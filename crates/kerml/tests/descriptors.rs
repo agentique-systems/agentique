@@ -123,7 +123,7 @@ fn association_storage_and_derived_writes_fail_atomically() {
     let before = Snapshot::new(r);
     let id = ElementId::new();
     for (key, derived) in [
-        ("Root-Elements-Element-ownedRelationship", false),
+        ("Root-Elements-Element-owningRelationship", false),
         ("Root-Elements-Element-ownedElement", true),
         ("Root-Namespaces-Namespace-membership", true),
     ] {

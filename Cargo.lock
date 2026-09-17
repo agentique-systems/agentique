@@ -64,6 +64,7 @@ version = "0.1.0"
 dependencies = [
  "agq-kerml",
  "agq-kernel",
+ "sha2",
 ]
 
 [[package]]

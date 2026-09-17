@@ -577,7 +577,9 @@ impl MetamodelRegistry {
     /// Derived slots are read-only projections. Authored association slots require
     /// a unique class end with an unordered 0..* association-owned, non-navigable
     /// opposite. No independently writable inverse, inverse bound, or inverse
-    /// order then needs a link store. All other association shapes stay unsupported.
+    /// order then needs a link store. Also supports a unique ordered 0..* class
+    /// end paired with a non-derived, unordered 0..1 class end. Its ordered slot
+    /// stores each link once; the scalar inverse is a read-only index projection.
     pub fn supports_slot_storage(&self, property: PropertyId) -> Result<bool, MetamodelError> {
         let p = self.property(property)?;
         if !matches!(p.owner, PropertyOwner::Class(_)) {
@@ -588,6 +590,9 @@ impl MetamodelRegistry {
         }
         if !p.unique {
             return Ok(false);
+        }
+        if self.scalar_inverse(property)?.is_some() {
+            return Ok(true);
         }
         for opposite in &p.opposite_ends {
             let q = self.property(*opposite)?;
@@ -600,6 +605,52 @@ impl MetamodelRegistry {
             }
         }
         Ok(true)
+    }
+
+    /// Scalar inverse of a supported ordered one-to-many association storage end.
+    /// This structural policy does not imply containment or language ownership.
+    pub fn scalar_inverse(
+        &self,
+        property: PropertyId,
+    ) -> Result<Option<PropertyId>, MetamodelError> {
+        let p = self.property(property)?;
+        if p.derived
+            || !p.unique
+            || !p.ordered
+            || p.multiplicity != Multiplicity::MANY
+            || !matches!(p.owner, PropertyOwner::Class(_))
+            || p.association.is_none()
+        {
+            return Ok(None);
+        }
+        let Some(opposite) = p.opposite_ends.first() else {
+            return Ok(None);
+        };
+        let q = self.property(*opposite)?;
+        Ok((!q.derived
+            && q.unique
+            && !q.ordered
+            && q.multiplicity
+                == Multiplicity {
+                    lower: 0,
+                    upper: Some(1),
+                }
+            && matches!(q.owner, PropertyOwner::Class(_)))
+        .then_some(q.id))
+    }
+
+    /// Canonical ordered end backing a scalar inverse projection, if supported.
+    pub fn inverse_storage(
+        &self,
+        property: PropertyId,
+    ) -> Result<Option<PropertyId>, MetamodelError> {
+        let p = self.property(property)?;
+        for opposite in &p.opposite_ends {
+            if self.scalar_inverse(*opposite)? == Some(property) {
+                return Ok(Some(*opposite));
+            }
+        }
+        Ok(None)
     }
 
     /// Exact enumeration domain and literal identities.

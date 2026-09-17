@@ -7,6 +7,17 @@
   "status_meaning": {"supported_subset":"Implemented within the stated boundary; never all forms of the named metaclass", "partial":"Some applicable structures or validation rules remain unimplemented", "preserved_only":"Original source survives; meaning is not interpreted", "refused":"Preparation refuses this capability", "not_applicable":"Outside this operation's role"},
   "capabilities": [
     {
+      "feature": "Kernel KerML semantic-query foundation",
+      "parsing": "not_applicable", "representation": "supported_subset", "validation": "partial", "interchange": "not_applicable", "execution": "not_applicable",
+      "boundary": "Pure queries over immutable normative Root/Core snapshots and overlays: direct ownership/membership, declared-name lookup, specialization reachability, direct typing/subsetting/redefinition, and effective feature identity sets on owned specialization DAGs. Context pins revision, content/provenance, exact metamodel, rule version, library content and options; results include completeness and positive/search dependencies with proofs.",
+      "clauses": ["KerML 8.3.2.1.2-8.3.2.1.3", "KerML 8.3.2.4.3-8.3.2.4.8", "KerML 8.3.3.1.6-8.3.3.1.10", "KerML 8.3.3.3.4, 8.3.3.3.7-8.3.3.3.10"],
+      "metaclasses": ["Element", "Relationship", "Namespace", "Membership", "OwningMembership", "Type", "FeatureMembership", "Specialization", "Feature", "FeatureTyping", "Subsetting", "Redefinition"],
+      "dependencies": [],
+      "implementation": ["crates/kerml-semantics/src/queries.rs", "crates/kerml-semantics/src/inheritance.rs", "crates/kerml-semantics/src/context.rs", "crates/kerml-semantics/src/contract.rs"],
+      "tests": ["crates/kerml-semantics/tests/foundation.rs"],
+      "gaps": ["No parsing, library implication, full constraint validation, global/imported name resolution or complete Feature::type inference.", "Effective features are an identity set for an acyclic unconjugated FeatureMembership slice, not normative ordered serialization. Cyclic inheritance, conjugation, imports, feature chains and feature aliases through other memberships are explicitly incomplete.", "No query cache or incremental invalidator; no migration of the older application semantics or runtime."]
+    },
+    {
       "feature": "Namespaces, imports, definitions and usages",
       "parsing": "supported_subset", "representation": "supported_subset", "validation": "partial", "interchange": "supported_subset", "execution": "not_applicable",
       "boundary": "Named packages, quoted names, public/private imports, wildcard imports, explicit definitions/usages, lexical resolution and typed feature chains in the self-model. Source recovery and diagnostics for other forms.",

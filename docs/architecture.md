@@ -194,5 +194,14 @@ does not implement KerML rules.
 same slice. [ADR 0004](adr/0004-kerml-typed-views.md) describes the API and its
 minimal generic association-slot prerequisite. A typed view stores an element ID
 and a reference to the existing immutable kernel model; it is not another
-canonical object. The kernel remains language-neutral. Future KerML semantics
-will evaluate rules and supply evidence-bearing derived results above it.
+canonical object. The kernel remains language-neutral.
+
+`agq-kerml-semantics` evaluates pure ownership, membership, specialization, direct
+typing/subsetting/redefinition and bounded effective-feature queries above these
+views. [ADR 0005](adr/0005-kerml-semantic-query-foundation.md) defines full semantic
+context identity, positive/search dependencies, completeness and proof graphs.
+A minimal generic ordered-many/scalar-inverse association storage shape enables
+declared ownership without precomputed language facts. Inherited features retain
+their kernel identities. No parser, cache framework or execution behavior is added.
+New kernel consumers use the query facade; the older application model remains
+separate pending an explicit migration.
