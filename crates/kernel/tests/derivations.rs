@@ -269,10 +269,10 @@ fn cyclic_explanations_and_self_support_are_rejected() {
         set_refs(&[]),
         evidence(&[Dependency::Derived(prop(SPORTS, EFFECTIVE))]),
     );
-    assert!(matches!(
-        builder.build(),
-        Err(DerivationError::DependencyCycle(_))
-    ));
+    assert_eq!(
+        builder.build().unwrap_err(),
+        DerivationError::DependencyCycle(vec![prop(VEHICLE, EFFECTIVE), prop(SPORTS, EFFECTIVE)])
+    );
     let mut builder = DerivationBuilder::new(snapshot);
     builder.property(
         SPORTS,
@@ -280,10 +280,50 @@ fn cyclic_explanations_and_self_support_are_rejected() {
         set_refs(&[]),
         evidence(&[Dependency::Derived(prop(SPORTS, EFFECTIVE))]),
     );
-    assert!(matches!(
-        builder.build(),
-        Err(DerivationError::DependencyCycle(_))
-    ));
+    assert_eq!(
+        builder.build().unwrap_err(),
+        DerivationError::DependencyCycle(vec![prop(SPORTS, EFFECTIVE)])
+    );
+}
+
+#[test]
+fn explanation_cycles_exclude_acyclic_evidence_and_dependents() {
+    let snapshot = vertical();
+    let mut builder = DerivationBuilder::new(snapshot.clone());
+    // Edges point from a derived fact to its evidence:
+    // ENGINE <-> VEHICLE -> SPORTS, with ENGINE_USE -> ENGINE upstream.
+    for (element, dependencies) in [
+        (ENGINE, vec![VEHICLE]),
+        (VEHICLE, vec![ENGINE, SPORTS]),
+        (SPORTS, vec![]),
+        (ENGINE_USE, vec![ENGINE]),
+    ] {
+        builder.property(
+            element,
+            EFFECTIVE,
+            set_refs(&[]),
+            evidence(
+                &dependencies
+                    .into_iter()
+                    .map(|id| Dependency::Derived(prop(id, EFFECTIVE)))
+                    .collect::<Vec<_>>(),
+            ),
+        );
+    }
+    assert_eq!(
+        builder.build().unwrap_err(),
+        DerivationError::DependencyCycle(vec![prop(ENGINE, EFFECTIVE), prop(VEHICLE, EFFECTIVE)])
+    );
+    for element in [ENGINE, VEHICLE, ENGINE_USE, SPORTS] {
+        assert!(
+            snapshot
+                .model()
+                .element(element)
+                .unwrap()
+                .slot(EFFECTIVE)
+                .is_none()
+        );
+    }
 }
 
 #[test]

@@ -629,35 +629,60 @@ fn validate(
     Ok(())
 }
 
-/// Iterative topological elimination: no recursion proportional to input size.
+/// Exact cyclic SCC members in sorted order, using iterative Kosaraju traversal.
+/// Both passes use heap-backed stacks, with no recursion proportional to input size.
 pub(crate) fn cyclic_nodes<K: Copy + Ord>(edges: &BTreeMap<K, BTreeSet<K>>) -> Vec<K> {
-    let mut degrees = BTreeMap::new();
+    let mut reverse: BTreeMap<K, BTreeSet<K>> = BTreeMap::new();
     for (&source, targets) in edges {
-        degrees.entry(source).or_insert(0usize);
+        reverse.entry(source).or_default();
         for &target in targets {
-            *degrees.entry(target).or_insert(0) += 1;
+            reverse.entry(target).or_default().insert(source);
         }
     }
-    let mut ready: BTreeSet<_> = degrees
-        .iter()
-        .filter(|(_, n)| **n == 0)
-        .map(|(id, _)| *id)
-        .collect();
-    while let Some(source) = ready.pop_first() {
-        for target in edges.get(&source).into_iter().flatten() {
-            if let Some(degree) = degrees.get_mut(target) {
-                *degree -= 1;
-                if *degree == 0 {
-                    ready.insert(*target);
+
+    // Keep each DFS frame until all its edges are visited to record finish order.
+    // The reverse map includes isolated sources and vertices appearing only as targets.
+    let mut visited = BTreeSet::new();
+    let mut finished = Vec::with_capacity(reverse.len());
+    for &root in reverse.keys() {
+        if !visited.insert(root) {
+            continue;
+        }
+        let mut stack = vec![(root, edges.get(&root).into_iter().flatten())];
+        while let Some((node, targets)) = stack.last_mut() {
+            if let Some(&target) = targets.next() {
+                if visited.insert(target) {
+                    stack.push((target, edges.get(&target).into_iter().flatten()));
                 }
+            } else {
+                finished.push(*node);
+                stack.pop();
             }
         }
     }
-    degrees
-        .into_iter()
-        .filter(|(_, n)| *n > 0)
-        .map(|(id, _)| id)
-        .collect()
+
+    // Reverse edges and reverse finish order isolate each strongly connected component.
+    visited.clear();
+    let mut cyclic = BTreeSet::new();
+    for root in finished.into_iter().rev() {
+        if !visited.insert(root) {
+            continue;
+        }
+        let mut component = Vec::new();
+        let mut stack = vec![root];
+        while let Some(node) = stack.pop() {
+            component.push(node);
+            for &source in &reverse[&node] {
+                if visited.insert(source) {
+                    stack.push(source);
+                }
+            }
+        }
+        if component.len() > 1 || reverse[&root].contains(&root) {
+            cyclic.extend(component);
+        }
+    }
+    cyclic.into_iter().collect()
 }
 
 #[cfg(test)]
@@ -665,10 +690,85 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cycle_members_exclude_downstream_vertices() {
+        let edges = BTreeMap::from([
+            ('A', BTreeSet::from(['B'])),
+            ('B', BTreeSet::from(['A', 'C'])),
+        ]);
+        assert_eq!(cyclic_nodes(&edges), vec!['A', 'B']);
+    }
+
+    #[test]
+    fn acyclic_chain_has_no_cycle_members() {
+        let edges = BTreeMap::from([
+            ('A', BTreeSet::from(['B'])),
+            ('B', BTreeSet::from(['C'])),
+            ('C', BTreeSet::from(['D'])),
+        ]);
+        assert!(cyclic_nodes(&edges).is_empty());
+    }
+
+    #[test]
+    fn self_loop_is_a_cycle() {
+        let edges = BTreeMap::from([('A', BTreeSet::from(['A']))]);
+        assert_eq!(cyclic_nodes(&edges), vec!['A']);
+    }
+
+    #[test]
+    fn three_vertex_cycle_reports_every_member() {
+        let edges = BTreeMap::from([
+            ('A', BTreeSet::from(['B'])),
+            ('B', BTreeSet::from(['C'])),
+            ('C', BTreeSet::from(['A'])),
+        ]);
+        assert_eq!(cyclic_nodes(&edges), vec!['A', 'B', 'C']);
+    }
+
+    #[test]
+    fn connected_cycles_report_members_in_sorted_order() {
+        let entries = [
+            ('D', BTreeSet::from(['C'])),
+            ('B', BTreeSet::from(['C', 'A'])),
+            ('C', BTreeSet::from(['D'])),
+            ('A', BTreeSet::from(['B'])),
+        ];
+        for edges in [
+            entries.clone().into_iter().collect(),
+            entries.into_iter().rev().collect(),
+        ] {
+            assert_eq!(cyclic_nodes(&edges), vec!['A', 'B', 'C', 'D']);
+        }
+    }
+
+    #[test]
+    fn cycle_members_exclude_upstream_downstream_and_isolated_vertices() {
+        let edges = BTreeMap::from([
+            ('A', BTreeSet::from(['B'])),
+            ('B', BTreeSet::from(['C'])),
+            ('C', BTreeSet::from(['B', 'D'])),
+            ('E', BTreeSet::new()),
+        ]);
+        assert_eq!(cyclic_nodes(&edges), vec!['B', 'C']);
+        assert!(cyclic_nodes::<char>(&BTreeMap::new()).is_empty());
+    }
+
+    #[test]
+    fn converging_acyclic_paths_have_no_cycle_members() {
+        let edges = BTreeMap::from([
+            ('A', BTreeSet::from(['B', 'C'])),
+            ('B', BTreeSet::from(['C', 'D'])),
+            ('C', BTreeSet::from(['D'])),
+        ]);
+        assert!(cyclic_nodes(&edges).is_empty());
+    }
+
+    #[test]
     fn deep_containment_and_evidence_graphs_do_not_require_recursion() {
         let mut edges: BTreeMap<_, _> = (0..20_000).map(|n| (n, BTreeSet::from([n + 1]))).collect();
         assert!(cyclic_nodes(&edges).is_empty());
         edges.insert(20_000, BTreeSet::from([19_999]));
         assert_eq!(cyclic_nodes(&edges), vec![19_999, 20_000]);
+        edges.insert(20_000, BTreeSet::from([0]));
+        assert_eq!(cyclic_nodes(&edges), (0..=20_000).collect::<Vec<_>>());
     }
 }

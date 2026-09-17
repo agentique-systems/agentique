@@ -383,11 +383,17 @@ fn composites_reject_multiple_owners_and_cycles_without_cascading() {
     let mut changes = old.change_set();
     changes
         .set(ENGINE, CONTAINS, set_refs(&[VEHICLE]), authored())
-        .set(VEHICLE, CONTAINS, set_refs(&[ENGINE]), authored());
-    assert!(matches!(
-        old.apply(&changes),
-        Err(ModelError::ContainmentCycle(_))
-    ));
+        .set(VEHICLE, CONTAINS, set_refs(&[ENGINE, SPORTS]), authored());
+    assert_eq!(
+        old.apply(&changes).unwrap_err(),
+        ModelError::ContainmentCycle(vec![ENGINE, VEHICLE])
+    );
+    let mut changes = old.change_set();
+    changes.set(ENGINE, CONTAINS, set_refs(&[ENGINE, SPORTS]), authored());
+    assert_eq!(
+        old.apply(&changes).unwrap_err(),
+        ModelError::ContainmentCycle(vec![ENGINE])
+    );
     let mut changes = old.change_set();
     changes.remove(OWNS);
     assert!(
