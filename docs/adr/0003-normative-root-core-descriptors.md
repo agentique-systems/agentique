@@ -3,6 +3,11 @@
 Status: implemented for descriptor generation and structural validation. Canonical
 association instance storage and KerML rule execution remain deferred.
 
+Follow-up: [ADR 0004](0004-kerml-typed-views.md) adds borrowed typed views and permits
+canonical slots for the bounded association shape with one writable class end.
+It supersedes this milestone's blanket association-write refusal; the two
+ownership pairs and general canonical link storage remain deferred.
+
 ## Authority and inspection
 
 This decision uses the exact artifacts pinned by [ADR 0002](0002-normative-metamodel-pipeline.md),

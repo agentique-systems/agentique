@@ -1,0 +1,16 @@
+
+> agentique@0.1.0 test:e2e
+> playwright test
+
+
+Running 4 tests using 1 worker
+
+  ✓  1 tests\browser\console.spec.ts:5:1 › Cancellable model work and paged history use durable Engine results (18.0s)
+  ✓  2 tests\browser\console.spec.ts:143:1 › Console lifecycle, source navigation, shared context and reviewed Assistant change (18.6s)
+  ✓  3 tests\browser\console.spec.ts:242:1 › API authentication, scope, identity mapping and revision checks (2.2s)
+  ✓  4 tests\browser\console.spec.ts:330:1 › Keyboard inspection and recoverable source drafts (5.0s)
+
+  4 passed (51.0s)
+[WebServer]    Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+[WebServer]     Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.40s
+[WebServer]      Running `target\debug\agq-server.exe --port 7342 --workspace .workspaces/e2e-2f89fab0-531a-4964-8f86-ce6dac239b77.db`

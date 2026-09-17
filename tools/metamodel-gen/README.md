@@ -14,7 +14,7 @@ cargo test --locked --offline -p agq-metamodel-gen
 The default root is this crate's repository; `--root PATH` selects another checkout.
 `--output FILE` alone selects IR-only export mode. `--descriptor-output DIRECTORY`
 redirects Rust/golden paths and can accompany `--output`. With neither option,
-all three checked-in artifacts are generated or checked. `--check` compares exact bytes
+all four checked-in artifacts are generated or checked. `--check` compares exact bytes
 and never writes. Exit status is nonzero for bad input, hash drift, cross-check
 failure, missing/stale output or unsupported arguments. All source hashes are
 verified before parsing. There is no network access or `build.rs`.
@@ -25,7 +25,10 @@ extracts/validates structural IR; `ir` defines rich records and descriptor keys;
 `pipeline` verifies the local lock and assembles the deterministic bundle.
 `descriptors` computes structural closure, validates generic descriptors and emits
 `crates/kerml/src/generated/root_core.rs` plus
-`standards/generated/kerml-1.0/root-core.golden.json`. Do not hand-edit either file.
+`standards/generated/kerml-1.0/root-core.golden.json`. `typed_views` emits
+`crates/kerml/src/generated/typed_views.rs` from that same closure: metamodel/class/
+property constants, borrowed views, checked upcasts and effective property readers.
+Do not hand-edit generated files. No additional classes are selected for views.
 Fixtures exercise failure behavior; integration tests import the actual pinned
 artifacts and compare the committed output, including across CLI invocations.
 
@@ -36,3 +39,5 @@ dependency rationale, identity encoding and deferred runtime decisions.
 property evidence, the exact slice inventory, canonical association policy and
 remaining semantic obligations. `agq-kerml` depends only on `agq-kernel` at runtime;
 its dependency here is test-only for comparison of compiled descriptors to XMI.
+[ADR 0004](../../docs/adr/0004-kerml-typed-views.md) describes the typed API, generated
+versus handwritten boundaries and bounded association-slot support.

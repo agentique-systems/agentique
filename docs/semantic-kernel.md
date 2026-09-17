@@ -21,8 +21,13 @@ property redefinition or the full intermediate class hierarchy.
 The kernel now supports explicit structural redefinition and association metadata;
 `crates/kerml` supplies generated normative Root/Core descriptors and separate tests.
 [ADR 0003](adr/0003-normative-root-core-descriptors.md) documents source evidence,
-effective property resolution and the association write boundary. Non-derived
-association slots are explicitly refused until canonical link storage exists.
+effective property resolution and the association write boundary. The follow-up
+[ADR 0004](adr/0004-kerml-typed-views.md) adds borrowed KerML typed views and permits
+a unique class-owned association slot when its opposite is association-owned,
+non-navigable, unordered and 0..*. This is one canonical storage surface; derived
+inverses are not automatically computed. Other non-derived association shapes,
+including both ownership pairs, still require canonical link storage and fail
+explicitly. `supports_slot_storage` exposes this generic capability.
 Use `MetamodelRegistry::from_descriptors` for sets containing associations or enums;
 `resolve_property` maps an inherited ID to its effective replacement. Derived-union
 and subset metadata do not themselves execute language rules.
@@ -129,9 +134,10 @@ maps, finer sharing of large slots, incremental validation and indexes can repla
 the initial implementation without changing semantic identity or query contracts.
 Debug output is diagnostic, not a serialization contract. No interchange is exposed.
 
-A generated `Feature<'m>` can hold only `{ id: ElementId, model: &'m ModelView }`,
-validate its class with `registry().is_subtype(...)`, and read slots through `element`.
-It needs no duplicate data. Parser ASTs, SQL rows, diagrams and compiled executable
+A generated `agq_kerml::views::Feature<'m>` holds only
+`{ id: ElementId, model: &'m ModelView }`, validates its class with
+`registry().is_subtype(...)`, and reads slots through `element` and effective
+property resolution. It needs no duplicate data. Parser ASTs, SQL rows, diagrams and compiled executable
 IR will remain separate representations outside this kernel. Salsa could later
 memoize queries, but is neither evaluated nor a canonical storage dependency here.
 
@@ -148,8 +154,10 @@ memoize queries, but is neither evaluated nor a canonical storage dependency her
    alternative explanations, closure completeness and invalidation contracts.
 
 ADR 0002 and ADR 0003 complete the KerML pin/import and structural descriptor
-milestones above, including enum domains and source-qualified identities. Canonical
-association instance storage, full scalar domains, semantic rules and migration
-remain open. The next step is atomic ownership-link storage with per-end ordering,
-followed by evidence-backed derived views. Parser and application migration remain
-deferred until those contracts are checked against the pinned artifacts.
+milestones above, including enum domains and source-qualified identities. ADR 0004
+adds the typed language layer and bounded single-slot association storage. General
+association storage, full scalar domains, semantic rules and migration remain open.
+Direct relationship queries can now use the existing endpoint slots and indexes.
+Ownership still needs atomic link storage with per-end ordering before derived
+ownership views. Parser and application migration remain deferred until those
+contracts are checked against the pinned artifacts.

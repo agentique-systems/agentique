@@ -188,4 +188,11 @@ closed Root/Core descriptor slice. [ADR 0003](adr/0003-normative-root-core-descr
 records normative property evidence, inheritance resolution and canonical association
 boundaries. Runtime crates do not depend on the importer. Existing application
 language support and execution coverage remain unchanged; descriptor registration
-does not implement KerML rules or association instance storage.
+does not implement KerML rules.
+
+`agq-kerml` also supplies generated constants and borrowed typed views for this
+same slice. [ADR 0004](adr/0004-kerml-typed-views.md) describes the API and its
+minimal generic association-slot prerequisite. A typed view stores an element ID
+and a reference to the existing immutable kernel model; it is not another
+canonical object. The kernel remains language-neutral. Future KerML semantics
+will evaluate rules and supply evidence-bearing derived results above it.

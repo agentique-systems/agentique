@@ -311,13 +311,7 @@ impl Snapshot {
                             property: *property,
                         });
                     }
-                    if self
-                        .model()
-                        .registry
-                        .property(*property)?
-                        .association
-                        .is_some()
-                    {
+                    if !self.model().registry.supports_slot_storage(*property)? {
                         return Err(ModelError::UnsupportedAssociationStorage(*property));
                     }
                     let mut value = value.clone();
@@ -349,13 +343,7 @@ impl Snapshot {
                             property: *property,
                         });
                     }
-                    if self
-                        .model()
-                        .registry
-                        .property(*property)?
-                        .association
-                        .is_some()
-                    {
+                    if !self.model().registry.supports_slot_storage(*property)? {
                         return Err(ModelError::UnsupportedAssociationStorage(*property));
                     }
                     Arc::make_mut(record).slots.remove(property);
@@ -465,7 +453,9 @@ impl ChangeSet {
 /// Structural validation failure, preserving semantic identifiers and value shape.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum ModelError {
-    #[error("association property {0} requires canonical link storage, which is not implemented")]
+    #[error(
+        "property {0} requires canonical link storage beyond the supported single-slot association shape"
+    )]
     UnsupportedAssociationStorage(PropertyId),
     #[error(transparent)]
     Metamodel(#[from] MetamodelError),
@@ -564,10 +554,9 @@ fn validate(
                 });
             }
             let descriptor = registry.property(property)?;
-            // Registration preserves association metadata, but slots cannot yet
-            // represent canonical links with per-end order. This also guards
-            // DerivationBuilder::element against bypassing declared write policy.
-            if descriptor.association.is_some() && !descriptor.derived {
+            // Refuse independently writable inverse ends and inverse ordering/
+            // bounds. Also guards implied elements against bypassing write policy.
+            if !registry.supports_slot_storage(property)? {
                 return Err(ModelError::UnsupportedAssociationStorage(property));
             }
             let expected = SlotShape::required(descriptor);
