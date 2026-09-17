@@ -1,0 +1,39 @@
+agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+├── agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+│   └── agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+│       ├── thiserror v2.0.20
+│       │   └── thiserror-impl v2.0.20 (proc-macro)
+│       │       ├── proc-macro2 v1.0.107
+│       │       │   └── unicode-ident v1.0.24
+│       │       ├── quote v1.0.47
+│       │       │   └── proc-macro2 v1.0.107 (*)
+│       │       └── syn v3.0.5
+│       │           ├── proc-macro2 v1.0.107 (*)
+│       │           ├── quote v1.0.47 (*)
+│       │           └── unicode-ident v1.0.24
+│       └── uuid v1.26.1
+│           ├── getrandom v0.4.3
+│           │   └── cfg-if v1.0.5
+│           └── sha1_smol v1.0.1
+├── agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel) (*)
+└── sha2 v0.10.9
+    ├── cfg-if v1.0.5
+    ├── cpufeatures v0.2.17
+    └── digest v0.10.7
+        ├── block-buffer v0.10.4
+        │   └── generic-array v0.14.7
+        │       └── typenum v1.20.1
+        └── crypto-common v0.1.7
+            ├── generic-array v0.14.7 (*)
+            └── typenum v1.20.1
+
+agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+├── agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml) (*)
+├── agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics) (*)
+├── agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+│   ├── agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel) (*)
+│   └── thiserror v2.0.20 (*)
+├── agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel) (*)
+└── thiserror v2.0.20 (*)
+
+agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel) (*)

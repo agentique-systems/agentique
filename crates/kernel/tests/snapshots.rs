@@ -93,6 +93,7 @@ fn names_are_not_identity_and_source_origin_is_not_identity() {
     let mut changes = old.change_set();
     let source = SourceOrigin {
         document: DocumentId::from_u128(1),
+        revision: SourceRevisionId::from_u128(1),
         range: ByteRange::new(0, 6).unwrap(),
         syntax_node: Some(SyntaxNodeId::from_u128(1)),
     };

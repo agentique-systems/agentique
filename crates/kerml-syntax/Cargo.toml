@@ -1,0 +1,10 @@
+[package]
+name = "agq-kerml-syntax"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Lossless, recoverable KerML syntax independent of semantic construction"
+
+[dependencies]
+agq-kernel = { path = "../kernel" }
+thiserror.workspace = true

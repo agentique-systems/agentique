@@ -205,3 +205,26 @@ declared ownership without precomputed language facts. Inherited features retain
 their kernel identities. No parser, cache framework or execution behavior is added.
 New kernel consumers use the query facade; the older application model remains
 separate pending an explicit migration.
+
+The additive second-generation textual frontend is `agq-kerml-syntax` (immutable
+source revisions, lossless tokens/range CST, borrowed syntax views) and
+`agq-kerml-text` (source history, conservative edit reconciliation and lowering).
+[ADR 0006](adr/0006-lossless-kerml-text-frontend.md) records the parser comparison,
+normative slice, recovery and identity contract. Text lowers directly through
+`agq-kerml` descriptors to `agq-kernel` snapshots; neither crate uses `agq-model`.
+Name denotation remains in `agq-kerml-semantics`, whose context includes pending
+specialization scope obligations during working-model resolution. SourceOrigin
+pins document, source revision, UTF-8 byte range and optional syntax identity;
+canonical records hold no parser objects. The kernel can transactionally update
+element provenance while preserving historical snapshots and semantic identities.
+
+The slice accepts named namespaces, types with required specialization, features,
+feature typing, subsetting and redefinition. Relationships and owning memberships
+are first-class records. Unsupported or malformed headers do not assert semantics;
+valid incomplete bodies can still form a working model. Unresolved/ambiguous
+references remain explicit assertions outside the structurally valid snapshot.
+`validate_slice` distinguishes this working state from successful bounded syntax,
+resolution and semantic-query checks. It is not full KerML validation or executable
+verification. Full imports/inheritance name resolution, library implication and
+additional descriptors are required before broadening into SysML. Application,
+HTTP and simulation continue to use their existing implementation.

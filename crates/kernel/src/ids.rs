@@ -37,6 +37,10 @@ identity!(
 );
 identity!(RevisionId, "Identity of one immutable declared snapshot.");
 identity!(
+    SourceRevisionId,
+    "Identity of immutable source bytes, separate from a model revision."
+);
+identity!(
     MetamodelId,
     "Identity of one exact metamodel release/artifact."
 );

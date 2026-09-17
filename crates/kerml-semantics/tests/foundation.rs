@@ -7,6 +7,121 @@ use std::{
     sync::Arc,
 };
 
+#[test]
+fn working_reference_scopes_are_semantic_inputs_and_block_lexical_guesses() {
+    let mut f = Fixture::new();
+    f.create(A, c::TYPE);
+    f.feature(id(30), A, FA);
+    let snapshot = f.finish();
+    let path = QualifiedName {
+        absolute: false,
+        segments: vec!["missing".into()],
+    };
+    let regular = queries(&snapshot).resolve_reference(FA, &path, c::TYPE);
+    assert_eq!(regular.value, Resolution::Unresolved);
+    let working = KerMlQueries::new(
+        SemanticContext::for_working_snapshot(
+            &snapshot,
+            SemanticOptions::default(),
+            BTreeSet::new(),
+            BTreeSet::from([A]),
+        )
+        .unwrap(),
+    );
+    let result = working.resolve_reference(FA, &path, c::TYPE);
+    assert_eq!(result.value, Resolution::Incomplete);
+    assert_eq!(result.completeness, Completeness::Incomplete);
+    assert_ne!(result.context, regular.context);
+    assert_eq!(result.context.model_digest, regular.context.model_digest);
+    assert!(matches!(
+        SemanticContext::for_working_snapshot(
+            &snapshot,
+            SemanticOptions::default(),
+            BTreeSet::new(),
+            BTreeSet::from([id(999)])
+        ),
+        Err(ContextError::InvalidPendingScope(_))
+    ));
+}
+
+#[test]
+fn qualified_resolution_filters_private_members_and_retains_proofs() {
+    let mut f = Fixture::new();
+    f.create(A, c::NAMESPACE);
+    f.create(B, c::NAMESPACE);
+    f.create(FA, c::FEATURE);
+    f.create(FB, c::FEATURE);
+    f.create(FC, c::FEATURE);
+    for (membership, owner, target) in [
+        (id(30), A, B),
+        (id(31), B, FA),
+        (id(32), A, FB),
+        (id(33), B, FC),
+    ] {
+        f.create(membership, c::OWNING_MEMBERSHIP);
+        f.link(owner, p::ELEMENT_OWNED_RELATIONSHIP, membership);
+        f.link(membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, target);
+    }
+    for (element, name) in [(B, "N"), (FA, "hidden")] {
+        f.change.set(
+            element,
+            p::ELEMENT_DECLARED_NAME,
+            SlotValue::Scalar(Value::String(name.into())),
+            origin(),
+        );
+    }
+    let registry = f.base.model().registry();
+    let ValueKind::Enumeration(domain) = registry
+        .property(p::MEMBERSHIP_VISIBILITY)
+        .unwrap()
+        .value_kind
+    else {
+        unreachable!()
+    };
+    let private = *registry
+        .enumeration(domain)
+        .unwrap()
+        .literals
+        .iter()
+        .find(|(_, name)| name.as_str() == "private")
+        .unwrap()
+        .0;
+    f.change.set(
+        id(31),
+        p::MEMBERSHIP_VISIBILITY,
+        SlotValue::Scalar(Value::Enumeration(private)),
+        origin(),
+    );
+    let snapshot = f.finish();
+    let q = queries(&snapshot);
+    let outside = q.resolve_reference(
+        FB,
+        &QualifiedName {
+            absolute: false,
+            segments: vec!["N".into(), "hidden".into()],
+        },
+        c::TYPE,
+    );
+    assert_eq!(outside.value, Resolution::Unresolved);
+    let inside = q.resolve_reference(
+        FC,
+        &QualifiedName {
+            absolute: false,
+            segments: vec!["hidden".into()],
+        },
+        c::TYPE,
+    );
+    assert_eq!(inside.value, Resolution::Resolved(FA));
+    assert!(
+        inside
+            .explanations
+            .keys()
+            .any(|c| c.query == QueryKind::ResolveReference)
+    );
+    assert_proofs(&inside);
+    assert_proofs(&outside);
+}
+
 const A: ElementId = ElementId::from_u128(1);
 const B: ElementId = ElementId::from_u128(2);
 const C: ElementId = ElementId::from_u128(3);
