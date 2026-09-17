@@ -3,6 +3,11 @@ import fs from "node:fs";
 import { spawn } from "node:child_process";
 
 const gates = {
+  "stage-1": [
+    ["artifacts", "node --test tools/normative-artifacts.test.mjs tools/sysml-artifacts.test.mjs"],
+    ["standards", "npm run standards:check", ["verification/standards-integrity.json"]],
+    ["kerml-current", "cargo run --locked --offline -p agq-metamodel-gen -- --check"],
+  ],
   "stage-0": [
     ["kernel", "cargo test -p agq-kernel"],
     ["kerml", "cargo test -p agq-kerml"],

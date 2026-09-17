@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { unzipSync } from "fflate";
 import { root, hash, safePath } from "./extract.mjs";
 import { verifyNormativeArtifacts } from "./normative-artifacts.mjs";
+import { verifySysmlArtifacts } from "./sysml-artifacts.mjs";
 const lock = JSON.parse(
   fs.readFileSync(path.join(root, "standards/lock.json"), "utf8"),
 );
@@ -113,6 +114,7 @@ const report = {
   dependency_edges: dependencies,
   artifact_discrepancies: discrepancies,
   normative_metamodel: verifyNormativeArtifacts(root),
+  sysml_2_0: verifySysmlArtifacts(root),
   scope:
     "Original artifact and extracted-entry byte verification; project metadata dependency closure. Whole-library language semantics are not certified by this check.",
 };

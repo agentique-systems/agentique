@@ -1,0 +1,514 @@
+{
+  "format": "agentique-library-content-set/1",
+  "id": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "root_resource": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+  "publication": "OMG formal SysML 2.0 / KerML 1.0 publication-linked KPARs (20250201 resources)",
+  "correction_release": null,
+  "identity_encoding": "SHA-256 of compact UTF-8 JSON [format, sorted [source URI, artifact SHA-256] pairs]; project version is independent of content identity.",
+  "scope": "Exact archive-level dependency closure. Textual semantic ingestion is not yet implemented; optional domain libraries are excluded.",
+  "artifacts": [
+    {
+      "specification": "KerML",
+      "version": "1.0",
+      "omg_file_id": "ptc/25-04-17",
+      "source": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+      "path": "standards/artifacts/Semantic-Library.kpar",
+      "sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+      "bytes": 33031,
+      "role": "library",
+      "normative": true,
+      "representation": "KerML model interchange project ZIP with textual content",
+      "media_type": "application/zip",
+      "retrieved_at": "2026-09-17T20:55:40.658024+00:00",
+      "acquisition_note": "Existing official bytes reused; baseline provenance checked and required remote bytes reverified during Stage 1.",
+      "reused_from": "standards/baseline-lock.json",
+      "kpar": {
+        "prefix": "Kernel Semantic Library/",
+        "project": {
+          "name": "Kernel Semantic Library",
+          "version": "1.0.0",
+          "description": "Standard semantic library for the Kernel Modeling Language (KerML)",
+          "usage": [
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+              "versionConstraint": "1.0.0"
+            },
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+              "versionConstraint": "1.0.0"
+            }
+          ]
+        },
+        "metamodel": "https://www.omg.org/spec/KerML/20250201"
+      },
+      "entries": [
+        {
+          "path": "Kernel Semantic Library/",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "Kernel Semantic Library/.meta.json",
+          "sha256": "a45927b8c154c1eec51bd4f4c5b3bb0f5d4258575e3d5f1355451df487ea35de",
+          "bytes": 782
+        },
+        {
+          "path": "Kernel Semantic Library/.project.json",
+          "sha256": "4ec268886e078d3a07990660b7572824117ea2b72f463b40f16681b706fefcb5",
+          "bytes": 428
+        },
+        {
+          "path": "Kernel Semantic Library/Base.kerml",
+          "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+          "bytes": 2338
+        },
+        {
+          "path": "Kernel Semantic Library/Clocks.kerml",
+          "sha256": "960ac0884935e308beea55c78ed11b6946c37a386eb7958ef2c913aa275ae4c7",
+          "bytes": 3853
+        },
+        {
+          "path": "Kernel Semantic Library/ControlPerformances.kerml",
+          "sha256": "31385be7dca94bd0538f011d5c8f7925626d54f96970769f0fdb28b2186a9a03",
+          "bytes": 4496
+        },
+        {
+          "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+          "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+          "bytes": 7429
+        },
+        {
+          "path": "Kernel Semantic Library/KerML.kerml",
+          "sha256": "8fdf4b7416e981c895cd74b75dc14b18091d13cbcaff7cdded6f9c23e2483d58",
+          "bytes": 21440
+        },
+        {
+          "path": "Kernel Semantic Library/Links.kerml",
+          "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+          "bytes": 2117
+        },
+        {
+          "path": "Kernel Semantic Library/Metaobjects.kerml",
+          "sha256": "983dbd85a4b183d8859326ee512fc59d991fb98a115e009e72fad21d1f9d1685",
+          "bytes": 1648
+        },
+        {
+          "path": "Kernel Semantic Library/Objects.kerml",
+          "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+          "bytes": 6127
+        },
+        {
+          "path": "Kernel Semantic Library/Observation.kerml",
+          "sha256": "603aecde2ef64d519c1bfc89bfc52f5315c05a36aa0cf86174badba5b371ddbf",
+          "bytes": 4552
+        },
+        {
+          "path": "Kernel Semantic Library/Occurrences.kerml",
+          "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+          "bytes": 37908
+        },
+        {
+          "path": "Kernel Semantic Library/Performances.kerml",
+          "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+          "bytes": 8925
+        },
+        {
+          "path": "Kernel Semantic Library/SpatialFrames.kerml",
+          "sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+          "bytes": 6944
+        },
+        {
+          "path": "Kernel Semantic Library/StatePerformances.kerml",
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "bytes": 5456
+        },
+        {
+          "path": "Kernel Semantic Library/Transfers.kerml",
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "bytes": 10817
+        },
+        {
+          "path": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "bytes": 2584
+        },
+        {
+          "path": "Kernel Semantic Library/Triggers.kerml",
+          "sha256": "124cad3625935e078d1363e6100ee12537ca9c51445a18108e056db8b4885609",
+          "bytes": 4422
+        }
+      ]
+    },
+    {
+      "specification": "KerML",
+      "version": "1.0",
+      "omg_file_id": "ptc/25-04-18",
+      "source": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+      "path": "standards/artifacts/Data-Type-Library.kpar",
+      "sha256": "957e4ff5c60f7fc5eedaf0b6d4f776856061c0aa7a424e260eeccb8d6ed7bfbd",
+      "bytes": 4260,
+      "role": "library",
+      "normative": true,
+      "representation": "KerML model interchange project ZIP with textual content",
+      "media_type": "application/zip",
+      "retrieved_at": "2026-09-17T20:55:40.907288+00:00",
+      "acquisition_note": "Existing official bytes reused; baseline provenance checked and required remote bytes reverified during Stage 1.",
+      "reused_from": "standards/baseline-lock.json",
+      "kpar": {
+        "prefix": "Kernel Data Type Library/",
+        "project": {
+          "name": "Kernel Data Type Library",
+          "version": "1.0.0",
+          "description": "Standard data type library for the Kernel Modeling Language (KerML)",
+          "usage": [
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+              "versionConstraint": "1.0.0"
+            }
+          ]
+        },
+        "metamodel": "https://www.omg.org/spec/KerML/20250201"
+      },
+      "entries": [
+        {
+          "path": "Kernel Data Type Library/",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "Kernel Data Type Library/.meta.json",
+          "sha256": "c6d972f55b4b4c775c10e9a34d34b078e93fc215f0c07b9a67e9668da14d1bf9",
+          "bytes": 238
+        },
+        {
+          "path": "Kernel Data Type Library/.project.json",
+          "sha256": "451c1ddd171bdbc4fc592bb0b85df8ee4181d44fe0c118b70f1175c3f0369ce9",
+          "bytes": 298
+        },
+        {
+          "path": "Kernel Data Type Library/Collections.kerml",
+          "sha256": "8d8359beb4c4613ded0abb780a890ccafa0a4aaa720a22334f602ca38301b92e",
+          "bytes": 4973
+        },
+        {
+          "path": "Kernel Data Type Library/ScalarValues.kerml",
+          "sha256": "4db25ce00dd170fd67261f6e7e21a2616bda15d233579dc5fb3193aaf61fa5a5",
+          "bytes": 862
+        },
+        {
+          "path": "Kernel Data Type Library/VectorValues.kerml",
+          "sha256": "7b22f8867e1cf46ac6a8226175db4405f6c29f047b3d6ad54a044fef3ce683dc",
+          "bytes": 1888
+        }
+      ]
+    },
+    {
+      "specification": "KerML",
+      "version": "1.0",
+      "omg_file_id": "ptc/25-04-19",
+      "source": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+      "path": "standards/artifacts/Function-Library.kpar",
+      "sha256": "a8319da3ab1d8ffc0f390ea1aef29d85a00451655c41a9267ce396845c2b1c8d",
+      "bytes": 15929,
+      "role": "library",
+      "normative": true,
+      "representation": "KerML model interchange project ZIP with textual content",
+      "media_type": "application/zip",
+      "retrieved_at": "2026-09-17T20:55:41.186008+00:00",
+      "acquisition_note": "Existing official bytes reused; baseline provenance checked and required remote bytes reverified during Stage 1.",
+      "reused_from": "standards/baseline-lock.json",
+      "kpar": {
+        "prefix": "Kernel Function Library/",
+        "project": {
+          "name": "Kernel Function Library",
+          "version": "1.0.0",
+          "description": "Standard function library for the Kernel Modeling Language (KerML)",
+          "usage": [
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+              "versionConstraint": "1.0.0"
+            },
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+              "versionConstraint": "1.0.0"
+            }
+          ]
+        },
+        "metamodel": "https://www.omg.org/spec/KerML/20250201"
+      },
+      "entries": [
+        {
+          "path": "Kernel Function Library/",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "Kernel Function Library/.meta.json",
+          "sha256": "35f39d8c9090f47d53c4c11b2daf430a37a0e354d2250e7bbf1b0b00e8a3fa4d",
+          "bytes": 954
+        },
+        {
+          "path": "Kernel Function Library/.project.json",
+          "sha256": "17fdebfe81a7fe67e15c9fd85348159dccae264c026196372f65a7e857720c6f",
+          "bytes": 430
+        },
+        {
+          "path": "Kernel Function Library/BaseFunctions.kerml",
+          "sha256": "c7700f36c786ff25796eb37d321a7a85f5f67b785e08a548c1cf4cd207c8b27f",
+          "bytes": 2044
+        },
+        {
+          "path": "Kernel Function Library/BooleanFunctions.kerml",
+          "sha256": "f836553db8e0ab1fb782043090198bdcd33ab6f168773e099fa2e192646ecc46",
+          "bytes": 962
+        },
+        {
+          "path": "Kernel Function Library/CollectionFunctions.kerml",
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "bytes": 2458
+        },
+        {
+          "path": "Kernel Function Library/ComplexFunctions.kerml",
+          "sha256": "cdb8ab38b5937f3716d66e2c71d6811d2ae7df08c1704f4dce7a815be1c01563",
+          "bytes": 2267
+        },
+        {
+          "path": "Kernel Function Library/ControlFunctions.kerml",
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "bytes": 3603
+        },
+        {
+          "path": "Kernel Function Library/DataFunctions.kerml",
+          "sha256": "896b81cd660948084efd0ee9ebc9125a1588b1e2d360bdebb03430d0317b7b5b",
+          "bytes": 2341
+        },
+        {
+          "path": "Kernel Function Library/IntegerFunctions.kerml",
+          "sha256": "3da7c23ee95290d768dae67e75287122d5512d054c0f9ca57b78a8aab81ee309",
+          "bytes": 2577
+        },
+        {
+          "path": "Kernel Function Library/NaturalFunctions.kerml",
+          "sha256": "f83daf1bbcf124fb9c535273c3c536d08424031991013f2f6c563706afde92ae",
+          "bytes": 1624
+        },
+        {
+          "path": "Kernel Function Library/NumericalFunctions.kerml",
+          "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+          "bytes": 2787
+        },
+        {
+          "path": "Kernel Function Library/OccurrenceFunctions.kerml",
+          "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+          "bytes": 3713
+        },
+        {
+          "path": "Kernel Function Library/RationalFunctions.kerml",
+          "sha256": "a7ef0870a5282f5dc489ab85ef424b66cd8909f5f52b2efe5f14ed1765afc768",
+          "bytes": 2813
+        },
+        {
+          "path": "Kernel Function Library/RealFunctions.kerml",
+          "sha256": "4b469aafc18d801ae733734066d3e43aa767c44a89e912cf60772933ab568a76",
+          "bytes": 2717
+        },
+        {
+          "path": "Kernel Function Library/ScalarFunctions.kerml",
+          "sha256": "3a6baf3962079a395304f0a811f3b58da09f18f91aaf76ceef5f81ebeae7a258",
+          "bytes": 2595
+        },
+        {
+          "path": "Kernel Function Library/SequenceFunctions.kerml",
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "bytes": 4501
+        },
+        {
+          "path": "Kernel Function Library/StringFunctions.kerml",
+          "sha256": "b3bbcad2251f9152f4b730754ad172e9a4e52d61fbdb9bdf55b968d92fcaa831",
+          "bytes": 1181
+        },
+        {
+          "path": "Kernel Function Library/TrigFunctions.kerml",
+          "sha256": "04af7eb3aa5be68c60bab85097b870b3a2540e646079c642d44b6a47150b0ce1",
+          "bytes": 1025
+        },
+        {
+          "path": "Kernel Function Library/VectorFunctions.kerml",
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "bytes": 7961
+        }
+      ]
+    },
+    {
+      "specification": "SysML",
+      "version": "2.0",
+      "omg_file_id": "ptc/25-04-24",
+      "source": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+      "path": "standards/artifacts/Systems-Library.kpar",
+      "sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+      "bytes": 27577,
+      "role": "library",
+      "normative": true,
+      "representation": "KerML model interchange project ZIP with textual content",
+      "media_type": "application/zip",
+      "retrieved_at": "2026-09-17T20:55:41.298863+00:00",
+      "acquisition_note": "Existing official bytes reused; baseline provenance checked and required remote bytes reverified during Stage 1.",
+      "reused_from": "standards/baseline-lock.json",
+      "kpar": {
+        "prefix": "Systems Library/",
+        "project": {
+          "name": "SysML Systems Library",
+          "version": "2.0.0",
+          "description": "Standard semantic library for the Systems Modeling Language (SysML)",
+          "usage": [
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+              "versionConstraint": "1.0.0"
+            },
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+              "versionConstraint": "1.0.0"
+            },
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+              "versionConstraint": "1.0.0"
+            }
+          ]
+        },
+        "metamodel": "https://www.omg.org/spec/SysML/20250201"
+      },
+      "entries": [
+        {
+          "path": "__MACOSX/Systems Library/._.DS_Store",
+          "sha256": "2f380f4a3d05a8d90c2106f50da75064e9ce57a598599dc5404f8f69a0223aa9",
+          "bytes": 120
+        },
+        {
+          "path": "Systems Library/",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "Systems Library/.DS_Store",
+          "sha256": "d65165279105ca6773180500688df4bdc69a2c7b771752f0a46ef120b7fd8ec3",
+          "bytes": 6148
+        },
+        {
+          "path": "Systems Library/.meta.json",
+          "sha256": "e37c13da99560ceb3d0610099f2b2f90aeb5177090819971dcd819e21738f604",
+          "bytes": 879
+        },
+        {
+          "path": "Systems Library/.project.json",
+          "sha256": "e07e0ba178d68fab7b88c58c1c97bcf9c59311f7cbad08234b77d9c72d75fe9f",
+          "bytes": 558
+        },
+        {
+          "path": "Systems Library/Actions.sysml",
+          "sha256": "541e019ff4a827fc5f2139987d2a96f8735e9423d623859fb0e93281371eafb5",
+          "bytes": 14335
+        },
+        {
+          "path": "Systems Library/Allocations.sysml",
+          "sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+          "bytes": 788
+        },
+        {
+          "path": "Systems Library/AnalysisCases.sysml",
+          "sha256": "2bb88f61178f2cefd5441600d2d980ed1e1a4ffc5cb7b3ca9207edee5c350f87",
+          "bytes": 1038
+        },
+        {
+          "path": "Systems Library/Attributes.sysml",
+          "sha256": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d",
+          "bytes": 626
+        },
+        {
+          "path": "Systems Library/Calculations.sysml",
+          "sha256": "19f5c2ac553c0a034550292de6bfa601e6948fc81d5af781b59c940eee2e5f72",
+          "bytes": 990
+        },
+        {
+          "path": "Systems Library/Cases.sysml",
+          "sha256": "2c4c0cbaaa466f9f720ba69af3a019517ca0a7741a561f7880006bae946bf24f",
+          "bytes": 1619
+        },
+        {
+          "path": "Systems Library/Connections.sysml",
+          "sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3",
+          "bytes": 2133
+        },
+        {
+          "path": "Systems Library/Constraints.sysml",
+          "sha256": "84dd65984abd0c35c37b75ef5766bfa63c836aa75a1c75a9d3eb5f4230fa8fdd",
+          "bytes": 1263
+        },
+        {
+          "path": "Systems Library/Flows.sysml",
+          "sha256": "4e65e6a45060d634db8ba16767d7692e7704c62c84b579fdb2e56b18bd0f8a34",
+          "bytes": 4987
+        },
+        {
+          "path": "Systems Library/Interfaces.sysml",
+          "sha256": "62b5c3c2bc3960e8d25633231c3933a81e422b3a904dc9541b8787113d076c66",
+          "bytes": 3467
+        },
+        {
+          "path": "Systems Library/Items.sysml",
+          "sha256": "3a344edb7def2276fa15e410c363531e5098d93bdf33a583418151fa87f538b3",
+          "bytes": 3946
+        },
+        {
+          "path": "Systems Library/Metadata.sysml",
+          "sha256": "6ad7a7857fad81570c84fac73981f8cce5aacab79bee2619644670bb792b2474",
+          "bytes": 813
+        },
+        {
+          "path": "Systems Library/Parts.sysml",
+          "sha256": "ccaaee608c1eb372c47cfdfc011c5f4f48cc5bcca5fb8b2441587ec26fd0fdaa",
+          "bytes": 1844
+        },
+        {
+          "path": "Systems Library/Ports.sysml",
+          "sha256": "401b2cb745bc0efb9df386d0435bddffa0e23d1eb6511cbe824734169b6a9566",
+          "bytes": 1522
+        },
+        {
+          "path": "Systems Library/Requirements.sysml",
+          "sha256": "c436a8fe2959b380ee3d8ae7c1c206311aa9c1215d13800b215f9952e1216632",
+          "bytes": 5466
+        },
+        {
+          "path": "Systems Library/StandardViewDefinitions.sysml",
+          "sha256": "b29882b0240e3cc2721b66c6bc9fd1d2d2431a34e80e170cd465911ff8d833a5",
+          "bytes": 6115
+        },
+        {
+          "path": "Systems Library/States.sysml",
+          "sha256": "9524f4c6d4dd10550faf6692dfdef3975e9e7f8514368e92032e8a17199f4980",
+          "bytes": 3369
+        },
+        {
+          "path": "Systems Library/SysML.sysml",
+          "sha256": "badb9f49bd280d0273a5f55fd6572fe2b332df6c8f3888415c04589fb314b900",
+          "bytes": 24613
+        },
+        {
+          "path": "Systems Library/UseCases.sysml",
+          "sha256": "242e51944c32032215d76a9ff1fd967d8ba36efffd9d78da1c423a5b102a2cf6",
+          "bytes": 1271
+        },
+        {
+          "path": "Systems Library/VerificationCases.sysml",
+          "sha256": "dbee7255e16df9c5cf0bded96c43cb60b1e5026b6973c5fb1176316902ac47b9",
+          "bytes": 2488
+        },
+        {
+          "path": "Systems Library/Views.sysml",
+          "sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
+          "bytes": 3845
+        }
+      ]
+    }
+  ]
+}

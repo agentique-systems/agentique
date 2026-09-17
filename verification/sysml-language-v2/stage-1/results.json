@@ -1,0 +1,26 @@
+[
+  {
+    "command": "node --test tools/normative-artifacts.test.mjs tools/sysml-artifacts.test.mjs",
+    "started": "2026-09-17T20:57:08.159Z",
+    "durationMs": 211,
+    "exitCode": 0,
+    "signal": null,
+    "log": "artifacts.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-17T20:57:08.371Z",
+    "durationMs": 496,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+    "started": "2026-09-17T20:57:08.868Z",
+    "durationMs": 1893,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-current.txt"
+  }
+]

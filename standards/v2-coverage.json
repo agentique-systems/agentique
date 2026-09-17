@@ -35,15 +35,15 @@
     {
       "id": "libraries",
       "status": "not-started",
-      "boundary": "Historical official and corrective library bytes are pinned. SemanticContext can identify caller-supplied content pins; generation 2 does not ingest or certify these libraries.",
-      "evidence": ["standards/baseline-lock.json", "standards/lock.json", "crates/kerml-semantics/src/context.rs"],
-      "gaps": ["Generation-2 library ingestion", "Exact selected library-set dependency closure and semantic provenance"]
+      "boundary": "Exact original Systems/Kernel archive dependency closure is pinned separately from the historical corrective release. SemanticContext can identify caller-supplied content pins; generation 2 does not ingest or certify these libraries.",
+      "evidence": ["standards/normative/sysml-2.0/library-set.json", "standards/baseline-lock.json", "standards/lock.json", "crates/kerml-semantics/src/context.rs"],
+      "gaps": ["Generation-2 library ingestion and semantic provenance"]
     },
     {
       "id": "sysml",
       "status": "not-started",
-      "boundary": "Planned SysML descriptors, typed views, semantic reuse and structural textual slice above KerML.",
-      "evidence": ["docs/architecture.md"],
+      "boundary": "SysML 2.0 XMI and JSON are pinned; descriptors, typed views, semantic reuse and structural text above KerML are not implemented.",
+      "evidence": ["docs/architecture.md", "standards/normative/sysml-2.0/README.md"],
       "gaps": ["SysML 2.0 metamodel pipeline, runtime descriptors, semantic rules and text lowering"]
     },
     {
