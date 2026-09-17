@@ -1,0 +1,3 @@
+ Documenting agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.32s
+   Generated C:\Users\phili\github\agentique-systems\agentique\target\doc\agq_kernel\index.html

@@ -1,0 +1,72 @@
+
+> agentique@0.1.0 standards:check
+> node tools/standards-check.mjs
+
+{
+  "checked_at": "2026-09-17T17:26:42.041Z",
+  "lock_sha256": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+  "result": "pass",
+  "artifacts": 10,
+  "artifact_bytes": 17562580,
+  "library_source_files": 57,
+  "dependency_edges": [
+    {
+      "from": "kerml-semantic-library",
+      "to": "kerml-data-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "kerml-semantic-library",
+      "to": "kerml-function-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "kerml-data-library",
+      "to": "kerml-semantic-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "kerml-function-library",
+      "to": "kerml-semantic-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "kerml-function-library",
+      "to": "kerml-data-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "sysml-systems-library",
+      "to": "kerml-semantic-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "sysml-systems-library",
+      "to": "kerml-data-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "sysml-systems-library",
+      "to": "kerml-function-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    }
+  ],
+  "artifact_discrepancies": [],
+  "scope": "Original artifact and extracted-entry byte verification; project metadata dependency closure. Whole-library language semantics are not certified by this check."
+}

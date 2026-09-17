@@ -1,0 +1,12 @@
+    Checking agq-model v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\model)
+   Compiling agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Checking agq-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\syntax)
+    Checking agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+    Checking agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+    Checking agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+    Checking agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+    Checking agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+    Checking agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.72s

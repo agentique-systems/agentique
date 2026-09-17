@@ -1,0 +1,83 @@
+{
+  "branch": "foundation/semantic-kernel-v2",
+  "parent_commit": "12ff2881d691476b4c97e9aacc673834566bd94f",
+  "started_at": "2026-09-17T18:04:29.538Z",
+  "environment": {
+    "os": "win32 10.0.19045 x64",
+    "rust": "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+    "cargo": "cargo 1.92.0 (344c4567c 2025-10-21)",
+    "node": "v22.11.0"
+  },
+  "changed_source_hashes": {
+    "crates/kernel/src/model.rs": "8a93b2259c15a9cb87edd22e43e47ae46d08081e72053361a84faba666a7135d",
+    "crates/kernel/tests/derivations.rs": "2d2a5a7d3fb2700487ae82a04b520eaf353f06e1f28ffb1e7c93eb4b67b3c5bd",
+    "crates/kernel/tests/snapshots.rs": "849a3a63e4a78fd577ff9247420c2277658e1725a72c1ed4fdb325d492d8cf62"
+  },
+  "records": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "started_at": "2026-09-17T18:04:29.710Z",
+      "duration_ms": 357,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-cycle-hardening/rust-format.txt"
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "started_at": "2026-09-17T18:04:30.067Z",
+      "duration_ms": 1650,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-cycle-hardening/rust-clippy.txt"
+    },
+    {
+      "command": "cargo test --workspace",
+      "started_at": "2026-09-17T18:04:31.718Z",
+      "duration_ms": 16320,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-cycle-hardening/rust-tests.txt"
+    },
+    {
+      "command": "cargo doc -p agq-kernel --no-deps",
+      "started_at": "2026-09-17T18:04:48.038Z",
+      "duration_ms": 1422,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-cycle-hardening/kernel-rustdoc.txt"
+    },
+    {
+      "command": "npm run check",
+      "started_at": "2026-09-17T18:04:49.460Z",
+      "duration_ms": 1478,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-cycle-hardening/frontend-types.txt"
+    },
+    {
+      "command": "npm run build",
+      "started_at": "2026-09-17T18:04:50.939Z",
+      "duration_ms": 1716,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-cycle-hardening/frontend-build.txt"
+    },
+    {
+      "command": "npm test",
+      "started_at": "2026-09-17T18:04:52.655Z",
+      "duration_ms": 476,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-cycle-hardening/engineering-tests.txt"
+    },
+    {
+      "command": "npm run test:e2e",
+      "started_at": "2026-09-17T18:04:53.134Z",
+      "duration_ms": 47266,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-cycle-hardening/browser-tests.txt"
+    }
+  ],
+  "finished_at": "2026-09-17T18:05:40.403Z"
+}
