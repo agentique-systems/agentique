@@ -1,0 +1,77 @@
+{
+  "format": "agentique-normative-metamodel-lock/1",
+  "specification": "KerML",
+  "version": "1.0",
+  "publication_page": "https://www.omg.org/spec/KerML/1.0",
+  "specification_document": "formal/26-03-01",
+  "specification_publication": "March 2026",
+  "adoption_date": "September 2025",
+  "metamodel_uri": "https://www.omg.org/spec/KerML/20250201",
+  "artifacts": [
+    {
+      "specification": "KerML",
+      "version": "1.0",
+      "source": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+      "filename": "KerML.xmi",
+      "path": "standards/normative/kerml-1.0/KerML.xmi",
+      "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+      "bytes": 962254,
+      "omg_file_id": "ptc/25-04-04",
+      "role": "primary",
+      "representation": "MOF abstract syntax serialized as UML XMI",
+      "media_type": "application/xml",
+      "retrieved_at": "2026-09-17T18:16:33.719828+00:00",
+      "resolved_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+      "http_metadata": {
+        "Content-Type": "application/xml",
+        "Last-Modified": null,
+        "ETag": "W/\"0c54435435e77fb008634b68991538db0\"",
+        "Date": "Thu, 17 Sep 2026 18:16:34 GMT"
+      }
+    },
+    {
+      "specification": "KerML",
+      "version": "1.0",
+      "source": "https://www.omg.org/spec/KerML/20250201/KerML.json",
+      "filename": "KerML.json",
+      "path": "standards/normative/kerml-1.0/KerML.json",
+      "sha256": "e454fe4b7c04f3d95874b6c1a4e6ef056ea5874c71fd3d17e3180319c2f58ab2",
+      "bytes": 1240573,
+      "omg_file_id": "ptc/25-04-21",
+      "role": "cross-check",
+      "representation": "JSON Schema for the JSON representation of KerML abstract syntax",
+      "media_type": "application/schema+json",
+      "retrieved_at": "2026-09-17T18:16:34.017346+00:00",
+      "resolved_uri": "https://www.omg.org/spec/KerML/20250201/KerML.json",
+      "http_metadata": {
+        "Content-Type": "application/json",
+        "Last-Modified": null,
+        "ETag": "W/\"05d35ba1fe13363bb918e5c7a838695bc\"",
+        "Date": "Thu, 17 Sep 2026 18:16:34 GMT"
+      }
+    },
+    {
+      "specification": "UML",
+      "version": "2.5.1",
+      "source": "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi",
+      "filename": "PrimitiveTypes.xmi",
+      "path": "standards/normative/kerml-1.0/PrimitiveTypes.xmi",
+      "sha256": "62d12217fcd26037fc917709e2a896600af574efd6412c110e2a711395a69849",
+      "bytes": 2880,
+      "omg_file_id": "ptc/18-01-02",
+      "role": "primary-dependency",
+      "representation": "UML primitive type declarations in XMI",
+      "media_type": "application/xml",
+      "retrieved_at": "2026-09-17T18:17:38.764986+00:00",
+      "resolved_uri": "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi",
+      "http_metadata": {
+        "Content-Type": "application/xml",
+        "Last-Modified": null,
+        "ETag": "W/\"02d0dde8fc4fe90cfed0cb4ef27725d9d\"",
+        "Date": "Thu, 17 Sep 2026 18:17:39 GMT"
+      },
+      "publication_page": "https://www.omg.org/spec/UML/2.5.1",
+      "publication": "December 2017"
+    }
+  ]
+}

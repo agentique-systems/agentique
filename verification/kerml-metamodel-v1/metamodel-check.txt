@@ -1,0 +1,7 @@
+
+> agentique@0.1.0 metamodel:check
+> cargo run --locked --offline -p agq-metamodel-gen -- --check
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running `target\debug\metamodel-gen.exe --check`
+Metamodel IR and normative JSON cross-check pass (3038685 bytes).

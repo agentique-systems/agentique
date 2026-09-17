@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmlns:xmi="http://www.omg.org/spec/XMI/20161101" xmlns:uml="http://www.omg.org/spec/UML/20161101">
+  <uml:Package xmi:id="Fixture" name="Fixture" URI="urn:agentique:fixture:1">
+    <packagedElement xmi:type="uml:Package" xmi:id="left" name="Left">
+      <packagedElement xmi:type="uml:Class" xmi:id="left-A" name="A" isAbstract="true">
+        <ownedAttribute xmi:type="uml:Property" xmi:id="left-A-items" name="items" isOrdered="true" isUnique="false" aggregation="composite" isReadOnly="true">
+          <type xmi:idref="left-A"/>
+          <lowerValue xmi:type="uml:LiteralInteger" xmi:id="items-lower"/>
+          <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="items-upper" value="-1"/>
+        </ownedAttribute>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Class" xmi:id="B" name="B"/>
+      <packagedElement xmi:type="uml:Class" xmi:id="C" name="C">
+        <generalization xmi:type="uml:Generalization" xmi:id="C-A"><general xmi:idref="left-A"/></generalization>
+        <generalization xmi:type="uml:Generalization" xmi:id="C-B"><general xmi:idref="B"/></generalization>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="C-refined" name="refined" isDerived="true" isDerivedUnion="true">
+          <type xmi:idref="left-A"/>
+          <redefinedProperty xmi:idref="left-A-items"/>
+          <subsettedProperty xmi:idref="left-A-items"/>
+          <lowerValue xmi:type="uml:LiteralInteger" xmi:id="refined-lower" value="2"/>
+          <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="refined-upper" value="4"/>
+        </ownedAttribute>
+        <ownedAttribute xmi:type="uml:Property" xmi:id="C-peer" name="peer">
+          <type xmi:idref="B"/>
+          <association xmi:idref="peers"/>
+        </ownedAttribute>
+        <ownedRule xmi:type="uml:Constraint" xmi:id="rule" name="documentaryRule">
+          <specification xmi:type="uml:OpaqueExpression" xmi:id="expression" body="self.refined-&gt;notEmpty()" language="OCL2.0"/>
+        </ownedRule>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Association" xmi:id="peers" name="Peers">
+        <memberEnd xmi:idref="C-peer"/><memberEnd xmi:idref="peers-back"/>
+        <navigableOwnedEnd xmi:idref="peers-back"/>
+        <ownedEnd xmi:type="uml:Property" xmi:id="peers-back" name="back">
+          <type xmi:idref="C"/><association xmi:idref="peers"/>
+        </ownedEnd>
+      </packagedElement>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Package" xmi:id="right" name="Right">
+      <packagedElement xmi:type="uml:Class" xmi:id="right-A" name="A"/>
+    </packagedElement>
+  </uml:Package>
+</xmi:XMI>
