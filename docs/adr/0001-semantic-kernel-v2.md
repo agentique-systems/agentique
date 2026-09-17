@@ -76,6 +76,8 @@ deliberately omitted.
   Persistent maps and incremental indexes can replace this after measurement.
   Snapshots are Send + Sync with no locks or interior mutability.
 * A change set binds to its exact base snapshot and reserves one new revision ID.
+  Appending an operation changes that candidate ID, including after an earlier
+  application, so one revision ID cannot describe two different candidate states.
   Applying the same set to the same base gives the same observable contents and
   revision. Distinct branches receive distinct revision IDs. Allocation randomness
   is outside application of a change set. Revisions are not persistence commits.
@@ -88,6 +90,9 @@ deliberately omitted.
   origin. Derived explanations reference elements, slots or other derived facts.
   Dependencies must resolve and form an acyclic explanation graph. Whole-overlay
   invalidation on declared revision change is the conservative initial policy.
+  The subject is included automatically; producers are responsible for complete
+  supporting evidence. An overlay's base revision is not an identity for its
+  result set: future memoization must also identify rule set/computation context.
 * Derived element IDs use a private, versioned UUID-v5 domain over a typed rule,
   subject and output key. This is a kernel-local deterministic policy, not an OMG
   ID formula. Rule IDs must change when rule identity/meaning changes. Later
