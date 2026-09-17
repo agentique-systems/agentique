@@ -15,6 +15,19 @@ const commands = [
   ["registers", "node", ["tools/registers.mjs"]],
   ["extraction", "node", ["tools/extract.mjs", "--check"]],
   ["standards", "node", ["tools/standards-check.mjs"]],
+  [
+    "metamodel",
+    "cargo",
+    [
+      "run",
+      "--locked",
+      "--offline",
+      "-p",
+      "agq-metamodel-gen",
+      "--",
+      "--check",
+    ],
+  ],
   ["rust-format", "cargo", ["fmt", "--all", "--", "--check"]],
   [
     "rust-clippy",

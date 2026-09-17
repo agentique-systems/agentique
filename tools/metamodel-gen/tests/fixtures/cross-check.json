@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Identified": {"type": "object"},
+    "Node": {
+      "$id": "urn:agentique:fixture:1/Node",
+      "title": "Node",
+      "type": "object",
+      "properties": {
+        "@type": {"type": "string", "const": "Node"},
+        "links": {"type": "array", "items": {"$ref": "urn:agentique:fixture:1/Identified", "$comment": "urn:agentique:fixture:1/Node"}}
+      }
+    }
+  }
+}

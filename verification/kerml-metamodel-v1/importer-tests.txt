@@ -1,0 +1,41 @@
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.51s
+     Running unittests src\lib.rs (target\debug\deps\agq_metamodel_gen-c0202e96581415b7.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (target\debug\deps\metamodel_gen-4cd0c6fe5772de3a.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\importer.rs (target\debug\deps\importer-5c8dcc0928f96eb8.exe)
+
+running 7 tests
+test descriptor_key_v1_golden_encoding ... ok
+test duplicate_external_identifiers_fail_even_in_retained_content ... ok
+test independent_json_cross_check_detects_intentional_mismatch_fixture ... ok
+test inheritance_multiplicity_containment_and_uninterpreted_semantics_survive ... ok
+test unresolved_metaclass_and_wrong_kind_references_fail ... ok
+test same_artifact_produces_identical_ir_and_keys ... ok
+test malformed_unknown_and_invalid_structural_input_is_explicit ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\normative.rs (target\debug\deps\normative-de9de77ec5d2c0e4.exe)
+
+running 2 tests
+test pinned_normative_artifacts_import_cross_check_and_match_committed_ir ... ok
+test cli_check_is_read_only_and_detects_stale_output_and_tampered_inputs ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.46s
+
+   Doc-tests agq_metamodel_gen
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

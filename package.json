@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "dev": "vite --config console/vite.config.ts",
     "standards:check": "node tools/standards-check.mjs",
+    "metamodel:check": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
     "test:process": "node tools/process-test.mjs",
     "verify": "node tools/verify.mjs",
     "format:check": "prettier --check console/src console/*.ts tests/browser tools/*.mjs playwright.config.ts"

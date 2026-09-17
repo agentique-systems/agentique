@@ -1,0 +1,11 @@
+<xmi:XMI xmlns:xmi="http://www.omg.org/spec/XMI/20161101" xmlns:uml="http://www.omg.org/spec/UML/20161101">
+  <uml:Package xmi:id="Fixture" name="Fixture" URI="urn:agentique:fixture:1">
+    <packagedElement xmi:type="uml:Class" xmi:id="Node" name="Node">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="Node-links" name="links">
+        <type xmi:idref="Node"/>
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="links-lower"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="links-upper" value="-1"/>
+      </ownedAttribute>
+    </packagedElement>
+  </uml:Package>
+</xmi:XMI>

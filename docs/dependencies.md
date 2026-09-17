@@ -54,3 +54,17 @@ configuration, target, build profile and compiler version. Verification also rec
 a broader source-file hash manifest. Debug and release build identities are distinct.
 An experiment can be inspected after a software update, but reset/resume requires
 compatible pinned dependencies; it does not silently substitute a new Engine build.
+
+The metamodel importer adds `roxmltree` 0.21.1, a maintained MIT/Apache-2.0 XML parser
+with namespace resolution and source positions. Its `memchr` dependency was already
+in Cargo.lock. It runs only in `tools/metamodel-gen`; serde, serde_json, sha2, uuid
+and test-only tempfile reuse workspace dependencies. The tool depends on agq-kernel
+for typed ID construction; the kernel dependency graph and source are unchanged.
+No database, async, web, simulation or language parsing dependency is added.
+
+KerML MOF XMI, its JSON serialization schema and referenced UML primitive types are
+separately locked in `standards/normative/kerml-1.0/lock.json`. The standard integrity
+command verifies all three. `npm run metamodel:check` verifies exact regenerated IR.
+See ADR 0002 for the reproducible acquisition command and JSON cross-check scope.
+Normal dependency provisioning (`cargo fetch --locked`, `npm ci`, local browser
+installation) precedes offline builds/tests; it does not retrieve standards.

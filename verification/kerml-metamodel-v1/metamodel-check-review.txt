@@ -1,0 +1,3 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running `target\debug\metamodel-gen.exe --check`
+Metamodel IR and normative JSON cross-check pass (3038685 bytes).

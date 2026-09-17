@@ -169,3 +169,16 @@ names and Link headers. The element result is a partial metaclass projection, no
 a complete OMG abstract-syntax serialization. The API coverage register enumerates
 every published operation and its status. All simulation routes are exclusively
 under `/api/agentique`.
+
+## Standards-driven foundation
+
+The additive generic `agq-kernel` foundation is described in ADR 0001. The intended
+runtime dependency direction is `agq-kernel` <- `agq-kerml` <- future `agq-sysml`.
+Language-specific descriptors and rules belong above the kernel.
+
+[`tools/metamodel-gen`](../tools/metamodel-gen/) imports hash-pinned KerML 1.0 MOF
+XMI into a neutral IR and cross-checks overlapping facts in the normative JSON
+serialization schema. It is engineering tooling, not canonical runtime storage;
+no runtime crate reads its output. [ADR 0002](adr/0002-normative-metamodel-pipeline.md)
+records authority, identity, retained property semantics and the decisions needed
+before generating runtime descriptors. Existing language coverage is unchanged.

@@ -1,0 +1,21 @@
+[package]
+name = "agq-metamodel-gen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "metamodel-gen"
+path = "src/main.rs"
+
+[dependencies]
+agq-kernel = { path = "../../crates/kernel" }
+roxmltree = "0.21.1"
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

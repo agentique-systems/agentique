@@ -13,3 +13,4 @@ verification/coverage-plan.json -text
 standards/libraries/** -text
 standards/libraries-2026-04/** -text
 standards/artifacts/** -text
+standards/normative/** -text

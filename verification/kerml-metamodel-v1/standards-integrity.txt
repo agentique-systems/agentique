@@ -1,3 +1,7 @@
+
+> agentique@0.1.0 standards:check
+> node tools/standards-check.mjs
+
 {
   "checked_at": "2026-09-17T18:36:20.656Z",
   "lock_sha256": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
