@@ -102,8 +102,14 @@ pub fn check(model: &Metamodel, schema: &Value, source: Source) -> Result<CrossC
             .values()
             .filter(|c| {
                 c.entity.key.kind == Kind::Class
-                    && c.generalizations
+                    && (c
+                        .generalizations
                         .contains(&classifier.entity.key.external_id)
+                        || c.generalizations.contains(&format!(
+                            "{}#{}",
+                            classifier.entity.key.source.artifact_uri,
+                            classifier.entity.key.external_id
+                        )))
             })
             .map(|c| format!("{}/{}", model.source.metamodel_uri, c.entity.name))
             .collect::<Vec<_>>();

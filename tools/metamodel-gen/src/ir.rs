@@ -21,6 +21,7 @@ pub enum Kind {
     PrimitiveType,
     Property,
     EnumerationLiteral,
+    Operation,
 }
 
 /// Source-qualified identity. Paths are arrays, so separators cannot collide.

@@ -79,6 +79,12 @@ pub fn one<'a, 'input>(node: Node<'a, 'input>, tag: &'a str) -> Result<Option<No
 }
 
 pub fn reference(node: Node<'_, '_>) -> Result<String> {
+    if let Some(uri) = node.attribute("href") {
+        if xa(node, "idref").is_some() || uri.is_empty() || !uri.contains('#') {
+            return Err(error(node, "invalid source-qualified href"));
+        }
+        return Ok(uri.to_owned());
+    }
     xa(node, "idref")
         .filter(|s| !s.is_empty())
         .map(str::to_owned)
@@ -205,11 +211,16 @@ fn validate_node(node: Node<'_, '_>, xmi_ns: Option<&str>) -> Result<()> {
             ],
         ),
         ("ownedParameter", "Parameter", false) => (
-            &["name", "isOrdered", "isUnique"],
+            &["name", "isOrdered", "isUnique", "isStream"],
             &["lowerValue", "upperValue", "type"],
         ),
         ("Tag", "Tag", false) => (&["name", "value", "element"], &[]),
-        ("type", "", false) if node.attribute("href").is_some() => (&["href"], &[]),
+        (
+            "type" | "general" | "importedPackage" | "redefinedProperty" | "subsettedProperty"
+            | "redefinedOperation" | "instance",
+            "",
+            false,
+        ) if node.attribute("href").is_some() => (&["href"], &[]),
         (
             "importedPackage" | "annotatedElement" | "general" | "association"
             | "subsettedProperty" | "type" | "redefinedProperty" | "ownedRule"
@@ -255,7 +266,8 @@ fn validate_node(node: Node<'_, '_>, xmi_ns: Option<&str>) -> Result<()> {
             boolean(node, attr.name(), false)?;
         }
     }
-    if !is_ref && !matches!(tag.name(), "XMI" | "type" | "body") {
+    if !is_ref && node.attribute("href").is_none() && !matches!(tag.name(), "XMI" | "type" | "body")
+    {
         id(node)?;
     }
     for child in node.children() {

@@ -1,0 +1,221 @@
+{
+  "checked_at": "2026-09-17T21:07:28.812Z",
+  "lock_sha256": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+  "result": "pass",
+  "artifacts": 10,
+  "artifact_bytes": 17562580,
+  "library_source_files": 57,
+  "dependency_edges": [
+    {
+      "from": "kerml-semantic-library",
+      "to": "kerml-data-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "kerml-semantic-library",
+      "to": "kerml-function-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "kerml-data-library",
+      "to": "kerml-semantic-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "kerml-function-library",
+      "to": "kerml-semantic-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "kerml-function-library",
+      "to": "kerml-data-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "sysml-systems-library",
+      "to": "kerml-semantic-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "sysml-systems-library",
+      "to": "kerml-data-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    },
+    {
+      "from": "sysml-systems-library",
+      "to": "kerml-function-library",
+      "required_version": "1.0.0",
+      "actual_version": "1.0.0",
+      "verified": true
+    }
+  ],
+  "artifact_discrepancies": [],
+  "normative_metamodel": {
+    "lock": "standards/normative/kerml-1.0/lock.json",
+    "lock_sha256": "1e6bc49282dd9ed933b4e8be450bd1bb47fa0af35da35e2f1ae6895e3211b6bb",
+    "artifacts": [
+      {
+        "path": "standards/normative/kerml-1.0/KerML.xmi",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "bytes": 962254,
+        "source": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+        "role": "primary"
+      },
+      {
+        "path": "standards/normative/kerml-1.0/KerML.json",
+        "sha256": "e454fe4b7c04f3d95874b6c1a4e6ef056ea5874c71fd3d17e3180319c2f58ab2",
+        "bytes": 1240573,
+        "source": "https://www.omg.org/spec/KerML/20250201/KerML.json",
+        "role": "cross-check"
+      },
+      {
+        "path": "standards/normative/kerml-1.0/PrimitiveTypes.xmi",
+        "sha256": "62d12217fcd26037fc917709e2a896600af574efd6412c110e2a711395a69849",
+        "bytes": 2880,
+        "source": "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi",
+        "role": "primary-dependency"
+      }
+    ]
+  },
+  "sysml_2_0": {
+    "lock": "standards/normative/sysml-2.0/lock.json",
+    "artifacts": [
+      {
+        "specification": "SysML",
+        "version": "2.0",
+        "source": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+        "filename": "SysML.xmi",
+        "path": "standards/normative/sysml-2.0/SysML.xmi",
+        "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+        "bytes": 1135635,
+        "omg_file_id": "ptc/25-02-15",
+        "role": "primary",
+        "normative": true,
+        "representation": "MOF abstract syntax serialized as UML XMI",
+        "media_type": "application/xml",
+        "retrieved_at": "2026-09-17T20:53:30.927870+00:00",
+        "resolved_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+        "http_metadata": {
+          "Content-Type": "application/xml",
+          "ETag": "W/\"06564c0e48a6ebea7b7a9b3548783cf34\"",
+          "Last-Modified": null,
+          "Date": "Thu, 17 Sep 2026 20:53:31 GMT"
+        }
+      },
+      {
+        "specification": "SysML",
+        "version": "2.0",
+        "source": "https://www.omg.org/spec/SysML/20250201/SysML.json",
+        "filename": "SysML.json",
+        "path": "standards/normative/sysml-2.0/SysML.json",
+        "sha256": "bb0d8af159cf2cbe4a0df4ed6b903505a57e33d047068e5a50a7008a18d546c5",
+        "bytes": 3875821,
+        "omg_file_id": "ptc/25-04-32",
+        "role": "cross-check",
+        "normative": true,
+        "representation": "JSON Schema for the JSON representation of SysML abstract syntax",
+        "media_type": "application/schema+json",
+        "retrieved_at": "2026-09-17T20:53:31.154899+00:00",
+        "resolved_uri": "https://www.omg.org/spec/SysML/20250201/SysML.json",
+        "http_metadata": {
+          "Content-Type": "application/json",
+          "ETag": "W/\"0edf4d0e3aac02d2481ccbe59d64a271c\"",
+          "Last-Modified": null,
+          "Date": "Thu, 17 Sep 2026 20:53:31 GMT"
+        }
+      },
+      {
+        "specification": "SysML",
+        "version": "2.0",
+        "source": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+        "filename": "Systems-Library.kpar",
+        "path": "standards/artifacts/Systems-Library.kpar",
+        "sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+        "bytes": 27577,
+        "omg_file_id": "ptc/25-04-24",
+        "role": "systems-library",
+        "normative": true,
+        "representation": "KerML model interchange project ZIP containing SysML text",
+        "media_type": "application/zip",
+        "retrieved_at": "2026-09-17T20:53:31.253109+00:00",
+        "resolved_uri": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+        "http_metadata": {
+          "Content-Type": "text/plain; charset=UTF-8",
+          "ETag": "W/\"06fbbf1415d3fc74b6f4953589127fcb1\"",
+          "Last-Modified": null,
+          "Date": "Thu, 17 Sep 2026 20:53:31 GMT"
+        },
+        "reused_from": "standards/baseline-lock.json"
+      }
+    ],
+    "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+    "dependency_edges": [
+      {
+        "from": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+        "to": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+        "version": "1.0.0"
+      },
+      {
+        "from": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+        "to": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+        "version": "1.0.0"
+      },
+      {
+        "from": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+        "to": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+        "version": "1.0.0"
+      },
+      {
+        "from": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+        "to": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+        "version": "1.0.0"
+      },
+      {
+        "from": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+        "to": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+        "version": "1.0.0"
+      },
+      {
+        "from": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+        "to": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+        "version": "1.0.0"
+      },
+      {
+        "from": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+        "to": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+        "version": "1.0.0"
+      },
+      {
+        "from": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+        "to": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+        "version": "1.0.0"
+      }
+    ],
+    "informative_example": {
+      "specification": "SysML",
+      "version": "2.0",
+      "omg_file_id": "ptc/25-04-31",
+      "source": "https://www.omg.org/cgi-bin/doc?ptc/25-04-31.sysml",
+      "normative": false,
+      "role": "acceptance-example",
+      "status": "unavailable",
+      "checked_at": "2026-09-17T20:55:25.452Z",
+      "reason": "OMG publication link was inspected; direct acquisition returned HTTP 403. Web retrieval with a normalized query returned an HTML document-not-available page. No substitute or HTML was pinned as the example."
+    }
+  },
+  "scope": "Original artifact and extracted-entry byte verification; project metadata dependency closure. Whole-library language semantics are not certified by this check."
+}

@@ -33,3 +33,17 @@ offline artifact tests (including changed upstream/local bytes, roles and versio
 standards integrity and the existing KerML generator currentness check. Original
 KerML metamodel bytes/IDs/generated output, old locks and library bytes are unchanged.
 Acquisition is an explicit maintenance tool, separate from builds and tests.
+
+## Gate 2 — passed
+
+The shared profile-driven importer handles SysML and authoritative references to
+KerML classes, properties, packages, enums/literals and operations. ADR 0007 records
+the published URI spelling and JSON namespace projection differences. Descriptor
+key v1 and all four existing KerML generated artifacts remain byte-for-byte current.
+The SysML neutral bundle is deterministic and checked by the default offline CLI.
+
+All five commands in [stage-2/results.json](stage-2/results.json) returned zero:
+format, strict generator Clippy, all generator tests, offline generated currentness
+and standards integrity. Tests include source-qualified direct/transitive inheritance,
+same-name isolation, unresolved/wrong-kind references, wrong baseline/artifact and
+stale output rejection. This gate does not establish runtime SysML support.

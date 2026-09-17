@@ -5,20 +5,53 @@ use std::collections::{BTreeMap, BTreeSet};
 pub type ExternalTypes = BTreeMap<String, DescriptorKey>;
 
 pub fn external_types(model: &Metamodel) -> ExternalTypes {
-    model
-        .classifiers
-        .iter()
-        .filter(|(_, c)| c.entity.key.kind == Kind::PrimitiveType)
-        .map(|(id, c)| {
-            (
-                format!("{}#{id}", model.source.artifact_uri),
-                c.entity.key.clone(),
-            )
-        })
-        .collect()
+    let mut entries = ExternalTypes::new();
+    let mut add = |key: DescriptorKey| {
+        entries.insert(
+            format!("{}#{}", key.source.artifact_uri, key.external_id),
+            key,
+        );
+    };
+    for package in model.packages.values() {
+        add(package.entity.key.clone());
+    }
+    for property in model.properties.values() {
+        add(property.entity.key.clone());
+    }
+    for class in model.classifiers.values() {
+        add(class.entity.key.clone());
+        for literal in &class.literals {
+            add(literal.key.clone());
+        }
+        for operation in class.retained.iter().filter(|n| n.tag == "ownedOperation") {
+            let id = operation
+                .attributes
+                .get(&format!("{{{XMI}}}id"))
+                .or_else(|| operation.attributes.get(&format!("{{{XMI_OLD}}}id")));
+            if let Some(id) = id {
+                let mut key = class.entity.key.clone();
+                key.external_id = id.clone();
+                key.kind = Kind::Operation;
+                add(key);
+            }
+        }
+    }
+    entries
 }
 
 pub fn import(xml: &str, source: Source, external: &ExternalTypes) -> Result<Metamodel> {
+    let root_uri = source.metamodel_uri.clone();
+    import_with_root_uri(xml, source, external, &root_uri)
+}
+
+/// The serialization root URI is explicit baseline evidence, separate from the
+/// canonical publication namespace. No heuristic URL repair is performed.
+pub fn import_with_root_uri(
+    xml: &str,
+    source: Source,
+    external: &ExternalTypes,
+    root_uri: &str,
+) -> Result<Metamodel> {
     if sha256(xml.as_bytes()) != source.sha256 {
         return Err("source provenance SHA-256 does not match input".into());
     }
@@ -27,7 +60,7 @@ pub fn import(xml: &str, source: Source, external: &ExternalTypes) -> Result<Met
     let ids = validate(&doc)?;
     let root = doc.root_element();
     let package = one(root, "Package")?.ok_or("missing root package")?;
-    if package.attribute("URI") != Some(source.metamodel_uri.as_str()) {
+    if package.attribute("URI") != Some(root_uri) {
         return Err(error(package, "root metamodel URI differs from provenance"));
     }
     let mut model = Metamodel {
@@ -48,6 +81,23 @@ pub fn import(xml: &str, source: Source, external: &ExternalTypes) -> Result<Met
     {
         if node.tag_name().name() == "type" {
             validate_type(&type_ref(node)?, &model, external)?;
+        }
+        if let Some(uri) = node.attribute("href") {
+            let expected = match node.tag_name().name() {
+                "type" => continue, // Domain validated above.
+                "general" => Kind::Class,
+                "importedPackage" => Kind::Package,
+                "redefinedProperty" | "subsettedProperty" => Kind::Property,
+                "redefinedOperation" => Kind::Operation,
+                "instance" => Kind::EnumerationLiteral,
+                _ => return Err(error(node, "unsupported external reference role")),
+            };
+            if !external.get(uri).is_some_and(|key| key.kind == expected) {
+                return Err(error(
+                    node,
+                    &format!("unresolved/wrong-kind external reference {uri}"),
+                ));
+            }
         }
     }
     Ok(model)
@@ -288,7 +338,16 @@ fn validate_type(target: &TypeRef, model: &Metamodel, external: &ExternalTypes) 
         {
             Ok(())
         }
-        TypeRef::External(uri) if external.contains_key(uri) => Ok(()),
+        TypeRef::External(uri)
+            if external.get(uri).is_some_and(|key| {
+                matches!(
+                    key.kind,
+                    Kind::Class | Kind::Enumeration | Kind::PrimitiveType
+                )
+            }) =>
+        {
+            Ok(())
+        }
         _ => Err(format!(
             "unresolved or unsupported property/parameter type {target:?}"
         )),
@@ -298,7 +357,11 @@ fn validate_type(target: &TypeRef, model: &Metamodel, external: &ExternalTypes) 
 fn validate_links(model: &mut Metamodel, external: &ExternalTypes) -> Result<()> {
     for package in model.packages.values() {
         for target in &package.imports {
-            if !model.packages.contains_key(target) {
+            if !model.packages.contains_key(target)
+                && !external
+                    .get(target)
+                    .is_some_and(|k| k.kind == Kind::Package)
+            {
                 return Err(format!("unresolved imported package {target}"));
             }
         }
@@ -306,11 +369,13 @@ fn validate_links(model: &mut Metamodel, external: &ExternalTypes) -> Result<()>
     for (id, classifier) in &model.classifiers {
         let mut unique = BTreeSet::new();
         for target in &classifier.generalizations {
-            let c = model
+            let kind = model
                 .classifiers
                 .get(target)
+                .map(|c| &c.entity.key.kind)
+                .or_else(|| external.get(target).map(|k| &k.kind))
                 .ok_or_else(|| format!("unresolved referenced metaclass {target} on {id}"))?;
-            if c.entity.key.kind != classifier.entity.key.kind || !unique.insert(target) {
+            if *kind != classifier.entity.key.kind || !unique.insert(target) {
                 return Err(format!("invalid/duplicate generalization {id} -> {target}"));
             }
         }
@@ -345,7 +410,11 @@ fn validate_links(model: &mut Metamodel, external: &ExternalTypes) -> Result<()>
     for (id, property) in &model.properties {
         validate_type(&property.type_ref, model, external)?;
         for target in property.redefines.iter().chain(&property.subsets) {
-            if !model.properties.contains_key(target) {
+            if !model.properties.contains_key(target)
+                && !external
+                    .get(target)
+                    .is_some_and(|k| k.kind == Kind::Property)
+            {
                 return Err(format!("unresolved property reference {id} -> {target}"));
             }
         }
@@ -370,6 +439,9 @@ fn validate_links(model: &mut Metamodel, external: &ExternalTypes) -> Result<()>
         if done.contains(id) {
             return Ok(());
         }
+        if !model.classifiers.contains_key(id) {
+            return Ok(());
+        } // Previously validated pinned dependency.
         if !active.insert(id.into()) {
             return Err(format!("generalization cycle at {id}"));
         }

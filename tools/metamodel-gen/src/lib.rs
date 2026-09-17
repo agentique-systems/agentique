@@ -1,8 +1,10 @@
 //! Offline abstract-syntax extraction, not a language implementation or runtime store.
 #![forbid(unsafe_code)]
 
+pub mod baseline;
 pub mod cross_check;
 pub mod descriptors;
+pub mod graph;
 pub mod ir;
 pub mod pipeline;
 mod profile;

@@ -1,9 +1,12 @@
-# Metamodel importer and Root/Core descriptor generator
+# Multi-metamodel importer and descriptor generator
 
-Offline tooling for the pinned KerML 1.0 abstract syntax. The workspace package is
+Offline tooling for pinned KerML 1.0 and SysML 2.0 abstract syntax. The workspace package is
 `agq-metamodel-gen`, binary `metamodel-gen`. It produces neutral JSON IR plus a
 dependency-closed normative Root/Core Rust descriptor slice and a source golden
-manifest. It does not execute language rules.
+manifest. It also imports SysML with source-qualified KerML dependencies and the
+same JSON cross-check pipeline. SysML runtime emission is a subsequent gate.
+It does not execute language rules. [ADR 0007](../../docs/adr/0007-multiple-metamodel-baselines.md)
+records the explicit baseline profiles, identity policy and representation differences.
 
 ```sh
 cargo run --locked --offline -p agq-metamodel-gen
@@ -14,7 +17,10 @@ cargo test --locked --offline -p agq-metamodel-gen
 The default root is this crate's repository; `--root PATH` selects another checkout.
 `--output FILE` alone selects IR-only export mode. `--descriptor-output DIRECTORY`
 redirects Rust/golden paths and can accompany `--output`. With neither option,
-all four checked-in artifacts are generated or checked. `--check` compares exact bytes
+all four KerML artifacts plus the SysML IR are generated or checked.
+`--baseline kerml-1.0` or `--baseline sysml-2.0` selects one profile;
+`--output` without a baseline preserves the KerML IR-only interface.
+`--check` compares exact bytes
 and never writes. Exit status is nonzero for bad input, hash drift, cross-check
 failure, missing/stale output or unsupported arguments. All source hashes are
 verified before parsing. There is no network access or `build.rs`.

@@ -1,4 +1,4 @@
-use agq_metamodel_gen::{Result, canonical_json, descriptors, pipeline};
+use agq_metamodel_gen::{Result, baseline, canonical_json, descriptors, pipeline};
 use std::{fs, path::PathBuf};
 
 fn run() -> Result<()> {
@@ -7,9 +7,15 @@ fn run() -> Result<()> {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut output = None;
     let mut descriptor_output = None;
+    let mut selected_baseline = None;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--check" => check = true,
+            "--baseline" => {
+                selected_baseline = Some(baseline::find(
+                    &args.next().ok_or("--baseline needs an ID")?,
+                )?)
+            }
             "--root" => root = args.next().ok_or("--root needs a path")?.into(),
             "--output" => output = Some(PathBuf::from(args.next().ok_or("--output needs a path")?)),
             "--descriptor-output" => {
@@ -19,26 +25,35 @@ fn run() -> Result<()> {
             }
             "--help" | "-h" => {
                 println!(
-                    "metamodel-gen [--check] [--root REPOSITORY] [--output IR_FILE] [--descriptor-output DIRECTORY]\nImports hash-locked XMI and cross-checks JSON; emits IR, Root/Core Rust and golden manifest. --output alone selects IR-only compatibility mode. --check compares bytes without writing."
+                    "metamodel-gen [--check] [--baseline kerml-1.0|sysml-2.0] [--root REPOSITORY] [--output IR_FILE] [--descriptor-output DIRECTORY]\nImports reviewed offline profiles and cross-checks JSON. Default: both language IRs and KerML runtime outputs. --output alone selects KerML IR-only compatibility mode. --check compares bytes without writing."
                 );
                 return Ok(());
             }
             _ => return Err(format!("unknown argument {arg}")),
         }
     }
-    let bundle = pipeline::generate(&root)?;
+    let profile = selected_baseline.unwrap_or(baseline::KERML);
+    let bundle = pipeline::generate_profile(&root, profile)?;
     let ir_only = output.is_some() && descriptor_output.is_none();
+    let all = selected_baseline.is_none() && output.is_none();
     let mut outputs = vec![(
-        output.unwrap_or_else(|| root.join(pipeline::OUTPUT_PATH)),
+        output.unwrap_or_else(|| root.join(profile.output.expect("language output path"))),
         canonical_json(&bundle)?,
     )];
-    if !ir_only {
+    if !ir_only && profile.descriptor_target == baseline::DescriptorTarget::KerMlRootCore {
         let directory = descriptor_output.unwrap_or_else(|| root.clone());
         outputs.extend(
             descriptors::artifacts(&bundle)?
                 .into_iter()
                 .map(|(path, bytes)| (directory.join(path), bytes)),
         );
+    }
+    if all {
+        let sysml = pipeline::generate_profile(&root, baseline::SYSML)?;
+        outputs.push((
+            root.join(baseline::SYSML.output.unwrap()),
+            canonical_json(&sysml)?,
+        ));
     }
     // The generator can never be directed to overwrite an input or its lock.
     let resolved_root = root.canonicalize().map_err(|e| e.to_string())?;

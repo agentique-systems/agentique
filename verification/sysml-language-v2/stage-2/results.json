@@ -1,0 +1,42 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-17T21:07:16.716Z",
+    "durationMs": 480,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --locked --offline -p agq-metamodel-gen --all-targets -- -D warnings",
+    "started": "2026-09-17T21:07:17.197Z",
+    "durationMs": 394,
+    "exitCode": 0,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-metamodel-gen",
+    "started": "2026-09-17T21:07:17.591Z",
+    "durationMs": 9375,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generator-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+    "started": "2026-09-17T21:07:26.966Z",
+    "durationMs": 1393,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generated.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-17T21:07:28.360Z",
+    "durationMs": 497,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  }
+]

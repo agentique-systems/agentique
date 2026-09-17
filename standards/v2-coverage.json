@@ -14,9 +14,9 @@
     {
       "id": "normative-metamodel",
       "status": "partial",
-      "boundary": "Offline hash-pinned KerML 1.0 MOF XMI import and conservative JSON cross-check; 29-class Root/Core runtime closure with borrowed typed views. Source-qualified descriptor IDs.",
+      "boundary": "Shared offline profile-driven KerML 1.0 / SysML 2.0 MOF XMI import and conservative JSON cross-check with source-qualified cross-metamodel references; 29-class KerML Root/Core runtime closure and borrowed views. SysML import does not imply runtime descriptors.",
       "evidence": ["docs/adr/0002-normative-metamodel-pipeline.md", "docs/adr/0003-normative-root-core-descriptors.md", "docs/adr/0004-kerml-typed-views.md", "tools/metamodel-gen/tests/normative.rs"],
-      "gaps": ["SysML import and multi-metamodel pipeline", "Full runtime descriptor and numeric-domain support", "Execution of retained OCL/English constraints"]
+      "gaps": ["SysML runtime descriptors and views", "Full runtime descriptor and numeric-domain support", "Execution of retained OCL/English constraints"]
     },
     {
       "id": "semantic-queries",

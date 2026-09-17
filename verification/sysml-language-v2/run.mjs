@@ -3,6 +3,13 @@ import fs from "node:fs";
 import { spawn } from "node:child_process";
 
 const gates = {
+  "stage-2": [
+    ["format", "cargo fmt --all -- --check"],
+    ["clippy", "cargo clippy --locked --offline -p agq-metamodel-gen --all-targets -- -D warnings"],
+    ["generator-tests", "cargo test --locked --offline -p agq-metamodel-gen"],
+    ["generated", "cargo run --locked --offline -p agq-metamodel-gen -- --check"],
+    ["standards", "npm run standards:check", ["verification/standards-integrity.json"]],
+  ],
   "stage-1": [
     ["artifacts", "node --test tools/normative-artifacts.test.mjs tools/sysml-artifacts.test.mjs"],
     ["standards", "npm run standards:check", ["verification/standards-integrity.json"]],
