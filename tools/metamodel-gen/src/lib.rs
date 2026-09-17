@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 pub mod cross_check;
+pub mod descriptors;
 pub mod ir;
 pub mod pipeline;
 mod profile;

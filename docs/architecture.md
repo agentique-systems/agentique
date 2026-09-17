@@ -182,3 +182,10 @@ serialization schema. It is engineering tooling, not canonical runtime storage;
 no runtime crate reads its output. [ADR 0002](adr/0002-normative-metamodel-pipeline.md)
 records authority, identity, retained property semantics and the decisions needed
 before generating runtime descriptors. Existing language coverage is unchanged.
+
+`agq-kerml` now depends only on `agq-kernel` and registers a generated, structurally
+closed Root/Core descriptor slice. [ADR 0003](adr/0003-normative-root-core-descriptors.md)
+records normative property evidence, inheritance resolution and canonical association
+boundaries. Runtime crates do not depend on the importer. Existing application
+language support and execution coverage remain unchanged; descriptor registration
+does not implement KerML rules or association instance storage.

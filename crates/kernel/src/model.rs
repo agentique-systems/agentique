@@ -311,6 +311,15 @@ impl Snapshot {
                             property: *property,
                         });
                     }
+                    if self
+                        .model()
+                        .registry
+                        .property(*property)?
+                        .association
+                        .is_some()
+                    {
+                        return Err(ModelError::UnsupportedAssociationStorage(*property));
+                    }
                     let mut value = value.clone();
                     value.normalize();
                     Arc::make_mut(record).slots.insert(
@@ -339,6 +348,15 @@ impl Snapshot {
                             element: *id,
                             property: *property,
                         });
+                    }
+                    if self
+                        .model()
+                        .registry
+                        .property(*property)?
+                        .association
+                        .is_some()
+                    {
+                        return Err(ModelError::UnsupportedAssociationStorage(*property));
                     }
                     Arc::make_mut(record).slots.remove(property);
                 }
@@ -447,6 +465,8 @@ impl ChangeSet {
 /// Structural validation failure, preserving semantic identifiers and value shape.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum ModelError {
+    #[error("association property {0} requires canonical link storage, which is not implemented")]
+    UnsupportedAssociationStorage(PropertyId),
     #[error(transparent)]
     Metamodel(#[from] MetamodelError),
     #[error("unknown element {0}")]
@@ -544,6 +564,12 @@ fn validate(
                 });
             }
             let descriptor = registry.property(property)?;
+            // Registration preserves association metadata, but slots cannot yet
+            // represent canonical links with per-end order. This also guards
+            // DerivationBuilder::element against bypassing declared write policy.
+            if descriptor.association.is_some() && !descriptor.derived {
+                return Err(ModelError::UnsupportedAssociationStorage(property));
+            }
             let expected = SlotShape::required(descriptor);
             let actual = SlotShape::actual(&slot.value);
             if expected != actual {
@@ -566,6 +592,8 @@ fn validate(
                     (ValueKind::Boolean, Value::Boolean(_))
                     | (ValueKind::Integer, Value::Integer(_))
                     | (ValueKind::String, Value::String(_)) => {}
+                    (ValueKind::Enumeration(domain), Value::Enumeration(literal))
+                        if registry.enumeration(domain)?.literals.contains_key(literal) => {}
                     (ValueKind::Reference(expected), Value::Reference(target)) => {
                         let target_record =
                             records.get(target).ok_or(ModelError::DanglingReference {

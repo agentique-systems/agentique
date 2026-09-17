@@ -1,0 +1,16 @@
+agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+└── agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    ├── thiserror v2.0.20
+    │   └── thiserror-impl v2.0.20 (proc-macro)
+    │       ├── proc-macro2 v1.0.107
+    │       │   └── unicode-ident v1.0.24
+    │       ├── quote v1.0.47
+    │       │   └── proc-macro2 v1.0.107 (*)
+    │       └── syn v3.0.5
+    │           ├── proc-macro2 v1.0.107 (*)
+    │           ├── quote v1.0.47 (*)
+    │           └── unicode-ident v1.0.24
+    └── uuid v1.26.1
+        ├── getrandom v0.4.3
+        │   └── cfg-if v1.0.5
+        └── sha1_smol v1.0.1

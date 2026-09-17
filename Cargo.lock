@@ -52,6 +52,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-kerml"
+version = "0.1.0"
+dependencies = [
+ "agq-kernel",
+]
+
+[[package]]
 name = "agq-kernel"
 version = "0.1.0"
 dependencies = [
@@ -63,6 +70,7 @@ dependencies = [
 name = "agq-metamodel-gen"
 version = "0.1.0"
 dependencies = [
+ "agq-kerml",
  "agq-kernel",
  "roxmltree",
  "serde",

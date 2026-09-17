@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/kernel", "crates/model", "crates/syntax", "crates/semantics", "crates/workspace", "crates/simulation", "crates/application", "adapters/storage", "adapters/assistant", "crates/server", "crates/cli", "tools/metamodel-gen"]
+members = ["crates/kernel", "crates/kerml", "crates/model", "crates/syntax", "crates/semantics", "crates/workspace", "crates/simulation", "crates/application", "adapters/storage", "adapters/assistant", "crates/server", "crates/cli", "tools/metamodel-gen"]
 resolver = "2"
 
 [workspace.package]

@@ -18,6 +18,15 @@ These are explicitly simplified architecture fixtures, not normative definitions
 or a complete inheritance algorithm. In particular the fixture does not implement
 property redefinition or the full intermediate class hierarchy.
 
+The kernel now supports explicit structural redefinition and association metadata;
+`crates/kerml` supplies generated normative Root/Core descriptors and separate tests.
+[ADR 0003](adr/0003-normative-root-core-descriptors.md) documents source evidence,
+effective property resolution and the association write boundary. Non-derived
+association slots are explicitly refused until canonical link storage exists.
+Use `MetamodelRegistry::from_descriptors` for sets containing associations or enums;
+`resolve_property` maps an inherited ID to its effective replacement. Derived-union
+and subset metadata do not themselves execute language rules.
+
 The crate-level Rustdoc includes a runnable minimal transaction. Main APIs:
 
 | API | Responsibility |
@@ -126,7 +135,7 @@ It needs no duplicate data. Parser ASTs, SQL rows, diagrams and compiled executa
 IR will remain separate representations outside this kernel. Salsa could later
 memoize queries, but is neither evaluated nor a canonical storage dependency here.
 
-## Before Phase 2
+## Foundation follow-up
 
 1. Pin and hash authoritative 1.0/2.0 XMI artifacts; define descriptor generation
    and cross-artifact ID mapping, with explicit artifact/version provenance.
@@ -138,8 +147,9 @@ memoize queries, but is neither evaluated nor a canonical storage dependency her
 4. Specify versioned semantic rules, query context identity, negative dependencies,
    alternative explanations, closure completeness and invalidation contracts.
 
-Recommended next milestone: a reproducible normative metamodel importer/generator
-with descriptor validation fixtures for Element, Relationship, Namespace, Type and
-Feature, including redefinition/subsetting. Generate a few typed *views* over the
-existing store. Keep parser and application migration deferred until that slice is
-structurally and semantically checked against the pinned artifacts.
+ADR 0002 and ADR 0003 complete the KerML pin/import and structural descriptor
+milestones above, including enum domains and source-qualified identities. Canonical
+association instance storage, full scalar domains, semantic rules and migration
+remain open. The next step is atomic ownership-link storage with per-end ordering,
+followed by evidence-backed derived views. Parser and application migration remain
+deferred until those contracts are checked against the pinned artifacts.

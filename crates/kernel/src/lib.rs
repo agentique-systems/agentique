@@ -18,7 +18,7 @@
 //!         uri: "urn:example:1".into(),
 //!     }],
 //!     [MetaclassDescriptor {
-//!         id: class_id, name: "Node".into(), metamodel: model_id,
+//!         id: class_id, name: "Node".into(), package: vec![], metamodel: model_id,
 //!         direct_supertypes: BTreeSet::new(), is_abstract: false,
 //!     }], [],
 //! )?;
