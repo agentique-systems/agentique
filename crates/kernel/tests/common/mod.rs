@@ -59,6 +59,7 @@ pub fn class(id: MetaclassId, name: &str, supers: &[MetaclassId]) -> MetaclassDe
     MetaclassDescriptor {
         id,
         name: name.into(),
+        package: Vec::new(),
         metamodel: MM,
         direct_supertypes: supers.iter().copied().collect(),
         is_abstract: false,
@@ -74,13 +75,18 @@ pub fn property(
     PropertyDescriptor {
         id,
         name: name.into(),
-        owner,
+        owner: PropertyOwner::Class(owner),
         value_kind,
         multiplicity,
         ordered: false,
         unique: true,
         derived: false,
         composite: false,
+        redefines: BTreeSet::new(),
+        subsets: BTreeSet::new(),
+        derived_union: false,
+        association: None,
+        opposite_ends: BTreeSet::new(),
     }
 }
 pub fn descriptors() -> (Vec<MetaclassDescriptor>, Vec<PropertyDescriptor>) {

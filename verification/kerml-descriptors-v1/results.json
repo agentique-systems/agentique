@@ -1,0 +1,97 @@
+{
+    "format":  "agentique-verification/1",
+    "baseline_commit":  "ec6e84f3b49e2335b12b04da283731bc719e08c8",
+    "branch":  "foundation/kerml-descriptors-v1",
+    "records":  [
+                    {
+                        "id":  "rust-format",
+                        "command":  "cargo fmt --all -- --check",
+                        "started_at":  "2026-09-17T19:04:58.3290154Z",
+                        "duration_ms":  519,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/rust-format.txt"
+                    },
+                    {
+                        "id":  "rust-clippy",
+                        "command":  "cargo clippy --workspace --all-targets -- -D warnings",
+                        "started_at":  "2026-09-17T19:04:59.0020810Z",
+                        "duration_ms":  3175,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/rust-clippy.txt"
+                    },
+                    {
+                        "id":  "rust-tests",
+                        "command":  "cargo test --workspace",
+                        "started_at":  "2026-09-17T19:05:02.2253079Z",
+                        "duration_ms":  28649,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/rust-tests.txt"
+                    },
+                    {
+                        "id":  "frontend-types",
+                        "command":  "npm.cmd run check",
+                        "started_at":  "2026-09-17T19:05:30.9314757Z",
+                        "duration_ms":  3316,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/frontend-types.txt"
+                    },
+                    {
+                        "id":  "frontend-build",
+                        "command":  "npm.cmd run build",
+                        "started_at":  "2026-09-17T19:05:34.2957746Z",
+                        "duration_ms":  2590,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/frontend-build.txt"
+                    },
+                    {
+                        "id":  "engineering-tests",
+                        "command":  "npm.cmd test",
+                        "started_at":  "2026-09-17T19:05:36.9353051Z",
+                        "duration_ms":  530,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/engineering-tests.txt"
+                    },
+                    {
+                        "id":  "browser-tests",
+                        "command":  "npm.cmd run test:e2e",
+                        "started_at":  "2026-09-17T19:05:37.5143938Z",
+                        "duration_ms":  54515,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/browser-tests.txt"
+                    },
+                    {
+                        "id":  "generated-current",
+                        "command":  "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+                        "started_at":  "2026-09-17T19:06:32.0871129Z",
+                        "duration_ms":  1639,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/generated-current.txt"
+                    },
+                    {
+                        "id":  "standards-integrity",
+                        "command":  "npm.cmd run standards:check",
+                        "started_at":  "2026-09-17T19:06:33.7689437Z",
+                        "duration_ms":  504,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/standards-integrity.txt"
+                    },
+                    {
+                        "id":  "runtime-dependencies",
+                        "command":  "cargo tree --locked --offline -p agq-kerml --edges normal",
+                        "started_at":  "2026-09-17T19:06:34.3129422Z",
+                        "duration_ms":  159,
+                        "exit_code":  0,
+                        "result":  "pass",
+                        "log":  "verification/kerml-descriptors-v1/runtime-dependencies.txt"
+                    }
+                ]
+}

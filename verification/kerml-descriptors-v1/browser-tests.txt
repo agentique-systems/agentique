@@ -1,0 +1,23 @@
+
+> agentique@0.1.0 test:e2e
+> playwright test
+
+npm.cmd : [WebServer]    Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+At C:\Users\phili\github\agentique-systems\agentique\verification\kerml-descriptors-v1\run.ps1:23 char:5
++     & $executable @arguments *> $log
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer]    ...\crates\server):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+[WebServer]     Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.93s
+[WebServer]      Running `target\debug\agq-server.exe --port 7342 --workspace
+.workspaces/e2e-1217e58f-9e28-4e9b-aa07-ec791bc2b2f3.db`
+
+Running 4 tests using 1 worker
+
+  ✓  1 tests\browser\console.spec.ts:5:1 › Cancellable model work and paged history use durable Engine results (18.7s)
+  ✓  2 tests\browser\console.spec.ts:143:1 › Console lifecycle, source navigation, shared context and reviewed Assistant change (18.6s)
+  ✓  3 tests\browser\console.spec.ts:242:1 › API authentication, scope, identity mapping and revision checks (2.5s)
+  ✓  4 tests\browser\console.spec.ts:330:1 › Keyboard inspection and recoverable source drafts (5.2s)
+
+  4 passed (52.1s)

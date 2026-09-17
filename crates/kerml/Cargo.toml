@@ -1,0 +1,9 @@
+[package]
+name = "agq-kerml"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Generated normative KerML Root/Core descriptors"
+
+[dependencies]
+agq-kernel = { path = "../kernel" }

@@ -179,3 +179,100 @@ fn registration_order_does_not_change_effective_properties() {
             .collect::<Vec<_>>()
     );
 }
+
+#[test]
+fn same_name_redefinition_and_diamond_join_require_explicit_identity_links() {
+    let classes = vec![
+        class(ELEMENT, "Base", &[]),
+        class(TYPE, "Left", &[ELEMENT]),
+        class(FEATURE, "Right", &[ELEMENT]),
+        class(PART_DEF, "Join", &[TYPE, FEATURE]),
+    ];
+    let base = property(
+        NAME,
+        "value",
+        ELEMENT,
+        ValueKind::String,
+        Multiplicity::OPTIONAL,
+    );
+    let mut left = property(
+        TAGS,
+        "value",
+        TYPE,
+        ValueKind::String,
+        Multiplicity::OPTIONAL,
+    );
+    left.redefines.insert(NAME);
+    let r = MetamodelRegistry::new(
+        [model_descriptor()],
+        classes.clone(),
+        [base.clone(), left.clone()],
+    )
+    .unwrap();
+    assert_eq!(
+        r.property_named(PART_DEF, "value").unwrap().unwrap().id,
+        TAGS
+    );
+    assert_eq!(r.effective_properties(PART_DEF).unwrap().count(), 1);
+    let mut right = property(
+        COUNT,
+        "renamed",
+        FEATURE,
+        ValueKind::String,
+        Multiplicity::OPTIONAL,
+    );
+    right.redefines.insert(NAME);
+    assert!(matches!(
+        MetamodelRegistry::new(
+            [model_descriptor()],
+            classes.clone(),
+            [base.clone(), left.clone(), right.clone()]
+        ),
+        Err(MetamodelError::PropertyConflict { .. })
+    ));
+    let mut join = property(
+        BAG,
+        "joined",
+        PART_DEF,
+        ValueKind::String,
+        Multiplicity::OPTIONAL,
+    );
+    join.redefines.extend([TAGS, COUNT]);
+    let r =
+        MetamodelRegistry::new([model_descriptor()], classes, [base, left, right, join]).unwrap();
+    assert_eq!(r.resolve_property(PART_DEF, NAME).unwrap().unwrap().id, BAG);
+    assert_eq!(r.effective_properties(PART_DEF).unwrap().count(), 1);
+}
+
+#[test]
+fn invalid_redefinition_scope_domain_bounds_and_cycles_fail() {
+    let classes = vec![class(ELEMENT, "Base", &[]), class(TYPE, "Sub", &[ELEMENT])];
+    let base = property(NAME, "base", ELEMENT, ValueKind::String, Multiplicity::ONE);
+    for (owner, kind, bounds) in [
+        (ELEMENT, ValueKind::String, Multiplicity::ONE),
+        (TYPE, ValueKind::Boolean, Multiplicity::ONE),
+        (TYPE, ValueKind::String, Multiplicity::OPTIONAL),
+    ] {
+        let mut redef = property(TAGS, "replacement", owner, kind, bounds);
+        redef.redefines.insert(NAME);
+        assert!(matches!(
+            MetamodelRegistry::new([model_descriptor()], classes.clone(), [base.clone(), redef]),
+            Err(MetamodelError::InvalidRedefinition { .. })
+        ));
+    }
+    let mut cycle = base;
+    cycle.redefines.insert(NAME);
+    assert!(matches!(
+        MetamodelRegistry::new([model_descriptor()], classes, [cycle]),
+        Err(MetamodelError::PropertyCycle(_))
+    ));
+}
+
+#[test]
+fn package_names_do_not_replace_descriptor_identity() {
+    let a = class(TYPE, "Same", &[]);
+    let mut b = class(FEATURE, "Same", &[]);
+    b.package = vec!["another".into()];
+    let r = MetamodelRegistry::new([model_descriptor()], [a, b], []).unwrap();
+    assert!(!r.is_subtype(TYPE, FEATURE).unwrap());
+}

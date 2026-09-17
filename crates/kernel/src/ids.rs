@@ -49,6 +49,15 @@ identity!(
     "Identity of a property descriptor within a registry."
 );
 identity!(
+    AssociationId,
+    "Identity of a metamodel association, not a model relationship."
+);
+identity!(EnumerationId, "Identity of an enumeration value domain.");
+identity!(
+    EnumerationLiteralId,
+    "Identity of a literal within its enumeration domain."
+);
+identity!(
     DocumentId,
     "Source document identity; never semantic element identity."
 );

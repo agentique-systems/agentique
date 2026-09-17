@@ -1,5 +1,5 @@
 //! Typed slot values; missing slots represent absence, never a magic null value.
-use crate::ElementId;
+use crate::{ElementId, EnumerationLiteralId};
 use std::collections::BTreeSet;
 
 /// One scalar primitive or semantic reference. Integer is explicitly bounded.
@@ -8,6 +8,7 @@ pub enum Value {
     Boolean(bool),
     Integer(i64),
     String(String),
+    Enumeration(EnumerationLiteralId),
     Reference(ElementId),
 }
 

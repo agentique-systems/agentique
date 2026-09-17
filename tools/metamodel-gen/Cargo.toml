@@ -18,4 +18,5 @@ sha2.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
+agq-kerml = { path = "../../crates/kerml" }
 tempfile.workspace = true
