@@ -1,0 +1,29 @@
+name: Engine and Console verification
+on: [push, pull_request]
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified 2026-09-16
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4, verified 2026-09-16
+        with:
+          node-version: '22.11.0'
+          cache: npm
+      - run: rustup show
+      - run: npm ci
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4, verified 2026-09-16
+        with:
+          distribution: temurin
+          java-version: '21.0.12.1'
+      - run: node tools/pilot-setup.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: npm run verify
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4, verified 2026-09-16
+        with:
+          name: verification-evidence
+          path: |
+            verification/
+            test-results/
+      # This intentionally stays red while any verification command fails,
+      # including the recorded independent-validator disagreement. No test is skipped.

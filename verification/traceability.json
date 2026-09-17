@@ -1,0 +1,326 @@
+{
+  "format": "agentique-release-traceability/0.1",
+  "generated_at": "2026-09-16T20:55:30.171Z",
+  "baseline_sha256": "37bcf2e9674d5af98501e1d85d71709f07302efa0cc9874f8b16c9cc8ef21511",
+  "implementation_revision": "2fb00b79fb4f4ea27a91c8fd9f50bc7b38eca769ab50e0c3f7aaa7f937fa8d96",
+  "release_status": "incomplete",
+  "note": "Passing automated tests establish their stated assertions, not complete standards satisfaction. Incomplete obligations prevent a complete v0.1 release claim.",
+  "requirements": [
+    {
+      "id": "AGQ-STD01",
+      "model_ref": "AgentiqueRequirements::std01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_std01",
+      "milestone": "M0",
+      "acceptance_id": "AT-STD01",
+      "implementation": "crates/semantics/src/lib.rs",
+      "tests": [
+        "crates/semantics/src/lib.rs#required_implicit_relationships_have_real_targets"
+      ],
+      "evidence": "verification/independent-validation.json",
+      "assessment": "incomplete",
+      "reason": "Required inherited/implicit semantic closure and complete connector feature-chain validation remain partial; see standards/coverage.json. Official pilot validation of all starter models and independent fixture passes against corrected, pinned 2026-04 libraries."
+    },
+    {
+      "id": "AGQ-STD02",
+      "model_ref": "AgentiqueRequirements::std02",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_std02",
+      "milestone": "M1",
+      "acceptance_id": "AT-STD02",
+      "implementation": "crates/semantics/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#at_std02_parallel_preserved"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-SELF01",
+      "model_ref": "AgentiqueRequirements::self01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_self01",
+      "milestone": "M0",
+      "acceptance_id": "AT-SELF01",
+      "implementation": "models/AgentiqueArchitecture.sysml",
+      "tests": [
+        "crates/application/tests/traceability.rs#at_self01_trace01_registered_declarations"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-MOD01",
+      "model_ref": "AgentiqueRequirements::mod01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_mod01",
+      "milestone": "M1",
+      "acceptance_id": "AT-MOD01",
+      "implementation": "crates/workspace/src/lib.rs",
+      "tests": [
+        "crates/workspace/tests/editing.rs#at_mod01_rename_move_identity",
+        "adapters/storage/tests/reliability.rs#completed_runs_survive_restart_and_rename"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-MOD02",
+      "model_ref": "AgentiqueRequirements::mod02",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_mod02",
+      "milestone": "M1",
+      "acceptance_id": "AT-MOD02",
+      "implementation": "crates/application/src/lib.rs",
+      "tests": [
+        "crates/workspace/tests/editing.rs#at_mod02_atomic_candidate_and_conflict",
+        "adapters/storage/tests/reliability.rs#invalid_draft_recoverable"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-MOD03",
+      "model_ref": "AgentiqueRequirements::mod03",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_mod03",
+      "milestone": "M1",
+      "acceptance_id": "AT-MOD03",
+      "implementation": "crates/workspace/src/lib.rs",
+      "tests": [
+        "crates/workspace/tests/editing.rs#at_mod03_text_and_kpar",
+        "crates/workspace/tests/editing.rs#standard_text_identity_sidecar_and_implicit_ids_roundtrip"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-SIM01",
+      "model_ref": "AgentiqueRequirements::sim01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_sim01",
+      "milestone": "M2",
+      "acceptance_id": "AT-SIM01",
+      "implementation": "crates/simulation/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#at_sim01_resolved_manifest",
+        "crates/simulation/tests/contract.rs#missing_and_mismatched_bindings"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-SIM02",
+      "model_ref": "AgentiqueRequirements::sim02",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_sim02",
+      "milestone": "M2",
+      "acceptance_id": "AT-SIM02",
+      "implementation": "crates/simulation/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#at_sim02_isolation"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-SIM03",
+      "model_ref": "AgentiqueRequirements::sim03",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_sim03",
+      "milestone": "M2",
+      "acceptance_id": "AT-SIM03",
+      "implementation": "crates/simulation/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#at_sim03_sim04_manual_continuous_repeat",
+        "crates/simulation/tests/contract.rs#control_state_machine"
+      ],
+      "evidence": "verification/demo.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-SIM04",
+      "model_ref": "AgentiqueRequirements::sim04",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_sim04",
+      "milestone": "M2",
+      "acceptance_id": "AT-SIM04",
+      "implementation": "crates/simulation/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#at_sim03_sim04_manual_continuous_repeat"
+      ],
+      "evidence": "verification/demo.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-SIM05",
+      "model_ref": "AgentiqueRequirements::sim05",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_sim05",
+      "milestone": "M2",
+      "acceptance_id": "AT-SIM05",
+      "implementation": "crates/simulation/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#at_sim05_completion_is_not_verdict",
+        "crates/simulation/tests/contract.rs#resource_limits_explicit"
+      ],
+      "evidence": "verification/demo.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-SIM06",
+      "model_ref": "AgentiqueRequirements::sim06",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_sim06",
+      "milestone": "M2",
+      "acceptance_id": "AT-SIM06",
+      "implementation": "crates/simulation/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#at_sim06_source_trace",
+        "tests/browser/console.spec.ts#Console lifecycle, source navigation, shared context and reviewed Assistant change"
+      ],
+      "evidence": "verification/browser-results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-UI01",
+      "model_ref": "AgentiqueRequirements::ui01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_ui01",
+      "milestone": "M3",
+      "acceptance_id": "AT-UI01",
+      "implementation": "console/src/main.tsx",
+      "tests": [
+        "tests/browser/console.spec.ts#Console lifecycle, source navigation, shared context and reviewed Assistant change"
+      ],
+      "evidence": "verification/browser-results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-UI02",
+      "model_ref": "AgentiqueRequirements::ui02",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_ui02",
+      "milestone": "M3",
+      "acceptance_id": "AT-UI02",
+      "implementation": "console/src/main.tsx",
+      "tests": [
+        "tests/browser/console.spec.ts#Keyboard inspection and recoverable source drafts"
+      ],
+      "evidence": "verification/browser-results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-AI01",
+      "model_ref": "AgentiqueRequirements::ai01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_ai01",
+      "milestone": "M3",
+      "acceptance_id": "AT-AI01",
+      "implementation": "adapters/assistant/src/lib.rs",
+      "tests": [
+        "adapters/storage/tests/reliability.rs#at_ai01_approval_actor_payload_expiry_stale",
+        "adapters/storage/tests/reliability.rs#approval_expiry_and_single_use",
+        "adapters/assistant/tests/provider.rs#live_transport_uses_typed_real_tools_and_rejects_forgery"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-SEC01",
+      "model_ref": "AgentiqueRequirements::sec01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_sec01",
+      "milestone": "M2",
+      "acceptance_id": "AT-SEC01",
+      "implementation": "crates/simulation/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#at_sec01_live_action_rejected",
+        "tests/browser/console.spec.ts#API authentication, scope, identity mapping and revision checks"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-NFR01",
+      "model_ref": "AgentiqueRequirements::nfr01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_nfr01",
+      "milestone": "M2",
+      "acceptance_id": "AT-NFR01",
+      "implementation": "adapters/storage/src/lib.rs",
+      "tests": [
+        "adapters/storage/tests/reliability.rs#failed_durable_commit_not_acknowledged",
+        "tools/process-test.mjs#forced process termination"
+      ],
+      "evidence": "verification/process-recovery.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-NFR02",
+      "model_ref": "AgentiqueRequirements::nfr02",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_nfr02",
+      "milestone": "M3",
+      "acceptance_id": "AT-NFR02",
+      "implementation": "crates/application/src/lib.rs",
+      "tests": [
+        "crates/simulation/tests/contract.rs#resource_limits_explicit",
+        "crates/cli/examples/benchmark.rs#fn main",
+        "crates/application/tests/cancellation.rs#cancel_during_parsing_preserves_accepted_revision_and_receipts",
+        "tests/browser/console.spec.ts#Cancellable model work and paged history use durable Engine results"
+      ],
+      "evidence": "verification/benchmark.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-EXT01",
+      "model_ref": "AgentiqueRequirements::ext01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_ext01",
+      "milestone": "M1",
+      "acceptance_id": "AT-EXT01",
+      "implementation": "crates/application/src/lib.rs",
+      "tests": [
+        "tools/registers.test.mjs#dependency direction",
+        "crates/simulation/tests/contract.rs#independent_model_exact_payload_guard"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    },
+    {
+      "id": "AGQ-TRACE01",
+      "model_ref": "AgentiqueRequirements::trace01",
+      "model_file": "models/AgentiqueRequirements.sysml",
+      "verification_ref": "AgentiqueVerification::verify_trace01",
+      "milestone": "M3",
+      "acceptance_id": "AT-TRACE01",
+      "implementation": "verification/traceability.json",
+      "tests": [
+        "crates/application/tests/traceability.rs#at_self01_trace01_registered_declarations",
+        "tools/registers.test.mjs#every requirement"
+      ],
+      "evidence": "verification/results.json",
+      "assessment": "verified_for_bounded_acceptance",
+      "reason": "See recorded checks and their explicit scope; no automatic SysML verdict is inferred."
+    }
+  ]
+}

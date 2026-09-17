@@ -1,0 +1,258 @@
+{
+  "source_digest": "2fb00b79fb4f4ea27a91c8fd9f50bc7b38eca769ab50e0c3f7aaa7f937fa8d96",
+  "last_completed_at": "2026-09-16T20:55:30.228Z",
+  "records": [
+    {
+      "id": "registers",
+      "executable": "node",
+      "args": [
+        "tools/registers.mjs"
+      ],
+      "started_at": "2026-09-16T20:54:02.459Z",
+      "duration_ms": 115,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/registers.txt"
+    },
+    {
+      "id": "extraction",
+      "executable": "node",
+      "args": [
+        "tools/extract.mjs",
+        "--check"
+      ],
+      "started_at": "2026-09-16T20:54:02.574Z",
+      "duration_ms": 67,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/extraction.txt"
+    },
+    {
+      "id": "standards",
+      "executable": "node",
+      "args": [
+        "tools/standards-check.mjs"
+      ],
+      "started_at": "2026-09-16T20:54:02.641Z",
+      "duration_ms": 185,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/standards.txt"
+    },
+    {
+      "id": "rust-format",
+      "executable": "cargo",
+      "args": [
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started_at": "2026-09-16T20:54:02.827Z",
+      "duration_ms": 299,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/rust-format.txt"
+    },
+    {
+      "id": "rust-clippy",
+      "executable": "cargo",
+      "args": [
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started_at": "2026-09-16T20:54:03.126Z",
+      "duration_ms": 1746,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/rust-clippy.txt"
+    },
+    {
+      "id": "rust-tests",
+      "executable": "cargo",
+      "args": [
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "started_at": "2026-09-16T20:54:04.873Z",
+      "duration_ms": 12542,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/rust-tests.txt"
+    },
+    {
+      "id": "rust-build",
+      "executable": "cargo",
+      "args": [
+        "build",
+        "--workspace",
+        "--locked"
+      ],
+      "started_at": "2026-09-16T20:54:17.416Z",
+      "duration_ms": 2523,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/rust-build.txt"
+    },
+    {
+      "id": "frontend-format",
+      "executable": "npm",
+      "args": [
+        "run",
+        "format:check"
+      ],
+      "started_at": "2026-09-16T20:54:19.939Z",
+      "duration_ms": 967,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/frontend-format.txt"
+    },
+    {
+      "id": "frontend-types",
+      "executable": "npm",
+      "args": [
+        "run",
+        "check"
+      ],
+      "started_at": "2026-09-16T20:54:20.906Z",
+      "duration_ms": 1308,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/frontend-types.txt"
+    },
+    {
+      "id": "frontend-build",
+      "executable": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "started_at": "2026-09-16T20:54:22.215Z",
+      "duration_ms": 1400,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/frontend-build.txt"
+    },
+    {
+      "id": "engineering-tests",
+      "executable": "npm",
+      "args": [
+        "test"
+      ],
+      "started_at": "2026-09-16T20:54:23.616Z",
+      "duration_ms": 423,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/engineering-tests.txt"
+    },
+    {
+      "id": "independent-starter",
+      "executable": "node",
+      "args": [
+        "node_modules/sysml-validate/out/main.js",
+        "models/",
+        "--library",
+        "standards/libraries-2026-04",
+        "--no-config",
+        "--format",
+        "json",
+        "--out",
+        "verification/independent-validation.json"
+      ],
+      "started_at": "2026-09-16T20:54:24.039Z",
+      "duration_ms": 4649,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/independent-starter.txt"
+    },
+    {
+      "id": "independent-fixtures",
+      "executable": "node",
+      "args": [
+        "node_modules/sysml-validate/out/main.js",
+        "tests/fixtures/",
+        "--library",
+        "standards/libraries-2026-04",
+        "--no-config",
+        "--format",
+        "json",
+        "--out",
+        "verification/independent-fixtures.json"
+      ],
+      "started_at": "2026-09-16T20:54:28.688Z",
+      "duration_ms": 4459,
+      "exit_code": 1,
+      "result": "fail",
+      "output": "verification/logs/independent-fixtures.txt"
+    },
+    {
+      "id": "official-pilot",
+      "executable": "node",
+      "args": [
+        "tools/pilot-validate.mjs"
+      ],
+      "started_at": "2026-09-16T20:54:33.147Z",
+      "duration_ms": 5995,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/official-pilot.txt"
+    },
+    {
+      "id": "browser-tests",
+      "executable": "npm",
+      "args": [
+        "run",
+        "test:e2e"
+      ],
+      "started_at": "2026-09-16T20:54:39.143Z",
+      "duration_ms": 47152,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/browser-tests.txt"
+    },
+    {
+      "id": "process-recovery",
+      "executable": "node",
+      "args": [
+        "tools/process-test.mjs"
+      ],
+      "started_at": "2026-09-16T20:55:26.296Z",
+      "duration_ms": 1971,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/process-recovery.txt"
+    },
+    {
+      "id": "headless-demo",
+      "executable": "target\\debug\\agentique.exe",
+      "args": [
+        "--workspace",
+        ".workspaces/verified-demo-3d896748-9620-4265-99ef-d0fb4eaf1186.db",
+        "demo"
+      ],
+      "started_at": "2026-09-16T20:55:28.268Z",
+      "duration_ms": 1732,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/headless-demo.txt"
+    },
+    {
+      "id": "update-registers",
+      "executable": "node",
+      "args": [
+        "tools/registers.mjs"
+      ],
+      "started_at": "2026-09-16T20:55:30.118Z",
+      "duration_ms": 110,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/update-registers.txt"
+    }
+  ]
+}

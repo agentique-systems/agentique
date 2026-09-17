@@ -1,0 +1,34 @@
+{
+  "name": "agentique",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "extract": "node tools/extract.mjs",
+    "build": "vite build --config console/vite.config.ts",
+    "check": "tsc --noEmit -p console/tsconfig.json",
+    "test": "node --test tools/*.test.mjs",
+    "test:e2e": "playwright test",
+    "dev": "vite --config console/vite.config.ts",
+    "standards:check": "node tools/standards-check.mjs",
+    "test:process": "node tools/process-test.mjs",
+    "verify": "node tools/verify.mjs",
+    "format:check": "prettier --check console/src console/*.ts tests/browser tools/*.mjs playwright.config.ts"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "fflate": "0.8.3",
+    "fzstd": "0.1.1",
+    "pdfjs-dist": "4.10.38",
+    "prettier": "3.6.2",
+    "sysml-validate": "0.43.1",
+    "typescript": "5.9.3",
+    "vite": "6.4.3"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "format": "agentique-language-coverage/0.1",
+  "claim": "Based on pinned KerML 1.0 and SysML 2.0, with bounded support. No full language, semantic-interchange or API conformance claim.",
+  "lock": "standards/lock.json",
+  "independent_evidence": "verification/pilot-validation.json",
+  "library_publication": "Official 2026-04 corrective release; original OMG downloads preserved in standards/baseline-lock.json",
+  "status_meaning": {"supported_subset":"Implemented within the stated boundary; never all forms of the named metaclass", "partial":"Some applicable structures or validation rules remain unimplemented", "preserved_only":"Original source survives; meaning is not interpreted", "refused":"Preparation refuses this capability", "not_applicable":"Outside this operation's role"},
+  "capabilities": [
+    {
+      "feature": "Namespaces, imports, definitions and usages",
+      "parsing": "supported_subset", "representation": "supported_subset", "validation": "partial", "interchange": "supported_subset", "execution": "not_applicable",
+      "boundary": "Named packages, quoted names, public/private imports, wildcard imports, explicit definitions/usages, lexical resolution and typed feature chains in the self-model. Source recovery and diagnostics for other forms.",
+      "clauses": ["KerML 7-9, 8.2.3", "SysML 7.5-7.6, 8.3, 8.4.2"],
+      "metaclasses": ["Element", "Namespace", "Package", "Membership", "OwningMembership", "FeatureMembership", "NamespaceImport", "FeatureTyping", "Subclassification", "Subsetting", "Redefinition"],
+      "dependencies": ["kerml-semantic-library", "kerml-data-library", "kerml-function-library", "sysml-systems-library"],
+      "implementation": ["crates/syntax/src/lib.rs", "crates/semantics/src/lib.rs", "crates/model/src/lib.rs"],
+      "tests": ["self_model_resolves", "invalid_type_and_resolution", "at_mod01_rename_move_identity", "standard_text_identity_sidecar_and_implicit_ids_roundtrip"],
+      "gaps": ["Full inherited-member lookup, alias/import visibility rules, all multiplicity and cross-metaclass constraints are not implemented.", "The official library sources are indexed for declarations; their complete semantic graphs are not constructed or independently certified by Agentique."]
+    },
+    {
+      "feature": "Parts, item payloads, ports and connections",
+      "parsing": "supported_subset", "representation": "partial", "validation": "partial", "interchange": "supported_subset", "execution": "refused",
+      "boundary": "Self-model part composition, item definitions, scalar item fields, ports, conjugated port usage and structural connect statements. Runtime only resolves a unit-multiplicity selected occurrence and receiver; it does not execute connected systems.",
+      "clauses": ["SysML 7.10-7.14, 8.4.5-8.4.8", "KerML 8.4.4.6"],
+      "metaclasses": ["PartDefinition", "PartUsage", "ItemDefinition", "ItemUsage", "PortDefinition", "PortUsage", "ConjugatedPortDefinition", "PortConjugation", "ConnectionUsage", "EndFeatureMembership", "ReferenceSubsetting"],
+      "library_symbols": ["Parts::Part", "Parts::parts", "Items::Item", "Items::items", "Items::Item::subparts", "Ports::Port", "Ports::ports", "Parts::Part::ownedPorts", "Connections::connections", "Connections::binaryConnections"],
+      "dependencies": ["sysml-systems-library", "kerml-semantic-library"],
+      "implementation": ["crates/semantics/src/expansion.rs", "crates/semantics/src/lib.rs", "crates/simulation/src/lib.rs"],
+      "tests": ["required_implicit_relationships_have_real_targets", "occurrence_receiver_cannot_alias", "at_mod01_rename_move_identity"],
+      "gaps": ["End memberships, reference subsettings, positional redefinitions and directly inherited typing are represented. Complete connector feature-chain and inherited-end validation remain incomplete.", "General conjugated inherited ports and interface definitions are outside the implemented projection."]
+    },
+    {
+      "feature": "Scalar attributes and expressions",
+      "parsing": "supported_subset", "representation": "supported_subset", "validation": "supported_subset", "interchange": "supported_subset", "execution": "supported_subset",
+      "boundary": "Exact Integer, Boolean, String literals; bound scalar attributes and named payload fields; ==, !=; Integer < <= > >=; Boolean not, and, or, xor and symbolic & |. No arithmetic, Real coercion, arbitrary calls or assignments. 4096-digit Integer limit.",
+      "clauses": ["SysML 7.7, 7.19-7.20, 8.4.3.2", "KerML expression semantics and official function libraries"],
+      "metaclasses": ["AttributeDefinition", "AttributeUsage", "ReferenceUsage", "LiteralInteger", "LiteralBoolean", "LiteralString", "OperatorExpression"],
+      "library_symbols": ["Base::DataValue", "Base::dataValues", "ScalarValues::Integer", "ScalarValues::Boolean", "ScalarValues::String", "IntegerFunctions", "BooleanFunctions", "BaseFunctions"],
+      "dependencies": ["kerml-data-library", "kerml-function-library", "kerml-semantic-library"],
+      "implementation": ["crates/syntax/src/lib.rs", "crates/simulation/src/lib.rs"],
+      "tests": ["exact_expression", "independent_model_exact_payload_guard", "missing_and_mismatched_bindings", "unsupported_guard_refused"],
+      "gaps": ["The npm validator reports an unresolved named payload; the official pilot independently accepts this fixture with zero errors. Both outcomes are recorded; see docs/standards-discrepancies.md."]
+    },
+    {
+      "feature": "States and transitions",
+      "parsing": "supported_subset", "representation": "partial", "validation": "supported_subset", "interchange": "supported_subset", "execution": "supported_subset",
+      "boundary": "AGQ-SEQ-01: one flat exclusive region, empty entry, immediately following initial succession, item-triggered transitions with optional pure guard and no effects. Selection and all scenario paths resolve to IDs before execution. Explicit executable inheritance/redefinitions are refused.",
+      "clauses": ["SysML 7.18.3, 8.2.2.18.3, 8.4.13.6, 8.4.14.2-8.4.14.4", "KerML 9.2.10-9.2.11"],
+      "metaclasses": ["StateDefinition", "StateUsage", "ExhibitStateUsage", "ActionUsage", "StateSubactionMembership", "TransitionUsage", "TransitionFeatureMembership", "ParameterMembership", "AcceptActionUsage", "Succession", "BindingConnector", "TypeFeaturing"],
+      "library_symbols": ["States::StateAction", "States::stateActions", "States::StateAction::exclusiveStates", "Parts::Part::exhibitedStates", "Actions::transitionActions", "States::StateAction::stateTransitions", "Actions::TransitionAction::accepter", "States::StateTransitionAction::transitionLinkSource", "States::StateTransitionAction::payload", "TransitionPerformances::TransitionPerformance::guard", "Occurrences::happensBeforeLinks"],
+      "dependencies": ["sysml-systems-library", "kerml-semantic-library", "kerml-function-library", "kerml-data-library"],
+      "implementation": ["crates/semantics/src/expansion.rs", "crates/simulation/src/lib.rs"],
+      "tests": ["required_implicit_relationships_have_real_targets", "at_sim03_sim04_manual_continuous_repeat", "ambiguous_step_does_not_consume", "unhandled_input_is_atomic", "shorthand_succession_after_state_is_not_an_initial_transition", "resource_limits_explicit", "at_std02_parallel_preserved"],
+      "gaps": ["Compact relationship projections do not serialize every inherited relationship or feature-chain property. Private ElementReference edges are distinguished from normative ReferenceSubsetting; binding and succession ends are explicit.", "No arbitrary actions, parallel or nested execution, timers, continuous equations, external effects or live agents."]
+    },
+    {
+      "feature": "Requirements and verification",
+      "parsing": "supported_subset", "representation": "supported_subset", "validation": "supported_subset", "interchange": "supported_subset", "execution": "refused",
+      "boundary": "Documentary requirement definitions/usages, IDs, descriptions, verification definitions, subject typing, objective and verify references. External acceptance procedures are registered separately. Empty verification bodies always remain not_run.",
+      "clauses": ["SysML 7.21, 7.24"],
+      "metaclasses": ["RequirementDefinition", "RequirementUsage", "VerificationCaseDefinition", "ObjectiveMembership", "RequirementVerificationMembership", "ReferenceUsage"],
+      "library_symbols": ["Requirements::RequirementCheck", "Requirements::requirementChecks", "VerificationCases::VerificationCase"],
+      "dependencies": ["sysml-systems-library"],
+      "implementation": ["crates/semantics/src/lib.rs", "crates/simulation/src/lib.rs", "verification/traceability.json"],
+      "tests": ["at_self01_trace01_registered_declarations", "at_sim05_completion_is_not_verdict"],
+      "gaps": ["No execution of SysML verification procedures, requirement predicates or satisfaction inference."]
+    },
+    {
+      "feature": "Views and renderings",
+      "parsing": "supported_subset", "representation": "partial", "validation": "partial", "interchange": "preserved_only", "execution": "refused",
+      "boundary": "View declaration names, ownership and base specialization can be represented. Console panels are application projections, not claims of standard RenderingUsage execution.",
+      "clauses": ["SysML 7.26"], "metaclasses": ["ViewDefinition", "ViewUsage"],
+      "library_symbols": ["Views::View", "Views::views"], "dependencies": ["sysml-systems-library"],
+      "implementation": ["console/src/main.tsx", "console/src/BehaviorGraph.tsx"],
+      "tests": ["Console lifecycle, source navigation, shared context and reviewed Assistant change", "Keyboard inspection and recoverable source drafts"],
+      "gaps": ["Standard view/rendering expression evaluation and full view metamodel validation are not implemented."]
+    },
+    {
+      "feature": "Text and project interchange",
+      "parsing": "supported_subset", "representation": "supported_subset", "validation": "supported_subset", "interchange": "supported_subset", "execution": "not_applicable",
+      "boundary": "UTF-8 .sysml/.kerml text and one-language .kpar ZIP projects with standard top-level project metadata, dependencies, checksum and index. Private identity sidecar is distinguished from standard text. Unsafe, unknown or stale identity content is refused.",
+      "clauses": ["KerML 10.2-10.3", "SysML 2"], "metaclasses": [], "dependencies": ["interchange-schema"],
+      "implementation": ["crates/workspace/src/lib.rs", "crates/cli/src/main.rs"],
+      "tests": ["at_mod03_text_and_kpar", "kerml_text_roundtrip", "standard_text_identity_sidecar_and_implicit_ids_roundtrip", "cycle_and_traversal_rejected", "no_lossy_unsupported_overwrite"],
+      "gaps": ["No XMI/JSON abstract-syntax interchange, arbitrary project dependencies, range constraints or wrapped project imports; no full interchange conformance claim."]
+    },
+    {
+      "feature": "Systems Modeling API",
+      "parsing": "not_applicable", "representation": "partial", "validation": "partial", "interchange": "partial", "execution": "not_applicable",
+      "boundary": "Read mapping for local project/main branch/commits/elements/roots. Standard cursor names and Link pagination. Agentique operations in a separate namespace.",
+      "clauses": ["Systems Modeling API 7-8, Annex A"], "metaclasses": ["Project", "Branch", "Commit", "Element"], "dependencies": ["api-spec", "api-openapi", "api-schema"],
+      "implementation": ["crates/server/src/model_api.rs", "standards/api-coverage.json"],
+      "tests": ["API authentication, scope, identity mapping and revision checks"],
+      "gaps": ["Element serialization is partial; official API conformance suite not executed. All unimplemented published operations are enumerated in api-coverage.json."]
+    }
+  ]
+}

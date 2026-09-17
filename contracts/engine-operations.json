@@ -1,0 +1,163 @@
+{
+  "format": "agentique-operation-contracts/0.1",
+  "status": "proposed_internal_contracts_not_OMG_endpoints",
+  "common_mutation_fields": [
+    "command_id",
+    "actor_id",
+    "project_id",
+    "base_revision_id",
+    "payload",
+    "approval_id_when_required"
+  ],
+  "approval_binding": [
+    "actor_id",
+    "base_revision_id",
+    "canonical_payload_digest",
+    "expiry"
+  ],
+  "operations": [
+    {
+      "name": "InspectModel",
+      "input": [
+        "revision_id",
+        "element_id_or_selection",
+        "query"
+      ],
+      "output": [
+        "model_projection",
+        "diagnostics"
+      ]
+    },
+    {
+      "name": "ProposeChange",
+      "input": [
+        "base_revision_id",
+        "typed_edits"
+      ],
+      "output": [
+        "proposal_id",
+        "diff",
+        "diagnostics",
+        "payload_digest"
+      ]
+    },
+    {
+      "name": "CommitChange",
+      "input": [
+        "proposal_id",
+        "base_revision_id",
+        "approval_id"
+      ],
+      "output": [
+        "new_revision_id",
+        "changed_element_ids"
+      ]
+    },
+    {
+      "name": "PrepareRun",
+      "input": [
+        "model_revision_id",
+        "scenario_revision_id",
+        "execution_contract_id"
+      ],
+      "output": [
+        "prepared_run_id",
+        "resolved_dependencies",
+        "diagnostics"
+      ]
+    },
+    {
+      "name": "ControlRun",
+      "input": [
+        "run_id",
+        "expected_control_version",
+        "command_id",
+        "operation"
+      ],
+      "output": [
+        "control_version",
+        "run_status",
+        "checkpoint_id"
+      ]
+    },
+    {
+      "name": "ReadRun",
+      "input": [
+        "run_id",
+        "from_sequence",
+        "limit"
+      ],
+      "output": [
+        "status",
+        "trace_page",
+        "next_sequence",
+        "check_results"
+      ]
+    },
+    {
+      "name": "ExportProject",
+      "input": [
+        "revision_id",
+        "format"
+      ],
+      "output": [
+        "artifact_id",
+        "digest",
+        "identity_mapping"
+      ]
+    }
+  ],
+  "errors": [
+    "parse_error",
+    "invalid_model",
+    "unsupported_feature",
+    "unresolved_reference",
+    "missing_binding",
+    "revision_conflict",
+    "permission_denied",
+    "approval_required",
+    "approval_mismatch",
+    "ambiguous_transition",
+    "unhandled_input",
+    "evaluation_error",
+    "resource_limit",
+    "interrupted"
+  ],
+  "run_controls": [
+    "initialise",
+    "run",
+    "pause",
+    "step",
+    "stop",
+    "reset_as_new_run"
+  ],
+  "run_statuses": [
+    "prepared",
+    "running",
+    "paused",
+    "completed",
+    "stopped",
+    "blocked",
+    "failed",
+    "interrupted"
+  ],
+  "run_stop_reasons": [
+    "condition_met",
+    "input_exhausted",
+    "user_stop",
+    "ambiguous_transition",
+    "unhandled_input",
+    "evaluation_error",
+    "step_limit",
+    "trace_limit",
+    "memory_limit",
+    "interrupted"
+  ],
+  "check_statuses": [
+    "not_run",
+    "pass",
+    "fail",
+    "inconclusive",
+    "error"
+  ]
+}

@@ -1,0 +1,66 @@
+[
+  {
+    "feature": "Namespaces, imports, definitions and usages",
+    "reference": "SysML \u00a7\u00a77.5\u20137.6, 8.3, 8.4; KerML \u00a7\u00a77\u20139",
+    "milestone": "M1",
+    "boundary": "Represent/validate the self-model subset and required implicit specializations; resolve the transitive library dependency closure.",
+    "implementation_status": "not_implemented",
+    "test_status": "not_run"
+  },
+  {
+    "feature": "Parts, item payloads, ports and connections",
+    "reference": "SysML \u00a7\u00a77.10\u20137.14; relevant \u00a78.3/8.4 rules",
+    "milestone": "M1",
+    "boundary": "Model structure and types. The initial runner does not execute arbitrary connected systems.",
+    "implementation_status": "not_implemented",
+    "test_status": "not_run"
+  },
+  {
+    "feature": "Scalar attributes and expressions",
+    "reference": "SysML \u00a7\u00a77.7, 7.19\u20137.20; pinned KerML libraries",
+    "milestone": "M1/M2",
+    "boundary": "Exact Integer, Boolean, String literals and bound parameters; pure comparisons and Boolean guards. Unsupported operators block preparation.",
+    "implementation_status": "not_implemented",
+    "test_status": "not_run"
+  },
+  {
+    "feature": "States and transitions",
+    "reference": "SysML \u00a7\u00a77.18, 8.4.14; KerML \u00a79.2.10",
+    "milestone": "M2",
+    "boundary": "One selected flat exclusive region, empty entry action, explicit initial succession and typed input-triggered transitions. No effects, concurrent regions, delays or internal action bodies.",
+    "implementation_status": "not_implemented",
+    "test_status": "not_run"
+  },
+  {
+    "feature": "Requirements and verification",
+    "reference": "SysML \u00a7\u00a77.21, 7.24",
+    "milestone": "M1/M3",
+    "boundary": "Retain documentary requirements and verification references. Bind concrete acceptance procedures separately; no automatic verdict from an empty body.",
+    "implementation_status": "not_implemented",
+    "test_status": "not_run"
+  },
+  {
+    "feature": "Views and renderings",
+    "reference": "SysML \u00a77.26",
+    "milestone": "M3",
+    "boundary": "Use standard view constructs where represented. Generic Console panels and layout data remain application objects.",
+    "implementation_status": "not_implemented",
+    "test_status": "not_run"
+  },
+  {
+    "feature": "Project interchange",
+    "reference": "KerML \u00a710; SysML \u00a72",
+    "milestone": "M1",
+    "boundary": "Supported-subset .sysml/.kerml and .kpar import/export; no full interchange-conformance claim until obligations are met.",
+    "implementation_status": "not_implemented",
+    "test_status": "not_run"
+  },
+  {
+    "feature": "API interoperability",
+    "reference": "Systems Modeling API \u00a7\u00a77\u20138, Annex A",
+    "milestone": "M3+",
+    "boundary": "Map model services to standard operations. Track missing operations/tests. Simulation operations use an explicit Agentique namespace.",
+    "implementation_status": "not_implemented",
+    "test_status": "not_run"
+  }
+]

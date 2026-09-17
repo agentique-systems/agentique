@@ -1,0 +1,40 @@
+{
+  "format": "agentique-scenario-template/0.1",
+  "status": "unresolved_template_not_a_prepared_run",
+  "execution_contract": "AGQ-SEQ-01",
+  "model_files": [
+    "models/AgentiqueBehaviour.sysml",
+    "models/AgentiqueArchitecture.sysml"
+  ],
+  "selected_behaviour_path": "AgentiqueArchitecture::agentique.engine.models.requestLifecycle",
+  "inputs": [
+    {
+      "ordinal": 1,
+      "receiver_path": "AgentiqueArchitecture::agentique.engine.models.requestLifecycle.input",
+      "payload_type": "AgentiqueBehaviour::CheckRequested"
+    },
+    {
+      "ordinal": 2,
+      "receiver_path": "AgentiqueArchitecture::agentique.engine.models.requestLifecycle.input",
+      "payload_type": "AgentiqueBehaviour::ValidationFailed"
+    }
+  ],
+  "stop_when_active_state": "AgentiqueArchitecture::agentique.engine.models.requestLifecycle.rejected",
+  "limits": {
+    "max_input_deliveries": 100,
+    "max_semantic_steps": 1000,
+    "max_trace_records": 5000
+  },
+  "expected": {
+    "active_states": [
+      "idle",
+      "checking",
+      "rejected"
+    ],
+    "transition_names": [
+      "beginCheck",
+      "rejectCheck"
+    ],
+    "stop_reason": "condition_met"
+  }
+}

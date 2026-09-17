@@ -1,0 +1,854 @@
+{
+  "format": "agentique-standards-lock/0.1",
+  "library_publication": "2026-04",
+  "library_source_root": "standards/libraries-2026-04",
+  "baseline_lock": "standards/baseline-lock.json",
+  "selection_basis": "Official corrections to StateTransitionAction payload direction and TransitionPerformance receiver binding; originals retained. See docs/standards-discrepancies.md.",
+  "artifacts": [
+    {
+      "id": "kerml-spec",
+      "title": "KerML 1.0",
+      "document_id": "formal/2026-03-01",
+      "source": "https://www.omg.org/spec/KerML/1.0/PDF",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "KerML.pdf",
+      "bytes": 1821407,
+      "title_page": "--- PDF PAGE 1 ---\nAn OMG ®   Systems Modeling Publication \nKernel Modeling Language™ (KerML™) \nVersion 1.0 \n_______________________________________________________________________________\nOMG Document Number:   formal/2026-03-01 \nDate:   March 2026 \nStandard document URL:   https://www.omg.org/spec/KerML/1.0/ \n_______________________________________________________________________________",
+      "pages": 454
+    },
+    {
+      "id": "sysml-spec",
+      "title": "SysML 2.0, Part 1",
+      "document_id": "formal/2026-03-02",
+      "source": "https://www.omg.org/spec/SysML/2.0/Language/PDF",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "SysML.pdf",
+      "bytes": 3804140,
+      "title_page": "--- PDF PAGE 1 ---\nAn OMG ®   Systems Modeling Publication \nOMG Systems Modeling Language™\n(SysML ® ) \nVersion 2.0 \nPart 1: Language Specification \n_______________________________________________________________________________\nOMG Document Number:   formal/2026-03-02 \nDate:   March 2026 \nStandard document URL:   https://www.omg.org/spec/SysML/2.0/ \n_______________________________________________________________________________",
+      "pages": 691
+    },
+    {
+      "id": "api-spec",
+      "title": "Systems Modeling API and Services 1.0",
+      "document_id": "formal/2026-03-04",
+      "source": "https://www.omg.org/spec/SystemsModelingAPI/1.0/PDF",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "1a93ffb9214573ec38b00b89f7ce4c7b7ff6559ccbff534a6a97e08e1f145e0a",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "SysAPI.pdf",
+      "bytes": 757624,
+      "title_page": "--- PDF PAGE 1 ---\nAn OMG ®   Systems Modeling Publication \nSystems Modeling Application\nProgramming Interface (API) and\nServices \nVersion 1.0 \n_______________________________________________________________________________\nOMG Document Number:   formal/2026-03-04 \nDate:   March 2026 \nStandard document URL:   https://www.omg.org/spec/SystemsModelingAPI/1.0/ \n_______________________________________________________________________________",
+      "pages": 107
+    },
+    {
+      "id": "kerml-semantic-library",
+      "title": "KerML Semantic Library",
+      "document_id": "ptc/25-04-17",
+      "source": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/9baca5908ca28b53da085de69336fde48420ea8f/sysml.library.kpar/Kernel_Semantic_Library-1.0.0.kpar",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "e741ff98b689b6596da5078ec1693928a94d2f8a090a476e1f3e7a7f5d0abb84",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "standards/artifacts/2026-04/Kernel_Semantic_Library-1.0.0.kpar",
+      "bytes": 31523,
+      "entries": [
+        {
+          "path": ".project.json",
+          "sha256": "b2f637a01a52dde3a49839a577e10fc0512e4f480854f36967d858fdcc583064",
+          "bytes": 356
+        },
+        {
+          "path": ".meta.json",
+          "sha256": "c3f9963c8022669711fe6cca8bcca6a6b2b86cdf8a512015ae89a56b0c424b3c",
+          "bytes": 2585
+        },
+        {
+          "path": "Performances.kerml",
+          "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+          "bytes": 8925
+        },
+        {
+          "path": "Metaobjects.kerml",
+          "sha256": "983dbd85a4b183d8859326ee512fc59d991fb98a115e009e72fad21d1f9d1685",
+          "bytes": 1648
+        },
+        {
+          "path": "KerML.kerml",
+          "sha256": "8fdf4b7416e981c895cd74b75dc14b18091d13cbcaff7cdded6f9c23e2483d58",
+          "bytes": 21440
+        },
+        {
+          "path": "Base.kerml",
+          "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+          "bytes": 2338
+        },
+        {
+          "path": "SpatialFrames.kerml",
+          "sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+          "bytes": 6944
+        },
+        {
+          "path": "Triggers.kerml",
+          "sha256": "124cad3625935e078d1363e6100ee12537ca9c51445a18108e056db8b4885609",
+          "bytes": 4422
+        },
+        {
+          "path": "ControlPerformances.kerml",
+          "sha256": "31385be7dca94bd0538f011d5c8f7925626d54f96970769f0fdb28b2186a9a03",
+          "bytes": 4496
+        },
+        {
+          "path": "Observation.kerml",
+          "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+          "bytes": 4578
+        },
+        {
+          "path": "StatePerformances.kerml",
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "bytes": 5456
+        },
+        {
+          "path": "FeatureReferencingPerformances.kerml",
+          "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+          "bytes": 7681
+        },
+        {
+          "path": "Links.kerml",
+          "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+          "bytes": 2117
+        },
+        {
+          "path": "Clocks.kerml",
+          "sha256": "960ac0884935e308beea55c78ed11b6946c37a386eb7958ef2c913aa275ae4c7",
+          "bytes": 3853
+        },
+        {
+          "path": "Occurrences.kerml",
+          "sha256": "b3a62ce0bc3a4f7e667102b4c2f68a4928ca8efeda425c6a4c8bdeadfbc9bbc1",
+          "bytes": 37911
+        },
+        {
+          "path": "Objects.kerml",
+          "sha256": "9057e2781fe8793d5108973c0647318caa26310be6231c6380152a4cbc894c25",
+          "bytes": 7249
+        },
+        {
+          "path": "TransitionPerformances.kerml",
+          "sha256": "1ce78437c817c8359a2cad43e8e72b23dd32b81d2a69dc1126c803fae72aae70",
+          "bytes": 2583
+        },
+        {
+          "path": "Transfers.kerml",
+          "sha256": "fa40b483a7834d89f07aad0f6f57e79244adc2a58b4396c4734bddeb297d7c46",
+          "bytes": 10817
+        }
+      ],
+      "metadata": {
+        ".project.json": {
+          "name": "Kernel Semantic Library",
+          "description": "Standard semantic library for the Kernel Modeling Language (KerML)",
+          "version": "1.0.0",
+          "usage": [
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+              "versionConstraint": "1.0.0"
+            },
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+              "versionConstraint": "1.0.0"
+            }
+          ]
+        },
+        ".meta.json": {
+          "index": {
+            "Base": "Base.kerml",
+            "Clocks": "Clocks.kerml",
+            "ControlPerformances": "ControlPerformances.kerml",
+            "FeatureReferencingPerformances": "FeatureReferencingPerformances.kerml",
+            "KerML": "KerML.kerml",
+            "Links": "Links.kerml",
+            "Metaobjects": "Metaobjects.kerml",
+            "Objects": "Objects.kerml",
+            "Observation": "Observation.kerml",
+            "Occurrences": "Occurrences.kerml",
+            "Performances": "Performances.kerml",
+            "SpatialFrames": "SpatialFrames.kerml",
+            "StatePerformances": "StatePerformances.kerml",
+            "Transfers": "Transfers.kerml",
+            "TransitionPerformances": "TransitionPerformances.kerml",
+            "Triggers": "Triggers.kerml"
+          },
+          "created": "2025-03-13T00:00:00Z",
+          "metamodel": "https://www.omg.org/spec/KerML/20250201",
+          "checksum": {
+            "FeatureReferencingPerformances.kerml": {
+              "value": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+              "algorithm": "SHA256"
+            },
+            "StatePerformances.kerml": {
+              "value": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+              "algorithm": "SHA256"
+            },
+            "ControlPerformances.kerml": {
+              "value": "31385be7dca94bd0538f011d5c8f7925626d54f96970769f0fdb28b2186a9a03",
+              "algorithm": "SHA256"
+            },
+            "Transfers.kerml": {
+              "value": "fa40b483a7834d89f07aad0f6f57e79244adc2a58b4396c4734bddeb297d7c46",
+              "algorithm": "SHA256"
+            },
+            "Links.kerml": {
+              "value": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+              "algorithm": "SHA256"
+            },
+            "Observation.kerml": {
+              "value": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+              "algorithm": "SHA256"
+            },
+            "SpatialFrames.kerml": {
+              "value": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+              "algorithm": "SHA256"
+            },
+            "TransitionPerformances.kerml": {
+              "value": "1ce78437c817c8359a2cad43e8e72b23dd32b81d2a69dc1126c803fae72aae70",
+              "algorithm": "SHA256"
+            },
+            "Metaobjects.kerml": {
+              "value": "983dbd85a4b183d8859326ee512fc59d991fb98a115e009e72fad21d1f9d1685",
+              "algorithm": "SHA256"
+            },
+            "Triggers.kerml": {
+              "value": "124cad3625935e078d1363e6100ee12537ca9c51445a18108e056db8b4885609",
+              "algorithm": "SHA256"
+            },
+            "Clocks.kerml": {
+              "value": "960ac0884935e308beea55c78ed11b6946c37a386eb7958ef2c913aa275ae4c7",
+              "algorithm": "SHA256"
+            },
+            "Performances.kerml": {
+              "value": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+              "algorithm": "SHA256"
+            },
+            "Occurrences.kerml": {
+              "value": "b3a62ce0bc3a4f7e667102b4c2f68a4928ca8efeda425c6a4c8bdeadfbc9bbc1",
+              "algorithm": "SHA256"
+            },
+            "Base.kerml": {
+              "value": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+              "algorithm": "SHA256"
+            },
+            "KerML.kerml": {
+              "value": "8fdf4b7416e981c895cd74b75dc14b18091d13cbcaff7cdded6f9c23e2483d58",
+              "algorithm": "SHA256"
+            },
+            "Objects.kerml": {
+              "value": "9057e2781fe8793d5108973c0647318caa26310be6231c6380152a4cbc894c25",
+              "algorithm": "SHA256"
+            }
+          }
+        }
+      },
+      "canonical_resource": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+      "publication": "Official SysML v2 Release 2026-04",
+      "commit": "9baca5908ca28b53da085de69336fde48420ea8f",
+      "extract_root": "standards/libraries-2026-04/Kernel_Semantic_Library-1.0.0"
+    },
+    {
+      "id": "kerml-data-library",
+      "title": "KerML Data Type Library",
+      "document_id": "ptc/25-04-18",
+      "source": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/9baca5908ca28b53da085de69336fde48420ea8f/sysml.library.kpar/Kernel_Data_Type_Library-1.0.0.kpar",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "9f2bf2ebf72c6cb9f4a53999afe5e382bf65acfbc0f455ce2ca5ffe1e621326d",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "standards/artifacts/2026-04/Kernel_Data_Type_Library-1.0.0.kpar",
+      "bytes": 3563,
+      "entries": [
+        {
+          "path": ".project.json",
+          "sha256": "211db5d329ef0777bc8b0d3217d4e8c7a864178084710c0e67947f9e9940a1fb",
+          "bytes": 252
+        },
+        {
+          "path": ".meta.json",
+          "sha256": "5c2cf0eb3e0f945a2a7ec340b78690879d72c076a29b1386cd3d5f1e32262335",
+          "bytes": 573
+        },
+        {
+          "path": "ScalarValues.kerml",
+          "sha256": "4db25ce00dd170fd67261f6e7e21a2616bda15d233579dc5fb3193aaf61fa5a5",
+          "bytes": 862
+        },
+        {
+          "path": "VectorValues.kerml",
+          "sha256": "7b22f8867e1cf46ac6a8226175db4405f6c29f047b3d6ad54a044fef3ce683dc",
+          "bytes": 1888
+        },
+        {
+          "path": "Collections.kerml",
+          "sha256": "8d8359beb4c4613ded0abb780a890ccafa0a4aaa720a22334f602ca38301b92e",
+          "bytes": 4973
+        }
+      ],
+      "metadata": {
+        ".project.json": {
+          "name": "Kernel Data Type Library",
+          "description": "Standard data type library for the Kernel Modeling Language (KerML)",
+          "version": "1.0.0",
+          "usage": [
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+              "versionConstraint": "1.0.0"
+            }
+          ]
+        },
+        ".meta.json": {
+          "index": {
+            "Collections": "Collections.kerml",
+            "ScalarValues": "ScalarValues.kerml",
+            "VectorValues": "VectorValues.kerml"
+          },
+          "created": "2025-03-13T00:00:00Z",
+          "metamodel": "https://www.omg.org/spec/KerML/20250201",
+          "checksum": {
+            "Collections.kerml": {
+              "value": "8d8359beb4c4613ded0abb780a890ccafa0a4aaa720a22334f602ca38301b92e",
+              "algorithm": "SHA256"
+            },
+            "VectorValues.kerml": {
+              "value": "7b22f8867e1cf46ac6a8226175db4405f6c29f047b3d6ad54a044fef3ce683dc",
+              "algorithm": "SHA256"
+            },
+            "ScalarValues.kerml": {
+              "value": "4db25ce00dd170fd67261f6e7e21a2616bda15d233579dc5fb3193aaf61fa5a5",
+              "algorithm": "SHA256"
+            }
+          }
+        }
+      },
+      "canonical_resource": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+      "publication": "Official SysML v2 Release 2026-04",
+      "commit": "9baca5908ca28b53da085de69336fde48420ea8f",
+      "extract_root": "standards/libraries-2026-04/Kernel_Data_Type_Library-1.0.0"
+    },
+    {
+      "id": "kerml-function-library",
+      "title": "KerML Function Library",
+      "document_id": "ptc/25-04-19",
+      "source": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/9baca5908ca28b53da085de69336fde48420ea8f/sysml.library.kpar/Kernel_Function_Library-1.0.0.kpar",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "05c57ed433073fde16f2a52bdbbe6ac099ce52520bfdf41893f7b49866aa24f4",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "standards/artifacts/2026-04/Kernel_Function_Library-1.0.0.kpar",
+      "bytes": 14095,
+      "entries": [
+        {
+          "path": ".project.json",
+          "sha256": "8fbf00120b58b39c2deb0cabf0d27adc296066212e0d717f54c441f78a782f3b",
+          "bytes": 356
+        },
+        {
+          "path": ".meta.json",
+          "sha256": "0da578abebb75ed78bf62e6c77662b9da83adce32c236126e77cc0cb50dca6c2",
+          "bytes": 2935
+        },
+        {
+          "path": "ComplexFunctions.kerml",
+          "sha256": "cdb8ab38b5937f3716d66e2c71d6811d2ae7df08c1704f4dce7a815be1c01563",
+          "bytes": 2267
+        },
+        {
+          "path": "SequenceFunctions.kerml",
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "bytes": 4501
+        },
+        {
+          "path": "IntegerFunctions.kerml",
+          "sha256": "3da7c23ee95290d768dae67e75287122d5512d054c0f9ca57b78a8aab81ee309",
+          "bytes": 2577
+        },
+        {
+          "path": "ScalarFunctions.kerml",
+          "sha256": "3a6baf3962079a395304f0a811f3b58da09f18f91aaf76ceef5f81ebeae7a258",
+          "bytes": 2595
+        },
+        {
+          "path": "CollectionFunctions.kerml",
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "bytes": 2458
+        },
+        {
+          "path": "BaseFunctions.kerml",
+          "sha256": "c7700f36c786ff25796eb37d321a7a85f5f67b785e08a548c1cf4cd207c8b27f",
+          "bytes": 2044
+        },
+        {
+          "path": "BooleanFunctions.kerml",
+          "sha256": "f836553db8e0ab1fb782043090198bdcd33ab6f168773e099fa2e192646ecc46",
+          "bytes": 962
+        },
+        {
+          "path": "ControlFunctions.kerml",
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "bytes": 3603
+        },
+        {
+          "path": "RealFunctions.kerml",
+          "sha256": "4b469aafc18d801ae733734066d3e43aa767c44a89e912cf60772933ab568a76",
+          "bytes": 2717
+        },
+        {
+          "path": "StringFunctions.kerml",
+          "sha256": "b3bbcad2251f9152f4b730754ad172e9a4e52d61fbdb9bdf55b968d92fcaa831",
+          "bytes": 1181
+        },
+        {
+          "path": "VectorFunctions.kerml",
+          "sha256": "2e9fdcd13a0cdf5db5bcc2326975430ac75432dccd45893740464d9a01487661",
+          "bytes": 8060
+        },
+        {
+          "path": "NaturalFunctions.kerml",
+          "sha256": "f83daf1bbcf124fb9c535273c3c536d08424031991013f2f6c563706afde92ae",
+          "bytes": 1624
+        },
+        {
+          "path": "RationalFunctions.kerml",
+          "sha256": "a7ef0870a5282f5dc489ab85ef424b66cd8909f5f52b2efe5f14ed1765afc768",
+          "bytes": 2813
+        },
+        {
+          "path": "NumericalFunctions.kerml",
+          "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+          "bytes": 2787
+        },
+        {
+          "path": "OccurrenceFunctions.kerml",
+          "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+          "bytes": 3713
+        },
+        {
+          "path": "TrigFunctions.kerml",
+          "sha256": "04af7eb3aa5be68c60bab85097b870b3a2540e646079c642d44b6a47150b0ce1",
+          "bytes": 1025
+        },
+        {
+          "path": "DataFunctions.kerml",
+          "sha256": "896b81cd660948084efd0ee9ebc9125a1588b1e2d360bdebb03430d0317b7b5b",
+          "bytes": 2341
+        }
+      ],
+      "metadata": {
+        ".project.json": {
+          "name": "Kernel Function Library",
+          "description": "Standard function library for the Kernel Modeling Language (KerML)",
+          "version": "1.0.0",
+          "usage": [
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+              "versionConstraint": "1.0.0"
+            },
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+              "versionConstraint": "1.0.0"
+            }
+          ]
+        },
+        ".meta.json": {
+          "index": {
+            "BaseFunctions": "BaseFunctions.kerml",
+            "BooleanFunctions": "BooleanFunctions.kerml",
+            "CollectionFunctions": "CollectionFunctions.kerml",
+            "ComplexFunctions": "ComplexFunctions.kerml",
+            "ControlFunctions": "ControlFunctions.kerml",
+            "DataFunctions": "DataFunctions.kerml",
+            "IntegerFunctions": "IntegerFunctions.kerml",
+            "NaturalFunctions": "NaturalFunctions.kerml",
+            "NumericalFunctions": "NumericalFunctions.kerml",
+            "OccurrenceFunctions": "OccurrenceFunctions.kerml",
+            "RationalFunctions": "RationalFunctions.kerml",
+            "RealFunctions": "RealFunctions.kerml",
+            "ScalarFunctions": "ScalarFunctions.kerml",
+            "SequenceFunctions": "SequenceFunctions.kerml",
+            "StringFunctions": "StringFunctions.kerml",
+            "TrigFunctions": "TrigFunctions.kerml",
+            "VectorFunctions": "VectorFunctions.kerml"
+          },
+          "created": "2025-03-13T00:00:00Z",
+          "metamodel": "https://www.omg.org/spec/KerML/20250201",
+          "checksum": {
+            "DataFunctions.kerml": {
+              "value": "896b81cd660948084efd0ee9ebc9125a1588b1e2d360bdebb03430d0317b7b5b",
+              "algorithm": "SHA256"
+            },
+            "CollectionFunctions.kerml": {
+              "value": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+              "algorithm": "SHA256"
+            },
+            "BaseFunctions.kerml": {
+              "value": "c7700f36c786ff25796eb37d321a7a85f5f67b785e08a548c1cf4cd207c8b27f",
+              "algorithm": "SHA256"
+            },
+            "NumericalFunctions.kerml": {
+              "value": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+              "algorithm": "SHA256"
+            },
+            "BooleanFunctions.kerml": {
+              "value": "f836553db8e0ab1fb782043090198bdcd33ab6f168773e099fa2e192646ecc46",
+              "algorithm": "SHA256"
+            },
+            "ComplexFunctions.kerml": {
+              "value": "cdb8ab38b5937f3716d66e2c71d6811d2ae7df08c1704f4dce7a815be1c01563",
+              "algorithm": "SHA256"
+            },
+            "RationalFunctions.kerml": {
+              "value": "a7ef0870a5282f5dc489ab85ef424b66cd8909f5f52b2efe5f14ed1765afc768",
+              "algorithm": "SHA256"
+            },
+            "ControlFunctions.kerml": {
+              "value": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+              "algorithm": "SHA256"
+            },
+            "ScalarFunctions.kerml": {
+              "value": "3a6baf3962079a395304f0a811f3b58da09f18f91aaf76ceef5f81ebeae7a258",
+              "algorithm": "SHA256"
+            },
+            "SequenceFunctions.kerml": {
+              "value": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+              "algorithm": "SHA256"
+            },
+            "RealFunctions.kerml": {
+              "value": "4b469aafc18d801ae733734066d3e43aa767c44a89e912cf60772933ab568a76",
+              "algorithm": "SHA256"
+            },
+            "StringFunctions.kerml": {
+              "value": "b3bbcad2251f9152f4b730754ad172e9a4e52d61fbdb9bdf55b968d92fcaa831",
+              "algorithm": "SHA256"
+            },
+            "TrigFunctions.kerml": {
+              "value": "04af7eb3aa5be68c60bab85097b870b3a2540e646079c642d44b6a47150b0ce1",
+              "algorithm": "SHA256"
+            },
+            "VectorFunctions.kerml": {
+              "value": "2e9fdcd13a0cdf5db5bcc2326975430ac75432dccd45893740464d9a01487661",
+              "algorithm": "SHA256"
+            },
+            "NaturalFunctions.kerml": {
+              "value": "f83daf1bbcf124fb9c535273c3c536d08424031991013f2f6c563706afde92ae",
+              "algorithm": "SHA256"
+            },
+            "OccurrenceFunctions.kerml": {
+              "value": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+              "algorithm": "SHA256"
+            },
+            "IntegerFunctions.kerml": {
+              "value": "3da7c23ee95290d768dae67e75287122d5512d054c0f9ca57b78a8aab81ee309",
+              "algorithm": "SHA256"
+            }
+          }
+        }
+      },
+      "canonical_resource": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+      "publication": "Official SysML v2 Release 2026-04",
+      "commit": "9baca5908ca28b53da085de69336fde48420ea8f",
+      "extract_root": "standards/libraries-2026-04/Kernel_Function_Library-1.0.0"
+    },
+    {
+      "id": "sysml-systems-library",
+      "title": "SysML Systems Library",
+      "document_id": "ptc/25-04-24",
+      "source": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/9baca5908ca28b53da085de69336fde48420ea8f/sysml.library.kpar/SysML_Systems_Library-2.0.0.kpar",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "7a8ea690b110466f50c52b8c594b9815a331377baebc2794958203b264d01bac",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "standards/artifacts/2026-04/SysML_Systems_Library-2.0.0.kpar",
+      "bytes": 25301,
+      "entries": [
+        {
+          "path": ".project.json",
+          "sha256": "9acc44afbf5178227fdf1c647061b95ea52057ab6e2ff75c0550bd3c9ec4318e",
+          "bytes": 460
+        },
+        {
+          "path": ".meta.json",
+          "sha256": "55798384151dde4168a5408541ba8376ae4f050f057c8d372533dd239481c0cd",
+          "bytes": 3192
+        },
+        {
+          "path": "SysML.sysml",
+          "sha256": "b9fce515ae13620ef15371aca7ca17d1b6b3c7444f498be392e5ceec9b6d8385",
+          "bytes": 30789
+        },
+        {
+          "path": "Views.sysml",
+          "sha256": "0bcf10afd49dd09c8c64844da97fc4c01a4a35fefd4e4a179a8bc0a8a261c8a8",
+          "bytes": 3973
+        },
+        {
+          "path": "VerificationCases.sysml",
+          "sha256": "dbee7255e16df9c5cf0bded96c43cb60b1e5026b6973c5fb1176316902ac47b9",
+          "bytes": 2488
+        },
+        {
+          "path": "AnalysisCases.sysml",
+          "sha256": "2bb88f61178f2cefd5441600d2d980ed1e1a4ffc5cb7b3ca9207edee5c350f87",
+          "bytes": 1038
+        },
+        {
+          "path": "States.sysml",
+          "sha256": "1a84e28d41a8d76ff1cbce81312257dac97b47bcd545c31f8a34f73098ac13bc",
+          "bytes": 3371
+        },
+        {
+          "path": "Requirements.sysml",
+          "sha256": "c436a8fe2959b380ee3d8ae7c1c206311aa9c1215d13800b215f9952e1216632",
+          "bytes": 5466
+        },
+        {
+          "path": "Connections.sysml",
+          "sha256": "7303b68d46ee3115e26efbd22d209640cd0f81a71b4c0f0f46f011011153b1c6",
+          "bytes": 2133
+        },
+        {
+          "path": "Attributes.sysml",
+          "sha256": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d",
+          "bytes": 626
+        },
+        {
+          "path": "Allocations.sysml",
+          "sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+          "bytes": 788
+        },
+        {
+          "path": "StandardViewDefinitions.sysml",
+          "sha256": "b29882b0240e3cc2721b66c6bc9fd1d2d2431a34e80e170cd465911ff8d833a5",
+          "bytes": 6115
+        },
+        {
+          "path": "Constraints.sysml",
+          "sha256": "84dd65984abd0c35c37b75ef5766bfa63c836aa75a1c75a9d3eb5f4230fa8fdd",
+          "bytes": 1263
+        },
+        {
+          "path": "Interfaces.sysml",
+          "sha256": "62b5c3c2bc3960e8d25633231c3933a81e422b3a904dc9541b8787113d076c66",
+          "bytes": 3467
+        },
+        {
+          "path": "Cases.sysml",
+          "sha256": "2c4c0cbaaa466f9f720ba69af3a019517ca0a7741a561f7880006bae946bf24f",
+          "bytes": 1619
+        },
+        {
+          "path": "Calculations.sysml",
+          "sha256": "19f5c2ac553c0a034550292de6bfa601e6948fc81d5af781b59c940eee2e5f72",
+          "bytes": 990
+        },
+        {
+          "path": "UseCases.sysml",
+          "sha256": "242e51944c32032215d76a9ff1fd967d8ba36efffd9d78da1c423a5b102a2cf6",
+          "bytes": 1271
+        },
+        {
+          "path": "Parts.sysml",
+          "sha256": "a22b926a7bbdcda20149200a61fd41c9f1e3924c8929ef7d68db529fb8e7bf51",
+          "bytes": 1882
+        },
+        {
+          "path": "Items.sysml",
+          "sha256": "5a3b2c2d2eb3104186a5e200c40647d1d798685a62db0301ce4ca361651015b7",
+          "bytes": 4121
+        },
+        {
+          "path": "Metadata.sysml",
+          "sha256": "c86a68a1b7f8f33f287d812780d2446021aeefb3284f28b9c10dfe2b1a13ded6",
+          "bytes": 884
+        },
+        {
+          "path": "Ports.sysml",
+          "sha256": "febd6617c3bb9d0f93c77722b98874d89b4973f7b93ee88509097b2e80bc6995",
+          "bytes": 1594
+        },
+        {
+          "path": "Flows.sysml",
+          "sha256": "191a741036cdffddef310d8abbf10cf622724ca837d3e33953df95664890de41",
+          "bytes": 4766
+        },
+        {
+          "path": "Actions.sysml",
+          "sha256": "b11b8f38c2eff529e5b9a77677a4908153e3e174b3750e97428aa87336b905e7",
+          "bytes": 14635
+        }
+      ],
+      "metadata": {
+        ".project.json": {
+          "name": "SysML Systems Library",
+          "description": "Standard semantic library for the Systems Modeling Language (SysML)",
+          "version": "2.0.0",
+          "usage": [
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+              "versionConstraint": "1.0.0"
+            },
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+              "versionConstraint": "1.0.0"
+            },
+            {
+              "resource": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+              "versionConstraint": "1.0.0"
+            }
+          ]
+        },
+        ".meta.json": {
+          "index": {
+            "Actions": "Actions.sysml",
+            "Allocations": "Allocations.sysml",
+            "AnalysisCases": "AnalysisCases.sysml",
+            "Attributes": "Attributes.sysml",
+            "Calculations": "Calculations.sysml",
+            "Cases": "Cases.sysml",
+            "Connections": "Connections.sysml",
+            "Constraints": "Constraints.sysml",
+            "Flows": "Flows.sysml",
+            "Interfaces": "Interfaces.sysml",
+            "Items": "Items.sysml",
+            "Metadata": "Metadata.sysml",
+            "Parts": "Parts.sysml",
+            "Ports": "Ports.sysml",
+            "Requirements": "Requirements.sysml",
+            "StandardViewDefinitions": "StandardViewDefinitions.sysml",
+            "States": "States.sysml",
+            "SysML": "SysML.sysml",
+            "UseCases": "UseCases.sysml",
+            "VerificationCases": "VerificationCases.sysml",
+            "Views": "Views.sysml"
+          },
+          "created": "2025-03-13T00:00:00Z",
+          "metamodel": "https://www.omg.org/spec/SysML/20250201",
+          "checksum": {
+            "StandardViewDefinitions.sysml": {
+              "value": "b29882b0240e3cc2721b66c6bc9fd1d2d2431a34e80e170cd465911ff8d833a5",
+              "algorithm": "SHA256"
+            },
+            "Parts.sysml": {
+              "value": "a22b926a7bbdcda20149200a61fd41c9f1e3924c8929ef7d68db529fb8e7bf51",
+              "algorithm": "SHA256"
+            },
+            "AnalysisCases.sysml": {
+              "value": "2bb88f61178f2cefd5441600d2d980ed1e1a4ffc5cb7b3ca9207edee5c350f87",
+              "algorithm": "SHA256"
+            },
+            "Constraints.sysml": {
+              "value": "84dd65984abd0c35c37b75ef5766bfa63c836aa75a1c75a9d3eb5f4230fa8fdd",
+              "algorithm": "SHA256"
+            },
+            "Attributes.sysml": {
+              "value": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d",
+              "algorithm": "SHA256"
+            },
+            "Calculations.sysml": {
+              "value": "19f5c2ac553c0a034550292de6bfa601e6948fc81d5af781b59c940eee2e5f72",
+              "algorithm": "SHA256"
+            },
+            "Interfaces.sysml": {
+              "value": "62b5c3c2bc3960e8d25633231c3933a81e422b3a904dc9541b8787113d076c66",
+              "algorithm": "SHA256"
+            },
+            "Actions.sysml": {
+              "value": "b11b8f38c2eff529e5b9a77677a4908153e3e174b3750e97428aa87336b905e7",
+              "algorithm": "SHA256"
+            },
+            "Items.sysml": {
+              "value": "5a3b2c2d2eb3104186a5e200c40647d1d798685a62db0301ce4ca361651015b7",
+              "algorithm": "SHA256"
+            },
+            "Cases.sysml": {
+              "value": "2c4c0cbaaa466f9f720ba69af3a019517ca0a7741a561f7880006bae946bf24f",
+              "algorithm": "SHA256"
+            },
+            "Metadata.sysml": {
+              "value": "c86a68a1b7f8f33f287d812780d2446021aeefb3284f28b9c10dfe2b1a13ded6",
+              "algorithm": "SHA256"
+            },
+            "Ports.sysml": {
+              "value": "febd6617c3bb9d0f93c77722b98874d89b4973f7b93ee88509097b2e80bc6995",
+              "algorithm": "SHA256"
+            },
+            "SysML.sysml": {
+              "value": "b9fce515ae13620ef15371aca7ca17d1b6b3c7444f498be392e5ceec9b6d8385",
+              "algorithm": "SHA256"
+            },
+            "VerificationCases.sysml": {
+              "value": "dbee7255e16df9c5cf0bded96c43cb60b1e5026b6973c5fb1176316902ac47b9",
+              "algorithm": "SHA256"
+            },
+            "States.sysml": {
+              "value": "1a84e28d41a8d76ff1cbce81312257dac97b47bcd545c31f8a34f73098ac13bc",
+              "algorithm": "SHA256"
+            },
+            "Allocations.sysml": {
+              "value": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+              "algorithm": "SHA256"
+            },
+            "Flows.sysml": {
+              "value": "191a741036cdffddef310d8abbf10cf622724ca837d3e33953df95664890de41",
+              "algorithm": "SHA256"
+            },
+            "UseCases.sysml": {
+              "value": "242e51944c32032215d76a9ff1fd967d8ba36efffd9d78da1c423a5b102a2cf6",
+              "algorithm": "SHA256"
+            },
+            "Views.sysml": {
+              "value": "0bcf10afd49dd09c8c64844da97fc4c01a4a35fefd4e4a179a8bc0a8a261c8a8",
+              "algorithm": "SHA256"
+            },
+            "Connections.sysml": {
+              "value": "7303b68d46ee3115e26efbd22d209640cd0f81a71b4c0f0f46f011011153b1c6",
+              "algorithm": "SHA256"
+            },
+            "Requirements.sysml": {
+              "value": "c436a8fe2959b380ee3d8ae7c1c206311aa9c1215d13800b215f9952e1216632",
+              "algorithm": "SHA256"
+            }
+          }
+        }
+      },
+      "canonical_resource": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+      "publication": "Official SysML v2 Release 2026-04",
+      "commit": "9baca5908ca28b53da085de69336fde48420ea8f",
+      "extract_root": "standards/libraries-2026-04/SysML_Systems_Library-2.0.0"
+    },
+    {
+      "id": "api-openapi",
+      "title": "Systems Modeling OpenAPI",
+      "document_id": "ptc/25-02-30",
+      "source": "https://www.omg.org/spec/SystemsModelingAPI/20250201/OpenAPI.json",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "17e7e8586df6c51ada09d802f48bec6dd68d141454fae05d3f45e9b9879e01ab",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "standards/artifacts/OpenAPI.json",
+      "bytes": 7568661
+    },
+    {
+      "id": "api-schema",
+      "title": "Systems Modeling schemas",
+      "document_id": "ptc/25-02-31",
+      "source": "https://www.omg.org/spec/SystemsModelingAPI/20250201/Schema.json",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": "cd1d74359d275fdb5c9182a390daffbff51c9c8c30f2a8955b2d9e4eb7589274",
+      "artifact_status": "bytes_acquired_and_hashed",
+      "path": "standards/artifacts/Schema.json",
+      "bytes": 3533868
+    },
+    {
+      "id": "interchange-schema",
+      "source": "https://www.omg.org/spec/KerML/20250201/KerML-Model-Interchange.json",
+      "path": "standards/artifacts/KerML-Model-Interchange.json",
+      "sha256": "c94b43f0f634902e9e1043498449fccde492b13bad1ccaed8289de7ecbf03bb6"
+    }
+  ]
+}

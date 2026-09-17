@@ -1,0 +1,16 @@
+[package]
+name = "agentique"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+agq-model.workspace = true
+agq-syntax.workspace = true
+agq-semantics.workspace = true
+agq-workspace.workspace = true
+agq-simulation.workspace = true
+agq-application.workspace = true
+agq-storage.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+chrono.workspace = true

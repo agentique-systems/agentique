@@ -1,0 +1,53 @@
+﻿{
+    "measured_at":  "2026-09-16T20:53:40.7014955Z",
+    "host":  {
+                 "architecture":  "AMD64",
+                 "os_version":  "10.0.19045",
+                 "node":  "v22.11.0",
+                 "os":  "Microsoft Windows 10 Home",
+                 "logical_processors":  12,
+                 "rustc":  "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+                 "installed_dimm_bytes":  17179869184,
+                 "physical_memory_bytes":  17093017600,
+                 "memory_basis":  "Win32_PhysicalMemory.Capacity sum for installed RAM; Win32_ComputerSystem.TotalPhysicalMemory for OS-usable RAM"
+             },
+    "process":  {
+                    "peak_working_set_bytes":  95035392,
+                    "method":  "Windows Process.PeakWorkingSet64 (actual operating-system high-water mark)",
+                    "samples":  512,
+                    "sampling_period_ms":  100,
+                    "exit_code":  0
+                },
+    "measurement":  {
+                        "committed_semantic_steps":  10000,
+                        "contended_pause_ack_ms":  10.5131,
+                        "contended_stop_ack_ms":  1.1613,
+                        "duration_ms":  53794.78309999999,
+                        "engine_build":  "0.1.0/7d6480ad66103fb73b44251bd4fd7d99df143ddd0eab177fdd910ba04b46b92b",
+                        "indexed_library_elements":  3467,
+                        "library_digest":  "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+                        "measurement":  "release binary, SQLite FULL synchronous; actual pause/stop requested while a background step holds the application mutex; safe-point bounds are separately derived from longest observed step",
+                        "pause_ack_ms":  0.4732,
+                        "pause_safe_point_bound_ms":  19.2139,
+                        "prepare_run_ms":  2396.2072000000003,
+                        "prepare_workspace_ms":  179.7457,
+                        "scenario_bytes":  1039168,
+                        "source_bytes":  22885,
+                        "step_ms":  {
+                                        "max":  18.7407,
+                                        "mean":  5.377501380138025,
+                                        "p95":  10.8136
+                                    },
+                        "stop_reason":  "step_limit",
+                        "stop_safe_point_bound_ms":  19.902,
+                        "trace_digest":  "019a5e7c5a691ff17d60f629a01b08da43e768baeda609d62fba7688efec8418",
+                        "trace_records":  19999,
+                        "user_elements":  1000
+                    },
+    "acceptance":  {
+                       "input_size_matches":  true,
+                       "pause_under_one_second":  true,
+                       "stop_under_one_second":  true,
+                       "host_sufficient":  true
+                   }
+}

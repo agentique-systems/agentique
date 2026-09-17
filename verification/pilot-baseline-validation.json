@@ -1,0 +1,196 @@
+{
+  "validator": "OMG SysML v2 pilot 0.59.0 / CheckMode.ALL",
+  "files": [
+    "models/AgentiqueArchitecture.sysml",
+    "models/AgentiqueBehaviour.sysml",
+    "models/AgentiqueRequirements.sysml",
+    "models/AgentiqueVerification.sysml",
+    "tests/fixtures/Controller.sysml",
+    "tests/fixtures/Parallel.sysml",
+    "tests/fixtures/Types.kerml"
+  ],
+  "issues": [
+    {
+      "file": "models/AgentiqueArchitecture.sysml",
+      "severity": "WARNING",
+      "code": "validateNamespaceDistinguishablity",
+      "message": "Duplicate of inherited member name 'accepted' from RequestLifecycle, StatePerformance",
+      "line": 34,
+      "column": 9,
+      "metaclass": "ExhibitStateUsage",
+      "name": "AgentiqueArchitecture::ModelService::requestLifecycle",
+      "direction": "null",
+      "redefines": []
+    },
+    {
+      "file": "models/AgentiqueBehaviour.sysml",
+      "severity": "WARNING",
+      "code": "validateNamespaceDistinguishablity",
+      "message": "Duplicate of inherited member name 'accepted' from StatePerformance",
+      "line": 20,
+      "column": 15,
+      "metaclass": "StateUsage",
+      "name": "AgentiqueBehaviour::RequestLifecycle::accepted",
+      "direction": "null",
+      "redefines": []
+    },
+    {
+      "file": "models/AgentiqueBehaviour.sysml",
+      "severity": "ERROR",
+      "code": "validateRedefinitionDirectionConformance",
+      "message": "Redefining feature must have a compatible direction",
+      "line": 24,
+      "column": 23,
+      "metaclass": "ReferenceUsage",
+      "name": "AgentiqueBehaviour::RequestLifecycle::beginCheck::payload",
+      "direction": "in",
+      "redefines": []
+    },
+    {
+      "file": "models/AgentiqueBehaviour.sysml",
+      "severity": "ERROR",
+      "code": "validateFeatureValueOverriding",
+      "message": "Cannot override a binding feature value",
+      "line": 25,
+      "column": 39,
+      "metaclass": "FeatureValue"
+    },
+    {
+      "file": "models/AgentiqueBehaviour.sysml",
+      "severity": "ERROR",
+      "code": "validateRedefinitionDirectionConformance",
+      "message": "Redefining feature must have a compatible direction",
+      "line": 29,
+      "column": 27,
+      "metaclass": "ReferenceUsage",
+      "name": "AgentiqueBehaviour::RequestLifecycle::acceptCheck::payload",
+      "direction": "in",
+      "redefines": []
+    },
+    {
+      "file": "models/AgentiqueBehaviour.sysml",
+      "severity": "ERROR",
+      "code": "validateFeatureValueOverriding",
+      "message": "Cannot override a binding feature value",
+      "line": 30,
+      "column": 41,
+      "metaclass": "FeatureValue"
+    },
+    {
+      "file": "models/AgentiqueBehaviour.sysml",
+      "severity": "ERROR",
+      "code": "validateRedefinitionDirectionConformance",
+      "message": "Redefining feature must have a compatible direction",
+      "line": 34,
+      "column": 27,
+      "metaclass": "ReferenceUsage",
+      "name": "AgentiqueBehaviour::RequestLifecycle::rejectCheck::payload",
+      "direction": "in",
+      "redefines": []
+    },
+    {
+      "file": "models/AgentiqueBehaviour.sysml",
+      "severity": "ERROR",
+      "code": "validateFeatureValueOverriding",
+      "message": "Cannot override a binding feature value",
+      "line": 35,
+      "column": 41,
+      "metaclass": "FeatureValue"
+    },
+    {
+      "file": "tests/fixtures/Controller.sysml",
+      "severity": "ERROR",
+      "code": "validateRedefinitionDirectionConformance",
+      "message": "Redefining feature must have a compatible direction",
+      "line": 18,
+      "column": 38,
+      "metaclass": "ReferenceUsage",
+      "name": "Controller::Mode::wake::payload",
+      "direction": "in",
+      "redefines": []
+    },
+    {
+      "file": "tests/fixtures/Controller.sysml",
+      "severity": "ERROR",
+      "code": "validateFeatureValueOverriding",
+      "message": "Cannot override a binding feature value",
+      "line": 18,
+      "column": 57,
+      "metaclass": "FeatureValue"
+    },
+    {
+      "file": "tests/fixtures/Controller.sysml",
+      "severity": "ERROR",
+      "code": "validateRedefinitionDirectionConformance",
+      "message": "Redefining feature must have a compatible direction",
+      "line": 19,
+      "column": 36,
+      "metaclass": "ReferenceUsage",
+      "name": "Controller::Mode::sleep::payload",
+      "direction": "in",
+      "redefines": []
+    },
+    {
+      "file": "tests/fixtures/Controller.sysml",
+      "severity": "ERROR",
+      "code": "validateFeatureValueOverriding",
+      "message": "Cannot override a binding feature value",
+      "line": 19,
+      "column": 55,
+      "metaclass": "FeatureValue"
+    },
+    {
+      "file": "tests/fixtures/Controller.sysml",
+      "severity": "ERROR",
+      "code": "validateRedefinitionDirectionConformance",
+      "message": "Redefining feature must have a compatible direction",
+      "line": 20,
+      "column": 37,
+      "metaclass": "ReferenceUsage",
+      "name": "Controller::Mode::retire::r",
+      "direction": "in",
+      "redefines": []
+    },
+    {
+      "file": "tests/fixtures/Controller.sysml",
+      "severity": "ERROR",
+      "code": "validateFeatureValueOverriding",
+      "message": "Cannot override a binding feature value",
+      "line": 20,
+      "column": 60,
+      "metaclass": "FeatureValue"
+    }
+  ],
+  "errors": 12,
+  "executed_at": "2026-09-16T20:47:16.388Z",
+  "command": {
+    "java": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\.cache\\jdk-21.0.12.1+1\\bin\\java.exe",
+    "args": [
+      "-Xmx2g",
+      "--class-path",
+      "C:\\Users\\phili\\github\\agentique-systems\\agentique\\.cache\\pilot-0.59.0\\share\\jupyter\\kernels\\sysml\\jupyter-sysml-kernel-0.59.0-all.jar",
+      "tools/ValidatePilot.java",
+      "C:\\Users\\phili\\github\\agentique-systems\\agentique\\.cache\\pilot-libraries-f03ae80164d700ef",
+      "verification/pilot-baseline-validation.json",
+      "models/AgentiqueArchitecture.sysml",
+      "models/AgentiqueBehaviour.sysml",
+      "models/AgentiqueRequirements.sysml",
+      "models/AgentiqueVerification.sysml",
+      "tests/fixtures/Controller.sysml",
+      "tests/fixtures/Parallel.sysml",
+      "tests/fixtures/Types.kerml"
+    ]
+  },
+  "exit_code": 1,
+  "jar_sha256": "7d6f1f2d555ddde2538a2b4f726709ba261567aa6c7eb172ad7db762d01efbaf",
+  "library_lock_sha256": "f03ae80164d700efbf5793456ee40a5e2ef118337c856c2ac4ca776b3922d1eb",
+  "sources": {
+    "models/AgentiqueArchitecture.sysml": "f2e8ec976b78d4325c30479d081837c3ba3b39a1808201f675d4d0eae50cb702",
+    "models/AgentiqueBehaviour.sysml": "bd708b87e4c721efebc9366c1a1536d95c030e42bbe56f877bccb701a25c3fcb",
+    "models/AgentiqueRequirements.sysml": "0e701c84629507457518c1eb335212c7c4a3178612f0ce42b3e0ade8418651bf",
+    "models/AgentiqueVerification.sysml": "c2851804a65745cc60262264825254c09dbbf3b1c33c01a7ecdc7fc9bf654c6f",
+    "tests/fixtures/Controller.sysml": "801be1493f9937a53e11b8113352d07fe84843e1e676070b67db983911174b76",
+    "tests/fixtures/Parallel.sysml": "296f98bed4f7719a0faa462b1bd298ea1a3a6b8e6061eaaffa9dc941d7792350",
+    "tests/fixtures/Types.kerml": "3ed57896e6e513b41d2285bf1ad34a7743514aa730fa3327f1979199ad91b49e"
+  }
+}

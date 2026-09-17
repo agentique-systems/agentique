@@ -1,0 +1,13 @@
+[package]
+name = "agq-workspace"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+agq-model.workspace = true
+agq-syntax.workspace = true
+agq-semantics.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+zip.workspace = true
+chrono.workspace = true

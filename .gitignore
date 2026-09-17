@@ -1,0 +1,9 @@
+/target/
+/node_modules/
+/console/dist/
+/.workspaces/
+/.cache/
+/test-results/
+/playwright-report/
+*.log
+.env

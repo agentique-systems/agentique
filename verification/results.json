@@ -1,0 +1,350 @@
+{
+  "format": "agentique-verification-run/0.1",
+  "completed_at": "2026-09-16T20:55:30.000Z",
+  "source_digest": "2fb00b79fb4f4ea27a91c8fd9f50bc7b38eca769ab50e0c3f7aaa7f937fa8d96",
+  "source_hashes": {
+    "crates/application/build.rs": "d88c6dea69ae63eee8dea02ced89950c1bff096c3c929da3050ec135d7711a2c",
+    "crates/application/Cargo.toml": "c320ce910cfe545c62ea87f010bdcec57aceb190b5052aaf576ce072dfe9f523",
+    "crates/application/src/lib.rs": "3addda76618c13339fb7214eed7072c810980ff14ee5b37e083e6d08cf8c2367",
+    "crates/application/tests/cancellation.rs": "ff6558448f6927571cc775721814894ab13e4d3b2651798dae08d867fe91c81f",
+    "crates/application/tests/traceability.rs": "b1b3940f58c3e8aad0e31dc26c7fb180cf973c403a25a0cdbb14db8d8d9e6281",
+    "crates/cli/Cargo.toml": "afe549bacb0f565f60df3960ac1494fa0491a1a8bce4b3ddf8e61a859cc0181e",
+    "crates/cli/examples/benchmark.rs": "1e197d9758047e6b8a449e1ded932ba11a9d6a8fe25c297f78e068699f1791b0",
+    "crates/cli/src/main.rs": "5575f72ecd729ac85fc321dd24d2ed7b744b940ca8b1a58490dd1c1b464eab47",
+    "crates/model/Cargo.toml": "1738ae3646b241442e4e521dd7cc0991f2495d7925c848d21c02d71d44636ce4",
+    "crates/model/src/lib.rs": "9c62ecb29f1c5ab8bd7860b0b7c024cd468333258420ac344098948a5a3ce6f7",
+    "crates/model/src/work.rs": "13cdfaa1d95d2c201263f315d1afc5ae4ef3675734bac79b6c3187a56639b2f3",
+    "crates/semantics/build.rs": "f2ffa497a22c0016e59a02e7f270fd42b451ccf8d43e514b6ebff572a6cfb94e",
+    "crates/semantics/Cargo.toml": "965a3a920278b8539a98c6bd7a83870eb709f9c23a2e8a8de7c4ea8a412478a8",
+    "crates/semantics/src/expansion.rs": "bcb1ae58e3602c3e0c09fdcaefa4db0f0f4ff70e07e77182a67c3e8ed22c4420",
+    "crates/semantics/src/lib.rs": "648d46cf1eb1f258d32f10002e98f6eabc83d80bbb2b9a1d82fbbb22c68470c7",
+    "crates/server/Cargo.toml": "e09222fdf0e8a7fa25546571c25d511579a1f3e4c1afd3fb58c22e692db93a19",
+    "crates/server/src/jobs.rs": "fb2490b49a9faf8993484bec95e2678d607e6e7c344665995440b0267ffafad2",
+    "crates/server/src/main.rs": "6f524bd2b56f59697e7992246b212b1c1f38bf1bd610907eeda762b56f967bb5",
+    "crates/server/src/model_api.rs": "1cc60c108deaeb10a12f5e2e993e3d2601a7f92640c1e222cb6ed848b5805322",
+    "crates/simulation/Cargo.toml": "e5cf18e15e5118055ad29b5928335a8561d3ee0baada8f009e2dfc80b04b9b3e",
+    "crates/simulation/src/lib.rs": "fe69df85237ac33e8f8840055fb65e332b97e1a0a5a8e4d95cf70b484bbafb32",
+    "crates/simulation/tests/contract.rs": "84aac28041bda8f5fcd6f4fa469be08d02252952a699478e0957e48999228984",
+    "crates/syntax/Cargo.toml": "ea609a0bc4cccd47117e9d66c21e638666c3028b594dc56cc80df76fb87a5444",
+    "crates/syntax/src/lib.rs": "ebc6a65997829f7016e114438db010e66df9a1495b064d1f1515836c999aee48",
+    "crates/workspace/Cargo.toml": "ea38936d9a11d60452983f86d2efca818b14c8caf6a4f49c5b92088644562a29",
+    "crates/workspace/src/lib.rs": "30d643ce3d3d66ec8d0acd6e56d559a82fcc6e39b74515a2386b5572017cc99d",
+    "crates/workspace/tests/editing.rs": "6a2c3062de2a48f4d68057ffbd4caa2e897f7b91e9ef18fc9836cd9c709703a0",
+    "adapters/assistant/Cargo.toml": "28816989015924ed96793fa45b6fe2ee121af889ecf07602c501ea2a3e847f2e",
+    "adapters/assistant/src/lib.rs": "ece3292ad236eb71d8c4d17b95093ffbe0fe8a319449531d9372860dd47615bc",
+    "adapters/assistant/tests/provider.rs": "edffbd3cd5b95952c1a15e5633035a7d1faf3ad4dc40bffb1c8f08f52d62034d",
+    "adapters/storage/Cargo.toml": "c4df46e66cc6c6131fffd1b37f962304d44ecc28c3e61cb83531013c38be4e42",
+    "adapters/storage/src/lib.rs": "67baf9c610df159a4243ecb462c28bf5d11983b68d55d1ffce92b4885f45b5da",
+    "adapters/storage/tests/reliability.rs": "ee7c930182f511134cda497ac5da9cc0481ad425b973ed299f9f57f2dc36d60f",
+    "console/index.html": "54b574ebe7000d3ff850e2a05f9886c34c9b37f46d6f82deeb889b39be8c2e59",
+    "console/src/BehaviorGraph.tsx": "2af7a4ca1b52029d9939654ed2d31e01d00cecfa514ebd750125f0158aab9540",
+    "console/src/main.tsx": "4a4ff90382082d95e5d6d5f1abd60fcca36f20091d88eb23bde68b80b3c59466",
+    "console/src/ModelEdits.tsx": "744cdf82932e486567e2574526d1601dbf6959f206cbffd2ca91bd7eb20001a9",
+    "console/src/style.css": "d4a7ed1c4ee532af11832841c27b7acf7b5d8c390088c246483679b72db4096d",
+    "console/tsconfig.json": "c09263efe51eb6cf96479b27e3afcf1a9c8b16beee1a6997453ff2b74f63bb8e",
+    "console/vite.config.ts": "20507082fe9de30590c0aa3d655b30aeda22053f320494b14a526c897edde33a",
+    "tools/baseline.mjs": "6c3009c9cfabdb1cb1d3c74da8adea0cf308ce07021c600369fa7b38ba38528c",
+    "tools/benchmark.ps1": "3c52eff5cf54bc51050ab97bb1b22ca85768c8564736df2bfe2dd88575d140b0",
+    "tools/extract.mjs": "a74757fdde7b6c130aaee811875c2b8668185c75fcc810fc433c1830f50c6d38",
+    "tools/extract.test.mjs": "a8ed4a20488e22e6798c2fc7313585d6b84082a9757f928c21d0b505879fa4d9",
+    "tools/library-release.mjs": "968c26b08f15b986723763de6553b8c03e37fc64e0d0e47a1f958f3c4e25b043",
+    "tools/pilot-setup.mjs": "bd8042db9863d6fccbfb6ca6351423207e35d42cbc1091cd81aeecc9b1eb646f",
+    "tools/pilot-validate.mjs": "8fdf7a03bf223ff636aaa001b1a1fa7c859cbb3a898d00398f37a665dcd063cd",
+    "tools/process-test.mjs": "53a3b5c8ff465d4313c3701031f6d0fc4eeddd556be43230241631bb5ec4e9e9",
+    "tools/registers.mjs": "49a50652592fd2b641da38dfaa619783e710fac9600b01a92c652c623ed02f6e",
+    "tools/registers.test.mjs": "53f0da3ce078c893eed566666a236c7921376285c7dd0542a9fbbe97acd989af",
+    "tools/report.mjs": "1f7917f64f00015fc85c858849d2ad3f8153a37fa28cd1ac9b8346a83f2e8991",
+    "tools/standards-check.mjs": "2e56607b33b87c463c5df2b67d27773c52ce33bb9117deaabe079a58958af7d7",
+    "tools/ValidatePilot.java": "90deb44483efff1a165d546bf616337326df5311e1c48fb312f61e394593328d",
+    "tools/verify.mjs": "47a4cb762119673f994779ca58ded0c0650389bf6b8c0ea0b432fd55a8721018",
+    "tests/browser/console.spec.ts": "1a60dd16bf33ac17e843d30fe31af95b90fd142e35be7cd9889fe6a003bb1874",
+    "tests/fixtures/Controller.sysml": "801be1493f9937a53e11b8113352d07fe84843e1e676070b67db983911174b76",
+    "tests/fixtures/Parallel.sysml": "296f98bed4f7719a0faa462b1bd298ea1a3a6b8e6061eaaffa9dc941d7792350",
+    "tests/fixtures/Types.kerml": "3ed57896e6e513b41d2285bf1ad34a7743514aa730fa3327f1979199ad91b49e",
+    "models/AgentiqueArchitecture.sysml": "f2e8ec976b78d4325c30479d081837c3ba3b39a1808201f675d4d0eae50cb702",
+    "models/AgentiqueBehaviour.sysml": "bd708b87e4c721efebc9366c1a1536d95c030e42bbe56f877bccb701a25c3fcb",
+    "models/AgentiqueRequirements.sysml": "0e701c84629507457518c1eb335212c7c4a3178612f0ce42b3e0ade8418651bf",
+    "models/AgentiqueVerification.sysml": "c2851804a65745cc60262264825254c09dbbf3b1c33c01a7ecdc7fc9bf654c6f",
+    "scenarios/accepted.json": "6007f60e6b49b57e204a14dbefb0760618e68e617a19e4cbfab76d7b3547c755",
+    "scenarios/rejected.json": "17839aa15f97265483202dc0d9cf22e387440793012a2f6fb92096e47d04b1ad",
+    "contracts/engine-operations.json": "31d07dd33acd29357eb8e94d63b6168314285b59522f8f8ad5d759aeddd2c12e",
+    "docs/architecture.md": "7bfc0ce38cbacbab07fe9df43cd9bdd6c552fa0b84bff6d4498889e185d35b08",
+    "docs/dependencies.md": "2579bc83cb716e2ca588924f8f8c66c9ee75a0686279f11ed16d42dfdecc3e7c",
+    "docs/standards-discrepancies.md": "36b02a7daac46f24356d7c05d00bc4d45395a510957b547be8995cbcab02f770",
+    "Cargo.toml": "8ef23ece8267a6f654e0a91dcad9d00e338fdf9dc43fc603762b407fddfe998c",
+    "Cargo.lock": "2dceef134582cfccb0c74bef801d20f57128004bcba6d22075aa9f8c6057fc79",
+    "package.json": "11c467d50ffe82c92b4f81a27a9796a9aab5e54a97d53063a8c14c17dcc08b36",
+    "package-lock.json": "7b87a7e558512fd6132378a523bf946d75cc010a541496b9dd70ca78c8dbb6fc",
+    "rust-toolchain.toml": "d0c46cd3a68028a2d8bad683c5016ddafb0218922f8b2bb09e7fbae0ee73cf82",
+    "standards/lock.json": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+    "standards/baseline-lock.json": "4ebbe41838f133ceffdb794f56451123e591aff58f87474c137307086ae1108b",
+    "standards/coverage.json": "24abd413795122b69194aff2d0774c47f78720f38b244948ca905500b025258f",
+    "requirements.json": "37bcf2e9674d5af98501e1d85d71709f07302efa0cc9874f8b16c9cc8ef21511"
+  },
+  "git_commit": "HEAD",
+  "environment": {
+    "os": "Windows_NT",
+    "release": "10.0.19045",
+    "architecture": "x64",
+    "logical_cpus": 12,
+    "physical_memory_bytes": 17093017600,
+    "node": "v22.11.0",
+    "rustc": "rustc 1.92.0 (ded5c06cf 2025-12-08)"
+  },
+  "result": "incomplete",
+  "automated_checks_excluding_documented_validator_disagreement": "pass",
+  "records": [
+    {
+      "id": "registers",
+      "executable": "node",
+      "args": [
+        "tools/registers.mjs"
+      ],
+      "started_at": "2026-09-16T20:54:02.459Z",
+      "duration_ms": 115,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/registers.txt"
+    },
+    {
+      "id": "extraction",
+      "executable": "node",
+      "args": [
+        "tools/extract.mjs",
+        "--check"
+      ],
+      "started_at": "2026-09-16T20:54:02.574Z",
+      "duration_ms": 67,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/extraction.txt"
+    },
+    {
+      "id": "standards",
+      "executable": "node",
+      "args": [
+        "tools/standards-check.mjs"
+      ],
+      "started_at": "2026-09-16T20:54:02.641Z",
+      "duration_ms": 185,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/standards.txt"
+    },
+    {
+      "id": "rust-format",
+      "executable": "cargo",
+      "args": [
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started_at": "2026-09-16T20:54:02.827Z",
+      "duration_ms": 299,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/rust-format.txt"
+    },
+    {
+      "id": "rust-clippy",
+      "executable": "cargo",
+      "args": [
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started_at": "2026-09-16T20:54:03.126Z",
+      "duration_ms": 1746,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/rust-clippy.txt"
+    },
+    {
+      "id": "rust-tests",
+      "executable": "cargo",
+      "args": [
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "started_at": "2026-09-16T20:54:04.873Z",
+      "duration_ms": 12542,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/rust-tests.txt"
+    },
+    {
+      "id": "rust-build",
+      "executable": "cargo",
+      "args": [
+        "build",
+        "--workspace",
+        "--locked"
+      ],
+      "started_at": "2026-09-16T20:54:17.416Z",
+      "duration_ms": 2523,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/rust-build.txt"
+    },
+    {
+      "id": "frontend-format",
+      "executable": "npm",
+      "args": [
+        "run",
+        "format:check"
+      ],
+      "started_at": "2026-09-16T20:54:19.939Z",
+      "duration_ms": 967,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/frontend-format.txt"
+    },
+    {
+      "id": "frontend-types",
+      "executable": "npm",
+      "args": [
+        "run",
+        "check"
+      ],
+      "started_at": "2026-09-16T20:54:20.906Z",
+      "duration_ms": 1308,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/frontend-types.txt"
+    },
+    {
+      "id": "frontend-build",
+      "executable": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "started_at": "2026-09-16T20:54:22.215Z",
+      "duration_ms": 1400,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/frontend-build.txt"
+    },
+    {
+      "id": "engineering-tests",
+      "executable": "npm",
+      "args": [
+        "test"
+      ],
+      "started_at": "2026-09-16T20:54:23.616Z",
+      "duration_ms": 423,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/engineering-tests.txt"
+    },
+    {
+      "id": "independent-starter",
+      "executable": "node",
+      "args": [
+        "node_modules/sysml-validate/out/main.js",
+        "models/",
+        "--library",
+        "standards/libraries-2026-04",
+        "--no-config",
+        "--format",
+        "json",
+        "--out",
+        "verification/independent-validation.json"
+      ],
+      "started_at": "2026-09-16T20:54:24.039Z",
+      "duration_ms": 4649,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/independent-starter.txt"
+    },
+    {
+      "id": "independent-fixtures",
+      "executable": "node",
+      "args": [
+        "node_modules/sysml-validate/out/main.js",
+        "tests/fixtures/",
+        "--library",
+        "standards/libraries-2026-04",
+        "--no-config",
+        "--format",
+        "json",
+        "--out",
+        "verification/independent-fixtures.json"
+      ],
+      "started_at": "2026-09-16T20:54:28.688Z",
+      "duration_ms": 4459,
+      "exit_code": 1,
+      "result": "fail",
+      "output": "verification/logs/independent-fixtures.txt"
+    },
+    {
+      "id": "official-pilot",
+      "executable": "node",
+      "args": [
+        "tools/pilot-validate.mjs"
+      ],
+      "started_at": "2026-09-16T20:54:33.147Z",
+      "duration_ms": 5995,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/official-pilot.txt"
+    },
+    {
+      "id": "browser-tests",
+      "executable": "npm",
+      "args": [
+        "run",
+        "test:e2e"
+      ],
+      "started_at": "2026-09-16T20:54:39.143Z",
+      "duration_ms": 47152,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/browser-tests.txt"
+    },
+    {
+      "id": "process-recovery",
+      "executable": "node",
+      "args": [
+        "tools/process-test.mjs"
+      ],
+      "started_at": "2026-09-16T20:55:26.296Z",
+      "duration_ms": 1971,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/process-recovery.txt"
+    },
+    {
+      "id": "headless-demo",
+      "executable": "target\\debug\\agentique.exe",
+      "args": [
+        "--workspace",
+        ".workspaces/verified-demo-3d896748-9620-4265-99ef-d0fb4eaf1186.db",
+        "demo"
+      ],
+      "started_at": "2026-09-16T20:55:28.268Z",
+      "duration_ms": 1732,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/headless-demo.txt"
+    },
+    {
+      "id": "update-registers",
+      "executable": "node",
+      "args": [
+        "tools/registers.mjs"
+      ],
+      "started_at": "2026-09-16T20:55:30.118Z",
+      "duration_ms": 110,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/logs/update-registers.txt"
+    }
+  ]
+}

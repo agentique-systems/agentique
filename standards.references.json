@@ -1,0 +1,87 @@
+{
+  "schema_version": "agentique-standards-references/0.1",
+  "purpose": "Publication reference manifest. Not a resolved dependency lock; artifact hashes and transitive library dependencies must be established at M0.",
+  "sources": [
+    {
+      "id": "kerml-spec",
+      "title": "KerML 1.0",
+      "document_id": "formal/2026-03-01",
+      "source": "https://www.omg.org/spec/KerML/1.0/PDF",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    },
+    {
+      "id": "sysml-spec",
+      "title": "SysML 2.0, Part 1",
+      "document_id": "formal/2026-03-02",
+      "source": "https://www.omg.org/spec/SysML/2.0/Language/PDF",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    },
+    {
+      "id": "api-spec",
+      "title": "Systems Modeling API and Services 1.0",
+      "document_id": "formal/2026-03-04",
+      "source": "https://www.omg.org/spec/SystemsModelingAPI/1.0/PDF",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    },
+    {
+      "id": "kerml-semantic-library",
+      "title": "KerML Semantic Library",
+      "document_id": "ptc/25-04-17",
+      "source": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    },
+    {
+      "id": "kerml-data-library",
+      "title": "KerML Data Type Library",
+      "document_id": "ptc/25-04-18",
+      "source": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    },
+    {
+      "id": "kerml-function-library",
+      "title": "KerML Function Library",
+      "document_id": "ptc/25-04-19",
+      "source": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    },
+    {
+      "id": "sysml-systems-library",
+      "title": "SysML Systems Library",
+      "document_id": "ptc/25-04-24",
+      "source": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    },
+    {
+      "id": "api-openapi",
+      "title": "Systems Modeling OpenAPI",
+      "document_id": "ptc/25-02-30",
+      "source": "https://www.omg.org/spec/SystemsModelingAPI/20250201/OpenAPI.json",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    },
+    {
+      "id": "api-schema",
+      "title": "Systems Modeling schemas",
+      "document_id": "ptc/25-02-31",
+      "source": "https://www.omg.org/spec/SystemsModelingAPI/20250201/Schema.json",
+      "reference_status": "publication reference checked on OMG website, 2026-09-16",
+      "sha256": null,
+      "artifact_status": "download and checksum required at milestone M0"
+    }
+  ]
+}

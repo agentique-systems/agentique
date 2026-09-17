@@ -1,0 +1,11 @@
+[package]
+name = "agq-simulation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+agq-model.workspace = true
+agq-semantics.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+num-bigint.workspace = true

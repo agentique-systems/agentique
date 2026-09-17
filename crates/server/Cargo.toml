@@ -1,0 +1,19 @@
+[package]
+name = "agq-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+agq-model.workspace = true
+agq-application.workspace = true
+agq-storage.workspace = true
+agq-assistant.workspace = true
+agq-workspace.workspace = true
+agq-simulation.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+axum.workspace = true
+tower-http.workspace = true
+clap.workspace = true
+chrono.workspace = true

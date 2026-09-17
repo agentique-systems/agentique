@@ -1,0 +1,15 @@
+* text=auto eol=lf
+*.pdf -text
+*.kpar -text
+*.png -text
+# Preserve exact supplied/locked engineering artifacts, including line endings.
+Agentique-Specification-v0.1.html -text
+models/** -text
+scenarios/** -text
+contracts/engine-operations.json -text
+requirements.json -text
+standards.references.json -text
+verification/coverage-plan.json -text
+standards/libraries/** -text
+standards/libraries-2026-04/** -text
+standards/artifacts/** -text
