@@ -573,6 +573,35 @@ impl MetamodelRegistry {
         })
     }
 
+    /// Whether one slot can be the sole canonical storage surface for this end.
+    /// Derived slots are read-only projections. Authored association slots require
+    /// a unique class end with an unordered 0..* association-owned, non-navigable
+    /// opposite. No independently writable inverse, inverse bound, or inverse
+    /// order then needs a link store. All other association shapes stay unsupported.
+    pub fn supports_slot_storage(&self, property: PropertyId) -> Result<bool, MetamodelError> {
+        let p = self.property(property)?;
+        if !matches!(p.owner, PropertyOwner::Class(_)) {
+            return Ok(false);
+        }
+        if p.derived || p.association.is_none() {
+            return Ok(true);
+        }
+        if !p.unique {
+            return Ok(false);
+        }
+        for opposite in &p.opposite_ends {
+            let q = self.property(*opposite)?;
+            if !matches!(q.owner, PropertyOwner::Association(_))
+                || self.is_navigable(q.id)?
+                || q.ordered
+                || q.multiplicity != Multiplicity::MANY
+            {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
     /// Exact enumeration domain and literal identities.
     pub fn enumeration(&self, id: EnumerationId) -> Result<&EnumerationDescriptor, MetamodelError> {
         self.enumerations

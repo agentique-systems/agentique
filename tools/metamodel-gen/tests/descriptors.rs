@@ -424,7 +424,7 @@ fn cli_check_detects_each_stale_generated_file_without_writing() {
     };
     assert!(run(false).status.success());
     assert!(run(true).status.success());
-    for file in [RUST_PATH, GOLDEN_PATH] {
+    for file in [RUST_PATH, GOLDEN_PATH, agq_metamodel_gen::typed_views::PATH] {
         let path = temp.path().join(file);
         let original = fs::read(&path).unwrap();
         fs::write(&path, b"stale\n").unwrap();

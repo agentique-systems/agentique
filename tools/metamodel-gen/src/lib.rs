@@ -6,6 +6,7 @@ pub mod descriptors;
 pub mod ir;
 pub mod pipeline;
 mod profile;
+pub mod typed_views;
 pub mod xmi;
 
 pub type Result<T> = std::result::Result<T, String>;

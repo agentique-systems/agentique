@@ -419,5 +419,10 @@ pub fn artifacts(bundle: &Bundle) -> Result<BTreeMap<&'static str, Vec<u8>>> {
     let set = descriptor_set(bundle, &selected)?;
     let manifest = canonical_json(&golden(bundle, &selected))?;
     let rust = rust_source(bundle, &selected, &set, &manifest).into_bytes();
-    Ok(BTreeMap::from([(RUST_PATH, rust), (GOLDEN_PATH, manifest)]))
+    let views = crate::typed_views::source(bundle, &selected, &set, &manifest)?.into_bytes();
+    Ok(BTreeMap::from([
+        (RUST_PATH, rust),
+        (GOLDEN_PATH, manifest),
+        (crate::typed_views::PATH, views),
+    ]))
 }

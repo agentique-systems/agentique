@@ -1,0 +1,92 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-17T19:25:22.865Z",
+    "durationMs": 503,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "started": "2026-09-17T19:25:23.369Z",
+    "durationMs": 1696,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo test --workspace",
+    "started": "2026-09-17T19:25:25.066Z",
+    "durationMs": 26484,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "rust-tests.txt"
+  },
+  {
+    "command": "npm run check",
+    "started": "2026-09-17T19:25:51.550Z",
+    "durationMs": 2912,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "frontend-check.txt"
+  },
+  {
+    "command": "npm run build",
+    "started": "2026-09-17T19:25:54.463Z",
+    "durationMs": 1980,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "frontend-build.txt"
+  },
+  {
+    "command": "npm test",
+    "started": "2026-09-17T19:25:56.443Z",
+    "durationMs": 489,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "node-tests.txt"
+  },
+  {
+    "command": "npm run test:e2e",
+    "started": "2026-09-17T19:25:56.932Z",
+    "durationMs": 53224,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "browser-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+    "started": "2026-09-17T19:26:50.156Z",
+    "durationMs": 1348,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "generated.txt"
+  },
+  {
+    "command": "cargo doc --no-deps -p agq-kerml -p agq-kernel",
+    "started": "2026-09-17T19:26:51.505Z",
+    "durationMs": 2094,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "rustdoc.txt"
+  },
+  {
+    "command": "cargo tree -p agq-kerml -e normal",
+    "started": "2026-09-17T19:26:53.599Z",
+    "durationMs": 166,
+    "exitCode": 0,
+    "signal": null,
+    "error": null,
+    "log": "dependencies.txt"
+  }
+]

@@ -1,0 +1,7 @@
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/metamodel.json (3038685 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/root_core.rs (214474 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/typed_views.rs (353151 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/root-core.golden.json (1111835 bytes).
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.60s
+     Running `target\debug\metamodel-gen.exe --check`
