@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/kernel", "crates/kerml", "crates/model", "crates/syntax", "crates/semantics", "crates/workspace", "crates/simulation", "crates/application", "adapters/storage", "adapters/assistant", "crates/server", "crates/cli", "tools/metamodel-gen"]
+members = ["crates/kernel", "crates/kerml", "crates/kerml-semantics", "crates/model", "crates/syntax", "crates/semantics", "crates/workspace", "crates/simulation", "crates/application", "adapters/storage", "adapters/assistant", "crates/server", "crates/cli", "tools/metamodel-gen"]
 resolver = "2"
 
 [workspace.package]
@@ -11,6 +11,7 @@ license = "Apache-2.0"
 agq-model = { path = "crates/model" }
 agq-syntax = { path = "crates/syntax" }
 agq-semantics = { path = "crates/semantics" }
+agq-kerml-semantics = { path = "crates/kerml-semantics" }
 agq-workspace = { path = "crates/workspace" }
 agq-simulation = { path = "crates/simulation" }
 agq-application = { path = "crates/application" }

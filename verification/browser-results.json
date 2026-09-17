@@ -62,7 +62,7 @@
     "version": "1.63.0",
     "workers": 1,
     "webServer": {
-      "command": "cargo run -p agq-server -- --port 7342 --workspace .workspaces/e2e-8cac81c2-e285-494b-96fa-67b007d04c2d.db",
+      "command": "cargo run -p agq-server -- --port 7342 --workspace .workspaces/e2e-93fe85dc-a730-4c2b-977e-99c4119ce3e9.db",
       "url": "http://127.0.0.1:7342",
       "timeout": 120000,
       "reuseExistingServer": false,
@@ -95,12 +95,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 17691,
+                  "duration": 18324,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-09-16T20:54:43.733Z",
+                  "startTime": "2026-09-17T19:39:39.152Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -129,12 +129,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 17607,
+                  "duration": 20605,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-09-16T20:55:01.513Z",
+                  "startTime": "2026-09-17T19:39:57.564Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -163,12 +163,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2077,
+                  "duration": 2265,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-09-16T20:55:19.129Z",
+                  "startTime": "2026-09-17T19:40:18.180Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -197,12 +197,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 4838,
+                  "duration": 5166,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-09-16T20:55:21.215Z",
+                  "startTime": "2026-09-17T19:40:20.455Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -220,8 +220,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-09-16T20:54:40.050Z",
-    "duration": 46219.498999999996,
+    "startTime": "2026-09-17T19:39:36.674Z",
+    "duration": 49163.427,
     "expected": 4,
     "skipped": 0,
     "unexpected": 0,

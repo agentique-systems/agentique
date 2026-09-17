@@ -59,6 +59,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-kerml-semantics"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml",
+ "agq-kernel",
+]
+
+[[package]]
 name = "agq-kernel"
 version = "0.1.0"
 dependencies = [

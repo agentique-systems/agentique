@@ -1,0 +1,10 @@
+[package]
+name = "agq-kerml-semantics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pure, evidence-bearing KerML semantic queries over immutable snapshots"
+
+[dependencies]
+agq-kernel = { path = "../kernel" }
+agq-kerml = { path = "../kerml" }
