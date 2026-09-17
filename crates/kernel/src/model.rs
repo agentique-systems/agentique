@@ -372,6 +372,10 @@ impl Snapshot {
                     }
                     Arc::make_mut(record).slots.remove(property);
                 }
+                Change::SetOrigin { id, origin } => {
+                    let record = records.get_mut(id).ok_or(ModelError::UnknownElement(*id))?;
+                    Arc::make_mut(record).origin = Origin::Declared(origin.clone());
+                }
             }
         }
         let model = ModelView::build(self.model().registry.clone(), records)?;
@@ -390,6 +394,10 @@ impl Snapshot {
 
 #[derive(Debug)]
 enum Change {
+    SetOrigin {
+        id: ElementId,
+        origin: DeclaredOrigin,
+    },
     Create {
         id: ElementId,
         metaclass: MetaclassId,
@@ -419,6 +427,13 @@ pub struct ChangeSet {
     changes: Vec<Change>,
 }
 impl ChangeSet {
+    /// Update evidence for an existing declaration without changing its identity.
+    /// Older snapshots keep their original evidence.
+    pub fn set_origin(&mut self, id: ElementId, origin: DeclaredOrigin) -> &mut Self {
+        self.revision = RevisionId::new();
+        self.changes.push(Change::SetOrigin { id, origin });
+        self
+    }
     /// Revision this transaction was created from; application also checks exact base identity.
     pub fn base_revision(&self) -> RevisionId {
         self.base.revision()

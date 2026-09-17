@@ -1,0 +1,13 @@
+[package]
+name = "agq-kerml-text"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "KerML source revisions, conservative identity and normative kernel lowering"
+
+[dependencies]
+agq-kernel = { path = "../kernel" }
+agq-kerml = { path = "../kerml" }
+agq-kerml-semantics.workspace = true
+agq-kerml-syntax = { path = "../kerml-syntax" }
+thiserror.workspace = true

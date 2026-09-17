@@ -1,7 +1,7 @@
 //! Evidence is separate from semantic identity and from modeled properties.
 use crate::{
-    DocumentId, ElementId, GeneratorId, LibraryId, PropertyId, RuleId, SyntaxNodeId,
-    TransformationId,
+    DocumentId, ElementId, GeneratorId, LibraryId, PropertyId, RuleId, SourceRevisionId,
+    SyntaxNodeId, TransformationId,
 };
 use std::collections::BTreeSet;
 
@@ -40,11 +40,13 @@ pub struct InvalidByteRange {
 /// Source evidence without an AST dependency. Document bounds are checked upstream.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceOrigin {
-    /// Document identity allocated by a future source store.
+    /// Document identity allocated by the source store.
     pub document: DocumentId,
+    /// Exact immutable source revision to which the byte range belongs.
+    pub revision: SourceRevisionId,
     /// Location within that source document.
     pub range: ByteRange,
-    /// Optional identity maintained by a future syntax layer.
+    /// Optional identity maintained by the syntax layer.
     pub syntax_node: Option<SyntaxNodeId>,
 }
 

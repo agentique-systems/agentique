@@ -1,0 +1,82 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-17T20:33:11.695Z",
+    "durationMs": 537,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "npm run check",
+    "started": "2026-09-17T20:33:11.707Z",
+    "durationMs": 2819,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-check.txt"
+  },
+  {
+    "command": "npm run build",
+    "started": "2026-09-17T20:33:14.527Z",
+    "durationMs": 3378,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-build.txt"
+  },
+  {
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "started": "2026-09-17T20:33:12.232Z",
+    "durationMs": 5936,
+    "exitCode": 0,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "npm test",
+    "started": "2026-09-17T20:33:17.906Z",
+    "durationMs": 523,
+    "exitCode": 0,
+    "signal": null,
+    "log": "node-tests.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-17T20:33:18.431Z",
+    "durationMs": 563,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "cargo test --workspace",
+    "started": "2026-09-17T20:33:18.169Z",
+    "durationMs": 32299,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rust-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+    "started": "2026-09-17T20:33:50.469Z",
+    "durationMs": 5951,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generated.txt"
+  },
+  {
+    "command": "cargo tree -p agq-kerml-text -p agq-kerml-semantics -p agq-kernel --edges normal",
+    "started": "2026-09-17T20:33:56.421Z",
+    "durationMs": 186,
+    "exitCode": 0,
+    "signal": null,
+    "log": "dependencies.txt"
+  },
+  {
+    "command": "npm run test:e2e",
+    "started": "2026-09-17T20:33:56.610Z",
+    "durationMs": 53016,
+    "exitCode": 0,
+    "signal": null,
+    "log": "browser-tests.txt"
+  }
+]

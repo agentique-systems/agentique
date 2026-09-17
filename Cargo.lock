@@ -68,6 +68,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-kerml-syntax"
+version = "0.1.0"
+dependencies = [
+ "agq-kernel",
+ "thiserror",
+]
+
+[[package]]
+name = "agq-kerml-text"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml",
+ "agq-kerml-semantics",
+ "agq-kerml-syntax",
+ "agq-kernel",
+ "thiserror",
+]
+
+[[package]]
 name = "agq-kernel"
 version = "0.1.0"
 dependencies = [
