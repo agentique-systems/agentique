@@ -103,6 +103,7 @@ pub struct ReferenceOccurrence {
 
 #[derive(Clone, Debug, Default)]
 struct Indexes {
+    inverse_slots: BTreeMap<(ElementId, PropertyId), Slot>,
     exact_class: BTreeMap<MetaclassId, BTreeSet<ElementId>>,
     by_supertype: BTreeMap<MetaclassId, BTreeSet<ElementId>>,
     incoming: BTreeMap<ElementId, Vec<ReferenceOccurrence>>,
@@ -141,6 +142,22 @@ impl ModelView {
             for (&property, slot) in &record.slots {
                 for (position, value) in slot.value.values().enumerate() {
                     if let Value::Reference(target) = value {
+                        if let Some(inverse) = registry.scalar_inverse(property)? {
+                            let slot = Slot {
+                                value: SlotValue::Scalar(Value::Reference(record.id)),
+                                origin: slot.origin.clone(),
+                            };
+                            if indexes
+                                .inverse_slots
+                                .insert((*target, inverse), slot)
+                                .is_some()
+                            {
+                                return Err(ModelError::InverseMultiplicity {
+                                    element: *target,
+                                    property: inverse,
+                                });
+                            }
+                        }
                         let occurrence = ReferenceOccurrence {
                             source: record.id,
                             property,
@@ -212,6 +229,13 @@ impl ModelView {
     /// References sorted by property, then value position.
     pub fn outgoing(&self, id: ElementId) -> impl Iterator<Item = &ReferenceOccurrence> {
         self.indexes.outgoing.get(&id).into_iter().flatten()
+    }
+    /// Stored slot or reconstructible scalar association navigation. Inverse
+    /// projections are never independently writable and are not record slots.
+    pub fn navigation_slot(&self, element: ElementId, property: PropertyId) -> Option<&Slot> {
+        self.element(element)?
+            .slot(property)
+            .or_else(|| self.indexes.inverse_slots.get(&(element, property)))
     }
 }
 
@@ -453,6 +477,11 @@ impl ChangeSet {
 /// Structural validation failure, preserving semantic identifiers and value shape.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum ModelError {
+    #[error("association inverse {element}/{property} has more than one source")]
+    InverseMultiplicity {
+        element: ElementId,
+        property: PropertyId,
+    },
     #[error(
         "property {0} requires canonical link storage beyond the supported single-slot association shape"
     )]

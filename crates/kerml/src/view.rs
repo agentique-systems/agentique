@@ -250,7 +250,7 @@ impl<'m, T> Values<'m, T> {
 // The private bound intentionally seals the set of supported scalar projections.
 #[allow(private_bounds)]
 impl<'m, T: Decode<'m>> Values<'m, T> {
-    pub fn iter(&self) -> impl Iterator<Item = T> + 'm {
+    pub fn iter(&self) -> impl Iterator<Item = T> + 'm + use<'m, T> {
         self.value
             .values()
             .map(|v| T::decode(v).expect("eagerly checked immutable slot"))
@@ -326,10 +326,10 @@ pub(crate) mod read {
                 expected: kind,
             });
         }
-        if !registry.supports_slot_storage(p.id)? {
+        if !registry.supports_slot_storage(p.id)? && registry.inverse_storage(p.id)?.is_none() {
             return Err(ViewError::UnsupportedAssociationStorage(p.id));
         }
-        let value = record.slot(p.id).map(|s| s.value());
+        let value = model.navigation_slot(id, p.id).map(|s| s.value());
         if let Some(value) = value {
             validate::<T>(id, p, value)?;
         } else if p.derived {

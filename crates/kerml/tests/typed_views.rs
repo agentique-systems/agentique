@@ -269,12 +269,7 @@ fn optional_ordered_unordered_nonunique_and_uncomputed_values_stay_distinct() {
             ..
         })
     ));
-    assert!(matches!(
-        feature.owned_relationship(),
-        Err(ViewError::UnsupportedAssociationStorage(
-            p::ELEMENT_OWNED_RELATIONSHIP
-        ))
-    ));
+    assert!(feature.owned_relationship().unwrap().is_none());
     let mut overlay = DerivationBuilder::new(snapshot.clone());
     overlay.property(F1, p::FEATURE_TYPE, SlotValue::Ordered(vec![]), evidence());
     overlay.property(

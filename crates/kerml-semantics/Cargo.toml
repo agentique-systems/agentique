@@ -8,3 +8,4 @@ description = "Pure, evidence-bearing KerML semantic queries over immutable snap
 [dependencies]
 agq-kernel = { path = "../kernel" }
 agq-kerml = { path = "../kerml" }
+sha2.workspace = true
