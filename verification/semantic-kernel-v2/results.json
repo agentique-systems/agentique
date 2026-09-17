@@ -1,0 +1,123 @@
+{
+  "source_commit": "1588b2c1f8823dda422383513d4aca287c8bedb4",
+  "base_main": "0dd51947fa0e0848028e23ccbbd11feb53bd6312",
+  "branch": "foundation/semantic-kernel-v2",
+  "started_at": "2026-09-17T17:26:34.728Z",
+  "environment": {
+    "os": "win32 10.0.19045 x64",
+    "rust": "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+    "cargo": "cargo 1.92.0 (344c4567c 2025-10-21)",
+    "node": "v22.11.0"
+  },
+  "source_hashes": {
+    "Cargo.lock": "3230065ff1224077c467917e7f58a539a3d9c258320db353d48da26b3984fc30",
+    "Cargo.toml": "e111a8b73948102dd73c186b60e8e76b2bd54c7c022e154fc6df48a4d4b0cd22",
+    "crates/kernel/Cargo.toml": "ea4be336bb4efa4869c8352696ce820931dbb9fff8558351108cc3040914e4c0",
+    "crates/kernel/src/derived.rs": "59b6f8c543975e447aa42fc007be6c26447b07d050eedddcb6e2b7a258ee93dd",
+    "crates/kernel/src/ids.rs": "806f7efecc41c10c17c095e3eaa74a728e3825918a48ebb14f048f814c8dfecc",
+    "crates/kernel/src/lib.rs": "0a667f4ec95ec7057c8a0c8ec5bb4c5211361fff32c233bb2ebf8bda13f666e6",
+    "crates/kernel/src/metamodel.rs": "a0aba58cca50a1d696796393f305f20f2538f222c7dbc45e78c7c592bbacf5a1",
+    "crates/kernel/src/model.rs": "ca77ec93091e7cee05fdf5b12e995002f4f6dd48ef0c42289df96800a74964f7",
+    "crates/kernel/src/provenance.rs": "7712f40c49ac6d0f1d9507787e6f1f4e8b7bb4e9521a1eb10859ab9027289591",
+    "crates/kernel/src/value.rs": "7674e27d6f369ebb985c04516fcb6f6f1c122723c88a5d25c2f6bed2c968c7aa",
+    "crates/kernel/tests/common/mod.rs": "4c4ef61b6bd7254198648adf5cd03b0c66ef70ae4b5f28a3401e64df01096abb",
+    "crates/kernel/tests/derivations.rs": "17d3ea2b883080beb2b5c66793b804df7e26bac22e44d9438f707753808939a1",
+    "crates/kernel/tests/metamodel.rs": "7f3bb09e3215788ab991e0d340664390e44c798e228635e14c766b6206c1479d",
+    "crates/kernel/tests/snapshots.rs": "27a11f2863310ab8ef8fe1ce2783e35c07924d03a8e3f75359a1ae24e2d9e14a",
+    "docs/adr/0001-semantic-kernel-v2.md": "f286f400fd191da089d8945d407cc3fe12eaf5f6b49c7f3eeb9a276bb0bbf7a4",
+    "docs/semantic-kernel.md": "b634a4eb1d333258995986eedfce8f24856f337fe534bd2c038030d585443a90"
+  },
+  "records": [
+    {
+      "id": "browser-tests",
+      "command": "npm run test:e2e",
+      "started_at": "2026-09-17T17:27:02.022Z",
+      "duration_ms": 57120,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/browser-tests.txt"
+    },
+    {
+      "id": "engineering-tests",
+      "command": "npm test",
+      "started_at": "2026-09-17T17:26:41.018Z",
+      "duration_ms": 477,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/engineering-tests.txt"
+    },
+    {
+      "id": "frontend-build",
+      "command": "npm run build",
+      "started_at": "2026-09-17T17:26:38.618Z",
+      "duration_ms": 2399,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/frontend-build.txt"
+    },
+    {
+      "id": "frontend-types",
+      "command": "npm run check",
+      "started_at": "2026-09-17T17:26:34.902Z",
+      "duration_ms": 3715,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/frontend-types.txt"
+    },
+    {
+      "id": "kernel-dependencies",
+      "command": "cargo tree -p agq-kernel --edges normal --depth 1",
+      "started_at": "2026-09-17T17:27:01.873Z",
+      "duration_ms": 148,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/kernel-dependencies.txt"
+    },
+    {
+      "id": "kernel-rustdoc",
+      "command": "cargo doc -p agq-kernel --no-deps",
+      "started_at": "2026-09-17T17:27:00.963Z",
+      "duration_ms": 910,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/kernel-rustdoc.txt"
+    },
+    {
+      "id": "rust-clippy",
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "started_at": "2026-09-17T17:26:35.247Z",
+      "duration_ms": 4943,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/rust-clippy.txt"
+    },
+    {
+      "id": "rust-format",
+      "command": "cargo fmt --all -- --check",
+      "started_at": "2026-09-17T17:26:34.895Z",
+      "duration_ms": 352,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/rust-format.txt"
+    },
+    {
+      "id": "rust-tests",
+      "command": "cargo test --workspace",
+      "started_at": "2026-09-17T17:26:40.191Z",
+      "duration_ms": 20772,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/rust-tests.txt"
+    },
+    {
+      "id": "standards-integrity",
+      "command": "npm run standards:check",
+      "started_at": "2026-09-17T17:26:41.495Z",
+      "duration_ms": 571,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/semantic-kernel-v2/standards-integrity.txt"
+    }
+  ],
+  "finished_at": "2026-09-17T17:27:59.146Z"
+}
