@@ -4,6 +4,12 @@ Status: accepted for the first foundation milestone; implementation refinements
 are recorded here. Baseline: KerML 1.0, SysML 2.0, Systems Modeling API & Services
 1.0 (future integration only).
 
+Later refinements: ADRs [0003](0003-normative-root-core-descriptors.md),
+[0004](0004-kerml-typed-views.md), [0005](0005-kerml-semantic-query-foundation.md)
+and [0006](0006-lossless-kerml-text-frontend.md) supersede this milestone's deferred
+structural metadata, enum, ownership-storage, query-contract and frontend limits
+within their stated slices. The decisions below retain their historical context.
+
 ## Problem and evidence
 
 The existing engine intentionally implements a bounded subset. Its source-linked

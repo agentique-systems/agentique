@@ -8,6 +8,13 @@ canonical slots for the bounded association shape with one writable class end.
 It supersedes this milestone's blanket association-write refusal; the two
 ownership pairs and general canonical link storage remain deferred.
 
+Subsequent follow-up: [ADR 0005](0005-kerml-semantic-query-foundation.md) supersedes
+the ownership-pair refusal and anticipated general link-store prerequisite for
+the ordered-many/scalar-inverse shape. It stores each occurrence once in the
+ordered end and supports inverse navigation, with inverse writes still refused.
+It also adds bounded semantic queries. The original milestone decisions below
+remain historical; a general association edit API remains deferred.
+
 ## Authority and inspection
 
 This decision uses the exact artifacts pinned by [ADR 0002](0002-normative-metamodel-pipeline.md),

@@ -4,7 +4,9 @@
 or SysML validation. The compatibility target is KerML 1.0 / SysML 2.0; the
 [decision record](adr/0001-semantic-kernel-v2.md) identifies the standards evidence,
 invariants and deferred work. The earlier application still uses its original
-crates unchanged. The new crate has only `uuid` and `thiserror` as direct dependencies.
+crates. New language work targets generation 2; see the
+[architecture](architecture.md) and [status register](../standards/v2-coverage.json).
+The kernel has only `uuid` and `thiserror` as direct dependencies.
 
 ## Where to start
 
@@ -25,9 +27,12 @@ effective property resolution and the association write boundary. The follow-up
 [ADR 0004](adr/0004-kerml-typed-views.md) adds borrowed KerML typed views and permits
 a unique class-owned association slot when its opposite is association-owned,
 non-navigable, unordered and 0..*. This is one canonical storage surface; derived
-inverses are not automatically computed. Other non-derived association shapes,
-including both ownership pairs, still require canonical link storage and fail
-explicitly. `supports_slot_storage` exposes this generic capability.
+inverses are not automatically derived. [ADR 0005](adr/0005-kerml-semantic-query-foundation.md)
+subsequently adds the ordered-many/scalar-inverse shape used by both ownership
+pairs: one ordered canonical slot and a reconstructible inverse index. Writes to
+the inverse remain refused. Other unsupported shapes fail explicitly.
+`supports_slot_storage` exposes the write capability; `navigation_slot` reads
+supported canonical and inverse surfaces without duplicate storage.
 Use `MetamodelRegistry::from_descriptors` for sets containing associations or enums;
 `resolve_property` maps an inherited ID to its effective replacement. Derived-union
 and subset metadata do not themselves execute language rules.
@@ -65,8 +70,10 @@ unique unordered collections use sets; nonunique unordered collections use bags
 normalized into value order. Duplicates in ordered unique properties are errors.
 Missing and present-empty collections differ. References must target an existing
 element of a compatible class. Primitive domains currently cover Boolean, i64 and
-String; unbounded integers, real numbers, enumerations and richer datatypes await
-an explicit standards-driven value-domain extension. There is no JSON catch-all.
+String, plus descriptor-identified enumerations. Unbounded integers, real numbers
+and richer datatypes await an explicit standards-driven value-domain extension.
+The generated Root/Core closure needs only Boolean, String and enums; it does not
+narrow normative numeric domains to i64. There is no JSON catch-all.
 
 ## Publication and invariants
 
@@ -94,7 +101,7 @@ verification success.
 Declared state includes authored, imported standard-library, transformation and
 internally generated facts. Every record and present slot carries origin metadata.
 Source evidence identifies a document, half-open byte range and optional syntax
-node; none of these determines semantic identity. Transformation inputs are
+node and source revision; none of these determines semantic identity. Transformation inputs are
 historical evidence, not live references subject to dangling-reference checks.
 
 `DerivationBuilder` builds a separate overlay, pinned to one declared snapshot.
@@ -116,7 +123,9 @@ Overlays cannot be rebased. A changed declared revision requires fresh derivatio
 older overlays continue to describe their pinned inputs. `base_revision()` identifies
 only declared inputs, **not** the derived result set. A future query cache must also
 identify the rule set and overlay/computation context. Missing facts are not negative
-facts. Negative/search-space dependencies and selective invalidation are deferred.
+facts. The separate `agq-kerml-semantics` query contract supplies negative/search
+dependencies, context identity, completeness and alternative proofs (ADR 0005).
+Selective invalidation and query caching remain deferred.
 
 ## Extension and cost model
 
@@ -141,7 +150,7 @@ property resolution. It needs no duplicate data. Parser ASTs, SQL rows, diagrams
 IR will remain separate representations outside this kernel. Salsa could later
 memoize queries, but is neither evaluated nor a canonical storage dependency here.
 
-## Foundation follow-up
+## Foundation status and follow-up
 
 1. Pin and hash authoritative 1.0/2.0 XMI artifacts; define descriptor generation
    and cross-artifact ID mapping, with explicit artifact/version provenance.
@@ -155,9 +164,13 @@ memoize queries, but is neither evaluated nor a canonical storage dependency her
 
 ADR 0002 and ADR 0003 complete the KerML pin/import and structural descriptor
 milestones above, including enum domains and source-qualified identities. ADR 0004
-adds the typed language layer and bounded single-slot association storage. General
-association storage, full scalar domains, semantic rules and migration remain open.
-Direct relationship queries can now use the existing endpoint slots and indexes.
-Ownership still needs atomic link storage with per-end ordering before derived
-ownership views. Parser and application migration remain deferred until those
-contracts are checked against the pinned artifacts.
+adds typed views and single-slot association storage. ADR 0005 supersedes the
+earlier ownership-storage limitation and supplies bounded ownership, specialization,
+typing and effective-feature queries. ADR 0006 adds lossless KerML text lowering
+and declared lexical name resolution. These later decisions refine the earlier
+milestones; their historical limitations are not the current capability boundary.
+
+General association storage, full numeric domains, complete constraints, imports
+and inherited name resolution, multi-document projects, generation-2 library
+ingestion and SysML remain open. Source parsing exists for the bounded KerML slice;
+application migration, persistence, API and execution remain separate future work.

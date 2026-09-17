@@ -14,6 +14,19 @@ See [baseline discrepancies](docs/standards-discrepancies.md) and
 
 ## Setup and launch
 
+The launch instructions and release claims below describe **generation 1**:
+`agq-model`, `agq-syntax`, `agq-semantics` and the integrated workspace, simulation,
+application, server and Console. They have not been migrated to generation 2.
+
+**Generation 2** is the standards-driven language engine under active development:
+`agq-kernel`, `agq-kerml`, `agq-kerml-semantics`, `agq-kerml-syntax`,
+`agq-kerml-text` and the normative metamodel generator. New language work targets
+this architecture, including the planned SysML layer. Its bounded capabilities
+and gaps are tracked separately in [generation-2 status](standards/v2-coverage.json).
+See the [dependency diagram](docs/architecture.md) and
+[semantic kernel guide](docs/semantic-kernel.md). Descriptor support, semantic
+queries, text support and execution are separate claims.
+
 Prerequisites: Rust/rustup with the pinned 1.92.0 toolchain, Node 22.11 or newer,
 npm, and a native C/C++ build toolchain for Rust and bundled SQLite. On Windows,
 install the Visual Studio C++ Build Tools. From the repository root:

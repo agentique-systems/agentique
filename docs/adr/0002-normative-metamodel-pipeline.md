@@ -3,6 +3,12 @@
 Status: implemented for the KerML 1.0 metamodel foundation. This decision adds
 tooling; it does not claim KerML semantic or interchange conformance.
 
+Later refinements: ADRs [0003](0003-normative-root-core-descriptors.md) and
+[0004](0004-kerml-typed-views.md) implement runtime descriptors and views;
+[0005](0005-kerml-semantic-query-foundation.md) and
+[0006](0006-lossless-kerml-text-frontend.md) add bounded queries and text.
+The deferred decisions below describe this import milestone, not current status.
+
 ## Baseline and authority
 
 The [KerML 1.0 publication](https://www.omg.org/spec/KerML/1.0) identifies these

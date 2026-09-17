@@ -2,6 +2,11 @@
 
 Status: implemented for the existing normative Root/Core closure.
 
+Follow-up: [ADR 0005](0005-kerml-semantic-query-foundation.md) supersedes the
+ownership-pair refusal below, adds canonical ordered slots with inverse navigation,
+and implements the proposed semantic-query layer. General association storage and
+inverse writes remain deferred. The rest records this typed-view milestone.
+
 `agq-kerml` is the KerML-specific Rust interface over `agq-kernel`. It registers
 the pinned KerML 1.0 descriptors and provides readable constants and checked,
 borrowed views. A view contains exactly an `ElementId` and `&ModelView`. There are

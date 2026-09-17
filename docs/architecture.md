@@ -1,4 +1,47 @@
-# Agentique v0.1 architecture
+# Agentique architecture: two generations
+
+Generation 1 is the functioning integrated application described below. Generation 2
+is the standards-driven engine for all new language implementation; it does not yet
+power the application. Compatibility/migration work must name its generation.
+Keep the [v0.1 release coverage](../standards/coverage.json) and requirements intact;
+use [generation-2 status](../standards/v2-coverage.json) for new engine capabilities.
+
+## Generation 2: language engine under development
+
+Arrows point from a consumer to its dependency. Dashed nodes are planned; they do
+not imply existing SysML support. The generator is maintenance tooling and emits
+checked-in descriptors; it is never a runtime or build-script dependency.
+
+```mermaid
+flowchart BT
+  kerml[agq-kerml] --> kernel[agq-kernel]
+  semantics[agq-kerml-semantics] --> kerml
+  text[agq-kerml-text] --> syntax[agq-kerml-syntax]
+  text --> semantics
+  text --> kerml
+  syntax --> kernel
+  sysml[agq-sysml: planned] --> kerml
+  sysmlsem[agq-sysml-semantics: planned] --> sysml
+  sysmlsem --> semantics
+  sysmltext[SysML text: planned] --> sysmlsem
+  classDef planned stroke-dasharray: 5 5
+  class sysml,sysmlsem,sysmltext planned
+```
+
+Canonical data lives in generic immutable kernel records. Borrowed typed views
+project those records without copied fields or a second graph. Language semantics
+reuse evidence-bearing queries; inherited elements retain their original identity.
+Parsers preserve text and supply declarations/references, never canonical truth or
+name denotation. Source identity and semantic identity remain distinct. Unsupported
+syntax, unresolved references and unimplemented semantic rules remain explicit.
+
+Normative targets are KerML 1.0 and SysML 2.0. Metamodel import, runtime descriptor
+closure, semantic queries, textual grammar and library ingestion have distinct
+coverage. Generation 2 has no application migration, persistence repository,
+Systems Modeling API or execution. See the foundation details below and
+[semantic kernel guide](semantic-kernel.md), including ADRs 0001–0006.
+
+## Generation 1: integrated v0.1 application
 
 The Engine is implemented here. It does not wrap a modelling application. Language
 meaning comes from the three supplied OMG publications; product and experiment
@@ -179,7 +222,8 @@ Language-specific descriptors and rules belong above the kernel.
 [`tools/metamodel-gen`](../tools/metamodel-gen/) imports hash-pinned KerML 1.0 MOF
 XMI into a neutral IR and cross-checks overlapping facts in the normative JSON
 serialization schema. It is engineering tooling, not canonical runtime storage;
-no runtime crate reads its output. [ADR 0002](adr/0002-normative-metamodel-pipeline.md)
+no runtime crate reads its neutral JSON IR. Generated Rust descriptors are compiled
+into `agq-kerml`. [ADR 0002](adr/0002-normative-metamodel-pipeline.md)
 records authority, identity, retained property semantics and the decisions needed
 before generating runtime descriptors. Existing language coverage is unchanged.
 

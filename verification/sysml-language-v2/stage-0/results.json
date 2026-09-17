@@ -1,0 +1,58 @@
+[
+  {
+    "command": "cargo test -p agq-kernel",
+    "started": "2026-09-17T20:51:24.323Z",
+    "durationMs": 3292,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kernel.txt"
+  },
+  {
+    "command": "cargo test -p agq-kerml",
+    "started": "2026-09-17T20:51:27.616Z",
+    "durationMs": 2955,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml.txt"
+  },
+  {
+    "command": "cargo test -p agq-kerml-semantics",
+    "started": "2026-09-17T20:51:30.571Z",
+    "durationMs": 2189,
+    "exitCode": 0,
+    "signal": null,
+    "log": "semantics.txt"
+  },
+  {
+    "command": "cargo test -p agq-kerml-text",
+    "started": "2026-09-17T20:51:32.761Z",
+    "durationMs": 2161,
+    "exitCode": 0,
+    "signal": null,
+    "log": "text.txt"
+  },
+  {
+    "command": "node tools/extract.mjs --check",
+    "started": "2026-09-17T20:51:34.923Z",
+    "durationMs": 65,
+    "exitCode": 0,
+    "signal": null,
+    "log": "extraction.txt"
+  },
+  {
+    "command": "npm test",
+    "started": "2026-09-17T20:51:34.988Z",
+    "durationMs": 418,
+    "exitCode": 0,
+    "signal": null,
+    "log": "engineering.txt"
+  },
+  {
+    "command": "node verification/sysml-language-v2/check-docs.mjs",
+    "started": "2026-09-17T20:51:35.406Z",
+    "durationMs": 67,
+    "exitCode": 0,
+    "signal": null,
+    "log": "links.txt"
+  }
+]

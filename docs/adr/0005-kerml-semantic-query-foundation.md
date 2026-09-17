@@ -3,6 +3,10 @@
 Status: implemented for the bounded Root/Core query slice, rule set
 `agq-kerml-query/2`. Supersedes the initial four-test query scaffold.
 
+Follow-up: [ADR 0006](0006-lossless-kerml-text-frontend.md) adds bounded textual
+lowering and declared lexical resolution, superseding the no-parser status at the
+end of this milestone. Current rule-set identity is defined by the implementation.
+
 ## Architecture and purity
 
 `agq-kernel <- agq-kerml <- agq-kerml-semantics`. Generated descriptors and

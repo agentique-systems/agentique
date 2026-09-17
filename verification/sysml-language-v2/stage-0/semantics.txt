@@ -1,0 +1,45 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.95s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_semantics-d7f32ee60fa1592b.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\foundation.rs (target\debug\deps\foundation-e63d9713cbbd9c6c.exe)
+
+running 25 tests
+test metamodel_mutation_is_rejected_even_with_same_release_id ... ok
+test malformed_memberships_and_bad_query_subjects_are_not_empty_successes ... ok
+test feature_aliases_do_not_silently_bypass_inheritance_filtering ... ok
+test chains_diamonds_alternative_proofs_and_determinism ... ok
+test implied_specializations_are_an_answer_affecting_option ... ok
+test association_inverse_is_unique_atomic_and_rebuilt_after_edits ... ok
+test nonowning_memberships_and_empty_namespace_lookup ... ok
+test overlay_proofs_retain_recursive_kernel_evidence ... ok
+test creation_order_does_not_change_content_identity_or_proofs ... ok
+test ownership_cycles_are_invalid_even_beyond_the_query_root ... ok
+test ownership_membership_order_and_no_copying ... ok
+test empty_lookup_depends_on_namespace_and_nonmatching_names ... ok
+test adding_redefinition_invalidates_effective_feature_evidence ... ok
+test qualified_resolution_filters_private_members_and_retains_proofs ... ok
+test private_membership_is_direct_but_not_inherited ... ok
+test specialization_cycles_are_finite_but_cyclic_inheritance_is_explicitly_incomplete ... ok
+test redefinitions_on_intermediate_types_and_diamonds_suppress_transitively ... ok
+test negative_incoming_dependency_catches_creation_and_retargeting ... ok
+test sibling_redefinitions_of_a_common_base_follow_second_removal_condition ... ok
+test subsetting_does_not_remove_an_inherited_feature ... ok
+test unsupported_conjugation_is_not_a_complete_empty_result ... ok
+test typed_upcasts_include_typing_subsetting_and_redefinition ... ok
+test context_binds_options_library_content_and_overlay_content ... ok
+test working_reference_scopes_are_semantic_inputs_and_block_lexical_guesses ... ok
+test large_sparse_graph_keeps_linear_proof_size_and_does_not_recurse ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.88s
+
+   Doc-tests agq_kerml_semantics
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,42 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.90s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml-7bfed3c593a341c6.exe)
+
+running 2 tests
+test generated_views::tests::all_named_ids_match_descriptor_inventory ... ok
+test view::tests::projection_rejects_malformed_shapes_and_values_without_filtering ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\descriptors.rs (target\debug\deps\descriptors-ff4944ea5032ccf9.exe)
+
+running 6 tests
+test association_storage_and_derived_writes_fail_atomically ... ok
+test normative_redefinitions_resolve_inherited_names_and_replaced_slots ... ok
+test corrupt_normative_metadata_is_rejected ... ok
+test both_nonderived_ownership_ends_are_preserved_without_inventing_composition ... ok
+test normative_subsets_opposites_and_unions_remain_distinct_metadata ... ok
+test normative_enum_literals_are_checked_against_the_property_domain ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\typed_views.rs (target\debug\deps\typed_views-dd663b2665c935d5.exe)
+
+running 6 tests
+test casts_use_the_live_registry_and_incompatible_domains_are_explicit ... ok
+test optional_ordered_unordered_nonunique_and_uncomputed_values_stay_distinct ... ok
+test malformed_writes_and_replaced_slots_cannot_be_hidden_by_typed_access ... ok
+test checked_upcasts_downcasts_unknowns_and_cross_snapshot_identity ... ok
+test property_reads_use_identity_even_when_display_names_change ... ok
+test relationships_are_first_class_records_and_views_share_canonical_data ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests agq_kerml
+
+running 1 test
+test crates\kerml\src\lib.rs - (line 5) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 0.51s; merged doctests compilation took 0.40s

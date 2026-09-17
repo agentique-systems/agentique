@@ -1,0 +1,64 @@
+{
+  "format": "agentique-generation-2-coverage/1",
+  "generation": 2,
+  "normative_targets": { "KerML": "1.0", "SysML": "2.0" },
+  "claim": "Bounded generation-2 language infrastructure; no full conformance, application migration or execution claim.",
+  "legacy_release_register": "standards/coverage.json",
+  "status_meaning": {
+    "implemented": "Implemented within the explicitly stated boundary.",
+    "partial": "Some required capabilities exist; listed gaps remain.",
+    "not-started": "No generation-2 implementation yet.",
+    "unsupported": "Explicitly outside the current implementation scope."
+  },
+  "capabilities": [
+    {
+      "id": "normative-metamodel",
+      "status": "partial",
+      "boundary": "Offline hash-pinned KerML 1.0 MOF XMI import and conservative JSON cross-check; 29-class Root/Core runtime closure with borrowed typed views. Source-qualified descriptor IDs.",
+      "evidence": ["docs/adr/0002-normative-metamodel-pipeline.md", "docs/adr/0003-normative-root-core-descriptors.md", "docs/adr/0004-kerml-typed-views.md", "tools/metamodel-gen/tests/normative.rs"],
+      "gaps": ["SysML import and multi-metamodel pipeline", "Full runtime descriptor and numeric-domain support", "Execution of retained OCL/English constraints"]
+    },
+    {
+      "id": "semantic-queries",
+      "status": "partial",
+      "boundary": "Ownership, membership, direct and transitive specialization, direct typing/subsetting/redefinition, effective-feature identity sets on supported DAGs, and declared lexical/public name resolution. Evidence, context identity, completeness and positive/search dependencies.",
+      "evidence": ["docs/adr/0005-kerml-semantic-query-foundation.md", "crates/kerml-semantics/tests/foundation.rs"],
+      "gaps": ["Imported and inherited name lookup", "Library implications and complete constraints", "Cyclic inheritance fixed point", "Incremental invalidator/query cache"]
+    },
+    {
+      "id": "textual-syntax",
+      "status": "partial",
+      "boundary": "Lossless single-document KerML namespace/type/feature slice, owned specialization/typing/subsetting/redefinition, UTF-8 origins and conservative edit identity reconciliation. Working snapshots distinguish pending assertions from resolved canonical relationships.",
+      "evidence": ["docs/adr/0006-lossless-kerml-text-frontend.md", "verification/kerml-text-v2/README.md"],
+      "gaps": ["Packages/imports/aliases/short names", "Multi-document projects and SysML", "Expressions/multiplicities/explicit visibility", "Full grammar and constraint validation"]
+    },
+    {
+      "id": "libraries",
+      "status": "not-started",
+      "boundary": "Historical official and corrective library bytes are pinned. SemanticContext can identify caller-supplied content pins; generation 2 does not ingest or certify these libraries.",
+      "evidence": ["standards/baseline-lock.json", "standards/lock.json", "crates/kerml-semantics/src/context.rs"],
+      "gaps": ["Generation-2 library ingestion", "Exact selected library-set dependency closure and semantic provenance"]
+    },
+    {
+      "id": "sysml",
+      "status": "not-started",
+      "boundary": "Planned SysML descriptors, typed views, semantic reuse and structural textual slice above KerML.",
+      "evidence": ["docs/architecture.md"],
+      "gaps": ["SysML 2.0 metamodel pipeline, runtime descriptors, semantic rules and text lowering"]
+    },
+    {
+      "id": "api",
+      "status": "unsupported",
+      "boundary": "No generation-2 Systems Modeling API, persistence repository or application migration in the language milestone.",
+      "evidence": ["docs/architecture.md"],
+      "gaps": ["Separate future platform milestone; generation-1 API coverage does not transfer"]
+    },
+    {
+      "id": "execution",
+      "status": "unsupported",
+      "boundary": "Generation 2 does not implement execution or simulation. Query completeness is not verification success.",
+      "evidence": ["docs/architecture.md"],
+      "gaps": ["Separate future execution semantics; generation-1 AGQ-SEQ-01 does not transfer"]
+    }
+  ]
+}
