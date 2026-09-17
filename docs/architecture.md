@@ -6,6 +6,10 @@ power the application. Compatibility/migration work must name its generation.
 Keep the [v0.1 release coverage](../standards/coverage.json) and requirements intact;
 use [generation-2 status](../standards/v2-coverage.json) for new engine capabilities.
 
+The shared metamodel importer now handles SysML 2.0, but runtime descriptor
+registration is [blocked by published property metadata](sysml-v2-runtime-blocker.md).
+Planned SysML runtime nodes below remain unimplemented.
+
 ## Generation 2: language engine under development
 
 Arrows point from a consumer to its dependency. Dashed nodes are planned; they do

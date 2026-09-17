@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
 
-const files = ["README.md", "docs/architecture.md", "docs/semantic-kernel.md",
-  ...fs.readdirSync("docs/adr").filter((name) => /^000[1-6]-/.test(name)).map((name) => `docs/adr/${name}`)];
+const files = ["README.md", "docs/architecture.md", "docs/semantic-kernel.md", "docs/sysml-v2-runtime-blocker.md",
+  ...fs.readdirSync("docs/adr").filter((name) => /^000[1-7]-/.test(name)).map((name) => `docs/adr/${name}`)];
 let checked = 0;
 for (const file of files) {
   for (const match of fs.readFileSync(file, "utf8").matchAll(/\]\(([^)]+)\)/g)) {

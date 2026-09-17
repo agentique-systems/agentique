@@ -1,4 +1,4 @@
-use agq_metamodel_gen::{Result, baseline, canonical_json, descriptors, pipeline};
+use agq_metamodel_gen::{Result, baseline, canonical_json, closure_audit, descriptors, pipeline};
 use std::{fs, path::PathBuf};
 
 fn run() -> Result<()> {
@@ -8,9 +8,11 @@ fn run() -> Result<()> {
     let mut output = None;
     let mut descriptor_output = None;
     let mut selected_baseline = None;
+    let mut require_runtime = false;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--check" => check = true,
+            "--require-runtime" => require_runtime = true,
             "--baseline" => {
                 selected_baseline = Some(baseline::find(
                     &args.next().ok_or("--baseline needs an ID")?,
@@ -25,7 +27,7 @@ fn run() -> Result<()> {
             }
             "--help" | "-h" => {
                 println!(
-                    "metamodel-gen [--check] [--baseline kerml-1.0|sysml-2.0] [--root REPOSITORY] [--output IR_FILE] [--descriptor-output DIRECTORY]\nImports reviewed offline profiles and cross-checks JSON. Default: both language IRs and KerML runtime outputs. --output alone selects KerML IR-only compatibility mode. --check compares bytes without writing."
+                    "metamodel-gen [--check] [--require-runtime] [--baseline kerml-1.0|sysml-2.0] [--root REPOSITORY] [--output IR_FILE] [--descriptor-output DIRECTORY]\nImports reviewed offline profiles and cross-checks JSON. Default: both language IRs, KerML runtime outputs and the SysML readiness audit. --output alone selects KerML IR-only compatibility mode. --check compares bytes without writing; it does not establish runtime readiness. --baseline sysml-2.0 --require-runtime fails while the structural audit is blocked."
                 );
                 return Ok(());
             }
@@ -34,6 +36,16 @@ fn run() -> Result<()> {
     }
     let profile = selected_baseline.unwrap_or(baseline::KERML);
     let bundle = pipeline::generate_profile(&root, profile)?;
+    if require_runtime && profile.descriptor_target == baseline::DescriptorTarget::SysMlStructural {
+        let audit = closure_audit::report(&bundle)?;
+        if audit["result"] != "representable" {
+            return Err(format!(
+                "SysML runtime closure blocked: {}. See {} for source-qualified evidence; no runtime output written.",
+                audit["registration_error"],
+                closure_audit::PATH
+            ));
+        }
+    }
     let ir_only = output.is_some() && descriptor_output.is_none();
     let all = selected_baseline.is_none() && output.is_none();
     let mut outputs = vec![(
@@ -50,6 +62,10 @@ fn run() -> Result<()> {
     }
     if all {
         let sysml = pipeline::generate_profile(&root, baseline::SYSML)?;
+        outputs.push((
+            root.join(closure_audit::PATH),
+            closure_audit::bytes(&sysml)?,
+        ));
         outputs.push((
             root.join(baseline::SYSML.output.unwrap()),
             canonical_json(&sysml)?,

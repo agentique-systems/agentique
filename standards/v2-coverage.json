@@ -4,6 +4,7 @@
   "normative_targets": { "KerML": "1.0", "SysML": "2.0" },
   "claim": "Bounded generation-2 language infrastructure; no full conformance, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
+  "runtime_sysml_gate": { "stage": 3, "result": "blocked", "evidence": "docs/sysml-v2-runtime-blocker.md", "audit": "standards/generated/sysml-2.0/structural-audit.json" },
   "status_meaning": {
     "implemented": "Implemented within the explicitly stated boundary.",
     "partial": "Some required capabilities exist; listed gaps remain.",
@@ -34,17 +35,17 @@
     },
     {
       "id": "libraries",
-      "status": "not-started",
+      "status": "partial",
       "boundary": "Exact original Systems/Kernel archive dependency closure is pinned separately from the historical corrective release. SemanticContext can identify caller-supplied content pins; generation 2 does not ingest or certify these libraries.",
       "evidence": ["standards/normative/sysml-2.0/library-set.json", "standards/baseline-lock.json", "standards/lock.json", "crates/kerml-semantics/src/context.rs"],
       "gaps": ["Generation-2 library ingestion and semantic provenance"]
     },
     {
       "id": "sysml",
-      "status": "not-started",
-      "boundary": "SysML 2.0 XMI and JSON are pinned; descriptors, typed views, semantic reuse and structural text above KerML are not implemented.",
+      "status": "partial",
+      "boundary": "SysML 2.0 XMI/JSON import and cross-metamodel structural audit exist. Runtime registration is blocked by published self-subsetting metadata; typed views, semantics and text are not implemented.",
       "evidence": ["docs/architecture.md", "standards/normative/sysml-2.0/README.md"],
-      "gaps": ["SysML 2.0 metamodel pipeline, runtime descriptors, semantic rules and text lowering"]
+      "gaps": ["Resolve the documented Stage 3 normative metadata blocker", "Runtime descriptors, typed views, semantic rules and text lowering"]
     },
     {
       "id": "api",

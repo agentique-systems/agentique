@@ -3,6 +3,16 @@ import fs from "node:fs";
 import { spawn } from "node:child_process";
 
 const gates = {
+  handoff: [
+    ["format", "cargo fmt --all -- --check"],
+    ["help", "cargo run --locked --offline -p agq-metamodel-gen -- --help"],
+    ["links", "node verification/sysml-language-v2/check-docs.mjs"],
+  ],
+  "stage-3": [
+    ["runtime-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
+    ["blocker-regressions", "cargo test --locked --offline -p agq-metamodel-gen --test sysml_closure"],
+    ["generated", "cargo run --locked --offline -p agq-metamodel-gen -- --check"],
+  ],
   "stage-2": [
     ["format", "cargo fmt --all -- --check"],
     ["clippy", "cargo clippy --locked --offline -p agq-metamodel-gen --all-targets -- -D warnings"],
@@ -29,6 +39,8 @@ const gates = {
     ["clippy", "cargo clippy --workspace --all-targets -- -D warnings"],
     ["rust-tests", "cargo test --workspace"],
     ["generated", "cargo run --locked --offline -p agq-metamodel-gen -- --check"],
+    ["rustdoc", "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-metamodel-gen"],
+    ["links", "node verification/sysml-language-v2/check-docs.mjs"],
     ["standards", "npm run standards:check", ["verification/standards-integrity.json"]],
     ["frontend-check", "npm run check"],
     ["frontend-build", "npm run build"],
@@ -47,7 +59,7 @@ for (const [name, command, artifacts = []] of gates[gate]) {
   const started = new Date();
   const log = fs.openSync(`${directory}/${name}.txt`, "w");
   const result = await new Promise((resolve) => {
-    const child = spawn(command, { shell: true, windowsHide: true, stdio: ["ignore", log, log] });
+    const child = spawn(command, { shell: true, windowsHide: true, stdio: ["ignore", log, log], env: { ...process.env, CARGO_NET_OFFLINE: "true", RUSTDOCFLAGS: "-D warnings" } });
     child.on("error", (error) => resolve({ exitCode: null, error: error.message }));
     child.on("close", (exitCode, signal) => resolve({ exitCode, signal }));
   });

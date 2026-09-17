@@ -1,0 +1,22 @@
+[
+  {
+    "path": "SysML.pdf",
+    "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a",
+    "pdf_page": 403,
+    "printed_page": 371,
+    "figure": 44,
+    "search_term": "analysisCaseOwningUsage",
+    "extracted_context": "ge  Usage  Expression  {subsets nestedCase,  ordered}  +/nestedAnalysisCase  0..*  +/analysisCaseOwningUsage  {subsets  analysisCaseOwningUsage}  0..1  {redefines caseDefinition}  +/analysisCaseDefinition  0..1  {redefines definedCase,  ordered}  +/definedAnalysisCase  0..* ",
+    "interpretation": "The figure annotates this property as subsetting itself, corroborating the pinned XMI rather than providing a distinct correction target."
+  },
+  {
+    "path": "KerML.pdf",
+    "sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697",
+    "pdf_page": 207,
+    "printed_page": 181,
+    "figure": 26,
+    "search_term": "targetAssociation",
+    "extracted_context": " Classifier  Structure  Class  Feature  Relationship  {subsets association,  subsets targetAssociation}  +/targetAssociation  0..*   {subsets relatedType,  redefines target}  +/targetType  0..*  {subsets relatedType,  redefines source}  +/sourceType  0..1 {subsets associatio",
+    "interpretation": "The figure annotates this property as subsetting itself, corroborating the pinned XMI rather than providing a distinct correction target."
+  }
+]

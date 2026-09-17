@@ -76,15 +76,6 @@ pub fn closure(model: &Metamodel, seeds: &[&str]) -> Result<Closure> {
     Ok(result)
 }
 
-fn mid(model: &Metamodel) -> MetamodelId {
-    // Reuse the v1 source-qualified key and the authoritative root package ID.
-    let root = model
-        .packages
-        .values()
-        .find(|p| p.parent.is_none())
-        .expect("imported root package");
-    MetamodelId::from_u128(root.entity.key.uuid().as_u128())
-}
 fn cid(model: &Metamodel, id: &str) -> Result<MetaclassId> {
     model.classifiers[id].entity.key.metaclass_id()
 }
@@ -103,22 +94,37 @@ fn pids(model: &Metamodel, ids: &[String]) -> Result<BTreeSet<PropertyId>> {
 
 pub fn descriptor_set(bundle: &Bundle, selected: &Closure) -> Result<DescriptorSet> {
     let model = &bundle.metamodel;
-    let metamodel = mid(model);
-    let mut output = DescriptorSet {
-        models: vec![MetamodelDescriptor {
-            id: metamodel,
-            name: "KerML".into(),
+    let mut metamodels = BTreeMap::new();
+    for root in model.packages.values().filter(|p| p.parent.is_none()) {
+        let source = &root.entity.key.source;
+        let parts = source
+            .version
+            .split('.')
+            .map(str::parse::<u32>)
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
+        if !(2..=3).contains(&parts.len()) {
+            return Err("unsupported specification version shape".into());
+        }
+        let descriptor = MetamodelDescriptor {
+            id: MetamodelId::from_u128(root.entity.key.uuid().as_u128()),
+            name: source.specification.clone(),
             version: Version {
-                major: 1,
-                minor: 0,
-                patch: 0,
+                major: parts[0],
+                minor: parts[1],
+                patch: parts.get(2).copied().unwrap_or(0),
             },
-            uri: model.source.metamodel_uri.clone(),
-        }],
+            uri: source.metamodel_uri.clone(),
+        };
+        metamodels.insert(source.artifact_uri.clone(), descriptor);
+    }
+    let mut output = DescriptorSet {
+        models: metamodels.values().cloned().collect(),
         ..DescriptorSet::default()
     };
     for id in &selected.classifiers {
         let c = &model.classifiers[id];
+        let metamodel = metamodels[&c.entity.key.source.artifact_uri].id;
         let name = c.entity.name.clone();
         let package = c.entity.key.package_path.clone();
         match c.entity.key.kind {

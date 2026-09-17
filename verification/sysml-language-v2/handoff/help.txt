@@ -1,0 +1,5 @@
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.65s
+     Running `target\debug\metamodel-gen.exe --help`
+metamodel-gen [--check] [--require-runtime] [--baseline kerml-1.0|sysml-2.0] [--root REPOSITORY] [--output IR_FILE] [--descriptor-output DIRECTORY]
+Imports reviewed offline profiles and cross-checks JSON. Default: both language IRs, KerML runtime outputs and the SysML readiness audit. --output alone selects KerML IR-only compatibility mode. --check compares bytes without writing; it does not establish runtime readiness. --baseline sysml-2.0 --require-runtime fails while the structural audit is blocked.

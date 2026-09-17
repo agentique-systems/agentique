@@ -1,0 +1,15 @@
+{
+  "role": "supporting-standards-investigation; not a new generator input",
+  "specification": "UML",
+  "version": "2.5.1",
+  "source": "https://www.omg.org/spec/UML/20161101/UML.xmi",
+  "publication_page": "https://www.omg.org/spec/UML/2.5.1",
+  "resolved_uri": "https://www.omg.org/spec/UML/20161101/UML.xmi",
+  "sha256": "e8166c91f51b8a0c015a90101b83d2249d03252e9f9a500a6511654347804f21",
+  "bytes": 1901856,
+  "retrieved_at": "2026-09-17T21:12:08.281001+00:00",
+  "constraint_id": "Property-subsetted_property_names",
+  "body": "subsettedProperty->forAll(sp | sp.name <> name)",
+  "description": "A Property may not subset a Property with the same name.",
+  "mof_reference": "https://www.omg.org/spec/MOF/2.5.1/PDF clauses 14.1, 14.2: CMOF uses UML classes and associations; see UML for their details."
+}

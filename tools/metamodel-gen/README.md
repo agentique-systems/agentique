@@ -8,6 +8,11 @@ same JSON cross-check pipeline. SysML runtime emission is a subsequent gate.
 It does not execute language rules. [ADR 0007](../../docs/adr/0007-multiple-metamodel-baselines.md)
 records the explicit baseline profiles, identity policy and representation differences.
 
+The default command also generates/checks the SysML structural readiness audit.
+That report currently says **blocked**; import currentness is not runtime support.
+`--baseline sysml-2.0 --require-runtime --check` returns nonzero on this blocker.
+See [exact evidence and resumption requirements](../../docs/sysml-v2-runtime-blocker.md).
+
 ```sh
 cargo run --locked --offline -p agq-metamodel-gen
 cargo run --locked --offline -p agq-metamodel-gen -- --check

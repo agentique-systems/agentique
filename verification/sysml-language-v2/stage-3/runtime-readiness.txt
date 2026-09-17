@@ -1,0 +1,4 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running `target\debug\metamodel-gen.exe --baseline sysml-2.0 --require-runtime --check`
+metamodel-gen: SysML runtime closure blocked: "generated descriptor validation: cyclic property metadata involving [PropertyId(166148462192291602155314859654161515648), PropertyId(266153316079629306486911134979232584517)]". See standards/generated/sysml-2.0/structural-audit.json for source-qualified evidence; no runtime output written.
+error: process didn't exit successfully: `target\debug\metamodel-gen.exe --baseline sysml-2.0 --require-runtime --check` (exit code: 1)

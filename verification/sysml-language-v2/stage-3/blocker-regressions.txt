@@ -1,0 +1,11 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.85s
+     Running tests\sysml_closure.rs (target\debug\deps\sysml_closure-38459a9bddaa6f49.exe)
+
+running 2 tests
+test runtime_readiness_gate_fails_without_changing_outputs ... ok
+test minimum_sysml_closure_retains_and_diagnoses_published_self_subsets ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.97s
+
