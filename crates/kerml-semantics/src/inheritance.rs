@@ -17,6 +17,19 @@ impl KerMlQueries<'_> {
         let mut queue = VecDeque::from([ty]);
         let mut seen = BTreeSet::from([ty]);
         while let Some(current) = queue.pop_front() {
+            if self
+                .context()
+                .pending_specialization_scopes
+                .contains(&current)
+                || self.context().pending_namespace_scopes.contains(&current)
+            {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_PENDING_INHERITANCE",
+                    current,
+                    "Pending project declarations or specializations may affect effective features",
+                );
+            }
             self.property(&mut out, current, p::TYPE_IS_CONJUGATED);
             if matches!(
                 self.model().property_state(current, p::TYPE_IS_CONJUGATED),

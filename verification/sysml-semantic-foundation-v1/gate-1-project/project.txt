@@ -1,0 +1,53 @@
+    Blocking waiting for file lock on build directory
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.48s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_text-506698fc43b8bd4f.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\equivalence.rs (target\debug\deps\equivalence-6b73ec1b19b73b39.exe)
+
+running 1 test
+test programmatic_and_textual_models_have_equivalent_canonical_records ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running tests\frontend.rs (target\debug\deps\frontend-9c8f2c917a033dab.exe)
+
+running 12 tests
+test unresolved_ambiguous_wrong_kind_are_explicit_and_never_kernel_targets ... ok
+test regular_comments_are_preserved_but_not_mistaken_for_notes ... ok
+test unresolved_specialization_obligations_block_inherited_name_lookup ... ok
+test limits_invalid_utf8_edits_and_atomic_history ... ok
+test source_tokens_trivia_utf8_and_old_revisions_are_lossless ... ok
+test vertical_slice_uses_normative_relationships_and_queries ... ok
+test declared_resolution_has_lexical_shadowing_and_reports_inheritance_gaps ... ok
+test structural_replacements_and_ambiguous_duplicates_are_not_reconciled ... ok
+test membership_and_relationship_identity_survive_rename_and_formatting ... ok
+test opaque_unsupported_constructs_cannot_inject_declarations_during_recovery ... ok
+test rename_and_formatting_preserve_ids_but_replacement_and_recreation_do_not ... ok
+test malformed_and_incomplete_text_never_invents_semantics ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.69s
+
+     Running tests\project.rs (target\debug\deps\project-9ff408b667b4c975.exe)
+
+running 6 tests
+test mixed_project_retains_sysml_and_marks_missing_frontend_evidence_incomplete ... ok
+test failed_batch_publishes_no_document_or_semantic_revision ... ok
+test unchanged_document_origin_and_identity_survive_format_and_path_edits ... ok
+test two_documents_share_one_root_and_resolve_in_both_directions ... ok
+test edit_preserves_other_document_and_old_revision_and_rebuilds_dependents ... ok
+test deletion_recreation_and_cross_document_move_allocate_new_ids ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+
+   Doc-tests agq_kerml_text
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

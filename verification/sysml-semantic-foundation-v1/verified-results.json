@@ -1,0 +1,55 @@
+{
+  "format": "agentique-sysml-semantic-foundation-verification/1",
+  "result": "incomplete-do-not-start-platform",
+  "normal_matrix": {
+    "results": "final/results.json",
+    "commands": 16,
+    "exit_zero": 16,
+    "runner_exit_code": 0
+  },
+  "structural_runtime_exit_codes": {
+    "kerml-1.0": 0,
+    "sysml-2.0": 0
+  },
+  "strict_metamodel_conformance": {
+    "results": "strict-final/results.json",
+    "exit_codes": {
+      "kerml-1.0": 1,
+      "sysml-2.0": 1
+    },
+    "kerml": {
+      "errors": 4,
+      "identical_to_previous_strict_current": true
+    },
+    "sysml": {
+      "errors": 12,
+      "identical_to_previous_strict_current": true
+    }
+  },
+  "library_semantic_quality": {
+    "results": "quality-final/results.json",
+    "exit_code": 1,
+    "report": "library-quality.json"
+  },
+  "preservation": {
+    "protected_files": 648,
+    "byte_exact_files": 190,
+    "remaining_comparison": "git-text-eol-normalized"
+  },
+  "tests": {
+    "cargo": {
+      "passed": 214,
+      "failed": 0,
+      "ignored": 0,
+      "includes_doctests": true
+    },
+    "browser": {
+      "passed": 4,
+      "failed": 0
+    },
+    "node": {
+      "passed": 10,
+      "failed": 0
+    }
+  }
+}

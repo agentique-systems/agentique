@@ -138,6 +138,16 @@ impl KerMlQueries<'_> {
         public_only: bool,
         out: &mut QueryResult<Resolution>,
     ) -> Vec<ElementId> {
+        if self.context().pending_namespace_scopes.contains(&namespace) {
+            out.search_dependencies
+                .insert(SearchDependency::NamespaceMembers { namespace });
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_PENDING_NAMESPACE",
+                namespace,
+                "Unavailable project syntax may contribute declarations to this namespace",
+            );
+        }
         if self
             .context()
             .pending_specialization_scopes

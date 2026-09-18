@@ -1,11 +1,14 @@
 //! Source-to-kernel orchestration. The canonical model has no parser dependency.
 #![forbid(unsafe_code)]
 mod lowering;
+mod project;
+pub use project::*;
 
 pub use agq_kerml_syntax as syntax;
 use agq_kernel::{DocumentId, SourceRevisionId};
 pub use lowering::{
-    FrontendDiagnostic, ReferenceAssertion, ValidatedModel, ValidationFailure, WorkingModel,
+    FrontendDiagnostic, FrontendDiagnosticDomain, ReferenceAssertion, ValidatedModel,
+    ValidationFailure, WorkingModel,
 };
 use std::{collections::BTreeMap, sync::Arc};
 use syntax::{ParseLimits, SourceError, SyntaxDocument, TextEdit};

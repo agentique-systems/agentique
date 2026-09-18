@@ -1,0 +1,28 @@
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.56s
+     Running unittests src\lib.rs (target\debug\deps\agq_standard_libraries-650c200ec09fca60.exe)
+
+running 5 tests
+test tests::unsafe_archive_locators_are_rejected_without_extraction ... ok
+test tests::immutable_content_change_changes_private_identity ... ok
+test tests::entry_hash_is_checked_independently_of_outer_hash ... ok
+test tests::dependency_must_exist_in_exact_content_set ... ok
+test tests::source_and_metadata_pins_cannot_disagree ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\pinned.rs (target\debug\deps\pinned-5fe028ead570e7e8.exe)
+
+running 3 tests
+test changed_archive_and_missing_dependency_fail_without_partial_publication ... ok
+test published_metadata_error_and_junk_are_retained_without_rewriting_sources ... ok
+test exact_pinned_closure_terminates_cycles_and_is_repeatable ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+   Doc-tests agq_standard_libraries
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

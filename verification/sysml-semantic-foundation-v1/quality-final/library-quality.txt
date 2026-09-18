@@ -1,0 +1,4 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running `target\debug\examples\audit.exe --require-semantic`
+Verified 57 lossless source partitions and reproducible lexical inventory; semantic quality gate INCOMPLETE
+error: process didn't exit successfully: `target\debug\examples\audit.exe --require-semantic` (exit code: 1)

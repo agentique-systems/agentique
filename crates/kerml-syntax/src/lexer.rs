@@ -90,6 +90,37 @@ pub(crate) fn lex(
             } else {
                 TokenKind::Invalid
             }
+        } else if ch.is_ascii_digit() {
+            // KerML 1.0 8.2.2.4. A real literal is a grammar production,
+            // not one decimal-point token. In particular 1..* retains '..'.
+            pos += rest.bytes().take_while(u8::is_ascii_digit).count();
+            let mut exponent_end = pos;
+            if source
+                .as_bytes()
+                .get(exponent_end)
+                .is_some_and(|c| matches!(c, b'e' | b'E'))
+            {
+                exponent_end += 1;
+                if source
+                    .as_bytes()
+                    .get(exponent_end)
+                    .is_some_and(|c| matches!(c, b'+' | b'-'))
+                {
+                    exponent_end += 1;
+                }
+                let digits = source[exponent_end..]
+                    .bytes()
+                    .take_while(u8::is_ascii_digit)
+                    .count();
+                if digits > 0 {
+                    pos = exponent_end + digits;
+                    TokenKind::ExponentialValue
+                } else {
+                    TokenKind::DecimalValue
+                }
+            } else {
+                TokenKind::DecimalValue
+            }
         } else if ch.is_ascii_alphabetic() || ch == '_' {
             pos += rest
                 .chars()

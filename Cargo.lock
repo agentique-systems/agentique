@@ -163,6 +163,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-standard-libraries"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml-syntax",
+ "agq-kernel",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "uuid",
+ "zip",
+]
+
+[[package]]
 name = "agq-storage"
 version = "0.1.0"
 dependencies = [

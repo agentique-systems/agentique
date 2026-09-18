@@ -112,9 +112,9 @@
   "modeling_platform_gate": {
     "stage": "prerequisite",
     "result": "blocked",
-    "evidence": "verification/modeling-platform-v2/README.md",
+    "evidence": "verification/sysml-semantic-foundation-v1/README.md",
     "completed_stages": [],
-    "reason": "Platform work is outside the structural-runtime milestone. It still requires its separate language/library/API prerequisites; structural registration alone is not platform completion.",
+    "reason": "SysML semantic foundation v1 is incomplete: canonical standard-library ingestion, mixed-language resolution, SysML semantic rules and SysML textual lowering remain unimplemented.",
     "previous_milestone": {
       "stage": "prerequisite",
       "result": "blocked",
@@ -167,10 +167,12 @@
     {
       "id": "semantic-queries",
       "status": "partial",
-      "boundary": "Ownership, membership, direct and transitive specialization, direct typing/subsetting/redefinition, effective-feature identity sets on supported DAGs, and declared lexical/public name resolution. Evidence, context identity, completeness and positive/search dependencies. Query rule set /4 admits independent registry extensions and the complete SysML graph while pinning unchanged KerML contracts and full model/overlay evidence.",
+      "boundary": "Ownership, membership, direct and transitive specialization, direct typing/subsetting/redefinition, effective-feature identity sets on supported DAGs, and declared lexical/public name resolution. Evidence, context identity, completeness and positive/search dependencies. Query rule set /5 admits independent registry extensions and the complete SysML graph while pinning unchanged KerML contracts and full model/overlay evidence. Pending namespace populations and unresolved specialization scopes retain incompleteness in project lookup/effective-feature results.",
       "evidence": [
         "docs/adr/0005-kerml-semantic-query-foundation.md",
-        "crates/kerml-semantics/tests/foundation.rs"
+        "crates/kerml-semantics/tests/foundation.rs",
+        "crates/kerml-text/tests/project.rs",
+        "docs/source-project-contract.md"
       ],
       "gaps": [
         "Imported and inherited name lookup",
@@ -182,30 +184,41 @@
     {
       "id": "textual-syntax",
       "status": "partial",
-      "boundary": "Lossless single-document KerML namespace/type/feature slice, owned specialization/typing/subsetting/redefinition, UTF-8 origins and conservative edit identity reconciliation. Working snapshots distinguish pending assertions from resolved canonical relationships.",
+      "boundary": "Lossless bounded KerML namespace/type/feature slice in single-document or atomic multi-document publications; UTF-8 origins and conservative edit reconciliation. Known declarations share one root and snapshot. Recovered namespaces and unavailable SysML frontends keep affected resolution incomplete. Decimal and exponential lexical values follow KerML 1.0; no general expression parsing claim.",
       "evidence": [
         "docs/adr/0006-lossless-kerml-text-frontend.md",
-        "verification/kerml-text-v2/README.md"
+        "verification/kerml-text-v2/README.md",
+        "docs/source-project-contract.md",
+        "crates/kerml-text/tests/project.rs",
+        "crates/kerml-syntax/tests/numeric_tokens.rs"
       ],
       "gaps": [
         "Packages/imports/aliases/short names",
-        "Multi-document projects and SysML",
+        "SysML frontend and mixed-language semantic construction",
         "Expressions/multiplicities/explicit visibility",
+        "Complete library production inventory and dependency-closed grammar",
         "Full grammar and constraint validation"
       ]
     },
     {
       "id": "libraries",
       "status": "partial",
-      "boundary": "Exact original Systems/Kernel archive dependency closure is pinned separately from the historical corrective release. SemanticContext can identify caller-supplied content pins; generation 2 does not ingest or certify these libraries.",
+      "boundary": "Exact local original Systems/Kernel KPAR source closure verified in agq-standard-libraries. Archive/entry SHA-256 and metadata/version pins, cyclic dependency traversal, immutable source inputs and deterministic private library/document/element allocation scheme. All 57 source documents retained; no canonical library semantic graph or validated bindings.",
       "evidence": [
         "standards/normative/sysml-2.0/library-set.json",
         "standards/baseline-lock.json",
         "standards/lock.json",
-        "crates/kerml-semantics/src/context.rs"
+        "crates/kerml-semantics/src/context.rs",
+        "docs/pinned-library-source-contract.md",
+        "crates/standard-libraries/tests/pinned.rs",
+        "standards/library-syntax-coverage.json",
+        "verification/sysml-semantic-foundation-v1/library-quality.json"
       ],
       "gaps": [
-        "Generation-2 library ingestion and semantic provenance"
+        "Complete library grammar/structural lowering",
+        "Canonical library declarations with StandardLibrary provenance",
+        "Validated semantic bindings, resolution and semantic quality",
+        "Repeatable canonical facts and semantic-context identity"
       ]
     },
     {
@@ -218,7 +231,10 @@
         "docs/adr/0008-property-subsetting-cycle-semantics.md",
         "verification/sysml-language-v2-resume/README.md",
         "crates/sysml/src/lib.rs",
-        "docs/language-core-runtime-contract.md"
+        "docs/language-core-runtime-contract.md",
+        "docs/adr/0012-sysml-semantic-layer.md",
+        "standards/sysml-semantic-coverage.json",
+        "docs/sysml-semantic-foundation-review.md"
       ],
       "gaps": [
         "KerML project/library prerequisites, SysML semantic rules, text lowering and end-to-end language acceptance"
@@ -246,5 +262,150 @@
         "Separate future execution semantics; generation-1 AGQ-SEQ-01 does not transfer"
       ]
     }
-  ]
+  ],
+  "sysml_semantic_foundation": {
+    "result": "incomplete-do-not-start-platform",
+    "review": "docs/sysml-semantic-foundation-review.md",
+    "evidence": "verification/sysml-semantic-foundation-v1/README.md",
+    "authority_inventory": "standards/sysml-semantic-coverage.json",
+    "syntax_inventory": "standards/library-syntax-coverage.json",
+    "library_quality": "verification/sysml-semantic-foundation-v1/library-quality.json",
+    "semantic_rule_set": null,
+    "gates": [
+      {
+        "gate": 0,
+        "status": "implemented-inventory",
+        "implemented": "93 classes, 384 directly owned XMI rules/operations, PDF anchors, retained library requirements and ADR 0012",
+        "outstanding": "Rule interpretation and additional prose obligations remain explicit; inventory is not rule execution"
+      },
+      {
+        "gate": 1,
+        "status": "partial",
+        "implemented": "Atomic immutable multi-document KerML publications; mixed source retention and explicit unavailable SysML frontend",
+        "outstanding": "Mixed-language semantic construction, project/library dependency ingestion"
+      },
+      {
+        "gate": 2,
+        "status": "partial",
+        "implemented": "Exact local KPAR source closure, archive/entry checks, metadata/dependency traversal, private deterministic identity allocation",
+        "outstanding": "Canonical library facts and semantic-context determinism"
+      },
+      {
+        "gate": 3,
+        "status": "partial",
+        "implemented": "All 57 textual files scanned losslessly, lexical counts/ranges and exact parser gaps",
+        "outstanding": "Complete production-level inventory"
+      },
+      {
+        "gate": 4,
+        "status": "partial",
+        "implemented": "Normative decimal/exponential lexical values with complete lossless corpus tokenization",
+        "outstanding": "Dependency-closed KerML grammar and structural lowering"
+      },
+      {
+        "gate": 5,
+        "status": "not-started",
+        "implemented": "Existing bounded lexical/public declared-name queries retained",
+        "outstanding": "Imports, aliases, inherited resolution, visibility closure, cycles and invalidation matrix"
+      },
+      {
+        "gate": 6,
+        "status": "not-started",
+        "implemented": "None",
+        "outstanding": "Canonical KerML library graph and validated bindings"
+      },
+      {
+        "gate": 7,
+        "status": "not-started",
+        "implemented": "Existing KerML context /5 accounts for pending namespace populations",
+        "outstanding": "SysML semantic crate, composed context and rule-set identity"
+      },
+      {
+        "gate": 8,
+        "status": "not-started",
+        "implemented": "Authority inventory only",
+        "outstanding": "Definition/Usage semantic rules"
+      },
+      {
+        "gate": 9,
+        "status": "not-started",
+        "implemented": "Authority inventory only",
+        "outstanding": "Item, Part, Attribute, Port, Connection, ConnectorAsUsage and Interface rules"
+      },
+      {
+        "gate": 10,
+        "status": "partial",
+        "implemented": "Distinct syntax/project diagnostic types and resolution/KerML semantic domains",
+        "outstanding": "SysML validator and validated-state contracts"
+      },
+      {
+        "gate": 11,
+        "status": "not-started",
+        "implemented": "Systems Library exact text retained",
+        "outstanding": "Complete Systems Library grammar and lowering"
+      },
+      {
+        "gate": 12,
+        "status": "not-started",
+        "implemented": "Systems archive source dependency closure verified",
+        "outstanding": "Canonical Systems Library graph and validated semantic bindings"
+      },
+      {
+        "gate": 13,
+        "status": "not-started",
+        "implemented": "Authored SysML stored with FrontendUnavailable",
+        "outstanding": "Lossless authored SysML semantic vertical slice"
+      },
+      {
+        "gate": 14,
+        "status": "partial",
+        "implemented": "Mixed source storage, immutable revisions, identity and incomplete-reference tests",
+        "outstanding": "Cross-language and library semantic acceptance/proofs"
+      },
+      {
+        "gate": 15,
+        "status": "not-started",
+        "implemented": "Existing bounded KerML equivalence retained",
+        "outstanding": "Programmatic/textual SysML semantic equivalence"
+      },
+      {
+        "gate": 16,
+        "status": "partial",
+        "implemented": "Every library document reported; semantic quality command exits 1",
+        "outstanding": "Successful parsing, canonical lowering, resolution and structural semantic validation"
+      },
+      {
+        "gate": 17,
+        "status": "partial",
+        "implemented": "Namespace miss insertion, context changes, stable IDs and dependent typing rebuild tested",
+        "outstanding": "Import/library/derived-result dependency readiness and full mutation matrix"
+      },
+      {
+        "gate": 18,
+        "status": "partial",
+        "implemented": "49-document specialization chain, original inherited identity, deterministic answers",
+        "outstanding": "Full stress matrix after import/library/SysML implementation"
+      },
+      {
+        "gate": 19,
+        "status": "review-complete-foundation-incomplete",
+        "implemented": "All 16 review questions answered",
+        "outstanding": "Semantic milestone acceptance remains unsatisfied"
+      }
+    ],
+    "final_verification": {
+      "results": "verification/sysml-semantic-foundation-v1/verified-results.json",
+      "normal_commands": 16,
+      "normal_exit_zero": 16,
+      "structural_runtime_exit_codes": {
+        "kerml-1.0": 0,
+        "sysml-2.0": 0
+      },
+      "strict_conformance_exit_codes": {
+        "kerml-1.0": 1,
+        "sysml-2.0": 1
+      },
+      "library_semantic_quality_exit_code": 1
+    }
+  }
 }

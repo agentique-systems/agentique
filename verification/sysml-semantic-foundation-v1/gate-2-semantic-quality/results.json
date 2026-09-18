@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo run --locked --offline -p agq-standard-libraries --example audit -- --require-semantic",
+    "started": "2026-09-18T20:40:52.616Z",
+    "durationMs": 918,
+    "exitCode": 1,
+    "signal": null,
+    "log": "library-quality.txt"
+  }
+]
