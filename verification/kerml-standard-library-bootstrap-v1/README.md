@@ -45,3 +45,16 @@ It does not gain canonical support merely because a production tree can recogniz
 additional syntax. `gate-1/results.json` records seven successful commands,
 including focused production tests, authored regressions, Clippy, strict Rustdoc
 and both runtime checks. The whole corpus frontend report is the next gate.
+
+## Gate 2
+
+All 36 exact pinned KerML documents parse through the production frontend with
+zero recovery and exact contiguous token/source preservation. The corpus tests
+repeat every parse and compare all node kinds, ranges and syntax IDs. The syntax
+quality report gives per-document counts and separates 42 anonymous-invariant
+grammar discrepancies across nine documents from parser diagnostics.
+
+`gate-2/results.json` records all seven commands at zero. The complete report is
+`gate-2/syntax-quality.json`; `corpus-first.json` preserves the initial run.
+Canonical/resolution/semantic counts remain null: these phases have not run.
+This syntax gate does not weaken or pass the library semantic quality gate.

@@ -1,0 +1,58 @@
+[
+  {
+    "command": "cargo run --locked --offline -p agq-standard-libraries --example syntax_audit -- --output verification/kerml-standard-library-bootstrap-v1/gate-2/syntax-quality.json",
+    "started": "2026-09-18T21:32:07.805Z",
+    "durationMs": 6682,
+    "exitCode": 0,
+    "signal": null,
+    "log": "corpus.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-standard-libraries --test corpus",
+    "started": "2026-09-18T21:32:14.487Z",
+    "durationMs": 13741,
+    "exitCode": 0,
+    "signal": null,
+    "log": "repeatable-corpus.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/inventory.py",
+    "started": "2026-09-18T21:32:28.228Z",
+    "durationMs": 3394,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-inventory.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/generate.py",
+    "started": "2026-09-18T21:32:31.623Z",
+    "durationMs": 284,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-tables.txt"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T21:32:31.908Z",
+    "durationMs": 1101,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T21:32:33.010Z",
+    "durationMs": 1527,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T21:32:34.537Z",
+    "durationMs": 3211,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  }
+]

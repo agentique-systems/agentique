@@ -5971,8 +5971,8 @@
           "text": "alias '*' for scalarVectorMult;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -6479,8 +6479,8 @@
           "text": "doc\n\t\t/*\n\t\t * OrderedCollection is the abstract supertype for all ordered collection types.\n\t\t */"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -7239,8 +7239,8 @@
           "text": "flattenedSize"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -7380,8 +7380,8 @@
           "text": "arr.dimensions#(i)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -7521,8 +7521,8 @@
           "text": "arr.dimensions#(i)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -7662,8 +7662,8 @@
           "text": "arr.dimensions#(i)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -7977,8 +7977,8 @@
           "text": "(col2.elements)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -8737,8 +8737,8 @@
           "text": "flattenedSize"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -9497,8 +9497,8 @@
           "text": "flattenedSize"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -9571,8 +9571,8 @@
           "text": "assoc all SelfLink specializes BinaryLink {\n        doc\n        /*\n         * SelfLink is a binary association in which the things at the two ends are asserted\n         * to be the same.\n         */\n        \n        end feature thisThing: A"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -9619,8 +9619,8 @@
           "text": "assoc struct TPCGuardConstraint {\n\t\tend guardedLink [0..1] feature constrainedHBLink: HappensBefore;\n\t\tend bool constrainedGuard;\n\t\t\n\t\tprivate inv { allTrue(constrainedGuard()) }\n\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -10567,8 +10567,8 @@
           "text": "dimensions"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -12402,8 +12402,8 @@
           "text": ""
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -12497,8 +12497,8 @@
           "text": "behavior add { inout seq: Anything[0..*] ordered nonunique; in values: Anything[0..*] ordered nonunique;\n\t\tprivate feature newSeq = seq->including(values);\n\t\tfeature redefines endShot: add {\n\t\t\tbinding seq = newSeq;\n\t\t}\n\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -12596,8 +12596,8 @@
           "text": ": HappensDuring from [0..1] occ.endShot to self"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -12832,8 +12832,8 @@
           "text": "==="
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13068,8 +13068,8 @@
           "text": "x === y"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13152,8 +13152,8 @@
           "text": "binding seq = newSeq;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13236,8 +13236,8 @@
           "text": "seq = newSeq"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13330,8 +13330,8 @@
           "text": "{in x; x}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13424,8 +13424,8 @@
           "text": "{in x; x}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13518,8 +13518,8 @@
           "text": "{in x; x}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13612,8 +13612,8 @@
           "text": "{in x; x}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13677,8 +13677,8 @@
           "text": "in bool redefines onOccurrence;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13747,8 +13747,8 @@
           "text": "true"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13824,8 +13824,8 @@
           "text": "crosses"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13894,8 +13894,8 @@
           "text": "as"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13945,8 +13945,8 @@
           "text": "chains self.suboccurrences.endShot"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -13981,8 +13981,8 @@
           "text": "abstract class all Life specializes Occurrence {\r\n\t\tbinding portionOf = self {\r\n\t\t\tdoc\r\n\t\t\t/*\r\n\t\t\t * Lives are only portions of themselves.\r\n\t\t\t */\r\n\t\t\t}\r\n\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -14054,8 +14054,8 @@
           "text": "that as Occurrence"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -14099,8 +14099,8 @@
           "text": "istype"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -14126,8 +14126,8 @@
           "text": "abstract classifier Anything {\n\t\tdoc\n\t\t/*\n\t     * Anything is the top level generalized type in the language. \n\t     */\n\t\t\n\t\tfeature self: Anything[1] subsets things chains things.that {\n\t\t\tdoc\n\t\t\t/*\n\t\t\t * The source of a SelfLink of this t"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -14778,8 +14778,8 @@
           "text": "UniqueCollection :> Collection"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -14862,8 +14862,8 @@
           "text": "/* Note: Redefinition of `elements` is unique by default. \n\t\t\t * The `key` of any `KeyValuePair` must be unique over the collection of `KeyValuePair`. \n\t\t\t * The `val` does not need to be unique. \n\t\t\t */"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -14978,8 +14978,8 @@
           "text": "and"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15094,8 +15094,8 @@
           "text": "re(x) == 0.0 and im(x)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15165,8 +15165,8 @@
           "text": "if isEmpty(seq)? 0 else size(tail(seq))"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15266,8 +15266,8 @@
           "text": "connector : HappensDuring from [0..1] occ.endShot to self;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15365,8 +15365,8 @@
           "text": ": HappensDuring from [0..1] occ.endShot to self"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15614,8 +15614,8 @@
           "text": "occ.startShot"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15863,8 +15863,8 @@
           "text": "occ.startShot"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15899,8 +15899,8 @@
           "text": "new TimeSignal(timeInstant, clock, monitor)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15935,8 +15935,8 @@
           "text": "(timeInstant, clock, monitor)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -15971,8 +15971,8 @@
           "text": "(timeInstant, clock, monitor)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -16048,8 +16048,8 @@
           "text": "crosses thatOccurrence.timeCoincidentOccurrences"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -16136,8 +16136,8 @@
           "text": "abstract datatype UniqueCollection :> Collection {\n    \tdoc\n\t\t/*\n\t\t * UniqueCollection is the abstract supertype for all collection types with unique elements.\n\t\t */\n\t\t\n\t\tfeature elements[0..*] :>> Collection::elements {\n\t\t\t/* Note: Redefin"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -16163,8 +16163,8 @@
           "text": "disjoint earlierOccurrence.successors from laterOccurrence.predecessors;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -16216,8 +16216,8 @@
           "text": "disjoint from Occurrence"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -16697,8 +16697,8 @@
           "text": "doc\n\t\t/*\n\t\t * OrderedCollection is the abstract supertype for all ordered collection types.\n\t\t */"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -17840,8 +17840,8 @@
           "text": ""
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -18983,8 +18983,8 @@
           "text": ""
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -19131,8 +19131,8 @@
           "text": "end"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -19203,8 +19203,8 @@
           "text": "in expr secondValue[0..1] { return : Anything[0..*] ordered nonunique; }"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -19297,8 +19297,8 @@
           "text": "{in x; x}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -19391,8 +19391,8 @@
           "text": "{in x; x}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -21060,8 +21060,8 @@
           "text": "feature elements[0..*] :>> Collection::elements {\n\t\t\t/* Note: Redefinition of 'elements' is unique by default. */\n\t\t}"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -21261,8 +21261,8 @@
           "text": "occ.endShot"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -21440,8 +21440,8 @@
           "text": "col.elements"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -21619,8 +21619,8 @@
           "text": "elements"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -23453,8 +23453,8 @@
           "text": "elements[0..*] :>> Collection::elements"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -24222,8 +24222,8 @@
           "text": "in"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -26126,8 +26126,8 @@
           "text": "feature elements[0..*] :>> Collection::elements {\n\t\t\t/* Note: Redefinition of 'elements' is unique by default. */\n\t\t}"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -27544,8 +27544,8 @@
           "text": "elements"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -29084,8 +29084,8 @@
           "text": "feature elements[0..*] :>> Collection::elements {\n\t\t\t/* Note: Redefinition of 'elements' is unique by default. */\n\t\t}"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -30031,8 +30031,8 @@
           "text": ""
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -30808,8 +30808,8 @@
           "text": "flattenedSize"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -31484,8 +31484,8 @@
           "text": "flattenedSize"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -32261,8 +32261,8 @@
           "text": "flattenedSize"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -32350,8 +32350,8 @@
           "text": "intersects objects, suboccurrences"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -34499,8 +34499,8 @@
           "text": ": Positive"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -36253,8 +36253,8 @@
           "text": "[0..*] :>> Collection::elements"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -36581,8 +36581,8 @@
           "text": "= 3"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -36628,8 +36628,8 @@
           "text": "abstract flow flowTransfers: FlowTransfer[0..*] nonunique subsets transfers {\n        doc\n        /*\n         * flowTransfers is a specialization of transfers restricted to type FlowTransfers.\n         * It is the default subsetting for non"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -36675,8 +36675,8 @@
           "text": "flowTransfers: FlowTransfer[0..*] nonunique subsets transfers"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -37088,8 +37088,8 @@
           "text": "abstract function '==='{ in x: Anything[0..1]; in y: Anything[0..1]; \n\t\treturn : Boolean[1];\n\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -37631,8 +37631,8 @@
           "text": "{ in x: Anything[0..1]; in y: Anything[0..1]; \n\t\treturn : Boolean[1] = not (x == y);\n\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -38200,8 +38200,8 @@
           "text": "in x: Anything[0..1]; in y: Anything[0..1]; \n\t\treturn : Boolean[1] = not (x == y);"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -38340,8 +38340,8 @@
           "text": "col.elements->includes(values)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -38398,8 +38398,8 @@
           "text": "max"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -38456,8 +38456,8 @@
           "text": "max"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -38514,8 +38514,8 @@
           "text": "max"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -38572,8 +38572,8 @@
           "text": "max"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -38630,8 +38630,8 @@
           "text": "max"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -38688,8 +38688,8 @@
           "text": "max"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -41106,8 +41106,8 @@
           "text": "Positive"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -42135,8 +42135,8 @@
           "text": "Collection"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -42483,8 +42483,8 @@
           "text": "private import SequenceFunctions::size;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -42831,8 +42831,8 @@
           "text": "SequenceFunctions::size"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -42908,8 +42908,8 @@
           "text": "arr.dimensions#(i)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -43196,8 +43196,8 @@
           "text": "SequenceFunctions::size"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -43480,8 +43480,8 @@
           "text": "SequenceFunctions::size"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -43527,8 +43527,8 @@
           "text": "interaction FlowTransfer specializes Transfer disjoint from MessageTransfer {\n        doc\n        /*\n         * A FlowTransfer is a Transfer identifying an output feature of the source from which\n         * to pick up a payload and an input"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -43627,8 +43627,8 @@
           "text": "VectorValue"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -43705,8 +43705,8 @@
           "text": "intersects CartesianVectorValue, ThreeVectorValue"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -43851,8 +43851,8 @@
           "text": "inv { isUnit(one) }"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -43909,8 +43909,8 @@
           "text": "inverse of predecessors"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -44195,8 +44195,8 @@
           "text": "SequenceFunctions::size(col.elements)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -44335,8 +44335,8 @@
           "text": "includes"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -44518,8 +44518,8 @@
           "text": "standard library package VectorValues {\n\tdoc\n\t/*\n\t * This package provides a basic model of abstract vectors as well as concrete vectors\n\t * whose components are numerical values. The package VectorFunctions defines the \n\t * corresponding v"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -44588,8 +44588,8 @@
           "text": "true"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -46906,8 +46906,8 @@
           "text": "0"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -47391,8 +47391,8 @@
           "text": "*"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -49305,8 +49305,8 @@
           "text": "0"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -49382,8 +49382,8 @@
           "text": "0.0"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -50453,8 +50453,8 @@
           "text": "abstract datatype Collection {\n\t\tdoc\n\t\t/*\n\t\t * Collection is the top level abstract supertype of all collection types.\n\t\t * The name elements is used to denote the members or contents of the collection.\n\t\t */\n\t\t\n\t\tfeature elements[0..*] non"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -53388,8 +53388,8 @@
           "text": ""
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -53672,8 +53672,8 @@
           "text": "ScalarValues::NumericalValue"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -53801,8 +53801,8 @@
           "text": "metaclass Comment specializes AnnotatingElement {\n\t\t\tvar feature 'locale' : String[0..1];\n\t\t\tvar feature body : String[1..1];\n\t\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -53847,8 +53847,8 @@
           "text": "multiplicity oneToMany [1..*] {\n\t\tdoc\n\t\t/*\n\t\t * oneToMany is a multiplicity range allowing any cardinality of one or more.\n\t\t */\n\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -55489,8 +55489,8 @@
           "text": "[0..*]"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -57729,8 +57729,8 @@
           "text": "0"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -59231,8 +59231,8 @@
           "text": "[0..*]"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -59277,8 +59277,8 @@
           "text": "multiplicity oneToMany [1..*] {\n\t\tdoc\n\t\t/*\n\t\t * oneToMany is a multiplicity range allowing any cardinality of one or more.\n\t\t */\n\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -60253,8 +60253,8 @@
           "text": "private import Base::*;"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -60372,8 +60372,8 @@
           "text": "inv piPrecision { RealFunctions::round(pi * 1E20) == 314159265358979323846.0 }"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -60514,8 +60514,8 @@
           "text": "IntegerFunctions::*"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -61286,8 +61286,8 @@
           "text": "abstract datatype Collection {\n\t\tdoc\n\t\t/*\n\t\t * Collection is the top level abstract supertype of all collection types.\n\t\t * The name elements is used to denote the members or contents of the collection.\n\t\t */\n\t\t\n\t\tfeature elements[0..*] non"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -61465,8 +61465,8 @@
           "text": "col"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -61644,8 +61644,8 @@
           "text": "col"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -61823,8 +61823,8 @@
           "text": "col"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -62902,8 +62902,8 @@
           "text": "dimensions->reduce '*'"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -63612,8 +63612,8 @@
           "text": "abstract datatype OrderedCollection :> Collection {\n    \tdoc\n\t\t/*\n\t\t * OrderedCollection is the abstract supertype for all ordered collection types.\n\t\t */\n    \t\n\t\tfeature elements[0..*] ordered nonunique :>> Collection::elements;\n    }"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -64683,8 +64683,8 @@
           "text": "abstract datatype Collection {\n\t\tdoc\n\t\t/*\n\t\t * Collection is the top level abstract supertype of all collection types.\n\t\t * The name elements is used to denote the members or contents of the collection.\n\t\t */\n\t\t\n\t\tfeature elements[0..*] non"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -64745,8 +64745,8 @@
           "text": "null"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -64815,8 +64815,8 @@
           "text": "myselfSameLives [1..*]"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -64885,8 +64885,8 @@
           "text": "myselfSameLives [1..*]"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -65081,8 +65081,8 @@
           "text": "[0..1]"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -65277,8 +65277,8 @@
           "text": "[0..1]"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -65354,8 +65354,8 @@
           "text": "thatOccurrence.timeCoincidentOccurrences"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -65407,8 +65407,8 @@
           "text": "Occurrence"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -66622,8 +66622,8 @@
           "text": "dimensions->reduce '*' ?? 1"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -66772,8 +66772,8 @@
           "text": "arr.dimensions#(i)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -66913,8 +66913,8 @@
           "text": "arr.dimensions#(i)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -67099,8 +67099,8 @@
           "text": "whileDecision.ifTest"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -67151,8 +67151,8 @@
           "text": "exit.startShot.successors"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -67487,8 +67487,8 @@
           "text": "occ"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -67545,8 +67545,8 @@
           "text": "predecessors"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -69079,8 +69079,8 @@
           "text": "feature elements[0..*] :>> Collection::elements {\n\t\t\t/* Note: Redefinition of 'elements' is unique by default. */\n\t\t}"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -70699,8 +70699,8 @@
           "text": "Positive"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -72337,8 +72337,8 @@
           "text": "[0..*]"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -73975,8 +73975,8 @@
           "text": "[0..*]"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -74364,8 +74364,8 @@
           "text": "OrderedCollection::elements"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -74617,8 +74617,8 @@
           "text": "occ.startShot"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -75127,8 +75127,8 @@
           "text": "OrderedCollection"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -75487,8 +75487,8 @@
           "text": "dataValues"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -75532,8 +75532,8 @@
           "text": "package Kernel {\n\t\tpublic import Core::*;\n\t\t\n\t\tmetaclass Association specializes Classifier, Relationship {\n\t\t\tderived var feature relatedType : Type[0..*] ordered nonunique redefines relatedElement;\n\t\t\tderived var feature sourceType : Type"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -75718,8 +75718,8 @@
           "text": "{\n\tdoc\n\t/*\n\t * This package provides a basic model of abstract vectors as well as concrete vectors\n\t * whose components are numerical values. The package VectorFunctions defines the \n\t * corresponding vector-space functions.\n\t */\n\n\tprivate "
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -75904,8 +75904,8 @@
           "text": "package VectorValues"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -76206,8 +76206,8 @@
           "text": "col2.elements"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -76254,8 +76254,8 @@
           "text": "abstract predicate LiteralBooleanEvaluation specializes LiteralEvaluation, BooleanEvaluation\n\t\tintersects LiteralEvaluation, BooleanEvaluation {\n\t\tdoc\n\t\t/*\n\t\t * LiteralBooleanEvaluation is a specialization of LiteralEvaluation for the case "
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -76420,8 +76420,8 @@
           "text": "col.elements"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -76586,8 +76586,8 @@
           "text": "col.elements"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -76752,8 +76752,8 @@
           "text": "col.elements"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -77831,8 +77831,8 @@
           "text": "dimensions->reduce '*'"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -81981,8 +81981,8 @@
           "text": "SequenceFunctions::size"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -82333,8 +82333,8 @@
           "text": ":>>"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -82410,8 +82410,8 @@
           "text": "references"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -82487,8 +82487,8 @@
           "text": "0.0"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -82839,8 +82839,8 @@
           "text": ":>> OrderedCollection::elements"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -83191,8 +83191,8 @@
           "text": ":>> OrderedCollection::elements, UniqueCollection::elements"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -83283,8 +83283,8 @@
           "text": "min"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -83329,8 +83329,8 @@
           "text": "references target"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -83693,8 +83693,8 @@
           "text": ";"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -83889,8 +83889,8 @@
           "text": "indexes#(i) > arr.dimensions#(i)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -84323,8 +84323,8 @@
           "text": "return : Boolean[1];"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -84506,8 +84506,8 @@
           "text": "standard library package VectorValues {\n\tdoc\n\t/*\n\t * This package provides a basic model of abstract vectors as well as concrete vectors\n\t * whose components are numerical values. The package VectorFunctions defines the \n\t * corresponding v"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -84993,8 +84993,8 @@
           "text": ":>"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85327,8 +85327,8 @@
           "text": "subsets"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85439,8 +85439,8 @@
           "text": "(col.elements as Anything)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85589,8 +85589,8 @@
           "text": "col.elements as Anything"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85675,8 +85675,8 @@
           "text": "i"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85729,8 +85729,8 @@
           "text": "values, seq->subsequence(index + 1)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85784,8 +85784,8 @@
           "text": "longerOccurrence.successors"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85882,8 +85882,8 @@
           "text": "composite step removeStep : remove {\n\t\t\tinout seq = group;\n\t\t\tin values = occ;\n\t\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85952,8 +85952,8 @@
           "text": "struct BasicClock :> Clock {\n\t\tdoc\n\t\t/*\n\t\t * A BasicClock is a Clock whose currentTime is a Real number.\n\t\t */\n\t\t\n\t\tvar feature :>> currentTime : Real;\n\t}"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -85979,8 +85979,8 @@
           "text": "subclassifier SelfLink specializes SelfSameLifeLink;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -86300,8 +86300,8 @@
           "text": "subsets dataValues"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -86355,8 +86355,8 @@
           "text": "subset longerOccurrence.successors subsets shorterOccurrence.successors;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -86676,8 +86676,8 @@
           "text": "subsets dataValues"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -86760,8 +86760,8 @@
           "text": "succession [1] ifTest then [0..1] thenClause;"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -86844,8 +86844,8 @@
           "text": "[1] ifTest then [0..1] thenClause"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -87330,8 +87330,8 @@
           "text": ":> OrderedCollection"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -88950,8 +88950,8 @@
           "text": ":"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -90952,8 +90952,8 @@
           "text": "{\n    \tdoc\n\t\t/*\n\t\t * OrderedCollection is the abstract supertype for all ordered collection types.\n\t\t */\n    \t\n\t\tfeature elements[0..*] ordered nonunique :>> Collection::elements;\n    }"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -92833,8 +92833,8 @@
           "text": "doc\n\t\t/*\n\t\t * OrderedCollection is the abstract supertype for all ordered collection types.\n\t\t */"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -92881,8 +92881,8 @@
           "text": "member feature 'public' : VisibilityKind[1];"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -93533,8 +93533,8 @@
           "text": "abstract"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -93606,8 +93606,8 @@
           "text": "Occurrence"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -93651,8 +93651,8 @@
           "text": "StatePerformance"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -93736,8 +93736,8 @@
           "text": "intersects CartesianVectorValue, ThreeVectorValue"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -93806,8 +93806,8 @@
           "text": "Occurrence"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -95426,8 +95426,8 @@
           "text": ": Positive"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -97046,8 +97046,8 @@
           "text": ": Positive"
         }
       ],
-      "parser_support": "bounded authored subset",
-      "ast_cst_support": "bounded authored subset",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "bounded authored subset",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -97128,8 +97128,8 @@
           "text": "not"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -97210,8 +97210,8 @@
           "text": "not isEmpty(seq)"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -97257,8 +97257,8 @@
           "text": "outsideOfOccurrences"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -97293,8 +97293,8 @@
           "text": "unions HappensBefore, OutsideOf"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -97621,8 +97621,8 @@
           "text": "= 3"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
@@ -98049,8 +98049,8 @@
           "text": "private"
         }
       ],
-      "parser_support": "not implemented in Rust frontend",
-      "ast_cst_support": "reference inventory tree only",
+      "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
+      "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
       "lowering_support": "not implemented",
       "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
       "semantic_interpretation_support": "not established for library corpus"
