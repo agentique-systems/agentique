@@ -9,6 +9,7 @@
     "gate_1": "not-implemented",
     "full_inventory": {"classes": 175, "properties": 715, "associations": 319, "enumerations": 7},
     "runtime_registration": "not-reached: full translation fails",
+    "final_verification": {"results": "verification/language-core-completion-v1/final/results.json", "commands_run": 14, "exit_zero": 12, "runtime_gate_exit_codes": {"kerml-1.0": 1, "sysml-2.0": 1}},
     "categories": {"C": "Integer and Real", "D": "association inheritance", "E": "five exact naming anomalies", "F": "definedFlow property context interpretation"},
     "reports": ["standards/generated/kerml-1.0/full-audit.json", "standards/generated/sysml-2.0/full-audit.json"],
     "remaining_stages": ["generic Property rule and regression matrix", "full runtime/value/storage/derived contract", "complete KerML and SysML views", "full-registry semantic context", "runtime stress matrix and acceptance"]

@@ -14,6 +14,8 @@ pins and supplied artifacts remain unchanged. No Pack 2B work was undertaken.
 before code changes and returned **1**, with the exact `2abb2284… -> 2e4efe58…`
 redefinition failure. [Original audit](original-structural-audit.json) preserves
 the prior report. No historical failed gate is removed or relabelled successful.
+The original PowerShell log is UTF-16; a
+[UTF-8 viewing copy](stage-0/runtime-readiness.utf8.txt) is also supplied.
 
 [Property evidence](stage-0/property-evidence.json) records direct-XMI ownership,
 contexts, types, associations, class/association ancestry, source-qualified IDs,
@@ -98,7 +100,14 @@ a content change. The revised checker captures current bytes only after proving
 Git equivalence (allowing only CRLF in historical text evidence), then requires
 exact byte equality across final verification.
 
-Final results are recorded in `final/results.json` when the runner completes.
-The foundation review's [13 answers](../../docs/language-core-foundation-review.md)
+All fourteen final commands ran: [results](final/results.json). Twelve returned
+0. Both complete runtime-readiness commands returned **1**; the runner therefore
+also returned **1**. All four browser tests passed, all five public generation-2
+crates passed strict Rustdoc, and 393 protected files passed preservation checks.
+These failures are actual gates, not converted into passing refusal tests.
+
+Implementation/investigation commit: `c6a52a0`. A separate verification commit
+records these final logs. The foundation review's
+[13 answers](../../docs/language-core-foundation-review.md)
 and [machine-readable coverage](../../standards/v2-coverage.json) remain
 incomplete regardless of existing workspace test success.

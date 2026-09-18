@@ -135,6 +135,10 @@ scope. Passing them cannot certify the unavailable full registry.
 
 Actual commands, complete logs and exits are in
 [the verification record](../verification/language-core-completion-v1/README.md).
+All fourteen final commands ran: twelve exited 0, including the workspace,
+strict Rustdoc and frontend/browser checks; both full runtime gates exited 1.
+Preservation checks passed for 393 protected files. No failed runtime gate is
+reported as completed by these passing workspace checks.
 `--require-runtime` now evaluates complete selected-language input for both
 baselines; a successful bounded KerML generator no longer certifies full readiness.
 `--audit-full --check` verifies diagnostic reports, including blocked reports;

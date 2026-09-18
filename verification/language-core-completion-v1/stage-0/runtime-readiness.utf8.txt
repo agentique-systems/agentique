@@ -1,0 +1,19 @@
+cargo.exe :    Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+At line:2 char:266
++ ... tring('o'); & cargo run --locked --offline -p agq-metamodel-gen -- -- ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling ag...\crates\kernel):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.50s
+     Running `target\debug\metamodel-gen.exe --baseline sysml-2.0 --require-runtime --check`
+Baseline diagnostic: https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-A_ownedRedefinition_owningFeature-owningFeature 
+[45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466; reviewed-upstream-anomaly-preserve] https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names
+Baseline diagnostic: https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-A_targetType_targetAssociation-targetAssociation 
+[45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466; reviewed-upstream-anomaly-preserve] https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names
+Baseline diagnostic: https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage 
+[caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f; reviewed-upstream-anomaly-preserve] https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names
+metamodel-gen: SysML runtime closure blocked: "generated descriptor validation: invalid redefinition 2abb2284-8e25-51ac-b486-1792cc60e1b1 -> 2e4efe58-2d09-5275-991e-104649d59bf3". See 
+standards/generated/sysml-2.0/structural-audit.json for source-qualified evidence; no runtime output written.
+error: process didn't exit successfully: `target\debug\metamodel-gen.exe --baseline sysml-2.0 --require-runtime --check` (exit code: 1)

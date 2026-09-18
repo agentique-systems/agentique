@@ -1,0 +1,12 @@
+{
+  "base": "76aef699ee7b2d4f910c7483e42340998770ac5c",
+  "capture": false,
+  "checkedProtectedFiles": 393,
+  "checkoutLineEndings": [
+    "verification/benchmark.json",
+    "verification/logs/pilot-baseline-validation.txt",
+    "verification/logs/pilot-validation.txt"
+  ],
+  "historicalAnomalyEntriesUnchanged": 3,
+  "originalAuditPreserved": true
+}
