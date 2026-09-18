@@ -31,6 +31,20 @@ pub enum SearchDependency {
     NamespaceMembers {
         namespace: ElementId,
     },
+    /// Import population and import visibility, recursion and target changes.
+    ImportSet {
+        namespace: ElementId,
+    },
+    /// A traversed namespace import, including misses in its target namespace.
+    ImportedNamespace {
+        import: ElementId,
+        namespace: ElementId,
+    },
+    /// Available root namespaces at the project/dependency boundary.
+    ProjectRoots {
+        root: ElementId,
+    },
+    StandardLibraries,
     Instances {
         class: MetaclassId,
     },
@@ -53,6 +67,10 @@ pub enum QueryKind {
     Member,
     LookupDeclaredMember,
     ResolveReference,
+    LookupMember,
+    NamespaceMemberships,
+    /// Whole membership population; subject and value are the namespace itself.
+    NamespacePopulation,
     DirectFeatures,
     DirectSpecializations,
     AllSpecializations,
@@ -90,6 +108,12 @@ pub enum Rule {
     MembershipEndpoint,
     DeclaredMemberName,
     DeclaredReferenceResolution,
+    NamespaceResolution,
+    ParameterRedefinition,
+    ResultRedefinition,
+    EndRedefinition,
+    LibrarySpecialization,
+    ExpressionResult,
     OwnedFeature,
     Specialization,
     TransitiveSpecialization,

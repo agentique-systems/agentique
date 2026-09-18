@@ -1,5 +1,6 @@
 //! Source-to-kernel orchestration. The canonical model has no parser dependency.
 #![forbid(unsafe_code)]
+pub mod library;
 mod lowering;
 mod project;
 pub use project::*;

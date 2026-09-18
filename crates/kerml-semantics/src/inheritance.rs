@@ -48,26 +48,14 @@ impl KerMlQueries<'_> {
                 }
             }
             let owned = self.owned_relationships(current);
-            let mut parents = BTreeSet::new();
             let direct = self.direct_specializations(current);
-            for &id in &owned.value {
-                if self.is(id, c::SPECIALIZATION) {
-                    let view =
-                        views::Specialization::try_new(id, self.model()).expect("checked class");
-                    self.property(&mut out, id, p::SPECIALIZATION_SPECIFIC);
-                    self.property(&mut out, id, p::SPECIALIZATION_GENERAL);
-                    self.property(&mut out, id, p::RELATIONSHIP_IS_IMPLIED);
-                    if view.specific().ok() == Some(current)
-                        && !(self.context().options.exclude_implied
-                            && view.is_implied().ok() == Some(true))
-                        && let Ok(general) = view.general()
-                    {
-                        parents.insert(general);
-                        if seen.insert(general) {
-                            queue.push_back(general);
-                        }
-                    }
+            let parents: BTreeSet<_> = direct.value.iter().copied().collect();
+            for &general in &parents {
+                if seen.insert(general) {
+                    queue.push_back(general);
                 }
+            }
+            for &id in &owned.value {
                 if [c::CONJUGATION, c::IMPORT, c::FEATURE_CHAINING]
                     .iter()
                     .any(|class| self.is(id, *class))
@@ -121,25 +109,10 @@ impl KerMlQueries<'_> {
                 continue;
             }
             let redefined = self.redefined_features(feature);
-            let owned = self.owned_relationships(feature);
-            let mut targets = BTreeSet::new();
-            for &id in &owned.value {
-                if self.is(id, c::REDEFINITION) {
-                    let view =
-                        views::Redefinition::try_new(id, self.model()).expect("checked class");
-                    self.property(&mut out, id, p::REDEFINITION_REDEFINING_FEATURE);
-                    self.property(&mut out, id, p::REDEFINITION_REDEFINED_FEATURE);
-                    if view.redefining_feature().ok() == Some(feature)
-                        && let Ok(target) = view.redefined_feature()
-                    {
-                        targets.insert(target);
-                    }
-                }
-            }
+            let targets: BTreeSet<_> = redefined.value.iter().copied().collect();
             pending.extend(targets.iter().copied());
             redef_graph.insert(feature, targets);
             out.merge(redefined);
-            out.merge(owned);
         }
         let mut closures = BTreeMap::<ElementId, BTreeSet<ElementId>>::new();
         for &feature in redef_graph.keys() {

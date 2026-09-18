@@ -11,3 +11,8 @@ agq-kerml = { path = "../kerml" }
 agq-kerml-semantics.workspace = true
 agq-kerml-syntax = { path = "../kerml-syntax" }
 thiserror.workspace = true
+agq-standard-libraries = { path = "../standard-libraries" }
+uuid.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

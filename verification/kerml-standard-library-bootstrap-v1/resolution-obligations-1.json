@@ -1,0 +1,3838 @@
+[
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      3111,
+      3121
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      5928,
+      5936
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      4707,
+      4717
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Observation.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      2619,
+      2631
+    ],
+    "source": "sourceOutput"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/KerML.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      335,
+      351
+    ],
+    "source": "annotatedElement"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(140312272290819579055272035561518329836), element: ElementId(72182770970526881465926789266218249205) }",
+      "MemberMatch { membership: ElementId(170994027564352468793530435977711870747), element: ElementId(58406089301945772916166886163104945792) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/ComplexFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      662,
+      663
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      3852,
+      3867
+    ],
+    "source": "laterOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/StatePerformances.kerml",
+    "property": "memberElement",
+    "range": [
+      4739,
+      4764
+    ],
+    "source": "incomingTransitionTrigger"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2049,
+      2053
+    ],
+    "source": "rank"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Observation.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      2415,
+      2440
+    ],
+    "source": "outgoingTransfersFromSelf"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(311679043949322152407795946912607975593), element: ElementId(247005598298837287770418916532072796405) }",
+      "MemberMatch { membership: ElementId(320347377388954563214715796631672824045), element: ElementId(217254850843006000598266303609301764607) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/ComplexFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      780,
+      781
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      2360,
+      2370
+    ],
+    "source": "spaceShots"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(287249127499529254830234920619195021832), element: ElementId(284375609436644710527122634811108635337) }",
+      "MemberMatch { membership: ElementId(289486270039964930435686392265887934780), element: ElementId(199519157807386727045874767213697546729) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6909,
+      6910
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/StatePerformances.kerml",
+    "property": "memberElement",
+    "range": [
+      4713,
+      4717
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5378,
+      5394
+    ],
+    "source": "longerOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(17411547361325612714358002041203842536), element: ElementId(278455257416525231682001812570212750336) }",
+      "MemberMatch { membership: ElementId(246690457303118850516127809011468981010), element: ElementId(173913096550354801361273674596349203177) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6118,
+      6119
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6368,
+      6382
+    ],
+    "source": "thisOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(64055894297842511797417422377896154327), element: ElementId(124909258155140411533909817530338488068) }",
+      "MemberMatch { membership: ElementId(263986681517034182679638229221866335109), element: ElementId(243107194183557985196747059932722638993) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7564,
+      7565
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      2421,
+      2449
+    ],
+    "source": "spaceTimeEnclosedOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      844,
+      852
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(153822254995439079976624042734555682401), element: ElementId(192890583126192176386135276909509837059) }",
+      "MemberMatch { membership: ElementId(213096441932517271774237488756548683239), element: ElementId(58673622563372144063679064856970898529) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6655,
+      6656
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6983,
+      6995
+    ],
+    "source": "smallerSpace"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(188299402017038024724579856254092652247), element: ElementId(56982236530444182136186859591245719842) }",
+      "MemberMatch { membership: ElementId(337650789672445937105082352978038321999), element: ElementId(316016705802366352318435430880583736242) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/OccurrenceFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1043,
+      1044
+    ],
+    "source": "y"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6996,
+      7016
+    ],
+    "source": "outsideOfOccurrences"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(122063529130640235156851269197198345946), element: ElementId(161558655110957710406762122375735905201) }",
+      "MemberMatch { membership: ElementId(130106886563546118787692075059688651034), element: ElementId(281972427993303576495884963043221024795) }",
+      "MemberMatch { membership: ElementId(143176456456375243763222738133629064267), element: ElementId(238076180177184324094056977457323382264) }",
+      "MemberMatch { membership: ElementId(266684316010253110366945324498588393806), element: ElementId(69625059489034243876672140691932521882) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/RationalFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2608,
+      2618
+    ],
+    "source": "collection"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(153822254995439079976624042734555682401), element: ElementId(192890583126192176386135276909509837059) }",
+      "MemberMatch { membership: ElementId(213096441932517271774237488756548683239), element: ElementId(58673622563372144063679064856970898529) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6694,
+      6695
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      8711,
+      8741
+    ],
+    "source": "spaceTimeCoincidentOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7291,
+      7300
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      1413,
+      1422
+    ],
+    "source": "snapshots"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(180300229752271201164582468139043135470), element: ElementId(319965379685421852156371449403196380253) }",
+      "MemberMatch { membership: ElementId(228314943374190002190289861605208318947), element: ElementId(104026475323519592053181880195108499353) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6191,
+      6192
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettingFeature",
+    "range": [
+      13874,
+      13886
+    ],
+    "source": "superendshot"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      3295,
+      3299
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      5916,
+      5926
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(148023215162510889875209261764973065864), element: ElementId(58960492093293391015177042136084392444) }",
+      "MemberMatch { membership: ElementId(268476898291949086949289807122261263680), element: ElementId(108179937825349864923591236732793092477) }"
+    ],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      24756,
+      24762
+    ],
+    "source": "source"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(122063529130640235156851269197198345946), element: ElementId(161558655110957710406762122375735905201) }",
+      "MemberMatch { membership: ElementId(130106886563546118787692075059688651034), element: ElementId(281972427993303576495884963043221024795) }",
+      "MemberMatch { membership: ElementId(143176456456375243763222738133629064267), element: ElementId(238076180177184324094056977457323382264) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/RealFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2525,
+      2535
+    ],
+    "source": "collection"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(32230774598712213068116543333735388856), element: ElementId(320757103687281317708950415255210634021) }",
+      "MemberMatch { membership: ElementId(104181514674818189108482032486905516311), element: ElementId(234119817692316255435309431883882409997) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6437,
+      6438
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      12155,
+      12166
+    ],
+    "source": "timeSliceOf"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5506,
+      5523
+    ],
+    "source": "shorterOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1603,
+      1611
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(68166973259721529983281196817948076061), element: ElementId(79320238855461803059356062837612476609) }",
+      "MemberMatch { membership: ElementId(200639661097374769427306147905225284946), element: ElementId(189563092459144464781478031789929050693) }",
+      "MemberMatch { membership: ElementId(337737480815117528323773227113694324971), element: ElementId(254981053029302343124089058642951487645) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/RealFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2693,
+      2703
+    ],
+    "source": "collection"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      14732,
+      14736
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(32230774598712213068116543333735388856), element: ElementId(320757103687281317708950415255210634021) }",
+      "MemberMatch { membership: ElementId(104181514674818189108482032486905516311), element: ElementId(234119817692316255435309431883882409997) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6702,
+      6703
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(68166973259721529983281196817948076061), element: ElementId(79320238855461803059356062837612476609) }",
+      "MemberMatch { membership: ElementId(200639661097374769427306147905225284946), element: ElementId(189563092459144464781478031789929050693) }",
+      "MemberMatch { membership: ElementId(247446620323367187613852754935142069416), element: ElementId(227922539729936103304628536571368088531) }",
+      "MemberMatch { membership: ElementId(287115509714749611211850391047091578292), element: ElementId(167869871237234306603334241361469135524) }",
+      "MemberMatch { membership: ElementId(337737480815117528323773227113694324971), element: ElementId(254981053029302343124089058642951487645) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/IntegerFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2555,
+      2565
+    ],
+    "source": "collection"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6850,
+      6861
+    ],
+    "source": "largerSpace"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6383,
+      6408
+    ],
+    "source": "timeCoincidentOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1344,
+      1352
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5353,
+      5365
+    ],
+    "source": "predecessors"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      3868,
+      3878
+    ],
+    "source": "successors"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(2495690069352290910773785151543426685), element: ElementId(272256225066747751264648236935340762464) }",
+      "MemberMatch { membership: ElementId(295441112060092908817155470597541348486), element: ElementId(144227272893045865874948066040813852875) }"
+    ],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      5280,
+      5284
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      3319,
+      3323
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/ControlPerformances.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      2039,
+      2043
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(115110032841144850418053516608372037290), element: ElementId(211213899384086652314445687973783614631) }",
+      "MemberMatch { membership: ElementId(147516795980598331116194436498649094294), element: ElementId(208872350763806535238643696491485559136) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2247,
+      2252
+    ],
+    "source": "index"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(17295125220928936351842512103771774560), element: ElementId(123179377986788136337960242398316462608) }",
+      "MemberMatch { membership: ElementId(144199243096526056384357677553192220492), element: ElementId(305252347046097559036475665955431366848) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      5926,
+      5927
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(161465619110170108399759088353627423285), element: ElementId(190621472862057807331679567448596943348) }",
+      "MemberMatch { membership: ElementId(337650789672445937105082352978038321999), element: ElementId(316016705802366352318435430880583736242) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/DataFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      627,
+      628
+    ],
+    "source": "y"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(68166973259721529983281196817948076061), element: ElementId(79320238855461803059356062837612476609) }",
+      "MemberMatch { membership: ElementId(200639661097374769427306147905225284946), element: ElementId(189563092459144464781478031789929050693) }",
+      "MemberMatch { membership: ElementId(247446620323367187613852754935142069416), element: ElementId(227922539729936103304628536571368088531) }",
+      "MemberMatch { membership: ElementId(337737480815117528323773227113694324971), element: ElementId(254981053029302343124089058642951487645) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/RationalFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2783,
+      2793
+    ],
+    "source": "collection"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      7458,
+      7486
+    ],
+    "source": "spaceTimeEnclosedOccurrences"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(147985019424354581402106793015040549248), element: ElementId(278326541186632696567280473177557060372) }",
+      "MemberMatch { membership: ElementId(339497470264461257883008685666127524585), element: ElementId(50449057133669382322108415480472175520) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7304,
+      7305
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(92281763556055093280694099834529319380), element: ElementId(111473644138770427265143375838041262414) }",
+      "MemberMatch { membership: ElementId(253159952737471629309205799345779810940), element: ElementId(47521089245258894977178989450870936027) }",
+      "MemberMatch { membership: ElementId(293847629240576885094069180697864925694), element: ElementId(291210395569068198078902587447950464847) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6942,
+      6943
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      12134,
+      12154
+    ],
+    "source": "timeSlicedOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6457,
+      6466
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Triggers.kerml",
+    "property": "memberElement",
+    "range": [
+      1027,
+      1038
+    ],
+    "source": "currentTime"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/TransitionPerformances.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      929,
+      949
+    ],
+    "source": "enclosedPerformances"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(198948801225624163825084241188779391945), element: ElementId(72575056045834041961367616193666476485) }",
+      "MemberMatch { membership: ElementId(297502811184583313095749873589296717564), element: ElementId(223511266697589625783938832162865503838) }"
+    ],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      24797,
+      24803
+    ],
+    "source": "target"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(106254648126730508462192408105654002702), element: ElementId(279110077118838182269744174768918789967) }",
+      "MemberMatch { membership: ElementId(293219737640802837284395651163276541376), element: ElementId(204663847347232729400625250407244725450) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7799,
+      7800
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(180300229752271201164582468139043135470), element: ElementId(319965379685421852156371449403196380253) }",
+      "MemberMatch { membership: ElementId(228314943374190002190289861605208318947), element: ElementId(104026475323519592053181880195108499353) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6133,
+      6134
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      15741,
+      15752
+    ],
+    "source": "spaceShotOf"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/StatePerformances.kerml",
+    "property": "memberElement",
+    "range": [
+      2273,
+      2277
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5573,
+      5596
+    ],
+    "source": "timeEnclosedOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Function Library/SequenceFunctions.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      3700,
+      3707
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      3905,
+      3915
+    ],
+    "source": "successors"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      6391,
+      6401
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1482,
+      1490
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      13791,
+      13798
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": [],
+    "class": "ReferenceSubsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Function Library/OccurrenceFunctions.kerml",
+    "property": "referencedFeature",
+    "range": [
+      1277,
+      1281
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Triggers.kerml",
+    "property": "memberElement",
+    "range": [
+      4197,
+      4208
+    ],
+    "source": "currentTime"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(60810858801005433539317839385084977412), element: ElementId(52302421828348759853660324822458817678) }",
+      "MemberMatch { membership: ElementId(262282583491077747760490652108668031928), element: ElementId(286394996188255640040684594149689227277) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7289,
+      7290
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(32230774598712213068116543333735388856), element: ElementId(320757103687281317708950415255210634021) }",
+      "MemberMatch { membership: ElementId(104181514674818189108482032486905516311), element: ElementId(234119817692316255435309431883882409997) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6470,
+      6471
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(311679043949322152407795946912607975593), element: ElementId(247005598298837287770418916532072796405) }",
+      "MemberMatch { membership: ElementId(320347377388954563214715796631672824045), element: ElementId(217254850843006000598266303609301764607) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/ComplexFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      797,
+      798
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/OccurrenceFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1026,
+      1039
+    ],
+    "source": "portionOfLife"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(208632470316306008558873120005940136090), element: ElementId(146545358377919417557370958903146319360) }",
+      "MemberMatch { membership: ElementId(239910552826038861754691967789573373325), element: ElementId(105523726898599975364169631328322787586) }"
+    ],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      6385,
+      6390
+    ],
+    "source": "frame"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      1900,
+      1910
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      15701,
+      15712
+    ],
+    "source": "spaceShotOf"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      13231,
+      13235
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      29454,
+      29460
+    ],
+    "source": "target"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      3682,
+      3692
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/ControlPerformances.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      1307,
+      1311
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      22403,
+      22407
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      599,
+      607
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5432,
+      5442
+    ],
+    "source": "successors"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      2115,
+      2124
+    ],
+    "source": "startShot"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      2426,
+      2433
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      13900,
+      13925
+    ],
+    "source": "timeCoincidentOccurrences"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(79699391283741059225617915995884422224), element: ElementId(232760122093966033076707216377987451557) }",
+      "MemberMatch { membership: ElementId(243127772406663904321917360640400159235), element: ElementId(338287433106420566597571610151152508823) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/StringFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1173,
+      1174
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2382,
+      2392
+    ],
+    "source": "dimensions"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Observation.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      3325,
+      3335
+    ],
+    "source": "startingAt"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2229,
+      2239
+    ],
+    "source": "dimensions"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      2704,
+      2725
+    ],
+    "source": "immediatePredecessors"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(34052385043065330388593837581622475862), element: ElementId(5856702351834650755606792336461922044) }",
+      "MemberMatch { membership: ElementId(198948801225624163825084241188779391945), element: ElementId(72575056045834041961367616193666476485) }"
+    ],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      24296,
+      24302
+    ],
+    "source": "target"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(68070377849846823734072273083157706907), element: ElementId(174886103729178647343462620339749268915) }",
+      "MemberMatch { membership: ElementId(110694056708666515768893598859899558961), element: ElementId(291896470803879895222260153889939526558) }"
+    ],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      5488,
+      5493
+    ],
+    "source": "frame"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      15013,
+      15025
+    ],
+    "source": "spaceSliceOf"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(96268921651479620474232713440623366489), element: ElementId(165468519627005814194506756847917632888) }",
+      "MemberMatch { membership: ElementId(148920011502099190494529188266648242102), element: ElementId(335540217336405971090362753758098229255) }"
+    ],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      3196,
+      3208
+    ],
+    "source": "onOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(115110032841144850418053516608372037290), element: ElementId(211213899384086652314445687973783614631) }",
+      "MemberMatch { membership: ElementId(147516795980598331116194436498649094294), element: ElementId(208872350763806535238643696491485559136) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2427,
+      2432
+    ],
+    "source": "index"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(92281763556055093280694099834529319380), element: ElementId(111473644138770427265143375838041262414) }",
+      "MemberMatch { membership: ElementId(304132976263097397936046883527151845607), element: ElementId(161289979457611484332709983317106088921) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      4034,
+      4035
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(239532451855385430519653158718623457838), element: ElementId(298227329460970725978699622901206551176) }",
+      "MemberMatch { membership: ElementId(245574710748402685898508504846328158841), element: ElementId(199794018579338676242516492121284367805) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7809,
+      7810
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      4154,
+      4182
+    ],
+    "source": "spaceTimeEnclosedOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      15721,
+      15740
+    ],
+    "source": "spaceShotOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      20756,
+      20760
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/TrigFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      507,
+      511
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Observation.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      3378,
+      3390
+    ],
+    "source": "observations"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7349,
+      7358
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(106254648126730508462192408105654002702), element: ElementId(279110077118838182269744174768918789967) }",
+      "MemberMatch { membership: ElementId(293219737640802837284395651163276541376), element: ElementId(204663847347232729400625250407244725450) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7785,
+      7786
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6120,
+      6129
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5414,
+      5431
+    ],
+    "source": "shorterOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(92281763556055093280694099834529319380), element: ElementId(111473644138770427265143375838041262414) }",
+      "MemberMatch { membership: ElementId(293092262905320867959122846605182090951), element: ElementId(239621361109457549355653329028603891561) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      3383,
+      3384
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5524,
+      5547
+    ],
+    "source": "timeEnclosedOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/Observation.kerml",
+    "property": "memberElement",
+    "range": [
+      2292,
+      2307
+    ],
+    "source": "signalCondition"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(64055894297842511797417422377896154327), element: ElementId(124909258155140411533909817530338488068) }",
+      "MemberMatch { membership: ElementId(263986681517034182679638229221866335109), element: ElementId(243107194183557985196747059932722638993) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7567,
+      7568
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      3966,
+      3982
+    ],
+    "source": "monitoredFeature"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(92281763556055093280694099834529319380), element: ElementId(111473644138770427265143375838041262414) }",
+      "MemberMatch { membership: ElementId(253159952737471629309205799345779810940), element: ElementId(47521089245258894977178989450870936027) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2888,
+      2889
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(2495690069352290910773785151543426685), element: ElementId(272256225066747751264648236935340762464) }",
+      "MemberMatch { membership: ElementId(295441112060092908817155470597541348486), element: ElementId(144227272893045865874948066040813852875) }"
+    ],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      19973,
+      19977
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      20751,
+      20755
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      7037,
+      7057
+    ],
+    "source": "outsideOfOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      621,
+      629
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "chainingFeature",
+    "range": [
+      2395,
+      2405
+    ],
+    "source": "startingAt"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1073,
+      1081
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(60810858801005433539317839385084977412), element: ElementId(52302421828348759853660324822458817678) }",
+      "MemberMatch { membership: ElementId(262282583491077747760490652108668031928), element: ElementId(286394996188255640040684594149689227277) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7347,
+      7348
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Observation.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      2968,
+      2972
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      3887,
+      3904
+    ],
+    "source": "earlierOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/Triggers.kerml",
+    "property": "memberElement",
+    "range": [
+      3733,
+      3743
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6329,
+      6354
+    ],
+    "source": "timeCoincidentOccurrences"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(85787593972714396660395588791705694507), element: ElementId(16124265629401848969424242862033992369) }",
+      "MemberMatch { membership: ElementId(297491070993465901256207916196508229330), element: ElementId(183968916549738281072670017087291728929) }"
+    ],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      6852,
+      6857
+    ],
+    "source": "frame"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      15462,
+      15466
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Function Library/SequenceFunctions.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      3961,
+      3968
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      13776,
+      13790
+    ],
+    "source": "suboccurrences"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(128633656874579098053737217597545982062), element: ElementId(269081030307273561660459167536395150898) }",
+      "MemberMatch { membership: ElementId(329478365366825950555067320139575605011), element: ElementId(294890177638367980659346367826021440240) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/OccurrenceFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1024,
+      1025
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(64092249861268005961650405717300826844), element: ElementId(139647516084573560045528368851161822016) }",
+      "MemberMatch { membership: ElementId(162023855443567480716675989014035490797), element: ElementId(114897749010857785763759151563654222698) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/RealFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      315,
+      316
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      12195,
+      12206
+    ],
+    "source": "timeSliceOf"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      1997,
+      2006
+    ],
+    "source": "startShot"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6135,
+      6144
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      14971,
+      14983
+    ],
+    "source": "spaceSliceOf"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Function Library/SequenceFunctions.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      4448,
+      4455
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(2495690069352290910773785151543426685), element: ElementId(272256225066747751264648236935340762464) }",
+      "MemberMatch { membership: ElementId(295441112060092908817155470597541348486), element: ElementId(144227272893045865874948066040813852875) }"
+    ],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      6735,
+      6739
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5314,
+      5326
+    ],
+    "source": "predecessors"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/StatePerformances.kerml",
+    "property": "memberElement",
+    "range": [
+      4637,
+      4652
+    ],
+    "source": "laterOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(147985019424354581402106793015040549248), element: ElementId(278326541186632696567280473177557060372) }",
+      "MemberMatch { membership: ElementId(339497470264461257883008685666127524585), element: ElementId(50449057133669382322108415480472175520) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7394,
+      7395
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      7495,
+      7507
+    ],
+    "source": "smallerSpace"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "chainingFeature",
+    "range": [
+      2014,
+      2023
+    ],
+    "source": "startShot"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(74087508752721986881460307969312073545), element: ElementId(204630662858407183749793224540817740631) }",
+      "MemberMatch { membership: ElementId(148023215162510889875209261764973065864), element: ElementId(58960492093293391015177042136084392444) }"
+    ],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      24262,
+      24268
+    ],
+    "source": "source"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      2966,
+      2976
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(239532451855385430519653158718623457838), element: ElementId(298227329460970725978699622901206551176) }",
+      "MemberMatch { membership: ElementId(245574710748402685898508504846328158841), element: ElementId(199794018579338676242516492121284367805) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7723,
+      7724
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      2372,
+      2384
+    ],
+    "source": "predecessors"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(122063529130640235156851269197198345946), element: ElementId(161558655110957710406762122375735905201) }",
+      "MemberMatch { membership: ElementId(143176456456375243763222738133629064267), element: ElementId(238076180177184324094056977457323382264) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/ComplexFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2049,
+      2059
+    ],
+    "source": "collection"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(17411547361325612714358002041203842536), element: ElementId(278455257416525231682001812570212750336) }",
+      "MemberMatch { membership: ElementId(246690457303118850516127809011468981010), element: ElementId(173913096550354801361273674596349203177) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6202,
+      6203
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(140312272290819579055272035561518329836), element: ElementId(72182770970526881465926789266218249205) }",
+      "MemberMatch { membership: ElementId(170994027564352468793530435977711870747), element: ElementId(58406089301945772916166886163104945792) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/ComplexFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      645,
+      646
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(60810858801005433539317839385084977412), element: ElementId(52302421828348759853660324822458817678) }",
+      "MemberMatch { membership: ElementId(262282583491077747760490652108668031928), element: ElementId(286394996188255640040684594149689227277) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7386,
+      7387
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      9789,
+      9793
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      7025,
+      7036
+    ],
+    "source": "largerSpace"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      15678,
+      15700
+    ],
+    "source": "spaceShottedOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/OccurrenceFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1045,
+      1058
+    ],
+    "source": "portionOfLife"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6804,
+      6816
+    ],
+    "source": "smallerSpace"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(248907473876380699694788449306706324930), element: ElementId(163354616972312121819556428914496762642) }",
+      "MemberMatch { membership: ElementId(263832746514962493306540619786215239182), element: ElementId(51375360481546625273711715305383227321) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7145,
+      7146
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      3324,
+      3328
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      20810,
+      20814
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "ReferenceSubsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Function Library/OccurrenceFunctions.kerml",
+    "property": "referencedFeature",
+    "range": [
+      1621,
+      1625
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      29336,
+      29342
+    ],
+    "source": "source"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5335,
+      5352
+    ],
+    "source": "shorterOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(17953962262244485748695571797351844797), element: ElementId(191384855966767064654637443145785123714) }",
+      "MemberMatch { membership: ElementId(128633656874579098053737217597545982062), element: ElementId(269081030307273561660459167536395150898) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/DataFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      622,
+      623
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(92281763556055093280694099834529319380), element: ElementId(111473644138770427265143375838041262414) }",
+      "MemberMatch { membership: ElementId(304132976263097397936046883527151845607), element: ElementId(161289979457611484332709983317106088921) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      4121,
+      4122
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      2767,
+      2774
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": null,
+    "class": "Interaction",
+    "completeness": null,
+    "diagnostics": null,
+    "expression": null,
+    "path": "Kernel Semantic Library/Transfers.kerml",
+    "property": "participantFeature",
+    "range": [
+      2037,
+      2352
+    ],
+    "source": "interaction MessageTransfer specializes Transfer {\n        doc\n        /*\n         * A MessageTransfer is a Transfer that does not specify where the payload is picked\n         * up and dropped off (see FlowTransfer). They are sent by SendPerformances and\n         * accepted by AcceptPerformances.\n         */\n    }"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6817,
+      6841
+    ],
+    "source": "spaceEnclosedOccurrences"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(100857438974959203556766817786785329884), element: ElementId(140590757877017037764348819749733795646) }",
+      "MemberMatch { membership: ElementId(295441112060092908817155470597541348486), element: ElementId(144227272893045865874948066040813852875) }"
+    ],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/StatePerformances.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      2340,
+      2344
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6314,
+      6328
+    ],
+    "source": "thatOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(17411547361325612714358002041203842536), element: ElementId(278455257416525231682001812570212750336) }",
+      "MemberMatch { membership: ElementId(246690457303118850516127809011468981010), element: ElementId(173913096550354801361273674596349203177) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6278,
+      6279
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      14949,
+      14970
+    ],
+    "source": "spaceSlicedOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      6858,
+      6868
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      3199,
+      3208
+    ],
+    "source": "startShot"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      4085,
+      4113
+    ],
+    "source": "spaceTimeEnclosedOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7710,
+      7719
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/KerML.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      778,
+      794
+    ],
+    "source": "annotatedElement"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      6862,
+      6886
+    ],
+    "source": "spaceEnclosedOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      22834,
+      22838
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7725,
+      7734
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      7508,
+      7536
+    ],
+    "source": "spaceTimeEnclosedOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      8652,
+      8682
+    ],
+    "source": "spaceTimeCoincidentOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      21674,
+      21678
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      961,
+      969
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(109101277146659353270527699186470036097), element: ElementId(22732415612764223825260273489596312108) }",
+      "MemberMatch { membership: ElementId(260280197236344518787820922614056693965), element: ElementId(281454467740815725570741137621045225480) }"
+    ],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      5910,
+      5915
+    ],
+    "source": "frame"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      729,
+      737
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      13155,
+      13159
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      12175,
+      12194
+    ],
+    "source": "timeSliceOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      5494,
+      5504
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(153822254995439079976624042734555682401), element: ElementId(192890583126192176386135276909509837059) }",
+      "MemberMatch { membership: ElementId(213096441932517271774237488756548683239), element: ElementId(58673622563372144063679064856970898529) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6455,
+      6456
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5297,
+      5313
+    ],
+    "source": "longerOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(68166973259721529983281196817948076061), element: ElementId(79320238855461803059356062837612476609) }",
+      "MemberMatch { membership: ElementId(337737480815117528323773227113694324971), element: ElementId(254981053029302343124089058642951487645) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/ComplexFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2232,
+      2242
+    ],
+    "source": "collection"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(122063529130640235156851269197198345946), element: ElementId(161558655110957710406762122375735905201) }",
+      "MemberMatch { membership: ElementId(130106886563546118787692075059688651034), element: ElementId(281972427993303576495884963043221024795) }",
+      "MemberMatch { membership: ElementId(143176456456375243763222738133629064267), element: ElementId(238076180177184324094056977457323382264) }",
+      "MemberMatch { membership: ElementId(266684316010253110366945324498588393806), element: ElementId(69625059489034243876672140691932521882) }",
+      "MemberMatch { membership: ElementId(273788597685275130732095892401098659513), element: ElementId(217943468403843100028206676075742897679) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/IntegerFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2386,
+      2396
+    ],
+    "source": "collection"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(96268921651479620474232713440623366489), element: ElementId(165468519627005814194506756847917632888) }",
+      "MemberMatch { membership: ElementId(148920011502099190494529188266648242102), element: ElementId(335540217336405971090362753758098229255) }"
+    ],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "chainingFeature",
+    "range": [
+      1990,
+      2002
+    ],
+    "source": "onOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(10815285120008589884450850068628865050), element: ElementId(39160358100669067243715649975932247681) }",
+      "MemberMatch { membership: ElementId(147516795980598331116194436498649094294), element: ElementId(208872350763806535238643696491485559136) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1880,
+      1885
+    ],
+    "source": "index"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/Triggers.kerml",
+    "property": "memberElement",
+    "range": [
+      2532,
+      2542
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/TransitionPerformances.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      976,
+      996
+    ],
+    "source": "enclosedPerformances"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(92281763556055093280694099834529319380), element: ElementId(111473644138770427265143375838041262414) }",
+      "MemberMatch { membership: ElementId(259850651944877483967702818509847365426), element: ElementId(208789238672754489947786372983273937778) }",
+      "MemberMatch { membership: ElementId(293092262905320867959122846605182090951), element: ElementId(239621361109457549355653329028603891561) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7142,
+      7143
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(69581588015985545274301496028017154187), element: ElementId(230008066086683775274457203755217624757) }",
+      "MemberMatch { membership: ElementId(96268921651479620474232713440623366489), element: ElementId(165468519627005814194506756847917632888) }",
+      "MemberMatch { membership: ElementId(148920011502099190494529188266648242102), element: ElementId(335540217336405971090362753758098229255) }"
+    ],
+    "class": "Redefinition",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Observation.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      3288,
+      3300
+    ],
+    "source": "onOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(96268921651479620474232713440623366489), element: ElementId(165468519627005814194506756847917632888) }",
+      "MemberMatch { membership: ElementId(148920011502099190494529188266648242102), element: ElementId(335540217336405971090362753758098229255) }"
+    ],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "chainingFeature",
+    "range": [
+      2382,
+      2394
+    ],
+    "source": "onOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/TransitionPerformances.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      1721,
+      1744
+    ],
+    "source": "timeEnclosedOccurrences"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1857,
+      1865
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [],
+    "class": "ReferenceSubsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Function Library/OccurrenceFunctions.kerml",
+    "property": "referencedFeature",
+    "range": [
+      1953,
+      1957
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "memberElement",
+    "range": [
+      3172,
+      3179
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "memberElement",
+    "range": [
+      13197,
+      13201
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Function Library/SequenceFunctions.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      4171,
+      4178
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Observation.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      3361,
+      3376
+    ],
+    "source": "accessedFeature"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7306,
+      7315
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(32230774598712213068116543333735388856), element: ElementId(320757103687281317708950415255210634021) }",
+      "MemberMatch { membership: ElementId(104181514674818189108482032486905516311), element: ElementId(234119817692316255435309431883882409997) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6551,
+      6552
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(239532451855385430519653158718623457838), element: ElementId(298227329460970725978699622901206551176) }",
+      "MemberMatch { membership: ElementId(245574710748402685898508504846328158841), element: ElementId(199794018579338676242516492121284367805) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7788,
+      7789
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(180300229752271201164582468139043135470), element: ElementId(319965379685421852156371449403196380253) }",
+      "MemberMatch { membership: ElementId(228314943374190002190289861605208318947), element: ElementId(104026475323519592053181880195108499353) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6100,
+      6101
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(2495690069352290910773785151543426685), element: ElementId(272256225066747751264648236935340762464) }",
+      "MemberMatch { membership: ElementId(295441112060092908817155470597541348486), element: ElementId(144227272893045865874948066040813852875) }"
+    ],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      13771,
+      13775
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6472,
+      6481
+    ],
+    "source": "dimension"
+  },
+  {
+    "candidates": null,
+    "class": "Interaction",
+    "completeness": null,
+    "diagnostics": null,
+    "expression": null,
+    "path": "Kernel Semantic Library/Transfers.kerml",
+    "property": "participantFeature",
+    "range": [
+      6027,
+      6462
+    ],
+    "source": "interaction FlowTransferBefore specializes FlowTransfer, TransferBefore intersects FlowTransfer, TransferBefore {\n        doc\n        /*\n         * FlowTransferBefore is a FlowTransfer that is also a TransferBefore. \n         */\n         \n        end feature source: Occurrence redefines Transfer::source, TransferBefore::source;\n        end feature target: Occurrence redefines Transfer::target, TransferBefore::target;         \n    }"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/StatePerformances.kerml",
+    "property": "memberElement",
+    "range": [
+      4665,
+      4669
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": null,
+    "class": "Interaction",
+    "completeness": null,
+    "diagnostics": null,
+    "expression": null,
+    "path": "Kernel Semantic Library/Transfers.kerml",
+    "property": "participantFeature",
+    "range": [
+      2363,
+      5337
+    ],
+    "source": "interaction FlowTransfer specializes Transfer disjoint from MessageTransfer {\n        doc\n        /*\n         * A FlowTransfer is a Transfer identifying an output feature of the source from which\n         * to pick up a payload and an input feature of the target to which to drop it off. They can\n         * start when the payload is available at the source and move or copy it to the target.\n         */\n         \n        feature isMove: Boolean[1] default true {\n            doc\n            /*\n             * If isMove is true, then the entire payload leaves the source at the start\n             * of the transfer.\n             */\n        }\n        \n        feature isPush: Boolean[1] default true {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payload is available\n             * at the source.\n             */\n        }\n        \n        connector sourceOutputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The output of the payloads from the sourceOutput.\n             */\n        \n            end [1] feature transferSource references source;\n            end [payloadNum] feature transferPayload references payload subsets transferSource.sourceOutput;\n        }\n        \n        connector targetInputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The input of the payload to the targetInput.\n             */\n        \n            end [1] feature transferTarget references target;\n            end [payloadNum] feature transferPayload references payload subsets transferTarget.targetInput;\n        }\n        \n        private connector sending: HappensDuring[payloadNum] from [1] startShot to [payloadNum] sourceOutputLink {\n          doc\n            /*\n             * The start of the transfer happens during the output of each of the payloads from the\n             * source. \n             */\n        }\n        \n        private connector moving: HappensWhile[0..*] from [0..*] sourceOutputLink.endShot to [0..1] startShot {\n            doc\n            /*\n             * If isMove is true, then all payloads leave the source at the start\n             * of the transfer.\n             */\n        }\n        private inv { isMove implies size(moving) == size(sourceOutputLink) }\n        \n        private connector pushing: HappensWhile[0..*] from [0..*] sourceOutputLink.startShot to [0..1] startShot {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payloads are available\n             * at the source.\n             */\n        }\n        private inv { isPush implies size(pushing) == size(sourceOutputLink) }\n        \n        private connector delivering: HappensWhile[payloadNum] from [payloadNum] targetInputLink.startShot to [1] endShot {\n            doc\n            /*\n             * The input of each of the payloads to the target starts at the end of the transfer.\n             */\n        }\n    }"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      9295,
+      9299
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      8696,
+      8710
+    ],
+    "source": "thisOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      4826,
+      4837
+    ],
+    "source": "currentTime"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(180300229752271201164582468139043135470), element: ElementId(319965379685421852156371449403196380253) }",
+      "MemberMatch { membership: ElementId(228314943374190002190289861605208318947), element: ElementId(104026475323519592053181880195108499353) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6286,
+      6287
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Clocks.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      1081,
+      1085
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5395,
+      5405
+    ],
+    "source": "successors"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      12017,
+      12021
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      5556,
+      5572
+    ],
+    "source": "longerOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "chainingFeature",
+    "range": [
+      2003,
+      2013
+    ],
+    "source": "startingAt"
+  },
+  {
+    "candidates": [],
+    "class": "Subsetting",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "subsettedFeature",
+    "range": [
+      3778,
+      3782
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      8637,
+      8651
+    ],
+    "source": "thatOccurrence"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      3068,
+      3079
+    ],
+    "source": "currentTime"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      1223,
+      1231
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(2495690069352290910773785151543426685), element: ElementId(272256225066747751264648236935340762464) }",
+      "MemberMatch { membership: ElementId(295441112060092908817155470597541348486), element: ElementId(144227272893045865874948066040813852875) }"
+    ],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      13895,
+      13899
+    ],
+    "source": "self"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(153822254995439079976624042734555682401), element: ElementId(192890583126192176386135276909509837059) }",
+      "MemberMatch { membership: ElementId(213096441932517271774237488756548683239), element: ElementId(58673622563372144063679064856970898529) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6580,
+      6581
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/TrigFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      500,
+      504
+    ],
+    "source": "that"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      2053,
+      2060
+    ],
+    "source": "endShot"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      7446,
+      7457
+    ],
+    "source": "largerSpace"
+  },
+  {
+    "candidates": null,
+    "class": "Interaction",
+    "completeness": null,
+    "diagnostics": null,
+    "expression": null,
+    "path": "Kernel Semantic Library/Transfers.kerml",
+    "property": "participantFeature",
+    "range": [
+      507,
+      2027
+    ],
+    "source": "interaction Transfer specializes Performance, BinaryLink {\n        doc\n        /*\n         * A Transfer represents the transfer of a payload from the source of the interaction \n         * to the target of the interaction.\n         */\n    \n        end feature source: Occurrence redefines BinaryLink::source {\n            doc\n            /*\n             * The entity whose output is the source of the payload to be transferred.\n             */\n        \n            feature sourceOutput: Anything[0..*];\n        }\n        \n        end feature target: Occurrence redefines BinaryLink::target {\n            doc\n            /*\n             * The entity whose input is the target of the payload to be transferred.\n             */\n        \n            feature targetInput: Anything[0..*];\n        }\n        \n        feature isInstant: Boolean[1] {\n            doc\n            /*\n             * If isInstance is true, then the transfer is instantaneous.\n             */\n        }\n        \n        feature payload: Anything[1..*] {\n            doc\n            /*\n             * The things that are to be transferred.\n             */\n        }\n        \n        feature payloadNum: Natural [1] = size(payload);\n        \n        private instantNum: Natural[1] = if isInstant? 1 else 0;\n        private binding instant[instantNum] of [0..1] startShot = [0..1] endShot {\n            doc\n            /*\n             * If isInstant is true, then the start and end of the transfer happen at the same time.\n             */\n        }\n    }"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/CollectionFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      2417,
+      2425
+    ],
+    "source": "elements"
+  },
+  {
+    "candidates": null,
+    "class": "Interaction",
+    "completeness": null,
+    "diagnostics": null,
+    "expression": null,
+    "path": "Kernel Semantic Library/Transfers.kerml",
+    "property": "participantFeature",
+    "range": [
+      5347,
+      6017
+    ],
+    "source": "interaction TransferBefore specializes Transfer, HappensBefore intersects Transfer, HappensBefore {\n        doc\n        /*\n         * TransferBefore is a specialization of Transfer in which the source happens before\n         * the transfer, which happens before the target.\n         */\n    \n        end feature source: Occurrence redefines Transfer::source, HappensBefore::earlierOccurrence;\n        end feature target: Occurrence redefines Transfer::target, HappensBefore::laterOccurrence;\n        \n        feature self: TransferBefore redefines Performance::self;\n        \n        private succession source then self;\n        private succession self then target;\n    }"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(82676788715578344149487573370070333680), element: ElementId(64143990483856918742928302234458069758) }",
+      "MemberMatch { membership: ElementId(172962152988715732956565864652164572864), element: ElementId(174413347101749921197189529453160044410) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      3777,
+      3778
+    ],
+    "source": "x"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(180300229752271201164582468139043135470), element: ElementId(319965379685421852156371449403196380253) }",
+      "MemberMatch { membership: ElementId(228314943374190002190289861605208318947), element: ElementId(104026475323519592053181880195108499353) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      6239,
+      6240
+    ],
+    "source": "w"
+  },
+  {
+    "candidates": [],
+    "class": "Membership",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION",
+      "KQ_EVIDENCE"
+    ],
+    "expression": true,
+    "path": "Kernel Semantic Library/SpatialFrames.kerml",
+    "property": "memberElement",
+    "range": [
+      1742,
+      1752
+    ],
+    "source": "localClock"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/Occurrences.kerml",
+    "property": "chainingFeature",
+    "range": [
+      14992,
+      15012
+    ],
+    "source": "spaceSliceOccurrence"
+  },
+  {
+    "candidates": [
+      "MemberMatch { membership: ElementId(106254648126730508462192408105654002702), element: ElementId(279110077118838182269744174768918789967) }",
+      "MemberMatch { membership: ElementId(293219737640802837284395651163276541376), element: ElementId(204663847347232729400625250407244725450) }"
+    ],
+    "class": "Membership",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": true,
+    "path": "Kernel Function Library/VectorFunctions.kerml",
+    "property": "memberElement",
+    "range": [
+      7708,
+      7709
+    ],
+    "source": "v"
+  },
+  {
+    "candidates": [],
+    "class": "Redefinition",
+    "completeness": "Complete",
+    "diagnostics": [],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "redefinedFeature",
+    "range": [
+      4096,
+      4112
+    ],
+    "source": "monitoredFeature"
+  },
+  {
+    "candidates": [],
+    "class": "FeatureChaining",
+    "completeness": "Incomplete",
+    "diagnostics": [
+      "KQ_CONSTRUCTION_OBLIGATION"
+    ],
+    "expression": false,
+    "path": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "property": "chainingFeature",
+    "range": [
+      2406,
+      2421
+    ],
+    "source": "accessedFeature"
+  }
+]

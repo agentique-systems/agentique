@@ -361,7 +361,30 @@ pub(crate) fn lower_project<'a>(
             }
         })
         .collect();
-    let desired = add_relationships(&declarations, &references)?;
+    let mut desired = add_relationships(&declarations, &references)?;
+    // Resolving a supertype can make inherited names available to subsequent
+    // assertions. Rebuild the unpublished candidate until no additional endpoint
+    // becomes available; publication remains a single atomic change.
+    loop {
+        let scopes = references
+            .iter()
+            .filter(|r| !matches!(r.resolution.value, Resolution::Resolved(_)))
+            .map(|r| r.specific)
+            .collect();
+        let resolver = project_queries(&desired, scopes, incomplete_namespaces.clone());
+        let mut progress = false;
+        for r in &mut references {
+            if matches!(r.resolution.value, Resolution::Resolved(_)) {
+                continue;
+            }
+            r.resolution = resolver.resolve_reference(r.specific, &r.name, expected(r.kind));
+            progress |= matches!(r.resolution.value, Resolution::Resolved(_));
+        }
+        if !progress {
+            break;
+        }
+        desired = add_relationships(&declarations, &references)?;
+    }
     let snapshot = if let Some(previous) = previous {
         publish(&previous.snapshot, &desired)?
     } else {

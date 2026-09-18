@@ -85,7 +85,10 @@ dependencies = [
  "agq-kerml-semantics",
  "agq-kerml-syntax",
  "agq-kernel",
+ "agq-standard-libraries",
+ "serde_json",
  "thiserror",
+ "uuid",
 ]
 
 [[package]]

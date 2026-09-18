@@ -90,6 +90,16 @@ No strict metamodel-authoring diagnostic changes as a result of this ADR.
 * Pages 95--96 spell the metaclassification operator rule with inconsistent
   capitalization. The projection uses `MetaclassificationTestOperator`.
   Its `@@` is two `@` tokens under the symbol list on page 78.
+* Pages 95--96 label `TypeResultMember` with the nonexistent class
+  `ResultParameterMembership`. Construction uses `ReturnParameterMembership`,
+  the defined result membership. Both cast productions also append a zero-width
+  `EmptyResultMember` after that typed result. Construction treats this empty
+  default as satisfied by the typed result, retaining both syntax productions.
+  This interpretation follows `validateExpressionResultParameterMembership`
+  (exactly one result) and the pinned `BaseFunctions::as` / `::meta` signatures
+  (one input and one result). It is an explicit grammar-to-abstract-syntax
+  disposition, not source rewriting or expression evaluation. The quality report
+  identifies affected casts separately from syntax recovery.
 * Page 99's `NonFeatureChainPrimaryArgumentMember` refers to `PrimaryArgument`
   despite the adjoining non-feature-chain productions. The projection follows
   those adjoining productions to prevent recursive feature-chain ambiguity.

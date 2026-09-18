@@ -1,6 +1,6 @@
 //! Reference denotation belongs here, independent of any textual parser.
 use crate::*;
-use agq_kerml::{classes as c, properties as p, views};
+use agq_kerml::{classes as c, properties as p};
 use agq_kernel::{ElementId, MetaclassId};
 use std::collections::BTreeSet;
 
@@ -19,73 +19,312 @@ pub enum Resolution {
     Incomplete,
 }
 impl KerMlQueries<'_> {
-    /// KerML 8.2.3.5: owned specialization references start in the owning
-    /// Type's owning Namespace. This bounded query handles long declared names,
-    /// lexical parents and public qualified traversal within one root namespace.
-    /// Inheritance/imports at a searched scope explicitly block this slice.
-    pub fn resolve_reference(
+    /// KerML 1.0 8.2.3.5 context-relationship rules. This query determines scope
+    /// from canonical ownership, including redefinition and ordered feature chains.
+    pub fn lookup_relationship_target(
         &self,
-        specific: ElementId,
+        relationship: ElementId,
+        property: agq_kernel::PropertyId,
         name: &QualifiedName,
-        expected: MetaclassId,
-    ) -> QueryResult<Resolution> {
-        let mut out = self.result(Resolution::Unresolved);
-        let parent = self.owner(specific);
-        let mut scope = parent.value;
-        out.merge(parent);
+    ) -> QueryResult<Vec<MemberMatch>> {
+        let mut out = self.result(vec![]);
+        let mut context = relationship;
+        let mut visited = BTreeSet::new();
+        loop {
+            if !visited.insert(context) {
+                out.problem(
+                    Completeness::Invalid,
+                    "KQ_CONTEXT_CYCLE",
+                    context,
+                    "Cyclic name-resolution context",
+                );
+                return out;
+            }
+            let mut owner = self.owning_related_element(context);
+            if owner.value.is_none() {
+                let nested = self.owner(context);
+                owner.value = nested.value;
+                owner.merge(nested);
+            }
+            let Some(mut scope) = owner.value else {
+                out.merge(owner);
+                return out;
+            };
+            out.merge(owner);
+            let owned_specific = if self.is(context, c::REFERENCE_SUBSETTING) {
+                true
+            } else if self.is(context, c::SPECIALIZATION) {
+                self.read_reference(&mut out, context, p::SPECIALIZATION_SPECIFIC) == Some(scope)
+            } else if self.is(context, c::CONJUGATION) {
+                self.read_reference(&mut out, context, p::CONJUGATION_CONJUGATED_TYPE)
+                    == Some(scope)
+            } else {
+                false
+            };
+            if self.is(context, c::FEATURE_CHAINING) {
+                let chain = self.owned_relationships(scope);
+                let steps: Vec<_> = chain
+                    .value
+                    .iter()
+                    .copied()
+                    .filter(|r| self.is(*r, c::FEATURE_CHAINING))
+                    .collect();
+                let position = steps.iter().position(|r| *r == context);
+                out.merge(chain);
+                if let Some(position) = position.filter(|n| *n > 0) {
+                    if let Some(previous) = self.read_reference(
+                        &mut out,
+                        steps[position - 1],
+                        p::FEATURE_CHAINING_CHAINING_FEATURE,
+                    ) {
+                        let lookup = self.lookup_path(previous, name);
+                        out.value = lookup.value.clone();
+                        out.merge(lookup);
+                    }
+                    return out;
+                }
+                let owning = self.owning_relationship(scope);
+                let next = owning.value;
+                out.merge(owning);
+                if let Some(next) = next {
+                    context = next;
+                    continue;
+                }
+                return out;
+            }
+            if self.is(context, c::REDEFINITION)
+                && property == p::REDEFINITION_REDEFINED_FEATURE
+                && self.is(scope, c::FEATURE)
+                && owned_specific
+            {
+                let owner = self.owner(scope);
+                let ty = owner.value;
+                out.merge(owner);
+                if let Some(ty) = ty.filter(|t| self.is(*t, c::TYPE)) {
+                    let owned = self.owned_relationships(ty);
+                    let specializations: Vec<_> = owned
+                        .value
+                        .iter()
+                        .copied()
+                        .filter(|r| self.is(*r, c::SPECIALIZATION))
+                        .collect();
+                    out.merge(owned);
+                    for specialization in specializations {
+                        if let Some(general) =
+                            self.read_reference(&mut out, specialization, p::SPECIALIZATION_GENERAL)
+                        {
+                            let lookup = self.lookup_path(general, name);
+                            out.value = lookup.value.clone();
+                            out.merge(lookup);
+                            if !out.value.is_empty() {
+                                return out;
+                            }
+                        }
+                    }
+                    // Implied generalizations also participate. Remove redundant
+                    // ancestors before selecting an implied starting namespace;
+                    // their more specific descendants already provide that scope.
+                    let generals = self.direct_specializations(ty);
+                    let mut redundant = BTreeSet::new();
+                    for &general in &generals.value {
+                        let ancestors = self.all_specializations(general);
+                        redundant.extend(ancestors.value.iter().copied());
+                        out.merge(ancestors);
+                    }
+                    let scopes: Vec<_> = generals
+                        .value
+                        .iter()
+                        .copied()
+                        .filter(|g| !redundant.contains(g))
+                        .collect();
+                    out.merge(generals);
+                    for general in scopes {
+                        let lookup = self.lookup_path(general, name);
+                        out.value = lookup.value.clone();
+                        out.merge(lookup);
+                        if !out.value.is_empty() {
+                            return out;
+                        }
+                    }
+                    return out;
+                }
+            }
+            if self.is(context, c::SPECIALIZATION) || self.is(context, c::CONJUGATION) {
+                if self.is(scope, c::TYPE) && owned_specific {
+                    let parent = self.owner(scope);
+                    let next = parent.value;
+                    out.merge(parent);
+                    if let Some(next) = next {
+                        scope = next;
+                    }
+                }
+                if self.is(context, c::REFERENCE_SUBSETTING) && self.is(scope, c::CONNECTOR) {
+                    let parent = self.owner(scope);
+                    let next = parent.value;
+                    out.merge(parent);
+                    if let Some(next) = next {
+                        scope = next;
+                    }
+                }
+            } else if self.is(context, c::MEMBERSHIP) && self.is(scope, c::FEATURE_CHAIN_EXPRESSION)
+            {
+                if let Some(argument) = self.argument_expression(&mut out, scope)
+                    && let Some(result) = self.expression_result(&mut out, argument)
+                {
+                    scope = result;
+                } else {
+                    out.problem(
+                        Completeness::Incomplete,
+                        "KQ_CHAIN_ARGUMENT_RESULT",
+                        context,
+                        "Feature-chain lookup requires its argument expression result",
+                    );
+                    return out;
+                }
+            } else if self.is(context, c::MEMBERSHIP)
+                && (self.is(scope, c::FEATURE_REFERENCE_EXPRESSION)
+                    || (self.is(scope, c::INSTANTIATION_EXPRESSION)
+                        && !self.is(context, c::FEATURE_MEMBERSHIP)))
+            {
+                loop {
+                    let parent = self.owner(scope);
+                    let next = parent.value;
+                    out.merge(parent);
+                    let skip = self.is(scope, c::FEATURE_REFERENCE_EXPRESSION)
+                        || self.is(scope, c::INSTANTIATION_EXPRESSION)
+                        || next.is_some_and(|n| self.is(n, c::INSTANTIATION_EXPRESSION));
+                    if !skip {
+                        break;
+                    }
+                    let Some(next) = next else {
+                        break;
+                    };
+                    scope = next;
+                }
+            }
+            let lookup = self.lookup_path(scope, name);
+            out.value = lookup.value.clone();
+            out.merge(lookup);
+            return out;
+        }
+    }
+    /// Candidate denotations, with completeness and evidence preserved. During
+    /// construction these are provisional until every answer-affecting read is complete.
+    pub fn lookup_path(
+        &self,
+        scope: ElementId,
+        name: &QualifiedName,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        let mut out = self.result(vec![]);
         if name.segments.is_empty() || name.segments.iter().any(String::is_empty) {
             out.problem(
                 Completeness::Invalid,
                 "KQ_REFERENCE_NAME",
-                specific,
+                scope,
                 "Reference path must have nonempty segments",
             );
             return out;
         }
         let mut scopes = vec![];
+        let mut current = Some(scope);
         let mut seen = BTreeSet::new();
-        while let Some(id) = scope {
+        while let Some(id) = current {
             if !seen.insert(id) {
                 break;
             }
             scopes.push(id);
             let parent = self.owner(id);
-            scope = parent.value;
+            current = parent.value;
             out.merge(parent);
         }
+        let root = *scopes.last().unwrap_or(&scope);
         if name.absolute {
-            scopes = scopes.last().copied().into_iter().collect();
+            scopes.clear();
+            scopes.push(root);
         }
-        let mut found = vec![];
         for namespace in scopes {
-            found = self.reference_members(namespace, &name.segments[0], false, &mut out);
-            if out.completeness != Completeness::Complete {
-                out.value = Resolution::Incomplete;
-                return out;
-            }
-            if !found.is_empty() {
+            let candidates = if namespace == root {
+                out.search_dependencies
+                    .insert(SearchDependency::ProjectRoots { root });
+                let roots = self
+                    .context()
+                    .available_roots
+                    .get(&root)
+                    .cloned()
+                    .unwrap_or_else(|| BTreeSet::from([root]));
+                let mut candidates = BTreeSet::new();
+                for available in roots {
+                    let lookup = self.lookup_member(
+                        available,
+                        &name.segments[0],
+                        if available == root {
+                            MemberAccess::All
+                        } else {
+                            MemberAccess::Public
+                        },
+                    );
+                    candidates.extend(lookup.value.iter().copied());
+                    out.merge(lookup);
+                }
+                candidates.into_iter().collect()
+            } else {
+                let lookup = self.lookup_member(namespace, &name.segments[0], MemberAccess::All);
+                let candidates = lookup.value.clone();
+                out.merge(lookup);
+                candidates
+            };
+            if !candidates.is_empty() {
+                out.value = candidates;
                 break;
             }
         }
         for segment in &name.segments[1..] {
-            if found.len() != 1 {
+            if out.value.len() != 1 {
                 break;
             }
-            if !self.is(found[0], c::NAMESPACE) {
-                found.clear();
+            let namespace = out.value[0].element;
+            if !self.is(namespace, c::NAMESPACE) {
+                out.value.clear();
                 break;
             }
-            found = self.reference_members(found[0], segment, true, &mut out);
-            if out.completeness != Completeness::Complete {
-                out.value = Resolution::Incomplete;
-                return out;
-            }
+            let lookup = self.lookup_member(namespace, segment, MemberAccess::Public);
+            out.value = lookup.value.clone();
+            out.merge(lookup);
+        }
+        out
+    }
+    /// Resolve a name in an explicit semantic namespace. Membership targets are
+    /// needed for MembershipImport; other references denote member elements.
+    pub fn resolve_name(
+        &self,
+        scope: ElementId,
+        name: &QualifiedName,
+        expected: MetaclassId,
+        membership_target: bool,
+    ) -> QueryResult<Resolution> {
+        let lookup = self.lookup_path(scope, name);
+        let found: Vec<_> = lookup
+            .value
+            .iter()
+            .map(|m| {
+                if membership_target {
+                    m.membership
+                } else {
+                    m.element
+                }
+            })
+            .collect();
+        let mut out = self.result(Resolution::Unresolved);
+        out.merge(lookup);
+        if out.completeness != Completeness::Complete {
+            out.value = Resolution::Incomplete;
+            return out;
         }
         match found.as_slice() {
             [] => out.problem(
                 Completeness::Invalid,
                 "KQ_UNRESOLVED",
-                specific,
+                scope,
                 format!("Unresolved reference {}", name.segments.join("::")),
             ),
             [target] if self.is(*target, expected) => {
@@ -104,9 +343,9 @@ impl KerMlQueries<'_> {
                     .collect();
                 out.prove(
                     QueryKind::ResolveReference,
-                    specific,
+                    scope,
                     *target,
-                    Rule::DeclaredReferenceResolution,
+                    Rule::NamespaceResolution,
                     premises,
                 );
             }
@@ -115,7 +354,7 @@ impl KerMlQueries<'_> {
                 out.problem(
                     Completeness::Invalid,
                     "KQ_REFERENCE_KIND",
-                    specific,
+                    scope,
                     "Reference target has the wrong metaclass",
                 );
             }
@@ -124,100 +363,24 @@ impl KerMlQueries<'_> {
                 out.problem(
                     Completeness::Invalid,
                     "KQ_AMBIGUOUS",
-                    specific,
+                    scope,
                     format!("Ambiguous reference {}", name.segments.join("::")),
                 );
             }
         }
         out
     }
-    fn reference_members(
+    /// KerML 8.2.3.5: an owned specialization starts in its specific Type's
+    /// owning namespace. Names and imports are resolved exclusively by queries.
+    pub fn resolve_reference(
         &self,
-        namespace: ElementId,
-        name: &str,
-        public_only: bool,
-        out: &mut QueryResult<Resolution>,
-    ) -> Vec<ElementId> {
-        if self.context().pending_namespace_scopes.contains(&namespace) {
-            out.search_dependencies
-                .insert(SearchDependency::NamespaceMembers { namespace });
-            out.problem(
-                Completeness::Incomplete,
-                "KQ_PENDING_NAMESPACE",
-                namespace,
-                "Unavailable project syntax may contribute declarations to this namespace",
-            );
-        }
-        if self
-            .context()
-            .pending_specialization_scopes
-            .contains(&namespace)
-        {
-            out.problem(
-                Completeness::Incomplete,
-                "KQ_RESOLUTION_SCOPE",
-                namespace,
-                "Pending specialization assertions may affect inherited name resolution",
-            );
-        }
-        if self.is(namespace, c::TYPE) {
-            let specializations = self.direct_specializations(namespace);
-            if !specializations.value.is_empty() {
-                out.problem(
-                    Completeness::Incomplete,
-                    "KQ_RESOLUTION_SCOPE",
-                    namespace,
-                    "Inherited name resolution is outside the declared-name slice",
-                );
-            }
-            out.merge(specializations);
-        }
-        let owned = self.owned_relationships(namespace);
-        for &relationship in &owned.value {
-            if self.is(relationship, c::IMPORT)
-                || self.is(relationship, c::SPECIALIZATION)
-                || self.is(relationship, c::CONJUGATION)
-            {
-                out.problem(Completeness::Incomplete, "KQ_RESOLUTION_SCOPE", namespace, "Imported/inherited/conjugated name resolution is outside the declared-name slice");
-            }
-        }
-        out.merge(owned);
-        let lookup = self.lookup_declared_member(namespace, name);
-        let mut targets = lookup.value.clone();
-        out.merge(lookup);
-        if public_only {
-            let memberships = self.memberships(namespace);
-            let mut visible = BTreeSet::new();
-            for &membership in &memberships.value {
-                self.property(out, membership, p::MEMBERSHIP_VISIBILITY);
-                let view =
-                    views::Membership::try_new(membership, self.model()).expect("membership query");
-                let visibility = self.accept(out, membership, view.visibility());
-                let registry = self.model().registry();
-                let agq_kernel::metamodel::ValueKind::Enumeration(domain) = registry
-                    .property(p::MEMBERSHIP_VISIBILITY)
-                    .expect("descriptor")
-                    .value_kind
-                else {
-                    unreachable!("visibility domain")
-                };
-                let is_public = visibility.is_some_and(|literal| {
-                    registry
-                        .enumeration(domain)
-                        .expect("visibility enumeration")
-                        .literals
-                        .get(&literal)
-                        .is_some_and(|n| n == "public")
-                });
-                let member = self.member(membership);
-                if is_public {
-                    visible.extend(member.value);
-                }
-                out.merge(member);
-            }
-            out.merge(memberships);
-            targets.retain(|t| visible.contains(t));
-        }
-        targets
+        specific: ElementId,
+        name: &QualifiedName,
+        expected: MetaclassId,
+    ) -> QueryResult<Resolution> {
+        let parent = self.owner(specific);
+        let mut out = self.resolve_name(parent.value.unwrap_or(specific), name, expected, false);
+        out.merge(parent);
+        out
     }
 }

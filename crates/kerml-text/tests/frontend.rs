@@ -307,7 +307,7 @@ fn structural_replacements_and_ambiguous_duplicates_are_not_reconciled() {
     );
 }
 #[test]
-fn declared_resolution_has_lexical_shadowing_and_reports_inheritance_gaps() {
+fn resolution_has_lexical_shadowing_and_inherited_lookup() {
     let doc = Document::new("feature X; namespace N { feature X; feature f : X; }").unwrap();
     let model = doc.current();
     assert!(model.validate_slice().is_ok());
@@ -336,22 +336,15 @@ fn declared_resolution_has_lexical_shadowing_and_reports_inheritance_gaps() {
     let doc =
         Document::new("feature Base { feature X; } feature X; type T :> Base { feature f : X; }")
             .unwrap();
-    assert!(
-        doc.current()
-            .references()
-            .iter()
-            .any(|r| r.resolution.value == Resolution::Incomplete)
-    );
     let t = named(doc.current(), "T");
     let f = member(doc.current(), t, "f");
-    assert!(
-        doc.current()
-            .queries()
-            .direct_feature_types(f)
-            .value
-            .is_empty()
+    let base = named(doc.current(), "Base");
+    let inherited = member(doc.current(), base, "X");
+    assert_eq!(
+        doc.current().queries().direct_feature_types(f).value,
+        vec![inherited]
     );
-    assert!(doc.current().validate_slice().is_err());
+    assert!(doc.current().validate_slice().is_ok());
 }
 #[test]
 fn regular_comments_are_preserved_but_not_mistaken_for_notes() {
