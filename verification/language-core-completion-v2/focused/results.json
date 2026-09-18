@@ -1,0 +1,50 @@
+[
+  {
+    "command": "python -X utf8 verification/language-core-completion-v2/authority.py --check",
+    "started": "2026-09-18T17:52:22.453Z",
+    "durationMs": 3512,
+    "exitCode": 0,
+    "signal": null,
+    "log": "authority.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-kernel",
+    "started": "2026-09-18T17:52:25.966Z",
+    "durationMs": 3697,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kernel.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-metamodel-gen",
+    "started": "2026-09-18T17:52:29.664Z",
+    "durationMs": 21799,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generator.txt"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T17:52:51.464Z",
+    "durationMs": 1082,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --audit-full --check",
+    "started": "2026-09-18T17:52:52.547Z",
+    "durationMs": 1834,
+    "exitCode": 0,
+    "signal": null,
+    "log": "audit.txt"
+  },
+  {
+    "command": "python -X utf8 verification/language-core-completion-v1/direct_xmi.py --check",
+    "started": "2026-09-18T17:52:54.382Z",
+    "durationMs": 394,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent.txt"
+  }
+]

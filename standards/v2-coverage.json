@@ -4,15 +4,50 @@
   "language_core_foundation": {
     "result": "incomplete-do-not-proceed",
     "review": "docs/language-core-foundation-review.md",
-    "evidence": "verification/language-core-completion-v1/README.md",
-    "gate_0": "reproduced; Property-specific authority gap unresolved (ADR 0009)",
+    "evidence": "verification/language-core-completion-v2/README.md",
+    "gate_0": "unresolved: all UML24-85/86/96 resolutions acquired; final inherited-feature condition and exact SysML context conflict remain (ADR 0010)",
     "gate_1": "not-implemented",
-    "full_inventory": {"classes": 175, "properties": 715, "associations": 319, "enumerations": 7},
+    "full_inventory": {
+      "classes": 175,
+      "properties": 715,
+      "associations": 319,
+      "enumerations": 7
+    },
     "runtime_registration": "not-reached: full translation fails",
-    "final_verification": {"results": "verification/language-core-completion-v1/final/results.json", "commands_run": 14, "exit_zero": 12, "runtime_gate_exit_codes": {"kerml-1.0": 1, "sysml-2.0": 1}},
-    "categories": {"C": "Integer and Real", "D": "association inheritance", "E": "five exact naming anomalies", "F": "definedFlow property context interpretation"},
-    "reports": ["standards/generated/kerml-1.0/full-audit.json", "standards/generated/sysml-2.0/full-audit.json"],
-    "remaining_stages": ["generic Property rule and regression matrix", "full runtime/value/storage/derived contract", "complete KerML and SysML views", "full-registry semantic context", "runtime stress matrix and acceptance"]
+    "final_verification": {
+      "status": "pending",
+      "results": "verification/language-core-completion-v2/final/results.json"
+    },
+    "categories": {
+      "C": "Integer and Real",
+      "D": "association inheritance",
+      "E": "five exact naming anomalies",
+      "F": "definedFlow property context interpretation"
+    },
+    "reports": [
+      "standards/generated/kerml-1.0/full-audit.json",
+      "standards/generated/sysml-2.0/full-audit.json"
+    ],
+    "remaining_stages": [
+      "generic Property rule and regression matrix",
+      "full runtime/value/storage/derived contract",
+      "complete KerML and SysML views",
+      "full-registry semantic context",
+      "runtime stress matrix and acceptance"
+    ],
+    "previous_milestone": {
+      "evidence": "verification/language-core-completion-v1/README.md",
+      "final_verification": {
+        "results": "verification/language-core-completion-v1/final/results.json",
+        "commands_run": 14,
+        "exit_zero": 12,
+        "runtime_gate_exit_codes": {
+          "kerml-1.0": 1,
+          "sysml-2.0": 1
+        }
+      }
+    },
+    "gate_sequence": "Gates 1?11 not started: unresolved Gate 0 authority conflict, not a stop at an ordinary generic capability gap"
   },
   "normative_targets": {
     "KerML": "1.0",

@@ -1,0 +1,17 @@
+{
+  "classification": "F",
+  "runtime_rule_accepted": false,
+  "acquired_resolved_issues": 3,
+  "candidate_matrix_rows": 16,
+  "acceptance_case": {
+    "owning_association_has_parents": false,
+    "base_association_is_ancestor": false,
+    "opposite_context_is_strict_subclass": false,
+    "value_type_conforms": true,
+    "flow_definition_inherits_both_contexts": true,
+    "literal_final_redefined_property_inherited": false,
+    "ownership_independent_opposite_context_candidate": false,
+    "association_ancestry_candidate": false,
+    "either_ancestry_candidate": false
+  }
+}
