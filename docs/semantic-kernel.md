@@ -1,5 +1,12 @@
 # Semantic kernel, second generation
 
+[ADR 0009](adr/0009-property-redefinition-context.md) reassesses the Property
+context invariant without changing it. Final UML text and the resolved mixed
+ownership issue do not establish a safe correction for the pinned failing edge.
+The [complete foundation review](language-core-foundation-review.md) records
+unimplemented full-registry/value/association obligations; the bounded kernel
+capabilities documented below must not be read as full language completion.
+
 `agq-kernel` is an additive semantic substrate. It does not implement full KerML
 or SysML validation. The compatibility target is KerML 1.0 / SysML 2.0; the
 [decision record](adr/0001-semantic-kernel-v2.md) identifies the standards evidence,

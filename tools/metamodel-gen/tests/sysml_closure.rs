@@ -80,14 +80,16 @@ fn runtime_readiness_gate_fails_without_changing_outputs() {
         .output()
         .unwrap();
     assert!(!result.status.success());
-    assert!(String::from_utf8_lossy(&result.stderr).contains("SysML runtime closure blocked"));
-    assert!(String::from_utf8_lossy(&result.stderr).contains("invalid redefinition"));
+    assert!(String::from_utf8_lossy(&result.stderr).contains("SysML complete runtime blocked"));
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains("property-redefinition-context-authority")
+    );
     assert!(!String::from_utf8_lossy(&result.stderr).contains("cyclic property"));
     assert_eq!(
         String::from_utf8_lossy(&result.stderr)
-            .matches("Baseline diagnostic:")
+            .matches("subsetted-property-name")
             .count(),
-        3
+        5
     );
     assert_eq!(before, fs::read(output).unwrap());
 }
@@ -205,6 +207,10 @@ fn explicit_sysml_check_checks_the_audit_and_rejects_stale_audit_without_writing
     let audit_path = directory.path().join(closure_audit::PATH);
     fs::create_dir_all(audit_path.parent().unwrap()).unwrap();
     fs::write(&audit_path, b"stale").unwrap();
+    for file in ["full-audit.json", "full.golden.json"] {
+        let path = PathBuf::from("standards/generated/sysml-2.0").join(file);
+        fs::copy(root.join(&path), directory.path().join(path)).unwrap();
+    }
     let result = Command::new(env!("CARGO_BIN_EXE_metamodel-gen"))
         .args(["--baseline", "sysml-2.0", "--check", "--root"])
         .arg(root)

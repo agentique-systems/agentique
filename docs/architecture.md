@@ -1,5 +1,12 @@
 # Agentique architecture: two generations
 
+The [complete structural foundation review](language-core-foundation-review.md)
+is **incomplete**. New full-input audits cover 175 classes and 319 associations;
+they expose Integer/Real domain and association-inheritance gaps as well as the
+Property-context authority question in [ADR 0009](adr/0009-property-redefinition-context.md).
+The earlier blocker records below remain historical. No complete runtime or
+SysML language crate is claimed.
+
 Generation 1 is the functioning integrated application described below. Generation 2
 is the standards-driven engine for all new language implementation; it does not yet
 power the application. Compatibility/migration work must name its generation.

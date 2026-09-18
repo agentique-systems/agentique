@@ -1,6 +1,18 @@
 {
   "format": "agentique-generation-2-coverage/1",
   "generation": 2,
+  "language_core_foundation": {
+    "result": "incomplete-do-not-proceed",
+    "review": "docs/language-core-foundation-review.md",
+    "evidence": "verification/language-core-completion-v1/README.md",
+    "gate_0": "reproduced; Property-specific authority gap unresolved (ADR 0009)",
+    "gate_1": "not-implemented",
+    "full_inventory": {"classes": 175, "properties": 715, "associations": 319, "enumerations": 7},
+    "runtime_registration": "not-reached: full translation fails",
+    "categories": {"C": "Integer and Real", "D": "association inheritance", "E": "five exact naming anomalies", "F": "definedFlow property context interpretation"},
+    "reports": ["standards/generated/kerml-1.0/full-audit.json", "standards/generated/sysml-2.0/full-audit.json"],
+    "remaining_stages": ["generic Property rule and regression matrix", "full runtime/value/storage/derived contract", "complete KerML and SysML views", "full-registry semantic context", "runtime stress matrix and acceptance"]
+  },
   "normative_targets": {
     "KerML": "1.0",
     "SysML": "2.0"

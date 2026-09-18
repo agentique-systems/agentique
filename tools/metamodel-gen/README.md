@@ -52,3 +52,19 @@ remaining semantic obligations. `agq-kerml` depends only on `agq-kernel` at runt
 its dependency here is test-only for comparison of compiled descriptors to XMI.
 [ADR 0004](../../docs/adr/0004-kerml-typed-views.md) describes the typed API, generated
 versus handwritten boundaries and bounded association-slot support.
+
+## Complete structural diagnostics
+
+`cargo run --locked --offline -p agq-metamodel-gen -- --audit-full` emits the
+complete raw `full.golden.json` and diagnostic `full-audit.json` for both baselines.
+Use `--baseline` to select one language; SysML includes the complete KerML input.
+`--check` is read-only and verifies report currentness, including blocked reports.
+The normal generator also checks/emits these reports alongside existing artifacts.
+The historical PartDefinition/PartUsage closure report remains separate.
+
+`--require-runtime` requires complete translation and atomic registration for
+the selected baseline. It no longer treats successful bounded KerML generation
+as full runtime readiness. Both complete baselines currently fail; no complete
+KerML expansion or SysML runtime has been generated. All raw facts remain in
+the manifests. See [foundation review](../../docs/language-core-foundation-review.md)
+and [ADR 0009](../../docs/adr/0009-property-redefinition-context.md).

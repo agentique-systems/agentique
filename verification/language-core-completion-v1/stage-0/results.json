@@ -1,0 +1,9 @@
+{
+    "exitCode":  1,
+    "initialWorktree":  "clean",
+    "started":  "2026-09-18T16:32:17.5630821Z",
+    "base":  "76aef699ee7b2d4f910c7483e42340998770ac5c",
+    "command":  "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "branch":  "foundation/language-core-completion-v1",
+    "log":  "runtime-readiness.txt"
+}

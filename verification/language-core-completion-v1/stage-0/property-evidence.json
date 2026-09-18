@@ -1,0 +1,1050 @@
+{
+  "format": "agentique-property-context-investigation/1",
+  "classification": "F",
+  "properties_and_associations": [
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow-definedFlow",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "Flows"
+        ],
+        "external_id": "Systems-Flows-A_flowDefinition_definedFlow-definedFlow",
+        "kind": "property"
+      },
+      "descriptor_id": "2abb2284-8e25-51ac-b486-1792cc60e1b1",
+      "byte_range": [
+        2819,
+        3932
+      ],
+      "lines": [
+        29,
+        38
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-Flows-A_flowDefinition_definedFlow-definedFlow",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Property",
+        "isDerived": "true",
+        "name": "definedFlow"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow",
+      "owner_kind": "Association",
+      "raw_xmi": "<ownedEnd xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow\" xmi:type=\"uml:Property\" isDerived=\"true\" name=\"definedFlow\">\n            <association xmi:idref=\"Systems-Flows-A_flowDefinition_definedFlow\"/>\n            <lowerValue xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow-lowerValue\" xmi:type=\"uml:LiteralInteger\" name=\"\"/>\n            <ownedComment xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow-_comment.0\" xmi:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;FlowUsages&lt;code&gt; that have a certain &lt;code&gt;Interaction&lt;/code&gt; as their &lt;code&gt;flowDefinition&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement xmi:idref=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow\"/>\n            </ownedComment>\n            <redefinedProperty xmi:idref=\"Systems-DefinitionAndUsage-Definition-ownedAction\"/>\n            <type xmi:idref=\"Systems-Flows-FlowUsage\"/>\n            <upperValue xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow-upperValue\" xmi:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\"/>\n          </ownedEnd>",
+      "type": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage",
+      "lower": 0,
+      "upper": -1,
+      "derived": true,
+      "ordered": false,
+      "unique": true,
+      "aggregation": "none",
+      "association": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow",
+      "opposite_ends": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage-flowDefinition"
+      ],
+      "redefines": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition-ownedAction"
+      ],
+      "subsets": [],
+      "property_contexts": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction"
+      ],
+      "context_ancestors": {
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction": [
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Classifier",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-Association",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Behavior",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Classes-Class",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Relationship",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace"
+        ]
+      },
+      "is_leaf_explicit": null,
+      "is_leaf_uml_default": false
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition-ownedAction",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "DefinitionAndUsage"
+        ],
+        "external_id": "Systems-DefinitionAndUsage-Definition-ownedAction",
+        "kind": "property"
+      },
+      "descriptor_id": "2e4efe58-2d09-5275-991e-104649d59bf3",
+      "byte_range": [
+        800464,
+        801597
+      ],
+      "lines": [
+        7019,
+        7028
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-DefinitionAndUsage-Definition-ownedAction",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Property",
+        "isDerived": "true",
+        "isOrdered": "true",
+        "name": "ownedAction"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition",
+      "owner_kind": "Class",
+      "raw_xmi": "<ownedAttribute xmi:id=\"Systems-DefinitionAndUsage-Definition-ownedAction\" xmi:type=\"uml:Property\" isDerived=\"true\" isOrdered=\"true\" name=\"ownedAction\">\n            <association xmi:idref=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition\"/>\n            <lowerValue xmi:id=\"Systems-DefinitionAndUsage-Definition-ownedAction-lowerValue\" xmi:type=\"uml:LiteralInteger\" name=\"\"/>\n            <ownedComment xmi:id=\"Systems-DefinitionAndUsage-Definition-ownedAction-_comment.0\" xmi:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;ActionUsages&lt;/code&gt; that are &lt;code&gt;ownedUsages&lt;/code&gt; of this &lt;code&gt;Definition&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement xmi:idref=\"Systems-DefinitionAndUsage-Definition-ownedAction\"/>\n            </ownedComment>\n            <subsettedProperty xmi:idref=\"Systems-DefinitionAndUsage-Definition-ownedOccurrence\"/>\n            <type xmi:idref=\"Systems-Actions-ActionUsage\"/>\n            <upperValue xmi:id=\"Systems-DefinitionAndUsage-Definition-ownedAction-upperValue\" xmi:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\"/>\n          </ownedAttribute>",
+      "type": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage",
+      "lower": 0,
+      "upper": -1,
+      "derived": true,
+      "ordered": true,
+      "unique": true,
+      "aggregation": "none",
+      "association": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition",
+      "opposite_ends": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition"
+      ],
+      "redefines": [],
+      "subsets": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition-ownedOccurrence"
+      ],
+      "property_contexts": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition"
+      ],
+      "context_ancestors": {
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition": [
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Classifier",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace"
+        ]
+      },
+      "is_leaf_explicit": null,
+      "is_leaf_uml_default": false
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage-flowDefinition",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "Flows"
+        ],
+        "external_id": "Systems-Flows-FlowUsage-flowDefinition",
+        "kind": "property"
+      },
+      "descriptor_id": "f477cbe7-cd78-50bb-bb57-e26486931f04",
+      "byte_range": [
+        9980,
+        11413
+      ],
+      "lines": [
+        95,
+        106
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-Flows-FlowUsage-flowDefinition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Property",
+        "isDerived": "true",
+        "isOrdered": "true",
+        "name": "flowDefinition"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage",
+      "owner_kind": "Class",
+      "raw_xmi": "<ownedAttribute xmi:id=\"Systems-Flows-FlowUsage-flowDefinition\" xmi:type=\"uml:Property\" isDerived=\"true\" isOrdered=\"true\" name=\"flowDefinition\">\n            <association xmi:idref=\"Systems-Flows-A_flowDefinition_definedFlow\"/>\n            <lowerValue xmi:id=\"Systems-Flows-FlowUsage-flowDefinition-lowerValue\" xmi:type=\"uml:LiteralInteger\" name=\"\"/>\n            <ownedComment \n            xmi:id=\"Systems-Flows-FlowUsage-flowDefinition-_comment.0\" xmi:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;Interactions&lt;/code&gt; that are the &lt;code&gt;types&lt;/code&gt; of this &lt;code&gt;FlowUsage&lt;/code&gt;. Nominally, these are &lt;code&gt;FlowDefinitions&lt;/code&gt;, but other kinds of Kernel &lt;code&gt;Interactions&lt;/code&gt; are also allowed, to permit use of Interactions from the Kernel Model Libraries.&lt;/p&gt;\">\n              <annotatedElement xmi:idref=\"Systems-Flows-FlowUsage-flowDefinition\"/>\n</ownedComment>\n            <redefinedProperty xmi:idref=\"Systems-Actions-ActionUsage-actionDefinition\"/>\n            <redefinedProperty href=\"https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Flow-interaction\"/>\n            <type href=\"https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction\"/>\n            <upperValue xmi:id=\"Systems-Flows-FlowUsage-flowDefinition-upperValue\" xmi:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\"/>\n          </ownedAttribute>",
+      "type": "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction",
+      "lower": 0,
+      "upper": -1,
+      "derived": true,
+      "ordered": true,
+      "unique": true,
+      "aggregation": "none",
+      "association": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow",
+      "opposite_ends": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow-definedFlow"
+      ],
+      "redefines": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage-actionDefinition",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Flow-interaction"
+      ],
+      "subsets": [],
+      "property_contexts": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage"
+      ],
+      "context_ancestors": {
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage": [
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-Feature",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Step",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Connectors-Connector",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Flow",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Relationship",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace",
+          "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage",
+          "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Connections-ConnectorAsUsage",
+          "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Usage",
+          "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceUsage"
+        ]
+      },
+      "is_leaf_explicit": null,
+      "is_leaf_uml_default": false
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "DefinitionAndUsage"
+        ],
+        "external_id": "Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition",
+        "kind": "property"
+      },
+      "descriptor_id": "fea96210-aa27-5c26-9053-56a2640f7ede",
+      "byte_range": [
+        868352,
+        869640
+      ],
+      "lines": [
+        7572,
+        7581
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Property",
+        "isDerived": "true",
+        "name": "actionOwningDefinition"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition",
+      "owner_kind": "Association",
+      "raw_xmi": "<ownedEnd xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition\" xmi:type=\"uml:Property\" isDerived=\"true\" name=\"actionOwningDefinition\">\n            <association xmi:idref=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition\"/>\n            <lowerValue xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition-lowerValue\" xmi:type=\"uml:LiteralInteger\" name=\"\"/>\n            <ownedComment xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition-_comment.0\" xmi:type=\"uml:Comment\" body=\"&lt;p&gt;The Definition that owns the &lt;code&gt;ownedAction&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement xmi:idref=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition\"/>\n            </ownedComment>\n            <subsettedProperty xmi:idref=\"Systems-DefinitionAndUsage-A_ownedOccurrence_occurrenceOwningDefinition-occurrenceOwningDefinition\"/>\n            <type xmi:idref=\"Systems-DefinitionAndUsage-Definition\"/>\n            <upperValue xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition-upperValue\" xmi:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"1\"/>\n          </ownedEnd>",
+      "type": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition",
+      "lower": 0,
+      "upper": 1,
+      "derived": true,
+      "ordered": false,
+      "unique": true,
+      "aggregation": "none",
+      "association": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition",
+      "opposite_ends": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition-ownedAction"
+      ],
+      "redefines": [],
+      "subsets": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_ownedOccurrence_occurrenceOwningDefinition-occurrenceOwningDefinition"
+      ],
+      "property_contexts": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage"
+      ],
+      "context_ancestors": {
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage": [
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-Feature",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Step",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+          "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace",
+          "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Usage",
+          "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceUsage"
+        ]
+      },
+      "is_leaf_explicit": null,
+      "is_leaf_uml_default": false
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "Flows"
+        ],
+        "external_id": "Systems-Flows-A_flowDefinition_definedFlow",
+        "kind": "association"
+      },
+      "descriptor_id": "934b08b2-eed6-527e-801d-a28ca753ee34",
+      "byte_range": [
+        2512,
+        3959
+      ],
+      "lines": [
+        26,
+        39
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-Flows-A_flowDefinition_definedFlow",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Association",
+        "name": "A_flowDefinition_definedFlow"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows",
+      "owner_kind": "Package",
+      "raw_xmi": "<packagedElement xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow\" xmi:type=\"uml:Association\" name=\"A_flowDefinition_definedFlow\">\n          <memberEnd xmi:idref=\"Systems-Flows-FlowUsage-flowDefinition\"/>\n          <memberEnd xmi:idref=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow\"/>\n          <ownedEnd xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow\" xmi:type=\"uml:Property\" isDerived=\"true\" name=\"definedFlow\">\n            <association xmi:idref=\"Systems-Flows-A_flowDefinition_definedFlow\"/>\n            <lowerValue xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow-lowerValue\" xmi:type=\"uml:LiteralInteger\" name=\"\"/>\n            <ownedComment xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow-_comment.0\" xmi:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;FlowUsages&lt;code&gt; that have a certain &lt;code&gt;Interaction&lt;/code&gt; as their &lt;code&gt;flowDefinition&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement xmi:idref=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow\"/>\n            </ownedComment>\n            <redefinedProperty xmi:idref=\"Systems-DefinitionAndUsage-Definition-ownedAction\"/>\n            <type xmi:idref=\"Systems-Flows-FlowUsage\"/>\n            <upperValue xmi:id=\"Systems-Flows-A_flowDefinition_definedFlow-definedFlow-upperValue\" xmi:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\"/>\n          </ownedEnd>\n        </packagedElement>",
+      "direct_supertypes": [],
+      "ancestors": []
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "DefinitionAndUsage"
+        ],
+        "external_id": "Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition",
+        "kind": "association"
+      },
+      "descriptor_id": "e0f5c7fe-6e2c-516d-befd-420b61fc325a",
+      "byte_range": [
+        867973,
+        869667
+      ],
+      "lines": [
+        7569,
+        7582
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Association",
+        "name": "A_ownedAction_actionOwningDefinition"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage",
+      "owner_kind": "Package",
+      "raw_xmi": "<packagedElement xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition\" xmi:type=\"uml:Association\" name=\"A_ownedAction_actionOwningDefinition\">\n          <memberEnd xmi:idref=\"Systems-DefinitionAndUsage-Definition-ownedAction\"/>\n          <memberEnd xmi:idref=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition\"/>\n          <ownedEnd xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition\" xmi:type=\"uml:Property\" isDerived=\"true\" name=\"actionOwningDefinition\">\n            <association xmi:idref=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition\"/>\n            <lowerValue xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition-lowerValue\" xmi:type=\"uml:LiteralInteger\" name=\"\"/>\n            <ownedComment xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition-_comment.0\" xmi:type=\"uml:Comment\" body=\"&lt;p&gt;The Definition that owns the &lt;code&gt;ownedAction&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement xmi:idref=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition\"/>\n            </ownedComment>\n            <subsettedProperty xmi:idref=\"Systems-DefinitionAndUsage-A_ownedOccurrence_occurrenceOwningDefinition-occurrenceOwningDefinition\"/>\n            <type xmi:idref=\"Systems-DefinitionAndUsage-Definition\"/>\n            <upperValue xmi:id=\"Systems-DefinitionAndUsage-A_ownedAction_actionOwningDefinition-actionOwningDefinition-upperValue\" xmi:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"1\"/>\n          </ownedEnd>\n        </packagedElement>",
+      "direct_supertypes": [],
+      "ancestors": []
+    }
+  ],
+  "classes": [
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "Flows"
+        ],
+        "external_id": "Systems-Flows-FlowUsage",
+        "kind": "class"
+      },
+      "descriptor_id": "22745cb1-fa22-57ca-a359-2495f863486f",
+      "byte_range": [
+        9149,
+        13820
+      ],
+      "lines": [
+        85,
+        126
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-Flows-FlowUsage",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Class",
+        "name": "FlowUsage"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows",
+      "owner_kind": "Package",
+      "direct_supertypes": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Connections-ConnectorAsUsage",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Flow",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage"
+      ],
+      "ancestors": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-Feature",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Step",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Connectors-Connector",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Flow",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Relationship",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Connections-ConnectorAsUsage",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Usage",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceUsage"
+      ]
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowDefinition",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "Flows"
+        ],
+        "external_id": "Systems-Flows-FlowDefinition",
+        "kind": "class"
+      },
+      "descriptor_id": "32fbbae9-3f37-50bb-84db-c8489db29b6c",
+      "byte_range": [
+        3968,
+        9140
+      ],
+      "lines": [
+        40,
+        84
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-Flows-FlowDefinition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Class",
+        "name": "FlowDefinition"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows",
+      "owner_kind": "Package",
+      "direct_supertypes": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionDefinition",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction"
+      ],
+      "ancestors": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Classifier",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-Association",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Behavior",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Classes-Class",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Relationship",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionDefinition",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceDefinition"
+      ]
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "Actions"
+        ],
+        "external_id": "Systems-Actions-ActionUsage",
+        "kind": "class"
+      },
+      "descriptor_id": "447b74fb-90f6-5f7e-a006-12253b028de9",
+      "byte_range": [
+        413568,
+        430184
+      ],
+      "lines": [
+        3617,
+        3770
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-Actions-ActionUsage",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Class",
+        "name": "ActionUsage"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions",
+      "owner_kind": "Package",
+      "direct_supertypes": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Step",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceUsage"
+      ],
+      "ancestors": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-Feature",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Step",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Usage",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceUsage"
+      ]
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition",
+      "key": {
+        "source": {
+          "specification": "SysML",
+          "version": "2.0",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+        },
+        "package_path": [
+          "SysML",
+          "Systems",
+          "DefinitionAndUsage"
+        ],
+        "external_id": "Systems-DefinitionAndUsage-Definition",
+        "kind": "class"
+      },
+      "descriptor_id": "2a982234-260b-5baa-b7ff-50696fe3478c",
+      "byte_range": [
+        779793,
+        854111
+      ],
+      "lines": [
+        6842,
+        7454
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-DefinitionAndUsage-Definition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Class",
+        "name": "Definition"
+      },
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage",
+      "owner_kind": "Package",
+      "direct_supertypes": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Classifier"
+      ],
+      "ancestors": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Classifier",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace"
+      ]
+    },
+    {
+      "source_qualified_id": "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction",
+      "key": {
+        "source": {
+          "specification": "KerML",
+          "version": "1.0",
+          "metamodel_uri": "https://www.omg.org/spec/KerML/20250201",
+          "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+          "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466"
+        },
+        "package_path": [
+          "KerML",
+          "Kernel",
+          "Interactions"
+        ],
+        "external_id": "Kernel-Interactions-Interaction",
+        "kind": "class"
+      },
+      "descriptor_id": "a1e67e18-e14f-557d-b42d-2a0b2cb552ab",
+      "byte_range": [
+        244551,
+        245595
+      ],
+      "lines": [
+        2288,
+        2300
+      ],
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Interactions-Interaction",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Class",
+        "name": "Interaction"
+      },
+      "owner": "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions",
+      "owner_kind": "Package",
+      "direct_supertypes": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-Association",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Behavior"
+      ],
+      "ancestors": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Classifier",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-Association",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Behavior",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Classes-Class",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Relationship",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace"
+      ]
+    }
+  ],
+  "retained_rules": [
+    {
+      "source": {
+        "specification": "SysML",
+        "version": "2.0",
+        "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+        "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+        "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+      },
+      "external_id": "Systems-Actions-ActionUsage-checkActionUsageOwnedActionSpecialization",
+      "byte_range": [
+        428822,
+        430157
+      ],
+      "raw_xmi": "<ownedRule xmi:id=\"Systems-Actions-ActionUsage-checkActionUsageOwnedActionSpecialization\" xmi:type=\"uml:Constraint\" name=\"checkActionUsageOwnedActionSpecialization\">\n            <constrainedElement xmi:idref=\"Systems-Actions-ActionUsage\"/>\n            <ownedComment \n            xmi:id=\"Systems-Actions-ActionUsage-checkActionUsageOwnedActionSpecialization-_comment.0\" xmi:type=\"uml:Comment\" body=\"&lt;p&gt;A composite &lt;code&gt;ActionUsage&lt;/code&gt; whose &lt;code&gt;owningType&lt;/code&gt; is  &lt;code&gt;PartDefinition&lt;/code&gt; or &lt;code&gt;PartUsage&lt;/code&gt; must directly or indirectly specialize the &lt;code&gt;ActionUsage&lt;/code&gt; &lt;em&gt;&lt;code&gt;Parts::Part::ownedActions&lt;/code&gt;&lt;/em&gt; from the Systems Model Library.&lt;/p&gt;\">\n              <annotatedElement xmi:idref=\"Systems-Actions-ActionUsage-checkActionUsageOwnedActionSpecialization\"/>\n</ownedComment>\n            <specification \n            xmi:id=\"Systems-Actions-ActionUsage-checkActionUsageOwnedActionSpecialization-specification0\" xmi:type=\"uml:OpaqueExpression\" body=\"isComposite and owningType &lt;&gt; null and\n(owningType.oclIsKindOf(PartDefinition) or\n owningType.oclIsKindOf(PartUsage)) implies\n    specializesFromLibrary('Parts::Part::ownedActions')\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>"
+    },
+    {
+      "source": {
+        "specification": "SysML",
+        "version": "2.0",
+        "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+        "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+        "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f"
+      },
+      "external_id": "Systems-DefinitionAndUsage-Definition-deriveDefinitionOwnedAction",
+      "byte_range": [
+        828909,
+        829885
+      ],
+      "raw_xmi": "<ownedRule xmi:id=\"Systems-DefinitionAndUsage-Definition-deriveDefinitionOwnedAction\" xmi:type=\"uml:Constraint\" name=\"deriveDefinitionOwnedAction\">\n            <constrainedElement xmi:idref=\"Systems-DefinitionAndUsage-Definition\"/>\n            <ownedComment \n            xmi:id=\"Systems-DefinitionAndUsage-Definition-deriveDefinitionOwnedAction-_comment.0\" xmi:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;ownedActions&lt;/code&gt; of a &lt;code&gt;Definition&lt;/code&gt; are all its &lt;code&gt;ownedUsages&lt;/code&gt; that are &lt;code&gt;ActionUsages&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement xmi:idref=\"Systems-DefinitionAndUsage-Definition-deriveDefinitionOwnedAction\"/>\n</ownedComment>\n            <specification xmi:id=\"Systems-DefinitionAndUsage-Definition-deriveDefinitionOwnedAction-specification0\" xmi:type=\"uml:OpaqueExpression\" body=\"ownedAction = ownedUsage-&gt;selectByKind(ActionUsage)\" language=\"OCL2.0\" name=\"\"/>\n          </ownedRule>"
+    }
+  ],
+  "uml": {
+    "source": "https://www.omg.org/spec/UML/20161101/UML.xmi",
+    "sha256": "e8166c91f51b8a0c015a90101b83d2249d03252e9f9a500a6511654347804f21",
+    "property_declared_operations": [
+      "isAttribute",
+      "isCompatibleWith",
+      "isComposite",
+      "isConsistentWith",
+      "isNavigable",
+      "opposite",
+      "subsettingContext"
+    ],
+    "property_context_override_present": false,
+    "rules_and_operations": {
+      "Property-subsetting_context_conforms": {
+        "line": 17197,
+        "bodies": [
+          "subsettedProperty->notEmpty() implies\n  (subsettingContext()->notEmpty() and subsettingContext()->forAll (sc |\n    subsettedProperty->forAll(sp |\n      sp.subsettingContext()->exists(c | sc.conformsTo(c)))))"
+        ],
+        "body_ids": [
+          "Property-subsetting_context_conforms-_specification"
+        ]
+      },
+      "Property-derived_union_is_read_only": {
+        "line": 17213,
+        "bodies": [
+          "isDerivedUnion implies isReadOnly"
+        ],
+        "body_ids": [
+          "Property-derived_union_is_read_only-_specification"
+        ]
+      },
+      "Property-multiplicity_of_composite": {
+        "line": 17226,
+        "bodies": [
+          "isComposite and association <> null implies opposite.upperBound() <= 1\n\n"
+        ],
+        "body_ids": [
+          "Property-multiplicity_of_composite-_specification"
+        ]
+      },
+      "Property-redefined_property_inherited": {
+        "line": 17241,
+        "bodies": [
+          "(redefinedProperty->notEmpty()) implies\n  (redefinitionContext->notEmpty() and\n      redefinedProperty->forAll(rp|\n        ((redefinitionContext->collect(fc|\n          fc.allParents()))->asSet())->collect(c| c.allFeatures())->asSet()->includes(rp)))"
+        ],
+        "body_ids": [
+          "Property-redefined_property_inherited-_specification"
+        ]
+      },
+      "Property-subsetting_rules": {
+        "line": 17258,
+        "bodies": [
+          "subsettedProperty->forAll(sp |\n  self.type.conformsTo(sp.type) and\n    ((self.upperBound()->notEmpty() and sp.upperBound()->notEmpty()) implies\n      self.upperBound() <= sp.upperBound() ))"
+        ],
+        "body_ids": [
+          "Property-subsetting_rules-_specification"
+        ]
+      },
+      "Property-binding_to_attribute": {
+        "line": 17273,
+        "bodies": [
+          "(self.isAttribute()\nand (templateParameterSubstitution->notEmpty())\nimplies (templateParameterSubstitution->forAll(ts |\n    ts.formal.oclIsKindOf(Property)\n    and ts.formal.oclAsType(Property).isAttribute())))"
+        ],
+        "body_ids": [
+          "Property-binding_to_attribute-_specification"
+        ]
+      },
+      "Property-derived_union_is_derived": {
+        "line": 17289,
+        "bodies": [
+          "isDerivedUnion implies isDerived"
+        ],
+        "body_ids": [
+          "Property-derived_union_is_derived-_specification"
+        ]
+      },
+      "Property-deployment_target": {
+        "line": 17302,
+        "bodies": [
+          "deployment->notEmpty() implies owner.oclIsKindOf(Node) and Node.allInstances()->exists(n | n.part->exists(p | p = self))"
+        ],
+        "body_ids": [
+          "Property-deployment_target-_specification"
+        ]
+      },
+      "Property-subsetted_property_names": {
+        "line": 17314,
+        "bodies": [
+          "subsettedProperty->forAll(sp | sp.name <> name)"
+        ],
+        "body_ids": [
+          "Property-subsetted_property_names-_specification"
+        ]
+      },
+      "Property-type_of_opposite_end": {
+        "line": 17327,
+        "bodies": [
+          "(opposite->notEmpty() and owningAssociation->isEmpty()) implies classifier = opposite.type"
+        ],
+        "body_ids": [
+          "Property-type_of_opposite_end-_specification"
+        ]
+      },
+      "Property-qualified_is_association_end": {
+        "line": 17339,
+        "bodies": [
+          "qualifier->notEmpty() implies association->notEmpty()"
+        ],
+        "body_ids": [
+          "Property-qualified_is_association_end-_specification"
+        ]
+      },
+      "Property-isAttribute": {
+        "line": 17515,
+        "bodies": [
+          "result = (not classifier->isEmpty())"
+        ],
+        "body_ids": [
+          "Property-isAttribute-spec-_specification"
+        ]
+      },
+      "Property-isCompatibleWith": {
+        "line": 17534,
+        "bodies": [
+          "result = (self.oclIsKindOf(p.oclType()) and (p.oclIsKindOf(TypeElement) implies\nself.type.conformsTo(p.oclAsType(TypedElement).type)))"
+        ],
+        "body_ids": [
+          "Property-isCompatibleWith-spec-_specification"
+        ]
+      },
+      "Property-isComposite.1": {
+        "line": 17556,
+        "bodies": [
+          "result = (aggregation = AggregationKind::composite)"
+        ],
+        "body_ids": [
+          "Property-isComposite.1-spec-_specification"
+        ]
+      },
+      "Property-isConsistentWith": {
+        "line": 17576,
+        "bodies": [
+          "redefiningElement.isRedefinitionContextValid(self)",
+          "result = (redefiningElement.oclIsKindOf(Property) and \n  let prop : Property = redefiningElement.oclAsType(Property) in \n  (prop.type.conformsTo(self.type) and \n  ((prop.lowerBound()->notEmpty() and self.lowerBound()->notEmpty()) implies prop.lowerBound() >= self.lowerBound()) and \n  ((prop.upperBound()->notEmpty() and self.upperBound()->notEmpty()) implies prop.lowerBound() <= self.lowerBound()) and \n  (self.isComposite implies prop.isComposite)))"
+        ],
+        "body_ids": [
+          null,
+          "Property-isConsistentWith-pre-_specification",
+          "Property-isConsistentWith-spec-_specification"
+        ]
+      },
+      "Property-isNavigable": {
+        "line": 17611,
+        "bodies": [
+          "result = (not classifier->isEmpty() or association.navigableOwnedEnd->includes(self))"
+        ],
+        "body_ids": [
+          "Property-isNavigable-spec-_specification"
+        ]
+      },
+      "Property-opposite.1": {
+        "line": 17630,
+        "bodies": [
+          "result = (if association <> null and association.memberEnd->size() = 2\nthen\n    association.memberEnd->any(e | e <> self)\nelse\n    null\nendif)"
+        ],
+        "body_ids": [
+          "Property-opposite.1-spec-_specification"
+        ]
+      },
+      "Property-subsettingContext": {
+        "line": 17653,
+        "bodies": [
+          "result = (if association <> null\nthen association.memberEnd->excluding(self)->collect(type)->asSet()\nelse \n  if classifier<>null\n  then classifier->asSet()\n  else Set{} \n  endif\nendif)"
+        ],
+        "body_ids": [
+          "Property-subsettingContext-spec-_specification"
+        ]
+      },
+      "RedefinableElement-redefinition_consistent": {
+        "line": 17689,
+        "bodies": [
+          "redefinedElement->forAll(re | re.isConsistentWith(self))"
+        ],
+        "body_ids": [
+          "RedefinableElement-redefinition_consistent-_specification"
+        ]
+      },
+      "RedefinableElement-non_leaf_redefinition": {
+        "line": 17702,
+        "bodies": [
+          "redefinedElement->forAll(re | not re.isLeaf)"
+        ],
+        "body_ids": [
+          "RedefinableElement-non_leaf_redefinition-_specification"
+        ]
+      },
+      "RedefinableElement-redefinition_context_valid": {
+        "line": 17716,
+        "bodies": [
+          "redefinedElement->forAll(re | self.isRedefinitionContextValid(re))"
+        ],
+        "body_ids": [
+          "RedefinableElement-redefinition_context_valid-_specification"
+        ]
+      },
+      "RedefinableElement-isConsistentWith": {
+        "line": 17769,
+        "bodies": [
+          "result = (false)",
+          "redefiningElement.isRedefinitionContextValid(self)"
+        ],
+        "body_ids": [
+          null,
+          "RedefinableElement-isConsistentWith-spec-_specification",
+          "RedefinableElement-isConsistentWith-pre-_specification"
+        ]
+      },
+      "RedefinableElement-isRedefinitionContextValid": {
+        "line": 17800,
+        "bodies": [
+          "result = (redefinitionContext->exists(c | c.allParents()->includesAll(redefinedElement.redefinitionContext)))"
+        ],
+        "body_ids": [
+          "RedefinableElement-isRedefinitionContextValid-spec-_specification"
+        ]
+      },
+      "MultiplicityElement-upper_ge_lower": {
+        "line": 12779,
+        "bodies": [
+          "upperBound() >= lowerBound()"
+        ],
+        "body_ids": [
+          "MultiplicityElement-upper_ge_lower-_specification"
+        ]
+      },
+      "MultiplicityElement-lower_ge_0": {
+        "line": 12792,
+        "bodies": [
+          "lowerBound() >= 0"
+        ],
+        "body_ids": [
+          "MultiplicityElement-lower_ge_0-_specification"
+        ]
+      },
+      "MultiplicityElement-value_specification_no_side_effects": {
+        "line": 12805,
+        "bodies": [],
+        "body_ids": [
+          "MultiplicityElement-value_specification_no_side_effects-_specification"
+        ]
+      },
+      "MultiplicityElement-value_specification_constant": {
+        "line": 12816,
+        "bodies": [],
+        "body_ids": [
+          "MultiplicityElement-value_specification_constant-_specification"
+        ]
+      },
+      "MultiplicityElement-lower_is_integer": {
+        "line": 12826,
+        "bodies": [
+          "lowerValue <> null implies lowerValue.integerValue() <> null"
+        ],
+        "body_ids": [
+          "MultiplicityElement-lower_is_integer-_specification"
+        ]
+      },
+      "MultiplicityElement-upper_is_unlimitedNatural": {
+        "line": 12840,
+        "bodies": [
+          "upperValue <> null implies upperValue.unlimitedValue() <> null"
+        ],
+        "body_ids": [
+          "MultiplicityElement-upper_is_unlimitedNatural-_specification"
+        ]
+      },
+      "MultiplicityElement-compatibleWith": {
+        "line": 12912,
+        "bodies": [
+          "result = ((other.lowerBound() <= self.lowerBound()) and ((other.upperBound() = *) or (self.upperBound() <= other.upperBound())))"
+        ],
+        "body_ids": [
+          "MultiplicityElement-compatibleWith-spec-_specification"
+        ]
+      },
+      "MultiplicityElement-includesMultiplicity": {
+        "line": 12933,
+        "bodies": [
+          "self.upperBound()->notEmpty() and self.lowerBound()->notEmpty() and M.upperBound()->notEmpty() and M.lowerBound()->notEmpty()",
+          "result = ((self.lowerBound() <= M.lowerBound()) and (self.upperBound() >= M.upperBound()))"
+        ],
+        "body_ids": [
+          null,
+          "MultiplicityElement-includesMultiplicity-pre-_specification",
+          "MultiplicityElement-includesMultiplicity-spec-_specification"
+        ]
+      },
+      "MultiplicityElement-is": {
+        "line": 12965,
+        "bodies": [
+          "result = (lowerbound = self.lowerBound() and upperbound = self.upperBound())"
+        ],
+        "body_ids": [
+          "MultiplicityElement-is-spec-_specification"
+        ]
+      },
+      "MultiplicityElement-isMultivalued": {
+        "line": 12990,
+        "bodies": [
+          "upperBound()->notEmpty()",
+          "result = (upperBound() > 1)"
+        ],
+        "body_ids": [
+          null,
+          "MultiplicityElement-isMultivalued-pre-_specification",
+          "MultiplicityElement-isMultivalued-spec-_specification"
+        ]
+      },
+      "MultiplicityElement-lower.1": {
+        "line": 13019,
+        "bodies": [
+          "result = (lowerBound())"
+        ],
+        "body_ids": [
+          "MultiplicityElement-lower.1-spec-_specification"
+        ]
+      },
+      "MultiplicityElement-lowerBound": {
+        "line": 13041,
+        "bodies": [
+          "result = (if (lowerValue=null or lowerValue.integerValue()=null) then 1 else lowerValue.integerValue() endif)"
+        ],
+        "body_ids": [
+          "MultiplicityElement-lowerBound-spec-_specification"
+        ]
+      },
+      "MultiplicityElement-upper.1": {
+        "line": 13060,
+        "bodies": [
+          "result = (upperBound())"
+        ],
+        "body_ids": [
+          "MultiplicityElement-upper.1-spec-_specification"
+        ]
+      },
+      "MultiplicityElement-upperBound": {
+        "line": 13082,
+        "bodies": [
+          "result = (if (upperValue=null or upperValue.unlimitedValue()=null) then 1 else upperValue.unlimitedValue() endif)"
+        ],
+        "body_ids": [
+          "MultiplicityElement-upperBound-spec-_specification"
+        ]
+      }
+    }
+  },
+  "pdfs": [
+    {
+      "path": "SysML.pdf",
+      "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a",
+      "bytes": 3804140,
+      "inspected_pdf_pages": [
+        336,
+        337
+      ],
+      "extracted_page_hashes": {
+        "336": "c6089844464d4fc61c8bc153764f7a18bf0f78221e5647ed6e1fac0fc3d92798",
+        "337": "a0554ab7c025bed11646a20f093fbd8bac3363c8d3b3f58b357d799b15e62817"
+      }
+    },
+    {
+      "path": ".cache/sysml-resume/UML.pdf",
+      "sha256": "416b57e1933780eb48bd60fe513e031da220c28a521bdd334a366bebc78a463e",
+      "bytes": 18069510,
+      "inspected_pdf_pages": [
+        154,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196
+      ],
+      "extracted_page_hashes": {
+        "154": "90a338c51ffb26d75958d685d285da052d1c2dc24b5891d61f4dbfc813e3112d",
+        "191": "e2c747f3e874070d9d0dec781656cf06f8cf1709e73cb1bf1e16c6c635920b23",
+        "192": "2ade05b55fd9097110ec220318bcb7910efb83ece3c7958a46508f5efc96c849",
+        "193": "36988235a3db5a82aeceaefcad4a30db2255c621d5cd0fd803a5d867304efa53",
+        "194": "d28cf17a3078b1595f1d71634c1e2cf921ee4e63f6d24d24ed75caa9b7173a52",
+        "195": "6465d84d1b960d89a4cbdcb3d27aa549419d0eecb56a4bd0a0aab026896bf6a7",
+        "196": "1f594b9a859aafa1bae86f2ae3eda474fb0f9a957098147a15fe6b45dc3ed097"
+      }
+    }
+  ],
+  "issue": {
+    "source": "https://issues.omg.org/issues/UML24-85",
+    "sha256": "c1ab577d4d70e4f3efb7c46523d2007765478bb069ed705708dcf4e07f2f2bf8",
+    "bytes": 13365,
+    "status": "resolved",
+    "legacy_id": 15525,
+    "interpretation": "Resolution identifies mixed ownership and inheritance. The final Property operation list has no proposed context override.",
+    "unavailable_revised_text": {
+      "url": "https://www.omg.org/issues/issue15525.txt",
+      "http_status": 403
+    }
+  },
+  "decision": "ADR 0009. No inspected rule establishes the exact replacement; do not infer an association ancestor or rewrite the Interaction type."
+}

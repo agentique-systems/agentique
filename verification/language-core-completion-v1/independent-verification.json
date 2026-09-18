@@ -1,0 +1,30 @@
+{
+  "kerml-1.0": {
+    "checked": "All direct structural facts, complete identity sets, UUID v1, hashes, attributes and byte ranges. Effective inheritance/rules/storage not certified.",
+    "classifiers": 215,
+    "distinct_references": 338,
+    "literals": 6,
+    "manifest_sha256": "d6044238255a86121c0678a2758c499d5c2b4684f22ca2ff3088701d2aaff83b",
+    "primitive_uses": {
+      "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean": 23,
+      "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Integer": 1,
+      "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Real": 1,
+      "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#String": 23
+    },
+    "properties": 313
+  },
+  "sysml-2.0": {
+    "checked": "All direct structural facts, complete identity sets, UUID v1, hashes, attributes and byte ranges. Effective inheritance/rules/storage not certified.",
+    "classifiers": 501,
+    "distinct_references": 814,
+    "literals": 19,
+    "manifest_sha256": "dc95b1d32ebe477ad5958f7021b5a5d89c11d2687970b7d18018d4a76d50df5d",
+    "primitive_uses": {
+      "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean": 37,
+      "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Integer": 1,
+      "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Real": 1,
+      "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#String": 27
+    },
+    "properties": 715
+  }
+}

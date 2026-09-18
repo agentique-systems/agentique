@@ -1,0 +1,96 @@
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.94s
+     Running unittests src\lib.rs (target\debug\deps\agq_metamodel_gen-f38423620d53f16a.exe)
+
+running 1 test
+test typed_views::tests::names_are_readable_and_collisions_fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (target\debug\deps\metamodel_gen-837d1c2c6d71c2d4.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\descriptors.rs (target\debug\deps\descriptors-682957dadf5ed8ce.exe)
+
+running 5 tests
+test source_golden_matches_raw_xmi_flags_bounds_and_references ... ok
+test identity_is_source_qualified_and_independent_of_display_names ... ok
+test every_compiled_descriptor_matches_fresh_authoritative_import ... ok
+test generation_is_deterministic_dependency_closed_and_current ... ok
+test cli_check_detects_each_stale_generated_file_without_writing ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.45s
+
+     Running tests\full_audit.rs (target\debug\deps\full_audit-320a7d8fd953d86d.exe)
+
+running 4 tests
+test full_manifest_preserves_all_existing_runtime_identities_and_cross_model_owners ... ok
+test readiness_cannot_certify_the_bounded_kerml_registry_as_complete ... ok
+test complete_inventory_reaches_shapes_outside_the_old_slice_without_publishing_them ... ok
+Current: C:\Users\phili\AppData\Local\Temp\.tmpENzeyS\standards/generated/kerml-1.0/full-audit.json (338573 bytes).
+Current: C:\Users\phili\AppData\Local\Temp\.tmpENzeyS\standards/generated/kerml-1.0/full.golden.json (2320099 bytes).
+Current: C:\Users\phili\AppData\Local\Temp\.tmpENzeyS\standards/generated/sysml-2.0/full-audit.json (816690 bytes).
+Current: C:\Users\phili\AppData\Local\Temp\.tmpENzeyS\standards/generated/sysml-2.0/full.golden.json (5886927 bytes).
+test full_audit_mode_is_separate_from_runtime_emission_and_check_is_read_only ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.74s
+
+     Running tests\importer.rs (target\debug\deps\importer-e0d287a707354a62.exe)
+
+running 8 tests
+test descriptor_key_v1_golden_encoding ... ok
+test duplicate_external_identifiers_fail_even_in_retained_content ... ok
+test documentary_body_keeps_text_on_both_sides_of_xml_comments ... ok
+test inheritance_multiplicity_containment_and_uninterpreted_semantics_survive ... ok
+test independent_json_cross_check_detects_intentional_mismatch_fixture ... ok
+test unresolved_metaclass_and_wrong_kind_references_fail ... ok
+test same_artifact_produces_identical_ir_and_keys ... ok
+test malformed_unknown_and_invalid_structural_input_is_explicit ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\multiple_metamodels.rs (target\debug\deps\multiple_metamodels-10ebb67c374ede26.exe)
+
+running 3 tests
+test source_qualified_external_inheritance_never_joins_display_names ... ok
+test sysml_import_is_current_deterministic_and_preserves_kerml_identity ... ok
+test sysml_cli_staleness_and_wrong_baselines_fail_without_writes ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.73s
+
+     Running tests\normative.rs (target\debug\deps\normative-69d1a3f058991087.exe)
+
+running 2 tests
+test pinned_normative_artifacts_import_cross_check_and_match_committed_ir ... ok
+test cli_check_is_read_only_and_detects_stale_output_and_tampered_inputs ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.38s
+
+     Running tests\sysml_closure.rs (target\debug\deps\sysml_closure-38459a9bddaa6f49.exe)
+
+running 6 tests
+test kerml_association_closure_registers_with_its_exact_published_self_subset ... ok
+test runtime_readiness_gate_fails_without_changing_outputs ... ok
+test exact_published_self_edges_survive_descriptor_translation_without_normalization ... ok
+test reviewed_dispositions_require_the_exact_source_hash_version_and_descriptor ... ok
+test minimum_sysml_closure_retains_and_diagnoses_published_self_subsets ... ok
+test explicit_sysml_check_checks_the_audit_and_rejects_stale_audit_without_writing ... FAILED
+
+failures:
+
+---- explicit_sysml_check_checks_the_audit_and_rejects_stale_audit_without_writing stdout ----
+
+thread 'explicit_sysml_check_checks_the_audit_and_rejects_stale_audit_without_writing' (4916) panicked at tools\metamodel-gen\tests\sysml_closure.rs:218:5:
+assertion failed: String::from_utf8_lossy(&result.stderr).contains("generated output is stale")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    explicit_sysml_check_checks_the_audit_and_rejects_stale_audit_without_writing
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.65s
+
+error: test failed, to rerun pass `-p agq-metamodel-gen --test sysml_closure`

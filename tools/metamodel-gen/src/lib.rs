@@ -6,6 +6,7 @@ pub mod baseline_diagnostics;
 pub mod closure_audit;
 pub mod cross_check;
 pub mod descriptors;
+pub mod full_audit;
 pub mod graph;
 pub mod ir;
 pub mod pipeline;
