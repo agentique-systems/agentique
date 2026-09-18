@@ -1,6 +1,8 @@
 //! Source-to-kernel orchestration. The canonical model has no parser dependency.
 #![forbid(unsafe_code)]
 mod lowering;
+mod project;
+pub use project::*;
 
 pub use agq_kerml_syntax as syntax;
 use agq_kernel::{DocumentId, SourceRevisionId};

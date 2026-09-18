@@ -29,23 +29,59 @@ pub struct FrontendDiagnostic {
     pub message: String,
 }
 #[derive(Clone, Debug)]
-struct Ids {
+pub(crate) struct Ids {
     element: ElementId,
     membership: ElementId,
 }
 #[derive(Debug)]
-pub struct WorkingModel {
-    syntax: SyntaxDocument,
+pub(crate) struct LoweredModel {
+    incomplete_namespaces: BTreeSet<ElementId>,
     snapshot: Snapshot,
     root: ElementId,
     identities: BTreeMap<SyntaxNodeId, Ids>,
     references: Vec<ReferenceAssertion>,
     diagnostics: Vec<FrontendDiagnostic>,
 }
+#[derive(Debug)]
+pub struct WorkingModel {
+    syntax: SyntaxDocument,
+    pub(crate) model: LoweredModel,
+}
 impl WorkingModel {
     pub fn syntax(&self) -> &SyntaxDocument {
         &self.syntax
     }
+    pub fn snapshot(&self) -> &Snapshot {
+        self.model.snapshot()
+    }
+    pub fn root(&self) -> ElementId {
+        self.model.root()
+    }
+    pub fn element_for(&self, node: SyntaxNodeId) -> Option<ElementId> {
+        self.model.element_for(node)
+    }
+    pub fn references(&self) -> &[ReferenceAssertion] {
+        self.model.references()
+    }
+    pub fn diagnostics(&self) -> &[FrontendDiagnostic] {
+        self.model.diagnostics()
+    }
+    pub fn queries(&self) -> KerMlQueries<'_> {
+        self.model.queries()
+    }
+    /// Checks the bounded syntax, resolution and semantic slice, not full conformance.
+    pub fn validate_slice(&self) -> Result<ValidatedModel<'_>, ValidationFailure> {
+        if self.syntax.status() == SyntaxStatus::Success && self.diagnostics().is_empty() {
+            Ok(ValidatedModel(self))
+        } else {
+            Err(ValidationFailure {
+                syntax_diagnostics: self.syntax.diagnostics().len(),
+                semantic_diagnostics: self.diagnostics().len(),
+            })
+        }
+    }
+}
+impl LoweredModel {
     /// Structurally valid canonical facts. Pending references are separate;
     /// inspect diagnostics/validate_slice before treating the document as valid.
     pub fn snapshot(&self) -> &Snapshot {
@@ -64,21 +100,18 @@ impl WorkingModel {
         &self.diagnostics
     }
     pub fn queries(&self) -> KerMlQueries<'_> {
-        queries(&self.snapshot)
-    }
-    /// Validation of this declared, public, long-name slice only. This does not
-    /// certify full KerML constraints, implied library semantics or execution.
-    pub fn validate_slice(&self) -> Result<ValidatedModel<'_>, ValidationFailure> {
-        if self.syntax.status() == SyntaxStatus::Success && self.diagnostics.is_empty() {
-            Ok(ValidatedModel(self))
-        } else {
-            Err(ValidationFailure {
-                syntax_diagnostics: self.syntax.diagnostics().len(),
-                semantic_diagnostics: self.diagnostics.len(),
-            })
-        }
+        project_queries(
+            &self.snapshot,
+            self.references
+                .iter()
+                .filter(|r| !matches!(r.resolution.value, Resolution::Resolved(_)))
+                .map(|r| r.specific)
+                .collect(),
+            self.incomplete_namespaces.clone(),
+        )
     }
 }
+
 pub struct ValidatedModel<'a>(&'a WorkingModel);
 impl ValidatedModel<'_> {
     pub fn model(&self) -> &WorkingModel {
@@ -126,8 +159,11 @@ impl Builder {
         }
     }
     fn create(&mut self, id: ElementId, class: MetaclassId, origin: &SourceOrigin) {
-        self.changes.create(id, class, authored(origin.clone()));
-        self.set(id, p::ELEMENT_ELEMENT_ID, text(id.to_string()), origin);
+        self.create_with_origin(id, class, &authored(origin.clone()));
+    }
+    fn create_with_origin(&mut self, id: ElementId, class: MetaclassId, origin: &DeclaredOrigin) {
+        self.changes.create(id, class, origin.clone());
+        self.set_declared(id, p::ELEMENT_ELEMENT_ID, text(id.to_string()), origin);
         // Explicit grammar/default facts for this exact slice. No generic
         // filling of arbitrary required properties with guessed values.
         let false_properties = [
@@ -151,7 +187,7 @@ impl Builder {
                 .is_legal(class, property)
                 .expect("descriptor")
             {
-                self.set(
+                self.set_declared(
                     id,
                     property,
                     SlotValue::Scalar(Value::Boolean(false)),
@@ -160,7 +196,7 @@ impl Builder {
             }
         }
         if class == c::FEATURE {
-            self.set(
+            self.set_declared(
                 id,
                 p::FEATURE_IS_UNIQUE,
                 SlotValue::Scalar(Value::Boolean(true)),
@@ -190,7 +226,7 @@ impl Builder {
                 .find(|(_, name)| name.as_str() == "public")
                 .expect("public visibility")
                 .0;
-            self.set(
+            self.set_declared(
                 id,
                 p::MEMBERSHIP_VISIBILITY,
                 SlotValue::Scalar(Value::Enumeration(public)),
@@ -207,6 +243,15 @@ impl Builder {
     ) {
         self.changes
             .set(id, property, value, authored(origin.clone()));
+    }
+    fn set_declared(
+        &mut self,
+        id: ElementId,
+        property: PropertyId,
+        value: SlotValue,
+        origin: &DeclaredOrigin,
+    ) {
+        self.changes.set(id, property, value, origin.clone());
     }
     fn link(
         &mut self,
@@ -245,31 +290,55 @@ pub(crate) fn lower(
     syntax: SyntaxDocument,
     previous: Option<&WorkingModel>,
 ) -> Result<WorkingModel, ModelError> {
+    let root = previous
+        .filter(|m| m.syntax.root_id() == syntax.root_id())
+        .map(|m| m.root())
+        .unwrap_or_default();
+    let origin = authored(syntax.origin(
+        syntax.root_id(),
+        ByteRange::new(0, syntax.source().len() as u64).unwrap(),
+    ));
+    let model = lower_project([&syntax], previous.map(|m| &m.model), root, origin, false)?;
+    Ok(WorkingModel { syntax, model })
+}
+
+pub(crate) fn lower_project<'a>(
+    documents: impl IntoIterator<Item = &'a SyntaxDocument>,
+    previous: Option<&LoweredModel>,
+    root: ElementId,
+    root_origin: DeclaredOrigin,
+    incomplete_root: bool,
+) -> Result<LoweredModel, ModelError> {
     let mut builder = Builder::new();
     let mut identities = BTreeMap::new();
     let mut pending = vec![];
-    let root = previous
-        .filter(|m| m.syntax.root_id() == syntax.root_id())
-        .map(|m| m.root)
-        .unwrap_or_default();
-    let root_origin = syntax.origin(
-        syntax.root_id(),
-        ByteRange::new(0, syntax.source().len() as u64).unwrap(),
-    );
-    builder.create(root, c::NAMESPACE, &root_origin);
-    lower_nodes(
-        &syntax,
-        syntax.nodes(),
-        root,
-        c::NAMESPACE,
-        previous,
-        &mut builder,
-        &mut identities,
-        &mut pending,
-    );
+    builder.create_with_origin(root, c::NAMESPACE, &root_origin);
+    for syntax in documents {
+        lower_nodes(
+            syntax,
+            syntax.nodes(),
+            root,
+            c::NAMESPACE,
+            previous,
+            &mut builder,
+            &mut identities,
+            &mut pending,
+        );
+    }
+    // The root membership collection spans documents and is project-generated.
+    let root_links = builder.links.remove(&(root, p::ELEMENT_OWNED_RELATIONSHIP));
+    if let Some((values, _)) = root_links {
+        builder.changes.set(
+            root,
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            SlotValue::Ordered(values),
+            root_origin,
+        );
+    }
     let declarations = builder.finish()?;
     let scopes = pending.iter().map(|r| r.specific).collect();
-    let initial = working_queries(&declarations, scopes);
+    let incomplete_namespaces: BTreeSet<_> = incomplete_root.then_some(root).into_iter().collect();
+    let initial = project_queries(&declarations, scopes, incomplete_namespaces.clone());
     let mut references: Vec<_> = pending
         .into_iter()
         .map(|r| {
@@ -297,7 +366,7 @@ pub(crate) fn lower(
         .filter(|r| !matches!(r.resolution.value, Resolution::Resolved(_)))
         .map(|r| r.specific)
         .collect();
-    let resolver = working_queries(&snapshot, scopes);
+    let resolver = project_queries(&snapshot, scopes, incomplete_namespaces.clone());
     for r in &mut references {
         r.resolution = resolver.resolve_reference(r.specific, &r.name, expected(r.kind));
     }
@@ -358,8 +427,8 @@ pub(crate) fn lower(
             }
         }
     }
-    Ok(WorkingModel {
-        syntax,
+    Ok(LoweredModel {
+        incomplete_namespaces,
         snapshot,
         root,
         identities,
@@ -376,13 +445,18 @@ fn source_origin(origin: &Origin) -> SourceOrigin {
     };
     source.clone()
 }
-fn working_queries(snapshot: &Snapshot, scopes: BTreeSet<ElementId>) -> KerMlQueries<'_> {
+fn project_queries(
+    snapshot: &Snapshot,
+    scopes: BTreeSet<ElementId>,
+    namespaces: BTreeSet<ElementId>,
+) -> KerMlQueries<'_> {
     KerMlQueries::new(
-        SemanticContext::for_working_snapshot(
+        SemanticContext::for_project_snapshot(
             snapshot,
             SemanticOptions::default(),
             BTreeSet::new(),
             scopes,
+            namespaces,
         )
         .expect("lowered Types"),
     )
@@ -408,7 +482,7 @@ fn lower_nodes(
     nodes: &[SyntaxNode],
     owner: ElementId,
     owner_class: MetaclassId,
-    previous: Option<&WorkingModel>,
+    previous: Option<&LoweredModel>,
     builder: &mut Builder,
     identities: &mut BTreeMap<SyntaxNodeId, Ids>,
     pending: &mut Vec<Pending>,
@@ -487,7 +561,7 @@ fn lower_references(
     syntax: &SyntaxDocument,
     d: &DeclarationSyntax,
     specific: ElementId,
-    previous: Option<&WorkingModel>,
+    previous: Option<&LoweredModel>,
     pending: &mut Vec<Pending>,
 ) {
     for r in &d.references {
@@ -571,7 +645,7 @@ fn publish(previous: &Snapshot, desired: &Snapshot) -> Result<Snapshot, ModelErr
         }
     }
     for record in desired.model().elements() {
-        let origin = authored(source_origin(record.origin()));
+        let origin = declared_origin(record.origin());
         if let Some(old) = previous.model().element(record.id()) {
             changes.set_origin(record.id(), origin);
             for (property, _) in old.slots() {
@@ -585,9 +659,16 @@ fn publish(previous: &Snapshot, desired: &Snapshot) -> Result<Snapshot, ModelErr
                 record.id(),
                 property,
                 slot.value().clone(),
-                authored(source_origin(slot.origin())),
+                declared_origin(slot.origin()),
             );
         }
     }
     previous.apply(&changes)
+}
+
+fn declared_origin(origin: &Origin) -> DeclaredOrigin {
+    match origin {
+        Origin::Declared(origin) => origin.clone(),
+        _ => unreachable!("lowering publishes declared facts only"),
+    }
 }

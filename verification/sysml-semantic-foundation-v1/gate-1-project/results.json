@@ -1,0 +1,34 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-text",
+    "started": "2026-09-18T20:29:13.767Z",
+    "durationMs": 8048,
+    "exitCode": 0,
+    "signal": null,
+    "log": "project.txt"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T20:29:21.815Z",
+    "durationMs": 1128,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T20:29:22.943Z",
+    "durationMs": 1602,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T20:29:24.545Z",
+    "durationMs": 3305,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  }
+]

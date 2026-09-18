@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/4";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/5";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -33,6 +33,8 @@ pub struct SemanticContextId {
     /// Reference-bearing working input: Types with unlowered specialization
     /// assertions. These can affect name lookup even without a canonical edge.
     pub pending_specialization_scopes: BTreeSet<ElementId>,
+    /// Namespaces whose declaration populations are not fully available yet.
+    pub pending_namespace_scopes: BTreeSet<ElementId>,
 }
 
 /// Validated identity bound to an immutable input, never to a caller-provided revision label.
@@ -48,6 +50,35 @@ pub enum ContextError {
 }
 
 impl<'m> SemanticContext<'m> {
+    /// Bind a project with unavailable declaration evidence. A namespace barrier
+    /// prevents a lookup miss (or a candidate) from being reported as definitive.
+    pub fn for_project_snapshot(
+        snapshot: &'m Snapshot,
+        options: SemanticOptions,
+        libraries: BTreeSet<LibraryPin>,
+        pending_specialization_scopes: BTreeSet<ElementId>,
+        pending_namespace_scopes: BTreeSet<ElementId>,
+    ) -> Result<Self, ContextError> {
+        let mut context = Self::for_working_snapshot(
+            snapshot,
+            options,
+            libraries,
+            pending_specialization_scopes,
+        )?;
+        for &id in &pending_namespace_scopes {
+            if !snapshot.model().element(id).is_some_and(|record| {
+                snapshot
+                    .model()
+                    .registry()
+                    .is_subtype(record.metaclass(), agq_kerml::classes::NAMESPACE)
+                    .unwrap_or(false)
+            }) {
+                return Err(ContextError::InvalidPendingScope(id));
+            }
+        }
+        context.id.pending_namespace_scopes = pending_namespace_scopes;
+        Ok(context)
+    }
     /// Bind unresolved working assertions by their semantic owning Types, without
     /// importing source syntax. The set participates in the full context identity.
     pub fn for_working_snapshot(
@@ -161,6 +192,7 @@ impl<'m> SemanticContext<'m> {
                 pinned_libraries,
                 options,
                 pending_specialization_scopes: BTreeSet::new(),
+                pending_namespace_scopes: BTreeSet::new(),
             },
         })
     }
