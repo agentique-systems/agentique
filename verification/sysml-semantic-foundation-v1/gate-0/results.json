@@ -1,0 +1,26 @@
+[
+  {
+    "command": "python -X utf8 verification/sysml-semantic-foundation-v1/authority.py --check",
+    "started": "2026-09-18T20:22:54.869Z",
+    "durationMs": 6400,
+    "exitCode": 0,
+    "signal": null,
+    "log": "inventory.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T20:23:01.269Z",
+    "durationMs": 4098,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T20:23:05.368Z",
+    "durationMs": 3295,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  }
+]
