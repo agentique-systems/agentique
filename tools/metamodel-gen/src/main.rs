@@ -11,11 +11,13 @@ fn run() -> Result<()> {
     let mut descriptor_output = None;
     let mut selected_baseline = None;
     let mut require_runtime = false;
+    let mut require_conformance = false;
     let mut audit_full = false;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--check" => check = true,
             "--require-runtime" => require_runtime = true,
+            "--require-conformance" => require_conformance = true,
             "--audit-full" => audit_full = true,
             "--baseline" => {
                 selected_baseline = Some(baseline::find(
@@ -31,7 +33,7 @@ fn run() -> Result<()> {
             }
             "--help" | "-h" => {
                 println!(
-                    "metamodel-gen [--check] [--require-runtime] [--audit-full] [--baseline kerml-1.0|sysml-2.0] [--root REPOSITORY] [--output IR_FILE] [--descriptor-output DIRECTORY]\nImports reviewed offline profiles and cross-checks JSON. Default: both language IRs, existing KerML runtime outputs, historical SysML closure audit, and complete structural audits/manifests. --audit-full emits only complete audits/manifests. --output alone selects KerML IR-only compatibility mode. --check compares bytes without writing; it does not establish runtime readiness. --require-runtime requires the complete selected metamodel, including dependencies, to translate and register; failures write nothing."
+                    "metamodel-gen [--check] [--require-runtime] [--require-conformance] [--audit-full] [--baseline kerml-1.0|sysml-2.0] [--root REPOSITORY] [--output IR_FILE] [--descriptor-output DIRECTORY]\nImports reviewed offline profiles and cross-checks JSON. Default: both language IRs, complete KerML and SysML descriptors/views, retained Root/Core fixtures, current SysML closure audit, and full structural audits/manifests. --audit-full emits only complete audits/manifests. --output alone selects KerML IR-only compatibility mode. --check compares bytes without writing; it does not establish runtime readiness. --require-runtime requires the complete selected metamodel, including dependencies, to translate, register and support the required structural runtime algorithms; failures write nothing. --require-conformance additionally rejects authoring errors, including reviewed baseline anomalies. This is an implemented-rule audit, not full UML certification."
                 );
                 return Ok(());
             }
@@ -46,7 +48,7 @@ fn run() -> Result<()> {
         return Err("select a language baseline, not a primitive dependency".into());
     }
     let bundle = pipeline::generate_profile(&root, profile)?;
-    if require_runtime {
+    if require_runtime || require_conformance {
         let audit = full_audit::report(&bundle)?;
         for finding in audit["findings"].as_array().into_iter().flatten() {
             eprintln!(
@@ -60,12 +62,31 @@ fn run() -> Result<()> {
                 })
             );
         }
-        if audit["result"] != "representable" {
+        for diagnostic in audit["conformance"].as_array().into_iter().flatten() {
+            eprintln!(
+                "Conformance {} {} {} ({})",
+                diagnostic["severity"],
+                diagnostic["rule"],
+                diagnostic["source"]["external_id"],
+                diagnostic["disposition"]
+            );
+        }
+        if require_conformance
+            && (audit["conformance_result"] != "conformant-to-implemented-rules"
+                || audit["result"] != "representable")
+        {
             return Err(format!(
-                "{} complete runtime blocked: translation={}, registration={}. See standards/generated/{}/full-audit.json; no runtime output written.",
+                "strict conformance failed: {}",
+                audit["conformance"]
+            ));
+        }
+        if require_runtime && audit["result"] != "representable" {
+            return Err(format!(
+                "{} complete runtime blocked: translation={}, registration={}, runtime={}. See standards/generated/{}/full-audit.json; no runtime output written.",
                 profile.specification,
                 audit["translation_error"],
                 audit["registration_error"],
+                audit["runtime_errors"],
                 profile.id
             ));
         }
@@ -90,7 +111,7 @@ fn run() -> Result<()> {
     }
     if !audit_full
         && !ir_only
-        && profile.descriptor_target == baseline::DescriptorTarget::KerMlRootCore
+        && profile.descriptor_target == baseline::DescriptorTarget::KerMlComplete
     {
         let directory = descriptor_output.as_ref().unwrap_or(&root);
         outputs.extend(
@@ -101,7 +122,7 @@ fn run() -> Result<()> {
     }
     if !audit_full
         && !ir_only
-        && profile.descriptor_target == baseline::DescriptorTarget::SysMlStructural
+        && profile.descriptor_target == baseline::DescriptorTarget::SysMlComplete
     {
         let directory = descriptor_output.as_ref().unwrap_or(&root);
         outputs.push((
@@ -126,6 +147,22 @@ fn run() -> Result<()> {
                 root.join(baseline::SYSML.output.unwrap()),
                 canonical_json(&sysml)?,
             ));
+        }
+    }
+    if !audit_full && !ir_only {
+        let directory = descriptor_output.as_ref().unwrap_or(&root);
+        outputs.extend(
+            descriptors::complete_artifacts(&bundle)?
+                .into_iter()
+                .map(|(p, b)| (directory.join(p), b)),
+        );
+        if all {
+            let sysml = pipeline::generate_profile(&root, baseline::SYSML)?;
+            outputs.extend(
+                descriptors::complete_artifacts(&sysml)?
+                    .into_iter()
+                    .map(|(p, b)| (directory.join(p), b)),
+            );
         }
     }
     // The generator can never be directed to overwrite an input or its lock.

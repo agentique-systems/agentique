@@ -295,3 +295,20 @@ resolution and semantic-query checks. It is not full KerML validation or executa
 verification. Full imports/inheritance name resolution, library implication and
 additional descriptors are required before broadening into SysML. Application,
 HTTP and simulation continue to use their existing implementation.
+
+
+## Structural runtime foundation v3 (supersedes bounded registry status)
+
+The complete KerML 1.0 descriptor graph is now the production `agq-kerml`
+registration boundary. `agq-sysml` adds all 93 SysML 2.0 classes using the same
+KerML identities; both depend inward on the generic kernel. No SysML semantic
+rule layer, parser, library ingestion or application migration is included.
+
+[ADR 0011](adr/0011-structural-registration-vs-metamodel-conformance.md) separates
+atomic structural registration from metamodel-authoring conformance. Exact source
+anomalies remain visible and strict validation rejects them. Raw property relations
+are distinct from class slot replacement and association inheritance. The complete
+[runtime contract](language-core-runtime-contract.md) describes exact numeric
+carriers, association occurrences, five derived states and semantic context identity.
+Earlier blocker findings remain historical evidence; the appended foundation review
+and v3 verification record provide the current gate result.

@@ -18,12 +18,12 @@ impl KerMlQueries<'_> {
         let mut seen = BTreeSet::from([ty]);
         while let Some(current) = queue.pop_front() {
             self.property(&mut out, current, p::TYPE_IS_CONJUGATED);
-            if self
-                .model()
-                .element(current)
-                .and_then(|e| e.slot(p::TYPE_IS_CONJUGATED))
-                .is_some()
-            {
+            if matches!(
+                self.model().property_state(current, p::TYPE_IS_CONJUGATED),
+                Ok(agq_kernel::derived::PropertyState::Computed(_)
+                    | agq_kernel::derived::PropertyState::Incomplete(_)
+                    | agq_kernel::derived::PropertyState::Invalid(_))
+            ) {
                 let view = views::Type::try_new(current, self.model()).expect("type endpoint");
                 if self.accept(&mut out, current, view.is_conjugated()) == Some(true) {
                     out.problem(

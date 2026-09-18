@@ -1,0 +1,51 @@
+{
+  "acceptance_case": {
+    "association_ancestry_candidate": false,
+    "base_association_is_ancestor": false,
+    "either_ancestry_candidate": false,
+    "flow_definition_inherits_both_contexts": true,
+    "literal_final_redefined_property_inherited": false,
+    "opposite_context_is_strict_subclass": false,
+    "ownership_independent_opposite_context_candidate": false,
+    "owning_association_has_parents": false,
+    "value_type_conforms": true
+  },
+  "conformance_diagnostic": {
+    "category": "conformance",
+    "disposition": {
+      "evidence": "docs/adr/0011-structural-registration-vs-metamodel-conformance.md",
+      "kind": "reviewed-baseline-anomaly"
+    },
+    "related_descriptors": [
+      {
+        "id": "2e4efe58-2d09-5275-991e-104649d59bf3",
+        "kind": "property"
+      }
+    ],
+    "rule": "RedefinitionContext",
+    "severity": "error",
+    "source": {
+      "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+      "byte_range": [
+        2819,
+        3932
+      ],
+      "external_id": "Systems-Flows-A_flowDefinition_definedFlow-definedFlow",
+      "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+      "specification": "SysML",
+      "version": "2.0"
+    },
+    "subject": {
+      "id": "2abb2284-8e25-51ac-b486-1792cc60e1b1",
+      "kind": "property"
+    }
+  },
+  "current_classification": "E",
+  "decision": "ADR 0011 separates structural representation from authoring conformance; no replacement language semantics invented",
+  "historical_source_evidence_unchanged": true,
+  "previous_classification": "F",
+  "runtime_results": {
+    "kerml-1.0": "representable",
+    "sysml-2.0": "representable"
+  }
+}

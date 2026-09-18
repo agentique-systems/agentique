@@ -3,7 +3,7 @@ name = "agq-kerml"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Normative KerML Root/Core descriptors and borrowed typed semantic views"
+description = "Complete normative KerML 1.0 descriptors and borrowed typed semantic views"
 
 [dependencies]
 agq-kernel = { path = "../kernel" }

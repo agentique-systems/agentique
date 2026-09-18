@@ -8,28 +8,9 @@ fn minimum_sysml_closure_retains_and_diagnoses_published_self_subsets() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let bundle = pipeline::generate_profile(&root, baseline::SYSML).unwrap();
     let audit = closure_audit::report(&bundle).unwrap();
-    assert_eq!(audit["result"], "blocked");
-    assert_eq!(audit["structural_status"], "invalid-generated-descriptor");
-    assert_eq!(
-        audit["registration_failure"]["kind"],
-        "invalid-redefinition"
-    );
-    assert_eq!(
-        audit["registration_failure"]["context_is_strict_subtype"],
-        false
-    );
-    assert_eq!(
-        audit["registration_failure"]["source_qualified_id"],
-        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow-definedFlow"
-    );
-    assert_eq!(
-        audit["registration_failure"]["property_context"],
-        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction"
-    );
-    assert_eq!(
-        audit["registration_failure"]["base_context"],
-        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition"
-    );
+    assert_eq!(audit["result"], "representable");
+    assert_eq!(audit["structural_status"], "structurally-representable");
+    assert!(audit["registration_failure"].is_null());
     let diagnostics = audit["baseline_diagnostics"].as_array().unwrap();
     assert_eq!(diagnostics.len(), 3);
     for d in diagnostics {
@@ -71,7 +52,7 @@ fn minimum_sysml_closure_retains_and_diagnoses_published_self_subsets() {
 }
 
 #[test]
-fn runtime_readiness_gate_fails_without_changing_outputs() {
+fn runtime_readiness_gate_succeeds_without_changing_outputs() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let output = root.join(baseline::SYSML.output.unwrap());
     let before = fs::read(&output).unwrap();
@@ -79,17 +60,10 @@ fn runtime_readiness_gate_fails_without_changing_outputs() {
         .args(["--baseline", "sysml-2.0", "--require-runtime", "--check"])
         .output()
         .unwrap();
-    assert!(!result.status.success());
-    assert!(String::from_utf8_lossy(&result.stderr).contains("SysML complete runtime blocked"));
     assert!(
-        String::from_utf8_lossy(&result.stderr).contains("property-redefinition-context-authority")
-    );
-    assert!(!String::from_utf8_lossy(&result.stderr).contains("cyclic property"));
-    assert_eq!(
+        result.status.success(),
+        "{}",
         String::from_utf8_lossy(&result.stderr)
-            .matches("subsetted-property-name")
-            .count(),
-        5
     );
     assert_eq!(before, fs::read(output).unwrap());
 }
@@ -143,17 +117,14 @@ fn exact_published_self_edges_survive_descriptor_translation_without_normalizati
                 .collect()
         );
     }
-    // Translation is inspection, not runtime publication. The independent
-    // redefinition failure must still block the validated emitter.
+    descriptors::descriptor_set(&input, &selected).unwrap();
+    let registry = agq_kernel::metamodel::MetamodelRegistry::from_descriptors(set).unwrap();
     assert!(
-        descriptors::descriptor_set(&input, &selected)
-            .unwrap_err()
-            .contains("invalid redefinition")
+        registry
+            .validate_conformance()
+            .require_conformance()
+            .is_err()
     );
-    assert!(matches!(
-        agq_kernel::metamodel::MetamodelRegistry::from_descriptors(set),
-        Err(agq_kernel::metamodel::MetamodelError::InvalidRedefinition { .. })
-    ));
 }
 
 #[test]

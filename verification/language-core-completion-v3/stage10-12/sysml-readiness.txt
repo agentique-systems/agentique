@@ -1,0 +1,25 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running `target\debug\metamodel-gen.exe --baseline sysml-2.0 --require-runtime --check`
+Full audit finding ["E"]: "subsetted-property-name" Core-Features-A_ownedRedefinition_owningFeature-owningFeature
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Associations-A_targetType_targetAssociation-targetAssociation
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage
+Conformance "Error" "SubsettedPropertyNames" "Core-Features-A_ownedRedefinition_owningFeature-owningFeature" ("ReviewedBaselineAnomaly { evidence: \"docs/adr/0008-property-subsetting-cycle-semantics.md\" }")
+Conformance "Error" "SubsettedPropertyNames" "Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity" ("ReviewedBaselineAnomaly { evidence: \"docs/language-core-foundation-review.md\" }")
+Conformance "Error" "SubsettedPropertyNames" "Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage" ("ReviewedBaselineAnomaly { evidence: \"docs/adr/0008-property-subsetting-cycle-semantics.md\" }")
+Conformance "Error" "SubsettedPropertyNames" "Kernel-Associations-A_targetType_targetAssociation-targetAssociation" ("ReviewedBaselineAnomaly { evidence: \"docs/adr/0008-property-subsetting-cycle-semantics.md\" }")
+Conformance "Error" "SubsettedPropertyNames" "Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity" ("ReviewedBaselineAnomaly { evidence: \"docs/language-core-foundation-review.md\" }")
+Conformance "Error" "SubsettingContext" "Systems-AnalysisCases-A_resultExpression_analysisCaseDefintion-analysisCaseDefintion" ("Unreviewed")
+Conformance "Error" "SubsettingContext" "Systems-DefinitionAndUsage-A_nestedConnection_connectionOwningUsage-connectionOwningUsage" ("Unreviewed")
+Conformance "Error" "SubsettingContext" "Systems-DefinitionAndUsage-A_ownedConnection_connectionOwningDefinition-connectionOwningDefinition" ("Unreviewed")
+Conformance "Error" "SubsettingContract" "Systems-Requirements-A_stakeholderParameter_stakholderOwiningRequirementDefinition-stakholderOwiningRequirementDefinition" ("Unreviewed")
+Conformance "Error" "SubsettingContract" "Systems-Requirements-A_stakeholderParameter_stakholderOwiningRequirementDefinition-stakholderOwiningRequirementDefinition" ("Unreviewed")
+Conformance "Error" "SubsettingContract" "Systems-Cases-A_ownedObjectiveRequirement_owningObjectiveMembership-owningObjectiveMembership" ("Unreviewed")
+Conformance "Error" "RedefinitionContext" "Systems-Flows-A_flowDefinition_definedFlow-definedFlow" ("ReviewedBaselineAnomaly { evidence: \"docs/adr/0011-structural-registration-vs-metamodel-conformance.md\" }")
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/metamodel.json (6888525 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/full-audit.json (1006533 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/full.golden.json (5886927 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/runtime-closure-audit.json (18967 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/sysml/src/generated/complete.rs (834652 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/sysml/src/generated/typed_views.rs (3135930 bytes).

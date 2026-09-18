@@ -1,0 +1,223 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    
+
+
+
+
+
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+<title>UML 2.4 RTF &mdash; Open Issues - OMG Issue Tracker</title>
+<script type="text/javascript">
+    if (!window.performance) {
+        window.mpPerformance = {};
+        window.mpPerformance.responseStart = new Date().getTime();
+    }
+</script>
+<meta name="application-name" content="JIRA" data-name="jira" data-version="6.1.2"><meta name="ajs-dev-mode" content="false">
+<meta name="ajs-context-path" content="">
+<meta name="ajs-version-number" content="6.1.2">
+<meta name="ajs-build-number" content="6157">
+<meta name="ajs-is-beta" content="false">
+<meta name="ajs-is-rc" content="false">
+<meta name="ajs-is-snapshot" content="false">
+<meta name="ajs-is-milestone" content="false">
+<meta name="ajs-remote-user" content="omg-system">
+<meta name="ajs-remote-user-fullname" content="OMG System User">
+<meta name="ajs-user-locale" content="en_US">
+<meta name="ajs-user-locale-group-separator" content=",">
+<meta name="ajs-app-title" content="OMG Issue Tracker">
+<meta name="ajs-keyboard-shortcuts-enabled" content="true">
+<meta name="ajs-enabled-dark-features" content="[&quot;app-switcher.new&quot;,&quot;com.atlassian.jira.darkfeature.CommonHeader&quot;,&quot;jira.frother.reporter.field&quot;,&quot;com.atlassian.jira.config.PDL&quot;,&quot;frother.assignee.field&quot;]">
+<meta name="ajs-date-relativize" content="true">
+<meta name="ajs-date-time" content="h:mm a z">
+<meta name="ajs-date-day" content="EEEE h:mm a z">
+<meta name="ajs-date-dmy" content="d MMMM yyyy">
+<meta name="ajs-date-complete" content="dd/MMM/yy h:mm a z">
+<meta name="ajs-in-admin-mode" content="false">
+<meta name="ajs-is-sysadmin" content="true">
+<meta name="ajs-is-admin" content="true">
+<meta name="ajs-outgoing-mail-enabled" content="true">
+<meta name="ajs-admin-quicksearch-show" content="true">
+
+
+    
+<meta id="atlassian-token" name="atlassian-token" content="BH2W-WAP3-BN8J-S7H8|7d65ee0c6d63e7e75ba0e3d80b6a486612ce87aa|lout">
+
+
+
+<link rel="shortcut icon" href="/s/en_US707sk0-1988229788/6157/60/_/favicon.ico">
+<link rel="search" type="application/opensearchdescription+xml" href="/osd.jsp" title="UML 2.4 RTF &mdash; Open Issues - OMG Issue Tracker"/>
+
+    
+
+
+<!--[if IE]><![endif]-->
+<script type="text/javascript">var contextPath = '';</script>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css" media="all">
+<!--[if lte IE 8]>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css?conditionalComment=lte+IE+8" media="all">
+<![endif]-->
+<!--[if lte IE 9]>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css?conditionalComment=lte+IE+9" media="all">
+<![endif]-->
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/f7d9fa89f956d340ee4a86dc404fb0ae/_/download/contextbatch/css/atl.global/batch.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/38b67dba02dfa46ea0f936745cd2b885/_/download/contextbatch/css/jira.global/batch.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-experimental-table-sortable/com.atlassian.auiplugin:aui-experimental-table-sortable.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-date-picker/com.atlassian.auiplugin:aui-date-picker.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/1.36-SNAPSHOT/_/download/batch/org.omg.jira.task-forces:base-resources/org.omg.jira.task-forces:base-resources.css" media="all">
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/js/batch.js" ></script>
+<!--[if lte IE 8]>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/js/batch.js?conditionalComment=lte+IE+8" ></script>
+<![endif]-->
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/f7d9fa89f956d340ee4a86dc404fb0ae/_/download/contextbatch/js/atl.global/batch.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/38b67dba02dfa46ea0f936745cd2b885/_/download/contextbatch/js/jira.global/batch.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-experimental-table-sortable/com.atlassian.auiplugin:aui-experimental-table-sortable.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-date-picker/com.atlassian.auiplugin:aui-date-picker.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/1.36-SNAPSHOT/_/download/batch/org.omg.jira.task-forces:base-resources/org.omg.jira.task-forces:base-resources.js" ></script>
+
+<script type="text/javascript" src="/rest/api/1.0/shortcuts/6157/48dfafa77a0b26adf93b7dca6624ae08/shortcuts.js"></script>
+
+
+    
+    
+    <meta name="decorator" content="blank"/>
+
+</head>
+<body id="jira" class="aui-layout aui-theme-default page-type-blank " data-version="6.1.2">
+    
+<section id="content" role="main">
+    <header class="aui-page-header">
+        <div class="aui-page-header-inner">
+            <div class="aui-page-header-image">
+            <span class="aui-avatar aui-avatar-large aui-avatar-project">
+                <span class="aui-avatar-inner">
+                    <img id="project-avatar" alt="UML 2.4 RTF Avatar"
+                         src="https://issues.omg.org/plugins/servlet/view-project-avatar?avatarId=10011&amp;size=large"/>
+                </span>
+            </span>
+            </div>
+            <div class="aui-page-header-main">
+                <ol class="aui-nav aui-nav-breadcrumbs">
+                    <li>OMG Issue</li>
+                </ol>
+                <h1><a href="https://issues.omg.org/issues/task-force/UML24">UML24</a> &mdash; redefinitionContext of Property</h1>
+                <ul class="operations-list">
+                    <li><span class="list-label">Key:</span> <span id="pd-key"><a href="https://issues.omg.org/browse/UML24-85">UML24-85</a></span>
+                    </li>
+                    <li><span class="list-label">OMG Task Force:</span> <span><a
+                            href="https://issues.omg.org/browse/UML24">UML 2.4 RTF</a></span></li>
+                </ul>
+            </div>
+            <div class="aui-page-header-actions">
+                <div class="aui-buttons">
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/UML24?view=OPEN" title="Issues not resolved">Open</a>
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/UML24?view=CLOSED" title="Issues resolved by a task force and approved by Board">Closed</a>
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/UML24?view=ALL" title="All Issues">All</a>
+                                    </div>
+            </div>
+        </div>
+    </header>
+    <div class="aui-page-panel">
+        <div class="aui-page-panel-inner">
+            <section class="aui-page-panel-content">
+                <article id="issue-24524" class="issue-description">
+                    <a id="id24524" href="#"></a>
+                    <ul class="property-list">
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Key:</strong>
+                                <span class="value">UML24-85</span>
+                            </div>
+                        </li>
+                                                <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Legacy Issue Number:</strong>
+                                <span class="value">15525</span>
+                            </div>
+                        </li>
+                                                <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Status:</strong>
+                                <span class="value"><span
+                                        class="aui-lozenge status-public-closed">closed</span> &nbsp; </span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Source:</strong>
+                                <span class="value">NASA (        <a class="user-hover" rel="580579" id="_580579" href="/secure/ViewProfile.jspa?name=580579">Dr. Maged Elaasar</a>)</span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Summary:</strong>
+                                <span class="value"><p>Constraint <span class="error">&#91;4&#93;</span> in Property implies an owned end can redefine any end of any ancestor of its owning association, whether that end is association owned or not. </p>
+
+<p>However in the case of an association-owned end redefining a (non-association) classifier-owned end, whose association is an ancesor (of the owning association), the redefinitionContexts are stil:</p>
+
+<p>the owningAssociation for the redefining proeprty<br/>
+the classifier for the redefined property</p>
+
+<p>Doesn't this violate constraint <span class="error">&#91;1&#93;</span> of RedefinableElement </p>
+
+<p><span class="error">&#91;1&#93;</span> At least one of the redefinition contexts of the redefining element must be a specialization of at least one of the redefinition contexts for each redefined element.<br/>
+self.redefinedElement-&gt;forAll(e | self.isRedefinitionContextValid(e))</p>
+
+<p>where</p>
+
+<p>RedefinableElement::isRedefinitionContextValid(redefined: RedefinableElement): Boolean;<br/>
+result = self.redefinitionContext-&gt;exists(c | c.allParents()-&gt;includes(redefined.redefinitionContext))</p>
+
+<p>since the classifier can never be an ancestor of the association? </p></span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Reported:</strong>
+                                <span class="value"><a href="https://issues.omg.org/issues/spec/UML/2.3">UML 2.3</a> &mdash;
+                                    Wed, 15 Sep 2010 04:00 GMT</span>
+                            </div>
+                        </li>
+                                                <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Disposition:</strong>
+                                <span class="value">Resolved &mdash; <a
+                                        href="https://issues.omg.org/issues/spec/UML/2.4/fixed">UML 2.4</a></span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Disposition Summary:</strong>
+                                <span class="value"><p>There was an earlier discussion in the RTF that agreed that this constraint is inconsistent with the operation<br/>
+isRedefinitionContextValid, and proposed that the operation isRedefinitionContextValid should be redefined<br/>
+for Property, to give the correct logic, which is that a property may redefine another in the inheritance<br/>
+hierarchy regardless of whether the property is association-owned or class-owned. This is the same logic as<br/>
+for subsetting.</p></span>
+                            </div>
+                        </li>
+                                                <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Updated:</strong>
+                                <span class="value">Fri, 6 Mar 2015 20:58 GMT</span>
+                            </div>
+                        </li>
+                                                                    </ul>
+                </article>
+                <hr class="fullcontent"/>
+            </section>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/3";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/4";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -91,20 +91,62 @@ impl<'m> SemanticContext<'m> {
         options: SemanticOptions,
         pinned_libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
-        // Require the exact generated slice. Debug encoding is private, deterministic
-        // (ordered maps), and rule-versioned; it is not a persistence format.
-        let descriptors = format!("{:?}", model.registry());
-        if descriptors
-            != format!(
-                "{:?}",
-                agq_kerml::registry().expect("generated descriptors")
-            )
+        // Require the exact normative KerML contracts while admitting independent
+        // metaclasses and subclasses from a dependency extension such as SysML.
+        let expected = agq_kerml::descriptors();
+        let registry = model.registry();
+        let base = agq_kerml::registry().expect("generated descriptors");
+        if expected
+            .models
+            .iter()
+            .any(|d| registry.metamodel(d.id) != Ok(d))
+            || expected.classes.iter().any(|d| {
+                registry.class(d.id) != Ok(d)
+                    || registry
+                        .effective_properties(d.id)
+                        .map(|p| p.map(|p| p.id).collect::<BTreeSet<_>>())
+                        != base
+                            .effective_properties(d.id)
+                            .map(|p| p.map(|p| p.id).collect())
+            })
+            || expected
+                .properties
+                .iter()
+                .any(|d| registry.property(d.id) != Ok(d))
+            || expected
+                .associations
+                .iter()
+                .any(|d| registry.association(d.id) != Ok(d))
+            || expected
+                .enumerations
+                .iter()
+                .any(|d| registry.enumeration(d.id) != Ok(d))
+            || expected
+                .primitives
+                .iter()
+                .any(|d| registry.primitive(d.id) != Ok(d))
+            || expected
+                .sources
+                .iter()
+                .any(|(id, source)| registry.source(*id) != Some(source))
         {
             return Err(ContextError::UnsupportedMetamodel);
         }
+        // Private, deterministic and rule-versioned; not a persistence format.
+        let descriptors = format!("{registry:?}");
         let mut digest = Sha256::new();
         for record in model.elements() {
             let encoded = format!("{record:?}");
+            digest.update((encoded.len() as u64).to_be_bytes());
+            digest.update(encoded.as_bytes());
+        }
+        for encoded in model
+            .association_occurrences()
+            .map(|v| format!("{v:?}"))
+            .chain(model.derived_navigation_results().map(|v| format!("{v:?}")))
+            .chain(model.computation_failures().map(|v| format!("{v:?}")))
+            .chain(model.computation_searches().map(|v| format!("{v:?}")))
+        {
             digest.update((encoded.len() as u64).to_be_bytes());
             digest.update(encoded.as_bytes());
         }

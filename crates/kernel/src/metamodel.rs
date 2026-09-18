@@ -1,8 +1,13 @@
 //! Immutable, validated descriptors. No language class hierarchy is built in.
 use crate::{
-    AssociationId, EnumerationId, EnumerationLiteralId, MetaclassId, MetamodelId, PropertyId,
+    AssociationId, EnumerationId, EnumerationLiteralId, MetaclassId, MetamodelId,
+    PrimitiveDomainId, PropertyId,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "conformance.rs"]
+mod conformance;
+use conformance::upper_contained;
+pub use conformance::*;
 
 /// An explicit release version, not a language-version assumption in storage.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -50,14 +55,35 @@ pub struct MetaclassDescriptor {
 pub enum ValueKind {
     /// Boolean primitive.
     Boolean,
-    /// Signed 64-bit primitive, not yet the normative unbounded Integer domain.
+    /// Exact arbitrary precision integer carrier.
     Integer,
+    /// Exact finite decimal literal carrier (not binary64).
+    Real,
+    /// Exact descriptor-identified primitive domain.
+    Primitive(PrimitiveDomainId),
     /// Unicode text value.
     String,
     /// A literal belonging to the identified enumeration domain.
     Enumeration(EnumerationId),
     /// References must target an instance of this class or a subclass.
     Reference(MetaclassId),
+}
+
+/// Generic scalar representation supported by a primitive domain descriptor.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PrimitiveRepresentation {
+    Boolean,
+    String,
+    Integer,
+    Real,
+}
+
+/// Primitive identity is independent of its name and storage representation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PrimitiveDescriptor {
+    pub id: PrimitiveDomainId,
+    pub name: String,
+    pub representation: PrimitiveRepresentation,
 }
 
 /// Number of values allowed in a slot; `None` means no upper bound.
@@ -146,6 +172,9 @@ pub struct AssociationDescriptor {
     /// Source order is preserved; it does not define an authoritative storage end.
     pub member_ends: Vec<PropertyId>,
     pub navigable_owned_ends: BTreeSet<PropertyId>,
+    /// Metamodel association ancestry, independent of model-level specialization.
+    pub direct_supertypes: BTreeSet<AssociationId>,
+    pub is_abstract: bool,
 }
 
 /// Named finite domain. Literal identities, not their display names, are values.
@@ -161,6 +190,10 @@ pub struct EnumerationDescriptor {
 /// Complete descriptor registration input, including non-class dependencies.
 #[derive(Clone, Debug, Default)]
 pub struct DescriptorSet {
+    /// Exact source evidence, separate from descriptor identity and runtime inference.
+    pub sources: BTreeMap<DescriptorId, DescriptorSource>,
+    pub reviews: Vec<DiagnosticReview>,
+    pub primitives: Vec<PrimitiveDescriptor>,
     pub models: Vec<MetamodelDescriptor>,
     pub classes: Vec<MetaclassDescriptor>,
     pub properties: Vec<PropertyDescriptor>,
@@ -177,6 +210,10 @@ pub enum MetamodelError {
     DuplicateClass(MetaclassId),
     #[error("duplicate property {0}")]
     DuplicateProperty(PropertyId),
+    #[error("unknown primitive domain {0}")]
+    UnknownPrimitive(PrimitiveDomainId),
+    #[error("duplicate primitive domain {0}")]
+    DuplicatePrimitive(PrimitiveDomainId),
     #[error("unknown metamodel {0}")]
     UnknownMetamodel(MetamodelId),
     #[error("unknown metaclass {0}")]
@@ -202,6 +239,14 @@ pub enum MetamodelError {
     PrimitiveContainment(PropertyId),
     #[error("unknown association {0}")]
     UnknownAssociation(AssociationId),
+    #[error("association inheritance cycle involving {0:?}")]
+    AssociationInheritanceCycle(Vec<AssociationId>),
+    #[error("unsupported association redefinition {property} -> {base} in {association}")]
+    UnsupportedAssociationRedefinition {
+        property: PropertyId,
+        base: PropertyId,
+        association: AssociationId,
+    },
     #[error("unknown enumeration {0}")]
     UnknownEnumeration(EnumerationId),
     #[error("invalid or duplicate association {0}")]
@@ -220,14 +265,28 @@ pub enum MetamodelError {
     PropertyCycle(Vec<PropertyId>),
 }
 
+/// Finite contributor graph, not computed union values. Consumers must depend on
+/// the exact descriptor graph, including absence of additional incoming edges.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DerivedUnionFrontier {
+    pub contributors: BTreeSet<PropertyId>,
+    pub inspected: BTreeSet<PropertyId>,
+    pub unsupported_relations: BTreeSet<(PropertyId, PropertyId)>,
+}
+
 /// Validated immutable registry, with deterministic effective-property queries.
 #[derive(Clone, Debug)]
 pub struct MetamodelRegistry {
+    sources: BTreeMap<DescriptorId, DescriptorSource>,
+    reviews: Vec<DiagnosticReview>,
+    primitives: BTreeMap<PrimitiveDomainId, PrimitiveDescriptor>,
+    effective_errors: BTreeMap<MetaclassId, MetamodelError>,
     models: BTreeMap<MetamodelId, MetamodelDescriptor>,
     classes: BTreeMap<MetaclassId, MetaclassDescriptor>,
     properties: BTreeMap<PropertyId, PropertyDescriptor>,
     associations: BTreeMap<AssociationId, AssociationDescriptor>,
     enumerations: BTreeMap<EnumerationId, EnumerationDescriptor>,
+    association_ancestors: BTreeMap<AssociationId, BTreeSet<AssociationId>>,
     redefined: BTreeMap<PropertyId, BTreeSet<PropertyId>>,
     ancestors: BTreeMap<MetaclassId, BTreeSet<MetaclassId>>,
     effective: BTreeMap<MetaclassId, BTreeSet<PropertyId>>,
@@ -249,29 +308,43 @@ impl MetamodelRegistry {
     /// Register a dependency-closed descriptor set atomically.
     pub fn from_descriptors(input: DescriptorSet) -> Result<Self, MetamodelError> {
         let DescriptorSet {
+            sources,
+            mut reviews,
+            primitives,
             models,
             classes,
             properties,
             associations,
             enumerations,
         } = input;
+        reviews.sort();
         let mut registry = Self {
+            sources,
+            reviews,
+            primitives: BTreeMap::new(),
+            effective_errors: BTreeMap::new(),
             models: BTreeMap::new(),
             classes: BTreeMap::new(),
             properties: BTreeMap::new(),
             associations: BTreeMap::new(),
             enumerations: BTreeMap::new(),
+            association_ancestors: BTreeMap::new(),
             redefined: BTreeMap::new(),
             ancestors: BTreeMap::new(),
             effective: BTreeMap::new(),
         };
+        for primitive in primitives {
+            let id = primitive.id;
+            if registry.primitives.insert(id, primitive).is_some() {
+                return Err(MetamodelError::DuplicatePrimitive(id));
+            }
+        }
         for model in models {
             let id = model.id;
             if registry.models.insert(id, model).is_some() {
                 return Err(MetamodelError::DuplicateMetamodel(id));
             }
         }
-        let mut names = BTreeMap::new();
         for class in classes {
             let id = class.id;
             if !registry.models.contains_key(&class.metamodel) {
@@ -279,12 +352,6 @@ impl MetamodelRegistry {
             }
             if registry.classes.contains_key(&id) {
                 return Err(MetamodelError::DuplicateClass(id));
-            }
-            if let Some(first) = names.insert(
-                (class.metamodel, class.package.clone(), class.name.clone()),
-                id,
-            ) {
-                return Err(MetamodelError::ClassNameConflict { first, second: id });
             }
             registry.classes.insert(id, class);
         }
@@ -336,15 +403,35 @@ impl MetamodelRegistry {
                 return Err(MetamodelError::InvalidAssociation(id));
             }
         }
+        let edges: BTreeMap<_, _> = registry
+            .associations
+            .iter()
+            .map(|(&id, a)| (id, a.direct_supertypes.clone()))
+            .collect();
+        for parents in edges.values() {
+            for parent in parents {
+                registry.association(*parent)?;
+            }
+        }
+        let cycle = crate::model::cyclic_nodes(&edges);
+        if !cycle.is_empty() {
+            return Err(MetamodelError::AssociationInheritanceCycle(cycle));
+        }
+        for &id in edges.keys() {
+            let mut ancestors = BTreeSet::new();
+            let mut pending = vec![id];
+            while let Some(next) = pending.pop() {
+                if ancestors.insert(next) {
+                    pending.extend(&edges[&next]);
+                }
+            }
+            registry.association_ancestors.insert(id, ancestors);
+        }
         let mut literals = BTreeSet::new();
         for enumeration in enumerations {
             registry.metamodel(enumeration.metamodel)?;
             let id = enumeration.id;
-            let mut names = BTreeSet::new();
-            if enumeration
-                .literals
-                .iter()
-                .any(|(id, name)| !literals.insert(*id) || !names.insert(name.clone()))
+            if enumeration.literals.keys().any(|id| !literals.insert(*id))
                 || registry.enumerations.insert(id, enumeration).is_some()
             {
                 return Err(MetamodelError::InvalidEnumeration(id));
@@ -359,6 +446,9 @@ impl MetamodelRegistry {
                 PropertyOwner::Association(owner) => {
                     registry.association(owner)?;
                 }
+            }
+            if let ValueKind::Primitive(target) = property.value_kind {
+                registry.primitive(target)?;
             }
             if let ValueKind::Reference(target) = property.value_kind {
                 registry.class(target)?;
@@ -382,7 +472,6 @@ impl MetamodelRegistry {
         }
         registry.validate_metadata()?;
         for (&id, ancestors) in &registry.ancestors {
-            let mut names = BTreeMap::new();
             let mut effective = BTreeSet::new();
             let candidates: BTreeSet<_> = registry
                 .properties
@@ -393,29 +482,12 @@ impl MetamodelRegistry {
                 .iter()
                 .flat_map(|p| registry.redefined[p].iter().copied())
                 .collect();
-            // Two sibling definitions replacing the same ancestor need an explicit
-            // joining redefinition even when their names differ.
-            let mut replacements = BTreeMap::new();
+            // Distinct surviving properties can redefine the same ancestor. Their
+            // exact identities remain usable; only an ambiguous alias query fails.
             for property in candidates
                 .difference(&replaced)
                 .map(|p| &registry.properties[p])
             {
-                for base in &registry.redefined[&property.id] {
-                    if let Some(first) = replacements.insert(*base, property.id) {
-                        return Err(MetamodelError::PropertyConflict {
-                            class: id,
-                            first,
-                            second: property.id,
-                        });
-                    }
-                }
-                if let Some(first) = names.insert(&property.name, property.id) {
-                    return Err(MetamodelError::PropertyConflict {
-                        class: id,
-                        first,
-                        second: property.id,
-                    });
-                }
                 effective.insert(property.id);
             }
             registry.effective.insert(id, effective);
@@ -438,15 +510,6 @@ impl MetamodelRegistry {
                 {
                     return Err(MetamodelError::InvalidAssociation(association.id));
                 }
-                if let PropertyOwner::Class(owner) = p.owner {
-                    let opposite =
-                        self.property(*p.opposite_ends.first().expect("validated binary end"))?;
-                    if let ValueKind::Reference(context) = opposite.value_kind
-                        && !self.is_subtype(owner, context)?
-                    {
-                        return Err(MetamodelError::InvalidAssociation(association.id));
-                    }
-                }
             }
             for end in &association.navigable_owned_ends {
                 if !association.member_ends.contains(end)
@@ -456,11 +519,7 @@ impl MetamodelRegistry {
                 }
             }
         }
-        let mut edges = BTreeMap::new();
         for p in self.properties.values() {
-            if p.derived_union && !p.derived {
-                return Err(MetamodelError::InvalidPropertyMetadata(p.id));
-            }
             if let Some(association) = p.association {
                 if !self.association(association)?.member_ends.contains(&p.id) {
                     return Err(MetamodelError::InvalidPropertyMetadata(p.id));
@@ -478,60 +537,138 @@ impl MetamodelRegistry {
             for base in p.redefines.iter().chain(&p.subsets) {
                 self.property(*base)?;
             }
-            // Replacement follows strict context ancestry. Set inclusion has no
-            // corresponding acyclicity rule (UML 2.5.1 Property, ADR 0008).
-            edges.insert(p.id, p.redefines.clone());
         }
-        let cycle = crate::model::cyclic_nodes(&edges);
-        if !cycle.is_empty() {
-            return Err(MetamodelError::PropertyCycle(cycle));
+        // Raw edges never become slot replacements merely by being recorded.
+        // Only safe class-to-class inheritance edges enter this operational graph.
+        let mut class_edges = BTreeMap::new();
+        for p in self.properties.values() {
+            let mut eligible = BTreeSet::new();
+            if let PropertyOwner::Class(owner) = p.owner {
+                if p.derived_union && !p.derived {
+                    for (&class, ancestors) in &self.ancestors {
+                        if ancestors.contains(&owner) {
+                            self.effective_errors
+                                .insert(class, MetamodelError::InvalidPropertyMetadata(p.id));
+                        }
+                    }
+                }
+                for base in &p.redefines {
+                    let b = &self.properties[base];
+                    if matches!(b.owner, PropertyOwner::Class(_)) {
+                        if self.redefinition_context_valid(p, b)
+                            && self.redefinition_contract_valid(p, b)
+                        {
+                            eligible.insert(*base);
+                        } else {
+                            for (&class, ancestors) in &self.ancestors {
+                                if ancestors.contains(&owner) {
+                                    self.effective_errors.insert(
+                                        class,
+                                        MetamodelError::InvalidRedefinition {
+                                            property: p.id,
+                                            base: *base,
+                                        },
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            class_edges.insert(p.id, eligible);
         }
         for p in self.properties.values() {
             let mut replaced = BTreeSet::new();
-            let mut pending: Vec<_> = p.redefines.iter().copied().collect();
+            let mut pending: Vec<_> = class_edges[&p.id].iter().copied().collect();
             while let Some(base) = pending.pop() {
                 if replaced.insert(base) {
-                    pending.extend(&self.properties[&base].redefines);
+                    pending.extend(&class_edges[&base]);
                 }
             }
             self.redefined.insert(p.id, replaced);
         }
-        for p in self.properties.values() {
-            for base in &p.redefines {
-                let b = self.property(*base)?;
-                let context = self.property_context(p)?;
-                let base_context = self.property_context(b)?;
-                if context == base_context
-                    || !self.is_subtype(context, base_context)?
-                    || !self.compatible_value(p.value_kind, b.value_kind)?
-                    || p.multiplicity.lower < b.multiplicity.lower
-                    || b.multiplicity
-                        .upper
-                        .is_some_and(|upper| p.multiplicity.upper.is_none_or(|n| n > upper))
-                    // UML Property::isConsistentWith does not require equal
-                    // ordering/uniqueness flags. Resolve and validate values
-                    // against the effective descriptor's collection contract.
-                    || (b.composite && !p.composite)
-                {
-                    return Err(MetamodelError::InvalidRedefinition {
-                        property: p.id,
-                        base: *base,
-                    });
-                }
-            }
-            for base in &p.subsets {
-                let b = self.property(*base)?;
-                if !self.is_subtype(self.property_context(p)?, self.property_context(b)?)?
-                    || !self.compatible_value(p.value_kind, b.value_kind)?
-                    || b.multiplicity
-                        .upper
-                        .is_some_and(|upper| p.multiplicity.upper.is_none_or(|n| n > upper))
-                {
-                    return Err(MetamodelError::InvalidPropertyMetadata(p.id));
-                }
-            }
-        }
         Ok(())
+    }
+
+    fn redefinition_context_valid(&self, p: &PropertyDescriptor, b: &PropertyDescriptor) -> bool {
+        match (p.owner, b.owner) {
+            (PropertyOwner::Class(owner), PropertyOwner::Class(base)) => {
+                owner != base && self.ancestors[&owner].contains(&base)
+            }
+            _ => match (p.association, b.association) {
+                (Some(owner), Some(base)) => {
+                    owner != base && self.association_ancestors[&owner].contains(&base)
+                }
+                _ => false,
+            },
+        }
+    }
+
+    fn redefinition_contract_valid(&self, p: &PropertyDescriptor, b: &PropertyDescriptor) -> bool {
+        self.compatible_value(p.value_kind, b.value_kind)
+            .expect("validated domains")
+            && p.multiplicity.lower >= b.multiplicity.lower
+            && upper_contained(p, b)
+            && (!b.composite || p.composite)
+    }
+
+    pub fn primitive(&self, id: PrimitiveDomainId) -> Result<&PrimitiveDescriptor, MetamodelError> {
+        self.primitives
+            .get(&id)
+            .ok_or(MetamodelError::UnknownPrimitive(id))
+    }
+
+    /// Scalar carrier for validation/projection. Descriptor domains remain exact
+    /// for type compatibility; sharing a carrier does not make two domains equal.
+    pub fn storage_kind(&self, kind: ValueKind) -> Result<ValueKind, MetamodelError> {
+        Ok(match kind {
+            ValueKind::Primitive(id) => match self.primitive(id)?.representation {
+                PrimitiveRepresentation::Boolean => ValueKind::Boolean,
+                PrimitiveRepresentation::String => ValueKind::String,
+                PrimitiveRepresentation::Integer => ValueKind::Integer,
+                PrimitiveRepresentation::Real => ValueKind::Real,
+            },
+            other => other,
+        })
+    }
+
+    /// Deterministic complete source map, including exact artifact digests.
+    pub fn sources(&self) -> impl Iterator<Item = (&DescriptorId, &DescriptorSource)> {
+        self.sources.iter()
+    }
+
+    /// Exact source evidence; its presence does not assert conformance.
+    pub fn source(&self, id: DescriptorId) -> Option<&DescriptorSource> {
+        self.sources.get(&id)
+    }
+
+    /// Optional authoring validation, independent of structural construction.
+    pub fn validate_conformance(&self) -> ConformanceReport {
+        MetamodelValidator::validate(self)
+    }
+
+    /// Exact recorded targets, with no implied runtime replacement role.
+    pub fn declared_redefinitions(
+        &self,
+        property: PropertyId,
+    ) -> Result<&BTreeSet<PropertyId>, MetamodelError> {
+        Ok(&self.property(property)?.redefines)
+    }
+
+    /// Transitive safe class replacements in this class context. Association-owned
+    /// ends never remove class properties or become fabricated class slots.
+    pub fn effective_redefinitions_for_class(
+        &self,
+        property: PropertyId,
+        context: MetaclassId,
+    ) -> Result<BTreeSet<PropertyId>, MetamodelError> {
+        self.property(property)?;
+        let _ = self.effective_properties(context)?;
+        Ok(if self.effective[&context].contains(&property) {
+            self.redefined[&property].clone()
+        } else {
+            BTreeSet::new()
+        })
     }
 
     fn compatible_value(&self, value: ValueKind, base: ValueKind) -> Result<bool, MetamodelError> {
@@ -591,6 +728,56 @@ impl MetamodelRegistry {
         Ok(visited)
     }
 
+    /// Termination-safe union frontier over subsets and applicable class redefinitions.
+    /// Unsupported context/type edges remain explicit; they never establish a value.
+    pub fn derived_union_frontier(
+        &self,
+        property: PropertyId,
+        context: MetaclassId,
+    ) -> Result<DerivedUnionFrontier, MetamodelError> {
+        self.property(property)?;
+        self.class(context)?;
+        let mut incoming: BTreeMap<PropertyId, BTreeSet<PropertyId>> = BTreeMap::new();
+        let mut unsupported = BTreeSet::new();
+        for p in self.properties.values() {
+            for &base in &p.subsets {
+                incoming.entry(base).or_default().insert(p.id);
+                let b = &self.properties[&base];
+                if !self.is_subtype(self.property_context(p)?, self.property_context(b)?)?
+                    || !self.compatible_value(p.value_kind, b.value_kind)?
+                    || !upper_contained(p, b)
+                {
+                    unsupported.insert((p.id, base));
+                }
+            }
+            if self.is_legal(context, p.id)? {
+                for &base in &self.redefined[&p.id] {
+                    incoming.entry(base).or_default().insert(p.id);
+                }
+            }
+        }
+        let mut inspected = BTreeSet::new();
+        let mut contributors = BTreeSet::new();
+        let mut pending = vec![property];
+        let mut unsupported_relations = BTreeSet::new();
+        while let Some(id) = pending.pop() {
+            if inspected.insert(id) {
+                for &p in incoming.get(&id).into_iter().flatten() {
+                    contributors.insert(p);
+                    pending.push(p);
+                    if unsupported.contains(&(p, id)) {
+                        unsupported_relations.insert((p, id));
+                    }
+                }
+            }
+        }
+        Ok(DerivedUnionFrontier {
+            contributors,
+            inspected,
+            unsupported_relations,
+        })
+    }
+
     /// Structural context for subsetting/redefinition. An association-owned end
     /// is viewed from the opposite end's type, without creating a class slot.
     pub fn property_context(&self, p: &PropertyDescriptor) -> Result<MetaclassId, MetamodelError> {
@@ -614,6 +801,103 @@ impl MetamodelRegistry {
         self.associations
             .get(&id)
             .ok_or(MetamodelError::UnknownAssociation(id))
+    }
+
+    /// Reflexive association ancestry, deterministic and independent of classes.
+    pub fn association_ancestry(
+        &self,
+        id: AssociationId,
+    ) -> Result<&BTreeSet<AssociationId>, MetamodelError> {
+        self.association(id)?;
+        Ok(&self.association_ancestors[&id])
+    }
+
+    /// All inherited member-end identities before operational redefinition filtering.
+    pub fn inherited_association_ends(
+        &self,
+        id: AssociationId,
+    ) -> Result<BTreeSet<PropertyId>, MetamodelError> {
+        Ok(self
+            .association_ancestry(id)?
+            .iter()
+            .flat_map(|a| self.associations[a].member_ends.iter().copied())
+            .collect())
+    }
+
+    /// Interpret a particular recorded edge in an association hierarchy. A relation
+    /// without the required hierarchy/contract is explicit unsupported semantics.
+    pub fn interpret_association_redefinition(
+        &self,
+        property: PropertyId,
+        base: PropertyId,
+        context: AssociationId,
+    ) -> Result<(), MetamodelError> {
+        let p = self.property(property)?;
+        let b = self.property(base)?;
+        let ancestors = self.association_ancestry(context)?;
+        if p.redefines.contains(&base)
+            && self.is_subtype(self.property_context(p)?, self.property_context(b)?)?
+            && self.redefinition_contract_valid(p, b)
+            && p.association
+                .zip(b.association)
+                .is_some_and(|(owner, parent)| {
+                    owner != parent
+                        && ancestors.contains(&owner)
+                        && self.association_ancestors[&owner].contains(&parent)
+                })
+        {
+            Ok(())
+        } else {
+            Err(MetamodelError::UnsupportedAssociationRedefinition {
+                property,
+                base,
+                association: context,
+            })
+        }
+    }
+
+    /// Inherited ends with only applicable association-hierarchy replacements.
+    /// Diamonds deduplicate identities. Unrelated raw edges have no replacement role.
+    pub fn effective_association_ends(
+        &self,
+        id: AssociationId,
+    ) -> Result<BTreeSet<PropertyId>, MetamodelError> {
+        let candidates = self.inherited_association_ends(id)?;
+        let mut removed = BTreeSet::new();
+        let mut replacements: BTreeMap<PropertyId, BTreeSet<PropertyId>> = BTreeMap::new();
+        for &p in &candidates {
+            let mut pending: Vec<_> = self.properties[&p]
+                .redefines
+                .iter()
+                .map(|&b| (p, b))
+                .collect();
+            let mut visited = BTreeSet::new();
+            while let Some((current, base)) = pending.pop() {
+                if !candidates.contains(&base) {
+                    continue;
+                }
+                self.interpret_association_redefinition(current, base, id)?;
+                if visited.insert(base) {
+                    removed.insert(base);
+                    replacements.entry(p).or_default().insert(base);
+                    pending.extend(self.properties[&base].redefines.iter().map(|&b| (base, b)));
+                }
+            }
+        }
+        let effective: BTreeSet<_> = candidates.difference(&removed).copied().collect();
+        let mut targets = BTreeSet::new();
+        for &p in &effective {
+            for &base in replacements.get(&p).into_iter().flatten() {
+                if !targets.insert(base) {
+                    return Err(MetamodelError::UnsupportedAssociationRedefinition {
+                        property: p,
+                        base,
+                        association: id,
+                    });
+                }
+            }
+        }
+        Ok(effective)
     }
 
     /// Structural navigability from class ownership or an explicit navigable
@@ -661,6 +945,28 @@ impl MetamodelRegistry {
             }
         }
         Ok(true)
+    }
+
+    /// Generic occurrence storage is exclusive with authored class-slot storage.
+    /// Derived-only associations remain descriptor metadata, with no authored links.
+    pub fn supports_occurrence_storage(&self, id: AssociationId) -> Result<bool, MetamodelError> {
+        let a = self.association(id)?;
+        let mut authored = false;
+        for &end in &a.member_ends {
+            let p = self.property(end)?;
+            if !p.derived && self.is_navigable(end)? {
+                authored = true;
+                if self.supports_slot_storage(end)? || self.inverse_storage(end)?.is_some() {
+                    return Ok(false);
+                }
+            }
+        }
+        Ok(authored)
+    }
+
+    /// All raw properties in identity order, including association-owned ends.
+    pub fn properties(&self) -> impl Iterator<Item = &PropertyDescriptor> {
+        self.properties.values()
     }
 
     /// Scalar inverse of a supported ordered one-to-many association storage end.
@@ -724,9 +1030,22 @@ impl MetamodelRegistry {
         property: PropertyId,
     ) -> Result<Option<&PropertyDescriptor>, MetamodelError> {
         self.property(property)?;
-        Ok(self
-            .effective_properties(class)?
-            .find(|p| p.id == property || self.redefined[&p.id].contains(&property)))
+        let properties: Vec<_> = self.effective_properties(class)?.collect();
+        if let Some(p) = properties.iter().find(|p| p.id == property) {
+            return Ok(Some(*p));
+        }
+        let mut matches = properties
+            .into_iter()
+            .filter(|p| self.redefined[&p.id].contains(&property));
+        let first = matches.next();
+        if let (Some(first), Some(second)) = (first, matches.next()) {
+            return Err(MetamodelError::PropertyConflict {
+                class,
+                first: first.id,
+                second: second.id,
+            });
+        }
+        Ok(first)
     }
 
     /// Resolve a display name only after inheritance and redefinition validation.
@@ -735,7 +1054,16 @@ impl MetamodelRegistry {
         class: MetaclassId,
         name: &str,
     ) -> Result<Option<&PropertyDescriptor>, MetamodelError> {
-        Ok(self.effective_properties(class)?.find(|p| p.name == name))
+        let mut matches = self.effective_properties(class)?.filter(|p| p.name == name);
+        let first = matches.next();
+        if let (Some(first), Some(second)) = (first, matches.next()) {
+            return Err(MetamodelError::PropertyConflict {
+                class,
+                first: first.id,
+                second: second.id,
+            });
+        }
+        Ok(first)
     }
 
     /// Look up the release owning descriptors.
@@ -783,6 +1111,9 @@ impl MetamodelRegistry {
         class: MetaclassId,
     ) -> Result<impl Iterator<Item = &PropertyDescriptor>, MetamodelError> {
         self.class(class)?;
+        if let Some(error) = self.effective_errors.get(&class) {
+            return Err(error.clone());
+        }
         Ok(self.effective[&class].iter().map(|id| &self.properties[id]))
     }
     /// Properties declared directly on this class, in identity order.
@@ -796,6 +1127,20 @@ impl MetamodelRegistry {
             .values()
             .filter(move |p| p.owner == PropertyOwner::Class(class)))
     }
+    /// Applicability of a navigation/result without manufacturing a class slot.
+    /// Association-owned properties use the exact opposite type as their context.
+    pub fn is_applicable_navigation(
+        &self,
+        class: MetaclassId,
+        property: PropertyId,
+    ) -> Result<bool, MetamodelError> {
+        let p = self.property(property)?;
+        match p.owner {
+            PropertyOwner::Class(_) => self.is_legal(class, property),
+            PropertyOwner::Association(_) => self.is_subtype(class, self.property_context(p)?),
+        }
+    }
+
     /// Whether an instance may carry this property (ignoring derived write policy).
     pub fn is_legal(
         &self,
@@ -804,6 +1149,7 @@ impl MetamodelRegistry {
     ) -> Result<bool, MetamodelError> {
         self.property(property)?;
         self.class(class)?;
+        let _ = self.effective_properties(class)?;
         Ok(self.effective[&class].contains(&property))
     }
     pub(crate) fn supertypes(&self, class: MetaclassId) -> impl Iterator<Item = MetaclassId> + '_ {

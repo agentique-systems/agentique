@@ -62,7 +62,7 @@ fn inherited_member_explanation_chain_keeps_declared_facts_separate() {
     builder.property(
         SPORTS,
         COUNT,
-        SlotValue::Scalar(Value::Integer(1)),
+        SlotValue::Scalar(Value::Integer(1.into())),
         evidence(&[Dependency::Derived(prop(SPORTS, EFFECTIVE))]),
     );
     let overlay = builder.build().unwrap();

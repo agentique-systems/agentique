@@ -26,10 +26,15 @@ fn descriptors() -> DescriptorSet {
     inverse.association = Some(ASSOCIATION);
     inverse.opposite_ends.insert(NAME);
     DescriptorSet {
+        sources: Default::default(),
+        reviews: Vec::new(),
+        primitives: Vec::new(),
         models: vec![model_descriptor()],
         classes: vec![class(ELEMENT, "Source", &[]), class(TYPE, "Target", &[])],
         properties: vec![forward, inverse],
         associations: vec![AssociationDescriptor {
+            direct_supertypes: BTreeSet::new(),
+            is_abstract: false,
             id: ASSOCIATION,
             name: "Links".into(),
             package: vec![],

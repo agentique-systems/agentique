@@ -1,0 +1,18 @@
+[
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T19:03:22.864Z",
+    "durationMs": 813,
+    "exitCode": 1,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T19:03:23.677Z",
+    "durationMs": 1439,
+    "exitCode": 1,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  }
+]

@@ -1,0 +1,8 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running `target\debug\metamodel-gen.exe --baseline kerml-1.0 --require-runtime --check`
+Full audit finding ["E"]: "subsetted-property-name" Core-Features-A_ownedRedefinition_owningFeature-owningFeature
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Associations-A_targetType_targetAssociation-targetAssociation
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity
+metamodel-gen: KerML complete runtime blocked: translation=null, registration=null, runtime=["authored association storage not supported for 26017bac-c302-51f9-bcd3-61d010764f06","authored association storage not supported for 0909c810-fc64-5f00-9c7e-7b01a1cdf4da","authored association storage not supported for b5861299-f8c1-5fa4-847b-944517ce51bd","authored association storage not supported for 7e19278d-53e5-5cb0-ad3b-91a380383ff9","authored association storage not supported for 19119ba7-bf1c-5b17-9976-56a77c034412"]. See standards/generated/kerml-1.0/full-audit.json; no runtime output written.
+error: process didn't exit successfully: `target\debug\metamodel-gen.exe --baseline kerml-1.0 --require-runtime --check` (exit code: 1)

@@ -69,6 +69,7 @@ pub enum DeclaredOrigin {
 /// Identifies an element assertion or a property assertion for explanations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FactKey {
+    AssociationOccurrence(crate::AssociationOccurrenceId),
     Element(ElementId),
     Property {
         element: ElementId,
@@ -96,6 +97,8 @@ pub struct Explanation {
 /// Explicit separation between submitted facts and semantic inference.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Origin {
+    /// A read-only navigation projection; inspect every contributing canonical link.
+    AssociationOccurrences(BTreeSet<crate::AssociationOccurrenceId>),
     Declared(DeclaredOrigin),
     Derived(Explanation),
 }

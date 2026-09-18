@@ -182,10 +182,14 @@ fn corrupt_normative_metadata_is_rejected() {
         .find(|p| p.derived_union)
         .unwrap()
         .derived = false;
-    assert!(matches!(
-        MetamodelRegistry::from_descriptors(input),
-        Err(MetamodelError::InvalidPropertyMetadata(_))
-    ));
+    let registry = MetamodelRegistry::from_descriptors(input).unwrap();
+    assert!(
+        registry
+            .validate_conformance()
+            .diagnostics
+            .iter()
+            .any(|d| d.rule == MetamodelRule::DerivedUnion)
+    );
     let mut input = agq_kerml::descriptors();
     input
         .properties
@@ -235,7 +239,7 @@ fn normative_enum_literals_are_checked_against_the_property_domain() {
             .unwrap()
             .filter(|p| !p.derived && p.multiplicity.lower > 0)
         {
-            let value = match p.value_kind {
+            let value = match registry.storage_kind(p.value_kind).unwrap() {
                 ValueKind::Boolean => Value::Boolean(false),
                 ValueKind::String => Value::String("structural-test".into()),
                 _ => panic!("unexpected required primitive"),

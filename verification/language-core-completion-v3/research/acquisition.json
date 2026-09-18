@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://issues.omg.org/issues/spec/SysML/2.0",
+    "retrieved": "2026-09-18T18:47:12.433500+00:00",
+    "path": "sysml-open.html",
+    "sha256": "6b9658095b4137b6614e2dbe57340c32cea148629eb9300d188617c1f95e0621",
+    "bytes": 1722686,
+    "status": 200
+  },
+  {
+    "url": "https://issues.omg.org/issues/spec/SysML/2.0/fixed",
+    "retrieved": "2026-09-18T18:47:16.944596+00:00",
+    "path": "sysml-resolved.html",
+    "sha256": "1c210287f1031b48948ee070a0463710a64ebaa221e0240024a11938cc525013",
+    "bytes": 3709517,
+    "status": 200
+  },
+  {
+    "url": "https://issues.omg.org/issues/spec/KerML/1.0/fixed",
+    "retrieved": "2026-09-18T18:47:25.015460+00:00",
+    "path": "kerml-resolved.html",
+    "sha256": "a025f0643bc2e48e45c51d4e50ab0a7440a6c24cd2a70436bf4800302a3b7cd5",
+    "bytes": 1531430,
+    "status": 200
+  },
+  {
+    "url": "https://issues.omg.org/issues/spec/SysML/2.1/fixed",
+    "retrieved": "2026-09-18T18:47:29.453792+00:00",
+    "path": "sysml21-resolved.html",
+    "sha256": "8ca465943c86a03292ea40b871caf31ee500152bfe8b2a89a88c5a7636ec86e3",
+    "bytes": 9298,
+    "status": 200
+  },
+  {
+    "url": "https://issues.omg.org/issues/spec/KerML/1.1/fixed",
+    "retrieved": "2026-09-18T18:47:30.114219+00:00",
+    "path": "kerml11-resolved.html",
+    "sha256": "dc8dafd97fe202d8a1edcf519412dbc0f6f1e9198a008ed94fb3153a466a3704",
+    "bytes": 9290,
+    "status": 200
+  },
+  {
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/releases/latest",
+    "retrieved": "2026-09-18T18:47:30.760758+00:00",
+    "path": "release.json",
+    "sha256": "f8c7ef95fff6939204dd0e4a9388af90499c1b94eb912fdebc444dfb4edb44b7",
+    "bytes": 5033,
+    "status": 200
+  },
+  {
+    "url": "https://issues.omg.org/issues/UML24-85",
+    "retrieved": "2026-09-18T18:47:31.005248+00:00",
+    "path": "UML24-85.html",
+    "sha256": "60df021995f47361ce9cde356636d45c3aafa68e71154f0798e76011b5ebf43e",
+    "bytes": 13365,
+    "status": 200
+  },
+  {
+    "url": "https://issues.omg.org/issues/UML24-86",
+    "retrieved": "2026-09-18T18:47:31.663030+00:00",
+    "path": "UML24-86.html",
+    "sha256": "17de163f8003d8e788c8b7f8e616ebb4284c607f387742c9f32279669859af96",
+    "bytes": 12260,
+    "status": 200
+  },
+  {
+    "url": "https://issues.omg.org/issues/UML24-96",
+    "retrieved": "2026-09-18T18:47:32.333339+00:00",
+    "path": "UML24-96.html",
+    "sha256": "8a3afc3fb1909ed7c00172042600dc20e9bf77f0fc55e292e34bf5c486e7051c",
+    "bytes": 17453,
+    "status": 200
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "base": "000496c7a97953206ead3f125edf1e1c777342b5",
+  "protectedFiles": 519,
+  "historicalAnomaliesPreserved": 5,
+  "reviewHistoryPreserved": true
+}

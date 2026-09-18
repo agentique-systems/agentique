@@ -1,9 +1,12 @@
+use crate::association::AssociationOccurrence;
 use crate::metamodel::{
     MetamodelError, MetamodelRegistry, Multiplicity, PropertyDescriptor, ValueKind,
 };
 use crate::provenance::{DeclaredOrigin, Origin};
 use crate::value::{SlotValue, Value};
-use crate::{ElementId, MetaclassId, PropertyId, RevisionId};
+use crate::{
+    AssociationId, AssociationOccurrenceId, ElementId, MetaclassId, PropertyId, RevisionId,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
@@ -87,14 +90,24 @@ impl SlotShape {
     }
 }
 
+/// Canonical source of a reference; an inverse projection is never a second fact.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ReferenceCarrier {
+    Slot,
+    AssociationOccurrence(AssociationOccurrenceId),
+    DerivedNavigation,
+}
+
 /// A reconstructible occurrence of a semantic reference, not a relationship.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ReferenceOccurrence {
+    pub carrier: ReferenceCarrier,
     /// The record containing the reference slot (possibly a relationship record).
     pub source: ElementId,
     /// The property that contains this occurrence.
     pub property: PropertyId,
-    /// Zero-based position in `SlotValue::values()`. For unordered properties
+    /// Zero-based slot/derived value position or per-end link position. Unordered
+    /// links use deterministic occurrence-ID enumeration. For unordered properties
     /// this is a deterministic enumeration position, not semantic ordering.
     pub position: usize,
     /// The semantic element being referenced.
@@ -104,6 +117,7 @@ pub struct ReferenceOccurrence {
 #[derive(Clone, Debug, Default)]
 struct Indexes {
     inverse_slots: BTreeMap<(ElementId, PropertyId), Slot>,
+    incidence: BTreeMap<ElementId, BTreeSet<AssociationOccurrenceId>>,
     exact_class: BTreeMap<MetaclassId, BTreeSet<ElementId>>,
     by_supertype: BTreeMap<MetaclassId, BTreeSet<ElementId>>,
     incoming: BTreeMap<ElementId, Vec<ReferenceOccurrence>>,
@@ -118,14 +132,42 @@ pub struct ModelView {
     pub(crate) registry: Arc<MetamodelRegistry>,
     pub(crate) records: BTreeMap<ElementId, Arc<ElementRecord>>,
     indexes: Indexes,
+    pub(crate) links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    derived_navigation: crate::association::Navigation,
+    pub(crate) statuses: BTreeMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
+    pub(crate) searches:
+        BTreeMap<crate::provenance::FactKey, BTreeSet<crate::derived::StructuralSearch>>,
 }
 impl ModelView {
     pub(crate) fn build(
         registry: Arc<MetamodelRegistry>,
         records: BTreeMap<ElementId, Arc<ElementRecord>>,
+        links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+        derived_navigation: crate::association::Navigation,
     ) -> Result<Self, ModelError> {
-        validate(&registry, &records)?;
-        let mut indexes = Indexes::default();
+        let mut projected = crate::association::project(&registry, &records, &links)?;
+        for (&(element, property), slot) in &derived_navigation {
+            let p = registry.property(property)?;
+            if !p.derived || !matches!(p.owner, crate::metamodel::PropertyOwner::Association(_)) {
+                return Err(ModelError::DerivedWrite { element, property });
+            }
+            if projected
+                .insert((element, property), slot.clone())
+                .is_some()
+            {
+                return Err(ModelError::UnsupportedAssociationStorage(property));
+            }
+        }
+        validate(&registry, &records, &projected)?;
+        let mut indexes = Indexes {
+            inverse_slots: projected,
+            ..Indexes::default()
+        };
+        for link in links.values() {
+            for &end in link.ends.values() {
+                indexes.incidence.entry(end).or_default().insert(link.id);
+            }
+        }
         for record in records.values() {
             indexes
                 .exact_class
@@ -159,6 +201,7 @@ impl ModelView {
                             }
                         }
                         let occurrence = ReferenceOccurrence {
+                            carrier: ReferenceCarrier::Slot,
                             source: record.id,
                             property,
                             position,
@@ -178,11 +221,162 @@ impl ModelView {
                 }
             }
         }
+        let mut positions = BTreeMap::<(ElementId, PropertyId), usize>::new();
+        for link in links.values() {
+            for (&property, &target) in &link.ends {
+                let p = registry.property(property)?;
+                let source = link.ends[p.opposite_ends.first().expect("binary integrity")];
+                let count = positions.entry((source, property)).or_default();
+                let position = link.positions.get(&property).copied().unwrap_or(*count);
+                *count += 1;
+                let occurrence = ReferenceOccurrence {
+                    carrier: ReferenceCarrier::AssociationOccurrence(link.id),
+                    source,
+                    property,
+                    position,
+                    target,
+                };
+                indexes.outgoing.entry(source).or_default().push(occurrence);
+                indexes.incoming.entry(target).or_default().push(occurrence);
+            }
+        }
+        for (&(source, property), slot) in &derived_navigation {
+            for (position, value) in slot.value.values().enumerate() {
+                if let Value::Reference(target) = value {
+                    let occurrence = ReferenceOccurrence {
+                        carrier: ReferenceCarrier::DerivedNavigation,
+                        source,
+                        property,
+                        position,
+                        target: *target,
+                    };
+                    indexes.outgoing.entry(source).or_default().push(occurrence);
+                    indexes
+                        .incoming
+                        .entry(*target)
+                        .or_default()
+                        .push(occurrence);
+                }
+            }
+        }
+        for entries in indexes
+            .incoming
+            .values_mut()
+            .chain(indexes.outgoing.values_mut())
+        {
+            entries.sort_by_key(|r| (r.source, r.property, r.position, r.target, r.carrier));
+        }
         Ok(Self {
             registry,
             records,
             indexes,
+            links,
+            derived_navigation,
+            statuses: BTreeMap::new(),
+            searches: BTreeMap::new(),
         })
+    }
+    /// Explicit property/navigation state, resolving only unambiguous class aliases.
+    pub fn property_state(
+        &self,
+        element: ElementId,
+        property: PropertyId,
+    ) -> Result<crate::derived::PropertyState<'_>, ModelError> {
+        use crate::derived::{ComputationFailure, PropertyState};
+        let record = self
+            .element(element)
+            .ok_or(ModelError::UnknownElement(element))?;
+        let declared = self.registry.property(property)?;
+        let p = match declared.owner {
+            crate::metamodel::PropertyOwner::Class(_) => self
+                .registry
+                .resolve_property(record.metaclass(), property)?,
+            crate::metamodel::PropertyOwner::Association(_) => self
+                .registry
+                .is_applicable_navigation(record.metaclass(), property)?
+                .then_some(declared),
+        }
+        .ok_or(ModelError::IllegalProperty {
+            element,
+            class: record.metaclass(),
+            property,
+        })?;
+        Ok(match self.statuses.get(&(element, p.id)) {
+            Some(f @ ComputationFailure::Incomplete { .. }) => PropertyState::Incomplete(f),
+            Some(f @ ComputationFailure::Invalid { .. }) => PropertyState::Invalid(f),
+            None => match self.navigation_slot(element, p.id) {
+                Some(slot) => PropertyState::Computed(slot),
+                None if p.derived => PropertyState::NotComputed,
+                None => PropertyState::Absent,
+            },
+        })
+    }
+    /// Derived association-owned results, separate from canonical element slots.
+    pub fn derived_navigation_results(
+        &self,
+    ) -> impl Iterator<Item = (&(ElementId, PropertyId), &Slot)> {
+        self.derived_navigation.iter()
+    }
+    /// Complete search evidence, including negative searches used by computed values.
+    pub fn computation_searches(
+        &self,
+    ) -> impl Iterator<
+        Item = (
+            &crate::provenance::FactKey,
+            &BTreeSet<crate::derived::StructuralSearch>,
+        ),
+    > {
+        self.searches.iter()
+    }
+    pub fn computation_failures(
+        &self,
+    ) -> impl Iterator<
+        Item = (
+            &(ElementId, PropertyId),
+            &crate::derived::ComputationFailure,
+        ),
+    > {
+        self.statuses.iter()
+    }
+    /// Canonical association facts, deterministically ordered by occurrence identity.
+    pub fn association_occurrences(&self) -> impl Iterator<Item = &AssociationOccurrence> {
+        self.links.values()
+    }
+    pub fn association_occurrence(
+        &self,
+        id: AssociationOccurrenceId,
+    ) -> Option<&AssociationOccurrence> {
+        self.links.get(&id)
+    }
+    /// Incidence index semantics: includes either endpoint and preserves link identity.
+    pub fn incident_associations(
+        &self,
+        element: ElementId,
+    ) -> impl Iterator<Item = &AssociationOccurrence> {
+        self.indexes
+            .incidence
+            .get(&element)
+            .into_iter()
+            .flatten()
+            .map(|id| &self.links[id])
+    }
+    /// Occurrences classified under this association or its descendants. End identities
+    /// remain those of the actual association; no implicit end alignment is invented.
+    pub fn association_instances(
+        &self,
+        association: AssociationId,
+        include_descendants: bool,
+    ) -> Result<impl Iterator<Item = &AssociationOccurrence>, MetamodelError> {
+        self.registry.association(association)?;
+        Ok(self.links.values().filter(move |link| {
+            link.association == association
+                || include_descendants
+                    && self
+                        .registry
+                        .association_ancestry(link.association)
+                        .expect("integrity")
+                        .contains(&association)
+        }))
     }
     /// Immutable descriptors used to validate this view.
     pub fn registry(&self) -> &MetamodelRegistry {
@@ -244,6 +438,7 @@ struct SnapshotData {
     revision: RevisionId,
     model: ModelView,
     used_ids: BTreeSet<ElementId>,
+    used_links: BTreeSet<AssociationOccurrenceId>,
 }
 
 /// An immutable declared revision. Cloning is cheap and preserves exact base identity.
@@ -263,8 +458,13 @@ impl Snapshot {
                     registry,
                     records: BTreeMap::new(),
                     indexes: Indexes::default(),
+                    links: BTreeMap::new(),
+                    derived_navigation: BTreeMap::new(),
+                    statuses: BTreeMap::new(),
+                    searches: BTreeMap::new(),
                 },
                 used_ids: BTreeSet::new(),
+                used_links: BTreeSet::new(),
             }),
         }
     }
@@ -297,8 +497,87 @@ impl Snapshot {
         }
         let mut records = self.model().records.clone();
         let mut used_ids = self.inner.used_ids.clone();
+        let mut links = self.model().links.clone();
+        let mut used_links = self.inner.used_links.clone();
         for change in &changes.changes {
             match change {
+                Change::MoveInverse {
+                    element,
+                    inverse,
+                    owner,
+                    origin,
+                } => {
+                    let registry = &self.model().registry;
+                    let storage = registry
+                        .inverse_storage(*inverse)?
+                        .ok_or(ModelError::UnsupportedAssociationStorage(*inverse))?;
+                    let record = records
+                        .get(element)
+                        .ok_or(ModelError::UnknownElement(*element))?;
+                    if !registry.is_legal(record.metaclass(), *inverse)? {
+                        return Err(ModelError::IllegalProperty {
+                            element: *element,
+                            class: record.metaclass(),
+                            property: *inverse,
+                        });
+                    }
+                    for record in records.values_mut() {
+                        if let Some(slot) = Arc::make_mut(record).slots.get_mut(&storage)
+                            && let SlotValue::Ordered(values) = &mut slot.value
+                            && values.contains(&Value::Reference(*element))
+                        {
+                            values.retain(|v| *v != Value::Reference(*element));
+                            slot.origin = Origin::Declared(origin.clone());
+                        }
+                    }
+                    if let Some((owner, position)) = owner {
+                        let record = records
+                            .get_mut(owner)
+                            .ok_or(ModelError::UnknownElement(*owner))?;
+                        let slot =
+                            Arc::make_mut(record)
+                                .slots
+                                .entry(storage)
+                                .or_insert_with(|| Slot {
+                                    value: SlotValue::Ordered(vec![]),
+                                    origin: Origin::Declared(origin.clone()),
+                                });
+                        let SlotValue::Ordered(values) = &mut slot.value else {
+                            return Err(ModelError::UnsupportedAssociationStorage(storage));
+                        };
+                        if *position > values.len() {
+                            return Err(ModelError::InvalidAssociationPosition {
+                                property: storage,
+                                position: *position,
+                            });
+                        }
+                        values.insert(*position, Value::Reference(*element));
+                        slot.origin = Origin::Declared(origin.clone());
+                    }
+                }
+                Change::Link(link) => {
+                    if !used_links.insert(link.id) {
+                        return Err(ModelError::InvalidAssociationOccurrence(link.id));
+                    }
+                    links.insert(link.id, link.clone());
+                }
+                Change::Unlink(id) => {
+                    if links.remove(id).is_none() {
+                        return Err(ModelError::InvalidAssociationOccurrence(*id));
+                    }
+                }
+                Change::Reorder {
+                    id,
+                    positions,
+                    origin,
+                } => {
+                    let link = links
+                        .get_mut(id)
+                        .ok_or(ModelError::InvalidAssociationOccurrence(*id))?;
+                    link.positions = positions.clone();
+                    link.origin = origin.clone();
+                }
+
                 Change::Create {
                     id,
                     metaclass,
@@ -378,12 +657,18 @@ impl Snapshot {
                 }
             }
         }
-        let model = ModelView::build(self.model().registry.clone(), records)?;
+        let model = ModelView::build(
+            self.model().registry.clone(),
+            records,
+            links,
+            BTreeMap::new(),
+        )?;
         Ok(Self {
             inner: Arc::new(SnapshotData {
                 revision: changes.revision,
                 model,
                 used_ids,
+                used_links,
             }),
         })
     }
@@ -394,6 +679,19 @@ impl Snapshot {
 
 #[derive(Debug)]
 enum Change {
+    MoveInverse {
+        element: ElementId,
+        inverse: PropertyId,
+        owner: Option<(ElementId, usize)>,
+        origin: DeclaredOrigin,
+    },
+    Link(AssociationOccurrence),
+    Unlink(AssociationOccurrenceId),
+    Reorder {
+        id: AssociationOccurrenceId,
+        positions: BTreeMap<PropertyId, usize>,
+        origin: DeclaredOrigin,
+    },
     SetOrigin {
         id: ElementId,
         origin: DeclaredOrigin,
@@ -427,6 +725,65 @@ pub struct ChangeSet {
     changes: Vec<Change>,
 }
 impl ChangeSet {
+    /// Edit a supported scalar inverse by modifying its sole ordered canonical slot.
+    /// The caller supplies insertion order explicitly. No inverse fact is stored.
+    pub fn move_inverse(
+        &mut self,
+        element: ElementId,
+        inverse: PropertyId,
+        owner: Option<(ElementId, usize)>,
+        origin: DeclaredOrigin,
+    ) -> &mut Self {
+        self.revision = RevisionId::new();
+        self.changes.push(Change::MoveInverse {
+            element,
+            inverse,
+            owner,
+            origin,
+        });
+        self
+    }
+    /// Insert one fact with both endpoint values. Use this API only for associations
+    /// classified for occurrence storage; slot-backed associations reject it.
+    pub fn link(
+        &mut self,
+        id: AssociationOccurrenceId,
+        association: AssociationId,
+        ends: BTreeMap<PropertyId, ElementId>,
+        positions: BTreeMap<PropertyId, usize>,
+        origin: DeclaredOrigin,
+    ) -> &mut Self {
+        self.revision = RevisionId::new();
+        self.changes.push(Change::Link(AssociationOccurrence {
+            id,
+            association,
+            ends,
+            positions,
+            origin,
+        }));
+        self
+    }
+    /// Remove explicitly; deleting an endpoint never silently cascades.
+    pub fn unlink(&mut self, id: AssociationOccurrenceId) -> &mut Self {
+        self.revision = RevisionId::new();
+        self.changes.push(Change::Unlink(id));
+        self
+    }
+    /// Change per-end ordering atomically alongside all other occurrence edits.
+    pub fn reorder_link(
+        &mut self,
+        id: AssociationOccurrenceId,
+        positions: BTreeMap<PropertyId, usize>,
+        origin: DeclaredOrigin,
+    ) -> &mut Self {
+        self.revision = RevisionId::new();
+        self.changes.push(Change::Reorder {
+            id,
+            positions,
+            origin,
+        });
+        self
+    }
     /// Update evidence for an existing declaration without changing its identity.
     /// Older snapshots keep their original evidence.
     pub fn set_origin(&mut self, id: ElementId, origin: DeclaredOrigin) -> &mut Self {
@@ -492,6 +849,13 @@ impl ChangeSet {
 /// Structural validation failure, preserving semantic identifiers and value shape.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum ModelError {
+    #[error("invalid insertion position {position} for association property {property}")]
+    InvalidAssociationPosition {
+        property: PropertyId,
+        position: usize,
+    },
+    #[error("invalid, unsupported, unknown or reused association occurrence {0}")]
+    InvalidAssociationOccurrence(AssociationOccurrenceId),
     #[error("association inverse {element}/{property} has more than one source")]
     InverseMultiplicity {
         element: ElementId,
@@ -579,6 +943,7 @@ pub enum ModelError {
 fn validate(
     registry: &MetamodelRegistry,
     records: &BTreeMap<ElementId, Arc<ElementRecord>>,
+    projected: &crate::association::Navigation,
 ) -> Result<(), ModelError> {
     let mut containers = BTreeMap::new();
     let mut containment: BTreeMap<ElementId, BTreeSet<ElementId>> = BTreeMap::new();
@@ -597,77 +962,26 @@ fn validate(
                     property,
                 });
             }
-            let descriptor = registry.property(property)?;
             // Refuse independently writable inverse ends and inverse ordering/
             // bounds. Also guards implied elements against bypassing write policy.
             if !registry.supports_slot_storage(property)? {
                 return Err(ModelError::UnsupportedAssociationStorage(property));
             }
-            let expected = SlotShape::required(descriptor);
-            let actual = SlotShape::actual(&slot.value);
-            if expected != actual {
-                return Err(ModelError::Shape {
-                    element: record.id,
-                    property,
-                    expected,
-                    actual,
-                });
-            }
-            let mut unique = BTreeSet::new();
-            for value in slot.value.values() {
-                if descriptor.unique && !unique.insert(value) {
-                    return Err(ModelError::DuplicateValue {
-                        element: record.id,
-                        property,
-                    });
-                }
-                match (descriptor.value_kind, value) {
-                    (ValueKind::Boolean, Value::Boolean(_))
-                    | (ValueKind::Integer, Value::Integer(_))
-                    | (ValueKind::String, Value::String(_)) => {}
-                    (ValueKind::Enumeration(domain), Value::Enumeration(literal))
-                        if registry.enumeration(domain)?.literals.contains_key(literal) => {}
-                    (ValueKind::Reference(expected), Value::Reference(target)) => {
-                        let target_record =
-                            records.get(target).ok_or(ModelError::DanglingReference {
-                                element: record.id,
-                                property,
-                                target: *target,
-                            })?;
-                        if !registry.is_subtype(target_record.metaclass, expected)? {
-                            return Err(ModelError::ReferenceType {
-                                element: record.id,
-                                property,
-                                target: *target,
-                                expected,
-                            });
-                        }
-                        if descriptor.composite {
-                            let owner = (record.id, property);
-                            if let Some(first) = containers.insert(*target, owner)
-                                && first != owner
-                            {
-                                return Err(ModelError::MultipleContainers {
-                                    target: *target,
-                                    first,
-                                    second: owner,
-                                });
-                            }
-                            containment.entry(record.id).or_default().insert(*target);
-                        }
-                    }
-                    _ => {
-                        return Err(ModelError::ValueKind {
-                            element: record.id,
-                            property,
-                            expected: descriptor.value_kind,
-                        });
-                    }
-                }
-            }
+            validate_slot(
+                registry,
+                records,
+                record,
+                property,
+                slot,
+                &mut containers,
+                &mut containment,
+            )?;
         }
         for property in registry.effective_properties(record.metaclass)? {
-            let slot = record.slots.get(&property.id);
+            let slot = record
+                .slots
+                .get(&property.id)
+                .or_else(|| projected.get(&(record.id, property.id)));
             // Derived slots need not have been computed. If present, validate fully.
             if property.derived && slot.is_none() {
                 continue;
@@ -683,9 +997,127 @@ fn validate(
             }
         }
     }
+    for (&(element, property), slot) in projected {
+        let record = records
+            .get(&element)
+            .ok_or(ModelError::UnknownElement(element))?;
+        if !registry.is_applicable_navigation(record.metaclass(), property)? {
+            return Err(ModelError::IllegalProperty {
+                element,
+                class: record.metaclass(),
+                property,
+            });
+        }
+        validate_slot(
+            registry,
+            records,
+            record,
+            property,
+            slot,
+            &mut containers,
+            &mut containment,
+        )?;
+    }
     let cycle = cyclic_nodes(&containment);
     if !cycle.is_empty() {
         return Err(ModelError::ContainmentCycle(cycle));
+    }
+    Ok(())
+}
+
+fn validate_slot(
+    registry: &MetamodelRegistry,
+    records: &BTreeMap<ElementId, Arc<ElementRecord>>,
+    record: &ElementRecord,
+    property: PropertyId,
+    slot: &Slot,
+    containers: &mut BTreeMap<ElementId, (ElementId, PropertyId)>,
+    containment: &mut BTreeMap<ElementId, BTreeSet<ElementId>>,
+) -> Result<(), ModelError> {
+    let descriptor = registry.property(property)?;
+    let expected = SlotShape::required(descriptor);
+    let actual = SlotShape::actual(&slot.value);
+    if expected != actual {
+        return Err(ModelError::Shape {
+            element: record.id,
+            property,
+            expected,
+            actual,
+        });
+    }
+    let mut unique = BTreeSet::new();
+    for value in slot.value.values() {
+        if descriptor.unique && !unique.insert(value) {
+            return Err(ModelError::DuplicateValue {
+                element: record.id,
+                property,
+            });
+        }
+        match (registry.storage_kind(descriptor.value_kind)?, value) {
+            (ValueKind::Boolean, Value::Boolean(_))
+            | (ValueKind::Integer, Value::Integer(_))
+            | (ValueKind::Real, Value::Real(_))
+            | (ValueKind::String, Value::String(_)) => {}
+            (ValueKind::Enumeration(domain), Value::Enumeration(literal))
+                if registry.enumeration(domain)?.literals.contains_key(literal) => {}
+            (ValueKind::Reference(expected), Value::Reference(target)) => {
+                let target_record = records.get(target).ok_or(ModelError::DanglingReference {
+                    element: record.id,
+                    property,
+                    target: *target,
+                })?;
+                if !registry.is_subtype(target_record.metaclass, expected)? {
+                    return Err(ModelError::ReferenceType {
+                        element: record.id,
+                        property,
+                        target: *target,
+                        expected,
+                    });
+                }
+                for opposite in &descriptor.opposite_ends {
+                    if let ValueKind::Reference(context) = registry.property(*opposite)?.value_kind
+                        && !registry.is_subtype(record.metaclass, context)?
+                    {
+                        return Err(ModelError::ReferenceType {
+                            element: *target,
+                            property: *opposite,
+                            target: record.id,
+                            expected: context,
+                        });
+                    }
+                }
+                if descriptor.composite {
+                    let owner = (record.id, property);
+                    if let Some(first) = containers.insert(*target, owner)
+                        && first != owner
+                    {
+                        return Err(ModelError::MultipleContainers {
+                            target: *target,
+                            first,
+                            second: owner,
+                        });
+                    }
+                    containment.entry(record.id).or_default().insert(*target);
+                }
+            }
+            _ => {
+                return Err(ModelError::ValueKind {
+                    element: record.id,
+                    property,
+                    expected: descriptor.value_kind,
+                });
+            }
+        }
+    }
+
+    let actual = slot.value.values().count();
+    if !descriptor.multiplicity.accepts(actual) {
+        return Err(ModelError::Multiplicity {
+            element: record.id,
+            property,
+            required: descriptor.multiplicity,
+            actual,
+        });
     }
     Ok(())
 }

@@ -1,0 +1,34 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-metamodel-gen --no-fail-fast",
+    "started": "2026-09-18T19:36:13.680Z",
+    "durationMs": 64670,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rust-foundation.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T19:37:18.351Z",
+    "durationMs": 1775,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T19:37:20.126Z",
+    "durationMs": 3712,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  },
+  {
+    "command": "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check",
+    "started": "2026-09-18T19:37:23.839Z",
+    "durationMs": 643,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent.txt"
+  }
+]

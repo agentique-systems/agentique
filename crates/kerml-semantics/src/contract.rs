@@ -16,6 +16,8 @@ pub enum Completeness {
 /// Set reads remain dependencies even when empty. Match pre- AND post-change state.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SearchDependency {
+    /// Generic overlay computation searches, including empty descriptor/navigation searches.
+    Kernel(agq_kernel::derived::StructuralSearch),
     Element(ElementId),
     PropertySet {
         element: ElementId,

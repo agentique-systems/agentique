@@ -1,6 +1,6 @@
 {
   "format": "agentique-baseline-anomalies/1",
-  "scope": "Reviewed subsetted_property_names violations only; neither a general waiver nor a UML conformance certificate.",
+  "scope": "Exact reviewed authoring anomalies; retain error severity and raw metadata. Structural representation and runtime interpretation are separate (ADR 0011).",
   "entries": [
     {
       "specification": "KerML",
@@ -12,7 +12,8 @@
       "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
       "disposition": "reviewed-upstream-anomaly-preserve",
       "evidence": "docs/language-core-foundation-review.md",
-      "descriptor_id": "e0163b2b-16c8-56bd-bec9-12006912c80b"
+      "descriptor_id": "e0163b2b-16c8-56bd-bec9-12006912c80b",
+      "target_descriptor_id": "a17cf14a-03d2-5709-a14a-6081beeab052"
     },
     {
       "specification": "KerML",
@@ -24,7 +25,8 @@
       "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
       "disposition": "reviewed-upstream-anomaly-preserve",
       "evidence": "docs/language-core-foundation-review.md",
-      "descriptor_id": "7058090a-4533-5e37-9d92-874215b70b98"
+      "descriptor_id": "7058090a-4533-5e37-9d92-874215b70b98",
+      "target_descriptor_id": "a17cf14a-03d2-5709-a14a-6081beeab052"
     },
     {
       "specification": "KerML",
@@ -36,7 +38,8 @@
       "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
       "disposition": "reviewed-upstream-anomaly-preserve",
       "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
-      "descriptor_id": "c83b439d-9a37-5c2a-853f-036cbbaf5345"
+      "descriptor_id": "c83b439d-9a37-5c2a-853f-036cbbaf5345",
+      "target_descriptor_id": "c83b439d-9a37-5c2a-853f-036cbbaf5345"
     },
     {
       "specification": "SysML",
@@ -48,7 +51,8 @@
       "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
       "disposition": "reviewed-upstream-anomaly-preserve",
       "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
-      "descriptor_id": "7cff07a4-93d3-53ae-99fa-1ff751324480"
+      "descriptor_id": "7cff07a4-93d3-53ae-99fa-1ff751324480",
+      "target_descriptor_id": "7cff07a4-93d3-53ae-99fa-1ff751324480"
     },
     {
       "specification": "KerML",
@@ -60,7 +64,21 @@
       "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
       "disposition": "reviewed-upstream-anomaly-preserve",
       "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
-      "descriptor_id": "232112d8-8b75-513e-a518-01d9071d1bed"
+      "descriptor_id": "232112d8-8b75-513e-a518-01d9071d1bed",
+      "target_descriptor_id": "33c4ba65-8f39-55a9-ab56-bb04ec8f7bf4"
+    },
+    {
+      "specification": "SysML",
+      "version": "2.0",
+      "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+      "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+      "external_id": "Systems-Flows-A_flowDefinition_definedFlow-definedFlow",
+      "target_external_id": "Systems-DefinitionAndUsage-Definition-ownedAction",
+      "descriptor_id": "2abb2284-8e25-51ac-b486-1792cc60e1b1",
+      "target_descriptor_id": "2e4efe58-2d09-5275-991e-104649d59bf3",
+      "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-redefined_property_inherited",
+      "disposition": "reviewed-upstream-anomaly-preserve",
+      "evidence": "docs/adr/0011-structural-registration-vs-metamodel-conformance.md"
     }
   ]
 }

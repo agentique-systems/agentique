@@ -33,14 +33,17 @@
 //! ```
 #![forbid(unsafe_code)]
 
+pub mod association;
 pub mod derived;
 mod ids;
 pub mod metamodel;
 mod model;
+pub mod numeric;
 pub mod provenance;
 pub mod value;
 
 pub use ids::*;
 pub use model::{
-    ChangeSet, ElementRecord, ModelError, ModelView, ReferenceOccurrence, Slot, SlotShape, Snapshot,
+    ChangeSet, ElementRecord, ModelError, ModelView, ReferenceCarrier, ReferenceOccurrence, Slot,
+    SlotShape, Snapshot,
 };

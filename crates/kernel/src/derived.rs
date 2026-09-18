@@ -61,6 +61,8 @@ pub struct DerivationBuilder {
     declared: Snapshot,
     elements: Vec<ElementInput>,
     properties: Vec<(ElementId, PropertyId, SlotValue, Explanation)>,
+    failures: BTreeMap<(ElementId, PropertyId), ComputationFailure>,
+    searches: BTreeMap<FactKey, BTreeSet<StructuralSearch>>,
 }
 impl DerivationBuilder {
     /// Begin a new overlay pinned to this snapshot; no earlier results are reused.
@@ -69,6 +71,8 @@ impl DerivationBuilder {
             declared,
             elements: Vec::new(),
             properties: Vec::new(),
+            failures: BTreeMap::new(),
+            searches: BTreeMap::new(),
         }
     }
     /// Add an implied element. Its ID is determined by `key`. The subject becomes
@@ -102,6 +106,29 @@ impl DerivationBuilder {
         self.properties
             .push((element, property, value, explanation));
         self
+    }
+    /// Supply search evidence for a computed or unsuccessful result. Absence in a
+    /// search is evidence too; results remain bound to the full immutable revision.
+    pub fn searches(&mut self, fact: FactKey, searches: BTreeSet<StructuralSearch>) -> &mut Self {
+        self.searches.entry(fact).or_default().extend(searches);
+        self
+    }
+    /// Record an incomplete or invalid derived result with positive and search evidence.
+    /// Duplicate submissions fail, including a value and failure for the same property.
+    pub fn failure(
+        &mut self,
+        element: ElementId,
+        property: PropertyId,
+        failure: ComputationFailure,
+    ) -> Result<&mut Self, DerivationError> {
+        if self.failures.contains_key(&(element, property)) {
+            return Err(DerivationError::DuplicateFact(FactKey::Property {
+                element,
+                property,
+            }));
+        }
+        self.failures.insert((element, property), failure);
+        Ok(self)
     }
     /// Validate structural constraints, dependencies and acyclic explanations.
     pub fn build(self) -> Result<DerivedOverlay, DerivationError> {
@@ -160,6 +187,7 @@ impl DerivationBuilder {
             }
             records.insert(id, Arc::new(record));
         }
+        let mut derived_navigation = BTreeMap::new();
         for (element, property, mut value, mut explanation) in self.properties {
             let descriptor = registry.property(property).map_err(ModelError::from)?;
             if !descriptor.derived {
@@ -169,7 +197,7 @@ impl DerivationBuilder {
                 .get_mut(&element)
                 .ok_or(ModelError::UnknownElement(element))?;
             let key = FactKey::Property { element, property };
-            if record.slots.contains_key(&property) {
+            if record.slots.contains_key(&property) || explanations.contains_key(&key) {
                 return Err(DerivationError::DuplicateFact(key));
             }
             let subject = FactKey::Element(element);
@@ -181,20 +209,91 @@ impl DerivationBuilder {
                     Dependency::Derived(subject)
                 });
             value.normalize();
-            Arc::make_mut(record).slots.insert(
-                property,
-                Slot {
-                    value,
-                    origin: Origin::Derived(explanation.clone()),
-                },
-            );
+            let slot = Slot {
+                value,
+                origin: Origin::Derived(explanation.clone()),
+            };
+            match descriptor.owner {
+                crate::metamodel::PropertyOwner::Class(_) => {
+                    Arc::make_mut(record).slots.insert(property, slot);
+                }
+                crate::metamodel::PropertyOwner::Association(_) => {
+                    derived_navigation.insert((element, property), slot);
+                }
+            }
             explanations.insert(key, explanation);
         }
-        let model = ModelView::build(registry, records)?;
+        let mut model = ModelView::build(
+            registry,
+            records,
+            self.declared.model().links.clone(),
+            derived_navigation,
+        )?;
+        for ((element, property), mut failure) in self.failures {
+            let record = model
+                .element(element)
+                .ok_or(ModelError::UnknownElement(element))?;
+            if !model
+                .registry
+                .is_applicable_navigation(record.metaclass(), property)
+                .map_err(ModelError::from)?
+            {
+                return Err(ModelError::IllegalProperty {
+                    element,
+                    class: record.metaclass(),
+                    property,
+                }
+                .into());
+            }
+            if !model
+                .registry
+                .property(property)
+                .map_err(ModelError::from)?
+                .derived
+            {
+                return Err(DerivationError::NotDerivedProperty { element, property });
+            }
+            let key = FactKey::Property { element, property };
+            if record.slot(property).is_some() || explanations.contains_key(&key) {
+                return Err(DerivationError::DuplicateFact(key));
+            }
+            let mut evidence = failure.explanation().clone();
+            evidence
+                .dependencies
+                .insert(if self.declared.model().element(element).is_some() {
+                    Dependency::Declared(FactKey::Element(element))
+                } else {
+                    Dependency::Derived(FactKey::Element(element))
+                });
+            match &mut failure {
+                ComputationFailure::Incomplete {
+                    explanation,
+                    searches,
+                    ..
+                }
+                | ComputationFailure::Invalid {
+                    explanation,
+                    searches,
+                    ..
+                } => {
+                    *explanation = evidence.clone();
+                    model
+                        .searches
+                        .entry(key)
+                        .or_default()
+                        .extend(searches.iter().cloned());
+                }
+            }
+            explanations.insert(key, evidence);
+            model.statuses.insert((element, property), failure);
+        }
         let mut edges: BTreeMap<FactKey, BTreeSet<FactKey>> = BTreeMap::new();
         for (&fact, explanation) in &explanations {
             for &dependency in &explanation.dependencies {
                 let exists = match dependency {
+                    Dependency::Declared(FactKey::AssociationOccurrence(id)) => {
+                        self.declared.model().association_occurrence(id).is_some()
+                    }
                     Dependency::Declared(FactKey::Element(id)) => {
                         self.declared.model().element(id).is_some()
                     }
@@ -205,6 +304,12 @@ impl DerivationBuilder {
                         .and_then(|e| e.slot(property))
                         .is_some(),
                     Dependency::Derived(key) => {
+                        if let FactKey::Property { element, property } = key
+                            && model.statuses.contains_key(&(element, property))
+                            && !matches!(fact, FactKey::Property { element,property } if model.statuses.contains_key(&(element,property)))
+                        {
+                            return Err(DerivationError::IncompleteDependency(key));
+                        }
                         edges.entry(fact).or_default().insert(key);
                         explanations.contains_key(&key)
                     }
@@ -213,6 +318,12 @@ impl DerivationBuilder {
                     return Err(DerivationError::MissingDependency { fact, dependency });
                 }
             }
+        }
+        for (fact, searches) in self.searches {
+            if !explanations.contains_key(&fact) {
+                return Err(DerivationError::MissingSearchSubject(fact));
+            }
+            model.searches.entry(fact).or_default().extend(searches);
         }
         let cycle = cyclic_nodes(&edges);
         if !cycle.is_empty() {
@@ -229,6 +340,10 @@ impl DerivationBuilder {
 /// Invalid inference results, distinct from the truth or validity of a semantic rule.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum DerivationError {
+    #[error("search evidence has no computation subject {0:?}")]
+    MissingSearchSubject(FactKey),
+    #[error("computed fact depends on incomplete or invalid result {0:?}")]
+    IncompleteDependency(FactKey),
     #[error(transparent)]
     Model(#[from] ModelError),
     #[error("derived identity {0} collides with an existing or retired identity")]
@@ -247,4 +362,57 @@ pub enum DerivationError {
     },
     #[error("cyclic derivation dependencies involving {0:?}")]
     DependencyCycle(Vec<FactKey>),
+}
+
+/// A typed reason why a structural computation is incomplete.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum IncompleteReason {
+    MissingInput,
+    UnsupportedRuntimeSemantics,
+    IncompleteDependency,
+}
+/// Search dependencies include empty searches. They are evaluated against the exact
+/// registry and immutable model revision, not only positive fact dependencies.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum StructuralSearch {
+    DescriptorGraph,
+    Property {
+        element: ElementId,
+        property: PropertyId,
+    },
+    Incoming(ElementId),
+    Association {
+        element: ElementId,
+        association: crate::AssociationId,
+    },
+}
+/// Explicit unsuccessful computation; never an empty value.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ComputationFailure {
+    Incomplete {
+        reason: IncompleteReason,
+        explanation: Explanation,
+        searches: BTreeSet<StructuralSearch>,
+    },
+    Invalid {
+        diagnostic: String,
+        explanation: Explanation,
+        searches: BTreeSet<StructuralSearch>,
+    },
+}
+impl ComputationFailure {
+    pub fn explanation(&self) -> &Explanation {
+        match self {
+            Self::Incomplete { explanation, .. } | Self::Invalid { explanation, .. } => explanation,
+        }
+    }
+}
+/// Borrowed structural state. Presence of an empty collection is `Computed`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PropertyState<'m> {
+    Absent,
+    NotComputed,
+    Computed(&'m Slot),
+    Incomplete(&'m ComputationFailure),
+    Invalid(&'m ComputationFailure),
 }

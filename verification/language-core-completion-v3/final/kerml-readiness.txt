@@ -1,0 +1,18 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running `target\debug\metamodel-gen.exe --baseline kerml-1.0 --require-runtime --check`
+Full audit finding ["E"]: "subsetted-property-name" Core-Features-A_ownedRedefinition_owningFeature-owningFeature
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Associations-A_targetType_targetAssociation-targetAssociation
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity
+Conformance "Error" "SubsettedPropertyNames" "Core-Features-A_ownedRedefinition_owningFeature-owningFeature" ("ReviewedBaselineAnomaly { evidence: \"docs/adr/0008-property-subsetting-cycle-semantics.md\" }")
+Conformance "Error" "SubsettedPropertyNames" "Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity" ("ReviewedBaselineAnomaly { evidence: \"docs/language-core-foundation-review.md\" }")
+Conformance "Error" "SubsettedPropertyNames" "Kernel-Associations-A_targetType_targetAssociation-targetAssociation" ("ReviewedBaselineAnomaly { evidence: \"docs/adr/0008-property-subsetting-cycle-semantics.md\" }")
+Conformance "Error" "SubsettedPropertyNames" "Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity" ("ReviewedBaselineAnomaly { evidence: \"docs/language-core-foundation-review.md\" }")
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/metamodel.json (3038685 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/full-audit.json (432590 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/full.golden.json (2320099 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/root_core.rs (366660 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/root_core_views.rs (379140 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/root-core.golden.json (1111835 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/complete.rs (625449 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/typed_views.rs (1564657 bytes).

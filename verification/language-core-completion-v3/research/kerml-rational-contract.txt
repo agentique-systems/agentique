@@ -1,0 +1,92 @@
+AnInvariantis a kind ofBooleanExpression, so all semantic constraints forBooleanExpressionsalso
+apply toInvariants. In addition, thecheckInvariantSpecializationconstraint requires thatInvariants
+specializeeithertheBooleanExpressionPerformances::trueEvaluations(see9.2.6.2.17) or, if the
+Invariantis negated, theBooleanExpressionPerformances::falseEvaluations(see9.2.6.2.6), both of
+which are specializations ofPerformances::booleanEvaluations. TheBooleanExpression
+trueEvaluationshas itsresultbound totrue, while theBooleanExpressionfalseEvaluationshas its
+resultbound tofalse.
+inv true i1 subsets Performances::trueEvaluations {
+p(3)
+}
+inv false i2 subsets Performances::falseEvaluations {
+p(-3)
+}
+8.4.4.9 Expressions Semantics
+Abstract syntax reference:8.3.4.8
+8.4.4.9.1 Null Expressions
+ThecheckNullExpressionSpecializationconstraint requires thatNullExpressionsspecialize the
+Expression Performances::nullEvaluations(see9.2.6.2.13), which is typed by theFunction
+Performances::NullEvaluation(see9.2.6.2.12).TheresultparameterofNullEvaluationhas
+multiplicity0..0, which means that aNullExpressionalways produces an empty result. The general semantic
+constraints forExpressions(see 8.4.4.8) also apply toNullExpressions.
+8.4.4.9.2 Literal Expressions
+ThecheckLiteralExpressionSpecializationconstraint requires thatLiteralExpressionsspecialize the
+Expression Performances::literalEvaluations(see9.2.6.2.9), which is typed by theFunction
+Performances::LiteralEvaluation(see9.2.6.2.8).TheresultparameterofLiteralEvaluationhas
+multiplicity1..1and is typed byBase::DataValue(see9.2.2.2.2). This means that aLiteralExpression
+always produces a singleDataValueas its result. What value is actually produced depends on the kind of
+LiteralExpression. The general semantic constraints forExpressions(see 8.4.4.8) also apply to
+LiteralExpressions.
+With the exception ofLiteralInfinity, each kind ofLiteralExpressionhas avalueproperty typed by a
+UML primitive type [UML, MOF]. The result produced by such aLiteralExpressionis given by thisvalue.
+LiteralInfinitydoes not have avalueproperty, because its result is always "infinity" (written*the KerML
+textual notation; see8.2.5.8.4), which is a number from theDataTypeScalarValues::Positivethat is greater
+than all the integers.
+Note. In the abstract syntax, thevalueproperty ofLiteralRationalhas typeReal(see8.3.4.8.13), because
+that is the available UML/MOF primitive type. However, only the rational-number subset of the real numbers can be
+represented using a finite literal. So the result of aLiteralRationalis actually always classified in the KerML
+DataTypeRational.
+8.4.4.9.3 Feature Reference Expressions
+There is no specific specialization requirement for aFeatureReferenceExpression. However, the general
+checkExpressionSpecializationconstraint (see8.4.4.8) requires that aFeatureReferenceExpression
+specializePerformances::Evaluation(see9.2.6.2.4). All other general semantic constraints forExpressions
+(see 8.4.4.8) also apply toFeatureReferenceExpressions.
+266 Kernel Modeling Language v1.0
+AFeatureReferenceExpressionis parsed with a non-owningMembershiprelationship to itsreferent
+Feature(see8.2.5.8.3). ThecheckFeatureReferenceExpressionBindingConnectorconstraint then
+requires that there be aBindingConnectorbetween this memberFeatureand the result parameter of the
+FeatureReferenceExpression. ThecheckFeatureReferenceExpressionResultSpecialization
+constraint further requires that the result parameter also subset theFeature. While this subsetting is technically
+implied by the semantics of theBindingConnector(see8.4.4.6), including theSubsettingrelationship allows
+for simpler static type checking of the result of theFeatureReferenceExpression.
+Given the above, aFeatureReferenceExpressionwhosereferentis aFeaturefis semantically equivalent
+to theExpression
+expr subsets Performances::evaluations {
+alias for f;
+return result
+redefines Performances::Evaluation::result
+subsets f;
+member binding result = f;
+}
+A bodyExpression(see8.2.5.8.3) is parsed as aFeatureReferenceExpressionthat contains the
+Expressionbody as itsownedreferent. That is, a bodyExpressionof the form
+{ body }
+is semantically equivalent to
+expr subsets Performances::evaluations {
+expr e subsets Performances::evaluation { body }
+return result
+redefines Performances::Evaluation::result
+subsets e;
+binding result = e;
+}
+This means that theresultof theExpressionis theEvaluationof the bodyExpressionitself, rather than the
+result of actually evaluating the body. If and when thisEvaluationactually occurs can then be further constrained,
+e.g., within an invokedFunctionfor which the bodyExpressionis an argument (as done, for example, by
+ControlFunctions– see8.4.4.9.6).
+8.4.4.9.4 Constructor Expressions
+AConstructorExpressionof the formnew T(e1, e2, ...), whereTis the name of aTypeande1,e2, ...
+areargumentExpressions, is parsed with aMembershiptoT(itsinstantiatedType) and aresult
+parameterhaving nestedownedFeaturesof theresultthat haveFeatureValuerelationships to the
+arguments(see8.2.5.8.3). ThecheckConstructorExpressionSpecializationconstraint requires that
+ConstructorExpressionsspecialize theExpressionPerformances::constuctorEvaluations(see
+9.2.6.2.3), which subsetsPerformances::evaluations(see9.2.6.2.5), redefining itsresultparameterto
+have multiplicity1..1. This means that aConstructorExpressionalways produces a single value as its result.
+In addition, thecheckConstructorExpressionResultSpecializationconstraint requires that theresultof
+aConstructorExpressionspecialize theinstantiatedType(via aFeatureTypingif the
+instantiatedTypeis aClassifieror aSubsettingif it is aFeature), and the
+checkConstructorExpressionResultFeatureRedefinitionconstraint requires that the nested
+ownedFeaturesof theresulteach redefine a publicfeatureof theinstantiatedType. Thus, a
+ConstructorExpressionof this form is semantically equivalent to
+expr subsets Performances::constructorEvaluations {
+alias of T; // If T is a feature chain, this is an OwningMembership.
+Kernel Modeling Language v1.0 267

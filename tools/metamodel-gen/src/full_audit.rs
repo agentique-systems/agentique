@@ -4,7 +4,9 @@ use crate::{
     Result, baseline_diagnostics, canonical_json, closure_audit, descriptors, ir::*,
     pipeline::Bundle,
 };
-use agq_kernel::metamodel::MetamodelRegistry;
+use agq_kernel::metamodel::{
+    DescriptorId, DiagnosticCategory, DiagnosticDisposition, DiagnosticSeverity, MetamodelRegistry,
+};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -36,19 +38,6 @@ fn ancestors(model: &Metamodel, id: &str) -> BTreeSet<String> {
     seen
 }
 
-fn contexts(model: &Metamodel, p: &Property) -> BTreeSet<String> {
-    if p.association.is_some() {
-        p.opposite_ends
-            .iter()
-            .map(|id| match &model.properties[id].type_ref {
-                TypeRef::Local(id) | TypeRef::External(id) => id.clone(),
-            })
-            .collect()
-    } else {
-        BTreeSet::from([p.owner.clone()])
-    }
-}
-
 fn finding(category: &str, code: &str, entity: &Entity, detail: Value) -> Value {
     json!({
         "category": category, "code": code, "source": entity.key.source,
@@ -56,6 +45,19 @@ fn finding(category: &str, code: &str, entity: &Entity, detail: Value) -> Value 
         "descriptor_id": entity.key.uuid().to_string(), "source_range": entity.source_range,
         "external_id": entity.key.external_id, "detail": detail,
     })
+}
+
+fn diagnostic_identity(id: DescriptorId) -> Value {
+    let (kind, id) = match id {
+        DescriptorId::Metamodel(v) => ("metamodel", v.to_string()),
+        DescriptorId::Class(v) => ("class", v.to_string()),
+        DescriptorId::Property(v) => ("property", v.to_string()),
+        DescriptorId::Association(v) => ("association", v.to_string()),
+        DescriptorId::Enumeration(v) => ("enumeration", v.to_string()),
+        DescriptorId::Literal(v) => ("literal", v.to_string()),
+        DescriptorId::Primitive(v) => ("primitive", v.to_string()),
+    };
+    json!({"kind":kind,"id":id})
 }
 
 /// Inventory all shapes and translation gaps without skipping unsupported facts.
@@ -70,6 +72,7 @@ pub fn report(bundle: &Bundle) -> Result<Value> {
     let mut primitives = BTreeMap::<String, Vec<String>>::new();
     let mut findings = Vec::new();
     let mut unions = BTreeMap::new();
+    let mut shapes = BTreeMap::<String, Value>::new();
     for (id, c) in &model.classifiers {
         *counts
             .entry(format!(
@@ -92,14 +95,14 @@ pub fn report(bundle: &Bundle) -> Result<Value> {
                     "navigable": model.classifiers[&p.owner].entity.key.kind == Kind::Class || c.navigable_owned_ends.contains(end),
                     "lower": p.lower, "upper": p.upper, "ordered": p.is_ordered,
                     "unique": p.is_unique, "derived": p.is_derived,
-                    "read_only": p.is_read_only, "opposites": p.opposite_ends})
+                    "read_only": p.is_read_only, "opposites": p.opposite_ends, "redefines": p.redefines, "subsets": p.subsets})
             }).collect::<Vec<_>>(),
             "storage_validation": "not-established-by-descriptor-inventory",
         }));
-        if c.is_abstract || !c.generalizations.is_empty() || c.member_ends.len() != 2 {
+        if c.member_ends.len() != 2 {
             findings.push(finding("D", "unsupported-association-descriptor-shape", &c.entity,
                 json!({"abstract": c.is_abstract, "generalizations": c.generalizations,
-                    "arity": c.member_ends.len(), "reason": "Current translator/registry supports concrete binary associations without inheritance."})));
+                    "arity": c.member_ends.len(), "reason": "Only binary association incidence is supported."})));
         }
     }
     for (id, p) in &model.properties {
@@ -124,7 +127,7 @@ pub fn report(bundle: &Bundle) -> Result<Value> {
                 .ok_or_else(|| format!("unresolved complete-audit domain {target}"))?;
             if !matches!(
                 primitive.entity.key.external_id.as_str(),
-                "Boolean" | "String"
+                "Boolean" | "String" | "Integer" | "Real"
             ) {
                 findings.push(finding("C", "unsupported-primitive-domain", &p.entity,
                     json!({"domain": primitive.entity, "reason": "No normative runtime representation; never map unbounded Integer to i64 or Real to f64 implicitly."})));
@@ -137,25 +140,6 @@ pub fn report(bundle: &Bundle) -> Result<Value> {
                 &p.entity,
                 json!({"read_only": p.is_read_only, "aggregation": p.aggregation}),
             ));
-        }
-        for base in &p.redefines {
-            let b = &model.properties[base];
-            let pc = contexts(model, p);
-            let bc = contexts(model, b);
-            // This probes the existing binary-context interpretation. Do not
-            // promote it to the unresolved Property-specific normative rule.
-            if !pc
-                .iter()
-                .all(|c| bc.iter().any(|a| ancestors(model, c).contains(a)))
-            {
-                findings.push(finding("F", "property-redefinition-context-authority", &p.entity,
-                    json!({"base": b.entity, "base_descriptor_id": b.entity.key.uuid().to_string(),
-                        "property_contexts": pc, "base_contexts": bc,
-                        "property_context_ancestors": pc.iter().map(|c| (c, ancestors(model, c))).collect::<BTreeMap<_,_>>(),
-                        "owner": p.owner, "base_owner": b.owner,
-                        "association": p.association, "base_association": b.association,
-                        "reason": "Context probe fails. ADR 0009 records the final-publication/resolution authority gap; no metadata is waived."})));
-            }
         }
         if p.is_derived_union {
             let direct: BTreeSet<_> = model
@@ -186,36 +170,160 @@ pub fn report(bundle: &Bundle) -> Result<Value> {
     for d in &diagnostics {
         findings.push(json!({"category": "E", "code": "subsetted-property-name", "diagnostic": d}));
     }
+    let mut runtime_errors = Vec::new();
+    let mut conformance = Vec::new();
     let (translation_error, registration_attempted, registration_error) =
         match descriptors::translate_descriptors(&input, &selected) {
             Err(e) => (Some(e), false, None),
-            Ok(set) => (
-                None,
-                true,
-                MetamodelRegistry::from_descriptors(set)
-                    .err()
-                    .map(|e| e.to_string()),
-            ),
+            Ok(set) => {
+                let classes: Vec<_> = set.classes.iter().map(|c| c.id).collect();
+                let assoc: Vec<_> = set.associations.iter().map(|c| c.id).collect();
+                let props = set.properties.clone();
+                match MetamodelRegistry::from_descriptors(set) {
+                    Err(e) => (None, true, Some(e.to_string())),
+                    Ok(registry) => {
+                        for (id, c) in &model.classifiers {
+                            if c.entity.key.kind != Kind::Association {
+                                continue;
+                            }
+                            let aid =
+                                agq_kernel::AssociationId::from_u128(c.entity.key.uuid().as_u128());
+                            let a = registry.association(aid).map_err(|e| e.to_string())?;
+                            let mut authored = false;
+                            let mut storage = Vec::new();
+                            for &end in &a.member_ends {
+                                let p = registry.property(end).map_err(|e| e.to_string())?;
+                                if !p.derived
+                                    && registry.is_navigable(end).map_err(|e| e.to_string())?
+                                {
+                                    authored = true;
+                                    storage.push(
+                                        if registry
+                                            .supports_slot_storage(end)
+                                            .map_err(|e| e.to_string())?
+                                        {
+                                            "canonical-class-slot"
+                                        } else if registry
+                                            .inverse_storage(end)
+                                            .map_err(|e| e.to_string())?
+                                            .is_some()
+                                        {
+                                            "inverse-slot-projection"
+                                        } else if registry
+                                            .supports_occurrence_storage(aid)
+                                            .map_err(|e| e.to_string())?
+                                        {
+                                            "canonical-association-occurrences"
+                                        } else {
+                                            "unsupported"
+                                        },
+                                    );
+                                }
+                            }
+                            if !authored {
+                                storage.push("descriptor-only-derived");
+                            }
+                            let mut shape = associations[id]["member_ends"].clone();
+                            for end in shape.as_array_mut().expect("ends") {
+                                let raw = end.as_object_mut().expect("end");
+                                raw.remove("id");
+                                raw.remove("owner");
+                                raw.remove("type");
+                                raw.remove("opposites");
+                                raw.remove("subsets");
+                                let redef = !raw["redefines"]
+                                    .as_array()
+                                    .expect("redefinitions")
+                                    .is_empty();
+                                raw.insert("redefines".into(), json!(redef));
+                            }
+                            let shape = json!({"ends":shape,"has_super_association":!a.direct_supertypes.is_empty(),"storage":storage});
+                            let key = crate::sha256(&canonical_json(&shape)?);
+                            shapes.entry(key.clone()).or_insert(shape);
+                            associations.get_mut(id).expect("inventory")["shape_id"] = json!(key);
+                            associations.get_mut(id).expect("inventory")["storage_validation"] =
+                                json!(storage);
+                        }
+                        for c in classes {
+                            if let Err(e) = registry.effective_properties(c) {
+                                runtime_errors.push(e.to_string());
+                            }
+                        }
+                        for a in assoc {
+                            if let Err(e) = registry.effective_association_ends(a) {
+                                runtime_errors.push(e.to_string());
+                            }
+                        }
+                        for p in props {
+                            if !p.derived
+                                && registry.is_navigable(p.id).map_err(|e| e.to_string())?
+                                && !registry
+                                    .supports_slot_storage(p.id)
+                                    .map_err(|e| e.to_string())?
+                                && registry
+                                    .inverse_storage(p.id)
+                                    .map_err(|e| e.to_string())?
+                                    .is_none()
+                                && !p.association.is_some_and(|a| {
+                                    registry.supports_occurrence_storage(a).unwrap_or(false)
+                                })
+                            {
+                                runtime_errors.push(format!(
+                                    "authored association storage not supported for {}",
+                                    p.id
+                                ));
+                            }
+                        }
+                        for d in registry.validate_conformance().diagnostics {
+                            let disposition = match &d.disposition {
+                                DiagnosticDisposition::Unreviewed => json!({"kind":"unreviewed"}),
+                                DiagnosticDisposition::ReviewedBaselineAnomaly { evidence } => {
+                                    json!({"kind":"reviewed-baseline-anomaly","evidence":evidence})
+                                }
+                            };
+                            let category = match d.category {
+                                DiagnosticCategory::Conformance => "conformance",
+                                DiagnosticCategory::UnsupportedRuntimeSemantics => {
+                                    "unsupported-runtime-semantics"
+                                }
+                            };
+                            let severity = match d.severity {
+                                DiagnosticSeverity::Error => "error",
+                                DiagnosticSeverity::Warning => "warning",
+                            };
+                            let diagnostic = json!({"rule": format!("{:?}",d.rule),"severity":severity,"category":category,
+                                "subject":diagnostic_identity(d.subject),"related_descriptors":d.related_descriptors.iter().copied().map(diagnostic_identity).collect::<Vec<_>>(),
+                                "source": d.source.as_ref().map(|v| json!({"specification": v.specification,"version":v.version,"artifact_uri":v.artifact_uri,"sha256":v.sha256,"external_id":v.external_id,"byte_range":v.byte_range})),
+                                "disposition":disposition});
+                            findings.push(json!({"category":if d.category==DiagnosticCategory::Conformance { "E" } else { "F" },
+                                "code":"metamodel-diagnostic","descriptor_id":diagnostic["subject"]["id"],
+                                "source_qualified_id":d.source.as_ref().map(|source|format!("{}#{}",source.artifact_uri,source.external_id)),"diagnostic":diagnostic}));
+                            conformance.push(diagnostic);
+                        }
+                        (None, true, None)
+                    }
+                }
+            }
         };
     let result = if translation_error.is_none()
         && registration_error.is_none()
-        && findings.iter().all(|f| {
-            f["category"] == "E"
-                && f["diagnostic"]["disposition"] == "reviewed-upstream-anomaly-preserve"
-        }) {
+        && runtime_errors.is_empty()
+        && findings.iter().all(|f| f["category"] == "E")
+    {
         "representable"
     } else {
         "blocked"
     };
     Ok(json!({
-        "format": "agentique-complete-structural-audit/1", "result": result,
+        "format": "agentique-complete-structural-audit/2", "result": result,
         "scope": "Every abstract-syntax classifier/property in the selected language and all dependency metamodels. No runtime publication or semantic-rule execution.",
         "counts": counts, "association_arities": arities, "associations": associations,
-        "primitive_property_uses": primitives, "derived_unions": unions,
+        "association_shapes": shapes, "primitive_property_uses": primitives, "derived_unions": unions,
         "findings": findings, "translation_attempted": true,
         "translation_error": translation_error, "registration_attempted": registration_attempted,
-        "registration_error": registration_error,
-        "limitations": ["Not a complete UML constraint checker", "Association storage not certified", "Retained rules not executed", "Context probe is not an accepted replacement rule"],
+        "registration_error": registration_error, "runtime_errors": runtime_errors,
+        "conformance_result": if conformance.iter().any(|d| d["severity"] == "error") { "errors" } else { "conformant-to-implemented-rules" }, "conformance": conformance,
+        "limitations": ["Not a complete UML constraint checker", "Occurrence incidence is structural; language derivations remain above the kernel", "Retained rules not executed", "Strict conformance is separate from structural readiness"],
     }))
 }
 

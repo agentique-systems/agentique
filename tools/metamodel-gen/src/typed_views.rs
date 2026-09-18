@@ -62,19 +62,29 @@ pub fn source(
     set: &DescriptorSet,
     golden: &[u8],
 ) -> Result<String> {
+    let spec = &bundle.metamodel.source.specification;
+    let dependent = spec == "SysML";
+    let mm = set
+        .models
+        .iter()
+        .find(|m| m.name == *spec)
+        .ok_or("missing owning model")?;
     let registry = MetamodelRegistry::from_descriptors(set.clone()).map_err(|e| e.to_string())?;
     let mut out = format!(
-        "// GENERATED FILE. DO NOT EDIT.\n// Generator: {VERSION}\n// Reproduce: cargo run --locked --offline -p agq-metamodel-gen\n// KerML.xmi SHA-256: {}\n// PrimitiveTypes.xmi SHA-256: {}\n// KerML.json SHA-256: {}\n// Golden SHA-256: {}\n\n",
+        "// GENERATED FILE. DO NOT EDIT.\n// Generator: {VERSION}\n// Reproduce: cargo run --locked --offline -p agq-metamodel-gen\n// Metamodel XMI SHA-256: {}\n// PrimitiveTypes.xmi SHA-256: {}\n// Metamodel JSON SHA-256: {}\n// Golden SHA-256: {}\n\n",
         bundle.metamodel.source.sha256,
         bundle.primitive_types.source.sha256,
         bundle.cross_check.source.sha256,
         sha256(golden)
     );
-    out.push_str(&format!("/// Identity of the pinned KerML 1.0 metamodel.\n#[rustfmt::skip]\npub mod metamodel {{\n    pub const KERML: agq_kernel::MetamodelId = agq_kernel::MetamodelId::from_u128(0x{:032x});\n}}\n", set.models[0].id.as_u128()));
+    out.push_str(&format!("/// Identity of the pinned normative metamodel.\n#[rustfmt::skip]\npub mod metamodel {{\n    pub const {}: agq_kernel::MetamodelId = agq_kernel::MetamodelId::from_u128(0x{:032x});\n}}\n", spec.to_ascii_uppercase(), mm.id.as_u128()));
     let mut class_names = BTreeMap::new();
     let mut property_names = BTreeMap::new();
     let mut assertions = String::new();
     out.push_str("/// Class IDs from source-qualified normative keys; Rust names are conveniences.\n#[rustfmt::skip]\npub mod classes {\n");
+    if dependent {
+        out.push_str("    pub use agq_kerml::classes::*;\n");
+    }
     let mut names = BTreeSet::new();
     for id in &selected.classifiers {
         let c = &bundle.metamodel.classifiers[id];
@@ -85,23 +95,46 @@ pub fn source(
         unique(&mut names, &name)?;
         let class_id = c.entity.key.metaclass_id()?;
         class_names.insert(class_id, name.clone());
+        if c.entity.key.source.specification != *spec {
+            continue;
+        }
         out.push_str(&format!("    /// XMI identity: `{id}`.\n    pub const {name}: agq_kernel::MetaclassId = agq_kernel::MetaclassId::from_u128(0x{:032x});\n", class_id.as_u128()));
+        let id = &c.entity.key.external_id;
         assertions.push_str(&format!("        assert_eq!(crate::CLASS_IDS.iter().find(|(key, _)| *key == {id:?}).unwrap().1, classes::{name});\n        assert_eq!(views::{}::CLASS, classes::{name});\n", c.entity.name));
     }
     out.push_str("}\n\n/// Property IDs, including association-owned metadata ends (not class slots).\n#[rustfmt::skip]\npub mod properties {\n");
+    if dependent {
+        out.push_str("    pub use agq_kerml::properties::*;\n");
+    }
     let mut names = BTreeSet::new();
     for id in &selected.properties {
         let p = &bundle.metamodel.properties[id];
         let owner = &bundle.metamodel.classifiers[&p.owner].entity.name;
-        let name = format!("{}_{}", snake(owner)?, snake(&p.entity.name)?).to_ascii_uppercase();
+        let name = format!(
+            "{}_{}",
+            snake(owner)?,
+            if p.entity.name.is_empty() {
+                "unnamed_end".into()
+            } else {
+                snake(&p.entity.name)?
+            }
+        )
+        .to_ascii_uppercase();
         unique(&mut names, &name)?;
         let property_id = p.entity.key.property_id()?;
         property_names.insert(property_id, name.clone());
+        if p.entity.key.source.specification != *spec {
+            continue;
+        }
         out.push_str(&format!("    /// XMI identity: `{id}`.\n    pub const {name}: agq_kernel::PropertyId = agq_kernel::PropertyId::from_u128(0x{:032x});\n", property_id.as_u128()));
+        let id = &p.entity.key.external_id;
         assertions.push_str(&format!("        assert_eq!(crate::PROPERTY_IDS.iter().find(|(key, _)| *key == {id:?}).unwrap().1, properties::{name});\n"));
     }
-    out.push_str("}\n\n/// Borrowed views for exactly the registered Root/Core closure.\n#[rustfmt::skip]\npub mod views {\n    use super::{classes, properties};\n    use agq_kernel::{ElementId, EnumerationLiteralId, EnumerationId, metamodel::ValueKind};\n    use crate::{Values, ViewError, view::{define_view, read}};\n");
-    for c in &set.classes {
+    out.push_str("}\n\n/// Borrowed views for the complete pinned language abstract syntax.\n#[rustfmt::skip]\npub mod views {\n    use super::{classes, properties};\n    use agq_kernel::{ElementId, EnumerationLiteralId, EnumerationId, metamodel::ValueKind};\n    use crate::{Values, ViewError, view::{define_view, read}};\n");
+    if dependent {
+        out.push_str("    use agq_kerml::views::*;\n");
+    }
+    for c in set.classes.iter().filter(|c| c.metamodel == mm.id) {
         let name = &c.name;
         out.push_str(&format!(
             "\n    define_view!({name}, classes::{});\n    impl<'m> {name}<'m> {{\n",
@@ -126,7 +159,18 @@ pub fn source(
         {
             let method = method(&p.name)?;
             unique(&mut names, &method)?;
-            let (ty, kind) = match p.value_kind {
+            let (ty, mut kind) = match registry
+                .storage_kind(p.value_kind)
+                .map_err(|e| e.to_string())?
+            {
+                ValueKind::Integer => (
+                    "&'m agq_kernel::numeric::Integer",
+                    "ValueKind::Integer".into(),
+                ),
+                ValueKind::Real => (
+                    "&'m agq_kernel::numeric::ExactDecimal",
+                    "ValueKind::Real".into(),
+                ),
                 ValueKind::Boolean => ("bool", "ValueKind::Boolean".into()),
                 ValueKind::String => ("&'m str", "ValueKind::String".into()),
                 ValueKind::Reference(target) => (
@@ -142,6 +186,12 @@ pub fn source(
                 ),
                 other => return Err(format!("unsupported typed-view domain: {other:?}")),
             };
+            if let ValueKind::Primitive(id) = p.value_kind {
+                kind = format!(
+                    "ValueKind::Primitive(agq_kernel::PrimitiveDomainId::from_u128(0x{:032x}))",
+                    id.as_u128()
+                );
+            }
             let scalar = p.multiplicity.upper.is_some_and(|n| n <= 1);
             let optional = p.multiplicity.lower == 0;
             let (reader, result) = match (scalar, optional) {
@@ -155,7 +205,7 @@ pub fn source(
         }
         out.push_str("    }\n");
     }
-    out.push_str("}\n\n#[cfg(test)]\n#[rustfmt::skip]\nmod tests {\n    use super::*;\n    #[test]\n    fn all_named_ids_match_descriptor_inventory() {\n        assert_eq!(metamodel::KERML, crate::descriptors().models[0].id);\n");
+    out.push_str("}\n\n#[cfg(test)]\n#[rustfmt::skip]\nmod tests {\n    use super::*;\n    #[test]\n    fn all_named_ids_match_descriptor_inventory() {\n");
     out.push_str(&assertions);
     out.push_str("    }\n}\n");
     Ok(out)

@@ -144,7 +144,7 @@ fn defaults(registry: &MetamodelRegistry, class: MetaclassId) -> Vec<(PropertyId
         .unwrap()
         .filter(|p| !p.derived && p.multiplicity.lower > 0)
         .filter_map(|p| {
-            let value = match p.value_kind {
+            let value = match registry.storage_kind(p.value_kind).unwrap() {
                 ValueKind::Boolean => Value::Boolean(false),
                 ValueKind::String => Value::String("fixture".into()),
                 ValueKind::Enumeration(domain) => Value::Enumeration(
@@ -171,7 +171,10 @@ struct Fixture {
 }
 impl Fixture {
     fn new() -> Self {
-        let base = Snapshot::new(Arc::new(agq_kerml::registry().unwrap()));
+        Self::with_registry(agq_kerml::registry().unwrap())
+    }
+    fn with_registry(registry: MetamodelRegistry) -> Self {
+        let base = Snapshot::new(Arc::new(registry));
         let change = base.change_set();
         Self {
             base,
@@ -671,11 +674,10 @@ fn association_inverse_is_unique_atomic_and_rebuilt_after_edits() {
         Err(ModelError::UnsupportedAssociationStorage(_))
     ));
     let mut moved = s.change_set();
-    moved.clear(A, p::ELEMENT_OWNED_RELATIONSHIP);
-    moved.set(
-        B,
-        p::ELEMENT_OWNED_RELATIONSHIP,
-        SlotValue::Ordered(vec![Value::Reference(id(30))]),
+    moved.move_inverse(
+        id(30),
+        p::RELATIONSHIP_OWNING_RELATED_ELEMENT,
+        Some((B, 0)),
         origin(),
     );
     let next = s.apply(&moved).unwrap();
@@ -903,4 +905,94 @@ fn feature_aliases_do_not_silently_bypass_inheritance_filtering() {
             .iter()
             .any(|d| d.code == "KQ_NONFEATURE_MEMBERSHIP")
     );
+}
+
+#[test]
+fn full_sysml_and_unrelated_extensions_preserve_kerml_answers_and_change_context_identity() {
+    let mut extension = agq_kerml::descriptors();
+    extension.classes.push(MetaclassDescriptor {
+        id: MetaclassId::from_u128(999),
+        name: "Unrelated".into(),
+        package: vec!["Extension".into()],
+        metamodel: extension.models[0].id,
+        direct_supertypes: BTreeSet::new(),
+        is_abstract: false,
+    });
+    let registries = [
+        agq_kerml::registry().unwrap(),
+        agq_sysml::registry().unwrap(),
+        MetamodelRegistry::from_descriptors(extension).unwrap(),
+    ];
+    let mut results = Vec::new();
+    let mut descriptor_ids = BTreeSet::new();
+    for registry in registries {
+        let mut f = Fixture::with_registry(registry);
+        f.create(A, c::TYPE);
+        f.feature(id(30), A, FA);
+        let snapshot = f.finish();
+        let context =
+            SemanticContext::for_snapshot(&snapshot, SemanticOptions::default(), BTreeSet::new())
+                .unwrap();
+        descriptor_ids.insert(context.id().descriptor_digest);
+        let answer = queries(&snapshot).direct_features(A);
+        results.push((
+            answer.value,
+            answer.completeness,
+            answer.positive_dependencies,
+            answer.search_dependencies,
+        ));
+    }
+    assert_eq!(descriptor_ids.len(), 3);
+    assert!(results.windows(2).all(|w| w[0] == w[1]));
+}
+
+#[test]
+fn explicit_computation_failures_propagate_completeness_and_search_evidence() {
+    let mut fixture = Fixture::new();
+    fixture.create(A, c::TYPE);
+    let snapshot = fixture.finish();
+    for invalid in [false, true] {
+        let mut builder = DerivationBuilder::new(snapshot.clone());
+        let explanation = Explanation {
+            rule: RuleId::from_u128(55),
+            dependencies: BTreeSet::new(),
+        };
+        let searches = BTreeSet::from([StructuralSearch::DescriptorGraph]);
+        let failure = if invalid {
+            ComputationFailure::Invalid {
+                diagnostic: "invalid derivation".into(),
+                explanation,
+                searches,
+            }
+        } else {
+            ComputationFailure::Incomplete {
+                reason: IncompleteReason::MissingInput,
+                explanation,
+                searches,
+            }
+        };
+        builder.failure(A, p::TYPE_IS_CONJUGATED, failure).unwrap();
+        let overlay = builder.build().unwrap();
+        let context =
+            SemanticContext::for_overlay(&overlay, SemanticOptions::default(), BTreeSet::new())
+                .unwrap();
+        let result = KerMlQueries::new(context).effective_features(A);
+        assert_eq!(
+            result.completeness,
+            if invalid {
+                Completeness::Invalid
+            } else {
+                Completeness::Incomplete
+            }
+        );
+        assert!(result.positive_dependencies.contains(&FactKey::Property {
+            element: A,
+            property: p::TYPE_IS_CONJUGATED
+        }));
+        assert!(
+            result
+                .search_dependencies
+                .contains(&SearchDependency::Kernel(StructuralSearch::DescriptorGraph))
+        );
+    }
 }

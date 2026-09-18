@@ -8,3 +8,4 @@ description = "Immutable, metamodel-driven semantic substrate for Agentique"
 [dependencies]
 uuid = { version = "1.18.1", features = ["v4", "v5"] }
 thiserror.workspace = true
+num-bigint.workspace = true

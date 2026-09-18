@@ -82,7 +82,7 @@ fn programmatic_and_textual_models_have_equivalent_canonical_records() {
             .unwrap()
             .filter(|p| !p.derived && p.multiplicity.lower > 0)
         {
-            let value = match property.value_kind {
+            let value = match registry.storage_kind(property.value_kind).unwrap() {
                 ValueKind::Boolean => Value::Boolean(property.id == p::FEATURE_IS_UNIQUE),
                 ValueKind::String => {
                     assert_eq!(property.id, p::ELEMENT_ELEMENT_ID);
