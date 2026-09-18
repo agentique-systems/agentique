@@ -21,6 +21,7 @@ No reconciliation consults historical tombstones or matches qualified names.
 KerML documents use the existing bounded grammar. SysML documents are retained
 with `FrontendUnavailable` until the SysML frontend is implemented. They are not
 parsed as KerML. Their possible root declarations become a semantic context input,
+and recovery regions mark their immediate namespaces incomplete,
 so affected reference resolution returns `Incomplete` and cannot publish guessed
 relationships. This establishes mixed source storage, not mixed semantic acceptance.
 Library/project dependency ingestion and broader resolution remain subsequent work.
@@ -34,3 +35,10 @@ Current rebuild is deliberately complete: all declaration contributions are rebu
 and all references resolved against the same candidate graph. Publication compares
 against the previous snapshot, preserving semantic identities and retirement history.
 No incremental cache or sublinear build claim is made.
+
+Resolution and KerML semantic diagnostics carry separate typed domains. Syntax
+and unavailable-frontends have their own diagnostic types; strict metamodel
+conformance stays in its existing separate audit. No SysML validation is claimed.
+A recovered namespace can retain known members while blocking a guessed reference
+or complete effective-feature conclusion. Unrelated fully parsed scopes retain
+their existing bounded query behavior.

@@ -23,7 +23,13 @@ pub struct ReferenceAssertion {
     pub resolution: QueryResult<Resolution>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FrontendDiagnosticDomain {
+    Resolution,
+    KerMlSemanticValidation,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FrontendDiagnostic {
+    pub domain: FrontendDiagnosticDomain,
     pub code: &'static str,
     pub origin: SourceOrigin,
     pub message: String,
@@ -312,6 +318,8 @@ pub(crate) fn lower_project<'a>(
     let mut builder = Builder::new();
     let mut identities = BTreeMap::new();
     let mut pending = vec![];
+    let mut incomplete_namespaces: BTreeSet<_> =
+        incomplete_root.then_some(root).into_iter().collect();
     builder.create_with_origin(root, c::NAMESPACE, &root_origin);
     for syntax in documents {
         lower_nodes(
@@ -323,6 +331,7 @@ pub(crate) fn lower_project<'a>(
             &mut builder,
             &mut identities,
             &mut pending,
+            &mut incomplete_namespaces,
         );
     }
     // The root membership collection spans documents and is project-generated.
@@ -337,7 +346,6 @@ pub(crate) fn lower_project<'a>(
     }
     let declarations = builder.finish()?;
     let scopes = pending.iter().map(|r| r.specific).collect();
-    let incomplete_namespaces: BTreeSet<_> = incomplete_root.then_some(root).into_iter().collect();
     let initial = project_queries(&declarations, scopes, incomplete_namespaces.clone());
     let mut references: Vec<_> = pending
         .into_iter()
@@ -374,6 +382,7 @@ pub(crate) fn lower_project<'a>(
     for r in &references {
         for d in &r.resolution.diagnostics {
             diagnostics.push(FrontendDiagnostic {
+                domain: FrontendDiagnosticDomain::Resolution,
                 code: d.code,
                 origin: r.origin.clone(),
                 message: d.message.clone(),
@@ -390,6 +399,7 @@ pub(crate) fn lower_project<'a>(
             let result = q.effective_features(element.id());
             for d in result.diagnostics {
                 diagnostics.push(FrontendDiagnostic {
+                    domain: FrontendDiagnosticDomain::KerMlSemanticValidation,
                     code: d.code,
                     origin: source_origin(element.origin()),
                     message: d.message,
@@ -397,6 +407,7 @@ pub(crate) fn lower_project<'a>(
             }
             if result.completeness != Completeness::Complete && diagnostics.is_empty() {
                 diagnostics.push(FrontendDiagnostic {
+                    domain: FrontendDiagnosticDomain::KerMlSemanticValidation,
                     code: "KT_INCOMPLETE",
                     origin: source_origin(element.origin()),
                     message: "Semantic queries are incomplete".into(),
@@ -418,6 +429,7 @@ pub(crate) fn lower_project<'a>(
                         && !names.insert(name.clone())
                     {
                         diagnostics.push(FrontendDiagnostic {
+                            domain: FrontendDiagnosticDomain::KerMlSemanticValidation,
                             code: "KT_DUPLICATE_NAME",
                             origin: source_origin(record.origin()),
                             message: format!("Duplicate declared member name {name}"),
@@ -486,13 +498,23 @@ fn lower_nodes(
     builder: &mut Builder,
     identities: &mut BTreeMap<SyntaxNodeId, Ids>,
     pending: &mut Vec<Pending>,
+    incomplete_namespaces: &mut BTreeSet<ElementId>,
 ) {
+    // A recovery region may contain a membership, import or specialization.
+    // Retain known declarations, but do not infer a complete namespace from them.
+    if nodes
+        .iter()
+        .any(|node| matches!(node, SyntaxNode::Error { .. }))
+    {
+        incomplete_namespaces.insert(owner);
+    }
     for d in nodes
         .iter()
         .filter_map(Declaration::cast)
         .map(Declaration::syntax)
     {
         if !d.header_valid {
+            incomplete_namespaces.insert(owner);
             continue;
         }
         let ids = previous
@@ -508,6 +530,10 @@ fn lower_nodes(
             DeclarationKind::Feature => c::FEATURE,
         };
         let origin = syntax.origin(d.id, d.range);
+        if !d.complete {
+            incomplete_namespaces.insert(owner);
+            incomplete_namespaces.insert(ids.element);
+        }
         builder.create(ids.element, class, &origin);
         if let Some(name) = &d.name {
             builder.set(
@@ -553,6 +579,7 @@ fn lower_nodes(
             builder,
             identities,
             pending,
+            incomplete_namespaces,
         );
         identities.insert(d.id, ids);
     }

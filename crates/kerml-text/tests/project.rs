@@ -280,3 +280,150 @@ fn unchanged_document_origin_and_identity_survive_format_and_path_edits() {
         Origin::Declared(DeclaredOrigin::Generated { .. })
     ));
 }
+
+#[test]
+fn adding_a_document_invalidates_an_earlier_namespace_miss() {
+    let mut project = SourceProject::new().unwrap();
+    let old = project
+        .apply(
+            project.current().revision(),
+            [add("use.kerml", "feature f : Missing;")],
+        )
+        .unwrap();
+    let f = named(&project, "f");
+    let miss = &old.references()[0];
+    assert_eq!(miss.resolution.value, Resolution::Unresolved);
+    assert!(
+        miss.resolution
+            .search_dependencies
+            .contains(&SearchDependency::NamespaceMembers {
+                namespace: old.root()
+            })
+    );
+    assert!(
+        old.semantic_diagnostics()
+            .iter()
+            .all(|d| d.domain == agq_kerml_text::FrontendDiagnosticDomain::Resolution)
+    );
+    let next = project
+        .apply(
+            old.revision(),
+            [add("definition.kerml", "feature Missing;")],
+        )
+        .unwrap();
+    assert_eq!(named(&project, "f"), f);
+    assert_eq!(
+        next.queries().direct_feature_types(f).value,
+        [named(&project, "Missing")]
+    );
+    assert!(next.is_complete_slice());
+    assert_ne!(
+        miss.resolution.context,
+        next.references()[0].resolution.context
+    );
+    assert_eq!(old.references()[0].resolution.value, Resolution::Unresolved);
+}
+
+#[test]
+fn many_documents_and_specialization_chain_preserve_one_inherited_feature() {
+    let mut project = SourceProject::new().unwrap();
+    let mut inputs = vec![add("base.kerml", "feature Base { feature inherited; }")];
+    for i in 0..48 {
+        let parent = if i == 0 {
+            "Base".to_string()
+        } else {
+            format!("T{}", i - 1)
+        };
+        inputs.push(add(
+            &format!("{i:03}.kerml"),
+            &format!("type T{i} :> {parent};"),
+        ));
+    }
+    inputs.reverse();
+    let m = project.apply(project.current().revision(), inputs).unwrap();
+    assert!(m.is_complete_slice(), "{:?}", m.semantic_diagnostics());
+    let base = named(&project, "Base");
+    let feature = m.queries().lookup_declared_member(base, "inherited").value[0];
+    let derived = m.queries().effective_features(named(&project, "T47"));
+    assert_eq!(derived.completeness, Completeness::Complete);
+    assert_eq!(derived.value, [feature]);
+    assert_eq!(m.queries().owner(feature).value, Some(base));
+    assert_eq!(
+        m.snapshot()
+            .model()
+            .instances(agq_kerml::classes::FEATURE_MEMBERSHIP, false)
+            .unwrap()
+            .count(),
+        1
+    );
+    let again = m.queries().effective_features(named(&project, "T47"));
+    assert_eq!(derived, again);
+}
+
+#[test]
+fn recovered_namespaces_block_guessed_denotation_without_poisoning_unrelated_scopes() {
+    let mut project = SourceProject::new().unwrap();
+    let m = project
+        .apply(
+            project.current().revision(),
+            [
+                add(
+                    "incomplete.kerml",
+                    "namespace Broken { feature X; class X; } feature f : Broken::X;",
+                ),
+                add(
+                    "complete.kerml",
+                    "namespace Good { feature Y; feature g : Y; }",
+                ),
+            ],
+        )
+        .unwrap();
+    assert!(!m.is_complete_slice());
+    let uncertain = m
+        .references()
+        .iter()
+        .find(|r| r.name.segments == ["Broken", "X"])
+        .unwrap();
+    assert_eq!(uncertain.resolution.value, Resolution::Incomplete);
+    assert!(
+        m.snapshot()
+            .model()
+            .element(uncertain.relationship)
+            .is_none()
+    );
+    let known = m
+        .references()
+        .iter()
+        .find(|r| r.name.segments == ["Y"])
+        .unwrap();
+    assert!(matches!(known.resolution.value, Resolution::Resolved(_)));
+    assert!(m.snapshot().model().element(known.relationship).is_some());
+    assert_eq!(
+        m.document_at("incomplete.kerml").unwrap().source(),
+        "namespace Broken { feature X; class X; } feature f : Broken::X;"
+    );
+}
+
+#[test]
+fn recovered_type_body_keeps_effective_feature_answers_incomplete() {
+    let mut project = SourceProject::new().unwrap();
+    let m = project
+        .apply(
+            project.current().revision(),
+            [add(
+                "broken.kerml",
+                "feature Base { feature known; class Unknown; } type Derived :> Base;",
+            )],
+        )
+        .unwrap();
+    let derived = named(&project, "Derived");
+    let result = m.queries().effective_features(derived);
+    assert_eq!(result.completeness, Completeness::Incomplete);
+    assert_eq!(result.value.len(), 1);
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "KQ_PENDING_INHERITANCE")
+    );
+}
