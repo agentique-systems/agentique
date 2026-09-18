@@ -428,7 +428,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-AcceptActionUsage-isTriggerAction_",
@@ -748,7 +748,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-ActionDefinition-checkActionDefinitionSpecialization",
@@ -1008,7 +1008,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-ActionUsage-inputParameters_",
@@ -1253,7 +1253,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-ActorMembership-validateActorMembershipOwningType",
@@ -1461,7 +1461,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Allocations-AllocationDefinition-deriveAllocationDefinitionAllocation",
@@ -1743,7 +1743,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Allocations-AllocationUsage-checkAllocationUsageSpecialization",
@@ -1967,7 +1967,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-AnalysisCases-AnalysisCaseDefinition-deriveAnalysisCaseDefinitionResultExpression",
@@ -2246,7 +2246,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-AnalysisCases-AnalysisCaseUsage-checkAnalysisCaseUsageSpecialization",
@@ -2579,7 +2579,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Constraints-AssertConstraintUsage-deriveAssertConstraintUsageAssertedConstraint",
@@ -2877,7 +2877,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-AssignmentActionUsage-checkAssignmentActionUsageAccessedFeatureRedefinition",
@@ -3204,7 +3204,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Attributes-AttributeDefinition-validateAttributeDefinitionFeatures",
@@ -3433,7 +3433,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Attributes-AttributeUsage-validateAttributeUsageIsReference",
@@ -3738,7 +3738,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [],
       "standard_library_dependencies": [
         " then FeatureDirectionKind::out     else if direction = FeatureDirectionKind::out then FeatureDirectionKind::_",
@@ -3936,7 +3936,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Calculations-CalculationDefinition-checkCalculationDefinitionSpecialization",
@@ -4214,7 +4214,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Calculations-CalculationUsage-modelLevelEvaluable_Feature",
@@ -4464,7 +4464,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Cases-CaseDefinition-checkCaseDefinitionSpecialization",
@@ -4807,7 +4807,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Cases-CaseUsage-validateCaseUsageSubjectParameterPosition",
@@ -5131,7 +5131,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-ConcernDefinition-checkConcernDefinitionSpecialization",
@@ -5404,7 +5404,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-ConcernUsage-checkConcernUsageSpecialization",
@@ -5631,7 +5631,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Ports-ConjugatedPortDefinition-effectiveName_",
@@ -5761,7 +5761,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Ports-ConjugatedPortTyping-deriveConjugatedPortTypingPortDefinition",
@@ -5970,7 +5970,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Connections-ConnectionDefinition-checkConnectionDefinitionSpecializations",
@@ -6267,7 +6267,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Connections-ConnectionUsage-checkConnectionUsageSpecialization",
@@ -6569,7 +6569,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [],
       "standard_library_dependencies": [
         " then FeatureDirectionKind::out     else if direction = FeatureDirectionKind::out then FeatureDirectionKind::_",
@@ -6773,7 +6773,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Constraints-ConstraintDefinition-checkConstraintDefinitionSpecialization",
@@ -7045,7 +7045,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Constraints-ConstraintUsage-namingFeature_",
@@ -7369,7 +7369,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-ControlNode-multiplicityHasBounds_Multiplicity_Integer_UnlimitedNatural",
@@ -7702,7 +7702,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-DecisionNode-validateDecisionNodeIncomingSuccessions",
@@ -7937,7 +7937,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-DefinitionAndUsage-Definition-deriveDefinitionOwnedOccurrence",
@@ -8537,7 +8537,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Enumerations-EnumerationDefinition-validateEnumerationDefinitionIsVariation",
@@ -8766,7 +8766,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [],
       "standard_library_dependencies": [
         " then FeatureDirectionKind::out     else if direction = FeatureDirectionKind::out then FeatureDirectionKind::_",
@@ -8994,7 +8994,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Occurrences-EventOccurrenceUsage-validateEventOccurrenceUsageReference",
@@ -9292,7 +9292,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-States-ExhibitStateUsage-checkExhibitStateUsageSpecialization",
@@ -9435,7 +9435,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Views-Expose-validateExposeVisibility",
@@ -9668,7 +9668,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Flows-FlowDefinition-checkFlowDefinitionSpecialization",
@@ -9988,7 +9988,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Flows-FlowUsage-checkFlowUsageSpecialization",
@@ -10279,7 +10279,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-ForLoopActionUsage-checkForLoopActionUsageSubactionSpecialization",
@@ -10631,7 +10631,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-ForkNode-validateForkNodeIncomingSuccessions",
@@ -10783,7 +10783,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-FramedConcernMembership-validateFramedConcernMembershipConstraintKind",
@@ -11019,7 +11019,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-IfActionUsage-deriveIfActionUsageThenAction",
@@ -11374,7 +11374,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-UseCases-IncludeUseCaseUsage-checkIncludeUseCaseSpecialization",
@@ -11636,7 +11636,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Interfaces-InterfaceDefinition-checkInterfaceDefinitionSpecialization",
@@ -11921,7 +11921,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Interfaces-InterfaceUsage-checkInterfaceUsageBinarySpecialization",
@@ -12150,7 +12150,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Items-ItemDefinition-checkItemDefinitionSpecialization",
@@ -12385,7 +12385,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Items-ItemUsage-deriveItemUsageItemDefinition",
@@ -12672,7 +12672,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-JoinNode-validateJoinNodeOutgoingSuccessions",
@@ -12954,7 +12954,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-LoopActionUsage-deriveLoopActionUsageBodyAction",
@@ -13084,7 +13084,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [],
       "standard_library_dependencies": [],
       "execution_semantics": {
@@ -13306,7 +13306,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-MergeNode-validateMergeNodeOutgoingSuccessions",
@@ -13565,7 +13565,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Metadata-MetadataDefinition-checkMetadataDefinitionSpecialization",
@@ -13829,7 +13829,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Metadata-MetadataUsage-checkMetadataUsageSpecialization",
@@ -13959,7 +13959,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [],
       "standard_library_dependencies": [],
       "execution_semantics": {
@@ -14051,7 +14051,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Cases-ObjectiveMembership-validateObjectiveMembershipOwningType",
@@ -14233,7 +14233,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Occurrences-OccurrenceDefinition-checkOccurrenceDefinitionIndividualSpecialization",
@@ -14481,7 +14481,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Occurrences-OccurrenceUsage-validateOccurrenceUsageIndividualDefinition",
@@ -14788,7 +14788,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Parts-PartDefinition-checkPartDefinitionSpecialization",
@@ -15024,7 +15024,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Parts-PartUsage-checkPartUsageActorSpecialization",
@@ -15361,7 +15361,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-PerformActionUsage-namingFeature_",
@@ -15509,7 +15509,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [],
       "standard_library_dependencies": [],
       "execution_semantics": {
@@ -15672,7 +15672,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Ports-PortDefinition-validatePortDefinitionOwnedUsagesNotComposite",
@@ -15946,7 +15946,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Ports-PortUsage-validatePortUsageNestedUsagesNotComposite",
@@ -16251,7 +16251,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-DefinitionAndUsage-ReferenceUsage-namingFeature_",
@@ -16457,7 +16457,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Views-RenderingDefinition-deriveRenderingDefinitionRendering",
@@ -16707,7 +16707,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Views-RenderingUsage-checkRenderingUsageSpecialization",
@@ -16874,7 +16874,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-RequirementConstraintMembership-validateRequirementConstraintMembershipIsComposite",
@@ -17095,7 +17095,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-RequirementDefinition-deriveRequirementDefinitionSubjectParameter",
@@ -17484,7 +17484,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-RequirementUsage-checkRequirementUsageSubrequirementSpecialization",
@@ -17784,7 +17784,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-VerificationCases-RequirementVerificationMembership-validateRequirementVerificationMembershipOwningType",
@@ -18064,7 +18064,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-SatisfyRequirementUsage-checkSatisfyRequirementUsageBindingConnector",
@@ -18380,7 +18380,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-SendActionUsage-deriveSendActionUsageSenderArgument",
@@ -18595,7 +18595,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-StakeholderMembership-validateStakeholderMembershipOwningType",
@@ -18772,7 +18772,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-States-StateDefinition-deriveStateDefinitionState",
@@ -18967,7 +18967,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-States-StateSubactionMembership-validateStateSubactionMembershipOwningType",
@@ -19203,7 +19203,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-States-StateUsage-isSubstateUsage_Boolean",
@@ -19476,7 +19476,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Requirements-SubjectMembership-validateSubjectMembershipOwningType",
@@ -19735,7 +19735,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [],
       "standard_library_dependencies": [
         " then FeatureDirectionKind::out     else if direction = FeatureDirectionKind::out then FeatureDirectionKind::_",
@@ -20035,7 +20035,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Flows-SuccessionFlowUsage-checkSuccessionFlowUsageSpecialization",
@@ -20314,7 +20314,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-TerminateActionUsage-checkTerminateActionUsageSpecialization",
@@ -20481,7 +20481,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-States-TransitionFeatureMembership-validateTransitionFeatureMembershipGuardExpression",
@@ -20760,7 +20760,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-States-TransitionUsage-triggerPayloadParameter_",
@@ -21321,7 +21321,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-TriggerInvocationExpression-instantiatedType_",
@@ -21624,7 +21624,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-DefinitionAndUsage-Usage-namingFeature_",
@@ -22367,7 +22367,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-UseCases-UseCaseDefinition-deriveUseCaseDefinitionIncludedUseCase",
@@ -22646,7 +22646,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-UseCases-UseCaseUsage-checkUseCaseUsageSubUseCaseSpecialization",
@@ -22813,7 +22813,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-DefinitionAndUsage-VariantMembership-validateVariantMembershipOwningNamespace",
@@ -23001,7 +23001,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-VerificationCases-VerificationCaseDefinition-deriveVerificationCaseDefinitionVerifiedRequirement",
@@ -23280,7 +23280,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-VerificationCases-VerificationCaseUsage-deriveVerificationCaseUsageVerifiedRequirement",
@@ -23522,7 +23522,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Views-ViewDefinition-deriveViewDefinitionViewCondition",
@@ -23705,7 +23705,7 @@
         "memberships",
         "member"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Views-ViewRenderingMembership-deriveVewRenderingMembershipReferencedRendering",
@@ -23943,7 +23943,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Views-ViewUsage-includeAsExposed_Element",
@@ -24261,7 +24261,7 @@
         "direct_features",
         "effective_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Views-ViewpointDefinition-deriveViewpointDefinitionViewpointStakeholder",
@@ -24547,7 +24547,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Views-ViewpointUsage-checkViewpointUsageViewpointSatisfactionSpecialization",
@@ -24847,7 +24847,7 @@
         "subsetted_features",
         "redefined_features"
       ],
-      "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+      "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
       "rules": [
         {
           "source_id": "Systems-Actions-WhileLoopActionUsage-checkWhileLoopActionUsageSpecialization",

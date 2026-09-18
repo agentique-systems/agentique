@@ -114,7 +114,7 @@ def main():
             "direct_supertypes": parents[identity],
             "inherited_kerml_behavior": inherited,
             "kerml_query_dependencies": ["owner", "memberships", "member"] + (["direct_specializations", "all_specializations", "direct_features", "effective_features"] if "Core-Types-Type" in ancestors else []) + (["direct_feature_types", "subsetted_features", "redefined_features"] if "Core-Features-Feature" in ancestors else []),
-            "kerml_query_scope": "Existing bounded agq-kerml-query/4 contracts; inherited retained bodies are not all implemented",
+            "kerml_query_scope": "Existing bounded agq-kerml-query/5 contracts; inherited retained bodies are not all implemented",
             "rules": retained,
             "standard_library_dependencies": all_refs,
             "execution_semantics": {"status": "deferred", "reason": "No generation-2 execution runtime in this milestone; structural queries do not execute instances"},

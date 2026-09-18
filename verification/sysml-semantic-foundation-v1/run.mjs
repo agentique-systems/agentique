@@ -2,84 +2,54 @@
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 
+const runtime = [
+  ["kerml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check"],
+  ["sysml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
+];
 const gates = {
+  runtime,
+  authority: [
+    ["inventory", "python -X utf8 verification/sysml-semantic-foundation-v1/authority.py --check"],
+    ...runtime,
+  ],
+  project: [
+    ["project", "cargo test --locked --offline -p agq-kerml-text"],
+    ["format", "cargo fmt --all -- --check"],
+    ...runtime,
+  ],
+  libraries: [
+    ["libraries", "cargo test --locked --offline -p agq-standard-libraries"],
+    ["syntax", "cargo test --locked --offline -p agq-kerml-syntax"],
+    ["corpus", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check"],
+    ["format", "cargo fmt --all -- --check"],
+    ["clippy", "cargo clippy --locked --offline -p agq-standard-libraries -p agq-kerml-text -p agq-kerml-semantics --all-targets -- -D warnings"],
+    ...runtime,
+  ],
   strict: [
     ["kerml-conformance", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-conformance --check"],
     ["sysml-conformance", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-conformance --check"],
   ],
-  foundation: [
-    ["rust-foundation", "cargo test --locked --offline -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-metamodel-gen --no-fail-fast"],
-    ["kerml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check"],
-    ["sysml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
-    ["independent", "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check"],
-  ],
-  runtime: [
-    ["kerml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check"],
-    ["sysml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
-  ],
-  focused: [
-    ["authority", "python -X utf8 verification/language-core-completion-v2/authority.py --check"],
-    ["kernel", "cargo test --locked --offline -p agq-kernel"],
-    ["generator", "cargo test --locked --offline -p agq-metamodel-gen"],
-    ["format", "cargo fmt --all -- --check"],
-    ["audit", "cargo run --locked --offline -p agq-metamodel-gen -- --audit-full --check"],
-    ["independent", "python -X utf8 verification/language-core-completion-v1/direct_xmi.py --check"],
-  ],
-  stage0: [
-    ["authority", "python -X utf8 verification/language-core-completion-v2/authority.py --check"],
-    ["generated-code", "cargo test --locked --offline -p agq-kerml -p agq-metamodel-gen"],
-    ["git", "git log -1 --format=fuller"],
-    ["audits", "cargo run --locked --offline -p agq-metamodel-gen -- --audit-full --check"],
-    ["kerml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check"],
-    ["sysml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
-  ],
+  quality: [["library-quality", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --require-semantic"]],
   final: [
     ["format", "cargo fmt --all -- --check"],
     ["clippy", "cargo clippy --workspace --all-targets -- -D warnings"],
     ["rust-tests", "cargo test --workspace"],
     ["generated", "cargo run --locked --offline -p agq-metamodel-gen -- --check"],
-    ["kerml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check"],
-    ["sysml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
-    ["rustdoc", "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-metamodel-gen"],
+    ...runtime,
+    ["rustdoc", "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-standard-libraries -p agq-metamodel-gen"],
     ["standards", "npm run standards:check", ["verification/standards-integrity.json"]],
     ["frontend-check", "npm run check"],
     ["frontend-build", "npm run build"],
     ["node-tests", "npm test"],
     ["browser-tests", "npm run test:e2e", ["verification/browser-results.json", "verification/screenshots/console-desktop.png", "verification/screenshots/console-mobile.png"]],
-    ["independent", "python -X utf8 verification/language-core-completion-v1/direct_xmi.py --check"],
-    ["authority", "python -X utf8 verification/language-core-completion-v2/authority.py --check"],
+    ["authority", "python -X utf8 verification/sysml-semantic-foundation-v1/authority.py --check"],
+    ["corpus", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check"],
     ["independent-runtime", "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check"],
-    ["preservation", "node verification/language-core-completion-v3/preservation.mjs"],
+    ["preservation", "python -X utf8 verification/sysml-semantic-foundation-v1/preservation.py"],
   ],
 };
-gates.final = gates.final.map(entry => entry[0] === "authority" ? ["authority", "python -X utf8 verification/language-core-completion-v3/authority.py --check"] : entry);
-gates.completion = [
-  ["standards", "npm run standards:check", ["verification/standards-integrity.json"]],
-  ["independent-runtime", "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check"],
-  ["authority", "python -X utf8 verification/language-core-completion-v3/authority.py --check"],
-  ["preservation", "node verification/language-core-completion-v3/preservation.mjs"],
-];
-gates.repair = gates.final.filter(([name]) => !["frontend-check", "frontend-build", "node-tests", "browser-tests"].includes(name));
-gates.authority = [
-  ["inventory", "python -X utf8 verification/sysml-semantic-foundation-v1/authority.py --check"],
-  ...gates.runtime,
-];
-gates.project = [
-  ["project", "cargo test --locked --offline -p agq-kerml-text"],
-  ["format", "cargo fmt --all -- --check"],
-  ...gates.runtime,
-];
-gates.libraries = [
-  ["libraries", "cargo test --locked --offline -p agq-standard-libraries"],
-  ["syntax", "cargo test --locked --offline -p agq-kerml-syntax"],
-  ["corpus", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check"],
-  ["format", "cargo fmt --all -- --check"],
-  ["clippy", "cargo clippy --locked --offline -p agq-standard-libraries -p agq-kerml-text -p agq-kerml-semantics --all-targets -- -D warnings"],
-  ...gates.runtime,
-];
-gates.quality = [["library-quality", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --require-semantic"]];
 const gate = process.argv[2];
-if (!Object.hasOwn(gates, gate)) throw new Error("Specify stage0, focused or final");
+if (!Object.hasOwn(gates, gate)) throw new Error("Specify a gate: authority, project, libraries, runtime, strict, quality, final");
 const label = process.argv[3] ?? gate;
 if (!/^[a-z0-9-]+$/.test(label)) throw new Error("Invalid evidence label");
 const directory = `verification/sysml-semantic-foundation-v1/${label}`;
