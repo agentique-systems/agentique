@@ -1,0 +1,6 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running `target\debug\metamodel-gen.exe --audit-full --check`
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/full-audit.json (338695 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/full.golden.json (2320099 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/full-audit.json (816812 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/full.golden.json (5886927 bytes).

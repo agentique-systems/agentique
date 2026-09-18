@@ -1,0 +1,401 @@
+{
+  "_generated": "GENERATED FILE. DO NOT EDIT. cargo run --locked --offline -p agq-metamodel-gen",
+  "baseline_diagnostics": [
+    {
+      "category": "normative-source-anomaly",
+      "descriptor_id": "232112d8-8b75-513e-a518-01d9071d1bed",
+      "disposition": "reviewed-upstream-anomaly-preserve",
+      "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
+      "external_id": "Core-Features-A_ownedRedefinition_owningFeature-owningFeature",
+      "governing_constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
+      "message": "Subsetted property has the same name. Exact source metadata is preserved; structural representability does not establish UML conformance.",
+      "severity": "error",
+      "source": {
+        "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+        "metamodel_uri": "https://www.omg.org/spec/KerML/20250201",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "specification": "KerML",
+        "version": "1.0"
+      },
+      "target": {
+        "external_id": "Core-Features-Subsetting-owningFeature",
+        "kind": "property",
+        "package_path": [
+          "KerML",
+          "Core",
+          "Features"
+        ],
+        "source": {
+          "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+          "metamodel_uri": "https://www.omg.org/spec/KerML/20250201",
+          "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+          "specification": "KerML",
+          "version": "1.0"
+        }
+      }
+    },
+    {
+      "category": "normative-source-anomaly",
+      "descriptor_id": "c83b439d-9a37-5c2a-853f-036cbbaf5345",
+      "disposition": "reviewed-upstream-anomaly-preserve",
+      "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
+      "external_id": "Kernel-Associations-A_targetType_targetAssociation-targetAssociation",
+      "governing_constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
+      "message": "Subsetted property has the same name. Exact source metadata is preserved; structural representability does not establish UML conformance.",
+      "severity": "error",
+      "source": {
+        "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+        "metamodel_uri": "https://www.omg.org/spec/KerML/20250201",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "specification": "KerML",
+        "version": "1.0"
+      },
+      "target": {
+        "external_id": "Kernel-Associations-A_targetType_targetAssociation-targetAssociation",
+        "kind": "property",
+        "package_path": [
+          "KerML",
+          "Kernel",
+          "Associations"
+        ],
+        "source": {
+          "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+          "metamodel_uri": "https://www.omg.org/spec/KerML/20250201",
+          "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+          "specification": "KerML",
+          "version": "1.0"
+        }
+      }
+    },
+    {
+      "category": "normative-source-anomaly",
+      "descriptor_id": "7cff07a4-93d3-53ae-99fa-1ff751324480",
+      "disposition": "reviewed-upstream-anomaly-preserve",
+      "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
+      "external_id": "Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage",
+      "governing_constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
+      "message": "Subsetted property has the same name. Exact source metadata is preserved; structural representability does not establish UML conformance.",
+      "severity": "error",
+      "source": {
+        "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+        "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+        "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+        "specification": "SysML",
+        "version": "2.0"
+      },
+      "target": {
+        "external_id": "Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage",
+        "kind": "property",
+        "package_path": [
+          "SysML",
+          "Systems",
+          "DefinitionAndUsage"
+        ],
+        "source": {
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+          "specification": "SysML",
+          "version": "2.0"
+        }
+      }
+    }
+  ],
+  "classifiers": {
+    "KerML::Association": 109,
+    "KerML::Class": 50,
+    "KerML::Enumeration": 2,
+    "SysML::Association": 145,
+    "SysML::Class": 54,
+    "SysML::Enumeration": 1
+  },
+  "conformance_diagnostics_format": "agentique-baseline-diagnostics/1",
+  "conformance_diagnostics_scope": "Property-subsetted_property_names only; not a full UML conformance audit.",
+  "external_domains": [
+    "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean",
+    "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#String"
+  ],
+  "generator": "agq-structural-closure-audit/2",
+  "has_unreviewed_baseline_diagnostics": false,
+  "properties": 562,
+  "registration_error": "generated descriptor validation: invalid redefinition 2abb2284-8e25-51ac-b486-1792cc60e1b1 -> 2e4efe58-2d09-5275-991e-104649d59bf3",
+  "registration_failure": {
+    "base": {
+      "key": {
+        "external_id": "Systems-DefinitionAndUsage-Definition-ownedAction",
+        "kind": "property",
+        "package_path": [
+          "SysML",
+          "Systems",
+          "DefinitionAndUsage"
+        ],
+        "source": {
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+          "specification": "SysML",
+          "version": "2.0"
+        }
+      },
+      "name": "ownedAction",
+      "qualified_path": [
+        "SysML",
+        "Systems",
+        "DefinitionAndUsage",
+        "Definition",
+        "ownedAction"
+      ],
+      "source_attributes": {
+        "isDerived": "true",
+        "isOrdered": "true",
+        "name": "ownedAction",
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-DefinitionAndUsage-Definition-ownedAction",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Property"
+      },
+      "source_range": [
+        800464,
+        801597
+      ]
+    },
+    "base_context": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition",
+    "base_source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition-ownedAction",
+    "context_ancestors_including_self": [
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Classifier",
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-Association",
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Behavior",
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Classes-Class",
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction",
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Relationship",
+      "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace"
+    ],
+    "context_is_strict_subtype": false,
+    "disposition": "rejected-no-baseline-waiver",
+    "kind": "invalid-redefinition",
+    "property": {
+      "key": {
+        "external_id": "Systems-Flows-A_flowDefinition_definedFlow-definedFlow",
+        "kind": "property",
+        "package_path": [
+          "SysML",
+          "Systems",
+          "Flows"
+        ],
+        "source": {
+          "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+          "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+          "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+          "specification": "SysML",
+          "version": "2.0"
+        }
+      },
+      "name": "definedFlow",
+      "qualified_path": [
+        "SysML",
+        "Systems",
+        "Flows",
+        "A_flowDefinition_definedFlow",
+        "definedFlow"
+      ],
+      "source_attributes": {
+        "isDerived": "true",
+        "name": "definedFlow",
+        "{http://www.omg.org/spec/XMI/20161101}id": "Systems-Flows-A_flowDefinition_definedFlow-definedFlow",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Property"
+      },
+      "source_range": [
+        2819,
+        3932
+      ]
+    },
+    "property_context": "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction",
+    "required_by": [
+      "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Parts-PartDefinition",
+      "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Items-ItemDefinition",
+      "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceDefinition",
+      "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition",
+      "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition-ownedFlow",
+      "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage",
+      "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage-flowDefinition",
+      "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow-definedFlow"
+    ],
+    "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow-definedFlow"
+  },
+  "result": "blocked",
+  "same_closure_with_attributes_ports_connections": true,
+  "scope": "Structural runtime readiness only; does not execute retained rules or certify conformance.",
+  "seeds": [
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Parts-PartDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Parts-PartUsage"
+  ],
+  "selected_class_ids": [
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Classifier",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Classifiers-Subclassification",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-CrossSubsetting",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-Feature",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-FeatureChaining",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-FeatureInverting",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-FeatureTyping",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-Redefinition",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-ReferenceSubsetting",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-Subsetting",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-TypeFeaturing",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Conjugation",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Differencing",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Disjoining",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-FeatureMembership",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Intersecting",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Multiplicity",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Specialization",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Type",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Types-Unioning",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-Association",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-AssociationStructure",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Behavior",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Behaviors-Step",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Classes-Class",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Connectors-Connector",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Connectors-Succession",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-DataTypes-DataType",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Functions-BooleanExpression",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Functions-Expression",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Functions-Function",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Functions-Predicate",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Flow",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-FlowEnd",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-Interaction",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-PayloadFeature",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Metadata-Metaclass",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Metadata-MetadataFeature",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Structures-Structure",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Annotations-AnnotatingElement",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Annotations-Annotation",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Annotations-Comment",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Annotations-Documentation",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Annotations-TextualRepresentation",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Element",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Elements-Relationship",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Import",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Membership",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-Namespace",
+    "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Root-Namespaces-OwningMembership",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-AcceptActionUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Actions-ActionUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Allocations-AllocationDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Allocations-AllocationUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-AnalysisCases-AnalysisCaseDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-AnalysisCases-AnalysisCaseUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Attributes-AttributeDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Attributes-AttributeUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Calculations-CalculationDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Calculations-CalculationUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Cases-CaseDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Cases-CaseUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Connections-ConnectionDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Connections-ConnectionUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Connections-ConnectorAsUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Constraints-ConstraintDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Constraints-ConstraintUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-ReferenceUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Usage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-VariantMembership",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Enumerations-EnumerationDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Enumerations-EnumerationUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-FlowUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Interfaces-InterfaceDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Interfaces-InterfaceUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Items-ItemDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Items-ItemUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Metadata-MetadataUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Parts-PartDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Parts-PartUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Ports-ConjugatedPortDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Ports-PortConjugation",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Ports-PortDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Ports-PortUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Requirements-ConcernDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Requirements-ConcernUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Requirements-RequirementDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Requirements-RequirementUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-States-StateUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-States-TransitionUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-UseCases-UseCaseDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-UseCases-UseCaseUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-VerificationCases-VerificationCaseDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-VerificationCases-VerificationCaseUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Views-RenderingDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Views-RenderingUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Views-ViewDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Views-ViewUsage",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Views-ViewpointDefinition",
+    "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Views-ViewpointUsage"
+  ],
+  "self_subsetting_properties": [
+    {
+      "descriptor_id": "c83b439d-9a37-5c2a-853f-036cbbaf5345",
+      "owner": "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-A_targetType_targetAssociation",
+      "required_by": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Parts-PartDefinition",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Items-ItemDefinition",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceDefinition",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Definition-ownedConnection",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Connections-ConnectorAsUsage",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Connectors-Connector",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Connectors-Connector-association",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-Association",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-Association-targetType",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-A_targetType_targetAssociation-targetAssociation"
+      ],
+      "source": {
+        "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+        "metamodel_uri": "https://www.omg.org/spec/KerML/20250201",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "specification": "KerML",
+        "version": "1.0"
+      },
+      "source_qualified_id": "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-A_targetType_targetAssociation-targetAssociation",
+      "source_range": [
+        381360,
+        382233
+      ],
+      "subsets": [
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-A_targetType_targetAssociation-targetAssociation",
+        "https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-A_relatedType_association-association"
+      ]
+    },
+    {
+      "descriptor_id": "7cff07a4-93d3-53ae-99fa-1ff751324480",
+      "owner": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase",
+      "required_by": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Parts-PartUsage",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Items-ItemUsage",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Occurrences-OccurrenceUsage",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Usage",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-Usage-nestedAnalysisCase",
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage"
+      ],
+      "source": {
+        "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+        "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+        "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+        "specification": "SysML",
+        "version": "2.0"
+      },
+      "source_qualified_id": "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage",
+      "source_range": [
+        881706,
+        883051
+      ],
+      "subsets": [
+        "https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage"
+      ]
+    }
+  ],
+  "structural_status": "invalid-generated-descriptor"
+}

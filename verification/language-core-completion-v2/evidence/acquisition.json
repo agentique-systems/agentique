@@ -1,0 +1,34 @@
+[
+  {
+    "id": "UML24-85",
+    "url": "https://issues.omg.org/issues/UML24-85",
+    "final_url": "https://issues.omg.org/issues/UML24-85",
+    "bytes": 13365,
+    "sha256": "cde39f5ad509a7e7b245bd8d8b3c1ce44c3e09804e43420d6c780557a6c68329",
+    "status": 200
+  },
+  {
+    "id": "UML24-86",
+    "url": "https://issues.omg.org/issues/UML24-86",
+    "final_url": "https://issues.omg.org/issues/UML24-86",
+    "bytes": 12260,
+    "sha256": "665caa54920df31df24b78ccaca20274841327d68b9b0cb42032f9b4fc1b207f",
+    "status": 200
+  },
+  {
+    "id": "UML24-96",
+    "url": "https://issues.omg.org/issues/UML24-96",
+    "final_url": "https://issues.omg.org/issues/UML24-96",
+    "bytes": 17453,
+    "sha256": "f7217c2ba8cc058521fd10c46ea12ef7def05591f1ef9f6d92f01e9419621207",
+    "status": 200
+  },
+  {
+    "id": "UML24-fixed",
+    "url": "https://issues.omg.org/issues/spec/UML/2.4/fixed",
+    "final_url": "https://issues.omg.org/issues/spec/UML/2.4/fixed",
+    "bytes": 829472,
+    "sha256": "6fa674ade28266e3e274c3b5c51aaa48edb0cec97b0c7b152e1873bfecc8648b",
+    "status": 200
+  }
+]

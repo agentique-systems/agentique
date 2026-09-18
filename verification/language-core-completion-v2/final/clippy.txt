@@ -1,0 +1,10 @@
+    Checking agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+    Checking agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Checking agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+    Checking agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+    Checking agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+    Checking agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+    Checking agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+    Checking agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+    Checking agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.15s

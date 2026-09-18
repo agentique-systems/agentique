@@ -1,0 +1,4 @@
+    Checking agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+ Documenting agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.12s
+   Generated C:\Users\phili\github\agentique-systems\agentique\target\doc\agq_kerml\index.html and 6 other files

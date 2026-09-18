@@ -1,0 +1,88 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.99s
+     Running unittests src\lib.rs (target\debug\deps\agq_kernel-ab63f46141635a64.exe)
+
+running 8 tests
+test model::tests::acyclic_chain_has_no_cycle_members ... ok
+test model::tests::converging_acyclic_paths_have_no_cycle_members ... ok
+test model::tests::cycle_members_exclude_downstream_vertices ... ok
+test model::tests::cycle_members_exclude_upstream_downstream_and_isolated_vertices ... ok
+test model::tests::self_loop_is_a_cycle ... ok
+test model::tests::three_vertex_cycle_reports_every_member ... ok
+test model::tests::connected_cycles_report_members_in_sorted_order ... ok
+test model::tests::deep_containment_and_evidence_graphs_do_not_require_recursion ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests\association_slots.rs (target\debug\deps\association_slots-b12b93c8ea0564e7.exe)
+
+running 2 tests
+test a_single_navigation_slot_is_canonical_and_atomic ... ok
+test inverse_order_bounds_navigation_and_two_class_ends_require_link_storage ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\derivations.rs (target\debug\deps\derivations-a919e336abebddbd.exe)
+
+running 10 tests
+test derived_ids_distinguish_rule_subject_and_output_not_support_order ... ok
+test overlays_cannot_overwrite_declared_or_conflicting_facts ... ok
+test implied_identity_cannot_collide_with_declared_or_retired_identity ... ok
+test cyclic_explanations_and_self_support_are_rejected ... ok
+test explanation_cycles_exclude_acyclic_evidence_and_dependents ... ok
+test forward_derived_dependencies_and_iteration_are_deterministic ... ok
+test derived_records_and_slots_receive_the_same_structural_validation ... ok
+test inherited_member_explanation_chain_keeps_declared_facts_separate ... ok
+test transitive_specialization_is_an_ordinary_but_derived_relationship ... ok
+test derived_evidence_must_exist_in_the_correct_layer ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\metamodel.rs (target\debug\deps\metamodel-d2d4b7a6b6914f9b.exe)
+
+running 14 tests
+test cycles_and_unknown_parents_are_rejected ... ok
+test package_names_do_not_replace_descriptor_identity ... ok
+test registry_versions_and_unknown_queries_are_explicit ... ok
+test incompatible_definitions_and_ambiguous_names_are_rejected ... ok
+test multiple_inheritance_diamond_preserves_both_branches_and_shared_properties_once ... ok
+test future_union_metadata_frontier_is_finite_and_deduplicates_diamonds_and_cycles ... ok
+test redefinition_cycles_and_composition_weakening_remain_rejected ... ok
+test locally_valid_subset_graphs_are_representable_not_uml_certified ... ok
+test invalid_properties_and_duplicate_descriptors_are_rejected ... ok
+test invalid_redefinition_scope_domain_bounds_and_cycles_fail ... ok
+test redefining_collection_flags_are_preserved_and_effective_shape_is_validated ... ok
+test subset_local_context_domain_and_upper_bound_validation_remains_enabled ... ok
+test same_name_redefinition_and_diamond_join_require_explicit_identity_links ... ok
+test registration_order_does_not_change_effective_properties ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\snapshots.rs (target\debug\deps\snapshots-a07fc227cc4e71fd.exe)
+
+running 14 tests
+test public_iteration_and_indexes_do_not_depend_on_creation_order ... ok
+test lower_upper_multiplicity_and_scalar_shape_are_enforced ... ok
+test abstract_instances_unknown_classes_and_derived_writes_are_rejected ... ok
+test failed_changes_are_atomic_and_illegal_slots_rejected ... ok
+test dangling_and_wrongly_typed_references_are_rejected ... ok
+test snapshot_supports_concurrent_readers ... ok
+test renaming_preserves_semantic_identity_and_previous_snapshot ... ok
+test names_are_not_identity_and_source_origin_is_not_identity ... ok
+test deletion_rebuilds_all_indexes_and_ids_cannot_be_reused ... ok
+test ordered_nonbinary_relationships_and_duplicate_reference_positions_are_preserved ... ok
+test changeset_base_and_revision_identity_are_not_ambiguous ... ok
+test composites_reject_multiple_owners_and_cycles_without_cascading ... ok
+test vehicle_engine_sports_car_without_source_text ... ok
+test unordered_values_are_canonical_and_absent_differs_from_empty ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_kernel
+
+running 1 test
+test crates\kernel\src\lib.rs - (line 7) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 0.58s; merged doctests compilation took 0.47s
