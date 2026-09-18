@@ -7,6 +7,13 @@ const runtime = [
   ["sysml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
 ];
 const gates = {
+  construction: [
+    ["kernel-and-semantic-tests", "cargo test --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text"],
+    ["clippy", "cargo clippy --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text --all-targets -- -D warnings"],
+    ["rustdoc", "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text"],
+    ["format", "cargo fmt --all -- --check"],
+    ...runtime,
+  ],
   gate2: [
     ["corpus", "cargo run --locked --offline -p agq-standard-libraries --example syntax_audit -- --output verification/kerml-standard-library-bootstrap-v1/gate-2/syntax-quality.json"],
     ["repeatable-corpus", "cargo test --locked --offline -p agq-standard-libraries --test corpus"],

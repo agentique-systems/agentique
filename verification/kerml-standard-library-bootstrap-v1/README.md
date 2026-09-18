@@ -58,3 +58,14 @@ grammar discrepancies across nine documents from parser diagnostics.
 `gate-2/syntax-quality.json`; `corpus-first.json` preserves the initial run.
 Canonical/resolution/semantic counts remain null: these phases have not run.
 This syntax gate does not weaken or pass the library semantic quality gate.
+
+## Construction prerequisite (Gate 3 in progress)
+
+The corpus requires inspection of declarations before mandatory reference targets
+are resolved, including Interaction participant associations. The kernel now
+offers a separate unpublished `ConstructionView` with explicit lower-bound
+obligations. Strict Snapshot publication is unchanged. Tests cover inspection,
+repair and publication, immutability, dangling references, wrong value kinds and
+upper bounds. `construction-1/results.json` records six successful commands,
+including kernel/semantic/authored tests, Clippy, strict Rustdoc and both complete
+runtime checks. This is a construction prerequisite, not Gate 3 acceptance.

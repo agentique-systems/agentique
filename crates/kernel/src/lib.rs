@@ -44,6 +44,6 @@ pub mod value;
 
 pub use ids::*;
 pub use model::{
-    ChangeSet, ElementRecord, ModelError, ModelView, ReferenceCarrier, ReferenceOccurrence, Slot,
-    SlotShape, Snapshot,
+    ChangeSet, ConstructionObligation, ConstructionView, ElementRecord, ModelError, ModelView,
+    ReferenceCarrier, ReferenceOccurrence, Slot, SlotShape, Snapshot,
 };

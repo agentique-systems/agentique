@@ -10,6 +10,84 @@ use crate::{
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+type StagedRecords = (
+    BTreeMap<ElementId, Arc<ElementRecord>>,
+    BTreeSet<ElementId>,
+    BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    BTreeSet<AssociationOccurrenceId>,
+);
+
+/// A lower bound that must be satisfied before a construction can be published.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConstructionObligation {
+    pub element: ElementId,
+    pub property: PropertyId,
+    pub required: Multiplicity,
+    pub actual: usize,
+}
+
+/// An immutable, unpublished candidate. This type cannot be used as a Snapshot.
+#[derive(Clone, Debug)]
+pub struct ConstructionView {
+    revision: RevisionId,
+    model: ModelView,
+    obligations: Vec<ConstructionObligation>,
+}
+impl ConstructionView {
+    /// Transaction revision, distinct from the base and from subsequent edits.
+    pub fn revision(&self) -> RevisionId {
+        self.revision
+    }
+    /// Canonical candidate records and indexes, including pending declarations.
+    pub fn model(&self) -> &ModelView {
+        &self.model
+    }
+    /// Missing required values, sorted by element and property identity.
+    pub fn obligations(&self) -> &[ConstructionObligation] {
+        &self.obligations
+    }
+}
+
+pub(crate) struct Validation {
+    deficits: Option<BTreeMap<(ElementId, PropertyId), ConstructionObligation>>,
+}
+impl Validation {
+    fn strict() -> Self {
+        Self { deficits: None }
+    }
+    pub(crate) fn multiplicity(
+        &mut self,
+        element: ElementId,
+        property: PropertyId,
+        required: Multiplicity,
+        actual: usize,
+    ) -> Result<(), ModelError> {
+        if required.accepts(actual) {
+            return Ok(());
+        }
+        if actual < required.lower
+            && let Some(deficits) = &mut self.deficits
+        {
+            deficits.insert(
+                (element, property),
+                ConstructionObligation {
+                    element,
+                    property,
+                    required,
+                    actual,
+                },
+            );
+            return Ok(());
+        }
+        Err(ModelError::Multiplicity {
+            element,
+            property,
+            required,
+            actual,
+        })
+    }
+}
+
 /// One present property value, carrying evidence separately from the value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Slot {
@@ -145,7 +223,22 @@ impl ModelView {
         links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
         derived_navigation: crate::association::Navigation,
     ) -> Result<Self, ModelError> {
-        let mut projected = crate::association::project(&registry, &records, &links)?;
+        Self::build_with_validation(
+            registry,
+            records,
+            links,
+            derived_navigation,
+            &mut Validation::strict(),
+        )
+    }
+    fn build_with_validation(
+        registry: Arc<MetamodelRegistry>,
+        records: BTreeMap<ElementId, Arc<ElementRecord>>,
+        links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+        derived_navigation: crate::association::Navigation,
+        validation: &mut Validation,
+    ) -> Result<Self, ModelError> {
+        let mut projected = crate::association::project(&registry, &records, &links, validation)?;
         for (&(element, property), slot) in &derived_navigation {
             let p = registry.property(property)?;
             if !p.derived || !matches!(p.owner, crate::metamodel::PropertyOwner::Association(_)) {
@@ -158,7 +251,7 @@ impl ModelView {
                 return Err(ModelError::UnsupportedAssociationStorage(property));
             }
         }
-        validate(&registry, &records, &projected)?;
+        validate(&registry, &records, &projected, validation)?;
         let mut indexes = Indexes {
             inverse_slots: projected,
             ..Indexes::default()
@@ -489,6 +582,52 @@ impl Snapshot {
     /// References and multiplicities are checked on the final candidate. Creation
     /// must precede edits to that record, but reference targets may be created later.
     pub fn apply(&self, changes: &ChangeSet) -> Result<Self, ModelError> {
+        let (records, used_ids, links, used_links) = self.stage(changes)?;
+        let model = ModelView::build(
+            self.model().registry.clone(),
+            records,
+            links,
+            BTreeMap::new(),
+        )?;
+        Ok(Self {
+            inner: Arc::new(SnapshotData {
+                revision: changes.revision,
+                model,
+                used_ids,
+                used_links,
+            }),
+        })
+    }
+    /// Inspect an unpublished transaction with explicit lower-bound obligations.
+    ///
+    /// All present values, references, upper bounds, ownership and association
+    /// occurrences are validated exactly as for publication. Missing required
+    /// values are reported as obligations instead of inventing placeholder facts.
+    /// This does not publish a snapshot, reserve identities, or mutate the base.
+    /// Publication still requires `apply` to pass every structural invariant.
+    pub fn preview(&self, changes: &ChangeSet) -> Result<ConstructionView, ModelError> {
+        let (records, _, links, _) = self.stage(changes)?;
+        let mut validation = Validation {
+            deficits: Some(BTreeMap::new()),
+        };
+        let model = ModelView::build_with_validation(
+            self.model().registry.clone(),
+            records,
+            links,
+            BTreeMap::new(),
+            &mut validation,
+        )?;
+        Ok(ConstructionView {
+            revision: changes.revision,
+            model,
+            obligations: validation
+                .deficits
+                .expect("construction validation")
+                .into_values()
+                .collect(),
+        })
+    }
+    fn stage(&self, changes: &ChangeSet) -> Result<StagedRecords, ModelError> {
         if !Arc::ptr_eq(&self.inner, &changes.base.inner) {
             return Err(ModelError::StaleChangeSet {
                 expected: self.revision(),
@@ -657,20 +796,7 @@ impl Snapshot {
                 }
             }
         }
-        let model = ModelView::build(
-            self.model().registry.clone(),
-            records,
-            links,
-            BTreeMap::new(),
-        )?;
-        Ok(Self {
-            inner: Arc::new(SnapshotData {
-                revision: changes.revision,
-                model,
-                used_ids,
-                used_links,
-            }),
-        })
+        Ok((records, used_ids, links, used_links))
     }
     pub(crate) fn has_used(&self, id: ElementId) -> bool {
         self.inner.used_ids.contains(&id)
@@ -940,13 +1066,19 @@ pub enum ModelError {
     },
 }
 
+#[derive(Default)]
+struct Containment {
+    containers: BTreeMap<ElementId, (ElementId, PropertyId)>,
+    edges: BTreeMap<ElementId, BTreeSet<ElementId>>,
+}
+
 fn validate(
     registry: &MetamodelRegistry,
     records: &BTreeMap<ElementId, Arc<ElementRecord>>,
     projected: &crate::association::Navigation,
+    validation: &mut Validation,
 ) -> Result<(), ModelError> {
-    let mut containers = BTreeMap::new();
-    let mut containment: BTreeMap<ElementId, BTreeSet<ElementId>> = BTreeMap::new();
+    let mut containment = Containment::default();
     for record in records.values() {
         if registry.class(record.metaclass)?.is_abstract {
             return Err(ModelError::AbstractClass {
@@ -973,8 +1105,8 @@ fn validate(
                 record,
                 property,
                 slot,
-                &mut containers,
                 &mut containment,
+                validation,
             )?;
         }
         for property in registry.effective_properties(record.metaclass)? {
@@ -987,14 +1119,7 @@ fn validate(
                 continue;
             }
             let count = slot.map_or(0, |s| s.value.values().count());
-            if !property.multiplicity.accepts(count) {
-                return Err(ModelError::Multiplicity {
-                    element: record.id,
-                    property: property.id,
-                    required: property.multiplicity,
-                    actual: count,
-                });
-            }
+            validation.multiplicity(record.id, property.id, property.multiplicity, count)?;
         }
     }
     for (&(element, property), slot) in projected {
@@ -1014,11 +1139,11 @@ fn validate(
             record,
             property,
             slot,
-            &mut containers,
             &mut containment,
+            validation,
         )?;
     }
-    let cycle = cyclic_nodes(&containment);
+    let cycle = cyclic_nodes(&containment.edges);
     if !cycle.is_empty() {
         return Err(ModelError::ContainmentCycle(cycle));
     }
@@ -1031,8 +1156,8 @@ fn validate_slot(
     record: &ElementRecord,
     property: PropertyId,
     slot: &Slot,
-    containers: &mut BTreeMap<ElementId, (ElementId, PropertyId)>,
-    containment: &mut BTreeMap<ElementId, BTreeSet<ElementId>>,
+    containment: &mut Containment,
+    validation: &mut Validation,
 ) -> Result<(), ModelError> {
     let descriptor = registry.property(property)?;
     let expected = SlotShape::required(descriptor);
@@ -1088,7 +1213,7 @@ fn validate_slot(
                 }
                 if descriptor.composite {
                     let owner = (record.id, property);
-                    if let Some(first) = containers.insert(*target, owner)
+                    if let Some(first) = containment.containers.insert(*target, owner)
                         && first != owner
                     {
                         return Err(ModelError::MultipleContainers {
@@ -1097,7 +1222,11 @@ fn validate_slot(
                             second: owner,
                         });
                     }
-                    containment.entry(record.id).or_default().insert(*target);
+                    containment
+                        .edges
+                        .entry(record.id)
+                        .or_default()
+                        .insert(*target);
                 }
             }
             _ => {
@@ -1111,14 +1240,7 @@ fn validate_slot(
     }
 
     let actual = slot.value.values().count();
-    if !descriptor.multiplicity.accepts(actual) {
-        return Err(ModelError::Multiplicity {
-            element: record.id,
-            property,
-            required: descriptor.multiplicity,
-            actual,
-        });
-    }
+    validation.multiplicity(record.id, property, descriptor.multiplicity, actual)?;
     Ok(())
 }
 
