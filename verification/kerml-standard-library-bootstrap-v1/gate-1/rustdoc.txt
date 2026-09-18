@@ -1,0 +1,4 @@
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+ Documenting agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.85s
+   Generated C:\Users\phili\github\agentique-systems\agentique\target\doc\agq_kerml_syntax\index.html

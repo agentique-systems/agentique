@@ -30,3 +30,18 @@ Remaining gates: richer production CST, precedence, recovery, corpus frontend,
 complete canonical lowering, import/alias/visibility resolution, atomic library
 publication, validated bindings, loaded context identity, semantic validation,
 quality gate, authored integration, dependency audit and stress/review acceptance.
+
+## Gate 1
+
+`agq-kerml-syntax::production` now supplies the grammar frontend, a lossless token
+partition and typed production arena, explicit recovery and published grammar
+discrepancies. Runtime tables are generated and checked in; Table 6 precedence and
+associativity have focused structural tests. All source traversal and tree
+materialization are iterative and chart work is bounded. Syntax IDs are deterministic
+within an exact source revision; edits conservatively retain unaffected ranges.
+
+The existing bounded authored adapter remains available during lowering migration.
+It does not gain canonical support merely because a production tree can recognize
+additional syntax. `gate-1/results.json` records seven successful commands,
+including focused production tests, authored regressions, Clippy, strict Rustdoc
+and both runtime checks. The whole corpus frontend report is the next gate.

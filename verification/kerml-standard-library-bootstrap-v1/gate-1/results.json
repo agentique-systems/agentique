@@ -1,0 +1,58 @@
+[
+  {
+    "command": "python -X utf8 tools/kerml-grammar/generate.py",
+    "started": "2026-09-18T21:29:43.535Z",
+    "durationMs": 285,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-tables.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-syntax -p agq-kerml-text",
+    "started": "2026-09-18T21:29:43.820Z",
+    "durationMs": 11710,
+    "exitCode": 0,
+    "signal": null,
+    "log": "syntax-and-authored.txt"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T21:29:55.530Z",
+    "durationMs": 1116,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --locked --offline -p agq-kerml-syntax --all-targets -- -D warnings",
+    "started": "2026-09-18T21:29:56.646Z",
+    "durationMs": 1781,
+    "exitCode": 0,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo doc --locked --offline --no-deps -p agq-kerml-syntax",
+    "started": "2026-09-18T21:29:58.428Z",
+    "durationMs": 2932,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rustdoc.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T21:30:01.360Z",
+    "durationMs": 1552,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T21:30:02.912Z",
+    "durationMs": 3214,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  }
+]

@@ -8,3 +8,4 @@ description = "Lossless, recoverable KerML syntax independent of semantic constr
 [dependencies]
 agq-kernel = { path = "../kernel" }
 thiserror.workspace = true
+uuid.workspace = true
