@@ -1,0 +1,42 @@
+{
+  "format": "agentique-baseline-anomalies/1",
+  "scope": "Reviewed subsetted_property_names violations only; neither a general waiver nor a UML conformance certificate.",
+  "entries": [
+    {
+      "specification": "KerML",
+      "version": "1.0",
+      "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+      "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+      "external_id": "Kernel-Associations-A_targetType_targetAssociation-targetAssociation",
+      "target_external_id": "Kernel-Associations-A_targetType_targetAssociation-targetAssociation",
+      "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
+      "disposition": "reviewed-upstream-anomaly-preserve",
+      "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
+      "descriptor_id": "c83b439d-9a37-5c2a-853f-036cbbaf5345"
+    },
+    {
+      "specification": "SysML",
+      "version": "2.0",
+      "artifact_uri": "https://www.omg.org/spec/SysML/20250201/SysML.xmi",
+      "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+      "external_id": "Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage",
+      "target_external_id": "Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage",
+      "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
+      "disposition": "reviewed-upstream-anomaly-preserve",
+      "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
+      "descriptor_id": "7cff07a4-93d3-53ae-99fa-1ff751324480"
+    },
+    {
+      "specification": "KerML",
+      "version": "1.0",
+      "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+      "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+      "external_id": "Core-Features-A_ownedRedefinition_owningFeature-owningFeature",
+      "target_external_id": "Core-Features-Subsetting-owningFeature",
+      "constraint": "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-subsetted_property_names",
+      "disposition": "reviewed-upstream-anomaly-preserve",
+      "evidence": "docs/adr/0008-property-subsetting-cycle-semantics.md",
+      "descriptor_id": "232112d8-8b75-513e-a518-01d9071d1bed"
+    }
+  ]
+}

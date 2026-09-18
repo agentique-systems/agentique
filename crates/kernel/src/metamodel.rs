@@ -118,7 +118,8 @@ pub struct PropertyDescriptor {
     pub composite: bool,
     /// Direct property identities replaced in an inheriting context.
     pub redefines: BTreeSet<PropertyId>,
-    /// Direct subset relationships; these do not themselves compute values.
+    /// Direct value-set inclusions. Reflexive and cyclic graphs are representable;
+    /// registration is not UML conformance certification. These do not compute values.
     pub subsets: BTreeSet<PropertyId>,
     /// A derived union requires a later, explicit evaluator.
     pub derived_union: bool,
@@ -214,7 +215,8 @@ pub enum MetamodelError {
         property: PropertyId,
         base: PropertyId,
     },
-    #[error("cyclic property metadata involving {0:?}")]
+    /// Redefinition must follow strict context ancestry; subsetting is independent.
+    #[error("cyclic property redefinition involving {0:?}")]
     PropertyCycle(Vec<PropertyId>),
 }
 
@@ -476,7 +478,9 @@ impl MetamodelRegistry {
             for base in p.redefines.iter().chain(&p.subsets) {
                 self.property(*base)?;
             }
-            edges.insert(p.id, p.redefines.union(&p.subsets).copied().collect());
+            // Replacement follows strict context ancestry. Set inclusion has no
+            // corresponding acyclicity rule (UML 2.5.1 Property, ADR 0008).
+            edges.insert(p.id, p.redefines.clone());
         }
         let cycle = crate::model::cyclic_nodes(&edges);
         if !cycle.is_empty() {
@@ -504,8 +508,9 @@ impl MetamodelRegistry {
                     || b.multiplicity
                         .upper
                         .is_some_and(|upper| p.multiplicity.upper.is_none_or(|n| n > upper))
-                    || (b.unique && !p.unique)
-                    || (b.ordered && !p.ordered && !p.multiplicity.scalar())
+                    // UML Property::isConsistentWith does not require equal
+                    // ordering/uniqueness flags. Resolve and validate values
+                    // against the effective descriptor's collection contract.
                     || (b.composite && !p.composite)
                 {
                     return Err(MetamodelError::InvalidRedefinition {
@@ -518,6 +523,9 @@ impl MetamodelRegistry {
                 let b = self.property(*base)?;
                 if !self.is_subtype(self.property_context(p)?, self.property_context(b)?)?
                     || !self.compatible_value(p.value_kind, b.value_kind)?
+                    || b.multiplicity
+                        .upper
+                        .is_some_and(|upper| p.multiplicity.upper.is_none_or(|n| n > upper))
                 {
                     return Err(MetamodelError::InvalidPropertyMetadata(p.id));
                 }
@@ -533,6 +541,54 @@ impl MetamodelRegistry {
             }
             _ => Ok(value == base),
         }
+    }
+
+    /// Reachable subset targets, each visited once, including the starting property
+    /// only if reached through an edge. Safe for reflexive/cyclic metadata.
+    ///
+    /// This is metadata reachability, not derived-union evaluation or a UML
+    /// conformance verdict. A future evaluator must deduplicate contributions by
+    /// identity and solve cyclic inclusions by a monotone fixed point. Incremental
+    /// users must depend on the registry identity and all inspected adjacency sets.
+    pub fn subset_closure(
+        &self,
+        property: PropertyId,
+    ) -> Result<BTreeSet<PropertyId>, MetamodelError> {
+        let mut pending: Vec<_> = self.property(property)?.subsets.iter().copied().collect();
+        let mut visited = BTreeSet::new();
+        while let Some(id) = pending.pop() {
+            if visited.insert(id) {
+                pending.extend(self.property(id)?.subsets.iter().copied());
+            }
+        }
+        Ok(visited)
+    }
+
+    /// Properties transitively subsetting this property, visited once in the
+    /// reverse graph. Includes this property only when reached through a cycle.
+    ///
+    /// Supplies a finite metadata frontier for future union evaluators; it does
+    /// not compute values, choose ordered-union ordering, or claim completeness
+    /// of a derivation. Each edge is visited at most once after adjacency construction.
+    pub fn subset_contributors(
+        &self,
+        property: PropertyId,
+    ) -> Result<BTreeSet<PropertyId>, MetamodelError> {
+        self.property(property)?;
+        let mut incoming: BTreeMap<_, Vec<_>> = BTreeMap::new();
+        for p in self.properties.values() {
+            for target in &p.subsets {
+                incoming.entry(*target).or_default().push(p.id);
+            }
+        }
+        let mut pending = incoming.get(&property).cloned().unwrap_or_default();
+        let mut visited = BTreeSet::new();
+        while let Some(id) = pending.pop() {
+            if visited.insert(id) {
+                pending.extend(incoming.get(&id).into_iter().flatten().copied());
+            }
+        }
+        Ok(visited)
     }
 
     /// Structural context for subsetting/redefinition. An association-owned end

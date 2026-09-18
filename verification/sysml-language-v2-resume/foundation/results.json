@@ -1,0 +1,26 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kernel",
+    "started": "2026-09-18T05:37:01.211Z",
+    "durationMs": 2693,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kernel.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-metamodel-gen",
+    "started": "2026-09-18T05:37:03.905Z",
+    "durationMs": 11397,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generator.txt"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T05:37:15.302Z",
+    "durationMs": 503,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  }
+]

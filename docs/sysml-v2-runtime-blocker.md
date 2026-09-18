@@ -81,3 +81,29 @@ do not replace historical bytes or quietly use preliminary 1.1/2.1 inputs.
 Until then, stages 3–7 and the larger mixed-source performance fixture remain
 unimplemented. Complete them before the repository/API/platform milestone. The
 existing generation-1 application remains operational and separately verified.
+
+## Follow-up, 2026-09-18: subset invariant corrected; independent blocker exposed
+
+The preceding sections are the original Gate 3 discovery and remain historical
+evidence. The resume task authorized reassessing the generic invariant using UML
+2.5.1. [ADR 0008](adr/0008-property-subsetting-cycle-semantics.md) records the result:
+subsetting is set inclusion and does not require general acyclicity. The kernel
+now checks cycles only for redefinition and validates subset edges locally,
+including upper bounds. Safe metadata traversal preserves reflexive/cyclic edges.
+
+The two exact self-subsets remain unchanged through import and descriptor
+translation. Source/hash/identity-qualified baseline diagnostics report their UML
+naming violations. A third, separately reviewed nonreflexive `owningFeature`
+naming anomaly is also explicit. No full UML conformance is claimed.
+
+Gate 3 still fails, now on `definedFlow` redefining `Definition::ownedAction`:
+the former has KerML Interaction as its context, which is not a specialization
+of SysML Definition. Both the XMI and PDF Figure 22 retain this redefinition.
+The revised [structural audit](../standards/generated/sysml-2.0/structural-audit.json)
+contains the exact properties, source ranges, dependency path and context ancestry.
+No guessed correction or redefinition waiver was applied. This is an independent
+structural failure, not another subset-cycle rejection.
+
+The [resume verification record](../verification/sysml-language-v2-resume/README.md)
+includes a byte-preserved copy of the old audit. Gates 3 continuation and 4–7
+remain unimplemented; Pack 2A is incomplete and Pack 2B must not start.

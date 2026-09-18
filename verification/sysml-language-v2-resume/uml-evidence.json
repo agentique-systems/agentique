@@ -1,0 +1,177 @@
+{
+  "format": "agentique-supporting-standards-evidence/1",
+  "source": "https://www.omg.org/spec/UML/20161101/UML.xmi",
+  "sha256": "e8166c91f51b8a0c015a90101b83d2249d03252e9f9a500a6511654347804f21",
+  "constraints_and_operations": [
+    {
+      "id": "MultiplicityElement-upper_ge_lower",
+      "text": "upperBound() >= lowerBound() OCL"
+    },
+    {
+      "id": "MultiplicityElement-lower_ge_0",
+      "text": "lowerBound() >= 0 OCL"
+    },
+    {
+      "id": "MultiplicityElement-value_specification_no_side_effects",
+      "text": ""
+    },
+    {
+      "id": "MultiplicityElement-value_specification_constant",
+      "text": ""
+    },
+    {
+      "id": "MultiplicityElement-lower_is_integer",
+      "text": "lowerValue <> null implies lowerValue.integerValue() <> null OCL"
+    },
+    {
+      "id": "MultiplicityElement-upper_is_unlimitedNatural",
+      "text": "upperValue <> null implies upperValue.unlimitedValue() <> null OCL"
+    },
+    {
+      "id": "MultiplicityElement-compatibleWith",
+      "text": "result = ((other.lowerBound() <= self.lowerBound()) and ((other.upperBound() = *) or (self.upperBound() <= other.upperBound()))) OCL"
+    },
+    {
+      "id": "MultiplicityElement-includesMultiplicity",
+      "text": "self.upperBound()->notEmpty() and self.lowerBound()->notEmpty() and M.upperBound()->notEmpty() and M.lowerBound()->notEmpty() OCL result = ((self.lowerBound() <= M.lowerBound()) and (self.upperBound() >= M.upperBound())) OCL"
+    },
+    {
+      "id": "MultiplicityElement-is",
+      "text": "result = (lowerbound = self.lowerBound() and upperbound = self.upperBound()) OCL"
+    },
+    {
+      "id": "MultiplicityElement-isMultivalued",
+      "text": "upperBound()->notEmpty() OCL result = (upperBound() > 1) OCL"
+    },
+    {
+      "id": "MultiplicityElement-lower.1",
+      "text": "result = (lowerBound()) OCL"
+    },
+    {
+      "id": "MultiplicityElement-lowerBound",
+      "text": "result = (if (lowerValue=null or lowerValue.integerValue()=null) then 1 else lowerValue.integerValue() endif) OCL"
+    },
+    {
+      "id": "MultiplicityElement-upper.1",
+      "text": "result = (upperBound()) OCL"
+    },
+    {
+      "id": "MultiplicityElement-upperBound",
+      "text": "result = (if (upperValue=null or upperValue.unlimitedValue()=null) then 1 else upperValue.unlimitedValue() endif) OCL"
+    },
+    {
+      "id": "Property-subsetting_context_conforms",
+      "text": "subsettedProperty->notEmpty() implies (subsettingContext()->notEmpty() and subsettingContext()->forAll (sc | subsettedProperty->forAll(sp | sp.subsettingContext()->exists(c | sc.conformsTo(c))))) OCL"
+    },
+    {
+      "id": "Property-derived_union_is_read_only",
+      "text": "isDerivedUnion implies isReadOnly OCL"
+    },
+    {
+      "id": "Property-multiplicity_of_composite",
+      "text": "isComposite and association <> null implies opposite.upperBound() <= 1 OCL"
+    },
+    {
+      "id": "Property-redefined_property_inherited",
+      "text": "(redefinedProperty->notEmpty()) implies (redefinitionContext->notEmpty() and redefinedProperty->forAll(rp| ((redefinitionContext->collect(fc| fc.allParents()))->asSet())->collect(c| c.allFeatures())->asSet()->includes(rp))) OCL"
+    },
+    {
+      "id": "Property-subsetting_rules",
+      "text": "subsettedProperty->forAll(sp | self.type.conformsTo(sp.type) and ((self.upperBound()->notEmpty() and sp.upperBound()->notEmpty()) implies self.upperBound() <= sp.upperBound() )) OCL"
+    },
+    {
+      "id": "Property-binding_to_attribute",
+      "text": "(self.isAttribute() and (templateParameterSubstitution->notEmpty()) implies (templateParameterSubstitution->forAll(ts | ts.formal.oclIsKindOf(Property) and ts.formal.oclAsType(Property).isAttribute()))) OCL"
+    },
+    {
+      "id": "Property-derived_union_is_derived",
+      "text": "isDerivedUnion implies isDerived OCL"
+    },
+    {
+      "id": "Property-deployment_target",
+      "text": "deployment->notEmpty() implies owner.oclIsKindOf(Node) and Node.allInstances()->exists(n | n.part->exists(p | p = self)) OCL"
+    },
+    {
+      "id": "Property-subsetted_property_names",
+      "text": "subsettedProperty->forAll(sp | sp.name <> name) OCL"
+    },
+    {
+      "id": "Property-type_of_opposite_end",
+      "text": "(opposite->notEmpty() and owningAssociation->isEmpty()) implies classifier = opposite.type OCL"
+    },
+    {
+      "id": "Property-qualified_is_association_end",
+      "text": "qualifier->notEmpty() implies association->notEmpty() OCL"
+    },
+    {
+      "id": "Property-isAttribute",
+      "text": "result = (not classifier->isEmpty()) OCL"
+    },
+    {
+      "id": "Property-isCompatibleWith",
+      "text": "result = (self.oclIsKindOf(p.oclType()) and (p.oclIsKindOf(TypeElement) implies self.type.conformsTo(p.oclAsType(TypedElement).type))) OCL"
+    },
+    {
+      "id": "Property-isComposite.1",
+      "text": "result = (aggregation = AggregationKind::composite) OCL"
+    },
+    {
+      "id": "Property-isConsistentWith",
+      "text": "redefiningElement.isRedefinitionContextValid(self) OCL result = (redefiningElement.oclIsKindOf(Property) and let prop : Property = redefiningElement.oclAsType(Property) in (prop.type.conformsTo(self.type) and ((prop.lowerBound()->notEmpty() and self.lowerBound()->notEmpty()) implies prop.lowerBound() >= self.lowerBound()) and ((prop.upperBound()->notEmpty() and self.upperBound()->notEmpty()) implies prop.lowerBound() <= self.lowerBound()) and (self.isComposite implies prop.isComposite))) OCL"
+    },
+    {
+      "id": "Property-isNavigable",
+      "text": "result = (not classifier->isEmpty() or association.navigableOwnedEnd->includes(self)) OCL"
+    },
+    {
+      "id": "Property-opposite.1",
+      "text": "result = (if association <> null and association.memberEnd->size() = 2 then association.memberEnd->any(e | e <> self) else null endif) OCL"
+    },
+    {
+      "id": "Property-subsettingContext",
+      "text": "result = (if association <> null then association.memberEnd->excluding(self)->collect(type)->asSet() else if classifier<>null then classifier->asSet() else Set{} endif endif) OCL"
+    },
+    {
+      "id": "RedefinableElement-redefinition_consistent",
+      "text": "redefinedElement->forAll(re | re.isConsistentWith(self)) OCL"
+    },
+    {
+      "id": "RedefinableElement-non_leaf_redefinition",
+      "text": "redefinedElement->forAll(re | not re.isLeaf) OCL"
+    },
+    {
+      "id": "RedefinableElement-redefinition_context_valid",
+      "text": "redefinedElement->forAll(re | self.isRedefinitionContextValid(re)) OCL"
+    },
+    {
+      "id": "RedefinableElement-isConsistentWith",
+      "text": "result = (false) OCL redefiningElement.isRedefinitionContextValid(self) OCL"
+    },
+    {
+      "id": "RedefinableElement-isRedefinitionContextValid",
+      "text": "result = (redefinitionContext->exists(c | c.allParents()->includesAll(redefinedElement.redefinitionContext))) OCL"
+    }
+  ],
+  "pdf": {
+    "source": "https://www.omg.org/spec/UML/2.5.1/PDF",
+    "sha256": "416b57e1933780eb48bd60fe513e031da220c28a521bdd334a366bebc78a463e",
+    "bytes": 18069510,
+    "inspected_pdf_pages": [
+      154,
+      155,
+      191,
+      192,
+      193,
+      194,
+      195,
+      196
+    ],
+    "governing_clauses": [
+      "9.5.3",
+      "9.9.17.7",
+      "9.9.17.8",
+      "9.9.18.7",
+      "9.9.18.8"
+    ]
+  }
+}

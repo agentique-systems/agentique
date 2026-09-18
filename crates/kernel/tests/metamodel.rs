@@ -276,3 +276,209 @@ fn package_names_do_not_replace_descriptor_identity() {
     let r = MetamodelRegistry::new([model_descriptor()], [a, b], []).unwrap();
     assert!(!r.is_subtype(TYPE, FEATURE).unwrap());
 }
+
+#[test]
+fn locally_valid_subset_graphs_are_representable_not_uml_certified() {
+    use std::collections::BTreeSet;
+    for edges in [
+        vec![(NAME, TAGS)],
+        vec![(NAME, TAGS), (TAGS, NAME)],
+        vec![(NAME, NAME)],
+    ] {
+        let mut a = property(NAME, "a", TYPE, ValueKind::String, Multiplicity::MANY);
+        let mut b = property(TAGS, "b", TYPE, ValueKind::String, Multiplicity::MANY);
+        for (source, target) in edges {
+            if source == NAME {
+                a.subsets.insert(target);
+            } else {
+                b.subsets.insert(target);
+            }
+        }
+        let r = MetamodelRegistry::new(
+            [model_descriptor()],
+            [class(TYPE, "Context", &[])],
+            [a.clone(), b.clone()],
+        )
+        .unwrap();
+        assert_eq!(r.property(NAME).unwrap().subsets, a.subsets);
+        assert_eq!(r.property(TAGS).unwrap().subsets, b.subsets);
+        assert!(r.subset_closure(NAME).unwrap().len() <= 2);
+        assert!(r.subset_contributors(NAME).unwrap().len() <= 2);
+        // Reflexive metadata violates UML subsetted_property_names. It is still
+        // coherent set inclusion and is never normalized out of the descriptor.
+        if a.subsets == BTreeSet::from([NAME]) {
+            assert_eq!(r.subset_closure(NAME).unwrap(), BTreeSet::from([NAME]));
+        }
+    }
+}
+
+#[test]
+fn subset_local_context_domain_and_upper_bound_validation_remains_enabled() {
+    let classes = vec![
+        class(TYPE, "Context", &[]),
+        class(FEATURE, "Unrelated", &[]),
+    ];
+    let base = property(NAME, "base", TYPE, ValueKind::String, Multiplicity::ONE);
+    for (owner, kind, bounds) in [
+        (FEATURE, ValueKind::String, Multiplicity::OPTIONAL),
+        (TYPE, ValueKind::Boolean, Multiplicity::OPTIONAL),
+        (TYPE, ValueKind::String, Multiplicity::MANY),
+    ] {
+        let mut sub = property(TAGS, "sub", owner, kind, bounds);
+        sub.subsets.insert(NAME);
+        assert!(matches!(
+            MetamodelRegistry::new([model_descriptor()], classes.clone(), [base.clone(), sub]),
+            Err(MetamodelError::InvalidPropertyMetadata(TAGS))
+        ));
+    }
+    // Unlike redefinition, subsetting does not require the lower bound to narrow.
+    let mut sub = property(TAGS, "sub", TYPE, ValueKind::String, Multiplicity::OPTIONAL);
+    sub.subsets.insert(NAME);
+    MetamodelRegistry::new(
+        [model_descriptor()],
+        classes.clone(),
+        [base.clone(), sub.clone()],
+    )
+    .unwrap();
+    sub.subsets.insert(BAG);
+    assert!(matches!(
+        MetamodelRegistry::new([model_descriptor()], classes, [base, sub]),
+        Err(MetamodelError::UnknownProperty(BAG))
+    ));
+}
+
+#[test]
+fn redefinition_cycles_and_composition_weakening_remain_rejected() {
+    let classes = vec![class(ELEMENT, "Base", &[]), class(TYPE, "Sub", &[ELEMENT])];
+    let mut a = property(
+        NAME,
+        "base",
+        ELEMENT,
+        ValueKind::Reference(ELEMENT),
+        Multiplicity::MANY,
+    );
+    a.ordered = true;
+    a.unique = true;
+    a.composite = true;
+    let mut b = property(
+        TAGS,
+        "replacement",
+        TYPE,
+        ValueKind::Reference(TYPE),
+        Multiplicity::MANY,
+    );
+    b.ordered = true;
+    b.unique = true;
+    b.composite = true;
+    b.redefines.insert(NAME);
+    MetamodelRegistry::new(
+        [model_descriptor()],
+        classes.clone(),
+        [a.clone(), b.clone()],
+    )
+    .unwrap();
+    let mut invalid = b.clone();
+    invalid.composite = false;
+    assert!(matches!(
+        MetamodelRegistry::new([model_descriptor()], classes.clone(), [a.clone(), invalid]),
+        Err(MetamodelError::InvalidRedefinition { .. })
+    ));
+    a.redefines.insert(TAGS);
+    assert!(matches!(
+        MetamodelRegistry::new([model_descriptor()], classes, [a, b]),
+        Err(MetamodelError::PropertyCycle(_))
+    ));
+}
+
+#[test]
+fn redefining_collection_flags_are_preserved_and_effective_shape_is_validated() {
+    use agq_kernel::{
+        provenance::DeclaredOrigin,
+        value::{SlotValue, Value},
+    };
+    use std::sync::Arc;
+    let mut a = property(NAME, "base", ELEMENT, ValueKind::String, Multiplicity::MANY);
+    a.ordered = true;
+    a.unique = true;
+    let mut b = property(
+        TAGS,
+        "replacement",
+        TYPE,
+        ValueKind::String,
+        Multiplicity::MANY,
+    );
+    b.ordered = false;
+    b.unique = false;
+    b.redefines.insert(NAME);
+    let registry = MetamodelRegistry::new(
+        [model_descriptor()],
+        [class(ELEMENT, "Base", &[]), class(TYPE, "Sub", &[ELEMENT])],
+        [a, b.clone()],
+    )
+    .unwrap();
+    assert_eq!(registry.resolve_property(TYPE, NAME).unwrap(), Some(&b));
+    let base = Snapshot::new(Arc::new(registry));
+    let origin = DeclaredOrigin::Authored { source: None };
+    let values = vec![Value::String("same".into()), Value::String("same".into())];
+    let mut changes = base.change_set();
+    changes.create(ENGINE, TYPE, origin.clone());
+    changes.set(ENGINE, TAGS, SlotValue::Bag(values.clone()), origin.clone());
+    let model = base.apply(&changes).unwrap();
+    assert_eq!(
+        model
+            .model()
+            .element(ENGINE)
+            .unwrap()
+            .slot(TAGS)
+            .unwrap()
+            .value(),
+        &SlotValue::Bag(values.clone())
+    );
+    let mut invalid = model.change_set();
+    invalid.set(ENGINE, TAGS, SlotValue::Ordered(values), origin);
+    assert!(model.apply(&invalid).is_err());
+    assert!(base.model().element(ENGINE).is_none());
+}
+
+#[test]
+fn future_union_metadata_frontier_is_finite_and_deduplicates_diamonds_and_cycles() {
+    use std::collections::BTreeSet;
+    let properties = [
+        (NAME, vec![NAME]),
+        (TAGS, vec![NAME, COUNT]),
+        (COUNT, vec![NAME, TAGS]),
+        (BAG, vec![TAGS, COUNT]),
+    ]
+    .map(|(id, targets)| {
+        let mut p = property(
+            id,
+            &id.to_string(),
+            TYPE,
+            ValueKind::String,
+            Multiplicity::MANY,
+        );
+        p.subsets.extend(targets);
+        p.derived = id == NAME;
+        p.derived_union = id == NAME;
+        p
+    });
+    let r = MetamodelRegistry::new(
+        [model_descriptor()],
+        [class(TYPE, "Context", &[])],
+        properties,
+    )
+    .unwrap();
+    assert_eq!(
+        r.subset_contributors(NAME).unwrap(),
+        BTreeSet::from([NAME, TAGS, COUNT, BAG])
+    );
+    assert_eq!(
+        r.subset_closure(BAG).unwrap(),
+        BTreeSet::from([NAME, TAGS, COUNT])
+    );
+    assert_eq!(r.subset_contributors(BAG).unwrap(), BTreeSet::new());
+    assert_eq!(
+        r.subset_contributors(PropertyId::from_u128(999)),
+        Err(MetamodelError::UnknownProperty(PropertyId::from_u128(999)))
+    );
+}

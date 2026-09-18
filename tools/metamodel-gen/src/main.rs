@@ -38,6 +38,24 @@ fn run() -> Result<()> {
     let bundle = pipeline::generate_profile(&root, profile)?;
     if require_runtime && profile.descriptor_target == baseline::DescriptorTarget::SysMlStructural {
         let audit = closure_audit::report(&bundle)?;
+        for diagnostic in audit["baseline_diagnostics"]
+            .as_array()
+            .into_iter()
+            .flatten()
+        {
+            eprintln!(
+                "Baseline diagnostic: {}#{} [{}; {}] {}",
+                diagnostic["source"]["artifact_uri"]
+                    .as_str()
+                    .unwrap_or_default(),
+                diagnostic["external_id"].as_str().unwrap_or_default(),
+                diagnostic["source"]["sha256"].as_str().unwrap_or_default(),
+                diagnostic["disposition"].as_str().unwrap_or_default(),
+                diagnostic["governing_constraint"]
+                    .as_str()
+                    .unwrap_or_default()
+            );
+        }
         if audit["result"] != "representable" {
             return Err(format!(
                 "SysML runtime closure blocked: {}. See {} for source-qualified evidence; no runtime output written.",
@@ -53,12 +71,19 @@ fn run() -> Result<()> {
         canonical_json(&bundle)?,
     )];
     if !ir_only && profile.descriptor_target == baseline::DescriptorTarget::KerMlRootCore {
-        let directory = descriptor_output.unwrap_or_else(|| root.clone());
+        let directory = descriptor_output.as_ref().unwrap_or(&root);
         outputs.extend(
             descriptors::artifacts(&bundle)?
                 .into_iter()
                 .map(|(path, bytes)| (directory.join(path), bytes)),
         );
+    }
+    if !ir_only && profile.descriptor_target == baseline::DescriptorTarget::SysMlStructural {
+        let directory = descriptor_output.as_ref().unwrap_or(&root);
+        outputs.push((
+            directory.join(closure_audit::PATH),
+            closure_audit::bytes(&bundle)?,
+        ));
     }
     if all {
         let sysml = pipeline::generate_profile(&root, baseline::SYSML)?;

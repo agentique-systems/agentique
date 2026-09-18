@@ -1,0 +1,90 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T05:38:07.141Z",
+    "durationMs": 486,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "started": "2026-09-18T05:38:07.627Z",
+    "durationMs": 2989,
+    "exitCode": 0,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo test --workspace",
+    "started": "2026-09-18T05:38:10.616Z",
+    "durationMs": 33617,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rust-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+    "started": "2026-09-18T05:38:44.234Z",
+    "durationMs": 2186,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generated.txt"
+  },
+  {
+    "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-metamodel-gen",
+    "started": "2026-09-18T05:38:46.421Z",
+    "durationMs": 5459,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rustdoc.txt"
+  },
+  {
+    "command": "node verification/sysml-language-v2-resume/check-docs.mjs",
+    "started": "2026-09-18T05:38:51.880Z",
+    "durationMs": 63,
+    "exitCode": 0,
+    "signal": null,
+    "log": "links.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-18T05:38:51.944Z",
+    "durationMs": 498,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "npm run check",
+    "started": "2026-09-18T05:38:52.443Z",
+    "durationMs": 1268,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-check.txt"
+  },
+  {
+    "command": "npm run build",
+    "started": "2026-09-18T05:38:53.711Z",
+    "durationMs": 1376,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-build.txt"
+  },
+  {
+    "command": "npm test",
+    "started": "2026-09-18T05:38:55.087Z",
+    "durationMs": 493,
+    "exitCode": 0,
+    "signal": null,
+    "log": "node-tests.txt"
+  },
+  {
+    "command": "npm run test:e2e",
+    "started": "2026-09-18T05:38:55.582Z",
+    "durationMs": 47579,
+    "exitCode": 0,
+    "signal": null,
+    "log": "browser-tests.txt"
+  }
+]
