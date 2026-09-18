@@ -96,6 +96,16 @@ If a derived value is supplied, its type, multiplicity and references are valida
 Structural acceptance does not establish semantic completeness, conformance or
 verification success.
 
+Property redefinition must follow strict context ancestry and compatible domain,
+bounds and composition. Collection flags are retained; values and borrowed reads
+use the effective replacement's shape. Only redefinition edges participate
+in `PropertyCycle` rejection. Subsetting checks local context/domain compatibility
+and upper-bound narrowing; reflexive and cyclic set-inclusion metadata is
+representable. `subset_closure` and `subset_contributors` traverse each reachable
+property once. Neither computes derived-union values. Exact source naming
+anomalies belong to the versioned standards diagnostics above the kernel, as
+documented in [ADR 0008](adr/0008-property-subsetting-cycle-semantics.md).
+
 ## Derivation and explanation
 
 Declared state includes authored, imported standard-library, transformation and

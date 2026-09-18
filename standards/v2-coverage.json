@@ -1,11 +1,27 @@
 {
   "format": "agentique-generation-2-coverage/1",
   "generation": 2,
-  "normative_targets": { "KerML": "1.0", "SysML": "2.0" },
+  "normative_targets": {
+    "KerML": "1.0",
+    "SysML": "2.0"
+  },
   "claim": "Bounded generation-2 language infrastructure; no full conformance, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
-  "runtime_sysml_gate": { "stage": 3, "result": "blocked", "evidence": "docs/sysml-v2-runtime-blocker.md", "audit": "standards/generated/sysml-2.0/structural-audit.json" },
-  "modeling_platform_gate": { "stage": "prerequisite", "result": "blocked", "evidence": "verification/modeling-platform-v2/README.md", "completed_stages": [], "reason": "Fetched main lacks the assumed completed generation-2 SysML language milestone; runtime readiness still fails on pinned property metadata." },
+  "runtime_sysml_gate": {
+    "stage": 3,
+    "result": "blocked",
+    "evidence": "docs/sysml-v2-runtime-blocker.md",
+    "audit": "standards/generated/sysml-2.0/structural-audit.json",
+    "reason": "Combined subset/redefinition cycle rule corrected (ADR 0008); runtime closure now fails an independent redefinition context: definedFlow -> Definition::ownedAction.",
+    "resume_evidence": "verification/sysml-language-v2-resume/README.md"
+  },
+  "modeling_platform_gate": {
+    "stage": "prerequisite",
+    "result": "blocked",
+    "evidence": "verification/modeling-platform-v2/README.md",
+    "completed_stages": [],
+    "reason": "Pack 2A remains incomplete: SysML runtime closure fails redefinition context validation after the subset invariant correction."
+  },
   "status_meaning": {
     "implemented": "Implemented within the explicitly stated boundary.",
     "partial": "Some required capabilities exist; listed gaps remain.",
@@ -17,50 +33,114 @@
       "id": "normative-metamodel",
       "status": "partial",
       "boundary": "Shared offline profile-driven KerML 1.0 / SysML 2.0 MOF XMI import and conservative JSON cross-check with source-qualified cross-metamodel references; 29-class KerML Root/Core runtime closure and borrowed views. SysML import does not imply runtime descriptors.",
-      "evidence": ["docs/adr/0002-normative-metamodel-pipeline.md", "docs/adr/0003-normative-root-core-descriptors.md", "docs/adr/0004-kerml-typed-views.md", "tools/metamodel-gen/tests/normative.rs"],
-      "gaps": ["SysML runtime descriptors and views", "Full runtime descriptor and numeric-domain support", "Execution of retained OCL/English constraints"]
+      "evidence": [
+        "docs/adr/0002-normative-metamodel-pipeline.md",
+        "docs/adr/0003-normative-root-core-descriptors.md",
+        "docs/adr/0004-kerml-typed-views.md",
+        "tools/metamodel-gen/tests/normative.rs"
+      ],
+      "gaps": [
+        "SysML runtime descriptors and views",
+        "Full runtime descriptor and numeric-domain support",
+        "Execution of retained OCL/English constraints"
+      ]
+    },
+    {
+      "id": "property-metadata",
+      "status": "implemented",
+      "boundary": "Generic redefinition-only cycle rejection; local subset context/domain/upper validation; visited-set forward/reverse subset traversal. Source naming anomalies have exact versioned dispositions independent of structural validation. No derived-union value evaluation or full UML conformance.",
+      "evidence": [
+        "docs/adr/0008-property-subsetting-cycle-semantics.md",
+        "crates/kernel/tests/metamodel.rs",
+        "tools/metamodel-gen/tests/sysml_closure.rs",
+        "standards/baseline-anomalies.json"
+      ],
+      "gaps": [
+        "Derived-union evaluator and incremental invalidation",
+        "Full UML/MOF well-formedness audit"
+      ]
     },
     {
       "id": "semantic-queries",
       "status": "partial",
       "boundary": "Ownership, membership, direct and transitive specialization, direct typing/subsetting/redefinition, effective-feature identity sets on supported DAGs, and declared lexical/public name resolution. Evidence, context identity, completeness and positive/search dependencies.",
-      "evidence": ["docs/adr/0005-kerml-semantic-query-foundation.md", "crates/kerml-semantics/tests/foundation.rs"],
-      "gaps": ["Imported and inherited name lookup", "Library implications and complete constraints", "Cyclic inheritance fixed point", "Incremental invalidator/query cache"]
+      "evidence": [
+        "docs/adr/0005-kerml-semantic-query-foundation.md",
+        "crates/kerml-semantics/tests/foundation.rs"
+      ],
+      "gaps": [
+        "Imported and inherited name lookup",
+        "Library implications and complete constraints",
+        "Cyclic inheritance fixed point",
+        "Incremental invalidator/query cache"
+      ]
     },
     {
       "id": "textual-syntax",
       "status": "partial",
       "boundary": "Lossless single-document KerML namespace/type/feature slice, owned specialization/typing/subsetting/redefinition, UTF-8 origins and conservative edit identity reconciliation. Working snapshots distinguish pending assertions from resolved canonical relationships.",
-      "evidence": ["docs/adr/0006-lossless-kerml-text-frontend.md", "verification/kerml-text-v2/README.md"],
-      "gaps": ["Packages/imports/aliases/short names", "Multi-document projects and SysML", "Expressions/multiplicities/explicit visibility", "Full grammar and constraint validation"]
+      "evidence": [
+        "docs/adr/0006-lossless-kerml-text-frontend.md",
+        "verification/kerml-text-v2/README.md"
+      ],
+      "gaps": [
+        "Packages/imports/aliases/short names",
+        "Multi-document projects and SysML",
+        "Expressions/multiplicities/explicit visibility",
+        "Full grammar and constraint validation"
+      ]
     },
     {
       "id": "libraries",
       "status": "partial",
       "boundary": "Exact original Systems/Kernel archive dependency closure is pinned separately from the historical corrective release. SemanticContext can identify caller-supplied content pins; generation 2 does not ingest or certify these libraries.",
-      "evidence": ["standards/normative/sysml-2.0/library-set.json", "standards/baseline-lock.json", "standards/lock.json", "crates/kerml-semantics/src/context.rs"],
-      "gaps": ["Generation-2 library ingestion and semantic provenance"]
+      "evidence": [
+        "standards/normative/sysml-2.0/library-set.json",
+        "standards/baseline-lock.json",
+        "standards/lock.json",
+        "crates/kerml-semantics/src/context.rs"
+      ],
+      "gaps": [
+        "Generation-2 library ingestion and semantic provenance"
+      ]
     },
     {
       "id": "sysml",
       "status": "partial",
-      "boundary": "SysML 2.0 XMI/JSON import and cross-metamodel structural audit exist. Runtime registration is blocked by published self-subsetting metadata; typed views, semantics and text are not implemented.",
-      "evidence": ["docs/architecture.md", "standards/normative/sysml-2.0/README.md"],
-      "gaps": ["Resolve the documented Stage 3 normative metadata blocker", "Runtime descriptors, typed views, semantic rules and text lowering"]
+      "boundary": "SysML 2.0 import and descriptor translation preserve exact self-subsets with source/hash-qualified baseline diagnostics. Atomic registry validation now fails the independent definedFlow -> Definition::ownedAction redefinition context; no SysML runtime, semantics or text crate is published.",
+      "evidence": [
+        "docs/architecture.md",
+        "standards/normative/sysml-2.0/README.md",
+        "docs/adr/0008-property-subsetting-cycle-semantics.md",
+        "verification/sysml-language-v2-resume/README.md"
+      ],
+      "gaps": [
+        "Resolve the independent invalid redefinition context in the required closure",
+        "Runtime descriptor publication and typed views",
+        "KerML project/library prerequisites, SysML rules, text lowering and end-to-end acceptance"
+      ]
     },
     {
       "id": "api",
       "status": "unsupported",
       "boundary": "No generation-2 Systems Modeling API, persistence repository or application migration in the language milestone.",
-      "evidence": ["docs/architecture.md"],
-      "gaps": ["Separate future platform milestone; generation-1 API coverage does not transfer"]
+      "evidence": [
+        "docs/architecture.md"
+      ],
+      "gaps": [
+        "Separate future platform milestone; generation-1 API coverage does not transfer"
+      ]
     },
     {
       "id": "execution",
       "status": "unsupported",
       "boundary": "Generation 2 does not implement execution or simulation. Query completeness is not verification success.",
-      "evidence": ["docs/architecture.md"],
-      "gaps": ["Separate future execution semantics; generation-1 AGQ-SEQ-01 does not transfer"]
+      "evidence": [
+        "docs/architecture.md"
+      ],
+      "gaps": [
+        "Separate future execution semantics; generation-1 AGQ-SEQ-01 does not transfer"
+      ]
     }
   ]
 }

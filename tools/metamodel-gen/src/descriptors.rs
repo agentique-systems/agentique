@@ -93,6 +93,16 @@ fn pids(model: &Metamodel, ids: &[String]) -> Result<BTreeSet<PropertyId>> {
 }
 
 pub fn descriptor_set(bundle: &Bundle, selected: &Closure) -> Result<DescriptorSet> {
+    let output = translate_descriptors(bundle, selected)?;
+    MetamodelRegistry::from_descriptors(output.clone())
+        .map_err(|e| format!("generated descriptor validation: {e}"))?;
+    Ok(output)
+}
+
+/// Translate exact source metadata for inspection before registration. This is
+/// deliberately NOT a runtime-readiness verdict. Production emission must use
+/// `descriptor_set`, which also validates the complete registry atomically.
+pub fn translate_descriptors(bundle: &Bundle, selected: &Closure) -> Result<DescriptorSet> {
     let model = &bundle.metamodel;
     let mut metamodels = BTreeMap::new();
     for root in model.packages.values().filter(|p| p.parent.is_none()) {
@@ -243,8 +253,6 @@ pub fn descriptor_set(bundle: &Bundle, selected: &Closure) -> Result<DescriptorS
             opposite_ends: pids(model, &p.opposite_ends)?,
         });
     }
-    MetamodelRegistry::from_descriptors(output.clone())
-        .map_err(|e| format!("generated descriptor validation: {e}"))?;
     Ok(output)
 }
 

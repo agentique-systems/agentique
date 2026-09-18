@@ -10,6 +10,11 @@ The shared metamodel importer now handles SysML 2.0, but runtime descriptor
 registration is [blocked by published property metadata](sysml-v2-runtime-blocker.md).
 Planned SysML runtime nodes below remain unimplemented.
 
+[ADR 0008](adr/0008-property-subsetting-cycle-semantics.md) corrects the former
+combined property-cycle invariant: cyclic subsetting is representable and exact
+source anomalies are separately reported. Runtime readiness now exposes an
+independent invalid redefinition context in the required SysML closure.
+
 The modeling-platform milestone's prerequisite check reproduced this blocker on
 fetched `main`; its stages 0-6 have not begun. See the
 [platform prerequisite record](../verification/modeling-platform-v2/README.md)

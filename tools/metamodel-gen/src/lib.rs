@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 pub mod baseline;
+pub mod baseline_diagnostics;
 pub mod closure_audit;
 pub mod cross_check;
 pub mod descriptors;
