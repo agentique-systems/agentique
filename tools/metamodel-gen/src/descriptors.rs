@@ -92,6 +92,42 @@ fn pids(model: &Metamodel, ids: &[String]) -> Result<BTreeSet<PropertyId>> {
     ids.iter().map(|id| pid(model, id)).collect()
 }
 
+pub fn descriptor_source(entity: &Entity) -> DescriptorSource {
+    DescriptorSource {
+        specification: entity.key.source.specification.clone(),
+        version: entity.key.source.version.clone(),
+        artifact_uri: entity.key.source.artifact_uri.clone(),
+        sha256: entity.key.source.sha256.clone(),
+        external_id: entity.key.external_id.clone(),
+        byte_range: entity.source_range,
+    }
+}
+
+fn source_code(source: &DescriptorSource) -> String {
+    format!(
+        "DescriptorSource {{ specification: {:?}.into(), version: {:?}.into(), artifact_uri: {:?}.into(), sha256: {:?}.into(), external_id: {:?}.into(), byte_range: {:?} }}",
+        source.specification,
+        source.version,
+        source.artifact_uri,
+        source.sha256,
+        source.external_id,
+        source.byte_range
+    )
+}
+
+fn descriptor_id_code(id: DescriptorId) -> String {
+    let (variant, ty, value) = match id {
+        DescriptorId::Metamodel(id) => ("Metamodel", "MetamodelId", id.as_u128()),
+        DescriptorId::Class(id) => ("Class", "MetaclassId", id.as_u128()),
+        DescriptorId::Property(id) => ("Property", "PropertyId", id.as_u128()),
+        DescriptorId::Association(id) => ("Association", "AssociationId", id.as_u128()),
+        DescriptorId::Enumeration(id) => ("Enumeration", "EnumerationId", id.as_u128()),
+        DescriptorId::Primitive(id) => ("Primitive", "PrimitiveDomainId", id.as_u128()),
+        DescriptorId::Literal(id) => ("Literal", "EnumerationLiteralId", id.as_u128()),
+    };
+    format!("DescriptorId::{variant}({})", id_code(ty, value))
+}
+
 pub fn descriptor_set(bundle: &Bundle, selected: &Closure) -> Result<DescriptorSet> {
     let output = translate_descriptors(bundle, selected)?;
     MetamodelRegistry::from_descriptors(output.clone())
@@ -132,8 +168,32 @@ pub fn translate_descriptors(bundle: &Bundle, selected: &Closure) -> Result<Desc
         models: metamodels.values().cloned().collect(),
         ..DescriptorSet::default()
     };
+    for root in model.packages.values().filter(|p| p.parent.is_none()) {
+        output.sources.insert(
+            DescriptorId::Metamodel(MetamodelId::from_u128(root.entity.key.uuid().as_u128())),
+            descriptor_source(&root.entity),
+        );
+    }
+    output.reviews = crate::baseline_diagnostics::reviews(model, selected)?;
     for id in &selected.classifiers {
         let c = &model.classifiers[id];
+        let descriptor_id = match c.entity.key.kind {
+            Kind::Class => DescriptorId::Class(cid(model, id)?),
+            Kind::Association => DescriptorId::Association(aid(model, id)),
+            Kind::Enumeration => DescriptorId::Enumeration(eid(model, id)),
+            _ => return Err(format!("unsupported classifier {id}")),
+        };
+        output
+            .sources
+            .insert(descriptor_id, descriptor_source(&c.entity));
+        for literal in &c.literals {
+            output.sources.insert(
+                DescriptorId::Literal(EnumerationLiteralId::from_u128(
+                    literal.key.uuid().as_u128(),
+                )),
+                descriptor_source(literal),
+            );
+        }
         let metamodel = metamodels[&c.entity.key.source.artifact_uri].id;
         let name = c.entity.name.clone();
         let package = c.entity.key.package_path.clone();
@@ -151,11 +211,6 @@ pub fn translate_descriptors(bundle: &Bundle, selected: &Closure) -> Result<Desc
                 is_abstract: c.is_abstract,
             }),
             Kind::Association => {
-                if c.is_abstract || !c.generalizations.is_empty() {
-                    return Err(format!(
-                        "unsupported association inheritance/abstractness: {id}"
-                    ));
-                }
                 output.associations.push(AssociationDescriptor {
                     id: aid(model, id),
                     name,
@@ -167,6 +222,8 @@ pub fn translate_descriptors(bundle: &Bundle, selected: &Closure) -> Result<Desc
                         .map(|id| pid(model, id))
                         .collect::<Result<_>>()?,
                     navigable_owned_ends: pids(model, &c.navigable_owned_ends)?,
+                    direct_supertypes: c.generalizations.iter().map(|id| aid(model, id)).collect(),
+                    is_abstract: c.is_abstract,
                 });
             }
             Kind::Enumeration => output.enumerations.push(EnumerationDescriptor {
@@ -194,6 +251,10 @@ pub fn translate_descriptors(bundle: &Bundle, selected: &Closure) -> Result<Desc
     }
     for id in &selected.properties {
         let p = &model.properties[id];
+        output.sources.insert(
+            DescriptorId::Property(pid(model, id)?),
+            descriptor_source(&p.entity),
+        );
         // No property with these semantics is silently approximated. All are
         // retained in the golden, including false/default values in this slice.
         if p.is_read_only || p.aggregation == Aggregation::Shared {
@@ -222,11 +283,26 @@ pub fn translate_descriptors(bundle: &Bundle, selected: &Closure) -> Result<Desc
                         ) == *target
                     })
                     .ok_or_else(|| format!("unresolved primitive {target}"))?;
-                match primitive.entity.key.external_id.as_str() {
-                    "Boolean" => ValueKind::Boolean,
-                    "String" => ValueKind::String,
+                let representation = match primitive.entity.key.external_id.as_str() {
+                    "Boolean" => PrimitiveRepresentation::Boolean,
+                    "String" => PrimitiveRepresentation::String,
+                    "Integer" => PrimitiveRepresentation::Integer,
+                    "Real" => PrimitiveRepresentation::Real,
                     _ => return Err(format!("unsupported primitive storage domain: {target}")),
+                };
+                let domain = PrimitiveDomainId::from_u128(primitive.entity.key.uuid().as_u128());
+                if !output.primitives.iter().any(|d| d.id == domain) {
+                    output.primitives.push(PrimitiveDescriptor {
+                        id: domain,
+                        name: primitive.entity.name.clone(),
+                        representation,
+                    });
+                    output.sources.insert(
+                        DescriptorId::Primitive(domain),
+                        descriptor_source(&primitive.entity),
+                    );
                 }
+                ValueKind::Primitive(domain)
             }
         };
         let bound = |v| usize::try_from(v).map_err(|_| format!("bound not representable: {id}"));
@@ -253,6 +329,7 @@ pub fn translate_descriptors(bundle: &Bundle, selected: &Closure) -> Result<Desc
             opposite_ends: pids(model, &p.opposite_ends)?,
         });
     }
+    output.primitives.sort_by_key(|d| d.id);
     Ok(output)
 }
 
@@ -350,19 +427,38 @@ pub fn rust_source(
     golden_bytes: &[u8],
 ) -> String {
     let mut out = format!(
-        "// GENERATED FILE. DO NOT EDIT.\n// Generator: {VERSION}\n// Reproduce: cargo run --locked --offline -p agq-metamodel-gen\n// KerML.xmi SHA-256: {}\n// PrimitiveTypes.xmi SHA-256: {}\n// KerML.json SHA-256: {}\n// Golden SHA-256: {}\n\nuse agq_kernel::{{metamodel::*, *}};\nuse std::collections::{{BTreeMap, BTreeSet}};\n\n#[rustfmt::skip]\npub fn descriptors() -> DescriptorSet {{\n    DescriptorSet {{\n",
+        "// GENERATED FILE. DO NOT EDIT.\n// Generator: {VERSION}\n// Reproduce: cargo run --locked --offline -p agq-metamodel-gen\n// Metamodel XMI SHA-256: {}\n// PrimitiveTypes.xmi SHA-256: {}\n// Metamodel JSON SHA-256: {}\n// Golden SHA-256: {}\n\nuse agq_kernel::{{metamodel::*, *}};\nuse std::collections::{{BTreeMap, BTreeSet}};\n\n#[rustfmt::skip]\npub fn descriptors() -> DescriptorSet {{\n    let mut output = DescriptorSet::default();\n",
         bundle.metamodel.source.sha256,
         bundle.primitive_types.source.sha256,
         bundle.cross_check.source.sha256,
         sha256(golden_bytes)
     );
-    let m = &set.models[0];
-    let mm = id_code("MetamodelId", m.id.as_u128());
-    out.push_str(&format!("        models: vec![MetamodelDescriptor {{ id: {mm}, name: {:?}.into(), version: Version {{ major: 1, minor: 0, patch: 0 }}, uri: {:?}.into() }}],\n        classes: vec![\n", m.name, m.uri));
-    for c in &set.classes {
-        out.push_str(&format!("            MetaclassDescriptor {{ id: {}, name: {:?}.into(), package: {}, metamodel: {mm}, direct_supertypes: BTreeSet::from({}), is_abstract: {} }},\n", id_code("MetaclassId", c.id.as_u128()), c.name, strings(&c.package), list(c.direct_supertypes.iter().map(|v| id_code("MetaclassId", v.as_u128()))), c.is_abstract));
+
+    for p in &set.primitives {
+        out.push_str(&format!("    output.primitives.push(PrimitiveDescriptor {{ id: {}, name: {:?}.into(), representation: PrimitiveRepresentation::{:?} }});\n", id_code("PrimitiveDomainId", p.id.as_u128()), p.name, p.representation));
     }
-    out.push_str("        ],\n        properties: vec![\n");
+
+    for (id, source) in &set.sources {
+        out.push_str(&format!(
+            "    output.sources.insert({}, {});\n",
+            descriptor_id_code(*id),
+            source_code(source)
+        ));
+    }
+
+    for r in &set.reviews {
+        out.push_str(&format!("    output.reviews.push(DiagnosticReview {{ rule: MetamodelRule::{:?}, subject: {}, related: {}, source: {}, related_source: {}, evidence: {:?}.into() }});\n", r.rule, descriptor_id_code(r.subject), descriptor_id_code(r.related), source_code(&r.source), source_code(&r.related_source), r.evidence));
+    }
+
+    for m in &set.models {
+        out.push_str(&format!("    output.models.push(MetamodelDescriptor {{ id: {}, name: {:?}.into(), version: Version {{ major: {}, minor: {}, patch: {} }}, uri: {:?}.into() }});\n", id_code("MetamodelId",m.id.as_u128()),m.name,m.version.major,m.version.minor,m.version.patch,m.uri));
+    }
+
+    for c in &set.classes {
+        let mm = id_code("MetamodelId", c.metamodel.as_u128());
+        out.push_str(&format!("    output.classes.push(MetaclassDescriptor {{ id: {}, name: {:?}.into(), package: {}, metamodel: {mm}, direct_supertypes: BTreeSet::from({}), is_abstract: {} }});\n", id_code("MetaclassId", c.id.as_u128()), c.name, strings(&c.package), list(c.direct_supertypes.iter().map(|v| id_code("MetaclassId", v.as_u128()))), c.is_abstract));
+    }
+
     for p in &set.properties {
         let owner = match p.owner {
             PropertyOwner::Class(id) => format!(
@@ -375,6 +471,10 @@ pub fn rust_source(
             ),
         };
         let kind = match p.value_kind {
+            ValueKind::Primitive(id) => format!(
+                "ValueKind::Primitive({})",
+                id_code("PrimitiveDomainId", id.as_u128())
+            ),
             ValueKind::Reference(id) => format!(
                 "ValueKind::Reference({})",
                 id_code("MetaclassId", id.as_u128())
@@ -388,28 +488,33 @@ pub fn rust_source(
         let association = p.association.map_or("None".into(), |id| {
             format!("Some({})", id_code("AssociationId", id.as_u128()))
         });
-        out.push_str(&format!("            PropertyDescriptor {{ id: {}, name: {:?}.into(), owner: {owner}, value_kind: {kind}, multiplicity: Multiplicity {{ lower: {}, upper: {:?} }}, ordered: {}, unique: {}, derived: {}, composite: {}, redefines: {}, subsets: {}, derived_union: {}, association: {association}, opposite_ends: {} }},\n", id_code("PropertyId", p.id.as_u128()), p.name, p.multiplicity.lower, p.multiplicity.upper, p.ordered, p.unique, p.derived, p.composite, property_set(&p.redefines), property_set(&p.subsets), p.derived_union, property_set(&p.opposite_ends)));
+        out.push_str(&format!("    output.properties.push(PropertyDescriptor {{ id: {}, name: {:?}.into(), owner: {owner}, value_kind: {kind}, multiplicity: Multiplicity {{ lower: {}, upper: {:?} }}, ordered: {}, unique: {}, derived: {}, composite: {}, redefines: {}, subsets: {}, derived_union: {}, association: {association}, opposite_ends: {} }});\n", id_code("PropertyId", p.id.as_u128()), p.name, p.multiplicity.lower, p.multiplicity.upper, p.ordered, p.unique, p.derived, p.composite, property_set(&p.redefines), property_set(&p.subsets), p.derived_union, property_set(&p.opposite_ends)));
     }
-    out.push_str("        ],\n        associations: vec![\n");
+
     for a in &set.associations {
-        out.push_str(&format!("            AssociationDescriptor {{ id: {}, name: {:?}.into(), package: {}, metamodel: {mm}, member_ends: vec!{}, navigable_owned_ends: {} }},\n", id_code("AssociationId", a.id.as_u128()), a.name, strings(&a.package), list(a.member_ends.iter().map(|v| id_code("PropertyId", v.as_u128()))), property_set(&a.navigable_owned_ends)));
+        let mm = id_code("MetamodelId", a.metamodel.as_u128());
+        out.push_str(&format!("    output.associations.push(AssociationDescriptor {{ id: {}, name: {:?}.into(), package: {}, metamodel: {mm}, member_ends: vec!{}, navigable_owned_ends: {}, direct_supertypes: BTreeSet::from({}), is_abstract: {} }});\n", id_code("AssociationId", a.id.as_u128()), a.name, strings(&a.package), list(a.member_ends.iter().map(|v| id_code("PropertyId", v.as_u128()))), property_set(&a.navigable_owned_ends), list(a.direct_supertypes.iter().map(|v| id_code("AssociationId", v.as_u128()))), a.is_abstract));
     }
-    out.push_str("        ],\n        enumerations: vec![\n");
+
     for e in &set.enumerations {
+        let mm = id_code("MetamodelId", e.metamodel.as_u128());
         let literals = list(e.literals.iter().map(|(id, name)| {
             format!(
                 "({}, {name:?}.into())",
                 id_code("EnumerationLiteralId", id.as_u128())
             )
         }));
-        out.push_str(&format!("            EnumerationDescriptor {{ id: {}, name: {:?}.into(), package: {}, metamodel: {mm}, literals: BTreeMap::from({literals}) }},\n", id_code("EnumerationId", e.id.as_u128()), e.name, strings(&e.package)));
+        out.push_str(&format!("    output.enumerations.push(EnumerationDescriptor {{ id: {}, name: {:?}.into(), package: {}, metamodel: {mm}, literals: BTreeMap::from({literals}) }});\n", id_code("EnumerationId", e.id.as_u128()), e.name, strings(&e.package)));
     }
-    out.push_str("        ],\n    }\n}\n\n#[rustfmt::skip]\npub const CLASS_IDS: &[(&str, MetaclassId)] = &[\n");
+    out.push_str(
+        "    output\n}\n\n#[rustfmt::skip]\npub const CLASS_IDS: &[(&str, MetaclassId)] = &[\n",
+    );
     for id in &selected.classifiers {
         let c = &bundle.metamodel.classifiers[id];
         if c.entity.key.kind == Kind::Class {
             out.push_str(&format!(
-                "    ({id:?}, {}),\n",
+                "    ({:?}, {}),\n",
+                c.entity.key.external_id,
                 id_code("MetaclassId", c.entity.key.uuid().as_u128())
             ));
         }
@@ -417,7 +522,8 @@ pub fn rust_source(
     out.push_str("];\n\n#[rustfmt::skip]\npub const PROPERTY_IDS: &[(&str, PropertyId)] = &[\n");
     for id in &selected.properties {
         out.push_str(&format!(
-            "    ({id:?}, {}),\n",
+            "    ({:?}, {}),\n",
+            bundle.metamodel.properties[id].entity.key.external_id,
             id_code(
                 "PropertyId",
                 bundle.metamodel.properties[id].entity.key.uuid().as_u128()
@@ -437,6 +543,76 @@ pub fn artifacts(bundle: &Bundle) -> Result<BTreeMap<&'static str, Vec<u8>>> {
     Ok(BTreeMap::from([
         (RUST_PATH, rust),
         (GOLDEN_PATH, manifest),
-        (crate::typed_views::PATH, views),
+        ("crates/kerml/src/generated/root_core_views.rs", views),
     ]))
+}
+
+/// Complete production output. Dependency descriptors are imported at runtime,
+/// never emitted a second time in the dependent language crate.
+pub fn complete_artifacts(bundle: &Bundle) -> Result<Vec<(String, Vec<u8>)>> {
+    let combined = crate::closure_audit::runtime_bundle(bundle)?;
+    let selected = crate::full_audit::selection(&combined.metamodel);
+    let set = descriptor_set(&combined, &selected)?;
+    let manifest = canonical_json(&crate::full_audit::manifest(bundle)?)?;
+    let spec = &bundle.metamodel.source.specification;
+    let owned = |id: &String| {
+        combined.metamodel.classifiers[id]
+            .entity
+            .key
+            .source
+            .specification
+            == *spec
+    };
+    let own_selection = Closure {
+        classifiers: selected
+            .classifiers
+            .iter()
+            .filter(|id| owned(id))
+            .cloned()
+            .collect(),
+        properties: selected
+            .properties
+            .iter()
+            .filter(|id| {
+                combined.metamodel.properties[*id]
+                    .entity
+                    .key
+                    .source
+                    .specification
+                    == *spec
+            })
+            .cloned()
+            .collect(),
+        external_types: selected.external_types.clone(),
+    };
+    let mut own = set.clone();
+    let models: BTreeSet<_> = set
+        .models
+        .iter()
+        .filter(|m| m.name == *spec)
+        .map(|m| m.id)
+        .collect();
+    own.models.retain(|m| models.contains(&m.id));
+    own.classes.retain(|c| models.contains(&c.metamodel));
+    own.associations.retain(|a| models.contains(&a.metamodel));
+    own.enumerations.retain(|e| models.contains(&e.metamodel));
+    own.properties
+        .retain(|p| set.sources[&DescriptorId::Property(p.id)].specification == *spec);
+    own.sources
+        .retain(|_, s| s.specification == *spec || spec == "KerML" && s.specification == "UML");
+    own.reviews.retain(|r| r.source.specification == *spec);
+    if spec != "KerML" {
+        own.primitives.clear();
+    }
+    let directory = if spec == "KerML" { "kerml" } else { "sysml" };
+    Ok(vec![
+        (
+            format!("crates/{directory}/src/generated/complete.rs"),
+            rust_source(&combined, &own_selection, &own, &manifest).into_bytes(),
+        ),
+        (
+            format!("crates/{directory}/src/generated/typed_views.rs"),
+            crate::typed_views::source(&combined, &selected, &set, &manifest)?.into_bytes(),
+        ),
+    ])
 }

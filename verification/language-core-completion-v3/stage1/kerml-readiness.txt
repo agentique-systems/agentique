@@ -1,0 +1,31 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+warning: unused implementer of `Iterator` that must be used
+   --> crates\kernel\src\metamodel.rs:537:9
+    |
+537 |         self.effective_properties(context)?;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: iterators are lazy and do nothing unless consumed
+    = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused implementer of `Iterator` that must be used
+   --> crates\kernel\src\metamodel.rs:812:9
+    |
+812 |         self.effective_properties(class)?;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: iterators are lazy and do nothing unless consumed
+
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+warning: `agq-kernel` (lib) generated 2 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.00s
+     Running `target\debug\metamodel-gen.exe --baseline kerml-1.0 --require-runtime --check`
+Full audit finding ["D"]: "unsupported-association-descriptor-shape" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-A_participantFeature_Interaction
+Full audit finding ["C"]: "unsupported-primitive-domain" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Expressions-LiteralInteger-value
+Full audit finding ["C"]: "unsupported-primitive-domain" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Expressions-LiteralRational-value
+Full audit finding ["E"]: "subsetted-property-name" Core-Features-A_ownedRedefinition_owningFeature-owningFeature
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Associations-A_targetType_targetAssociation-targetAssociation
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity
+metamodel-gen: KerML complete runtime blocked: translation="unsupported association inheritance/abstractness: https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-A_participantFeature_Interaction", registration=null. See standards/generated/kerml-1.0/full-audit.json; no runtime output written.
+error: process didn't exit successfully: `target\debug\metamodel-gen.exe --baseline kerml-1.0 --require-runtime --check` (exit code: 1)

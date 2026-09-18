@@ -2,80 +2,126 @@
   "format": "agentique-generation-2-coverage/1",
   "generation": 2,
   "language_core_foundation": {
-    "result": "incomplete-do-not-proceed",
+    "result": "complete-ready-for-sysml-semantics",
     "review": "docs/language-core-foundation-review.md",
-    "evidence": "verification/language-core-completion-v2/README.md",
-    "gate_0": "unresolved: all UML24-85/86/96 resolutions acquired; final inherited-feature condition and exact SysML context conflict remain (ADR 0010)",
-    "gate_1": "not-implemented",
+    "evidence": "verification/language-core-completion-v3/README.md",
+    "gate_0": "ADR 0011 separates representable raw metadata from runtime interpretation and strict authoring conformance; exact anomaly retained",
     "full_inventory": {
       "classes": 175,
       "properties": 715,
       "associations": 319,
       "enumerations": 7
     },
-    "runtime_registration": "not-reached: full translation fails",
-    "final_verification": {
-      "results": "verification/language-core-completion-v2/final/results.json",
-      "commands_run": 15,
-      "exit_zero": 13,
-      "runtime_gate_exit_codes": {
-        "kerml-1.0": 1,
-        "sysml-2.0": 1
-      },
-      "runner_exit_code": 1,
-      "protected_files_verified": 465
-    },
-    "categories": {
-      "C": "Integer and Real",
-      "D": "association inheritance",
-      "E": "five exact naming anomalies",
-      "F": "definedFlow context and final inherited-feature constraint reconciliation (ADR 0010)"
-    },
+    "runtime_registration": "complete: 175 classes, 715 properties, 319 associations, 7 enumerations; both complete structural runtime gates exit zero",
+    "strict_conformance": "separate implemented-rule audit; reviewed errors remain errors",
     "reports": [
       "standards/generated/kerml-1.0/full-audit.json",
       "standards/generated/sysml-2.0/full-audit.json"
     ],
-    "remaining_stages": [
-      "generic Property rule and regression matrix",
-      "full runtime/value/storage/derived contract",
-      "complete KerML and SysML views",
-      "full-registry semantic context",
-      "runtime stress matrix and acceptance"
-    ],
+    "remaining_stages": [],
     "previous_milestone": {
-      "evidence": "verification/language-core-completion-v1/README.md",
+      "result": "incomplete-do-not-proceed",
+      "review": "docs/language-core-foundation-review.md",
+      "evidence": "verification/language-core-completion-v2/README.md",
+      "gate_0": "unresolved: all UML24-85/86/96 resolutions acquired; final inherited-feature condition and exact SysML context conflict remain (ADR 0010)",
+      "gate_1": "not-implemented",
+      "full_inventory": {
+        "classes": 175,
+        "properties": 715,
+        "associations": 319,
+        "enumerations": 7
+      },
+      "runtime_registration": "not-reached: full translation fails",
       "final_verification": {
-        "results": "verification/language-core-completion-v1/final/results.json",
-        "commands_run": 14,
-        "exit_zero": 12,
+        "results": "verification/language-core-completion-v2/final/results.json",
+        "commands_run": 15,
+        "exit_zero": 13,
         "runtime_gate_exit_codes": {
           "kerml-1.0": 1,
           "sysml-2.0": 1
+        },
+        "runner_exit_code": 1,
+        "protected_files_verified": 465
+      },
+      "categories": {
+        "C": "Integer and Real",
+        "D": "association inheritance",
+        "E": "five exact naming anomalies",
+        "F": "definedFlow context and final inherited-feature constraint reconciliation (ADR 0010)"
+      },
+      "reports": [
+        "standards/generated/kerml-1.0/full-audit.json",
+        "standards/generated/sysml-2.0/full-audit.json"
+      ],
+      "remaining_stages": [
+        "generic Property rule and regression matrix",
+        "full runtime/value/storage/derived contract",
+        "complete KerML and SysML views",
+        "full-registry semantic context",
+        "runtime stress matrix and acceptance"
+      ],
+      "previous_milestone": {
+        "evidence": "verification/language-core-completion-v1/README.md",
+        "final_verification": {
+          "results": "verification/language-core-completion-v1/final/results.json",
+          "commands_run": 14,
+          "exit_zero": 12,
+          "runtime_gate_exit_codes": {
+            "kerml-1.0": 1,
+            "sysml-2.0": 1
+          }
         }
-      }
+      },
+      "gate_sequence": "Gates 1?11 not started: unresolved Gate 0 authority conflict, not a stop at an ordinary generic capability gap"
     },
-    "gate_sequence": "Gates 1?11 not started: unresolved Gate 0 authority conflict, not a stop at an ordinary generic capability gap"
+    "final_verification": {
+      "results": "verification/language-core-completion-v3/verified-results.json",
+      "normal_commands_run": 16,
+      "normal_exit_zero": 16,
+      "runtime_gate_exit_codes": {
+        "kerml-1.0": 0,
+        "sysml-2.0": 0
+      },
+      "strict_conformance_exit_codes": {
+        "kerml-1.0": 1,
+        "sysml-2.0": 1
+      },
+      "protected_files_verified": 519
+    }
   },
   "normative_targets": {
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "claim": "Bounded generation-2 language infrastructure; no full conformance, application migration or execution claim.",
+  "claim": "Complete generation-2 structural runtime; no full UML certification, SysML semantic rules, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": {
-    "stage": 3,
-    "result": "blocked",
-    "evidence": "docs/sysml-v2-runtime-blocker.md",
-    "audit": "standards/generated/sysml-2.0/structural-audit.json",
-    "reason": "Combined subset/redefinition cycle rule corrected (ADR 0008); runtime closure now fails an independent redefinition context: definedFlow -> Definition::ownedAction.",
-    "resume_evidence": "verification/sysml-language-v2-resume/README.md"
+    "stage": "structural-runtime-v3",
+    "result": "representable",
+    "evidence": "verification/language-core-completion-v3/verified-results.json",
+    "audit": "standards/generated/sysml-2.0/full-audit.json",
+    "previous_milestone": {
+      "stage": 3,
+      "result": "blocked",
+      "evidence": "docs/sysml-v2-runtime-blocker.md",
+      "audit": "standards/generated/sysml-2.0/structural-audit.json",
+      "reason": "Combined subset/redefinition cycle rule corrected (ADR 0008); runtime closure now fails an independent redefinition context: definedFlow -> Definition::ownedAction.",
+      "resume_evidence": "verification/sysml-language-v2-resume/README.md"
+    }
   },
   "modeling_platform_gate": {
     "stage": "prerequisite",
     "result": "blocked",
     "evidence": "verification/modeling-platform-v2/README.md",
     "completed_stages": [],
-    "reason": "Pack 2A remains incomplete: SysML runtime closure fails redefinition context validation after the subset invariant correction."
+    "reason": "Platform work is outside the structural-runtime milestone. It still requires its separate language/library/API prerequisites; structural registration alone is not platform completion.",
+    "previous_milestone": {
+      "stage": "prerequisite",
+      "result": "blocked",
+      "evidence": "verification/modeling-platform-v2/README.md",
+      "completed_stages": [],
+      "reason": "Pack 2A remains incomplete: SysML runtime closure fails redefinition context validation after the subset invariant correction."
+    }
   },
   "status_meaning": {
     "implemented": "Implemented within the explicitly stated boundary.",
@@ -86,29 +132,32 @@
   "capabilities": [
     {
       "id": "normative-metamodel",
-      "status": "partial",
-      "boundary": "Shared offline profile-driven KerML 1.0 / SysML 2.0 MOF XMI import and conservative JSON cross-check with source-qualified cross-metamodel references; 29-class KerML Root/Core runtime closure and borrowed views. SysML import does not imply runtime descriptors.",
+      "status": "implemented",
+      "boundary": "Complete pinned KerML 1.0 and SysML 2.0 structural descriptors, provenance, primitive domains, associations, enumerations and borrowed views. Atomic structural registration and separately reportable strict authoring diagnostics.",
       "evidence": [
         "docs/adr/0002-normative-metamodel-pipeline.md",
         "docs/adr/0003-normative-root-core-descriptors.md",
         "docs/adr/0004-kerml-typed-views.md",
-        "tools/metamodel-gen/tests/normative.rs"
+        "tools/metamodel-gen/tests/normative.rs",
+        "docs/adr/0011-structural-registration-vs-metamodel-conformance.md",
+        "crates/sysml/tests/foundation.rs",
+        "verification/language-core-completion-v3/independent_xmi.py"
       ],
       "gaps": [
-        "SysML runtime descriptors and views",
-        "Full runtime descriptor and numeric-domain support",
-        "Execution of retained OCL/English constraints"
+        "Execution of retained OCL/English constraints",
+        "Complete UML/CMOF metamodel certification"
       ]
     },
     {
       "id": "property-metadata",
       "status": "implemented",
-      "boundary": "Generic redefinition-only cycle rejection; local subset context/domain/upper validation; visited-set forward/reverse subset traversal. Source naming anomalies have exact versioned dispositions independent of structural validation. No derived-union value evaluation or full UML conformance.",
+      "boundary": "Exact raw redefinitions/subsets; separate safe class replacement and association inheritance; typed conformance diagnostics; finite derived-union contributor frontiers including unsupported relation evidence; five structural computation states.",
       "evidence": [
         "docs/adr/0008-property-subsetting-cycle-semantics.md",
         "crates/kernel/tests/metamodel.rs",
         "tools/metamodel-gen/tests/sysml_closure.rs",
-        "standards/baseline-anomalies.json"
+        "standards/baseline-anomalies.json",
+        "crates/kernel/tests/foundation_v3.rs"
       ],
       "gaps": [
         "Derived-union evaluator and incremental invalidation",
@@ -118,7 +167,7 @@
     {
       "id": "semantic-queries",
       "status": "partial",
-      "boundary": "Ownership, membership, direct and transitive specialization, direct typing/subsetting/redefinition, effective-feature identity sets on supported DAGs, and declared lexical/public name resolution. Evidence, context identity, completeness and positive/search dependencies.",
+      "boundary": "Ownership, membership, direct and transitive specialization, direct typing/subsetting/redefinition, effective-feature identity sets on supported DAGs, and declared lexical/public name resolution. Evidence, context identity, completeness and positive/search dependencies. Query rule set /4 admits independent registry extensions and the complete SysML graph while pinning unchanged KerML contracts and full model/overlay evidence.",
       "evidence": [
         "docs/adr/0005-kerml-semantic-query-foundation.md",
         "crates/kerml-semantics/tests/foundation.rs"
@@ -162,17 +211,17 @@
     {
       "id": "sysml",
       "status": "partial",
-      "boundary": "SysML 2.0 import and descriptor translation preserve exact self-subsets with source/hash-qualified baseline diagnostics. Atomic registry validation now fails the independent definedFlow -> Definition::ownedAction redefinition context; no SysML runtime, semantics or text crate is published.",
+      "boundary": "All 93 SysML 2.0 metaclasses and borrowed views in agq-sysml over the same complete KerML descriptor identities. The definedFlow authoring anomaly is retained with its exact reviewed disposition; strict conformance rejects it.",
       "evidence": [
         "docs/architecture.md",
         "standards/normative/sysml-2.0/README.md",
         "docs/adr/0008-property-subsetting-cycle-semantics.md",
-        "verification/sysml-language-v2-resume/README.md"
+        "verification/sysml-language-v2-resume/README.md",
+        "crates/sysml/src/lib.rs",
+        "docs/language-core-runtime-contract.md"
       ],
       "gaps": [
-        "Resolve the independent invalid redefinition context in the required closure",
-        "Runtime descriptor publication and typed views",
-        "KerML project/library prerequisites, SysML rules, text lowering and end-to-end acceptance"
+        "KerML project/library prerequisites, SysML semantic rules, text lowering and end-to-end language acceptance"
       ]
     },
     {

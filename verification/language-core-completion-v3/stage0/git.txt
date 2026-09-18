@@ -1,0 +1,11 @@
+commit 000496c7a97953206ead3f125edf1e1c777342b5
+Author:     Philip Solarz <129498305+philipsolarz@users.noreply.github.com>
+AuthorDate: Fri Sep 18 20:34:55 2026 +0200
+Commit:     GitHub <noreply@github.com>
+CommitDate: Fri Sep 18 20:34:55 2026 +0200
+
+    fix: Foundation/language core completion v2 (#8)
+    
+    * Record complete OMG Property resolution evidence and unresolved Gate 0 conflict
+    
+    * Preserve final verification with both complete runtime gates failing

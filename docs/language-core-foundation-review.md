@@ -201,3 +201,50 @@ generic Property rule and its regression matrix, then complete all remaining
 runtime/value/association/derived-state/context/stress gates. Complete reports
 must be rerun after every correction. Do not proceed to SysML semantics or text,
 platform APIs, repository, visualization or execution.
+
+
+## Completion v3: current structural runtime review, 2026-09-18
+
+**LANGUAGE CORE STRUCTURAL RUNTIME COMPLETE ? READY FOR SYSML SEMANTICS**
+
+This status supersedes the runtime-registration conclusion above. All historical
+v1/v2 text remains unchanged. [ADR 0011](adr/0011-structural-registration-vs-metamodel-conformance.md)
+supersedes ADR 0010's unconditional registration blocker without changing its
+source evidence. The [runtime contract](language-core-runtime-contract.md) defines
+representation, interpretation and conformance as distinct responsibilities.
+
+| Question | Current answer and evidence |
+| --- | --- |
+| 1. Every KerML metaclass/property/association represented at runtime? | **Yes:** 82 classes, 313 properties, 131 associations and two enumerations are the production generated set. The complete KerML runtime gate exits zero. |
+| 2. Every SysML metaclass/property/association represented at runtime? | **Yes:** `agq-sysml` adds 93 classes, 402 properties, 188 associations and five enumerations; the complete combined runtime gate exits zero. |
+| 3. Cross-metamodel references preserved exactly? | **Yes:** the independent XML/Rust checker verifies all identities, parents, domains, property relations, ownership/opposites and source ranges. SysML imports the same KerML descriptors once. |
+| 4. Remaining blanket exceptions? | No source-specific runtime waiver. Structural integrity fails atomically; authoring predicates are diagnosed and their operational consequences checked at query/edit boundaries. |
+| 5. Name-based descriptor hacks? | No language-name dispatch in the kernel. Frozen source-qualified UUID v1 remains unchanged. Display names are conveniences; ambiguous name/ancestor alias lookups fail explicitly. |
+| 6. Source anomalies silently normalized? | **No:** all raw edges remain. The exact anomaly register preserves its five previous entries and adds only the pinned definedFlow pair. Six additional local subset diagnostics remain unreviewed. |
+| 7. Normative primitives narrowed? | Integer is arbitrary precision. Real-valued finite literal storage is exact normalized decimal, with arbitrary precision coefficient/exponent and no binary64 conversion; its rational-literal scope follows the pinned authority. |
+| 8. Association occurrences without duplicate writable truth? | **Yes:** all 319 associations are classified into 59 shapes. Each authored association uses one slot carrier or one canonical occurrence store; inverse edits modify that same fact. |
+| 9. Derived/uncomputed states distinguishable? | **Yes:** absent, not computed, computed (including empty), incomplete and invalid. Association-owned results are overlay navigation, not class slots. Positive and search evidence remain explicit. |
+| 10. Immutable snapshots sole canonical declared state? | **Yes:** elements, slots and occurrences live in immutable snapshots with atomic changesets, indexes, provenance, deletion and branching. Tests cover rollback and concurrent readers. |
+| 11. Typed views without duplicate semantic data? | **Yes:** all 175 class views borrow identity/model only; cross-language upcasts retain ElementId and the same record. |
+| 12. Existing queries safe against full registry? | **Yes within their documented query scope:** rule set /4 checks unchanged normative contracts, accepts extensions, identifies full descriptor/model/overlay content and preserves completeness/evidence. Unrelated descriptors do not change answers. |
+| 13. Known gaps explicitly recorded? | **Yes:** strict authoring errors, unsupported interpretation paths and future language/platform semantics remain explicit in the runtime contract, full audits and coverage register. Structural readiness is not UML certification. |
+| 14. Can structurally representable but nonconformant metadata be retained without corrupting runtime semantics? | **Yes:** exact raw relations remain queryable; checked class replacement and association interpretation use only applicable edges. Model edits still enforce their structural invariants. |
+| 15. Are conformance diagnostics separate from registration failures? | **Yes:** `MetamodelValidator` / `ConformanceReport` are optional authoring audits over an already registered graph. Both gate types have independent commands and outcomes. |
+| 16. Does effective-property computation ignore irrelevant association-owned redefinition metadata? | **Yes:** association-owned ends never replace class slots. The exact definedFlow edge cannot remove Definition::ownedAction or manufacture a definedFlow class slot. |
+| 17. Can strict conformance checking still reject the published anomaly? | **Yes:** both strict commands exit 1. Reviewed anomalies retain error severity; the SysML report contains the exact redefinition-context diagnostic. |
+| 18. Does ordinary registration preserve the anomaly without hiding it? | **Yes:** both runtime commands exit zero while reporting the conformance diagnostics. The source hash, URI, version, external IDs, generated IDs, raw edge and review evidence remain available. |
+
+[Final verification](../verification/language-core-completion-v3/verified-results.json)
+indexes actual commands, complete outputs and exits. Both complete runtime gates,
+workspace tests and structural stress suite pass. Strict Rustdoc covers every
+public generation-2 crate. Frontend checks/build/tests and all four browser tests
+pass. Independent source/runtime verification and the preservation check pass.
+[Strict conformance](../verification/language-core-completion-v3/strict-current/results.json)
+remains separately nonzero: four KerML and twelve combined error diagnostics,
+including six unreviewed local subset findings. Those results are not represented
+as certification success.
+
+The [v3 evidence README](../verification/language-core-completion-v3/README.md)
+records stage-by-stage full translation, discovered generic deficiencies, fixes,
+failed attempts and their superseding checks. No SysML semantic rule layer or
+other out-of-scope platform work is included.

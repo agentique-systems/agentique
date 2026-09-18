@@ -1,8 +1,8 @@
 //! Reviewed baselines, independent of filenames and XMI serialization profiles.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DescriptorTarget {
-    KerMlRootCore,
-    SysMlStructural,
+    KerMlComplete,
+    SysMlComplete,
     None,
 }
 #[derive(Clone, Copy, Debug)]
@@ -48,9 +48,11 @@ pub const KERML: Baseline = Baseline {
     cross_check_json: Some("KerML.json"),
     dependencies: &[PRIMITIVES.id],
     output: Some("standards/generated/kerml-1.0/metamodel.json"),
-    descriptor_target: DescriptorTarget::KerMlRootCore,
+    descriptor_target: DescriptorTarget::KerMlComplete,
     descriptor_outputs: &[
+        "crates/kerml/src/generated/complete.rs",
         "crates/kerml/src/generated/root_core.rs",
+        "crates/kerml/src/generated/root_core_views.rs",
         "standards/generated/kerml-1.0/root-core.golden.json",
         "crates/kerml/src/generated/typed_views.rs",
     ],
@@ -68,10 +70,10 @@ pub const SYSML: Baseline = Baseline {
     cross_check_json: Some("SysML.json"),
     dependencies: &[PRIMITIVES.id, KERML.id],
     output: Some("standards/generated/sysml-2.0/metamodel.json"),
-    descriptor_target: DescriptorTarget::SysMlStructural,
+    descriptor_target: DescriptorTarget::SysMlComplete,
     descriptor_outputs: &[
-        "crates/sysml/src/generated/structural.rs",
-        "standards/generated/sysml-2.0/structural.golden.json",
+        "crates/sysml/src/generated/complete.rs",
+        "standards/generated/sysml-2.0/full.golden.json",
         "crates/sysml/src/generated/typed_views.rs",
     ],
 };

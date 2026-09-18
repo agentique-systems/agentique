@@ -1,0 +1,25 @@
+warning: field `statuses` is never read
+   --> crates\kernel\src\model.rs:123:16
+    |
+118 | pub struct ModelView {
+    |            --------- field in this struct
+...
+123 |     pub(crate) statuses: BTreeMap<(ElementId,PropertyId), crate::derived::ComputationFailure>,
+    |                ^^^^^^^^
+    |
+    = note: `ModelView` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `agq-kernel` (lib) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running `target\debug\metamodel-gen.exe --baseline kerml-1.0 --require-runtime --check`
+Full audit finding ["E"]: "subsetted-property-name" Core-Features-A_ownedRedefinition_owningFeature-owningFeature
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Associations-A_targetType_targetAssociation-targetAssociation
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/metamodel.json (3038685 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/full-audit.json (337146 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/full.golden.json (2320099 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/root_core.rs (357750 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/typed_views.rs (379209 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/root-core.golden.json (1111835 bytes).

@@ -1,12 +1,14 @@
 //! Typed slot values; missing slots represent absence, never a magic null value.
+pub use crate::numeric::{ExactDecimal, Integer, InvalidNumericLexical};
 use crate::{ElementId, EnumerationLiteralId};
 use std::collections::BTreeSet;
 
-/// One scalar primitive or semantic reference. Integer is explicitly bounded.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// One scalar primitive or semantic reference. Numeric values are exact.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Value {
     Boolean(bool),
-    Integer(i64),
+    Integer(Integer),
+    Real(ExactDecimal),
     String(String),
     Enumeration(EnumerationLiteralId),
     Reference(ElementId),

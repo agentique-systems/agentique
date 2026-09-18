@@ -24,7 +24,7 @@ fn property_ids(m: &Metamodel, ids: &[String]) -> BTreeSet<PropertyId> {
 fn every_compiled_descriptor_matches_fresh_authoritative_import() {
     let bundle = pipeline::generate(&root()).unwrap();
     let m = &bundle.metamodel;
-    let selection = closure(m, SEEDS).unwrap();
+    let selection = agq_metamodel_gen::full_audit::selection(m);
     let actual = agq_kerml::descriptors();
     let r = agq_kerml::registry().unwrap();
     assert_eq!(
@@ -34,22 +34,7 @@ fn every_compiled_descriptor_matches_fresh_authoritative_import() {
             actual.associations.len(),
             actual.enumerations.len()
         ),
-        (29, 196, 80, 2)
-    );
-    assert_eq!(
-        actual
-            .properties
-            .iter()
-            .filter(|p| matches!(p.owner, PropertyOwner::Class(_)))
-            .count(),
-        146
-    );
-    assert_eq!(selection.classifiers.len(), 111);
-    assert!(
-        selection
-            .classifiers
-            .iter()
-            .all(|id| id.starts_with("Root-") || id.starts_with("Core-"))
+        (82, 313, 131, 2)
     );
     assert_eq!(actual.properties.len(), selection.properties.len());
     for id in &selection.classifiers {
@@ -151,14 +136,22 @@ fn every_compiled_descriptor_matches_fresh_authoritative_import() {
                         _ => panic!("unexpected domain"),
                     }
                 }
-                TypeRef::External(uri)
-                    if uri
-                        == "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean" =>
-                    ValueKind::Boolean,
-                TypeRef::External(uri)
-                    if uri == "https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#String" =>
-                    ValueKind::String,
-                _ => panic!("unexpected primitive"),
+                TypeRef::External(uri) => {
+                    let primitive = bundle
+                        .primitive_types
+                        .classifiers
+                        .values()
+                        .find(|p| {
+                            format!(
+                                "{}#{}",
+                                p.entity.key.source.artifact_uri, p.entity.key.external_id
+                            ) == *uri
+                        })
+                        .unwrap();
+                    ValueKind::Primitive(PrimitiveDomainId::from_u128(
+                        primitive.entity.key.uuid().as_u128(),
+                    ))
+                }
             }
         );
         assert_eq!(compiled.multiplicity.lower as u64, p.lower);

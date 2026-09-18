@@ -25,6 +25,7 @@ struct ReviewedAnomaly {
     external_id: String,
     descriptor_id: String,
     target_external_id: String,
+    target_descriptor_id: String,
     constraint: String,
     disposition: String,
     evidence: String,
@@ -79,6 +80,7 @@ pub fn diagnose(model: &Metamodel, selected: &Closure) -> Result<Vec<BaselineDia
                         && a.descriptor_id == key.uuid().to_string()
                         && q.entity.key.source == *source
                         && a.target_external_id == q.entity.key.external_id
+                        && a.target_descriptor_id == q.entity.key.uuid().to_string()
                         && a.constraint == CONSTRAINT
                 })
                 .collect();
@@ -104,4 +106,59 @@ pub fn diagnose(model: &Metamodel, selected: &Closure) -> Result<Vec<BaselineDia
         }
     }
     Ok(diagnostics)
+}
+
+/// Materialize exact reviewed pairs, retaining both sides' provenance. The kernel
+/// independently checks these keys when assigning a diagnostic disposition.
+pub fn reviews(
+    model: &Metamodel,
+    selected: &Closure,
+) -> Result<Vec<agq_kernel::metamodel::DiagnosticReview>> {
+    use agq_kernel::metamodel::*;
+    let policy: Policy = serde_json::from_str(POLICY).map_err(|e| e.to_string())?;
+    let mut result = Vec::new();
+    for a in policy.entries {
+        let Some(p) = selected
+            .properties
+            .iter()
+            .map(|id| &model.properties[id])
+            .find(|p| p.entity.key.uuid().to_string() == a.descriptor_id)
+        else {
+            continue;
+        };
+        let Some(q) = model
+            .properties
+            .values()
+            .find(|p| p.entity.key.uuid().to_string() == a.target_descriptor_id)
+        else {
+            continue;
+        };
+        let source = &p.entity.key.source;
+        if source.specification != a.specification
+            || source.version != a.version
+            || source.artifact_uri != a.artifact_uri
+            || source.sha256 != a.sha256
+            || p.entity.key.external_id != a.external_id
+            || q.entity.key.external_id != a.target_external_id
+            || q.entity.key.source != *source
+        {
+            continue;
+        }
+        let rule = match a.constraint.as_str() {
+            CONSTRAINT => MetamodelRule::SubsettedPropertyNames,
+            "https://www.omg.org/spec/UML/20161101/UML.xmi#Property-redefined_property_inherited" => {
+                MetamodelRule::RedefinitionContext
+            }
+            _ => return Err(format!("unsupported reviewed rule {}", a.constraint)),
+        };
+        result.push(DiagnosticReview {
+            rule,
+            subject: DescriptorId::Property(p.entity.key.property_id()?),
+            related: DescriptorId::Property(q.entity.key.property_id()?),
+            source: crate::descriptors::descriptor_source(&p.entity),
+            related_source: crate::descriptors::descriptor_source(&q.entity),
+            evidence: a.evidence,
+        });
+    }
+    Ok(result)
 }

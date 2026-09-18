@@ -191,3 +191,21 @@ General association storage, full numeric domains, complete constraints, imports
 and inherited name resolution, multi-document projects, generation-2 library
 ingestion and SysML remain open. Source parsing exists for the bounded KerML slice;
 application migration, persistence, API and execution remain separate future work.
+
+
+## Completion v3: current structural boundary
+
+This section supersedes the historical bounded and i64-only limitations above.
+The complete 175-class graph is structurally registered with exact primitive domain
+IDs, arbitrary precision Integer, finite exact decimal Real literals, separate
+association inheritance, generic occurrence storage and borrowed typed views.
+Derived results distinguish absent, not computed, computed, incomplete and invalid;
+association-owned results remain overlay navigation rather than fabricated slots.
+
+The [runtime contract](language-core-runtime-contract.md) is the detailed current
+contract. Registry hard failures concern graph integrity and safe representation.
+Authoring diagnostics are independently queryable and strict checking remains
+available. Unsafe effective replacement and ambiguous alias queries fail explicitly.
+Association facts have one writable carrier; links, indexes and derived results
+remain revision-bound. Source and library bytes, generation-1 obligations and
+historical blocker reports remain unchanged.

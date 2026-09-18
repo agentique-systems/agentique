@@ -1,0 +1,10 @@
+[package]
+name = "agq-sysml"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Complete SysML 2.0 structural descriptors and borrowed views"
+
+[dependencies]
+agq-kerml = { path = "../kerml" }
+agq-kernel = { path = "../kernel" }

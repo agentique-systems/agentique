@@ -1,0 +1,98 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T19:41:54.927Z",
+    "durationMs": 1266,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "started": "2026-09-18T19:41:56.193Z",
+    "durationMs": 7203,
+    "exitCode": 0,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo test --workspace",
+    "started": "2026-09-18T19:42:03.396Z",
+    "durationMs": 67815,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rust-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+    "started": "2026-09-18T19:43:11.211Z",
+    "durationMs": 6679,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generated.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T19:43:17.891Z",
+    "durationMs": 1758,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T19:43:19.649Z",
+    "durationMs": 3724,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  },
+  {
+    "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-metamodel-gen",
+    "started": "2026-09-18T19:43:23.373Z",
+    "durationMs": 13621,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rustdoc.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-18T19:43:36.995Z",
+    "durationMs": 689,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "python -X utf8 verification/language-core-completion-v1/direct_xmi.py --check",
+    "started": "2026-09-18T19:43:37.684Z",
+    "durationMs": 391,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent.txt"
+  },
+  {
+    "command": "python -X utf8 verification/language-core-completion-v2/authority.py --check",
+    "started": "2026-09-18T19:43:38.076Z",
+    "durationMs": 3869,
+    "exitCode": 1,
+    "signal": null,
+    "log": "authority.txt"
+  },
+  {
+    "command": "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check",
+    "started": "2026-09-18T19:43:41.946Z",
+    "durationMs": 539,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-runtime.txt"
+  },
+  {
+    "command": "node verification/language-core-completion-v3/preservation.mjs",
+    "started": "2026-09-18T19:43:42.486Z",
+    "durationMs": 371,
+    "exitCode": 0,
+    "signal": null,
+    "log": "preservation.txt"
+  }
+]

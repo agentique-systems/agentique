@@ -14,10 +14,10 @@
 //! // The generic kernel does not apply normative default-value rules.
 //! for p in before.model().registry().effective_properties(classes::FEATURE)? {
 //!     if !p.derived && p.multiplicity.lower > 0 {
-//!         let value = match p.value_kind {
+//!         let value = match before.model().registry().storage_kind(p.value_kind)? {
 //!             agq_kernel::metamodel::ValueKind::Boolean => Value::Boolean(false),
 //!             agq_kernel::metamodel::ValueKind::String => Value::String("example".into()),
-//!             _ => unreachable!("this bounded slice has only required primitive slots"),
+//!             _ => unreachable!("Feature has only required primitive slots"),
 //!         };
 //!         changes.set(id, p.id, SlotValue::Scalar(value), authored.clone());
 //!     }
@@ -34,17 +34,18 @@
 //! ```
 #![forbid(unsafe_code)]
 
-#[path = "generated/root_core.rs"]
+#[path = "generated/complete.rs"]
 mod generated;
 #[path = "generated/typed_views.rs"]
 mod generated_views;
-mod view;
+#[doc(hidden)]
+pub mod view;
 
 pub use generated::{CLASS_IDS, PROPERTY_IDS, descriptors};
 pub use generated_views::{classes, metamodel, properties, views};
 pub use view::{TypedView, Values, ViewError};
 
-/// Build a validated registry from the checked-in normative descriptor slice.
+/// Build a validated registry from the checked-in normative descriptor graph.
 pub fn registry()
 -> Result<agq_kernel::metamodel::MetamodelRegistry, agq_kernel::metamodel::MetamodelError> {
     agq_kernel::metamodel::MetamodelRegistry::from_descriptors(descriptors())

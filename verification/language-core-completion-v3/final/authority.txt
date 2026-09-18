@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\language-core-completion-v2\authority.py", line 223, in <module>
+    main()
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\language-core-completion-v2\authority.py", line 211, in main
+    assert path.read_bytes() == rendered, "Gate 0 authority evidence is stale"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Gate 0 authority evidence is stale

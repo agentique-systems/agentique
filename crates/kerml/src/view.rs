@@ -9,6 +9,11 @@ use std::{fmt, marker::PhantomData};
 /// A failed cast or property read. Missing derivations are never empty values.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ViewError {
+    ComputationFailure {
+        element: ElementId,
+        property: PropertyId,
+        failure: Box<agq_kernel::derived::ComputationFailure>,
+    },
     Registry(MetamodelError),
     UnknownElement(ElementId),
     WrongClass {
@@ -48,6 +53,11 @@ impl From<MetamodelError> for ViewError {
 impl fmt::Display for ViewError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ComputationFailure {
+                element,
+                property,
+                failure,
+            } => write!(f, "derived property {element}/{property}: {failure:?}"),
             Self::Registry(error) => error.fmt(f),
             Self::UnknownElement(id) => write!(f, "unknown element {id}"),
             Self::WrongClass {
@@ -97,7 +107,8 @@ impl std::error::Error for ViewError {
     }
 }
 
-pub(crate) mod sealed {
+#[doc(hidden)]
+pub mod sealed {
     pub trait Sealed {}
 }
 
@@ -118,11 +129,8 @@ pub trait TypedView<'m>: sealed::Sealed + Copy {
     }
 }
 
-pub(crate) fn check(
-    id: ElementId,
-    model: &ModelView,
-    expected: MetaclassId,
-) -> Result<(), ViewError> {
+#[doc(hidden)]
+pub fn check(id: ElementId, model: &ModelView, expected: MetaclassId) -> Result<(), ViewError> {
     let record = model.element(id).ok_or(ViewError::UnknownElement(id))?;
     if !model.registry().is_subtype(record.metaclass(), expected)? {
         return Err(ViewError::WrongClass {
@@ -134,6 +142,7 @@ pub(crate) fn check(
     Ok(())
 }
 
+#[macro_export]
 macro_rules! define_view {
     ($name:ident, $class:expr) => {
         /// Checked borrowed access to one kernel record. Stores only identity and model reference.
@@ -142,14 +151,14 @@ macro_rules! define_view {
             id: agq_kernel::ElementId,
             model: &'m agq_kernel::ModelView,
         }
-        impl crate::view::sealed::Sealed for $name<'_> {}
-        impl<'m> crate::TypedView<'m> for $name<'m> {
+        impl $crate::view::sealed::Sealed for $name<'_> {}
+        impl<'m> $crate::TypedView<'m> for $name<'m> {
             const CLASS: agq_kernel::MetaclassId = $class;
             fn try_new(
                 id: agq_kernel::ElementId,
                 model: &'m agq_kernel::ModelView,
-            ) -> Result<Self, crate::ViewError> {
-                crate::view::check(id, model, Self::CLASS)?;
+            ) -> Result<Self, $crate::ViewError> {
+                $crate::view::check(id, model, Self::CLASS)?;
                 Ok(Self { id, model })
             }
             fn id(self) -> agq_kernel::ElementId {
@@ -164,8 +173,8 @@ macro_rules! define_view {
             pub fn try_new(
                 id: agq_kernel::ElementId,
                 model: &'m agq_kernel::ModelView,
-            ) -> Result<Self, crate::ViewError> {
-                <Self as crate::TypedView>::try_new(id, model)
+            ) -> Result<Self, $crate::ViewError> {
+                <Self as $crate::TypedView>::try_new(id, model)
             }
             pub fn id(self) -> agq_kernel::ElementId {
                 self.id
@@ -174,18 +183,20 @@ macro_rules! define_view {
                 self.model
             }
             pub fn record(self) -> &'m agq_kernel::ElementRecord {
-                crate::TypedView::record(self)
+                $crate::TypedView::record(self)
             }
-            pub fn cast<T: crate::TypedView<'m>>(self) -> Result<T, crate::ViewError> {
-                crate::TypedView::cast(self)
+            pub fn cast<T: $crate::TypedView<'m>>(self) -> Result<T, $crate::ViewError> {
+                $crate::TypedView::cast(self)
             }
         }
     };
 }
-pub(crate) use define_view;
+#[doc(hidden)]
+pub use crate::define_view;
 
 // Only these projections can instantiate Values. They borrow text and copy IDs/primitives.
-pub(crate) trait Decode<'m>: Copy {
+#[doc(hidden)]
+pub trait Decode<'m>: Copy {
     fn decode(value: &'m Value) -> Option<Self>;
 }
 impl<'m> Decode<'m> for &'m str {
@@ -211,7 +222,24 @@ macro_rules! decode {
     };
 }
 decode!(bool, Boolean);
-decode!(i64, Integer);
+impl<'m> Decode<'m> for &'m agq_kernel::numeric::Integer {
+    fn decode(value: &'m Value) -> Option<Self> {
+        if let Value::Integer(v) = value {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+impl<'m> Decode<'m> for &'m agq_kernel::numeric::ExactDecimal {
+    fn decode(value: &'m Value) -> Option<Self> {
+        if let Value::Real(v) = value {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
 decode!(ElementId, Reference);
 decode!(EnumerationLiteralId, Enumeration);
 
@@ -297,7 +325,8 @@ fn validate<'m, T: Decode<'m>>(
     Ok(())
 }
 
-pub(crate) mod read {
+#[doc(hidden)]
+pub mod read {
     use super::*;
     fn slot<'m, T: Decode<'m>>(
         id: ElementId,
@@ -326,8 +355,24 @@ pub(crate) mod read {
                 expected: kind,
             });
         }
-        if !registry.supports_slot_storage(p.id)? && registry.inverse_storage(p.id)?.is_none() {
+        if !registry.supports_slot_storage(p.id)?
+            && registry.inverse_storage(p.id)?.is_none()
+            && !p
+                .association
+                .is_some_and(|a| registry.supports_occurrence_storage(a).unwrap_or(false))
+        {
             return Err(ViewError::UnsupportedAssociationStorage(p.id));
+        }
+        if let Ok(
+            agq_kernel::derived::PropertyState::Incomplete(failure)
+            | agq_kernel::derived::PropertyState::Invalid(failure),
+        ) = model.property_state(id, p.id)
+        {
+            return Err(ViewError::ComputationFailure {
+                element: id,
+                property: p.id,
+                failure: Box::new(failure.clone()),
+            });
         }
         let value = model.navigation_slot(id, p.id).map(|s| s.value());
         if let Some(value) = value {
@@ -345,7 +390,8 @@ pub(crate) mod read {
         }
         Ok((p, value))
     }
-    pub(crate) fn optional<'m, T: Decode<'m>>(
+    #[doc(hidden)]
+    pub fn optional<'m, T: Decode<'m>>(
         id: ElementId,
         model: &'m ModelView,
         property: PropertyId,
@@ -366,7 +412,8 @@ pub(crate) mod read {
             }),
         }
     }
-    pub(crate) fn required<'m, T: Decode<'m>>(
+    #[doc(hidden)]
+    pub fn required<'m, T: Decode<'m>>(
         id: ElementId,
         model: &'m ModelView,
         property: PropertyId,
@@ -377,7 +424,8 @@ pub(crate) mod read {
             property,
         })
     }
-    pub(crate) fn many<'m, T: Decode<'m>>(
+    #[doc(hidden)]
+    pub fn many<'m, T: Decode<'m>>(
         id: ElementId,
         model: &'m ModelView,
         property: PropertyId,
@@ -390,7 +438,8 @@ pub(crate) mod read {
             marker: PhantomData,
         }))
     }
-    pub(crate) fn required_many<'m, T: Decode<'m>>(
+    #[doc(hidden)]
+    pub fn required_many<'m, T: Decode<'m>>(
         id: ElementId,
         model: &'m ModelView,
         property: PropertyId,

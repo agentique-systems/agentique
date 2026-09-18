@@ -1,0 +1,50 @@
+[
+  {
+    "command": "python -X utf8 verification/language-core-completion-v2/authority.py --check",
+    "started": "2026-09-18T18:46:35.352Z",
+    "durationMs": 4115,
+    "exitCode": 0,
+    "signal": null,
+    "log": "authority.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-kerml -p agq-metamodel-gen",
+    "started": "2026-09-18T18:46:39.468Z",
+    "durationMs": 24442,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generated-code.txt"
+  },
+  {
+    "command": "git log -1 --format=fuller",
+    "started": "2026-09-18T18:47:03.910Z",
+    "durationMs": 42,
+    "exitCode": 0,
+    "signal": null,
+    "log": "git.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --audit-full --check",
+    "started": "2026-09-18T18:47:03.952Z",
+    "durationMs": 1996,
+    "exitCode": 0,
+    "signal": null,
+    "log": "audits.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T18:47:05.949Z",
+    "durationMs": 585,
+    "exitCode": 1,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T18:47:06.534Z",
+    "durationMs": 1036,
+    "exitCode": 1,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  }
+]

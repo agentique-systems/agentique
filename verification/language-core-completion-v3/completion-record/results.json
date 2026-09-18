@@ -1,0 +1,18 @@
+[
+  {
+    "command": "python -X utf8 verification/language-core-completion-v3/authority.py --check",
+    "started": "2026-09-18T19:53:58.362Z",
+    "durationMs": 3580,
+    "exitCode": 0,
+    "signal": null,
+    "log": "authority.txt"
+  },
+  {
+    "command": "node verification/language-core-completion-v3/preservation.mjs",
+    "started": "2026-09-18T19:54:01.942Z",
+    "durationMs": 302,
+    "exitCode": 0,
+    "signal": null,
+    "log": "preservation.txt"
+  }
+]

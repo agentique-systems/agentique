@@ -44,13 +44,25 @@ impl<'m> KerMlQueries<'m> {
         match read {
             Ok(value) => Some(value),
             Err(error) => {
-                let status = if matches!(
-                    error,
-                    ViewError::NotComputed { .. } | ViewError::UnsupportedAssociationStorage(_)
-                ) {
-                    Completeness::Incomplete
-                } else {
-                    Completeness::Invalid
+                let status = match &error {
+                    ViewError::NotComputed { .. } | ViewError::UnsupportedAssociationStorage(_) => {
+                        Completeness::Incomplete
+                    }
+                    ViewError::ComputationFailure { failure, .. }
+                        if matches!(
+                            failure.as_ref(),
+                            agq_kernel::derived::ComputationFailure::Incomplete { .. }
+                        ) =>
+                    {
+                        Completeness::Incomplete
+                    }
+                    ViewError::Registry(
+                        agq_kernel::metamodel::MetamodelError::PropertyConflict { .. }
+                        | agq_kernel::metamodel::MetamodelError::UnsupportedAssociationRedefinition {
+                            ..
+                        },
+                    ) => Completeness::Incomplete,
+                    _ => Completeness::Invalid,
                 };
                 out.problem(status, "KQ_EVIDENCE", id, format!("{error:?}"));
                 None
@@ -102,7 +114,13 @@ impl<'m> KerMlQueries<'m> {
                 self.fact(out, fact);
                 evidence.push(Evidence::Fact(fact));
             }
-        } else if record.slot(property).is_some() {
+        } else if self.model().navigation_slot(element, property).is_some()
+            || matches!(
+                self.model().property_state(element, property),
+                Ok(agq_kernel::derived::PropertyState::Incomplete(_)
+                    | agq_kernel::derived::PropertyState::Invalid(_))
+            )
+        {
             let fact = FactKey::Property { element, property };
             self.fact(out, fact);
             evidence.push(Evidence::Fact(fact));
@@ -116,18 +134,46 @@ impl<'m> KerMlQueries<'m> {
             if out.positive_dependencies.contains(&key) {
                 continue;
             }
+            if let FactKey::AssociationOccurrence(id) = key {
+                if let Some(link) = self.model().association_occurrence(id) {
+                    out.positive_dependencies.insert(key);
+                    out.fact_origins
+                        .insert(key, Origin::Declared(link.origin().clone()));
+                }
+                continue;
+            }
             let origin = match key {
-                FactKey::Element(id) => self.model().element(id).map(|e| e.origin()),
+                FactKey::AssociationOccurrence(_) => unreachable!("handled above"),
+                FactKey::Element(id) => self.model().element(id).map(|e| e.origin().clone()),
                 FactKey::Property { element, property } => self
                     .model()
-                    .element(element)
-                    .and_then(|e| e.slot(property))
-                    .map(|s| s.origin()),
+                    .navigation_slot(element, property)
+                    .map(|s| s.origin().clone())
+                    .or_else(
+                        || match self.model().property_state(element, property).ok()? {
+                            agq_kernel::derived::PropertyState::Incomplete(failure)
+                            | agq_kernel::derived::PropertyState::Invalid(failure) => {
+                                Some(Origin::Derived(failure.explanation().clone()))
+                            }
+                            _ => None,
+                        },
+                    ),
             };
             if let Some(origin) = origin {
+                for (_, searches) in self
+                    .model()
+                    .computation_searches()
+                    .filter(|(fact, _)| **fact == key)
+                {
+                    out.search_dependencies
+                        .extend(searches.iter().cloned().map(SearchDependency::Kernel));
+                }
                 out.positive_dependencies.insert(key);
                 out.fact_origins.insert(key, origin.clone());
-                if let Origin::Derived(explanation) = origin {
+                if let Origin::AssociationOccurrences(links) = &origin {
+                    queue.extend(links.iter().copied().map(FactKey::AssociationOccurrence));
+                }
+                if let Origin::Derived(explanation) = &origin {
                     queue.extend(explanation.dependencies.iter().map(|d| match d {
                         Dependency::Declared(f) | Dependency::Derived(f) => *f,
                     }));

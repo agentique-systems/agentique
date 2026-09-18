@@ -14,3 +14,6 @@ standards/libraries/** -text
 standards/libraries-2026-04/** -text
 standards/artifacts/** -text
 standards/normative/** -text
+
+# Freeze exact v3 research responses, original captures, and process output bytes.
+verification/language-core-completion-v3/** -text

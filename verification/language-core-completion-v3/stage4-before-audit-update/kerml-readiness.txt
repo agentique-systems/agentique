@@ -1,0 +1,13 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.67s
+     Running `target\debug\metamodel-gen.exe --baseline kerml-1.0 --require-runtime --check`
+Full audit finding ["D"]: "unsupported-association-descriptor-shape" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Interactions-A_participantFeature_Interaction
+Full audit finding ["C"]: "unsupported-primitive-domain" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Expressions-LiteralInteger-value
+Full audit finding ["C"]: "unsupported-primitive-domain" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Expressions-LiteralRational-value
+Full audit finding ["E"]: "subsetted-property-name" Core-Features-A_ownedRedefinition_owningFeature-owningFeature
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Associations-A_targetType_targetAssociation-targetAssociation
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity
+metamodel-gen: KerML complete runtime blocked: translation=null, registration=null. See standards/generated/kerml-1.0/full-audit.json; no runtime output written.
+error: process didn't exit successfully: `target\debug\metamodel-gen.exe --baseline kerml-1.0 --require-runtime --check` (exit code: 1)

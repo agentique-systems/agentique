@@ -83,7 +83,9 @@ fn incompatible_definitions_and_ambiguous_names_are_rejected() {
         class(PART_DEF, "Both", &[TYPE, FEATURE]),
     ];
     assert!(matches!(
-        MetamodelRegistry::new([model_descriptor()], classes, [p, q]),
+        MetamodelRegistry::new([model_descriptor()], classes, [p, q])
+            .unwrap()
+            .property_named(PART_DEF, "same"),
         Err(MetamodelError::PropertyConflict {
             class: PART_DEF,
             ..
@@ -227,7 +229,9 @@ fn same_name_redefinition_and_diamond_join_require_explicit_identity_links() {
             [model_descriptor()],
             classes.clone(),
             [base.clone(), left.clone(), right.clone()]
-        ),
+        )
+        .unwrap()
+        .resolve_property(PART_DEF, NAME),
         Err(MetamodelError::PropertyConflict { .. })
     ));
     let mut join = property(
@@ -256,16 +260,22 @@ fn invalid_redefinition_scope_domain_bounds_and_cycles_fail() {
         let mut redef = property(TAGS, "replacement", owner, kind, bounds);
         redef.redefines.insert(NAME);
         assert!(matches!(
-            MetamodelRegistry::new([model_descriptor()], classes.clone(), [base.clone(), redef]),
+            MetamodelRegistry::new([model_descriptor()], classes.clone(), [base.clone(), redef])
+                .unwrap()
+                .effective_properties(TYPE),
             Err(MetamodelError::InvalidRedefinition { .. })
         ));
     }
     let mut cycle = base;
     cycle.redefines.insert(NAME);
-    assert!(matches!(
-        MetamodelRegistry::new([model_descriptor()], classes, [cycle]),
-        Err(MetamodelError::PropertyCycle(_))
-    ));
+    let r = MetamodelRegistry::new([model_descriptor()], classes, [cycle]).unwrap();
+    assert!(
+        r.validate_conformance()
+            .diagnostics
+            .iter()
+            .any(|d| d.rule == MetamodelRule::RedefinitionCycle)
+    );
+    assert!(r.effective_properties(TYPE).is_err());
 }
 
 #[test]
@@ -326,10 +336,15 @@ fn subset_local_context_domain_and_upper_bound_validation_remains_enabled() {
     ] {
         let mut sub = property(TAGS, "sub", owner, kind, bounds);
         sub.subsets.insert(NAME);
-        assert!(matches!(
-            MetamodelRegistry::new([model_descriptor()], classes.clone(), [base.clone(), sub]),
-            Err(MetamodelError::InvalidPropertyMetadata(TAGS))
-        ));
+        let r = MetamodelRegistry::new([model_descriptor()], classes.clone(), [base.clone(), sub])
+            .unwrap();
+        assert!(r.validate_conformance().require_conformance().is_err());
+        assert!(
+            r.derived_union_frontier(NAME, TYPE)
+                .unwrap()
+                .unsupported_relations
+                .contains(&(TAGS, NAME))
+        );
     }
     // Unlike redefinition, subsetting does not require the lower bound to narrow.
     let mut sub = property(TAGS, "sub", TYPE, ValueKind::String, Multiplicity::OPTIONAL);
@@ -380,14 +395,20 @@ fn redefinition_cycles_and_composition_weakening_remain_rejected() {
     let mut invalid = b.clone();
     invalid.composite = false;
     assert!(matches!(
-        MetamodelRegistry::new([model_descriptor()], classes.clone(), [a.clone(), invalid]),
+        MetamodelRegistry::new([model_descriptor()], classes.clone(), [a.clone(), invalid])
+            .unwrap()
+            .effective_properties(TYPE),
         Err(MetamodelError::InvalidRedefinition { .. })
     ));
     a.redefines.insert(TAGS);
-    assert!(matches!(
-        MetamodelRegistry::new([model_descriptor()], classes, [a, b]),
-        Err(MetamodelError::PropertyCycle(_))
-    ));
+    let r = MetamodelRegistry::new([model_descriptor()], classes, [a, b]).unwrap();
+    assert!(
+        r.validate_conformance()
+            .diagnostics
+            .iter()
+            .any(|d| d.rule == MetamodelRule::RedefinitionCycle)
+    );
+    assert!(r.effective_properties(TYPE).is_err());
 }
 
 #[test]

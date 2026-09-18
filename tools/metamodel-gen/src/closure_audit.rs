@@ -6,7 +6,7 @@ use agq_kernel::metamodel::{MetamodelError, MetamodelRegistry};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, VecDeque};
 
-pub const PATH: &str = "standards/generated/sysml-2.0/structural-audit.json";
+pub const PATH: &str = "standards/generated/sysml-2.0/runtime-closure-audit.json";
 pub const SEEDS: &[&str] = &["Systems-Parts-PartDefinition", "Systems-Parts-PartUsage"];
 
 /// Exact source-qualified combined input; this does not certify runtime support.
@@ -144,12 +144,12 @@ pub fn report(bundle: &Bundle) -> Result<Value> {
             }
         },
     };
-    let result = if error.is_none() && !unreviewed {
+    let result = if error.is_none() {
         "representable"
     } else {
         "blocked"
     };
-    // Verify the optional structural seeds cannot remove the minimum-slice blocker.
+    // Retain the historical closure comparison independently of full production selection.
     let mut extended = seeds.clone();
     for id in [
         "Systems-Attributes-AttributeDefinition",

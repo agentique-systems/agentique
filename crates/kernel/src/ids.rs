@@ -108,3 +108,13 @@ impl DerivationKey {
         ElementId::from_u128(uuid::Uuid::new_v5(&DOMAIN, &bytes).as_u128())
     }
 }
+
+identity!(
+    PrimitiveDomainId,
+    "Identity of an exact primitive domain descriptor."
+);
+
+identity!(
+    AssociationOccurrenceId,
+    "Identity of one canonical association occurrence, not a semantic element."
+);

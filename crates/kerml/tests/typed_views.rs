@@ -1,4 +1,5 @@
 use agq_kerml::{ViewError, classes as c, properties as p, views::*};
+use agq_kernel::provenance::Dependency;
 use agq_kernel::{
     derived::{DerivationBuilder, DerivationError},
     metamodel::*,
@@ -61,7 +62,7 @@ fn fixture() -> Snapshot {
             .unwrap()
             .filter(|p| !p.derived && p.multiplicity.lower > 0)
         {
-            let value = match property.value_kind {
+            let value = match registry.storage_kind(property.value_kind).unwrap() {
                 ValueKind::Boolean => Value::Boolean(false),
                 ValueKind::String => Value::String(format!("fixture-{id}")),
                 ValueKind::Enumeration(domain) => Value::Enumeration(
@@ -491,7 +492,7 @@ fn casts_use_the_live_registry_and_incompatible_domains_are_explicit() {
     change.set(
         BASE,
         p::ELEMENT_DECLARED_NAME,
-        SlotValue::Scalar(Value::Integer(42)),
+        SlotValue::Scalar(Value::Integer(42.into())),
         authored(),
     );
     let after = before.apply(&change).unwrap();

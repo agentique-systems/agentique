@@ -327,9 +327,9 @@ fn unordered_values_are_canonical_and_absent_differs_from_empty() {
             ENGINE,
             BAG,
             SlotValue::Bag(vec![
-                Value::Integer(2),
-                Value::Integer(1),
-                Value::Integer(2),
+                Value::Integer(2.into()),
+                Value::Integer(1.into()),
+                Value::Integer(2.into()),
             ]),
             authored(),
         );
@@ -354,9 +354,9 @@ fn unordered_values_are_canonical_and_absent_differs_from_empty() {
             .unwrap()
             .value(),
         &SlotValue::Bag(vec![
-            Value::Integer(1),
-            Value::Integer(2),
-            Value::Integer(2)
+            Value::Integer(1.into()),
+            Value::Integer(2.into()),
+            Value::Integer(2.into())
         ])
     );
     let mut changes = next.change_set();
