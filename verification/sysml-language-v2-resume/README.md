@@ -98,6 +98,18 @@ Results: [foundation](foundation/results.json), [runtime gate](stage-3/results.j
 historical files restored. The pinned PDFs/XMI/JSON, library bytes, old coverage
 and traceability records, and KerML generated artifacts are unchanged from the base.
 
+All three foundation checks and all eleven final checks returned exit 0; all four
+browser tests passed. The readiness command returned exit 1, and both subsequent
+refusal/currentness checks returned exit 0. Final documentation and preservation
+checks are in [handoff](handoff/results.json). `check-preservation.mjs` verifies
+protected files against the fetched base, the exact original-audit bytes, and the
+unchanged historical blocker prefix. It also checks the actual verification and
+readiness exit codes rather than inferring success from run completion.
+
+Implementation/evidence commit: `5849123` (generic property semantics, explicit
+baseline diagnostics, new ADR and the separate Gate 3 failure). A follow-up
+verification commit records the full workspace checks and preservation audit.
+
 ## Remaining obligations
 
 Resolve the independent redefinition-context failure before emitting the SysML

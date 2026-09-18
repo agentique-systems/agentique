@@ -569,7 +569,7 @@ impl MetamodelRegistry {
     ///
     /// Supplies a finite metadata frontier for future union evaluators; it does
     /// not compute values, choose ordered-union ordering, or claim completeness
-    /// of a derivation. Cost is linear in registry properties and subset edges.
+    /// of a derivation. Each edge is visited at most once after adjacency construction.
     pub fn subset_contributors(
         &self,
         property: PropertyId,

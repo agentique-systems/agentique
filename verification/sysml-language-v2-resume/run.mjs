@@ -10,8 +10,9 @@ const gates = {
   ],
   handoff: [
     ["format", "cargo fmt --all -- --check"],
-    ["help", "cargo run --locked --offline -p agq-metamodel-gen -- --help"],
+    ["rustdoc", "cargo doc --locked --offline --no-deps -p agq-kernel"],
     ["links", "node verification/sysml-language-v2-resume/check-docs.mjs"],
+    ["preservation", "node verification/sysml-language-v2-resume/check-preservation.mjs"],
   ],
   "stage-3": [
     ["runtime-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
