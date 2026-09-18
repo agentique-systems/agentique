@@ -69,6 +69,15 @@ gates.project = [
   ["format", "cargo fmt --all -- --check"],
   ...gates.runtime,
 ];
+gates.libraries = [
+  ["libraries", "cargo test --locked --offline -p agq-standard-libraries"],
+  ["syntax", "cargo test --locked --offline -p agq-kerml-syntax"],
+  ["corpus", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check"],
+  ["format", "cargo fmt --all -- --check"],
+  ["clippy", "cargo clippy --locked --offline -p agq-standard-libraries -p agq-kerml-text -p agq-kerml-semantics --all-targets -- -D warnings"],
+  ...gates.runtime,
+];
+gates.quality = [["library-quality", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --require-semantic"]];
 const gate = process.argv[2];
 if (!Object.hasOwn(gates, gate)) throw new Error("Specify stage0, focused or final");
 const label = process.argv[3] ?? gate;

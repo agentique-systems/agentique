@@ -1,0 +1,3 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running `target\debug\examples\audit.exe --check`
+Verified 57 lossless source partitions and reproducible lexical inventory; semantic quality gate INCOMPLETE

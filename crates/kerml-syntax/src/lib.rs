@@ -15,6 +15,10 @@ pub enum TokenKind {
     Word,
     QuotedName,
     StringValue,
+    /// KerML 1.0 8.2.2.4: unsigned decimal digits, separate from a real literal's dot.
+    DecimalValue,
+    /// Decimal mantissa followed by an exponent; signs belong only to the exponent.
+    ExponentialValue,
     Symbol,
     Comment,
     Invalid,
