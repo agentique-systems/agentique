@@ -95,13 +95,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "retained_but_not_evaluated":true})
     }).collect();
     let inventory = json!({
-        "format":"agentique-library-syntax-coverage/1","library_set":libraries.content_set_id,
+        "format":"agentique-library-syntax-coverage/1","library_set":libraries.content_set_id(),
         "status":"complete-byte-and-lexical-scan; production-inventory-incomplete",
         "scope":"All 57 exact pinned textual entries scanned. Tokens and recovery diagnostics are evidence, not a production-level parser or semantic library ingestion.",
         "required_production_families":["packages/namespaces","imports (membership/namespace)","aliases","visibility","short names","definitions/usages","specialization","subsetting","redefinition","conjugation","multiplicities","feature directions","value assignments","expressions","metadata","comments/annotations","classifiers","connectors","behaviors","functions"],
         "documents":documents,"constructs":entries,
     });
-    let report = json!({"format":"agentique-standard-library-quality/1","library_set":libraries.content_set_id,
+    let report = json!({"format":"agentique-standard-library-quality/1","library_set":libraries.content_set_id(),
         "result":"incomplete","semantic_quality_gate_passed":false,"documents":quality});
     let args: Vec<_> = std::env::args().skip(1).collect();
     let write = args.iter().any(|a| a == "--write");

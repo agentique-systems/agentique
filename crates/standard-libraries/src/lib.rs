@@ -185,23 +185,59 @@ pub enum LibraryDiagnostic {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VerifiedLibrary {
-    pub id: LibraryId,
-    pub resource: String,
-    pub archive_sha256: String,
-    pub project: ProjectMetadata,
-    pub metadata: ArchiveMetadata,
-    pub dependencies: BTreeSet<LibraryId>,
-    pub entries: Vec<EntryEvidence>,
-    pub documents: Vec<LibraryDocument>,
+    id: LibraryId,
+    resource: String,
+    archive_sha256: String,
+    project: ProjectMetadata,
+    metadata: ArchiveMetadata,
+    dependencies: BTreeSet<LibraryId>,
+    entries: Vec<EntryEvidence>,
+    documents: Vec<LibraryDocument>,
+}
+impl VerifiedLibrary {
+    pub fn id(&self) -> LibraryId {
+        self.id
+    }
+    pub fn resource(&self) -> &str {
+        &self.resource
+    }
+    pub fn archive_sha256(&self) -> &str {
+        &self.archive_sha256
+    }
+    pub fn project(&self) -> &ProjectMetadata {
+        &self.project
+    }
+    pub fn metadata(&self) -> &ArchiveMetadata {
+        &self.metadata
+    }
+    pub fn dependencies(&self) -> &BTreeSet<LibraryId> {
+        &self.dependencies
+    }
+    pub fn entries(&self) -> &[EntryEvidence] {
+        &self.entries
+    }
+    pub fn documents(&self) -> &[LibraryDocument] {
+        &self.documents
+    }
 }
 /// Source closure only. Canonical semantic loading is a separate frontend gate.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VerifiedLibrarySet {
-    pub content_set_id: String,
-    pub libraries: BTreeMap<LibraryId, VerifiedLibrary>,
-    pub diagnostics: Vec<LibraryDiagnostic>,
+    content_set_id: String,
+    libraries: BTreeMap<LibraryId, VerifiedLibrary>,
+    diagnostics: Vec<LibraryDiagnostic>,
 }
 impl VerifiedLibrarySet {
+    pub fn content_set_id(&self) -> &str {
+        &self.content_set_id
+    }
+    pub fn libraries(&self) -> &BTreeMap<LibraryId, VerifiedLibrary> {
+        &self.libraries
+    }
+    pub fn diagnostics(&self) -> &[LibraryDiagnostic] {
+        &self.diagnostics
+    }
+
     /// Read only the exact paths from the compiled, reviewed manifest.
     pub fn load_from_directory(root: &Path) -> Result<Self, LibraryError> {
         Self::load_with(|path| std::fs::read(root.join(path)).ok())

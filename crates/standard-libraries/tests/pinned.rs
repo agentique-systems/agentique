@@ -35,17 +35,17 @@ fn exact_pinned_closure_terminates_cycles_and_is_repeatable() {
             .count(),
         21
     );
-    for library in first.libraries.values() {
-        assert_eq!(library.dependencies.len(), library.project.usage.len());
-        for dep in &library.dependencies {
-            assert!(first.libraries.contains_key(dep));
+    for library in first.libraries().values() {
+        assert_eq!(library.dependencies().len(), library.project().usage.len());
+        for dep in library.dependencies() {
+            assert!(first.libraries().contains_key(dep));
         }
-        for doc in &library.documents {
-            assert_eq!(doc.library(), library.id);
+        for doc in library.documents() {
+            assert_eq!(doc.library(), library.id());
             assert_eq!(
                 doc.origin(),
                 DeclaredOrigin::StandardLibrary {
-                    library: library.id
+                    library: library.id()
                 }
             );
             let range = ByteRange::new(0, 0).unwrap();
@@ -69,17 +69,17 @@ fn exact_pinned_closure_terminates_cycles_and_is_repeatable() {
         }
     }
     let semantic = first
-        .libraries
+        .libraries()
         .values()
-        .find(|l| l.resource.ends_with("/Semantic-Library.kpar"))
+        .find(|l| l.resource().ends_with("/Semantic-Library.kpar"))
         .unwrap();
     let data = first
-        .libraries
+        .libraries()
         .values()
-        .find(|l| l.resource.ends_with("/Data-Type-Library.kpar"))
+        .find(|l| l.resource().ends_with("/Data-Type-Library.kpar"))
         .unwrap();
-    assert!(semantic.dependencies.contains(&data.id));
-    assert!(data.dependencies.contains(&semantic.id));
+    assert!(semantic.dependencies().contains(&data.id()));
+    assert!(data.dependencies().contains(&semantic.id()));
 }
 
 #[test]
@@ -109,26 +109,26 @@ fn changed_archive_and_missing_dependency_fail_without_partial_publication() {
 #[test]
 fn published_metadata_error_and_junk_are_retained_without_rewriting_sources() {
     let set = VerifiedLibrarySet::load_from_directory(root()).unwrap();
-    assert!(set.diagnostics.iter().any(|d| matches!(d, LibraryDiagnostic::MissingIndexTarget{name,target,..} if name=="AnalysisCases" && target.ends_with("/AnalysisCase.sysml"))));
-    assert!(set.diagnostics.iter().any(|d| matches!(d, LibraryDiagnostic::UnindexedDocument{path,..} if path.ends_with("/AnalysisCases.sysml"))));
+    assert!(set.diagnostics().iter().any(|d| matches!(d, LibraryDiagnostic::MissingIndexTarget{name,target,..} if name=="AnalysisCases" && target.ends_with("/AnalysisCase.sysml"))));
+    assert!(set.diagnostics().iter().any(|d| matches!(d, LibraryDiagnostic::UnindexedDocument{path,..} if path.ends_with("/AnalysisCases.sysml"))));
     assert_eq!(
-        set.diagnostics
+        set.diagnostics()
             .iter()
             .filter(|d| matches!(d, LibraryDiagnostic::RetainedOtherEntry { .. }))
             .count(),
         2
     );
     let systems = set
-        .libraries
+        .libraries()
         .values()
-        .find(|l| l.resource.ends_with("/Systems-Library.kpar"))
+        .find(|l| l.resource().ends_with("/Systems-Library.kpar"))
         .unwrap();
     assert_eq!(
-        systems.metadata.index["AnalysisCases"],
+        systems.metadata().index["AnalysisCases"],
         "AnalysisCase.sysml"
     );
     let doc = systems
-        .documents
+        .documents()
         .iter()
         .find(|d| d.path().ends_with("/AnalysisCases.sysml"))
         .unwrap();
@@ -169,11 +169,11 @@ fn private_library_identity_encoding_has_an_independent_uuid_v5_golden() {
     ];
     for (suffix, id) in expected {
         assert_eq!(
-            set.libraries
+            set.libraries()
                 .values()
-                .find(|l| l.resource.ends_with(suffix))
+                .find(|l| l.resource().ends_with(suffix))
                 .unwrap()
-                .id
+                .id()
                 .to_string(),
             id
         );
