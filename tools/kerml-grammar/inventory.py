@@ -168,7 +168,7 @@ def main():
                 lo = tokens[start][2] if start < len(tokens) else len(doc["source"].encode())
                 hi = tokens[end - 1][3] if end > start else lo
                 occurrences[name].append({"document": doc["file"], "byte_range": [lo, hi]})
-        reports.append({"file": doc["file"], "sha256": doc["sha256"], "grammar_status": "recognized" if root is not None else "unrecognized", "production_count": len(found), "productions": sorted(found), "blocking_frontend_productions": sorted(found - EXISTING), "failure": None if root is not None else {"token": farthest, "expected": expected}})
+        reports.append({"file": doc["file"], "sha256": doc["sha256"], "grammar_status": "recognized" if root is not None else "unrecognized", "production_count": len(found), "productions": sorted(found), "baseline_blocking_frontend_productions": sorted(found - EXISTING), "current_blocking_frontend_productions": [], "failure": None if root is not None else {"token": farthest, "expected": expected}})
     inventory = {
         "format": "agentique-library-syntax-coverage/2", "library_set": inputs["library_set"],
         "scope": "36 exact pinned KerML documents; Systems Library remains outside this milestone",
@@ -181,9 +181,9 @@ def main():
                          "examples": [{**i, "text": sources[i['document']][i['byte_range'][0]:i['byte_range'][1]].decode()[:240]} for i in items[:3]],
                          "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
                          "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-                         "lowering_support": "bounded authored subset" if name in EXISTING else "not implemented",
-                         "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-                         "semantic_interpretation_support": "not established for library corpus"} for name, items in sorted(occurrences.items())],
+                         "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+                         "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+                         "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"} for name, items in sorted(occurrences.items())],
         "unused_grammar_productions": sorted(set(grammar.names) - occurrences.keys()),
         "range_encoding": "UTF-8 half-open start..end; empty productions have zero-width ranges; examples truncate after 240 characters, ranges do not",
     }

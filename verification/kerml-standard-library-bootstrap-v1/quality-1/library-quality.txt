@@ -1,0 +1,49 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 8.17s
+     Running `target\release\examples\library_quality.exe --output=verification/kerml-standard-library-bootstrap-v1/quality-1/library-quality.json`
+refinement 0: 0 provisional endpoints; 4008 obligations
+refinement 1: 2121 provisional endpoints; 1887 obligations
+refinement 2: 3777 provisional endpoints; 231 obligations
+refinement 3: 3974 provisional endpoints; 34 obligations
+refinement 4: 3991 provisional endpoints; 17 obligations
+refinement 5: 3998 provisional endpoints; 10 obligations
+Existing structural query families evaluated over candidate declarations
+Kernel Function Library/BaseFunctions.kerml: 520 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/BooleanFunctions.kerml: 196 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/CollectionFunctions.kerml: 918 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/ComplexFunctions.kerml: 712 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/ControlFunctions.kerml: 1070 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/DataFunctions.kerml: 647 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/IntegerFunctions.kerml: 644 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/NaturalFunctions.kerml: 389 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/NumericalFunctions.kerml: 667 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/OccurrenceFunctions.kerml: 527 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/RationalFunctions.kerml: 746 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/RealFunctions.kerml: 724 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/ScalarFunctions.kerml: 570 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/SequenceFunctions.kerml: 1882 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/StringFunctions.kerml: 278 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/TrigFunctions.kerml: 384 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Function Library/VectorFunctions.kerml: 2408 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Data Type Library/Collections.kerml: 293 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Data Type Library/ScalarValues.kerml: 39 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Data Type Library/VectorValues.kerml: 66 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Base.kerml: 138 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Clocks.kerml: 520 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/ControlPerformances.kerml: 554 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/FeatureReferencingPerformances.kerml: 639 candidate elements, 2 unresolved, 3 incomplete reference answers
+Kernel Semantic Library/KerML.kerml: 3232 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Links.kerml: 145 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Metaobjects.kerml: 77 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Objects.kerml: 752 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Observation.kerml: 440 candidate elements, 1 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Occurrences.kerml: 4096 candidate elements, 2 unresolved, 54 incomplete reference answers
+Kernel Semantic Library/Performances.kerml: 633 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/SpatialFrames.kerml: 1013 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/StatePerformances.kerml: 1399 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Transfers.kerml: 979 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/TransitionPerformances.kerml: 569 candidate elements, 0 unresolved, 0 incomplete reference answers
+Kernel Semantic Library/Triggers.kerml: 399 candidate elements, 0 unresolved, 0 incomplete reference answers
+KerML semantic quality: INCOMPLETE
+error: process didn't exit successfully: `target\release\examples\library_quality.exe --output=verification/kerml-standard-library-bootstrap-v1/quality-1/library-quality.json` (exit code: 1)

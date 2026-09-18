@@ -1,0 +1,2778 @@
+{
+  "base": "1eb1424",
+  "protected_files": 693,
+  "files": {
+    "AGENTS.md": {
+      "sha256": "2a3cb0698ec0a208fa96df5abec97967ce7c03070e65df053a72dfd3e01689a0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "Agentique-Specification-v0.1.html": {
+      "sha256": "c8727c42afa30bbd21cec60512b8c3eb6c09c1640103b1b88e033a493286b98c",
+      "comparison": "byte-exact"
+    },
+    "KerML.pdf": {
+      "sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697",
+      "comparison": "byte-exact"
+    },
+    "SysAPI.pdf": {
+      "sha256": "1a93ffb9214573ec38b00b89f7ce4c7b7ff6559ccbff534a6a97e08e1f145e0a",
+      "comparison": "byte-exact"
+    },
+    "SysML.pdf": {
+      "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a",
+      "comparison": "byte-exact"
+    },
+    "adapters/assistant/Cargo.toml": {
+      "sha256": "28816989015924ed96793fa45b6fe2ee121af889ecf07602c501ea2a3e847f2e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "adapters/assistant/src/lib.rs": {
+      "sha256": "ece3292ad236eb71d8c4d17b95093ffbe0fe8a319449531d9372860dd47615bc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "adapters/assistant/tests/provider.rs": {
+      "sha256": "edffbd3cd5b95952c1a15e5633035a7d1faf3ad4dc40bffb1c8f08f52d62034d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "adapters/storage/Cargo.toml": {
+      "sha256": "c4df46e66cc6c6131fffd1b37f962304d44ecc28c3e61cb83531013c38be4e42",
+      "comparison": "git-text-eol-normalized"
+    },
+    "adapters/storage/src/lib.rs": {
+      "sha256": "67baf9c610df159a4243ecb462c28bf5d11983b68d55d1ffce92b4885f45b5da",
+      "comparison": "git-text-eol-normalized"
+    },
+    "adapters/storage/tests/reliability.rs": {
+      "sha256": "ee7c930182f511134cda497ac5da9cc0481ad425b973ed299f9f57f2dc36d60f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "console/index.html": {
+      "sha256": "54b574ebe7000d3ff850e2a05f9886c34c9b37f46d6f82deeb889b39be8c2e59",
+      "comparison": "byte-exact"
+    },
+    "console/src/BehaviorGraph.tsx": {
+      "sha256": "2af7a4ca1b52029d9939654ed2d31e01d00cecfa514ebd750125f0158aab9540",
+      "comparison": "git-text-eol-normalized"
+    },
+    "console/src/ModelEdits.tsx": {
+      "sha256": "744cdf82932e486567e2574526d1601dbf6959f206cbffd2ca91bd7eb20001a9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "console/src/main.tsx": {
+      "sha256": "4a4ff90382082d95e5d6d5f1abd60fcca36f20091d88eb23bde68b80b3c59466",
+      "comparison": "git-text-eol-normalized"
+    },
+    "console/src/style.css": {
+      "sha256": "d4a7ed1c4ee532af11832841c27b7acf7b5d8c390088c246483679b72db4096d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "console/tsconfig.json": {
+      "sha256": "c09263efe51eb6cf96479b27e3afcf1a9c8b16beee1a6997453ff2b74f63bb8e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "console/vite.config.ts": {
+      "sha256": "20507082fe9de30590c0aa3d655b30aeda22053f320494b14a526c897edde33a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/application/Cargo.toml": {
+      "sha256": "c320ce910cfe545c62ea87f010bdcec57aceb190b5052aaf576ce072dfe9f523",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/application/build.rs": {
+      "sha256": "d88c6dea69ae63eee8dea02ced89950c1bff096c3c929da3050ec135d7711a2c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/application/src/lib.rs": {
+      "sha256": "3addda76618c13339fb7214eed7072c810980ff14ee5b37e083e6d08cf8c2367",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/application/tests/cancellation.rs": {
+      "sha256": "ff6558448f6927571cc775721814894ab13e4d3b2651798dae08d867fe91c81f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/application/tests/traceability.rs": {
+      "sha256": "b1b3940f58c3e8aad0e31dc26c7fb180cf973c403a25a0cdbb14db8d8d9e6281",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/cli/Cargo.toml": {
+      "sha256": "afe549bacb0f565f60df3960ac1494fa0491a1a8bce4b3ddf8e61a859cc0181e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/cli/examples/benchmark.rs": {
+      "sha256": "1e197d9758047e6b8a449e1ded932ba11a9d6a8fe25c297f78e068699f1791b0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/cli/src/main.rs": {
+      "sha256": "5575f72ecd729ac85fc321dd24d2ed7b744b940ca8b1a58490dd1c1b464eab47",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/Cargo.toml": {
+      "sha256": "dcb952365c12cf7d8bba508c2812cea0b9495ed31734fa20285f7ab15971f9ef",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/src/generated/complete.rs": {
+      "sha256": "005b880ddca192ffaca9ed5675985a9bbc97e423fdf8fc44ef94d30a10d85dfa",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/src/generated/root_core.rs": {
+      "sha256": "9113a8e4f39e6d78e4c25a8d51d83861ebf3e60f079c71c72f2f027be2d3ab67",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/src/generated/root_core_views.rs": {
+      "sha256": "ce1d2d306ade195fa43042c1614c5af771c5a87973f114f1ee0c7ab79602da08",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/src/generated/typed_views.rs": {
+      "sha256": "932fa2b8d80e5916232e95c734206118565905bac142a418a1f9d35d20c0a05f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/src/lib.rs": {
+      "sha256": "1525848a7d126093d311fe1e3cc5ee5b922b153e397516e2f191ac5ab6811509",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/src/view.rs": {
+      "sha256": "8b6eccc5f6e7417020e9e886a1ecb9bae1d79d308357be5fe82726bb5e3780fe",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/tests/descriptors.rs": {
+      "sha256": "33dd463ec173faf1a4b2cecd27ec0ebf09e78e152f01319e537d2e3e01c01112",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/kerml/tests/typed_views.rs": {
+      "sha256": "adebe3365078d1284450b2d9e9e6c357f80a28168ec6e5076bff3144189aaacf",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/model/Cargo.toml": {
+      "sha256": "1738ae3646b241442e4e521dd7cc0991f2495d7925c848d21c02d71d44636ce4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/model/src/lib.rs": {
+      "sha256": "9c62ecb29f1c5ab8bd7860b0b7c024cd468333258420ac344098948a5a3ce6f7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/model/src/work.rs": {
+      "sha256": "13cdfaa1d95d2c201263f315d1afc5ae4ef3675734bac79b6c3187a56639b2f3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/semantics/Cargo.toml": {
+      "sha256": "965a3a920278b8539a98c6bd7a83870eb709f9c23a2e8a8de7c4ea8a412478a8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/semantics/build.rs": {
+      "sha256": "f2ffa497a22c0016e59a02e7f270fd42b451ccf8d43e514b6ebff572a6cfb94e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/semantics/src/expansion.rs": {
+      "sha256": "bcb1ae58e3602c3e0c09fdcaefa4db0f0f4ff70e07e77182a67c3e8ed22c4420",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/semantics/src/lib.rs": {
+      "sha256": "648d46cf1eb1f258d32f10002e98f6eabc83d80bbb2b9a1d82fbbb22c68470c7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/server/Cargo.toml": {
+      "sha256": "e09222fdf0e8a7fa25546571c25d511579a1f3e4c1afd3fb58c22e692db93a19",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/server/src/jobs.rs": {
+      "sha256": "fb2490b49a9faf8993484bec95e2678d607e6e7c344665995440b0267ffafad2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/server/src/main.rs": {
+      "sha256": "6f524bd2b56f59697e7992246b212b1c1f38bf1bd610907eeda762b56f967bb5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/server/src/model_api.rs": {
+      "sha256": "1cc60c108deaeb10a12f5e2e993e3d2601a7f92640c1e222cb6ed848b5805322",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/simulation/Cargo.toml": {
+      "sha256": "e5cf18e15e5118055ad29b5928335a8561d3ee0baada8f009e2dfc80b04b9b3e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/simulation/src/lib.rs": {
+      "sha256": "fe69df85237ac33e8f8840055fb65e332b97e1a0a5a8e4d95cf70b484bbafb32",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/simulation/tests/contract.rs": {
+      "sha256": "84aac28041bda8f5fcd6f4fa469be08d02252952a699478e0957e48999228984",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/syntax/Cargo.toml": {
+      "sha256": "ea609a0bc4cccd47117e9d66c21e638666c3028b594dc56cc80df76fb87a5444",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/syntax/src/lib.rs": {
+      "sha256": "ebc6a65997829f7016e114438db010e66df9a1495b064d1f1515836c999aee48",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/sysml/Cargo.toml": {
+      "sha256": "8ace8232b19d08a0368bb7f54d3c6d27d53cae2588fe1d3098173ca0d289a0ae",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/sysml/src/generated/complete.rs": {
+      "sha256": "b81a3bedbdd153a6fe4c86863b041cb64ab759191d34eae98add631295b488fe",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/sysml/src/generated/typed_views.rs": {
+      "sha256": "fffbcca0a58368809ad6cc96360844b5cb2c23761f7eca5a835642ae8247a95d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/sysml/src/lib.rs": {
+      "sha256": "a5b81890f74437f9bb38667298a5a1446367b14dda4f58fad9e623d20aa9e721",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/sysml/tests/foundation.rs": {
+      "sha256": "772b01c714a76feda36676db591ea0a080a66e6f227d41e3527d70eef385ac29",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/workspace/Cargo.toml": {
+      "sha256": "ea38936d9a11d60452983f86d2efca818b14c8caf6a4f49c5b92088644562a29",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/workspace/src/lib.rs": {
+      "sha256": "30d643ce3d3d66ec8d0acd6e56d559a82fcc6e39b74515a2386b5572017cc99d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "crates/workspace/tests/editing.rs": {
+      "sha256": "6a2c3062de2a48f4d68057ffbd4caa2e897f7b91e9ef18fc9836cd9c709703a0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0001-semantic-kernel-v2.md": {
+      "sha256": "7912bda7bd5881d0738ee947291ee71f647f63bf92aa4d26d2cb9a6962ec2eb7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0002-normative-metamodel-pipeline.md": {
+      "sha256": "30b09346299b4eb469e77d153116cb2889bdc5cb5cacc2c5fbe6d31bd4cf312e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0003-normative-root-core-descriptors.md": {
+      "sha256": "a97c4f33a56d563941313578e504dd6e93c315a282a0b35312e5e0454837d0ab",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0004-kerml-typed-views.md": {
+      "sha256": "b045fd4e1fecdf342626b2980d4cf3d042123aa8dbc5c503577510d106e98031",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0005-kerml-semantic-query-foundation.md": {
+      "sha256": "490872dc28d92c840cb8912fb9114b2a27698b076c3c227370b24bb92118106b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0006-lossless-kerml-text-frontend.md": {
+      "sha256": "fb9f9f1e0f675ecca6f1178e3725214f6f5165c1a6b9c40e28b2e8cd986baaa3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0007-multiple-metamodel-baselines.md": {
+      "sha256": "40817112a3ab6e23e19a6931a0ce473e636f604c4792def7fdfb8014ceaf1fe8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0008-property-subsetting-cycle-semantics.md": {
+      "sha256": "04eb1504d79ceab9ae3f034a4f542d75bc81d94cb80c70fd862561a7dc4232b5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0009-property-redefinition-context.md": {
+      "sha256": "0a9c4661599786e3d049e346425db57d5f6bfdcb15a888923f95c497c40e9735",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0010-property-redefinition-validity.md": {
+      "sha256": "dedd27539907a0c1a2f134580c37d2dc0655bde6d2aff6aadde3c1db4d0cdd1d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0011-structural-registration-vs-metamodel-conformance.md": {
+      "sha256": "dbe613e8a75e7ae23c9f81d4e70f263a1b834b4e20aff5f096f94a2cdb7521c7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/adr/0012-sysml-semantic-layer.md": {
+      "sha256": "233cdc4670b0836cd3a7ca2faba3ce16fd35c94614812b526e036f352717f75a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/architecture.md": {
+      "sha256": "3757195405b25303266441790a4e57e1f3eef464647bdf1ede7fa7085a767794",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/language-core-runtime-contract.md": {
+      "sha256": "0894758ef7f218837fcc0590c2c8910febe347e6751aefdcd8dd69e3c53b8009",
+      "comparison": "git-text-eol-normalized"
+    },
+    "docs/sysml-semantic-foundation-review.md": {
+      "sha256": "f8fb04ccaae33fe3fc5a79c5e63fda5e960f6749292e36dd6de7edbd0a75415c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "package-lock.json": {
+      "sha256": "7b87a7e558512fd6132378a523bf946d75cc010a541496b9dd70ca78c8dbb6fc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "package.json": {
+      "sha256": "b519ffe4d345ca0aa1f912cc649ce26e7139cd90e66040003705a3d38878e82c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "playwright.config.ts": {
+      "sha256": "8dfa79c26fd72b106058bd7be339c9d93fea3d3a46fef0a02da3b3081d15a8fd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/artifacts/2026-04/Kernel_Data_Type_Library-1.0.0.kpar": {
+      "sha256": "9f2bf2ebf72c6cb9f4a53999afe5e382bf65acfbc0f455ce2ca5ffe1e621326d",
+      "comparison": "byte-exact"
+    },
+    "standards/artifacts/2026-04/Kernel_Function_Library-1.0.0.kpar": {
+      "sha256": "05c57ed433073fde16f2a52bdbbe6ac099ce52520bfdf41893f7b49866aa24f4",
+      "comparison": "byte-exact"
+    },
+    "standards/artifacts/2026-04/Kernel_Semantic_Library-1.0.0.kpar": {
+      "sha256": "e741ff98b689b6596da5078ec1693928a94d2f8a090a476e1f3e7a7f5d0abb84",
+      "comparison": "byte-exact"
+    },
+    "standards/artifacts/2026-04/SysML_Systems_Library-2.0.0.kpar": {
+      "sha256": "7a8ea690b110466f50c52b8c594b9815a331377baebc2794958203b264d01bac",
+      "comparison": "byte-exact"
+    },
+    "standards/artifacts/Data-Type-Library.kpar": {
+      "sha256": "957e4ff5c60f7fc5eedaf0b6d4f776856061c0aa7a424e260eeccb8d6ed7bfbd",
+      "comparison": "byte-exact"
+    },
+    "standards/artifacts/Function-Library.kpar": {
+      "sha256": "a8319da3ab1d8ffc0f390ea1aef29d85a00451655c41a9267ce396845c2b1c8d",
+      "comparison": "byte-exact"
+    },
+    "standards/artifacts/Semantic-Library.kpar": {
+      "sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+      "comparison": "byte-exact"
+    },
+    "standards/artifacts/Systems-Library.kpar": {
+      "sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+      "comparison": "byte-exact"
+    },
+    "standards/baseline-anomalies.json": {
+      "sha256": "2bacd22522817e95eebaf83137c84baf3cb13edd6d398bc9d7f567cd4d3ef360",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/baseline-lock.json": {
+      "sha256": "4ebbe41838f133ceffdb794f56451123e591aff58f87474c137307086ae1108b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/coverage.json": {
+      "sha256": "6a78164cd8cda48766649d86203c2d914cec3fcd1acc9224d40d4a33ba590be3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/kerml-1.0/full-audit.json": {
+      "sha256": "55b4b66fea23f92aab0bf0500b4b65f093f9bb49a88dec00e664197ae1259aed",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/kerml-1.0/full.golden.json": {
+      "sha256": "d6044238255a86121c0678a2758c499d5c2b4684f22ca2ff3088701d2aaff83b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/kerml-1.0/metamodel.json": {
+      "sha256": "d9e604c55d4aae966d3e9afddfc87f87e2b8f025d1ba0d8f43ef7f1b674d7a59",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/kerml-1.0/root-core.golden.json": {
+      "sha256": "ca76228dfbf88d66f028a2e504b39025dd0533b1924ed90956f46415b69c81c8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/sysml-2.0/full-audit.json": {
+      "sha256": "b859d84a83a0cce54e78f54c5b220deac3bcff5291fea1c2dae0d23592cc7d10",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/sysml-2.0/full.golden.json": {
+      "sha256": "dc95b1d32ebe477ad5958f7021b5a5d89c11d2687970b7d18018d4a76d50df5d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/sysml-2.0/metamodel.json": {
+      "sha256": "817871908ceabf7632c6566ebbc3fc6b9c9503caccde01d26bf4f0026e9772e9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/sysml-2.0/runtime-closure-audit.json": {
+      "sha256": "5cbb8946892ac195bc8469c3e6e14fe23b6058c6e125abf9b1b25f86b8d611c5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/generated/sysml-2.0/structural-audit.json": {
+      "sha256": "497906c4334fd6401ab33bf74d4ee6a23b858dbc292039919402735e5a7d0c1a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/lock.json": {
+      "sha256": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+      "comparison": "git-text-eol-normalized"
+    },
+    "standards/normative/kerml-1.0/KerML.json": {
+      "sha256": "e454fe4b7c04f3d95874b6c1a4e6ef056ea5874c71fd3d17e3180319c2f58ab2",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/kerml-1.0/KerML.xmi": {
+      "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/kerml-1.0/PrimitiveTypes.xmi": {
+      "sha256": "62d12217fcd26037fc917709e2a896600af574efd6412c110e2a711395a69849",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/kerml-1.0/README.md": {
+      "sha256": "9a98b10553990911d815ecb1153e3bd2a82d0a206d73b0a451be9953f1975e89",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/kerml-1.0/lock.json": {
+      "sha256": "1e6bc49282dd9ed933b4e8be450bd1bb47fa0af35da35e2f1ae6895e3211b6bb",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/sysml-2.0/README.md": {
+      "sha256": "30308d1c37d5db79efb1828dd8b1f05c40274898ce7dd4ad8eb85ffb5c7db001",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/sysml-2.0/SysML.json": {
+      "sha256": "bb0d8af159cf2cbe4a0df4ed6b903505a57e33d047068e5a50a7008a18d546c5",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/sysml-2.0/SysML.xmi": {
+      "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/sysml-2.0/library-set.json": {
+      "sha256": "5f0533b4f0795d71499677916b5967d972c01eca62f4edf66fba04397d082c1e",
+      "comparison": "byte-exact"
+    },
+    "standards/normative/sysml-2.0/lock.json": {
+      "sha256": "db8f7af2c350b23de1c5dc798431e808841d01d4ae40e5579c1f5754e59ea4d8",
+      "comparison": "byte-exact"
+    },
+    "standards/sysml-semantic-coverage.json": {
+      "sha256": "fdad865593e4bb9113dc5b7ee4b218ededc0c00f86f8d6ccadcf60dbb704f50c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tests/browser/console.spec.ts": {
+      "sha256": "1a60dd16bf33ac17e843d30fe31af95b90fd142e35be7cd9889fe6a003bb1874",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tests/fixtures/Controller.sysml": {
+      "sha256": "801be1493f9937a53e11b8113352d07fe84843e1e676070b67db983911174b76",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tests/fixtures/Parallel.sysml": {
+      "sha256": "296f98bed4f7719a0faa462b1bd298ea1a3a6b8e6061eaaffa9dc941d7792350",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tests/fixtures/Types.kerml": {
+      "sha256": "3ed57896e6e513b41d2285bf1ad34a7743514aa730fa3327f1979199ad91b49e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/Cargo.toml": {
+      "sha256": "733051a204b2fae6a64f79aeb39da8793c5dcff323fa34d60b4ea202750ea4cb",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/README.md": {
+      "sha256": "9035890a2f22864beb4fb0ac4588087023067345740ffabbe1c9c0c59f180750",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/baseline.rs": {
+      "sha256": "8b6b951b990e95c988dabd209a10f63ebcf2da30d6ae8eb4b91d9e2e378775ec",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/baseline_diagnostics.rs": {
+      "sha256": "38c76709877e431ae200d3c127478d5f2e6d29407312b4e8f2027530948c26b1",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/closure_audit.rs": {
+      "sha256": "e2c2bbaa0d094e41f68a8d938d590d93283cd5af322c94da4b53aecfce57a013",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/cross_check.rs": {
+      "sha256": "8ef43fd0d37b27edcabbc08e75b89f99152a024aeddf6e3f90dc56bfa96ee92e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/descriptors.rs": {
+      "sha256": "7706d7bc270b816c175072a6167dd6c5df12aa2b269ff88800530606cb67cc40",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/full_audit.rs": {
+      "sha256": "39f3a98c27a6e74a41ff695ebb38fea5f7bbef0c12ddfed27c208b69663702e3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/graph.rs": {
+      "sha256": "17345fa64715dbb7f8c180fb8f9cadde1cb112528ba0f21c076fd5a70a074644",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/ir.rs": {
+      "sha256": "315706fb0770196ec4a780e3d00733e05050fbb5d487f0321269944ad5dcbe76",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/lib.rs": {
+      "sha256": "fe83d4497ad83aa9dbc2f3387f0f5dd905f83ffba4c17d034f7367c0ab87587f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/main.rs": {
+      "sha256": "281d996a49b125c8ff7e19c75958ccc42534ee5ccdd38b49fd26a928c5a85cd2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/pipeline.rs": {
+      "sha256": "7774d133ff2cde75fc32e27a5772b1eb67d52a56969566f4481a8aca45335b06",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/profile.rs": {
+      "sha256": "384b10c8d4ff590dd7bd566e2fb67c5ada004327ddbf7c5ce5010f4f06fab9f4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/typed_views.rs": {
+      "sha256": "2c8e8e2a2029bef1c0dc8494d9fa7453e1bac8547091fbbe59b6abcf15e1e4d2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/src/xmi.rs": {
+      "sha256": "1950680e506649c454e0f4c571eb9ae77e54c77a05d3a4bd9faa8138f3870b33",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/descriptors.rs": {
+      "sha256": "d028bf2ccf0f950ef340ffd19b5bff5e9b4b0401a918f0f9b87ed605df900ad9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/fixtures/cross-check.json": {
+      "sha256": "857027a05cb9b526280e82a90e0f77606e56019af192ad2f8852d073b6c21ca1",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/fixtures/cross-check.xmi": {
+      "sha256": "230bb013d6b2c6542740e22ceeba129713ad1d21e1146e381ce28bba9fb51eaf",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/fixtures/foundation.xmi": {
+      "sha256": "18df319e02c27af16d8bc2b39083b04618c455e342e33911c0be5e44a2829dab",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/fixtures/mismatch.json": {
+      "sha256": "9949849a80a100ed412434a2b044ba7cbc081dcbad4b783e2f3598ee4b7b4ccc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/full_audit.rs": {
+      "sha256": "dba7e2c5849d84a33c0f6764501c5518d12dda74d9f85cb037c062d0e409074d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/importer.rs": {
+      "sha256": "c5a6a29f08136debd2dd68e79c962d443fe6798bd761b4b3717b3e9ef8968a55",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/multiple_metamodels.rs": {
+      "sha256": "62f82405691c58f34495b18bebb6b4caebcccf956a308f47ff83a2bfa0549edf",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/normative.rs": {
+      "sha256": "4795ddf3344d333222dae771f61721295f0ab0249b328cd36f72862f55b1c4e9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "tools/metamodel-gen/tests/sysml_closure.rs": {
+      "sha256": "b0cb83ad5c817190f75a55a1f0975ffafab62a58f204d7a4939b5d02af20688d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/RELEASE.md": {
+      "sha256": "8138f2a5f28f5a05a57a10898f216aa85cd9c5e0aaec36c396aea954e11bce51",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/benchmark.json": {
+      "sha256": "dcea053955ba17763f92fa595de621b84cb0b299414d23d4e383e68718e3f96a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/browser-results.json": {
+      "sha256": "2f3fe6e7e5b4af186dc6d008e630d3016d5312e6777b6256cba8d66e4122a97a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/coverage-plan.json": {
+      "sha256": "f5b300721c3f5828824eab6a3eb0c3e40e8489dfa448b7b97e953635a8d4e543",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/demo.json": {
+      "sha256": "e7c74ce4d47c63f0cb212ee1866b2dc3ad269c2ea5f9050bf528a347ea5f0a45",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/extraction-lock.json": {
+      "sha256": "0617e5bd9c9217cb952e3eabe98dd85ed1d1eb64fcc1213708d7f8c78a087341",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/independent-fixtures.json": {
+      "sha256": "99a52db50c41a7911047b8a5a824943f3dd9bbab8cfb4dae8da1d4c974660df5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/independent-validation.json": {
+      "sha256": "e30717eb02703ab5249f7b64fc7c3cecd84ac35c94d1763ef49a0c78c9c4b3f9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/README.md": {
+      "sha256": "d10368a1dfddd3160a9424323f5ab87b33c099b3e724ca1c45f0f52d8bd69da8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/browser-results.json": {
+      "sha256": "18b2b244f60fad44ff1adc87c3b37d0d30c15180446054630c576e1a475bc0f2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/browser-tests.txt": {
+      "sha256": "1a98c76aa1a8d82b44ed864428664b48bb1305e7f47e8f627e86cd747e2c2bd7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/console-desktop.png": {
+      "sha256": "d76f0e34717bb2fd6306f0a03a62c35519d80d64e95f3ef1de26519ddac2459a",
+      "comparison": "byte-exact"
+    },
+    "verification/kerml-descriptors-v1/console-mobile.png": {
+      "sha256": "1b5f2232269c258cc67b0ca9b078259b8d40250059f558ee8746915725245b4e",
+      "comparison": "byte-exact"
+    },
+    "verification/kerml-descriptors-v1/engineering-tests.txt": {
+      "sha256": "852ba49bb04290ab5cf9000c8e6137042d90b8703d36436b1420b6b4ade2972c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/frontend-build.txt": {
+      "sha256": "b00b7683b78bc06ef6c6bbf549c8991831e5ac7f77778fbbc938712e606b5f7c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/frontend-types.txt": {
+      "sha256": "77e9877b6d5ebb16d5b0c1250253cfb50b09c77eb42dc31d8be8135d5766090e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/generated-current.txt": {
+      "sha256": "b4e291bdb1c2b453cff9d113d71e5aad8989cc9e4087f383247d411ffa4ab75e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/preserved-artifacts.json": {
+      "sha256": "255f47520f72bf863ba7d8350ff126e459bd3b34c672a2bf41a18545b8a17e50",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/results.json": {
+      "sha256": "057e1daded3dd667e730495ba4d19717965f372a9927f87c816403b7763ac574",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/run.ps1": {
+      "sha256": "f66e11faadd1c6aff38b5f5075ffa11b2323d00bd476ec8b9eab21110758e054",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/runtime-dependencies.txt": {
+      "sha256": "883e88c8b5bf2730b94ded4599f14ea045f6456a1a5f6e8dd1249a979ac573d0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/rust-clippy.txt": {
+      "sha256": "7d40097117b44b8952be3b6e6f20c3447d32beb51945b145c8b536c206a86523",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/rust-format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/rust-tests.txt": {
+      "sha256": "e9e8dcafc44bc3216ab94b91abe6570ff74bcd1eddb450df69806d5c6756e4d9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/source-hashes.json": {
+      "sha256": "011bd0b0bf692690c046183cb49fdc726c45b528e07a27490a6bd1e362547ea0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/standards-integrity.json": {
+      "sha256": "01c54c115082f9c8d7e5c9e6bf1443bd4ac367dec6e6c4c296aa070efc6c9485",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-descriptors-v1/standards-integrity.txt": {
+      "sha256": "665ec50a1945f9cbcaa0c1c46e9cb93d29b199501ff21d7e66c840b8741ccdf4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/README.md": {
+      "sha256": "60f35d65ce07b075192d5d67719a9352d5a0b19378cf9961c962e15040a48e60",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/browser-results.json": {
+      "sha256": "a17e4393c4dc4a7b4ecbb454876d6f2583b88423137c86e9cdf4c8213a8a7752",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/browser-tests.txt": {
+      "sha256": "b83004eb5e2d500c897bcd9d0d004c1670db2ab9569201a1142249be61e88003",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/engineering-tests.txt": {
+      "sha256": "b5717f8313ab9d1afab331aa55cff0a2b862d35268fede1473e2b1cacbe9286a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/files.txt": {
+      "sha256": "c6525e50cf3e97a58c43270fd582e3878c1e1cd7b933e0ec39c9fce9d5e9e434",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/frontend-build.txt": {
+      "sha256": "b00b7683b78bc06ef6c6bbf549c8991831e5ac7f77778fbbc938712e606b5f7c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/frontend-format.txt": {
+      "sha256": "64dda5783057daee882ca09b252d354ff6be9a936c7c582fe96059c857d202ce",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/frontend-types.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/importer-dependencies.txt": {
+      "sha256": "6f252419035374c9d8e2ddcf8adcc8bf101ecb44a4286a35736edb386c1009e6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/importer-tests-review.txt": {
+      "sha256": "8e7c5ee0fff14572193efe9b6b4ebcdd06bd4bb6d8a385b1afa23654d706feef",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/importer-tests.txt": {
+      "sha256": "993fdebc2cc6654c84279266754298a7b45a4e2e942e01287abbf7a877a0afcd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/metamodel-check-review.txt": {
+      "sha256": "1d66b53c79e1c77a8e5a6604dfa632b774376e5447fdbcba38d2b8e375489d5e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/metamodel-check.txt": {
+      "sha256": "2b8f64a291cd422938016026bab3f6f95cb11db1612dd9196403739694f3f88d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/results.json": {
+      "sha256": "2a22c563778c5dafc76b4fac12698c0173d4e1f213fe4afa0310bfb05876058a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/rust-clippy-review.txt": {
+      "sha256": "7b1f7503b6e76d6db6e6c17afb1ba229143b71254694b6d1b93b243cf1b81330",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/rust-clippy.txt": {
+      "sha256": "b1b15a12f51fa7277c529592fbd73d0e52e66f106d3a0f2cac32b1ad9a951539",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/rust-format-review.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/rust-format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/rust-tests-review.txt": {
+      "sha256": "45a617804463dfcc0fd2f0c3b618d67c3cb8f4ab1026180ea5d137382b448622",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/rust-tests.txt": {
+      "sha256": "03c0a54b18c037d4764d7bc07a5201344cc3225283ce6dfebb0318d738f7b529",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/standards-integrity.json": {
+      "sha256": "7b98e51e07a969eebfc7510e4b659b6d4698d21b446f64c38356e6a7c1b3c86d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-metamodel-v1/standards-integrity.txt": {
+      "sha256": "9c9640d5f6b097ab9d48c33d4bffa3cf4a85ef73b60bd5c3e0a9d792fd3fd908",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/README.md": {
+      "sha256": "4136cf7cfa5603d2f9f65ccb3492a8124376a02c008c112c5ec8078599081072",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/browser-results.json": {
+      "sha256": "8c53d58cac34938374fa88e4e772c8c0d817d35be237e562702494b8745fb15c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/browser-tests.txt": {
+      "sha256": "5b3001779dd0d0da24c29500b0964083c4c830fd496844cc80b2f9f1dd84027f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/clippy.txt": {
+      "sha256": "92cea4e65353f6edefa2bc694effa8113746edbf018ecbbd419ecf3fd3e3edcc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/console-desktop.png": {
+      "sha256": "6e68270ac49d89ffe9c1eaf11e7b475dfdcc4a799fe5d8a312c4a794ac5dfe5c",
+      "comparison": "byte-exact"
+    },
+    "verification/kerml-query-foundation/console-mobile.png": {
+      "sha256": "1e940a5e146885b3dfd7381226203dfec62b4a5804253d76aab0bebbaec4024d",
+      "comparison": "byte-exact"
+    },
+    "verification/kerml-query-foundation/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/frontend-build.txt": {
+      "sha256": "fac3d96e346bb2e8e0700e7daa676f21b459c68454f8e404249ddcd59ccc163f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/frontend-check.txt": {
+      "sha256": "2be1fa19a51a9c1f96de48f7c18e7cd985d31f8a1517b4c66c51baacf0d90cf7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/generated.txt": {
+      "sha256": "1f497ba354990b661c8b16597abb5b8c3b0935e8fbf11f314b71a064641381cf",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/node-tests.txt": {
+      "sha256": "749ba7c9391f9562c4e5e5c2da1d115971eaf482c0cc7e663f7a63d3dc8c5b14",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/results.json": {
+      "sha256": "2a6809630fafad96356ccd328a6201154e73cc6facbdb3e53891287651d643ef",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/run.mjs": {
+      "sha256": "3a019dc0ac40466cc65fbb767841870d293b998d07587b8e94810bd60e76297e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/rust-tests.txt": {
+      "sha256": "6b2eef343a9aa43d4b760c33e2cc21fa8e6e98e6a7fcc9e9bc925a2caadcc0f4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/standards-integrity.json": {
+      "sha256": "45e457c1ab5222ce227f3b9ae63f3edcac62a2adceeb399bb1623932ba4ba075",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-query-foundation/standards.txt": {
+      "sha256": "41868dea12b9e246495619a0c3c97587d84db9f6fe3cb5264a21289fdd4c1df8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/README.md": {
+      "sha256": "72761a35a771296f92d4fe0e1d9ee384afb1604d02d887621a8576cbf1df6883",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/browser-results.json": {
+      "sha256": "fd92afeb808aaa16888e7fef4a27f99c05f833a4a9169613897aba5fdfdf022e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/browser-tests.txt": {
+      "sha256": "07a8a91f333366f5afd745251579c9a3d51376ffd102deecc435a99e7b0bc0f2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/clippy.txt": {
+      "sha256": "4de3db575b08977528987676adf0bc2b6496320cbf19aac03defe3f5608c39d5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/console-desktop.png": {
+      "sha256": "ca60330528469b646393c551d949ae2f08a9fb8ff08a7213d309945c6d7703c4",
+      "comparison": "byte-exact"
+    },
+    "verification/kerml-text-v2/console-mobile.png": {
+      "sha256": "16f282bdafbc8bad829294f8e74f354a7ed780ba3a45ad7a5410b17157feb0b3",
+      "comparison": "byte-exact"
+    },
+    "verification/kerml-text-v2/dependencies.txt": {
+      "sha256": "b58587566707b1884e5b4ab08d854b9a0579c80dbeeca558659e98f6821e84ab",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/frontend-build.txt": {
+      "sha256": "6e38b6889c560d4e3742d07af18d3f30365ffe705bedfdf91fdde5c7edea858e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/generated.txt": {
+      "sha256": "c168467bc9ce0f3607a1e8a4840e6998ea30cdab027263cd42a361135782b9f7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/node-tests.txt": {
+      "sha256": "0900af9e9adeef80bd385821d9d6597af64c9ce42ade5fb7207f8f198a59cceb",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/results.json": {
+      "sha256": "cea9ad4e2e4a8190892677b93f5a186939749a3a996d22c032d81e37f024636c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/run.mjs": {
+      "sha256": "a98328ada9b353c5e3c522a8c3e33361ee69454cd25d8a6a88021dbce9c05564",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/rust-tests.txt": {
+      "sha256": "dd686a7bc26acf31b4f41342fa8cfc8ffaf23e47ee5b47a20b8027ff62a4eb78",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/standards-integrity.json": {
+      "sha256": "608cf89e48353242b550d7b6274934f48eb10e9b41180bc113d946cebca0a0b5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-text-v2/standards.txt": {
+      "sha256": "5c9e7fc141e7f1f573667a015ad71520e2e53588d48318ece95c520816d5004a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/README.md": {
+      "sha256": "e2f358b1f55aa8b7653a7058caff2678a4114a06d3cfa2591fca442b951ca69a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/browser-results.json": {
+      "sha256": "400a8e806afef39cf31df48331006c1b34b589e705f82e263e953830938bd2bc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/browser-tests.txt": {
+      "sha256": "a91961fc123af2887053381d22144a60ef892306a2ecd25715ac80004b890d73",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/clippy.txt": {
+      "sha256": "c1bf9e5dc249a7ebc6f064f8326a7bcf3d81ca2bb8f2178787003d42955a8164",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/dependencies.txt": {
+      "sha256": "883e88c8b5bf2730b94ded4599f14ea045f6456a1a5f6e8dd1249a979ac573d0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/frontend-build.txt": {
+      "sha256": "23a5e15bb9dbefb175fcc7bab181c39eb138376df3096aca301266721b6dea1a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/generated.txt": {
+      "sha256": "ff775d37ef31cca95551e0c18a53f31434c425e79f4eb294eeb3be34b9b6688b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/node-tests.txt": {
+      "sha256": "046502de5c8f76164082707148a19f86de9a1505ac7cd9d7eae403656d01033a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/results.json": {
+      "sha256": "4e7db70ed857e880b79fb9906d64289833698049b52dfe2c6478cd77cee921c8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/run.mjs": {
+      "sha256": "e05c3008f7cc8e5949820da01e0420f5b314554e6a61942b2df497f5bea297b8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/rust-tests.txt": {
+      "sha256": "9c94972fa6920c360ae130161b75984e3850b39ea9b27aa4c3ebbd78da49de74",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/kerml-typed-views/rustdoc.txt": {
+      "sha256": "161ce47d0b57c95b1cef54caa575c29aef0c910d167ece0689793ecff19dda57",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/.gitignore": {
+      "sha256": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/README.md": {
+      "sha256": "f8ca1004b15a76a223469fa6a8da69a02fae9233244a6588c50054afc00e1bb5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/direct_xmi.py": {
+      "sha256": "8a4db33486c8955ad5242bf11ec3f6bd27f1f159b3cb277dffb0dcfdf5613a0b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/browser-results.json": {
+      "sha256": "896d1d8fd230a21e825155255bce1b3e2ded8c8fb0e5ea37f8485015c2c3dc73",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/browser-tests.txt": {
+      "sha256": "90d47465f2a566e5bdd7d7972ded05e915eb0aee2d1cda7b9155345c263a7a27",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/clippy.txt": {
+      "sha256": "69084028431d38572adefa9301edefd3c9659d1d44b5f259993a0af2320a18ab",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/console-desktop.png": {
+      "sha256": "4ec695f653879f95a86b470f28f61a1cf08afc10ed99d9344c37649136cc493c",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v1/final/console-mobile.png": {
+      "sha256": "1f7dc075d14926cba91ab652c21aab0c9078a89397d30e28ced878d5950135b7",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v1/final/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/frontend-build.txt": {
+      "sha256": "8c8fec110cfe09c3858dbf583f1c65f26c8fd26e216534f10d3b063e2b150541",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/generated.txt": {
+      "sha256": "55dcd28277756d64819a0d3ac4f3e054f6bdedef830ca2327a262580c06b3e92",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/independent.txt": {
+      "sha256": "58b0e13b15d5dde1e6776b31dae9dc28c7458ad7538f4f6d72f16cc87954823d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/kerml-readiness.txt": {
+      "sha256": "66722a72c35b439612773ad107902f945ae47a98e0f0647f054d21895ffe45f3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/node-tests.txt": {
+      "sha256": "c1aac18aeb0ce4b981c120c68ce2529ff545c580f4ced2199cccb63b272128e3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/preservation.txt": {
+      "sha256": "a4de8c8240478cb4a48e7b81e9dd5b6f49e19c49202acfd544145a7acf7033c3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/results.json": {
+      "sha256": "35d445e0dea56fa431ee761eb6b782564622419d0f2de25f8072c9e93d167ec3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/rust-tests.txt": {
+      "sha256": "9019775577feac01e50c5343ba47558d289f2a333052e8508958ac92e3a2ba55",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/rustdoc.txt": {
+      "sha256": "eccd45053408cfd79f6759aa912186515ccf717e1c044b4360f2e630953d7b14",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/standards-integrity.json": {
+      "sha256": "6dd238f45f30d5e3e4631cf0ff6d790a81db2f71964d68071c704a2430c29613",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/standards.txt": {
+      "sha256": "134435d003279d57d6f980c0304ca45bafbeca042ca7dcc544d524cf93ff01b0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/final/sysml-readiness.txt": {
+      "sha256": "4f26a4867a2b0b3012819df5b79208113c52e9ad247b790398753c23f34562dd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused-recheck/audit.txt": {
+      "sha256": "a084faeaf33e7a08aa090f7bbc8185e42c7a7ecea7e33e0de341866aaa5cd9b3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused-recheck/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused-recheck/generator.txt": {
+      "sha256": "2a5f12b5e167718f956b9d5aa695d3c55074bb5aca0644ee61ec4441aa7e3645",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused-recheck/independent.txt": {
+      "sha256": "58b0e13b15d5dde1e6776b31dae9dc28c7458ad7538f4f6d72f16cc87954823d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused-recheck/results.json": {
+      "sha256": "0a5928c5313c5c807cbb3917465104dfdb082e5051f499e08fa9ea4064ce2931",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused/audit.txt": {
+      "sha256": "3db2498e2a998e23f5a845c5d82ea6bc72cc1e01a974dffa56ec8b2d88798f15",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused/generator.txt": {
+      "sha256": "65b92fa233efbe771a0cfee73375d5a37d979383fbe1764b15f60e5111980e33",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused/independent.txt": {
+      "sha256": "58b0e13b15d5dde1e6776b31dae9dc28c7458ad7538f4f6d72f16cc87954823d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/focused/results.json": {
+      "sha256": "d35c5da14f0b9971510cde08580ffa9bd168f3d3630865378a758c9d258f6a01",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/independent-verification.json": {
+      "sha256": "e53b8178efa0d5ef441c0011e3d77ca51e851bbfa9832f1374f12756f267a75e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/original-structural-audit.json": {
+      "sha256": "497906c4334fd6401ab33bf74d4ee6a23b858dbc292039919402735e5a7d0c1a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/preservation-inputs.json": {
+      "sha256": "ff1cee6e57089293f27ff754986cbce04ad93b31a9491f5f5f23b2f57f83d22d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/preservation.mjs": {
+      "sha256": "48148de24c421dcc24babeccf5a0ba2e251fa54408751e00525ad80dcbbfb352",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/property_evidence.py": {
+      "sha256": "19cf65dff435bf62439c11c649da91725220781d42e70069433db4c46b438102",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/run.mjs": {
+      "sha256": "a5c5573e1b4ef286a89b282d2ddb9ba1c16d7098a255958843c20c91e882e6cc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/stage-0/property-evidence.json": {
+      "sha256": "0f7758c66ba068bfa3250f6186302af023384541548a49dbd07ce1781266f67b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/stage-0/results.json": {
+      "sha256": "6e53fed70d2d18803ae065797cf211e24c3143af7b099c526570b895edbbc313",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/stage-0/runtime-readiness.txt": {
+      "sha256": "9b61feb265f974ad0a920cb8ed42e123780f6ed7594054c17a4a1fc0e61a763d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v1/stage-0/runtime-readiness.utf8.txt": {
+      "sha256": "426c2701b6ddf44866e3f343bb2ebaa5045f89f3b9d3171cb9dbbe0333ee059c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/.gitattributes": {
+      "sha256": "b427b6d0fa18d673ef376a6f83897669baa115dfee788915573111151b6c72f7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/README.md": {
+      "sha256": "2ce96c985c10f7b84f78d40e53031c488d8076c0f4a86e563793cd11f7982a79",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/authority.py": {
+      "sha256": "4d75490c2c2b6fa5a6b1409921949bfba7621805dfe284074671b81ab28aaf74",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/evidence/UML24-85.html": {
+      "sha256": "cde39f5ad509a7e7b245bd8d8b3c1ce44c3e09804e43420d6c780557a6c68329",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v2/evidence/UML24-86.html": {
+      "sha256": "665caa54920df31df24b78ccaca20274841327d68b9b0cb42032f9b4fc1b207f",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v2/evidence/UML24-96.html": {
+      "sha256": "f7217c2ba8cc058521fd10c46ea12ef7def05591f1ef9f6d92f01e9419621207",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v2/evidence/UML24-fixed.html": {
+      "sha256": "6fa674ade28266e3e274c3b5c51aaa48edb0cec97b0c7b152e1873bfecc8648b",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v2/evidence/acquisition.json": {
+      "sha256": "eed4ab3a345590c74a9411f556ad69b622729aca50c4166af1ebcc87e7facb9f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/evidence/property-authority.json": {
+      "sha256": "42e7ee00d1663fb527e63e858dac89566d74aefe5acd3bb17a7a1e50ff6e58ef",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/evidence/sysml-page-336.png": {
+      "sha256": "a98171122f18a00c1606617ac526257428716025cd2ea898c3b83399e43c593a",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v2/evidence/uml-page-153.png": {
+      "sha256": "e1a25040c3bd7cbe07a82c358a8931b764ee4cce88e9ea5543969f164431e495",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v2/final/authority.txt": {
+      "sha256": "0ce35f6a51d26ba3bfc5be767b7f0ba83e051e9bf7991330cf68b18cb15001b4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/browser-results.json": {
+      "sha256": "b462e74425e2fe9371de5c6d7167861088cb719f667d3847cfc81a9a46fb353a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/browser-tests.txt": {
+      "sha256": "a5cc9ee349f12d1a80c6163ff6ea2d3c605f1c225e67c740eda9a6d483e2b542",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/clippy.txt": {
+      "sha256": "98c6c40ecb175f74a0200c4fd496f8f15fdf428caf8386fcc3fba9376ff71fa1",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/console-desktop.png": {
+      "sha256": "cfc57141a8c06b46eb7c9cf13441821dd5a57e64518799cfbcc017f4432627be",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v2/final/console-mobile.png": {
+      "sha256": "9c010df66eed7240cbfd2a98730d463bac037cf764c7608908a04a929edb3542",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v2/final/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/frontend-build.txt": {
+      "sha256": "422072751be30ff8aa19dc9cf2f5425680e57707a81422411cbe345a15d144ee",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/generated.txt": {
+      "sha256": "e4c77290489fb379d881e9ee692569b099f2430d31617012ff8238e21f5f2bc6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/independent.txt": {
+      "sha256": "47d7973cf36390a09f653eea5a56e3ab3c7cc266ab2990def250bb063169ab41",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/kerml-readiness.txt": {
+      "sha256": "8bbd8d4510f1f6c96cac5f0c3115a68840adffc5b7a820e756fd6a89fb04bbfe",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/node-tests.txt": {
+      "sha256": "a72a4cc7db4cc1fb89eee6ae81d0c5263c044ebc790670ab7ea5daaea6caca97",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/preservation.txt": {
+      "sha256": "0286a33c50bad1d8eec7c1e06cfb86c7c589aafbc268231d37b4df26eb2c31d9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/results.json": {
+      "sha256": "714fe5c56798f47e642636e4d21ede312fbb495bb125c8534fda192a49e1aa1f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/rust-tests.txt": {
+      "sha256": "4d5fe75ba49fb05863e63990ea1e5d5ef03f1decc517410afcf3458f5d6e7e14",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/rustdoc.txt": {
+      "sha256": "e720ac29d318e2d277a4619728c4261988d28b2dbb0ee54b12937466bc925a1e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/standards-integrity.json": {
+      "sha256": "961f6fdd385250a670d8d66082d9b94788f11e181339e7fbb5e31dd91bf8ed8c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/standards.txt": {
+      "sha256": "51baa2e8b0616aa4d86bc1d0a01ac53e3a9f6386cb23efad5774c4cf5828a157",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/final/sysml-readiness.txt": {
+      "sha256": "260397bfab7deb802a3cfcb1edcc94fdf6f39f1f18c9a2052d691655fa79f607",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/focused/audit.txt": {
+      "sha256": "b36689dcbddf6295e249eb3511ef31abdcebcc1a43b47abe33c66f01364003f8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/focused/authority.txt": {
+      "sha256": "0ce35f6a51d26ba3bfc5be767b7f0ba83e051e9bf7991330cf68b18cb15001b4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/focused/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/focused/generator.txt": {
+      "sha256": "890a519a50a4779e3e041b588f92fd23df4a410970b770229eda0197786e6ce6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/focused/independent.txt": {
+      "sha256": "47d7973cf36390a09f653eea5a56e3ab3c7cc266ab2990def250bb063169ab41",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/focused/kernel.txt": {
+      "sha256": "64061605e518c3fd966a81c6479fa5b963f5bdea728c0fd195a260cc7a044059",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/focused/results.json": {
+      "sha256": "07571b78b082997aa2b1f07ab53a6ac822adef9bc580c3dee7c59fae2a5559e5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/original-foundation-review.md": {
+      "sha256": "9cd6f5759aebc0bb198b7728eea9670e3df84bbc3baa0c87b8bb3a4c661ea6ca",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/original-structural-audit.json": {
+      "sha256": "497906c4334fd6401ab33bf74d4ee6a23b858dbc292039919402735e5a7d0c1a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/preservation-inputs.json": {
+      "sha256": "5aebc56ea214d39bdddd4a813288dbff3f17cd581c5f4e22da3b922338a70e76",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/preservation.mjs": {
+      "sha256": "a5f8e40dd96e44caeb256005c347fdb7fbafe8adf0f03eccfc849bedc807985f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/run.mjs": {
+      "sha256": "189cf91e6ac29553b98a98f66d285abef69f5dea3f04889c1a5d3b9d67adc0ae",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/stage0/audits.txt": {
+      "sha256": "0e9fa869b5217d422dd8fe6b3c12aec32abfddef6d84782a458b31ddf5a34af9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/stage0/git.txt": {
+      "sha256": "d35b1068fe29caede8f1413496ac809fbf5c73e47ee38bd58e1a9319d3a6e2b9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/stage0/kerml-readiness.txt": {
+      "sha256": "6734a418993d22ed3e61e7545f95961488d8067aa9e555dadaca842cfc8dfa37",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/stage0/results.json": {
+      "sha256": "03e15d3690a0930ae9df27d8f42fcbf6c61d46554cb6759b7d0f436f75bfc9c6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v2/stage0/sysml-readiness.txt": {
+      "sha256": "231ff2531874754691ff5149131ec47ef5cf7e51a46c1b9be7e1abfcfcf016c1",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/README.md": {
+      "sha256": "04f3448fe69fca8dbcb876627ca279c327adb33aabce7e6c84d2cf02cd9aa023",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/authority-verification.json": {
+      "sha256": "fd1553b675fadd72f323c70e6ee73a0df643aa3051fa7894e1e042e9c048263e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/authority.py": {
+      "sha256": "fe17697c71162877841ec10df384ad2ada3aca2d3bffbc7d15f0dec3804d9b81",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/completion-record/authority.txt": {
+      "sha256": "3faf38dc616be3e838bb81a15aba59f46f2a669dd82b1e87426c823aa5cb3661",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/completion-record/preservation.txt": {
+      "sha256": "a8de36283e2328da2493939286073f37a4b9152226343eb7c978851e0b4d0e6c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/completion-record/results.json": {
+      "sha256": "69d38397f86c34e737b1c537174748b33f749b277d782b35fc3fe9759b8e6565",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/derived-navigation/independent.txt": {
+      "sha256": "7ff6b657c0e109ec7ad01343401004ee8ee6e161ab70a70c23a7fb3cece0049d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/derived-navigation/kerml-readiness.txt": {
+      "sha256": "d74e1541b5f713715e1e6d3201d6d95e0cc90ca54c34dd13477643e8b2ae52b2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/derived-navigation/results.json": {
+      "sha256": "9816a23316559f8ae214e83b585789d672aad0db5fe6f90080a7f810bb607c50",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/derived-navigation/rust-foundation.txt": {
+      "sha256": "04f56ec6394cb5cd84e7954e920e693e578c2bc89493fd705cb07c4c8ffe43ea",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/derived-navigation/sysml-readiness.txt": {
+      "sha256": "89b637c945ae8a16b11c846a92e5fa66ccc966c626758dc0cb77dcf26b6c8c33",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/development-clippy-1.txt": {
+      "sha256": "293d3b4d8afb08535dca1bff8ba9eaffef881ddb2d5d03da40055fd7cd9d2bc6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/development-clippy-2.txt": {
+      "sha256": "c6af1c3258187a5bb5b26dff09ccb9ace2314637a8a9060f57dff3281fb57215",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/development-clippy-3.txt": {
+      "sha256": "960ac2d600769f2437a2eaaa11c9d2da26a660961ce5a1567e459925b81785c0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/development-tests-1.txt": {
+      "sha256": "98bce1737db3ef2ac2697e57c322823daee4ec4993c03d03de18c9043fed41a1",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/development-tests-2.txt": {
+      "sha256": "9c9b1f56236441ec03c2dacc3820ef3445f92c9ad40c349a458f37f7879f3b14",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/development-workspace-check.txt": {
+      "sha256": "9bb61935b090ae4569b7326878ff6b8e975dc869a83a022e909b1a18aa44b8e4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/authority.txt": {
+      "sha256": "3faf38dc616be3e838bb81a15aba59f46f2a669dd82b1e87426c823aa5cb3661",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/clippy.txt": {
+      "sha256": "be2124b851a7004dee9e668786afd365dba43d83c2de328fea5ec2eb65cf937b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/generated.txt": {
+      "sha256": "d8f2f3893c4fd26fc5bfcc17ba16691bf93c8b97bd1c13e2acb8d1451a4a52f0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/independent-runtime.txt": {
+      "sha256": "4c6149fb44de89070e586ca91de86684336fec8a661f773edc30b43d18989fc7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/independent.txt": {
+      "sha256": "47d7973cf36390a09f653eea5a56e3ab3c7cc266ab2990def250bb063169ab41",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/kerml-readiness.txt": {
+      "sha256": "54a82a132cf690ab2faf27ab733a7b711b0a2c6087b1d69abf7f032569996c62",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/preservation.txt": {
+      "sha256": "a8de36283e2328da2493939286073f37a4b9152226343eb7c978851e0b4d0e6c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/results.json": {
+      "sha256": "9911f4322de7248d2c3dc55c9dcbd81c134d593a9e0fe7bbde618a276a787cc8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/rust-tests.txt": {
+      "sha256": "fe7dd3b9020204ba603f6f91a2e89c997d7eb00fdfe1a317f01a8a0f03a05f4b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/rustdoc.txt": {
+      "sha256": "7c0c8bff9b418642c148e3aa2fa9b42de84fef2ee2978067a7ecb8c76812f78a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/standards-integrity.json": {
+      "sha256": "f39773c6cb392487aecaab4d69d105f7ee9b2e15f52d5a8715b624303f59196c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/standards.txt": {
+      "sha256": "e3bd3e70736ff76e4d2ce7ca433af2d9bdd53fdc7c6ee41b62f16d14ecc8f4ac",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-accepted/sysml-readiness.txt": {
+      "sha256": "96b087b62e25bb9e77b589ecaf0d3405f6e6f838d6b41d65abe0be73247a44b4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-records/authority.txt": {
+      "sha256": "3faf38dc616be3e838bb81a15aba59f46f2a669dd82b1e87426c823aa5cb3661",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-records/independent-runtime.txt": {
+      "sha256": "4c6149fb44de89070e586ca91de86684336fec8a661f773edc30b43d18989fc7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-records/preservation.txt": {
+      "sha256": "a8de36283e2328da2493939286073f37a4b9152226343eb7c978851e0b4d0e6c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-records/results.json": {
+      "sha256": "a5e94a67b6f03cbefe0978baccccf03b3da19b89dfbb7702e80bb4740061fb42",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-records/standards-integrity.json": {
+      "sha256": "faa56fc941936e8b720ecbc09f948fec64fedec763af9ae376294d404fa67e6a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-records/standards.txt": {
+      "sha256": "5844ac124bb46a490f1e7fa993f3c5e5aeaa70422d1d4ea7b94b3533000e9abd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/authority.txt": {
+      "sha256": "49d7f8223fe2750bc78cf6afb2a8cd681d0d308cd3f939d9d02740ccced4aa29",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/clippy.txt": {
+      "sha256": "4bdc992c64db637146d7b8d6d337ac50106760295909d42134cd042c6d3c1943",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/generated.txt": {
+      "sha256": "e2716e83a773884883b001cb0faca46c38bcbefe60a093ad4425f6fa9b3c9373",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/independent-runtime.txt": {
+      "sha256": "7ff6b657c0e109ec7ad01343401004ee8ee6e161ab70a70c23a7fb3cece0049d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/independent.txt": {
+      "sha256": "47d7973cf36390a09f653eea5a56e3ab3c7cc266ab2990def250bb063169ab41",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/kerml-readiness.txt": {
+      "sha256": "45831218d33cd693a05a2ad5d914f4c5bb38ee4113449580ebbc17c08ffbe571",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/preservation.txt": {
+      "sha256": "a8de36283e2328da2493939286073f37a4b9152226343eb7c978851e0b4d0e6c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/results.json": {
+      "sha256": "5cfe93c78276d6b0adbaeb43bffca6b6dcc21cecff03b04712ee9c2e2b124ea5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/rust-tests.txt": {
+      "sha256": "7bee1df3b1f703a3a64341f5aa4d13e4bc071e18fe7d3dd10db631757b163750",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/rustdoc.txt": {
+      "sha256": "81f7b6371e1ede6171ec5ccde5a31829a3d14f0502a676baf29c03b6fc097ff4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/standards-integrity.json": {
+      "sha256": "6a855f8e2c5cf846ea00bd086a3891cb15865790bc39499e96d909f67538d1b6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/standards.txt": {
+      "sha256": "b8c1587061d6da686a6692b6f0b35f130427d7ed425be75089f3cd570f7bd17e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-repair/sysml-readiness.txt": {
+      "sha256": "c526430b279e94f866e6fd5370c1a146074a1ac853a277b11423e7aff6254b54",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/authority.txt": {
+      "sha256": "3faf38dc616be3e838bb81a15aba59f46f2a669dd82b1e87426c823aa5cb3661",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/clippy.txt": {
+      "sha256": "c7d5f998fdf905335416693884d81012174605b6d624b41b5b9d32551502dd65",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/generated.txt": {
+      "sha256": "38412d554f784d2a7a71ef170eee6de6ca3e46f41750df59ccdb5514956b0d37",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/independent-runtime.txt": {
+      "sha256": "4c6149fb44de89070e586ca91de86684336fec8a661f773edc30b43d18989fc7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/independent.txt": {
+      "sha256": "47d7973cf36390a09f653eea5a56e3ab3c7cc266ab2990def250bb063169ab41",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/kerml-readiness.txt": {
+      "sha256": "f0d0818c417c43a488586315572f0b4928e0aa2cafce3f1c9c2771bfc448987e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/preservation.txt": {
+      "sha256": "a8de36283e2328da2493939286073f37a4b9152226343eb7c978851e0b4d0e6c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/results.json": {
+      "sha256": "8b8402d8cf7b1c4c411badc99677fe2b7343c634ab1f74e5b830099e2b837863",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/rust-tests.txt": {
+      "sha256": "61815ff09fe56d09c31c32d88198cc9759bcbf2f4e9128c9f7215e12e376eaab",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/rustdoc.txt": {
+      "sha256": "7631db89538d00059d4c5d38db16a970680800bcc66fd7243abab67e3428c491",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/standards-integrity.json": {
+      "sha256": "ca4e84c121c18518544b026b50be596e876dac1e11a606389ac363f1d80cd16a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/standards.txt": {
+      "sha256": "4a4ba7a0a6164fb78229de96e6ac94eb4c76ce2d6b8366b0c6bbe528b8052dc6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final-runtime/sysml-readiness.txt": {
+      "sha256": "96b087b62e25bb9e77b589ecaf0d3405f6e6f838d6b41d65abe0be73247a44b4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/authority.txt": {
+      "sha256": "49d7f8223fe2750bc78cf6afb2a8cd681d0d308cd3f939d9d02740ccced4aa29",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/browser-results.json": {
+      "sha256": "dd807b6806dcb6f2c9aeff2e5a0f34306426a2f103bb5be7a874a3713556c017",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/browser-tests.txt": {
+      "sha256": "ccd5fb6f58e6db3e4c3ab8c792394108191cde48c0efc7d13b42099b9b439b89",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/clippy.txt": {
+      "sha256": "5bc9eaa2c470cdd74bb15f8631ab1c617109f8e3f0768559493a18333745a613",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/console-desktop.png": {
+      "sha256": "384fdcc67761af7b7783636f257f35b35d3369633fb2c7ce8a1439a0d727db99",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/final/console-mobile.png": {
+      "sha256": "7b3fcfc078a0434a690e4abaeb978430f5a4a254e14235e69c33c90611ebd606",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/final/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/frontend-build.txt": {
+      "sha256": "4e34d3c646377e9262f125e971d4a2aa7bd9ff7e0b804fa25cd400c36ca188c7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/generated.txt": {
+      "sha256": "47eae93587153c093e68d85b170e98181ab74d967ec47ebd7195ded5af23795b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/independent-runtime.txt": {
+      "sha256": "7ff6b657c0e109ec7ad01343401004ee8ee6e161ab70a70c23a7fb3cece0049d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/independent.txt": {
+      "sha256": "47d7973cf36390a09f653eea5a56e3ab3c7cc266ab2990def250bb063169ab41",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/kerml-readiness.txt": {
+      "sha256": "29a8c4606cc8829dd5a01e3003d0a1192c892e4e9af3fba50e73e0c658e4259f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/node-tests.txt": {
+      "sha256": "f107cf6d80794ab4b94cb0b87c6eb2655a8220c70d37ce6bc83eba086dc7a86b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/preservation.txt": {
+      "sha256": "a8de36283e2328da2493939286073f37a4b9152226343eb7c978851e0b4d0e6c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/results.json": {
+      "sha256": "a259c493e374020978ff8dc11305865ca9e3387ed6f1c30480453ff370655403",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/rust-tests.txt": {
+      "sha256": "f8f23ee4b74e67a293bbafb0eb00fa090523f2779b2305648f8aa68ecf071fbd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/rustdoc.txt": {
+      "sha256": "4da331bb9b595a4d0e226299f9b9ce2a732ce331d703297a424a6c6a98e9015f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/standards-integrity.json": {
+      "sha256": "c548502240631e6324b840c7b3d29e0a0fca0e1a5829211699bef6e29ade980e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/standards.txt": {
+      "sha256": "3e70aacb740902aa05dd541bafb337c28e78734e2d72c7745af8b67f7aae64f4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/final/sysml-readiness.txt": {
+      "sha256": "89b637c945ae8a16b11c846a92e5fa66ccc966c626758dc0cb77dcf26b6c8c33",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/independent-verification.json": {
+      "sha256": "b398ed1ed2e91719d488d4bf8cdbf74561d8d002fe9b65f9f82d538f03ad339c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/independent_xmi.py": {
+      "sha256": "6b98811d0ef0fe916c9731bd18151282cf9dd7dd90fa93e3f14a649990d68560",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/original-foundation-review.md": {
+      "sha256": "b17ff6f6079fee725f9f1748ce5ad2bed548332a6489a9ed2bfc39203b5a0573",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/original-kerml-1.0-full-audit.json": {
+      "sha256": "48311cf96396d5ee030aca76bb55959a6a8b945d9b9f457711cd8a88bc41a0ac",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/original-sysml-2.0-full-audit.json": {
+      "sha256": "bbd95861e2e350c994c2e7e3c36fc6840e3ab0c6529b64626d140c28c3d35834",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/original-v2-coverage.json": {
+      "sha256": "4709f2c386f210ba73a0ec0302b58dfa74466b24da0319d11ffd9b62a42a2b68",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/preservation-inputs.json": {
+      "sha256": "3833c79773999e1b3740a4beeca16a18ffa3ff62368607534c4964a5e1eeac0a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/preservation.mjs": {
+      "sha256": "fe1fc22ff8ff8e8fc4bc62389739ef0a7e09121695a2aa509d63eb0a626fa54f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/research/UML24-85.html": {
+      "sha256": "60df021995f47361ce9cde356636d45c3aafa68e71154f0798e76011b5ebf43e",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/research/UML24-86.html": {
+      "sha256": "17de163f8003d8e788c8b7f8e616ebb4284c607f387742c9f32279669859af96",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/research/UML24-96.html": {
+      "sha256": "8a3afc3fb1909ed7c00172042600dc20e9bf77f0fc55e292e34bf5c486e7051c",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/research/acquisition.json": {
+      "sha256": "307bcc4d972f719c70d4c713aefe5f0485ffb54036b115471013799503878503",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/research/kerml-rational-contract.txt": {
+      "sha256": "b1304069546e55e3d9acb4f962975f0cc46690fbdf9ba6bb7e2e0c5cbf275d09",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/research/kerml-resolved.html": {
+      "sha256": "a025f0643bc2e48e45c51d4e50ab0a7440a6c24cd2a70436bf4800302a3b7cd5",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/research/kerml11-resolved.html": {
+      "sha256": "dc8dafd97fe202d8a1edcf519412dbc0f6f1e9198a008ed94fb3153a466a3704",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/research/release.json": {
+      "sha256": "f8c7ef95fff6939204dd0e4a9388af90499c1b94eb912fdebc444dfb4edb44b7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/research/sysml-open.html": {
+      "sha256": "6b9658095b4137b6614e2dbe57340c32cea148629eb9300d188617c1f95e0621",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/research/sysml-resolved.html": {
+      "sha256": "1c210287f1031b48948ee070a0463710a64ebaa221e0240024a11938cc525013",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/research/sysml21-resolved.html": {
+      "sha256": "8ca465943c86a03292ea40b871caf31ee500152bfe8b2a89a88c5a7636ec86e3",
+      "comparison": "byte-exact"
+    },
+    "verification/language-core-completion-v3/run.mjs": {
+      "sha256": "9cf11f2c1b9e4da6e2468dd5edb14e632ee77e129f15d6e01191e04fa93ff1cc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage0/audits.txt": {
+      "sha256": "b36689dcbddf6295e249eb3511ef31abdcebcc1a43b47abe33c66f01364003f8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage0/authority.txt": {
+      "sha256": "0ce35f6a51d26ba3bfc5be767b7f0ba83e051e9bf7991330cf68b18cb15001b4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage0/generated-code.txt": {
+      "sha256": "5a91548a8e213891d83c78744e13ff24d9ce32ea636411c851d5f5b22ee16f16",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage0/git.txt": {
+      "sha256": "9947f98bd4922b8556c06e21905a6026140825e0d2fa25ec842aed7998d948f4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage0/kerml-readiness.txt": {
+      "sha256": "05fb5ccd5940de8ac989d9f814dda900adc681cc237b1f3aff0116990323bc48",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage0/results.json": {
+      "sha256": "a1e48fea37a75cebfa6a904c5327d8fa28ac8f795a24f238e5c0a53a05bb6d91",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage0/sysml-readiness.txt": {
+      "sha256": "b7402a7871d0746adaeeee8fafb4befe19ef0958dbb1a16c6914b9c148c51726",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage1/kerml-readiness.txt": {
+      "sha256": "6a8b4f8725199a17e382a2cc3e815493a0fdc067a53089dbacae2c8197c1f4f7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage1/results.json": {
+      "sha256": "b21d7a34aa741959f45cb2d41ade6d19169ffdb63f9d46cad4acaa055e64cf9b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage1/sysml-readiness.txt": {
+      "sha256": "e93c063220d0f5f33970d566c40247dc8dfc66f30b32f7ccc5e100c89407d460",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage10-12/independent.txt": {
+      "sha256": "7ff6b657c0e109ec7ad01343401004ee8ee6e161ab70a70c23a7fb3cece0049d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage10-12/kerml-readiness.txt": {
+      "sha256": "d74e1541b5f713715e1e6d3201d6d95e0cc90ca54c34dd13477643e8b2ae52b2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage10-12/results.json": {
+      "sha256": "91cb708801d774006840ee7b9d24397ce6af056282cce6a70db961bc4e081552",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage10-12/rust-foundation.txt": {
+      "sha256": "cf90e63fa401f5e90f70b29f180e208edb9a08b40310d5dbee40b9b563ccbe41",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage10-12/sysml-readiness.txt": {
+      "sha256": "c086e76ee593440cbdcf94141de188957a37488d6b48b4a69ab0259f640df9e1",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage3/kerml-readiness.txt": {
+      "sha256": "3fd97121a4454e28780a7c0bbef6675d570895d0209cbe0c7f45225d9857ea1e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage3/results.json": {
+      "sha256": "5c60cfce4ddf3b97ce2b8fbe53311989a7151bee6d9837f1048cfb323a527f2d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage3/sysml-readiness.txt": {
+      "sha256": "86c7a34851bb272524c4d8562023fd2f2acfbed60f2bbc0aac9c19eb29e6dc59",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage4-before-audit-update/kerml-readiness.txt": {
+      "sha256": "f225b85d42269771077a1c80b02b013db7bce1a786d29c0db1de08f0f626ceca",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage4-before-audit-update/results.json": {
+      "sha256": "edbba3ac92b01a20b62bdadb043c6db9d32de7c6efa02b15f2febd7bf885bf71",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage4-before-audit-update/sysml-readiness.txt": {
+      "sha256": "72506d9eac3becc733b723e376259604cd941adc149791fdb46616cfeeed0410",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage4/kerml-readiness.txt": {
+      "sha256": "892e9327d37ef75336bbd685da94bd813cbb8ba1f55e1c5d62bb245ea3980784",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage4/results.json": {
+      "sha256": "1a29e3a981877b076a042f1029de7f14185cf7fc2d6086e22685a67e100260ac",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage4/sysml-readiness.txt": {
+      "sha256": "39971843c1a27b095a95b4a68537852aba225602b74ff33e867f7551f9033499",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage6/kerml-readiness.txt": {
+      "sha256": "d0215e2c22562dccbf5e01a64245dbd3c4a360cf7eafa55b111fbdce6d3e35d3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage6/results.json": {
+      "sha256": "bb0516380979d308bf71fca5eeaa384901123deb88c862ba825f7de430b99fa8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage6/sysml-readiness.txt": {
+      "sha256": "5b77b7962ebfcc53aaf36dea7d48a499c6c60ba29cc58a3b5e72be73427f1ce1",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage7-9/kerml-readiness.txt": {
+      "sha256": "ea58f38ef3df7f1374fdd7afb711b49d40015f112663248452bccdca99dc6189",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage7-9/results.json": {
+      "sha256": "a8439efdb36c53afee7b6f6cec29ab049a4aaf8f53682935098fd12039cb75b1",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/stage7-9/sysml-readiness.txt": {
+      "sha256": "3144cf1f2a14cc3a167e7dfcb8366ca4221b72e46f612554d8cf44a4d036f651",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/strict-conformance/kerml-conformance.txt": {
+      "sha256": "d7a385c1988e081c2ae27a043953d6edf7fd29dfffe8af7c388b2fc29ebd2c8d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/strict-conformance/results.json": {
+      "sha256": "4d6f8573a56823c8dea6cd3183af07540cab3e4492744980e8a8f6d24b3a241f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/strict-conformance/sysml-conformance.txt": {
+      "sha256": "954448ea9c3dd9bfb7abbd95015efa385d825e1895782da1b8a8b4fb64c5f4fa",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/strict-current/kerml-conformance.txt": {
+      "sha256": "72543c1b45a3b228888589c98a426f5055b912dd400890d62b3bf5e5b3d0270d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/strict-current/results.json": {
+      "sha256": "2b81d714b61a26bd76cfe9b270cc070dbd8b0514a7c99d2110542ab67a9e92dc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/strict-current/sysml-conformance.txt": {
+      "sha256": "fc02275fe91becfb3e88d2ad7ac3914f7e941c6bff16e027a2dd224f5b4ae03f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/language-core-completion-v3/verified-results.json": {
+      "sha256": "4117c11c05c039ac3e7043283983641ed577aa7f0d966d84e305ddfa4bfeea5d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/browser-tests.txt": {
+      "sha256": "6e359945aa2080033329f4c18a9ade88cd549a932771c817e26b6ed4b36fd801",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/engineering-tests.txt": {
+      "sha256": "c4ff18d94620931c6629460b58132fbc6870cebc7ef0e31e459d64dbffc99376",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/extraction.txt": {
+      "sha256": "9f92e09d0a8e4f1e5b5769adb83d81f1615f2ab17e9df81a3365ae73dff9f399",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/frontend-build.txt": {
+      "sha256": "ffa3443e6b2d370d5b1c45e2727624447b8999b12cf77e78443e8169f4d4ec37",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/frontend-format.txt": {
+      "sha256": "64dda5783057daee882ca09b252d354ff6be9a936c7c582fe96059c857d202ce",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/frontend-types.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/headless-demo.txt": {
+      "sha256": "e7c74ce4d47c63f0cb212ee1866b2dc3ad269c2ea5f9050bf528a347ea5f0a45",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/independent-fixtures.txt": {
+      "sha256": "f95a8a36082010cd3b3e5bd29a7f2340c5168adaea35a4a1257cc8fa9a029714",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/independent-starter.txt": {
+      "sha256": "bb356d21cd43f2864f39342610ba9e5bcd8486e0366b74a8740f8638eab15259",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/official-pilot.txt": {
+      "sha256": "079ab96ddb0eb348beff7d1d284bd05dfc00a919fca0fce849d6f1aabc904969",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/pilot-baseline-validation.txt": {
+      "sha256": "731eab7410afcbfafca1bfd960d1d195071f422ed8690eeb24f532f42ccccab4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/pilot-validation.txt": {
+      "sha256": "724d4b347a41148673ec81e9cbd93282e919103b3934c4c27f43bc564e4f8ab3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/process-recovery.txt": {
+      "sha256": "69c9c768e9de35ef8e8e815dcdb624a66b7dbb73d4e3dd4d5fb328698638354e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/registers.txt": {
+      "sha256": "049e70b30dae5510b2035096263d78b266920d1cc6b49da9f84a0e9d69663520",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/rust-build.txt": {
+      "sha256": "9e504007081db473238710fbffced01daef3ecce13ef0e7b23f4e6dc4b19cb69",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/rust-clippy.txt": {
+      "sha256": "65eefeb0750056a88d3bcf67aba6285d594e29de2606e6fab8f3f53cf3c9e968",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/rust-format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/rust-tests.txt": {
+      "sha256": "d5b7b189d7057bd938ec83a0c76d032c2b44e05f2223171d94ec330182220699",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/standards.txt": {
+      "sha256": "7201e3a3c440acbe7a2755f0bd3b1cab3079a6f3ebc8c3696da13cd4b28cbf87",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/logs/update-registers.txt": {
+      "sha256": "049e70b30dae5510b2035096263d78b266920d1cc6b49da9f84a0e9d69663520",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/README.md": {
+      "sha256": "ac06ce592750c8da0223d359be50a935a3ce500f15c901f26cff9986afcea993",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/browser-results.json": {
+      "sha256": "45453d1c449c7965b227dd87d16b2737bb7e8706a7693814993f83976e4366c2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/browser-tests.txt": {
+      "sha256": "6caf4318a373da3b8e277cfd508b5e8cf384780a7b0e4ddfcac2137353d6ac5d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/clippy.txt": {
+      "sha256": "0b273053da460b1705e08b72d1a16923f41c63280211c498915c61c8b8a090c5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/console-desktop.png": {
+      "sha256": "6c64cb27ed7559cc9a09c3829ccc517a229ab9b41ad6dfa32de7c9c3cab97db7",
+      "comparison": "byte-exact"
+    },
+    "verification/modeling-platform-v2/baseline/console-mobile.png": {
+      "sha256": "decf0adfdb92d4d48992ea85a20c1fe3762e08a8181545859cf53e897418dd14",
+      "comparison": "byte-exact"
+    },
+    "verification/modeling-platform-v2/baseline/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/frontend-build.txt": {
+      "sha256": "ca1d6c7ba06dc4da4776d648671a29ba449ef9037462c38bedcf2f91e53f1efd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/generated.txt": {
+      "sha256": "66f84c61692fdb6367056bdbe9e192a9aa9b60a6acc27bf9188ce01c339d41f7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/links.txt": {
+      "sha256": "fc059373f19d0ef8ef54735691061b7ca680483564a3bc6a9f15e96151490aad",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/node-tests.txt": {
+      "sha256": "14355f66226645eb598960e34a481982368d8ee8fb7aa7a62b1147365a1d4ea2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/results.json": {
+      "sha256": "7f6e50411f23e2d0fc1a9627acd1ad773949e4d5c9d5f2e8c5191f7dcd9c6232",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/rust-tests.txt": {
+      "sha256": "16271e1ab258a33d074895998274127bac234a351adb61f020756c3646eb660b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/rustdoc.txt": {
+      "sha256": "f466e1c9f5cdb3eeff8b2797c9ff1bce1a98d33ad4dade95a4a47f26c3dd933a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/standards-integrity.json": {
+      "sha256": "eba48c03536c265700062237aa997e035f8f19fef4895b0d57267cb1094c7be4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/baseline/standards.txt": {
+      "sha256": "e0cba013b9de3c82e8e07ca647896f1ac893c4f7d7dcfd3bc556c13c70d203d5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/prerequisite/blocker-regressions.txt": {
+      "sha256": "c945f1518c2776c37d7d30111f4045dde439da2d6bb93ae0cea79047f263ecae",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/prerequisite/inventory.txt": {
+      "sha256": "62ddbfd9ba4d32945b0f4abd2b95a8af386c4e12edace67edbc6258ac97dce7f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/prerequisite/results.json": {
+      "sha256": "7b7099b18411dd56052e5bf57508733ff9cace636c83071bd8e55853d0cfd777",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/prerequisite/runtime-readiness.txt": {
+      "sha256": "fd39be66432aabfd88702e9f07b18fc35a9ffbc46ffa9a00164e616ea6a7dcd7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/prerequisites.mjs": {
+      "sha256": "c9c15c886f6e03f1315d8533dbc321c298ffb3723503efb36777f24c8d507c37",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/modeling-platform-v2/run.mjs": {
+      "sha256": "95fdb3f3847f8865481db6e7a2dcb0fb2d900afe6e1b913ce5a88c400e98df69",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/pilot-baseline-validation.json": {
+      "sha256": "b9d6328d2911909267a04d0e7094d8a6d506dab8154761735aca496549fc9bf4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/pilot-provenance.json": {
+      "sha256": "6834eeb6f02bb1b49456a02e3b004c485ef141683bd4a33b0860d3623a8a32e3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/pilot-validation.json": {
+      "sha256": "b86b30f847df8571369e446451392e6966ef428853fd48d436a6a625e389f29a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/process-recovery.json": {
+      "sha256": "69c9c768e9de35ef8e8e815dcdb624a66b7dbb73d4e3dd4d5fb328698638354e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/progress.json": {
+      "sha256": "12e9c7910f256dc32dfc553edfa53ddf6dc7564bac98957116d04dc4e9d01824",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/results.json": {
+      "sha256": "4ad1d5e8294463bca51c3e5eccd6a1f261bc8d30dac2f4d2e1993fe608c32a7f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/screenshots/console-desktop.png": {
+      "sha256": "3a630bd0853debf5076db320f69132bf4c8fbaadf2fc2ddf4afdbcde64142bfc",
+      "comparison": "byte-exact"
+    },
+    "verification/screenshots/console-mobile.png": {
+      "sha256": "a6b68ab242bde9a6c72df60576d7e04931dd8e04bd8928198b66e8530edbad8f",
+      "comparison": "byte-exact"
+    },
+    "verification/semantic-cycle-hardening/README.md": {
+      "sha256": "b8d47e2280ea5f9755f4fec9abfc712763189ec8bc25c8f0dda3d6618e00cf5b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/browser-results.json": {
+      "sha256": "ee0b5540e2120887f8b9a7dd16a1708ad4b9ab04f017f2f81886e346676f70ef",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/browser-tests.txt": {
+      "sha256": "fa115d922f92316e6beb6607fd7df63bfae7b31316963ead2f52ed21edd3898b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/engineering-tests.txt": {
+      "sha256": "25e2312238ee0ac9e2f7b662757d15caae56a7d51f5bacbe488db6ccb534099c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/frontend-build.txt": {
+      "sha256": "53c648696dda45ceb54a6258c040a1b3d6f9e13dafda69bba3b5fd616adaea6e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/frontend-types.txt": {
+      "sha256": "77e9877b6d5ebb16d5b0c1250253cfb50b09c77eb42dc31d8be8135d5766090e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/kernel-rustdoc.txt": {
+      "sha256": "0e18bc27f3cff303f6df4c925657edb9db9069e5c09a33f7479b102c4cf75a2f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/results.json": {
+      "sha256": "6ba91f3bc7c87e2022a07e88d04ea3a4ffcd36f6644d75fea421942a706a1f5e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/rust-clippy.txt": {
+      "sha256": "17d1cd898fcbc103961516d13092ac8b3fc73c603b00c16b72219c4b53f4e6b9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/rust-format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-cycle-hardening/rust-tests.txt": {
+      "sha256": "630252546dfd457cb061264331111f1732e293380e664e237b68b773e2908d5d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/README.md": {
+      "sha256": "83f2193ed4f36ab450ed5ee50cc08dc367202899d42f3ad1623f36937407f57a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/browser-results.json": {
+      "sha256": "e664da60e616033a1db800c90fb24c932becfcfde653220bf66f7754c55a2f96",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/browser-tests.txt": {
+      "sha256": "4a3a0d2251a639be434cb577593b384c9f7ce103aa0b0dc202df7697937527f3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/engineering-tests.txt": {
+      "sha256": "1e0d469d923e750e500f341c909dd817448d2a8fbaf9457d8b9ebe4083a4e2c3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/files.txt": {
+      "sha256": "d30603ee1dbf05f83e9f9e9c75eefbf858f72e37ce66b0730eb4a2fd7ad3ffce",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/frontend-build.txt": {
+      "sha256": "27603eba87fea6e16def2f93dc93bd1a20dc736d8ec0645b8582848df721e632",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/frontend-types.txt": {
+      "sha256": "77e9877b6d5ebb16d5b0c1250253cfb50b09c77eb42dc31d8be8135d5766090e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/kernel-dependencies.txt": {
+      "sha256": "3848b4b44f0e3bbacdccdaf399f63c00fd6ae1e2e1adf82556a05f4521619972",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/kernel-rustdoc.txt": {
+      "sha256": "66cc2ee45208de790532c75b1891943ea89ad2d6f6b771141242d612034bbf90",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/results.json": {
+      "sha256": "8f1f71c64cc532e3f976ae952f97f6b4aa62b2048d87c945928698f4d6f60b30",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/rust-clippy.txt": {
+      "sha256": "310c9600a03463c9b0d01724b318860054d88ca32eadcb23a3bf7759203946e5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/rust-format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/rust-tests.txt": {
+      "sha256": "eb39d7335b419a01ce185ff16c8ef1ef11f8ee65f05efe163790e7e85a959b66",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/standards-integrity.json": {
+      "sha256": "1bb2613d870a8ef8dc655f48b53d764501fe8c2b3f270759147bc111c74e06f8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/semantic-kernel-v2/standards-integrity.txt": {
+      "sha256": "793c22d82b552029ca4488d4a96523dd234acbf04839235dba89af84ddef658b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/standards-integrity.json": {
+      "sha256": "7b98e51e07a969eebfc7510e4b659b6d4698d21b446f64c38356e6a7c1b3c86d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/README.md": {
+      "sha256": "ea56ca7292f10f5b38b1be50c341c855e23aa03885625232936646c15388308d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/check-docs.mjs": {
+      "sha256": "8a77a2db72964001c7c9c478ce090bd3d4ebcb75f9c86d73a52093d6c0e7e4f8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/check-preservation.mjs": {
+      "sha256": "d593eb9b98eff431270c675104fcbcca336c47437cb99b79b9870adf1d2233a9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/browser-results.json": {
+      "sha256": "a21ae8041cc66107f30349510db576f693919270894f8a94116494db49575df6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/browser-tests.txt": {
+      "sha256": "5124d87aebbd71836eb651dc8f4901f723a4ba8e6a18dbefaf398dbf33caa29d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/clippy.txt": {
+      "sha256": "114bf82e2f77d4a663bf6d1bf94507870a637340085f81b8b96cb4dedd3672ce",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/console-desktop.png": {
+      "sha256": "d9df215e3a5bd79dd8f282d59d72aef8ebf71a43316b2f34fe8d6e1902186b8e",
+      "comparison": "byte-exact"
+    },
+    "verification/sysml-language-v2-resume/final/console-mobile.png": {
+      "sha256": "be7013283ee2af0946c63a1a09f74fe6a1469de430d4803d50dd78fa52961622",
+      "comparison": "byte-exact"
+    },
+    "verification/sysml-language-v2-resume/final/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/frontend-build.txt": {
+      "sha256": "c31b84639143f91cf9644504914038060e921a0fcfb96971643a8edd2407119c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/generated.txt": {
+      "sha256": "d0256b12f6d47ee371cf90fced64680f07aed3cd94277b18629b0ff6562abf6c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/links.txt": {
+      "sha256": "2e94584609af53baaa4c9731b1b604526750e6ca8bceeeb697139a899c492de3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/node-tests.txt": {
+      "sha256": "5a8930adb7f0f6d29fbfda08f2279d9428a35354916ffe0ece99daed2ef46a63",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/results.json": {
+      "sha256": "207c590f7e2471f12a43d2facd1bc17c70a36b9da1e4d2126fb500a22bf9e92b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/rust-tests.txt": {
+      "sha256": "1b553546d5e39852c5eaf7cb9725583cb1d3c05c3088caff7405efcd5ec8e334",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/rustdoc.txt": {
+      "sha256": "324b4a87325f4354578c74d0f800ded5b22ed39e2c877914175d0a998a18adc2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/standards-integrity.json": {
+      "sha256": "9e90bb2ebe70a01f69e8e080f87ad61e820d067116a2ce2091d4a4f8e6d0ca3f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/final/standards.txt": {
+      "sha256": "9b799a277cd22dbe1b6da347b79e284daa60887928f73361f0dcbb9409c9ed77",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/foundation/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/foundation/generator.txt": {
+      "sha256": "80b976a4dde8ea0b5b1d92ecc4dafb62ce8c455d5a1746ddc34e0617b60e6d06",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/foundation/kernel.txt": {
+      "sha256": "b9d7905d908a1ba3225a146e5fce5b6a3e06a43e00347b27bd1c6a7f28188b90",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/foundation/results.json": {
+      "sha256": "697819fceff3666b3e233fd40d80fe9f5011e4e3971351c710cb7e5299453b89",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/handoff/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/handoff/links.txt": {
+      "sha256": "144cfbd4de716be446e1d88a9fe2b962c263a38a87603ec96169b22d468aa236",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/handoff/preservation.txt": {
+      "sha256": "5b21d73ce4e06358f571f6c11e6758496e06639e42905b6df9cfdf83dd38a5a0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/handoff/results.json": {
+      "sha256": "63b8e66157a875aae819b11809110fc8f7641cb43f5e6f80ab5c4f5716078c8b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/handoff/rustdoc.txt": {
+      "sha256": "9c32a94d8ebaa6908316496f4514887f6cc223d608046241fce0e910d1f595b8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/original-structural-audit.json": {
+      "sha256": "e98bb21c5f12cc567b0791b0052284df15e0d54c235f14a1d046c4fa967bffb0",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/pdf-evidence.json": {
+      "sha256": "5bd9d6983ca3c930515968fad069116b30daa71fb89695f442e0e78dd2748d58",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/run.mjs": {
+      "sha256": "08306ff4d87081177b72b7537611ba70c098bd26e4705c08646a90d798c24e99",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/stage-3/blocker-regressions.txt": {
+      "sha256": "d896b1223beba11ae52290b36a5c3c52187eed1bb251f4e7918b8f86563a1e7e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/stage-3/generated.txt": {
+      "sha256": "0961b3f49ba524371fc1a77b905b295ccb319d50d53bf9f9efd2cbf7fb5f2aa5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/stage-3/results.json": {
+      "sha256": "c7a0fb67749a546e114c68e33194bd7cc0f0529eb4275e07b179c73c9abafc31",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/stage-3/runtime-readiness.txt": {
+      "sha256": "3fc751a8e5e64fe7fa3863816bbaf52a03255fb5d7b9f551d55376a70d9f96e4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2-resume/uml-evidence.json": {
+      "sha256": "0101e7330e9419eb8e71d4fcb15815f5d09e95bbf8c1255bb4554afb851bcb37",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/README.md": {
+      "sha256": "1ba7f60e4f49b90dd9e2601592d14b69a1cc28fd0fe40a2935c43f07a7ad1de8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/check-docs.mjs": {
+      "sha256": "05a79a42244698fbb7cd23035bdf7e5d369bc0a975e5b91acbb9e8cd66570075",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/browser-results.json": {
+      "sha256": "82dbde3da7d4943df6e1a2251b3b0ec978b2c01dcec1f797282cf04479e4b2a3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/browser-tests.txt": {
+      "sha256": "e017e53156fda839820f7dc96c52f672dc4b9a431a7085fd951da157ee7bb4fe",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/clippy.txt": {
+      "sha256": "5cf328ed83e4c0e13b1003f62d776ebd9180f818d18f93b2c089e17734449fdc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/console-desktop.png": {
+      "sha256": "980f1e1229f78a05aab61174d82c062ba130bf25af693206ca152d65a7491774",
+      "comparison": "byte-exact"
+    },
+    "verification/sysml-language-v2/final/console-mobile.png": {
+      "sha256": "54a22e4f151672266a8d2d4a5a80a8d6e8e696fac9de685d8ef6df3a42355ddc",
+      "comparison": "byte-exact"
+    },
+    "verification/sysml-language-v2/final/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/frontend-build.txt": {
+      "sha256": "75a6b6d67525fc3bb708a5b36920b4beae15ad261cc14e1deba2493f75864ddd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/generated.txt": {
+      "sha256": "e96398cb09fdfdd59318d65544bd030493047639d188a0ccd66ed24883446767",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/links.txt": {
+      "sha256": "7ff5b19a39d9a86738a07238b59c74ddf1593af611e664ecedd23ba7b85bb1ba",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/node-tests.txt": {
+      "sha256": "2084fdf37f2fa124710996b7d3b35ef9714ba5d0f430043024b73f79a5698671",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/results.json": {
+      "sha256": "cc315098d990b0e57540bdf30af9f286a01dce9a94408eb85bef07e47dedcef9",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/rust-tests.txt": {
+      "sha256": "9753eab1cd9c1b756279f48f0fda9a35cbe6cc2ab0aee2e3d5c1c695b4d81410",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/rustdoc.txt": {
+      "sha256": "778d5ec9fae7006393a4626a272596094fb6989163a306b55cb24cceb62889f4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/standards-integrity.json": {
+      "sha256": "97d31b56435d2747c2dbb032dbe4121aa17faf9e1b237d1c81fe468191058a48",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/final/standards.txt": {
+      "sha256": "b8325a62c8cef2fcf0d44bd853873a88ffdf4ca200ccced62f85c174ccdee974",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/handoff/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/handoff/help.txt": {
+      "sha256": "30df7a6aa8e52a188cbcf116d7348895024aaf6f7c452aa08451dddf42142ffa",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/handoff/links.txt": {
+      "sha256": "7f21a090f090e8c935b3fc38cc0484ef6a1db3d0a5e7e2682595b1ca7717cbe7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/handoff/results.json": {
+      "sha256": "82335361035116a1df532861991c6e37f54ddcb60ba4be6cd4b8e0f9a9d6f8aa",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/run.mjs": {
+      "sha256": "643736cd98d50e7ac053a8238f5c63aaf2763e3a5d556152bd0680511cf44163",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-0/engineering.txt": {
+      "sha256": "161ba2ab1752e244f85ba5a73d634ce7af47f875531c12563c89db9032e555bd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-0/extraction.txt": {
+      "sha256": "9f92e09d0a8e4f1e5b5769adb83d81f1615f2ab17e9df81a3365ae73dff9f399",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-0/kerml.txt": {
+      "sha256": "bb45ce7364da6996298f9463c82b1e0a2510ad64be573d3e0cea2f619dd1ad6a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-0/kernel.txt": {
+      "sha256": "c0db066e1354b57c941e34081f897e70cfcb6825e7747c0a8cefe8330d844f8c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-0/links.txt": {
+      "sha256": "7aad7de454f0844eb7e22ac4302549087d60ba5baaea258d2bbe79f280b5d88c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-0/results.json": {
+      "sha256": "4afc5b5d1dd981ad87f80071cb9237482998f07c709618148f8dd2c75a896895",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-0/semantics.txt": {
+      "sha256": "cb94a4d3fbf9b6c55b806a04f465878ca496b9837b75e133997829db0c9a6fee",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-0/text.txt": {
+      "sha256": "dcf9425f88e8d8e36c6bf2b36bea36c4bd62ee293b62d69e6941c00a036ae819",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-1/artifacts.txt": {
+      "sha256": "8779949f73aa97d1a5b4dd27066643823d6da578c9eec8f1b3187d6dcc2f89bf",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-1/kerml-current.txt": {
+      "sha256": "d6fe7593be176b80648459c43c6340a3da7997fb7d11c888ca8281041893d495",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-1/results.json": {
+      "sha256": "66d751b0837ef3cc4e6f78c9844e3a72184313e62b31ff415fa7748ea7a7e4c8",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-1/standards-integrity.json": {
+      "sha256": "99520aab22a154772d44957ef5af7cd1bb7fc1604e1c5772d5e507cf377dedc4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-1/standards.txt": {
+      "sha256": "61b6240b5b587a83516ea2c4cb95aca8dd189953a06078231e01b67abc169d00",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-2/clippy.txt": {
+      "sha256": "8647add8d372a92615b5044e6f00e5631fad499c44bd5254a11abdab1d16e3dc",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-2/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-2/generated.txt": {
+      "sha256": "b44ce8d96743836e8edf4a3aa19c7f5e8e984cb16bdc9f4866b82761307efe0f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-2/generator-tests.txt": {
+      "sha256": "d53924788f8bd9fc38b7c88b7e5b5a09713a235baa3d84a70ccbf302817a1c60",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-2/results.json": {
+      "sha256": "52ed0cd9624405578e32e7cd29e423b75de6c97b63520e97ccef679e82a9d480",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-2/standards-integrity.json": {
+      "sha256": "d618637f8999cc5a954108665295510f7b3db7e7abad2dffadc68b9d6552ddf4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-2/standards.txt": {
+      "sha256": "cbd373068d6cd582a4b6086f4e0d3b1337f9aba29a44b27161b8d124ca87717e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-3/blocker-regressions.txt": {
+      "sha256": "c9af21eb16f49db6d916240dbd6c74fb98b17cfe5a1f39fca5f3c037264770ac",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-3/generated.txt": {
+      "sha256": "c30583681b9fbd27d243d5f19981da5e3b96600be7e9bc399b062719c1b1dfd5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-3/pdf-evidence.json": {
+      "sha256": "db867207d3d624255a7c5aa4c77a296b39c3924f4ae2f540b7d527d7d316cac4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-3/results.json": {
+      "sha256": "046cf8028e68fe079a8f0a632fc37f3c7d47761b8bd4a5f3f2b937d096dc3980",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-3/runtime-readiness.txt": {
+      "sha256": "3d48f2de5a3661c3ee6d2f8da4807d28c12b702d9fdd16ea7cc81edba6b55c25",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-language-v2/stage-3/uml-constraint-evidence.json": {
+      "sha256": "fd67cf9660db08aaeabf8a5e9eef0c67964f7626af4407d7c77116affcf52e4f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/README.md": {
+      "sha256": "67a52b2ed6b5e46d6dc5e5fe713e401ee42eb2a9f265a64552346b0afb8dbb32",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/authority.py": {
+      "sha256": "454cb691e516d5e987d959c878c24019b31f7425abbaba6ceca5aa9f3ba4b3aa",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/authority.txt": {
+      "sha256": "c138a0fb4aa2f2d48b8ec081dc0203416e3171db3ae5452358f1aeca3b11b15e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/browser-results.json": {
+      "sha256": "03d9b2a18f91dbb1d1cd6a6fbd45a9a539a7741ff0803d07ba9c67b89656ba5f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/browser-tests.txt": {
+      "sha256": "299b177b702b40fcb9aedf68bff56f0c4f578e6492c306d5d28626cc9afcd4a2",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/clippy.txt": {
+      "sha256": "a11f8b7f9713c069da45d666bb50f1bf998ec6ce77cb2253b368b34fa1befabd",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/console-desktop.png": {
+      "sha256": "49f2d19bbe3a5be00b65e8c02443879d397c9ab5336168d35222f08091417f60",
+      "comparison": "byte-exact"
+    },
+    "verification/sysml-semantic-foundation-v1/final/console-mobile.png": {
+      "sha256": "aa70284978170b37f3baf41ecf679b7f8b7c230fbafe894996f7bd18bc91ee4d",
+      "comparison": "byte-exact"
+    },
+    "verification/sysml-semantic-foundation-v1/final/corpus.txt": {
+      "sha256": "a96bdf5ffba9195c941f4bcf68cf37735a32b022f31fbe5e76d25c825488b1ed",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/frontend-build.txt": {
+      "sha256": "edcd02ad66686221aefa91a0d6a861b80d75c3deef5819063d633762b6aa5558",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/frontend-check.txt": {
+      "sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/generated.txt": {
+      "sha256": "2ef466470438b6ac07c61dde831e193e48ef56773c1c04d4dec7ec7c6ad198fb",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/independent-runtime.txt": {
+      "sha256": "4c6149fb44de89070e586ca91de86684336fec8a661f773edc30b43d18989fc7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/kerml-readiness.txt": {
+      "sha256": "d9eeedd563882344c1ff1524869ff06692c283e35da54aaa15b1e5f5b8d55d51",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/node-tests.txt": {
+      "sha256": "1e99393eb6922dd94f4b9054e838b83b5a6645eff97ad123c5e54524041f5255",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/preservation.txt": {
+      "sha256": "121d562ce22fc40798e416e764d8e8bc1bd547842a6b7c9855e679dfdb69dbbe",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/results.json": {
+      "sha256": "61ca5cb6e2c245760d8df0c93257a14c6afc055bf2ea9d652c62c5dcc42dfc57",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/rust-tests.txt": {
+      "sha256": "4d68a2ae0d6bc449867cc06fc97e3bcc056bb5db44e0653c529c1d8761d86203",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/rustdoc.txt": {
+      "sha256": "5beddd4d95bc2488378c1efc03ed2264b9fd54ca2eca93dbd91e1ae42b5dac06",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/standards-integrity.json": {
+      "sha256": "af77f192d073230e287c072954177ea83c48db60beb6a1ddce57f69d5d539b39",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/standards.txt": {
+      "sha256": "df487963f10966551521e44f3ef9b7860319ed56cdd8ed089ab5a15a22bf9949",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/final/sysml-readiness.txt": {
+      "sha256": "b8146bb3946c5c9ceb77567a5f94c2c29786bc052504a4b8f1227a3738d13628",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-0/inventory.txt": {
+      "sha256": "4962e7e4755c6dfd62373546b39775683e4c23c097afd359aced9bc855094593",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-0/kerml-readiness.txt": {
+      "sha256": "9b12cbfe1bbdc4e380dc60bf50199450696d73b5fbf3f2172e95cf5196efec19",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-0/results.json": {
+      "sha256": "57187e9491c14ac9c3c6255d90c8f866ba2f71e2ac713c1d43144219a7d83bb3",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-0/sysml-readiness.txt": {
+      "sha256": "8e8bc3901e5df6a6be073273417b554a161147aa1adb1709fa571832dce7740f",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-1-project/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-1-project/kerml-readiness.txt": {
+      "sha256": "d9eeedd563882344c1ff1524869ff06692c283e35da54aaa15b1e5f5b8d55d51",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-1-project/project.txt": {
+      "sha256": "367c0da96c9182fb206dfb56f6504278a782a55f196cf877a7379b63c627b76b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-1-project/results.json": {
+      "sha256": "67aa883e6b938e380dc8103b0cdacb81cd7cd254a5828e99e72f598ff71aad63",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-1-project/sysml-readiness.txt": {
+      "sha256": "b8146bb3946c5c9ceb77567a5f94c2c29786bc052504a4b8f1227a3738d13628",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-semantic-quality/library-quality.txt": {
+      "sha256": "79cffe4850c45e115d9c258d0949fea8adea37777dcfbd94435256f89bbe8072",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-semantic-quality/results.json": {
+      "sha256": "b12ebb2d970c3dd608c875846d6e276fcf6d374a7582fd9158c7293216e7fbad",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-source-loader/clippy.txt": {
+      "sha256": "260baa805e4600858cd3fce7d228faca73e434b69508747e1d5da43e1c2db64c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-source-loader/corpus.txt": {
+      "sha256": "17e6491aea08abb22984f5d7bfaee882aedce3a28263088c5049c3bf405e1bc6",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-source-loader/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-source-loader/kerml-readiness.txt": {
+      "sha256": "1b41f4118a572e4d1482e2195efeffc131118bdaad3e618fafad161c9953f562",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-source-loader/libraries.txt": {
+      "sha256": "0e9125f63f63c118eee9b7d9e2b3adb76c6cfee85908351f99debac5760d3440",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-source-loader/results.json": {
+      "sha256": "8a4820b89809efb96e148083c546fa620125d36290b121f28d23bfb1b88cb23b",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-source-loader/syntax.txt": {
+      "sha256": "beb3ea13dbd376a7fe6f89b1c8f3f3e5ba614542027ea70701b89b3330521af7",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/gate-2-source-loader/sysml-readiness.txt": {
+      "sha256": "b8146bb3946c5c9ceb77567a5f94c2c29786bc052504a4b8f1227a3738d13628",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/library-quality.json": {
+      "sha256": "6887e3d8f63dbb78132e46e02e2365e253e1c0bd0bf206435e07daeed447769d",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/preservation.py": {
+      "sha256": "b9707fad9d91497434e508fc1647714965b5beaf2fdeb1bb520a10664018861c",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/project-regressions/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/project-regressions/kerml-readiness.txt": {
+      "sha256": "d9eeedd563882344c1ff1524869ff06692c283e35da54aaa15b1e5f5b8d55d51",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/project-regressions/project.txt": {
+      "sha256": "a3a104c1c278fd927f3679ac9d4e2dfcfe2082edb1b33b553d6d2924be4be4e5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/project-regressions/results.json": {
+      "sha256": "e98d1f822d0335154956b2a56e712e6b85957c625052740b28c51ddd89647e43",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/project-regressions/sysml-readiness.txt": {
+      "sha256": "b8146bb3946c5c9ceb77567a5f94c2c29786bc052504a4b8f1227a3738d13628",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/quality-final/library-quality.txt": {
+      "sha256": "8376e3621b1c7f93a98688607cf922b1624297617e313d25b6f035fcfe359aae",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/quality-final/results.json": {
+      "sha256": "ebce0e5a0039cb2622a89a524749ce4fe559387f15f9f2db4e5d9746d571b922",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/recovery-regressions/format.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/recovery-regressions/kerml-readiness.txt": {
+      "sha256": "d9eeedd563882344c1ff1524869ff06692c283e35da54aaa15b1e5f5b8d55d51",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/recovery-regressions/project.txt": {
+      "sha256": "904e5bea417faef35151b86288f11d42b153e38edc665713bc125c3b5cd64cb5",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/recovery-regressions/results.json": {
+      "sha256": "f124731eecf5a894eea328c4d9e857cb429a080fc7adf50f5bd252dd56c73816",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/recovery-regressions/sysml-readiness.txt": {
+      "sha256": "b8146bb3946c5c9ceb77567a5f94c2c29786bc052504a4b8f1227a3738d13628",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/run.mjs": {
+      "sha256": "1b0d3af97dee445fa691e04e18247b835465ad63eb69ab85653ba75dfd7356ec",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/strict-final/kerml-conformance.txt": {
+      "sha256": "614ea97a5bc00b2648a254ed3540cdb3111fcba18b039fc8cd892494b5f0f780",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/strict-final/results.json": {
+      "sha256": "0be5db589ee966edafb249acc3c4d8aefbdee7fdc431df2ecf00806074e73e12",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/strict-final/sysml-conformance.txt": {
+      "sha256": "876344a457bc08491f1c6941df9f5171902f6a99a5a46638972381f43c0d9f0a",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/sysml-semantic-foundation-v1/verified-results.json": {
+      "sha256": "e4b9126bd53e5665ec3c8c884acd27bebb922b33232537877e3dcc4c55b1aca4",
+      "comparison": "git-text-eol-normalized"
+    },
+    "verification/traceability.json": {
+      "sha256": "b443ac9c6db4f7723b5e813bcc925c14f14434ac0ae78988dfc1c1571deb3f69",
+      "comparison": "git-text-eol-normalized"
+    }
+  }
+}

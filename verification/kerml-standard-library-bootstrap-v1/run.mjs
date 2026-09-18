@@ -7,6 +7,10 @@ const runtime = [
   ["sysml-readiness", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check"],
 ];
 const gates = {
+  review: [
+    ["standards", "npm run standards:check", ["verification/standards-integrity.json"]],
+    ["diff", "git diff --check"],
+  ],
   construction: [
     ["kernel-and-semantic-tests", "cargo test --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text"],
     ["clippy", "cargo clippy --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text --all-targets -- -D warnings"],
@@ -39,7 +43,7 @@ const gates = {
   ],
   runtime,
   authority: [
-    ["inventory", "python -X utf8 verification/kerml-standard-library-bootstrap-v1/authority.py --check"],
+    ["inventory", "python -X utf8 tools/kerml-grammar/inventory.py"],
     ...runtime,
   ],
   project: [
@@ -59,7 +63,7 @@ const gates = {
     ["kerml-conformance", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-conformance --check"],
     ["sysml-conformance", "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-conformance --check"],
   ],
-  quality: [["library-quality", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --require-semantic"]],
+  quality: [["library-quality", "cargo run --release --config profile.release.lto=false --locked --offline -p agq-kerml-text --example library_quality -- --output={directory}/library-quality.json"]],
   final: [
     ["format", "cargo fmt --all -- --check"],
     ["clippy", "cargo clippy --workspace --all-targets -- -D warnings"],
@@ -72,8 +76,11 @@ const gates = {
     ["frontend-build", "npm run build"],
     ["node-tests", "npm test"],
     ["browser-tests", "npm run test:e2e", ["verification/browser-results.json", "verification/screenshots/console-desktop.png", "verification/screenshots/console-mobile.png"]],
-    ["authority", "python -X utf8 verification/kerml-standard-library-bootstrap-v1/authority.py --check"],
-    ["corpus", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check"],
+    ["grammar-inventory", "python -X utf8 tools/kerml-grammar/inventory.py"],
+    ["grammar-tables", "python -X utf8 tools/kerml-grammar/generate.py"],
+    ["grammar-tests", "python -X utf8 tools/kerml-grammar/test_inventory.py"],
+    ["bindings", "cargo run --locked --offline -p agq-kerml-text --example binding_manifest"],
+    ["historical-lexical-corpus", "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check"],
     ["independent-runtime", "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check"],
     ["preservation", "python -X utf8 verification/kerml-standard-library-bootstrap-v1/preservation.py"],
   ],
@@ -86,7 +93,8 @@ const directory = `verification/kerml-standard-library-bootstrap-v1/${label}`;
 if (fs.existsSync(directory)) throw new Error("Evidence already exists; use a fresh label");
 fs.mkdirSync(directory, { recursive: true });
 const results = [];
-for (const [name, command, artifacts = []] of gates[gate]) {
+for (const [name, template, artifacts = []] of gates[gate]) {
+  const command = template.replaceAll("{directory}", directory);
   console.log(`Running: ${command}`);
   const originals = artifacts.map(file => [file, fs.existsSync(file) ? fs.readFileSync(file) : null]);
   const started = new Date();

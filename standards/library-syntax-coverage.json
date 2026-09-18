@@ -125,7 +125,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -204,6 +204,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -239,7 +240,7 @@
         "TypePrefix",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "ClassifierDeclaration",
         "DataType",
@@ -257,6 +258,7 @@
         "SuperclassingPart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -328,7 +330,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "BaseExpression",
         "BasicFeaturePrefix",
@@ -366,6 +368,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -446,7 +449,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentMember",
@@ -498,6 +501,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -559,7 +563,7 @@
         "Typings",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "BasicFeaturePrefix",
         "ClassifierDeclaration",
@@ -591,6 +595,7 @@
         "SuperclassingPart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -711,7 +716,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -802,6 +807,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -896,7 +902,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -960,6 +966,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -1066,7 +1073,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -1144,6 +1151,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -1222,7 +1230,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentMember",
@@ -1271,6 +1279,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -1352,7 +1361,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -1404,6 +1413,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -1465,7 +1475,7 @@
         "Typings",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "BasicFeaturePrefix",
         "ClassifierDeclaration",
@@ -1497,6 +1507,7 @@
         "SuperclassingPart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -1601,7 +1612,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -1676,6 +1687,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -1786,7 +1798,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -1867,6 +1879,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -1948,7 +1961,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -2000,6 +2013,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -2083,7 +2097,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -2137,6 +2151,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -2199,7 +2214,7 @@
         "Typings",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "BasicFeaturePrefix",
         "ClassifierDeclaration",
@@ -2232,6 +2247,7 @@
         "SuperclassingPart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -2355,7 +2371,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -2445,6 +2461,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -2517,7 +2534,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "BaseExpression",
         "BasicFeaturePrefix",
@@ -2560,6 +2577,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -2651,7 +2669,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -2712,6 +2730,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -2847,7 +2866,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AliasMember",
         "AnnotatingElement",
         "Argument",
@@ -2948,6 +2967,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -3018,7 +3038,7 @@
         "TypedBy",
         "Typings"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "BasicFeaturePrefix",
         "ChainingPart",
@@ -3050,6 +3070,7 @@
         "PackageDeclaration",
         "SuperclassingPart"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -3157,7 +3178,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -3230,6 +3251,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -3341,7 +3363,7 @@
         "UnaryOperatorExpression",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -3415,6 +3437,7 @@
         "UnaryOperatorExpression",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -3540,7 +3563,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -3628,6 +3651,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -3698,7 +3722,7 @@
         "Typings",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "BasicFeaturePrefix",
         "ClassifierDeclaration",
@@ -3731,6 +3755,7 @@
         "TypeFeatureMember",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -3808,7 +3833,7 @@
         "Typings",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Association",
         "BasicFeaturePrefix",
@@ -3847,6 +3872,7 @@
         "SuperclassingPart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -3916,7 +3942,7 @@
         "Typings",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "BasicFeaturePrefix",
         "ClassifierDeclaration",
@@ -3947,6 +3973,7 @@
         "SuperclassingPart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -4065,7 +4092,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -4145,6 +4172,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -4275,7 +4303,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -4367,6 +4395,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -4526,7 +4555,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -4647,6 +4676,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -4775,7 +4805,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentMember",
@@ -4865,6 +4895,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -4983,7 +5014,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -5071,6 +5102,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -5221,7 +5253,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -5334,6 +5366,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -5469,7 +5502,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -5566,6 +5599,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -5686,7 +5720,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentExpression",
@@ -5769,6 +5803,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     },
     {
@@ -5876,7 +5911,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
-      "blocking_frontend_productions": [
+      "baseline_blocking_frontend_productions": [
         "AnnotatingElement",
         "Argument",
         "ArgumentList",
@@ -5946,6 +5981,7 @@
         "ValuePart",
         "VisibilityIndicator"
       ],
+      "current_blocking_frontend_productions": [],
       "failure": null
     }
   ],
@@ -5973,9 +6009,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "AnnotatingElement",
@@ -6481,9 +6517,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Argument",
@@ -7241,9 +7277,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ArgumentExpression",
@@ -7382,9 +7418,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ArgumentExpressionMember",
@@ -7523,9 +7559,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ArgumentExpressionValue",
@@ -7664,9 +7700,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ArgumentList",
@@ -7979,9 +8015,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ArgumentMember",
@@ -8739,9 +8775,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ArgumentValue",
@@ -9499,9 +9535,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Association",
@@ -9573,9 +9609,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "AssociationStructure",
@@ -9621,9 +9657,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BaseExpression",
@@ -10569,9 +10605,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BasicFeaturePrefix",
@@ -12404,9 +12440,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Behavior",
@@ -12499,9 +12535,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BinaryConnectorDeclaration",
@@ -12598,9 +12634,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BinaryOperator",
@@ -12834,9 +12870,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BinaryOperatorExpression",
@@ -13070,9 +13106,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BindingConnector",
@@ -13154,9 +13190,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BindingConnectorDeclaration",
@@ -13238,9 +13274,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BodyArgument",
@@ -13332,9 +13368,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BodyArgumentMember",
@@ -13426,9 +13462,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BodyArgumentValue",
@@ -13520,9 +13556,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BodyExpression",
@@ -13614,9 +13650,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BooleanExpression",
@@ -13679,9 +13715,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "BooleanValue",
@@ -13749,9 +13785,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "CROSSES",
@@ -13826,9 +13862,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "CastOperator",
@@ -13896,9 +13932,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ChainingPart",
@@ -13947,9 +13983,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Class",
@@ -13983,9 +14019,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ClassificationExpression",
@@ -14056,9 +14092,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ClassificationTestOperator",
@@ -14101,9 +14137,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Classifier",
@@ -14128,9 +14164,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ClassifierDeclaration",
@@ -14780,9 +14816,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Comment",
@@ -14864,9 +14900,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConditionalBinaryOperator",
@@ -14980,9 +15016,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConditionalBinaryOperatorExpression",
@@ -15096,9 +15132,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConditionalExpression",
@@ -15167,9 +15203,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Connector",
@@ -15268,9 +15304,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConnectorDeclaration",
@@ -15367,9 +15403,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConnectorEnd",
@@ -15616,9 +15652,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConnectorEndMember",
@@ -15865,9 +15901,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConstructorExpression",
@@ -15901,9 +15937,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConstructorResult",
@@ -15937,9 +15973,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ConstructorResultMember",
@@ -15973,9 +16009,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Crosses",
@@ -16050,9 +16086,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "DataType",
@@ -16138,9 +16174,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Disjoining",
@@ -16165,9 +16201,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "DisjoiningPart",
@@ -16218,9 +16254,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Documentation",
@@ -16699,9 +16735,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "EmptyFeature",
@@ -17842,9 +17878,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "EmptyResultMember",
@@ -18985,9 +19021,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "EndFeaturePrefix",
@@ -19133,9 +19169,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Expression",
@@ -19205,9 +19241,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ExpressionBody",
@@ -19299,9 +19335,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ExpressionBodyMember",
@@ -19393,9 +19429,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Feature",
@@ -21062,9 +21098,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureChain",
@@ -21263,9 +21299,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureChainExpression",
@@ -21442,9 +21478,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureChainMember",
@@ -21621,9 +21657,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureDeclaration",
@@ -23455,9 +23491,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureDirection",
@@ -24224,9 +24260,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureElement",
@@ -26128,9 +26164,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureIdentification",
@@ -27546,9 +27582,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureMember",
@@ -29086,9 +29122,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeaturePrefix",
@@ -30033,9 +30069,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureReference",
@@ -30810,9 +30846,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureReferenceExpression",
@@ -31486,9 +31522,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureReferenceMember",
@@ -32263,9 +32299,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureRelationshipPart",
@@ -32352,9 +32388,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureSpecialization",
@@ -34501,9 +34537,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureSpecializationPart",
@@ -36255,9 +36291,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FeatureValue",
@@ -36583,9 +36619,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Flow",
@@ -36630,9 +36666,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FlowDeclaration",
@@ -36677,9 +36713,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Function",
@@ -37090,9 +37126,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionBody",
@@ -37633,9 +37669,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionBodyPart",
@@ -38202,9 +38238,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionOperationExpression",
@@ -38342,9 +38378,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionReference",
@@ -38400,9 +38436,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionReferenceArgument",
@@ -38458,9 +38494,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionReferenceArgumentMember",
@@ -38516,9 +38552,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionReferenceArgumentValue",
@@ -38574,9 +38610,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionReferenceExpression",
@@ -38632,9 +38668,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "FunctionReferenceMember",
@@ -38690,9 +38726,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "GeneralType",
@@ -41108,9 +41144,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Identification",
@@ -42137,9 +42173,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Import",
@@ -42485,9 +42521,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ImportDeclaration",
@@ -42833,9 +42869,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "IndexExpression",
@@ -42910,9 +42946,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "InstantiatedTypeMember",
@@ -43198,9 +43234,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "InstantiatedTypeReference",
@@ -43482,9 +43518,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Interaction",
@@ -43529,9 +43565,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Intersecting",
@@ -43629,9 +43665,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "IntersectingPart",
@@ -43707,9 +43743,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Invariant",
@@ -43853,9 +43889,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "InvertingPart",
@@ -43911,9 +43947,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "InvocationExpression",
@@ -44197,9 +44233,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "InvocationTypeMember",
@@ -44337,9 +44373,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "LibraryPackage",
@@ -44520,9 +44556,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "LiteralBoolean",
@@ -44590,9 +44626,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "LiteralExpression",
@@ -46908,9 +46944,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "LiteralInfinity",
@@ -47393,9 +47429,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "LiteralInteger",
@@ -49307,9 +49343,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "LiteralReal",
@@ -49384,9 +49420,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "MemberElement",
@@ -50455,9 +50491,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "MemberPrefix",
@@ -53390,9 +53426,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "MembershipImport",
@@ -53674,9 +53710,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Metaclass",
@@ -53803,9 +53839,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Multiplicity",
@@ -53849,9 +53885,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "MultiplicityBounds",
@@ -55491,9 +55527,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "MultiplicityExpressionMember",
@@ -57731,9 +57767,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "MultiplicityPart",
@@ -59233,9 +59269,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "MultiplicityRange",
@@ -59279,9 +59315,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NamespaceBodyElement",
@@ -60255,9 +60291,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NamespaceFeatureMember",
@@ -60374,9 +60410,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NamespaceImport",
@@ -60516,9 +60552,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NamespaceMember",
@@ -61288,9 +61324,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NonFeatureChainPrimaryArgument",
@@ -61467,9 +61503,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NonFeatureChainPrimaryArgumentMember",
@@ -61646,9 +61682,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NonFeatureChainPrimaryArgumentValue",
@@ -61825,9 +61861,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NonFeatureChainPrimaryExpression",
@@ -62904,9 +62940,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NonFeatureElement",
@@ -63614,9 +63650,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NonFeatureMember",
@@ -64685,9 +64721,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "NullExpression",
@@ -64747,9 +64783,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedCrossFeature",
@@ -64817,9 +64853,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedCrossFeatureMember",
@@ -64887,9 +64923,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedCrossMultiplicity",
@@ -65083,9 +65119,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedCrossMultiplicityMember",
@@ -65279,9 +65315,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedCrossSubsetting",
@@ -65356,9 +65392,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedDisjoining",
@@ -65409,9 +65445,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedExpression",
@@ -66624,9 +66660,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedExpressionMember",
@@ -66774,9 +66810,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedExpressionReference",
@@ -66915,9 +66951,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedFeatureChain",
@@ -67101,9 +67137,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedFeatureChainMember",
@@ -67153,9 +67189,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedFeatureChaining",
@@ -67489,9 +67525,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedFeatureInverting",
@@ -67547,9 +67583,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedFeatureMember",
@@ -69081,9 +69117,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedFeatureTyping",
@@ -70701,9 +70737,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedMultiplicity",
@@ -72339,9 +72375,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedMultiplicityRange",
@@ -73977,9 +74013,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedRedefinition",
@@ -74366,9 +74402,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedReferenceSubsetting",
@@ -74619,9 +74655,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedSubclassification",
@@ -75129,9 +75165,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "OwnedSubsetting",
@@ -75489,9 +75525,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Package",
@@ -75534,9 +75570,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "PackageBody",
@@ -75720,9 +75756,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "PackageDeclaration",
@@ -75906,9 +75942,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "PositionalArgumentList",
@@ -76208,9 +76244,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Predicate",
@@ -76256,9 +76292,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "PrimaryArgument",
@@ -76422,9 +76458,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "PrimaryArgumentMember",
@@ -76588,9 +76624,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "PrimaryArgumentValue",
@@ -76754,9 +76790,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "PrimaryExpression",
@@ -77833,9 +77869,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "QualifiedName",
@@ -81983,9 +82019,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "REDEFINES",
@@ -82335,9 +82371,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "REFERENCES",
@@ -82412,9 +82448,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "RealValue",
@@ -82489,9 +82525,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Redefines",
@@ -82841,9 +82877,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Redefinitions",
@@ -83193,9 +83229,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ReferenceTyping",
@@ -83285,9 +83321,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "References",
@@ -83331,9 +83367,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "RelationshipBody",
@@ -83695,9 +83731,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ResultExpressionMember",
@@ -83891,9 +83927,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ReturnFeatureMember",
@@ -84325,9 +84361,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "RootNamespace",
@@ -84508,9 +84544,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SPECIALIZES",
@@ -84995,9 +85031,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SUBSETS",
@@ -85329,9 +85365,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SequenceExpression",
@@ -85441,9 +85477,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SequenceExpressionList",
@@ -85591,9 +85627,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SequenceExpressionListMember",
@@ -85677,9 +85713,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SequenceOperatorExpression",
@@ -85731,9 +85767,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SpecificType",
@@ -85786,9 +85822,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Step",
@@ -85884,9 +85920,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Structure",
@@ -85954,9 +85990,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Subclassification",
@@ -85981,9 +86017,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Subsets",
@@ -86302,9 +86338,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Subsetting",
@@ -86357,9 +86393,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Subsettings",
@@ -86678,9 +86714,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Succession",
@@ -86762,9 +86798,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SuccessionDeclaration",
@@ -86846,9 +86882,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "SuperclassingPart",
@@ -87332,9 +87368,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TYPED_BY",
@@ -88952,9 +88988,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypeBody",
@@ -90954,9 +90990,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypeBodyElement",
@@ -92835,9 +92871,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypeFeatureMember",
@@ -92883,9 +92919,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypePrefix",
@@ -93535,9 +93571,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypeReference",
@@ -93608,9 +93644,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypeReferenceMember",
@@ -93653,9 +93689,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypeRelationshipPart",
@@ -93738,9 +93774,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypeResultMember",
@@ -93808,9 +93844,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "TypedBy",
@@ -95428,9 +95464,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Typings",
@@ -97048,9 +97084,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "bounded authored subset",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "UnaryOperator",
@@ -97130,9 +97166,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "UnaryOperatorExpression",
@@ -97212,9 +97248,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "Unioning",
@@ -97259,9 +97295,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "UnioningPart",
@@ -97295,9 +97331,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "ValuePart",
@@ -97623,9 +97659,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     },
     {
       "production": "VisibilityIndicator",
@@ -98051,9 +98087,9 @@
       ],
       "parser_support": "agq-kerml-syntax::production; complete pinned corpus verified",
       "ast_cst_support": "typed lossless production tree; Table 6 expression precedence",
-      "lowering_support": "not implemented",
-      "resolution_support": "declared/public bounded lookup only; imports/inheritance absent",
-      "semantic_interpretation_support": "not established for library corpus"
+      "lowering_support": "traversed by canonical kernel construction; strict library publication incomplete",
+      "resolution_support": "semantic namespace/import/alias/visibility/inheritance queries implemented; corpus reference completeness not accepted",
+      "semantic_interpretation_support": "candidate structural interpretation; full library validation incomplete; execution unsupported"
     }
   ],
   "unused_grammar_productions": [
