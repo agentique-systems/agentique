@@ -1,0 +1,26 @@
+[
+  {
+    "command": "node verification/modeling-platform-v2/prerequisites.mjs",
+    "started": "2026-09-18T04:56:15.259Z",
+    "durationMs": 211,
+    "exitCode": 1,
+    "signal": null,
+    "log": "inventory.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T04:56:15.470Z",
+    "durationMs": 2138,
+    "exitCode": 1,
+    "signal": null,
+    "log": "runtime-readiness.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-metamodel-gen --test sysml_closure",
+    "started": "2026-09-18T04:56:17.609Z",
+    "durationMs": 1713,
+    "exitCode": 0,
+    "signal": null,
+    "log": "blocker-regressions.txt"
+  }
+]

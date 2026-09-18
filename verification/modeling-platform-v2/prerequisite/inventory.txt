@@ -1,0 +1,37 @@
+{
+  "format": "agentique-platform-prerequisites/1",
+  "head": "3a1375a6628da5d0597442249e7c5f3312db0c2a",
+  "originMain": "3a1375a6628da5d0597442249e7c5f3312db0c2a",
+  "branch": "platform/modeling-platform-v2",
+  "workspacePackages": [
+    "agentique",
+    "agq-application",
+    "agq-assistant",
+    "agq-kerml",
+    "agq-kerml-semantics",
+    "agq-kerml-syntax",
+    "agq-kerml-text",
+    "agq-kernel",
+    "agq-metamodel-gen",
+    "agq-model",
+    "agq-semantics",
+    "agq-server",
+    "agq-simulation",
+    "agq-storage",
+    "agq-syntax",
+    "agq-workspace"
+  ],
+  "missingRequiredPackages": [
+    "agq-sysml",
+    "agq-sysml-semantics"
+  ],
+  "languageRuntimeGate": {
+    "stage": 3,
+    "result": "blocked",
+    "evidence": "docs/sysml-v2-runtime-blocker.md",
+    "audit": "standards/generated/sysml-2.0/structural-audit.json"
+  },
+  "structuralAuditResult": "blocked",
+  "result": "blocked",
+  "scope": "Necessary prerequisite inventory only; successful inventory would not establish complete language milestone acceptance."
+}

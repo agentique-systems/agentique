@@ -10,6 +10,13 @@ The shared metamodel importer now handles SysML 2.0, but runtime descriptor
 registration is [blocked by published property metadata](sysml-v2-runtime-blocker.md).
 Planned SysML runtime nodes below remain unimplemented.
 
+The modeling-platform milestone's prerequisite check reproduced this blocker on
+fetched `main`; its stages 0-6 have not begun. See the
+[platform prerequisite record](../verification/modeling-platform-v2/README.md)
+for the exact base, commands and resumption conditions. Repository, API, view and
+transformation boundaries must be designed against the completed generation-2
+language stack before they are shown as implemented components here.
+
 ## Generation 2: language engine under development
 
 Arrows point from a consumer to its dependency. Dashed nodes are planned; they do

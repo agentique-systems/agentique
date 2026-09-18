@@ -5,6 +5,7 @@
   "claim": "Bounded generation-2 language infrastructure; no full conformance, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": { "stage": 3, "result": "blocked", "evidence": "docs/sysml-v2-runtime-blocker.md", "audit": "standards/generated/sysml-2.0/structural-audit.json" },
+  "modeling_platform_gate": { "stage": "prerequisite", "result": "blocked", "evidence": "verification/modeling-platform-v2/README.md", "completed_stages": [], "reason": "Fetched main lacks the assumed completed generation-2 SysML language milestone; runtime readiness still fails on pinned property metadata." },
   "status_meaning": {
     "implemented": "Implemented within the explicitly stated boundary.",
     "partial": "Some required capabilities exist; listed gaps remain.",
