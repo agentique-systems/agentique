@@ -15,14 +15,21 @@
     },
     "runtime_registration": "not-reached: full translation fails",
     "final_verification": {
-      "status": "pending",
-      "results": "verification/language-core-completion-v2/final/results.json"
+      "results": "verification/language-core-completion-v2/final/results.json",
+      "commands_run": 15,
+      "exit_zero": 13,
+      "runtime_gate_exit_codes": {
+        "kerml-1.0": 1,
+        "sysml-2.0": 1
+      },
+      "runner_exit_code": 1,
+      "protected_files_verified": 465
     },
     "categories": {
       "C": "Integer and Real",
       "D": "association inheritance",
       "E": "five exact naming anomalies",
-      "F": "definedFlow property context interpretation"
+      "F": "definedFlow context and final inherited-feature constraint reconciliation (ADR 0010)"
     },
     "reports": [
       "standards/generated/kerml-1.0/full-audit.json",

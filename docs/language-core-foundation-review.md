@@ -38,6 +38,16 @@ links actual commands/exits. The candidate ownership matrix is diagnostic
 investigation, not a passing runtime regression matrix. There is no successful
 complete runtime or stress-matrix result. The completion conditions therefore fail.
 
+## Completion-v2 final verification
+
+All [15 final commands](../verification/language-core-completion-v2/final/results.json)
+ran: 13 exited zero, both complete runtime commands exited 1, and the runner
+exited 1. Strict Rustdoc covered all five existing public generation-2 crates and
+the generator. All four browser tests passed. Independent complete-XMI and
+Property-evidence checks passed. Preservation verified 465 protected files and
+all five earlier anomaly dispositions. These successes establish no new complete
+runtime capability and do not pass the foundation review.
+
 ## Historical completion-v1 review (unchanged)
 
 # Language core foundation review, 2026-09-18

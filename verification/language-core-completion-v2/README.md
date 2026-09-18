@@ -42,7 +42,7 @@ by UML24-96; and records PDF page hashes. The result is
 `--check` compares bytes without writing. A zero exit means the evidence remains
 reproducible, not that any candidate rule is accepted.
 
-Research-only local prerequisites are Python `pypdf` and the previously acquired
+Research-only local prerequisites are Python `pypdf` 6.19.0 and the previously acquired
 `.cache/sysml-resume/UML.{pdf,xmi}` with hashes checked by the script. Their official
 source URLs are in ADR 0010 and the evidence. PDF figures were rendered with
 `pypdfium2` 5.13.0 installed only under `.cache/language-core-completion-v2/python`,
@@ -85,6 +85,16 @@ evidence, kernel tests, generator tests, formatting, complete audit currentness 
 independent complete-XMI manifest verification. These are existing-runtime and
 evidence checks; their success does not complete Gate 0.
 
-The final verification result is recorded separately after execution. The
-[foundation review](../../docs/language-core-foundation-review.md) must remain
-incomplete unless both runtime gates and all foundation obligations pass.
+[Final verification](final/results.json): all **15** commands ran. **13** returned
+zero; both complete runtime gates returned **1**, so the runner returned **1**.
+All workspace, strict Rustdoc, generator-currentness, standards and frontend
+checks passed, including all four browser tests. Independent complete-XMI
+verification, authority evidence currentness and preservation checks passed.
+The preservation check verified 465 protected files and all five earlier anomaly
+entries. No runtime failure is reclassified by a passing refusal regression.
+
+Investigation/evidence commit: `cc49729`. A separate commit records final logs and
+status. Raw downloaded HTML retains its source whitespace; process logs retain
+actual line endings through local Git attributes. Neither is whitespace-cleaned
+into different evidence bytes. The [foundation review](../../docs/language-core-foundation-review.md)
+remains incomplete. No public runtime crate or language rule changed.

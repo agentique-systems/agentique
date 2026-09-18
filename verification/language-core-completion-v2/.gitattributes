@@ -1,0 +1,3 @@
+# Research acquisitions and actual process output retain original bytes.
+evidence/*.html -text -diff
+*.txt -text
