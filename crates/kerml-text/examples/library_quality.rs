@@ -55,7 +55,13 @@ fn serialized_diagnostics(values: &BTreeMap<(&'static str, ElementId), String>) 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
-    let profile = if std::env::args().any(|a| a == "--v3") {
+    let profile = if std::env::args().any(|a| a == "--v4") {
+        agq_kerml::BaselineProfile::OPERATIONAL_V4
+    } else if std::env::args().any(|a| a == "--published") {
+        agq_kerml::BaselineProfile::PublishedKerMl10
+    } else if std::env::args().any(|a| a == "--v1") {
+        agq_kerml::BaselineProfile::OPERATIONAL_V1
+    } else if std::env::args().any(|a| a == "--v3") {
         agq_kerml::BaselineProfile::OPERATIONAL_V3
     } else {
         agq_kerml::BaselineProfile::OPERATIONAL_V2

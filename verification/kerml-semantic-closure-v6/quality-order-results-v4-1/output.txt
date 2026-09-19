@@ -1,0 +1,7 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 16.23s
+     Running `target/kerml-v4\release\examples\library_quality.exe --v4 --output=verification/kerml-semantic-closure-v6/quality-order-results-v4-1/quality.json`
+refinement 0: 0 provisional endpoints; 4000 obligations
+refinement 1: 2110 provisional endpoints; 1890 obligations
+error: process didn't exit successfully: `target/kerml-v4\release\examples\library_quality.exe --v4 --output=verification/kerml-semantic-closure-v6/quality-order-results-v4-1/quality.json` (exit code: 0xffffffff)

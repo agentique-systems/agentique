@@ -1,0 +1,1 @@
+KLCV6-F-001 independently reproduced: explicit antecedent true; literal rule false; prose rule reflexively true; five synthetic profiles complete

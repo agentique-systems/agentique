@@ -131,57 +131,12 @@ impl KerMlQueries<'_> {
             // OwningMembership derives its names from the member Element.
             return names;
         }
-        let mut pending: Vec<_> = element.into_iter().collect();
-        let mut seen = BTreeSet::new();
-        while let Some(id) = pending.pop() {
-            if !seen.insert(id) {
-                out.problem(
-                    Completeness::Incomplete,
-                    "KQ_NAMING_CYCLE",
-                    id,
-                    "Cyclic namingFeature dependencies do not establish an effective name",
-                );
-                continue;
+        if let Some(element) = element {
+            let effective = self.effective_names(element);
+            if let EffectiveNames::Determinate(values) = &effective.value {
+                names.extend(values.iter().cloned());
             }
-            let before = names.len();
-            for property in [p::ELEMENT_DECLARED_NAME, p::ELEMENT_DECLARED_SHORT_NAME] {
-                if let Some(Value::String(name)) = self.read_value(out, id, property) {
-                    names.insert(name.clone());
-                }
-            }
-            if names.len() == before && self.is(id, c::FEATURE) {
-                // Feature::namingFeature is the FIRST owned Redefinition. It
-                // does not combine names from all redefinition targets.
-                let relationships = self.owned_relationships(id);
-                if let Some(relationship) = relationships
-                    .value
-                    .iter()
-                    .find(|r| self.is(**r, c::REDEFINITION))
-                {
-                    pending.extend(self.read_reference(
-                        out,
-                        *relationship,
-                        p::REDEFINITION_REDEFINED_FEATURE,
-                    ));
-                } else {
-                    // A required implied positional redefinition participates
-                    // in naming too. A singleton establishes its first target
-                    // without inventing an order among implied relationships.
-                    let implied = self.implied_redefinitions(id);
-                    if implied.value.len() == 1 {
-                        pending.extend(implied.value.iter().copied());
-                    } else if implied.value.len() > 1 {
-                        out.problem(
-                            Completeness::Incomplete,
-                            "KQ_IMPLIED_NAMING_ORDER",
-                            id,
-                            "Multiple implied redefinitions require an established owned relationship order for naming",
-                        );
-                    }
-                    out.merge(implied);
-                }
-                out.merge(relationships);
-            }
+            out.merge(effective);
         }
         names
     }

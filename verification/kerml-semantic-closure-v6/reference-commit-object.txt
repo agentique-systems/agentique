@@ -1,0 +1,8 @@
+tree 77070506777bc4df4016e30a1db0d5d27edaf7e7
+parent f35b6a5bbed2a070d41d2462f13930e9ef2837c3
+author Ed Seidewitz <ed-s@modeldriven.com> 1785701143 -0400
+committer Ed Seidewitz <ed-s@modeldriven.com> 1785794355 -0400
+
+KERML11-68 Revised validateRedefinitionEndConformance impl as resolved.
+
+- Also updated Xpect test Redefinition_End_Invalid.kerml.

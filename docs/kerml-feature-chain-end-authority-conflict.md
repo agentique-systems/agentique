@@ -55,3 +55,15 @@ isolated from Agentique construction defects, outside the existing correction
 authorities, and requires a materially different semantic rule or library fact.
 Ordinary implementation gaps remain work after that authority decision. Neither
 this witness nor successful kernel storage constitutes accepted publication.
+
+## V6 operational disposition
+
+The project now authorizes exactly the owner-restricted validation rule verified
+in official pilot commit `d9231d21e621aeabeafa92aef026b3929c859116`. Explicit
+Operational KerML 1.0/v4 implements it; Published through v3 preserve the failed
+implication documented above. See [ADR 0016](adr/0016-operational-semantic-validation-corrections.md)
+and the [v6 authority packet](../verification/kerml-semantic-closure-v6/authority-packet.json).
+No end flags, source bytes or lowering structure are changed by the correction.
+This disposes of KLCV5-F-001 operationally without claiming final OMG adoption.
+The independent [KLCV6-F-001](kerml-subobject-specialization-authority-conflict.md)
+and outstanding structural work still prevent accepted library publication.

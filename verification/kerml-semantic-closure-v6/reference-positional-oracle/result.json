@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v6/reference-positional-oracle.py"
+  ],
+  "started": "2026-09-19T19:26:56.512565+00:00",
+  "duration_seconds": 2.140999999945052,
+  "exit_code": 0,
+  "output": "output.txt"
+}

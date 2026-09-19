@@ -20,7 +20,11 @@ verification/language-core-completion-v3/** -text
 verification/sysml-semantic-foundation-v1/** -text
 verification/kerml-operational-errata-publication-v3/** -text
 verification/kerml-name-resolution-errata-publication-v4/** -text
+verification/kerml-library-content-errata-publication-v5/** -text
+verification/kerml-semantic-closure-v6/** -text
 # Manifest hashes identify reviewed bytes, including line endings.
 standards/kerml-1.0-operational-errata*.json -text
+standards/kerml-1.0-operational-library-errata-v3.json -text
+standards/kerml-1.0-operational-validation-errata-v4.json -text
 # Reviewed v1 bytes use CRLF; still check actual spaces and blank lines.
 standards/kerml-1.0-operational-errata.json whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

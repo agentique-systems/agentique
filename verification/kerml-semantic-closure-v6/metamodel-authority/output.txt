@@ -1,0 +1,207 @@
+Behavior parameter {'{http://www.omg.org/spec/XMI/20161101}id': 'Kernel-Behaviors-Behavior-parameter', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'isOrdered': 'true', 'name': 'parameter'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Behaviors-Behavior-parameter-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The parameters of this <code>Behavior</code>, which are defined as its <code>directedFeatures</code>, whose values are passed into and/or out of a performance of the <code>Behavior</code>.</p> "
+  }
+]
+Step parameter {'{http://www.omg.org/spec/XMI/20161101}id': 'Kernel-Behaviors-Step-parameter', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'isOrdered': 'true', 'name': 'parameter'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Behaviors-Step-parameter-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>parameters</code> of this <code>Step</code>, which are defined as its <code>directedFeatures</code>, whose values are passed into and/or out of a performance of the <code>Step</code>.</p> "
+  }
+]
+Expression result {'{http://www.omg.org/spec/XMI/20161101}id': 'Kernel-Functions-Expression-result', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'name': 'result'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Expression-result-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p><p>An <code>output</code> <code>parameter</code> of the <code>Expression</code> whose value is the result of the <code>Expression</code>. The result of an <code>Expression</code> is either inherited from its <code>function</code> or it is related to the <code>Expression</code> via a <code>ReturnParameterMembership</code>, in which case it redefines the <code>result</code> <code>parameter</code> of its <code>function</code>.</p> "
+  }
+]
+Function result {'{http://www.omg.org/spec/XMI/20161101}id': 'Kernel-Functions-Function-result', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'name': 'result'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-result-_comment.1",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The object or value that is the result of evaluating the Function.</p>"
+  },
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-result-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>result</code> <code>parameter</code> of the <code>Function</code>, which is owned by the <code>Function</code> via a <code>ReturnParameterMembership</code>.</p> "
+  }
+]
+Disjoining owningType {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-Disjoining-owningType', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'name': 'owningType'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Disjoining-owningType-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>A <code>typeDisjoined</code> that is also an <code>owningRelatedElement</code>.</p>"
+  }
+]
+Type ownedSpecialization {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-Type-ownedSpecialization', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'isOrdered': 'true', 'name': 'ownedSpecialization'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-ownedSpecialization-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>ownedRelationships</code> of this <code>Type</code> that are <code>Specializations</code>, for which the <code>Type</code> is the <code>specific</code> <code>Type</code>.</p> "
+  }
+]
+Type ownedFeatureMembership {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-Type-ownedFeatureMembership', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'isOrdered': 'true', 'name': 'ownedFeatureMembership'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-ownedFeatureMembership-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>ownedMemberships</code> of this <code>Type</code> that are <code>FeatureMemberships</code>, for which the <code>Type</code> is the <code>owningType</code>. Each such <code>FeatureMembership</code> identifies an <code>ownedFeature</code> of the <code>Type</code>.</p> "
+  }
+]
+Type endFeature {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-Type-endFeature', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'isOrdered': 'true', 'name': 'endFeature'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-endFeature-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>All <code>features</code> of this <code>Type</code> with <code>isEnd = true</code>.</p>"
+  }
+]
+Type featureMembership {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-Type-featureMembership', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'isOrdered': 'true', 'name': 'featureMembership'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-featureMembership-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>FeatureMemberships</code> for <code>features</code> of this <code>Type</code>, which include all <code>ownedFeatureMemberships</code> and those <code>inheritedMemberships</code> that are <code>FeatureMemberships</code> (but does <em>not</em> include any <code>importedMemberships</code>).</p> "
+  }
+]
+Type inheritedMemberships {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-Type-inheritedMemberships_Namespace_Type_Boolean', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Operation', 'name': 'inheritedMemberships'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-inheritedMemberships_Namespace_Type_Boolean-unnamed1-specification0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+    "body": "removeRedefinedFeatures( inheritableMemberships(excludedNamespaces, excludedTypes, excludeImplied))",
+    "language": "OCL2.0",
+    "name": ""
+  },
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-inheritedMemberships_Namespace_Type_Boolean-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>Return the <code>Memberships</code> inheritable from supertypes of this <code>Type</code> with redefined <code>Features</code> removed. When computing inheritable <code>Memberships</code>, exclude <code>Imports</code> of <code>excludedNamespaces</code>, <code>Specializations</code> of <code>excludedTypes</code>, and, if <code>excludeImplied = true</code>, all implied <code>Specializations</code>.</p> "
+  }
+]
+FeatureMembership owningType {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-FeatureMembership-owningType', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'name': 'owningType'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-FeatureMembership-owningType-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>Type</code> that owns this <code>FeatureMembership</code>.</p> "
+  }
+]
+Conjugation owningType {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-Conjugation-owningType', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'name': 'owningType'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Conjugation-owningType-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>conjugatedType</code> of this <code>Conjugation</code> that is also its <code>owningRelatedElement</code>.</p> "
+  }
+]
+Specialization owningType {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Types-Specialization-owningType', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'name': 'owningType'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Specialization-owningType-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>Type</code> that is the <code>specific</code> <code>Type</code> of this <code>Specialization</code> and owns it as its <code>owningRelatedElement</code>.</p> "
+  }
+]
+Redefinition validateRedefinitionEndConformance {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Features-Redefinition-validateRedefinitionEndConformance', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Constraint', 'name': 'validateRedefinitionEndConformance'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Redefinition-validateRedefinitionEndConformance-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>If the redefinedFeature of a Redefinition has isEnd = true, then the redefiningFeature must have isEnd = true.</p>"
+  },
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Redefinition-validateRedefinitionEndConformance-specification0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+    "body": "redefinedFeature.isEnd implies redefiningFeature.isEnd",
+    "language": "OCL2.0",
+    "name": ""
+  }
+]
+Feature owningType {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Features-Feature-owningType', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'name': 'owningType'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-owningType-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>Type</code> that is the <code>owningType</code> of the <code>owningFeatureMembership</code> of this <code>Feature</code>.</p>"
+  }
+]
+Feature ownedRedefinition {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Features-Feature-ownedRedefinition', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Property', 'isDerived': 'true', 'name': 'ownedRedefinition'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-ownedRedefinition-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>The <code>ownedSubsettings</code> of this <code>Feature</code> that are <code>Redefinitions</code>, for which the <code>Feature</code> is the <code>redefiningFeature</code>.</p>  "
+  }
+]
+Feature namingFeature {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Features-Feature-namingFeature_', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Operation', 'name': 'namingFeature'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-namingFeature_-unnamed1-specification0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+    "body": "if ownedRedefinition->isEmpty() then null else ownedRedefinition->at(1).redefinedFeature endif",
+    "language": "OCL2.0",
+    "name": ""
+  },
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-namingFeature_-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>By default, the naming <code>Feature</code> of a <code>Feature</code> is given by its first <code>redefinedFeature</code> of its first <code>ownedRedefinition</code>, if any.</p>"
+  }
+]
+Feature checkFeatureParameterRedefinition {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Features-Feature-checkFeatureParameterRedefinition', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Constraint', 'name': 'checkFeatureParameterRedefinition'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureParameterRedefinition-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>If a <code>Feature</code> is a <code>parameter</code> of an <code>owningType</code> that is a <code>Behavior</code> or <code>Step</code>, but <em>not</em> </p> <ul>     <li>A <code>result</code> <code>parameter</code></li>     <li>A <code>parameter</code> of an <code>InvocationExpression</code>, with at least one non-implied <code>ownedRedefinition</code></li> </ul> <p>then, for each direct supertype of its <code>owningType</code> that is also a <code>Behavior</code> or <code>Step</code>, it must redefine the <code>parameter</code> at the same position, if any.</p>"
+  },
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureParameterRedefinition-specification0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+    "body": "owningType <> null and not owningFeatureMembership.     oclIsKindOf(ReturnParameterMembership) and (owningType.oclIsKindOf(Behavior) or  owningType.oclIsKindOf(Step) and     (owningType.oclIsKindOf(InvocationExpression) implies       not ownedRedefinition->exists(not isImplied))  implies     let i : Integer =         owningType.ownedFeature->select(direction <> null)->             reject(owningFeatureMembership.                 oclIsKindOf(ReturnParameterMembership))->             indexOf(self) in     owningType.ownedSpecialization.general->         forAll(supertype |             let ownedParameters : Sequence(Feature) =                 supertype.ownedFeature->select(direction <> null)->                      reject(owningFeatureMembership.                          oclIsKindOf(ReturnParameterMembership)) in             ownedParameters->size() >= i implies                 redefines(ownedParameters->at(i))",
+    "language": "OCL2.0",
+    "name": ""
+  }
+]
+Feature checkFeatureEndRedefinition {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Features-Feature-checkFeatureEndRedefinition', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Constraint', 'name': 'checkFeatureEndRedefinition'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureEndRedefinition-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>If a <code>Feature</code> has <code>isEnd = true</code> and an <code>owningType</code> that is not empty, then, for each direct supertype of its <code>owningType</code>, it must redefine the <code>endFeature</code> at the same position, if any.</p>"
+  },
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureEndRedefinition-specification0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+    "body": "isEnd and owningType <> null implies     let i : Integer =          owningType.ownedEndFeature->indexOf(self) in     owningType.ownedSpecialization.general->         forAll(supertype |              supertype.endFeature->size() >= i implies                 redefines(supertype.endFeature->at(i))",
+    "language": "OCL2.0",
+    "name": ""
+  }
+]
+Feature checkFeatureResultRedefinition {'{http://www.omg.org/spec/XMI/20161101}id': 'Core-Features-Feature-checkFeatureResultRedefinition', '{http://www.omg.org/spec/XMI/20161101}type': 'uml:Constraint', 'name': 'checkFeatureResultRedefinition'}
+[
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureResultRedefinition-_comment.0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+    "body": "<p>If a <code>Feature</code> is a <code>result</code> <code>parameter</code> of an <code>owningType</code> that is a <code>Function</code> or <code>Expression</code>, then, for each direct supertype of its <code>owningType</code> that is also a <code>Function</code> or <code>Expression</code>, it must redefine the <code>result</code> <code>parameter</code>.</p>"
+  },
+  {
+    "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureResultRedefinition-specification0",
+    "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+    "body": "owningType <> null and (owningType.oclIsKindOf(Function) and     self = owningType.oclAsType(Function).result or  owningType.oclIsKindOf(Expression) and     self = owningType.oclAsType(Expression).result) implies     owningType.ownedSpecialization.general->         select(oclIsKindOf(Function) or oclIsKindOf(Expression))->         forAll(supertype |             redefines(                 if superType.oclIsKindOf(Function) then                     superType.oclAsType(Function).result                 else                     superType.oclAsType(Expression).result                 endif)",
+    "language": "OCL2.0",
+    "name": ""
+  }
+]

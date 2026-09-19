@@ -1,0 +1,343 @@
+{
+  "format": "agentique-model-api-coverage/0.1",
+  "official_openapi_sha256": "17e7e8586df6c51ada09d802f48bec6dd68d141454fae05d3f45e9b9879e01ab",
+  "prefix": "/api/model",
+  "conformance": "not_claimed",
+  "official_conformance_suite": "not_run",
+  "simulation_prefix": "/api/agentique",
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/projects",
+      "operation_id": "getProjects",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "POST",
+      "path": "/projects",
+      "operation_id": "postProject",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}",
+      "operation_id": "getProjectById",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "PUT",
+      "path": "/projects/{projectId}",
+      "operation_id": "putProjectById",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "DELETE",
+      "path": "/projects/{projectId}",
+      "operation_id": "deleteProjectById",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/branches",
+      "operation_id": "getBranchesByProject",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "POST",
+      "path": "/projects/{projectId}/branches",
+      "operation_id": "postBranchByProject",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/branches/{branchId}",
+      "operation_id": "getBranchesByProjectAndId",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "DELETE",
+      "path": "/projects/{projectId}/branches/{branchId}",
+      "operation_id": "deleteBranchByProjectAndId",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/tags",
+      "operation_id": "getTagsByProject",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "POST",
+      "path": "/projects/{projectId}/tags",
+      "operation_id": "postTagByProject",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/tags/{tagId}",
+      "operation_id": "getTagByProjectAndId",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "DELETE",
+      "path": "/projects/{projectId}/tags/{tagId}",
+      "operation_id": "deleteTagByProjectAndId",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits",
+      "operation_id": "getCommitsByProject",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "POST",
+      "path": "/projects/{projectId}/commits",
+      "operation_id": "postCommitByProject",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}",
+      "operation_id": "getCommitByProjectAndId",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/changes",
+      "operation_id": "getChangesByProjectCommit",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/changes/{changeId}",
+      "operation_id": "getChangeByProjectCommitId",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/elements",
+      "operation_id": "getElementsByProjectCommit",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Partial metaclass projection; not full Element interchange schema."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/elements/{elementId}",
+      "operation_id": "getElementByProjectCommitId",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Partial metaclass projection; not full Element interchange schema."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/elements/{elementId}/projectUsage",
+      "operation_id": "getProjectUsageByProjectCommitElement",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/roots",
+      "operation_id": "getRootsByProjectCommit",
+      "status": "mapped_read_subset",
+      "implementation": "crates/server/src/model_api.rs",
+      "tests": [
+        "tests/browser/console.spec.ts"
+      ],
+      "limitations": "Partial metaclass projection; not full Element interchange schema."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/elements/{relatedElementId}/relationships",
+      "operation_id": "getRelationshipsByProjectCommitRelatedElement",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{compareCommitId}/diff",
+      "operation_id": "diff",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "POST",
+      "path": "/projects/{projectId}/branches/{targetBranchId}/merge",
+      "operation_id": "merge",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/queries",
+      "operation_id": "getQueriesByProject",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "POST",
+      "path": "/projects/{projectId}/queries",
+      "operation_id": "postQueryByProject",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/queries/{queryId}",
+      "operation_id": "getQueryByProjectAndId",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "PUT",
+      "path": "/projects/{projectId}/queries/{queryId}",
+      "operation_id": "putQueryByProjectAndId",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "DELETE",
+      "path": "/projects/{projectId}/queries/{queryId}",
+      "operation_id": "deleteQueryByProjectAndId",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/queries/{queryId}/results",
+      "operation_id": "getQueryResultsByProjectIdQueryId",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{projectId}/query-results",
+      "operation_id": "getQueryResultsByProjectIdQuery",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "POST",
+      "path": "/projects/{projectId}/query-results",
+      "operation_id": "getQueryResultsByProjectIdQueryPost",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/meta/datatypes",
+      "operation_id": "getDatatypes",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    },
+    {
+      "method": "GET",
+      "path": "/meta/datatypes/{datatypeId}",
+      "operation_id": "getDatatypeById",
+      "status": "not_implemented",
+      "implementation": null,
+      "tests": [],
+      "limitations": "Single local project and main branch."
+    }
+  ]
+}

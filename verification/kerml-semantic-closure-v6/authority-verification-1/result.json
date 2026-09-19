@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v6/verify-authority.py",
+    "--git"
+  ],
+  "started": "2026-09-19T18:24:42.437144+00:00",
+  "duration_seconds": 2.4839999999385327,
+  "exit_code": 0,
+  "output": "output.txt"
+}

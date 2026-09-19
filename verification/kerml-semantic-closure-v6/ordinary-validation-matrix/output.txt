@@ -1,0 +1,11 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.66s
+     Running tests\ordinary_validation_v6.rs (target\debug\deps\ordinary_validation_v6-c0aca9b521b57ba0.exe)
+
+running 3 tests
+test constructor_result_parameter_ownership_exception_is_preserved ... ok
+test subsetting_reports_independent_uniqueness_and_constant_violations ... ok
+test classifier_specialization_checks_semantic_kinds ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+

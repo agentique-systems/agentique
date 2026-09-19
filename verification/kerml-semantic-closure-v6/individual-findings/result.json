@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v6/classify-findings.py"
+  ],
+  "started": "2026-09-19T19:43:22.370659+00:00",
+  "duration_seconds": 3.0160000000614673,
+  "exit_code": 0,
+  "output": "output.txt"
+}

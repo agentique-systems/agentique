@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/12";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/14";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -233,7 +233,7 @@ impl<'m> SemanticContext<'m> {
         let mismatch = |origin: &Origin| {
             matches!(origin,
             Origin::Declared(DeclaredOrigin::ReviewedCorrection { profile: correction, .. })
-                if correction != profile.id())
+                if !profile.accepts_correction_profile(correction))
         };
         for record in model.elements() {
             if mismatch(record.origin()) {

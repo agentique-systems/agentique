@@ -383,3 +383,70 @@ quality classification, constraint coverage and the separate authority stop.
 Workspace/front-end/end-to-end checks and strict Rustdoc pass. The stale binding
 check and strict raw conformance failures remain explicit; generation-1 release
 obligations and the historical independent fixture diagnostic are preserved.
+
+## V6 — Explicit validation erratum and independent subobject authority stop
+
+Operational v4 implements exactly the reviewed KERML11-68 owner restriction.
+The official Git commit, validator diff, changed reference tests, pinned formal
+rule, preliminary wording, current implied-XMI witness and 220 arbitrary-name
+canonical cases are independently verified. Published through v3 retain their
+end-conformance behavior. All source/model correction IDs remain those of v3;
+the validation-only successor carries a distinct semantic context and manifest.
+
+Ordinary implementation advanced: owned specialization order is projected from
+stored ownership; canonical inherited result memberships participate in positional
+result redefinition; feature-chain terminal features supply structural end
+populations; and implied names are complete when all possible targets agree.
+Different possible names remain typed ambiguity, with no ID/order tie-break.
+Additional local structural constraints are checked. These changes do not claim
+full structural closure or full positional reference-XMI agreement.
+
+The full inventory independently reproduced
+[KLCV6-F-001 / KERML11-205](kerml-subobject-specialization-authority-conflict.md):
+the subobject specialization rule's prose and formal target disagree. The actual
+pinned subobjects declaration is a witness using explicit facts and reflexive
+specialization, independent of incomplete inference. This new authority choice
+is outside the four authorized errata. It is the stop reason. Ordinary incomplete
+queries and remaining implementation workload are not stop reasons.
+
+Fresh grouped measurements, retained failures, exact commands and exit codes are
+in the [v6 evidence index](../verification/kerml-semantic-closure-v6/README.md).
+No historical count is used as an expected final result.
+
+The final audit measures 29,140 canonical records and 4,000 references: four
+unresolved, 60 incomplete reference answers, zero ambiguous candidate sets and
+zero stored endpoint mismatches. Two distinguishability findings remain in
+Triggers. Observed expression-result cardinality findings fall to zero, while a
+new end-membership check exposes 180 construction defects. The 258-constraint
+inventory has 38 explicit checks; full structural validation is not established.
+All remaining diagnostics are individually classified as implementation defects
+or missing structural rules. The 3,901 executable/function elements remain a
+separate deferred population.
+
+| Required review question | V6 answer |
+| --- | --- |
+| 1. Pinned source bytes unchanged? | Yes; the v6 starting-byte preservation audit checks all 1,692 original files. Historical v5 acquisition-index discrepancies are separately retained and documented. |
+| 2. Published KERML11-68 behavior reproducible? | Yes; Published and v1–v3 retain the unconditional implication in the five-profile matrix. |
+| 3. V4 exactly implements the reviewed validator change? | Yes; the owning-Type restriction matches the independently verified commit; missing facts remain incomplete. |
+| 4. Association/Connector end redefinitions still checked? | Yes, including AssociationStructure and BindingConnector metaclass subtypes. |
+| 5. StatePerformances passes without source rewrite? | Its independently captured prescribed/reference end pair passes the v4 rule and fails the historical rule with unchanged flags. Full Agentique feature-chain structural construction remains unfinished. |
+| 6. Implied positional naming complete? | Not established. Ordered ownership and name agreement/typed ambiguity are implemented; corpus closure and the complete independent target comparison remain obligations. |
+| 7. All required references Complete? | No. Four unresolved references and 60 incomplete reference answers remain; nonempty candidates never count as success. |
+| 8. All distinguishability findings resolved? | No. Two findings remain in Triggers. |
+| 9. Expression results valid? | The complete recount has zero result-cardinality findings. Full structural expression coverage remains unestablished, so semantic acceptance is withheld. |
+| 10. Feature-chain interpretation complete? | No. Terminal end population is improved, but the full prescribed structural expansion and evidence remain work. |
+| 11. Required formal validation coverage complete? | No. There are 38 explicit checks among 258 inventoried constraints. The independent target conflict blocks authority closure and other structural coverage remains required. |
+| 12. Strict semantic publication passes? | No; no language-semantic acceptance operation issues acceptance in this change. Kernel storage acceptance is separate. |
+| 13. Accepted immutable facade published? | No. `LoadedKermlStandardLibraries` is withheld. |
+| 14. Accepted bindings current? | No. Regeneration is withheld until accepted publication; the historical candidate manifest is unchanged. |
+| 15. Authored projects consume accepted libraries? | No. Explicit v4 authored profile metadata is tested; accepted library consumption remains unavailable. |
+| 16. Corrections/proofs explainable? | Yes for the implemented correction: profile, manifest, rule, endpoint flags, actual owning Type/metaclass, fact origins and search dependencies are retained. Full publication dependency coverage is not claimed. |
+| 17. Historical profiles reproducible? | Yes for the frozen profile matrices and manifests. Ordinary query implementation has an independently versioned rule-set identity. |
+| 18. Execution still deferred separately? | Yes. Structural deficiencies are not moved into the execution count. |
+| 19. Both complete structural runtime gates green? | Yes; both fresh runtime commands exit 0. Strict published metamodel authoring conformance remains separately failing. |
+
+See [ADR 0016](adr/0016-operational-semantic-validation-corrections.md) for the
+v4 authority boundary. No Systems Library publication, SysML semantics/frontend,
+repository/API, transforms, simulation or application migration is introduced.
+
+**KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**

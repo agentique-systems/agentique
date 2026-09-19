@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--release",
+    "--target-dir",
+    "target/kerml-v4",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "library_quality",
+    "--",
+    "--v4",
+    "--output=verification/kerml-semantic-closure-v6/quality-baseline-v4-release/quality.json"
+  ],
+  "started": "2026-09-19T18:25:24.701966+00:00",
+  "duration_seconds": 1809.609000000055,
+  "exit_code": 1,
+  "output": "output.txt"
+}

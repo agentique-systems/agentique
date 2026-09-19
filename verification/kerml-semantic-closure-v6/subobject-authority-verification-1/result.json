@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v6/verify-subobject-authority.py"
+  ],
+  "started": "2026-09-19T18:55:01.787618+00:00",
+  "duration_seconds": 0.10999999998603016,
+  "exit_code": 1,
+  "output": "output.txt"
+}

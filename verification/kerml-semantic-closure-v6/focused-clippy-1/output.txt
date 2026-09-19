@@ -1,0 +1,51 @@
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+error: this `if` statement can be collapsed
+   --> crates\kerml-semantics\src\implicit.rs:459:13
+    |
+459 | /             if let Some(target) = chained.filter(|&target| target != current) {
+460 | |                 if !generals.contains(&target) {
+461 | |                     generals.push(target);
+462 | |                 }
+463 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+459 ~             if let Some(target) = chained.filter(|&target| target != current)
+460 ~                 && !generals.contains(&target) {
+461 |                     generals.push(target);
+462 ~                 }
+    |
+
+error: this `if` statement can be collapsed
+  --> crates\kerml-semantics\src\validation.rs:41:13
+   |
+41 | /             if let Some(ty) = owner.value {
+42 | |                 if self
+43 | |                     .checked::<agq_kerml::views::Type, _>(&mut out, ty)
+44 | |                     .is_some()
+...  |
+62 | |             }
+   | |_____________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#collapsible_if
+help: collapse nested if block
+   |
+41 ~             if let Some(ty) = owner.value
+42 ~                 && self
+43 |                     .checked::<agq_kerml::views::Type, _>(&mut out, ty)
+...
+60 |                     );
+61 ~                 }
+   |
+
+error: could not compile `agq-kerml-semantics` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

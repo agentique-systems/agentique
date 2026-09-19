@@ -109,3 +109,36 @@ V3 construction is not an accepted publication. The separately reproduced
 blocks strict semantic acceptance. Incomplete naming, required references,
 expression structure and formal-validation coverage remain explicit obligations;
 no candidate bindings or facade are labeled accepted.
+
+## Operational KerML 1.0/v4 — reviewed validation semantics
+
+`agentique-kerml-1.0-operational/4` adds only the reviewed KERML11-68 validation
+interpretation to v3. Published, v1 (+81), v2 (+140), and v3 (+76) remain frozen
+and separately selectable. V4 adds no library-model or descriptor changes.
+
+For a non-end Feature redefining an end Feature, the revised constraint rejects
+the redefinition only if its actual owning Type conforms to Association or
+Connector, including their metaclass subtypes. Published through v3 retain the
+unconditional end implication. Neither end flags nor feature-chain lowering are
+changed to satisfy validation.
+
+[ADR 0016](adr/0016-operational-semantic-validation-corrections.md) defines the
+exact rule, profile lineage, proof contract and metadata obligations. The
+[frozen manifest](../standards/kerml-1.0-operational-validation-errata-v4.json)
+and [independent evidence](../verification/kerml-semantic-closure-v6/authority-packet.json)
+pin official pilot commit `d9231d21e621aeabeafa92aef026b3929c859116`, including
+the actual validator and regression-test changes. KERML11-68 remains open; this
+is not an adopted final KerML 1.1 correction.
+
+Canonical v3 correction facts retain their original v3 IDs and origins under
+this validation-only successor. SemanticContext includes the v4 identity and
+manifest digest, and authored SourceProjects can select v4 explicitly. The
+default `OPERATIONAL` remains v2. Future accepted publication/API metadata must
+identify both the profile and correction manifest; no acceptance is inferred
+from profile availability.
+
+The former end-conformance contradiction now has an explicit operational rule.
+The expanded inventory independently exposes
+[KLCV6-F-001 / KERML11-205](kerml-subobject-specialization-authority-conflict.md).
+V4 does not choose that rule's conflicting required specialization target, and
+strict semantic publication remains unaccepted.
