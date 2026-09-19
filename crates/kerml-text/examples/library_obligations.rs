@@ -2,7 +2,7 @@
 use agq_kerml::{classes as c, properties as p};
 use agq_kerml_semantics::{Completeness, QueryResult};
 use agq_kerml_syntax::production;
-use agq_kerml_text::library::{LibraryDraft, refine_declarations};
+use agq_kerml_text::library::{LibraryDraft, refine_declarations_with_profile};
 use agq_kernel::{ElementId, PropertyId, provenance::FactKey};
 use agq_standard_libraries::{LibraryLanguage, VerifiedLibrarySet};
 use serde_json::{Value, json};
@@ -39,11 +39,17 @@ impl Evidence {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
-    let draft = refine_declarations(&sources, |round, endpoints, obligations| {
-        println!(
-            "refinement {round}: {endpoints} provisional endpoints; {obligations} obligations"
-        );
-    })?;
+    let profile = if std::env::args().any(|a| a == "--published") {
+        agq_kerml::BaselineProfile::PublishedKerMl10
+    } else {
+        agq_kerml::BaselineProfile::OPERATIONAL
+    };
+    let draft =
+        refine_declarations_with_profile(&sources, profile, |round, endpoints, obligations| {
+            println!(
+                "refinement {round}: {endpoints} provisional endpoints; {obligations} obligations"
+            );
+        })?;
     let mut syntax = BTreeMap::new();
     for source in sources
         .documents()
@@ -158,7 +164,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
     let strict = strict_publication(&draft);
     let report = json!({
-        "format":"agentique-kerml-library-obligations/2",
+        "format":"agentique-kerml-library-obligations/3", "baseline_profile":profile.id(),
         "library_set":sources.content_set_id(),"rule_version":queries.context().rule_set_version,
         "evidence_encoding":"Dependency indexes reference evidence_dictionary; debug labels are evidence display, not semantic identity hashing.",
         "evidence_dictionary":evidence.values,"references":references,"semantic_queries":semantic,

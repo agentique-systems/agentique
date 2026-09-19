@@ -33,6 +33,7 @@ pub type LibrarySourceMap = BTreeMap<FactKey, SourceOrigin>;
 #[derive(Debug)]
 pub struct LibraryDraft {
     candidate: agq_kernel::ConstructionView,
+    profile: agq_kerml::BaselineProfile,
     source_map: LibrarySourceMap,
     roots: Vec<ElementId>,
     references: Vec<PendingLibraryReference>,
@@ -86,12 +87,22 @@ impl LibraryDraft {
             .id();
         let roots: std::collections::BTreeSet<_> = self.roots.iter().copied().collect();
         let availability = roots.iter().map(|r| (*r, roots.clone())).collect();
-        let context = SemanticContext::for_construction(&self.candidate, Default::default(), pins)
-            .and_then(|c| c.with_available_roots(availability))
-            .map_err(|e| LibraryLoadError::Interpretation(format!("{e:?}")))?
-            .with_standard_bindings(&self.roots, semantic)
-            .map_err(|e| LibraryLoadError::Interpretation(format!("Binding validation: {e:?}")))?;
+        let context = SemanticContext::for_construction(
+            &self.candidate,
+            agq_kerml_semantics::SemanticOptions {
+                baseline_profile: self.profile,
+                ..Default::default()
+            },
+            pins,
+        )
+        .and_then(|c| c.with_available_roots(availability))
+        .map_err(|e| LibraryLoadError::Interpretation(format!("{e:?}")))?
+        .with_standard_bindings(&self.roots, semantic)
+        .map_err(|e| LibraryLoadError::Interpretation(format!("Binding validation: {e:?}")))?;
         Ok(KerMlQueries::new(context))
+    }
+    pub fn baseline_profile(&self) -> agq_kerml::BaselineProfile {
+        self.profile
     }
     pub fn candidate(&self) -> &agq_kernel::ConstructionView {
         &self.candidate
@@ -129,7 +140,11 @@ struct Input {
 /// Parse the complete verified KerML corpus and lower declarations atomically.
 /// Unresolved relationships remain explicit assertions, never fabricated endpoints.
 pub fn lower_declarations(sources: &VerifiedLibrarySet) -> Result<LibraryDraft, LibraryLoadError> {
-    construction::construct(&parse_sources(sources)?, &BTreeMap::new())
+    construction::construct(
+        &parse_sources(sources)?,
+        &BTreeMap::new(),
+        agq_kerml::BaselineProfile::OPERATIONAL,
+    )
 }
 
 fn parse_sources(sources: &VerifiedLibrarySet) -> Result<Vec<Input>, LibraryLoadError> {
@@ -161,6 +176,15 @@ fn parse_sources(sources: &VerifiedLibrarySet) -> Result<Vec<Input>, LibraryLoad
 /// Complete publication must revalidate every resolution and structural obligation.
 pub fn refine_declarations(
     sources: &VerifiedLibrarySet,
+    progress: impl FnMut(usize, usize, usize),
+) -> Result<LibraryDraft, LibraryLoadError> {
+    refine_declarations_with_profile(sources, agq_kerml::BaselineProfile::OPERATIONAL, progress)
+}
+
+/// Reproduce construction under an explicitly selected authority profile.
+pub fn refine_declarations_with_profile(
+    sources: &VerifiedLibrarySet,
+    profile: agq_kerml::BaselineProfile,
     mut progress: impl FnMut(usize, usize, usize),
 ) -> Result<LibraryDraft, LibraryLoadError> {
     let inputs = parse_sources(sources)?;
@@ -173,7 +197,7 @@ pub fn refine_declarations(
                 "Resolution refinement cycle".into(),
             ));
         }
-        let draft = construction::construct(&inputs, &resolved)?;
+        let draft = construction::construct(&inputs, &resolved, profile)?;
         progress(round, resolved.len(), draft.candidate.obligations().len());
         let queries = draft.queries(sources)?;
         let mut next = BTreeMap::new();

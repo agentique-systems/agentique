@@ -1,0 +1,39 @@
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.14s
+     Running `target\debug\examples\grammar_inputs.exe`
+Kernel Data Type Library/Collections.kerml recognized
+Kernel Data Type Library/ScalarValues.kerml recognized
+Kernel Data Type Library/VectorValues.kerml recognized
+Kernel Function Library/BaseFunctions.kerml recognized
+Kernel Function Library/BooleanFunctions.kerml recognized
+Kernel Function Library/CollectionFunctions.kerml recognized
+Kernel Function Library/ComplexFunctions.kerml recognized
+Kernel Function Library/ControlFunctions.kerml recognized
+Kernel Function Library/DataFunctions.kerml recognized
+Kernel Function Library/IntegerFunctions.kerml recognized
+Kernel Function Library/NaturalFunctions.kerml recognized
+Kernel Function Library/NumericalFunctions.kerml recognized
+Kernel Function Library/OccurrenceFunctions.kerml recognized
+Kernel Function Library/RationalFunctions.kerml recognized
+Kernel Function Library/RealFunctions.kerml recognized
+Kernel Function Library/ScalarFunctions.kerml recognized
+Kernel Function Library/SequenceFunctions.kerml recognized
+Kernel Function Library/StringFunctions.kerml recognized
+Kernel Function Library/TrigFunctions.kerml recognized
+Kernel Function Library/VectorFunctions.kerml recognized
+Kernel Semantic Library/Base.kerml recognized
+Kernel Semantic Library/Clocks.kerml recognized
+Kernel Semantic Library/ControlPerformances.kerml recognized
+Kernel Semantic Library/FeatureReferencingPerformances.kerml recognized
+Kernel Semantic Library/KerML.kerml recognized
+Kernel Semantic Library/Links.kerml recognized
+Kernel Semantic Library/Metaobjects.kerml recognized
+Kernel Semantic Library/Objects.kerml recognized
+Kernel Semantic Library/Observation.kerml recognized
+Kernel Semantic Library/Occurrences.kerml recognized
+Kernel Semantic Library/Performances.kerml recognized
+Kernel Semantic Library/SpatialFrames.kerml recognized
+Kernel Semantic Library/StatePerformances.kerml recognized
+Kernel Semantic Library/Transfers.kerml recognized
+Kernel Semantic Library/TransitionPerformances.kerml recognized
+Kernel Semantic Library/Triggers.kerml recognized

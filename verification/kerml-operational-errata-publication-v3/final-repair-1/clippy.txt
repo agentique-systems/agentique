@@ -1,0 +1,15 @@
+    Blocking waiting for file lock on build directory
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+    Checking agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+    Checking agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+    Checking agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+    Checking agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+    Checking agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+    Checking agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+    Checking agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+    Checking agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.59s

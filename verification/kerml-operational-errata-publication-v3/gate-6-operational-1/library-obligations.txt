@@ -1,0 +1,12 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+error[E0425]: cannot find value `profile` in this scope
+   --> crates\kerml-text\src\library\construction.rs:749:9
+    |
+749 |         profile,
+    |         ^^^^^^^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `agq-kerml-text` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

@@ -18,6 +18,17 @@ struct Fixture {
     owned: BTreeMap<ElementId, Vec<Value>>,
 }
 impl Fixture {
+    fn construction(mut self) -> agq_kernel::ConstructionView {
+        for (owner, values) in self.owned {
+            self.changes.set(
+                owner,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                SlotValue::Ordered(values),
+                origin(),
+            );
+        }
+        self.base.preview(&self.changes).unwrap()
+    }
     fn new() -> Self {
         let base = Snapshot::new(Arc::new(agq_kerml::registry().unwrap()));
         let changes = base.change_set();
@@ -162,6 +173,96 @@ impl Fixture {
             );
         }
         self.base.apply(&self.changes).unwrap()
+    }
+}
+
+#[test]
+fn kerml11_140_nested_redefinition_cannot_search_the_specific_types_outer_scope() {
+    // Arbitrary names, no libraries, imports, chains or conjugation. This isolates
+    // the published 8.2.3.5.1 scope rule from unimplemented corpus semantics.
+    for profile in [
+        agq_kerml::BaselineProfile::PublishedKerMl10,
+        agq_kerml::BaselineProfile::OPERATIONAL,
+    ] {
+        let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+        let changes = base.change_set();
+        let mut f = Fixture {
+            base,
+            changes,
+            owned: BTreeMap::new(),
+        };
+        f.create(100, c::NAMESPACE);
+        f.member(100, 101, 1, c::CLASS, "Cobalt");
+        f.member(100, 102, 3, c::CLASS, "Quartz");
+        f.member(1, 103, 2, c::FEATURE, "signal");
+        f.member(3, 104, 4, c::FEATURE, "segments");
+        f.member(1, 105, 5, c::FEATURE, "interval");
+        f.member(5, 106, 6, c::FEATURE, "capture");
+        f.create(200, c::FEATURE_TYPING);
+        f.value(
+            200,
+            p::FEATURE_TYPING_TYPED_FEATURE,
+            Value::Reference(id(5)),
+        );
+        f.value(200, p::FEATURE_TYPING_TYPE, Value::Reference(id(3)));
+        f.own(5, 200);
+        f.create(201, c::SUBSETTING);
+        f.value(
+            201,
+            p::SUBSETTING_SUBSETTING_FEATURE,
+            Value::Reference(id(5)),
+        );
+        f.value(
+            201,
+            p::SUBSETTING_SUBSETTED_FEATURE,
+            Value::Reference(id(4)),
+        );
+        f.own(5, 201);
+        f.create(202, c::REDEFINITION);
+        f.value(
+            202,
+            p::REDEFINITION_REDEFINING_FEATURE,
+            Value::Reference(id(6)),
+        );
+        f.own(6, 202);
+        let candidate = f.construction();
+        let q = KerMlQueries::new(
+            SemanticContext::for_construction(
+                &candidate,
+                SemanticOptions {
+                    baseline_profile: profile,
+                    ..Default::default()
+                },
+                Default::default(),
+            )
+            .unwrap(),
+        );
+        let name = QualifiedName {
+            absolute: false,
+            segments: vec!["signal".into()],
+        };
+        let permitted =
+            q.lookup_relationship_target(id(202), p::REDEFINITION_REDEFINED_FEATURE, &name);
+        assert_eq!(permitted.completeness, Completeness::Complete);
+        assert!(permitted.value.is_empty());
+        let lexical = q.lookup_path(id(1), &name);
+        assert_eq!(lexical.completeness, Completeness::Complete);
+        assert_eq!(
+            lexical.value,
+            vec![MemberMatch {
+                membership: id(103),
+                element: id(2)
+            }]
+        );
+        assert_eq!(candidate.obligations().len(), 1);
+        assert_eq!(
+            candidate.obligations()[0].property,
+            p::REDEFINITION_REDEFINED_FEATURE
+        );
+        println!(
+            "{}: published redefinition scope has no target; extra lexical lookup finds signal, but is not authorized by 8.2.3.5.1",
+            profile.id()
+        );
     }
 }
 fn queries(s: &Snapshot) -> KerMlQueries<'_> {

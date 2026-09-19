@@ -222,6 +222,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     let report = json!({
         "format":"agentique-kerml-library-semantic-quality/1", "library_set":sources.content_set_id(),
+        "baseline_profile":draft.baseline_profile().id(),
+        "authority_scope":"Agentique operational errata profile; exact published descriptors remain separately accessible",
         "scope":"Complete pinned three-library KerML corpus. Structural semantic publication required; execution excluded. Null means not evaluated.",
         "semantic_quality_gate_passed":passed,"published_snapshot":published,
         "structural_obligation_count":draft.candidate().obligations().len(),

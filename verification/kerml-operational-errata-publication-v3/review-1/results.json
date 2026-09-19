@@ -1,0 +1,42 @@
+[
+  {
+    "command": "node verification/kerml-operational-errata-publication-v3/inspect-authority.mjs --check",
+    "started": "2026-09-19T11:28:51.484Z",
+    "durationMs": 3655,
+    "exitCode": 0,
+    "signal": null,
+    "log": "authority-inspection.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-operational-errata-publication-v3/independent-profiles.py",
+    "started": "2026-09-19T11:28:55.139Z",
+    "durationMs": 4006,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-diff.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-operational-errata-publication-v3/preservation.py",
+    "started": "2026-09-19T11:28:59.146Z",
+    "durationMs": 1476,
+    "exitCode": 0,
+    "signal": null,
+    "log": "preservation.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-19T11:29:00.623Z",
+    "durationMs": 654,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "git diff HEAD --check",
+    "started": "2026-09-19T11:29:01.278Z",
+    "durationMs": 82,
+    "exitCode": 0,
+    "signal": null,
+    "log": "diff.txt"
+  }
+]

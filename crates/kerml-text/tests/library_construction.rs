@@ -12,6 +12,14 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
     let second = lower_declarations(&sources).unwrap();
     let model = first.candidate().model();
     let queries = first.queries(&sources).unwrap();
+    assert_eq!(
+        first.baseline_profile(),
+        agq_kerml::BaselineProfile::OPERATIONAL
+    );
+    assert_eq!(
+        queries.context().baseline_profile_id,
+        first.baseline_profile().id()
+    );
     assert_eq!(queries.context().pinned_libraries.len(), 3);
     let bindings = queries.context().standard_bindings.as_ref().unwrap();
     assert_eq!(
@@ -51,8 +59,15 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
         let candidate =
             defective_candidate(model, &queries, bindings.get(StandardRole::Anything), fault);
         let q = KerMlQueries::new(
-            SemanticContext::for_construction(&candidate, Default::default(), Default::default())
-                .unwrap(),
+            SemanticContext::for_construction(
+                &candidate,
+                agq_kerml_semantics::SemanticOptions {
+                    baseline_profile: first.baseline_profile(),
+                    ..Default::default()
+                },
+                Default::default(),
+            )
+            .unwrap(),
         );
         let error =
             StandardKermlBindings::validate(&q, first.roots(), bindings.library()).unwrap_err();

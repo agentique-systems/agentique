@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo run --release --config profile.release.lto=false --locked --offline -p agq-kerml-text --example library_quality -- --output=verification/kerml-operational-errata-publication-v3/quality-1/library-quality.json",
+    "started": "2026-09-19T11:23:31.638Z",
+    "durationMs": 640141,
+    "exitCode": 1,
+    "signal": null,
+    "log": "library-quality.txt"
+  }
+]

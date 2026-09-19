@@ -42,8 +42,18 @@ fn create(base: &Snapshot, changes: &mut ChangeSet, id: ElementId, class: Metacl
 
 #[test]
 fn inherited_end_identity_cannot_satisfy_the_pinned_participant_opposite_bound() {
-    let base = Snapshot::new(Arc::new(agq_kerml::registry().unwrap()));
-    let registry = base.model().registry();
+    witness(agq_kerml::BaselineProfile::PublishedKerMl10);
+}
+
+#[test]
+fn operational_profile_publishes_shared_inherited_ends_without_participant_facts() {
+    witness(agq_kerml::BaselineProfile::OPERATIONAL);
+}
+
+fn witness(profile: agq_kerml::BaselineProfile) {
+    let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+    let published = agq_kerml::registry().unwrap();
+    let registry = &published;
     let participant = registry
         .property(p::A_PARTICIPANT_FEATURE_INTERACTION_PARTICIPANT_FEATURE)
         .expect("pinned external association end");
@@ -108,12 +118,31 @@ fn inherited_end_identity_cannot_satisfy_the_pinned_participant_opposite_bound()
     );
     let construction = base.preview(&changes).unwrap();
     let queries = KerMlQueries::new(
-        SemanticContext::for_construction(&construction, Default::default(), Default::default())
-            .unwrap(),
+        SemanticContext::for_construction(
+            &construction,
+            agq_kerml_semantics::SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            Default::default(),
+        )
+        .unwrap(),
     );
     let effective = queries.effective_features(child);
     assert_eq!(effective.completeness, Completeness::Complete);
     assert_eq!(effective.value, ends);
+    if profile == agq_kerml::BaselineProfile::OPERATIONAL {
+        assert!(base.model().registry().property(participant.id).is_err());
+        assert!(base.model().registry().association(association).is_err());
+        assert!(construction.obligations().is_empty());
+        let snapshot = base.apply(&changes).unwrap();
+        assert_eq!(snapshot.model().len(), 7);
+        assert_eq!(snapshot.model().association_occurrences().count(), 0);
+        println!(
+            "Agentique operational errata profile: original inherited identities, no participant schema obligation or fabricated links; strict Snapshot accepted"
+        );
+        return;
+    }
     assert_eq!(construction.obligations().len(), 2);
     assert!(
         construction

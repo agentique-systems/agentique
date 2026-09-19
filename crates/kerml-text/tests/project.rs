@@ -38,6 +38,18 @@ fn two_documents_share_one_root_and_resolve_in_both_directions() {
         .unwrap();
     assert!(m.is_complete_slice(), "{:?}", m.semantic_diagnostics());
     assert_eq!(
+        m.queries().context().baseline_profile_id,
+        agq_kerml::BaselineProfile::OPERATIONAL.id()
+    );
+    assert!(m.queries().context().errata_manifest_digest.is_some());
+    assert!(
+        m.snapshot()
+            .model()
+            .registry()
+            .property(agq_kerml::properties::A_PARTICIPANT_FEATURE_INTERACTION_PARTICIPANT_FEATURE)
+            .is_err()
+    );
+    assert_eq!(
         m.documents().map(|(p, _)| p).collect::<Vec<_>>(),
         ["a.kerml", "b.kerml"]
     );

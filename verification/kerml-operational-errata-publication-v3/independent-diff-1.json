@@ -1,0 +1,26 @@
+{
+  "format": "agentique-independent-operational-diff/1",
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "-q",
+    "-p",
+    "agq-kerml",
+    "--example",
+    "profile_descriptors"
+  ],
+  "exit_code": 0,
+  "published_profile": "omg-kerml-1.0-published/1",
+  "operational_profile": "agentique-kerml-1.0-operational/1",
+  "published_properties": 313,
+  "operational_properties": 309,
+  "published_associations": 131,
+  "operational_associations": 129,
+  "exact_removed_descriptor_count": 6,
+  "xml_owned_closure_count": 11,
+  "non_errata_changes": 0,
+  "external_incoming_references": 0,
+  "manifest_sha256": "7614fec2b75e14e7181d7e8a0d474cbd3000f53ca3470d8d9814f4b40fd82994"
+}

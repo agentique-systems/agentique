@@ -56,6 +56,9 @@ name = "agq-kerml"
 version = "0.1.0"
 dependencies = [
  "agq-kernel",
+ "serde_json",
+ "sha2",
+ "thiserror",
 ]
 
 [[package]]

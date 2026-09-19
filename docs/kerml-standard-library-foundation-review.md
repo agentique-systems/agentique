@@ -195,3 +195,39 @@ adopted correction or an explicit project authority decision about the spurious
 association contract and the milestone's participant requirement. Neither an
 open issue nor a computed effective-end set authorizes a silent exception to
 Snapshot validation.
+
+## Operational errata publication v3 review, 2026-09-19
+
+The project-authorized operational interpretation resolves KLPV2-F-001 without
+changing the published baseline. [ADR 0014](adr/0014-operational-standard-errata-profiles.md)
+defines the two profiles and their migration contract. The current stop is the
+separate **KOPV3-F-001 / KERML11-140**
+[redefinition resolution conflict](kerml-operational-library-publication-authority-conflict.md),
+independently reproduced without library-dependent semantics. The historical
+incomplete sections above remain true records of their milestones.
+
+| V3 acceptance question | Result |
+| --- | --- |
+| 1. Published 1.0 artifacts unchanged? | Yes; pinned bytes, generated descriptors and historical evidence are preserved. |
+| 2. KERML11-81 preserved in published inspection? | Yes; published descriptors and the original contradiction witness remain available. |
+| 3. Operational correction exact/hash-qualified? | Yes; reviewed artifact URI, SHA-256, external IDs, generated IDs and source ranges are checked. |
+| 4. Only reviewed descriptors removed? | Yes; two associations and four exclusively owned ends. |
+| 5. Independent verification confirms diff? | Yes; direct XML/UUID verification plus compiled descriptor comparison; zero unrelated changes. |
+| 6. Profile identity first-class? | Yes; BaselineProfile, stable profile ID, frozen manifest digest and effective graph digest. |
+| 7. Participants absent rather than fabricated? | Yes; the operational witness accepts original shared ends without participant links. The independently compared corpus obligations drop from five participant obligations to zero; the other five are unchanged. |
+| 8. Remaining redefinitions resolved normatively? | No; KERML11-140 establishes a distinct conflict for nested resolution; other unresolved cases remain. |
+| 9. Required effective-feature semantics complete? | No; existing incomplete structural queries remain implementation obligations after the authority stop. |
+| 10. Strict library Snapshot publication passes? | No; missing redefinition endpoints still prevent ordinary strict publication. |
+| 11. Bindings validated against accepted Snapshot? | No accepted Snapshot; the 22 existing canonical candidate anchor bindings remain separately validated. |
+| 12. Authored projects use accepted libraries? | No; authored construction uses the operational profile, but an accepted dependency is unavailable. |
+| 13. Profile/library dependencies in SemanticContext? | Yes for current construction: profile, review digest, effective graph, original artifact, library pins, candidate graph, rules and bindings. Accepted-library integration is pending. |
+| 14. Library quality gate green? | No; structural publication remains incomplete. |
+| 15. Both structural metamodel runtime gates green? | Yes; both complete structural runtime commands exit 0 in v3 `final-1`, independently of publication. |
+| 16. Strict published diagnostics visible? | Yes; the raw profile, source findings and separate strict-conformance commands are retained. |
+| 17. Executable semantics separated? | Yes; evaluation is neither implemented nor claimed by this structural milestone. |
+
+The stop is caused by the conflict between a published resolution rule and an
+intended nested modeling pattern, not by KERML11-81's issue status. A fallback
+that changes the specified scope search has not been introduced. See the
+[v3 evidence](../verification/kerml-operational-errata-publication-v3/README.md)
+for actual commands, outputs, exit codes and preservation results.

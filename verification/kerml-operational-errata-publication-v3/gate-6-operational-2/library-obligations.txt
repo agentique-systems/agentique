@@ -1,0 +1,11 @@
+    Blocking waiting for file lock on build directory
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 1m 02s
+     Running `target\release\examples\library_obligations.exe --output=verification/kerml-operational-errata-publication-v3/gate-6-operational-2/obligations.json`
+refinement 0: 0 provisional endpoints; 4003 obligations
+refinement 1: 2121 provisional endpoints; 1882 obligations
+refinement 2: 3777 provisional endpoints; 226 obligations
+refinement 3: 3974 provisional endpoints; 29 obligations
+refinement 4: 3991 provisional endpoints; 12 obligations
+refinement 5: 3998 provisional endpoints; 5 obligations
+Captured 62 reference, 5 structural, 530 query obligations

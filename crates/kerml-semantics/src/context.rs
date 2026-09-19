@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/6";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/7";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -17,6 +17,8 @@ pub struct LibraryPin {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SemanticOptions {
+    /// Explicit interpretation authority; legacy callers default to published metadata.
+    pub baseline_profile: agq_kerml::BaselineProfile,
     /// KerML Type::supertypes(excludeImplied). Applies to specialization traversal.
     pub exclude_implied: bool,
 }
@@ -26,7 +28,10 @@ pub struct SemanticOptions {
 pub struct SemanticContextId {
     pub revision: RevisionId,
     pub model_digest: [u8; 32],
+    pub baseline_profile_id: &'static str,
     pub metamodel_version: &'static str,
+    /// Reviewed errata content identity; None is the exact published profile.
+    pub errata_manifest_digest: Option<[u8; 32]>,
     pub descriptor_digest: [u8; 32],
     pub rule_set_version: &'static str,
     pub pinned_libraries: BTreeSet<LibraryPin>,
@@ -219,9 +224,28 @@ impl<'m> SemanticContext<'m> {
     ) -> Result<Self, ContextError> {
         // Require the exact normative KerML contracts while admitting independent
         // metaclasses and subclasses from a dependency extension such as SysML.
-        let expected = agq_kerml::descriptors();
+        let profile = options.baseline_profile;
+        let expected = agq_kerml::descriptors_for_profile(profile)
+            .map_err(|_| ContextError::UnsupportedMetamodel)?;
         let registry = model.registry();
-        let base = agq_kerml::registry().expect("generated descriptors");
+        let base = agq_kerml::registry_for_profile(profile)
+            .map_err(|_| ContextError::UnsupportedMetamodel)?;
+        // A profile cannot admit excluded raw descriptors through an extension.
+        if agq_kerml::published_descriptors().sources.keys().any(|id| {
+            !expected.sources.contains_key(id)
+                && (registry.source(*id).is_some()
+                    || match id {
+                        agq_kernel::metamodel::DescriptorId::Property(id) => {
+                            registry.property(*id).is_ok()
+                        }
+                        agq_kernel::metamodel::DescriptorId::Association(id) => {
+                            registry.association(*id).is_ok()
+                        }
+                        _ => false,
+                    })
+        }) {
+            return Err(ContextError::UnsupportedMetamodel);
+        }
         if expected
             .models
             .iter()
@@ -281,7 +305,9 @@ impl<'m> SemanticContext<'m> {
             id: SemanticContextId {
                 revision,
                 model_digest: digest.finalize().into(),
+                baseline_profile_id: profile.id(),
                 metamodel_version: METAMODEL_VERSION,
+                errata_manifest_digest: profile.errata_manifest_sha256(),
                 descriptor_digest: Sha256::digest(descriptors.as_bytes()).into(),
                 rule_set_version: RULE_SET_VERSION,
                 pinned_libraries,

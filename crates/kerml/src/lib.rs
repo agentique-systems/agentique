@@ -38,14 +38,18 @@
 mod generated;
 #[path = "generated/typed_views.rs"]
 mod generated_views;
+mod profiles;
 #[doc(hidden)]
 pub mod view;
 
 pub use generated::{CLASS_IDS, PROPERTY_IDS, descriptors};
 pub use generated_views::{classes, metamodel, properties, views};
+pub use profiles::*;
 pub use view::{TypedView, Values, ViewError};
 
-/// Build a validated registry from the checked-in normative descriptor graph.
+/// Build a validated registry from the exact published descriptor graph.
+/// Usable generation-2 KerML models select [`BaselineProfile::OPERATIONAL`]
+/// explicitly through [`registry_for_profile`]. This legacy API is unchanged.
 pub fn registry()
 -> Result<agq_kernel::metamodel::MetamodelRegistry, agq_kernel::metamodel::MetamodelError> {
     agq_kernel::metamodel::MetamodelRegistry::from_descriptors(descriptors())

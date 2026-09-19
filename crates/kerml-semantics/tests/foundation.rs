@@ -562,6 +562,7 @@ fn context_binds_options_library_content_and_overlay_content() {
     let options = SemanticContext::for_snapshot(
         &s,
         SemanticOptions {
+            baseline_profile: agq_kerml::BaselineProfile::PublishedKerMl10,
             exclude_implied: true,
         },
         BTreeSet::new(),
@@ -612,6 +613,7 @@ fn implied_specializations_are_an_answer_affecting_option() {
         SemanticContext::for_snapshot(
             &s,
             SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::PublishedKerMl10,
                 exclude_implied: true,
             },
             BTreeSet::new(),

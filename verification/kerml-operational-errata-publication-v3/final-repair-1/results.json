@@ -1,0 +1,26 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-19T11:26:51.689Z",
+    "durationMs": 1299,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "started": "2026-09-19T11:26:52.989Z",
+    "durationMs": 14866,
+    "exitCode": 0,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo test --workspace",
+    "started": "2026-09-19T11:27:07.855Z",
+    "durationMs": 154991,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rust-tests.txt"
+  }
+]

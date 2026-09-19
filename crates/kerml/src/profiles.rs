@@ -1,0 +1,218 @@
+//! Published metadata and reviewed operational interpretations are separate graphs.
+use agq_kernel::{AssociationId, PropertyId, metamodel::*};
+use sha2::{Digest, Sha256};
+use std::collections::BTreeSet;
+
+/// Exact published artifact identity, unchanged by operational interpretation.
+pub const PUBLISHED_ARTIFACT_URI: &str = "https://www.omg.org/spec/KerML/20250201/KerML.xmi";
+/// SHA-256 of the pinned, untouched KerML 1.0 XMI bytes.
+pub const PUBLISHED_ARTIFACT_SHA256: &str =
+    "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
+/// Reviewed manifest; provenance is shipped with the runtime, not fetched at build time.
+pub const OPERATIONAL_ERRATA_MANIFEST: &str =
+    include_str!("../../../standards/kerml-1.0-operational-errata.json");
+/// Frozen review content. Changing a review requires an explicitly versioned implementation.
+pub const REVIEWED_MANIFEST_SHA256: [u8; 32] = [
+    0x76, 0x14, 0xfe, 0xc2, 0xb7, 0x5e, 0x14, 0xe7, 0x18, 0x1d, 0x7e, 0x8a, 0x0d, 0x47, 0x4c, 0xbd,
+    0x30, 0x00, 0xf5, 0x3c, 0xa3, 0x47, 0x0d, 0x8d, 0x98, 0x14, 0xf4, 0xb4, 0x0f, 0xd8, 0x29, 0x94,
+];
+
+/// Closed set of implemented, reviewed transforms. A new revision requires review
+/// and explicit implementation; a version label cannot enable an arbitrary patch.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum OperationalErrataProfile {
+    /// KERML11-81, qualified by the exact KerML 1.0 artifact and six descriptor IDs.
+    ReviewedV1,
+}
+
+/// Language interpretation authority. This is part of semantic context identity.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum BaselineProfile {
+    /// Exact source metadata, including published anomalies.
+    #[default]
+    PublishedKerMl10,
+    /// Agentique interpretation, never advertised as untouched published metadata.
+    OperationalKerMl10 {
+        errata_profile: OperationalErrataProfile,
+    },
+}
+
+impl BaselineProfile {
+    /// Default authority for usable generation-2 KerML model construction.
+    pub const OPERATIONAL: Self = Self::OperationalKerMl10 {
+        errata_profile: OperationalErrataProfile::ReviewedV1,
+    };
+
+    /// Stable profile identity. Any future change requires a new identity.
+    pub const fn id(self) -> &'static str {
+        match self {
+            Self::PublishedKerMl10 => "omg-kerml-1.0-published/1",
+            Self::OperationalKerMl10 {
+                errata_profile: OperationalErrataProfile::ReviewedV1,
+            } => "agentique-kerml-1.0-operational/1",
+        }
+    }
+
+    /// Content identity of the reviewed interpretation, separate from source identity.
+    pub fn errata_manifest_sha256(self) -> Option<[u8; 32]> {
+        match self {
+            Self::PublishedKerMl10 => None,
+            Self::OperationalKerMl10 { .. } => {
+                Some(Sha256::digest(OPERATIONAL_ERRATA_MANIFEST).into())
+            }
+        }
+    }
+}
+
+/// Fail-closed transform/registration errors; no partial operational set is returned.
+#[derive(Debug, thiserror::Error)]
+pub enum ProfileError {
+    #[error("errata manifest content differs from the implemented review")]
+    UnreviewedManifest,
+    #[error("descriptor graph differs from the exact reviewed KerML 1.0 artifact")]
+    UnreviewedGraph,
+    #[error("reviewed deletion identity or exclusive ownership closure does not match")]
+    InvalidDeletionClosure,
+    #[error(transparent)]
+    Metamodel(#[from] MetamodelError),
+}
+
+/// Exact published descriptor graph. Legacy `descriptors()` has this same meaning.
+pub fn published_descriptors() -> DescriptorSet {
+    crate::descriptors()
+}
+
+/// Explicitly choose source fidelity or a reviewed operational interpretation.
+pub fn descriptors_for_profile(profile: BaselineProfile) -> Result<DescriptorSet, ProfileError> {
+    match profile {
+        BaselineProfile::PublishedKerMl10 => Ok(published_descriptors()),
+        BaselineProfile::OperationalKerMl10 { errata_profile } => {
+            operational_descriptors(errata_profile)
+        }
+    }
+}
+
+/// Build a separate operational graph; the raw descriptors remain independently available.
+pub fn operational_descriptors(
+    profile: OperationalErrataProfile,
+) -> Result<DescriptorSet, ProfileError> {
+    apply_operational_errata(&published_descriptors(), profile)
+}
+
+/// Strictly apply an implemented review to an exact published graph. Changes in
+/// descriptors, provenance, hashes, duplicates or unrelated extensions fail closed.
+/// Composed language registries must apply this transform before adding extensions.
+pub fn apply_operational_errata(
+    source: &DescriptorSet,
+    profile: OperationalErrataProfile,
+) -> Result<DescriptorSet, ProfileError> {
+    match profile {
+        OperationalErrataProfile::ReviewedV1 => {}
+    }
+    let review_digest: [u8; 32] = Sha256::digest(OPERATIONAL_ERRATA_MANIFEST).into();
+    if review_digest != REVIEWED_MANIFEST_SHA256 {
+        return Err(ProfileError::UnreviewedManifest);
+    }
+    let published = published_descriptors();
+    if source.sources != published.sources
+        || source.models != published.models
+        || source.classes != published.classes
+        || source.properties != published.properties
+        || source.associations != published.associations
+        || source.enumerations != published.enumerations
+        || source.primitives != published.primitives
+        || source.reviews != published.reviews
+    {
+        return Err(ProfileError::UnreviewedGraph);
+    }
+    let removed: BTreeSet<_> = DELETIONS.iter().map(|(id, _, _)| *id).collect();
+    for (id, external, range) in DELETIONS {
+        let Some(provenance) = source.sources.get(id) else {
+            return Err(ProfileError::InvalidDeletionClosure);
+        };
+        if provenance.specification != "KerML"
+            || provenance.version != "1.0"
+            || provenance.artifact_uri != PUBLISHED_ARTIFACT_URI
+            || provenance.sha256 != PUBLISHED_ARTIFACT_SHA256
+            || provenance.external_id != *external
+            || provenance.byte_range != *range
+            || source
+                .sources
+                .values()
+                .filter(|s| s.artifact_uri == PUBLISHED_ARTIFACT_URI && s.external_id == *external)
+                .count()
+                != 1
+        {
+            return Err(ProfileError::InvalidDeletionClosure);
+        }
+    }
+    for association in &source.associations {
+        if removed.contains(&DescriptorId::Association(association.id)) {
+            let owned: BTreeSet<_> = source
+                .properties
+                .iter()
+                .filter(|p| p.owner == PropertyOwner::Association(association.id))
+                .map(|p| p.id)
+                .collect();
+            if owned != association.member_ends.iter().copied().collect()
+                || owned
+                    .iter()
+                    .any(|id| !removed.contains(&DescriptorId::Property(*id)))
+            {
+                return Err(ProfileError::InvalidDeletionClosure);
+            }
+        }
+    }
+    let mut effective = source.clone();
+    effective
+        .associations
+        .retain(|a| !removed.contains(&DescriptorId::Association(a.id)));
+    effective
+        .properties
+        .retain(|p| !removed.contains(&DescriptorId::Property(p.id)));
+    effective.sources.retain(|id, _| !removed.contains(id));
+    // Reviews are immutable historical conformance evidence, not runtime edges.
+    // All surviving structural references must still register without any repair.
+    MetamodelRegistry::from_descriptors(effective.clone())?;
+    Ok(effective)
+}
+
+/// Register the explicitly selected profile using ordinary kernel validation.
+pub fn registry_for_profile(profile: BaselineProfile) -> Result<MetamodelRegistry, ProfileError> {
+    Ok(MetamodelRegistry::from_descriptors(
+        descriptors_for_profile(profile)?,
+    )?)
+}
+// Exact reviewed source identities; independently checked against the XMI and manifest.
+const DELETIONS: &[(DescriptorId, &str, [usize; 2])] = &[
+    (
+        DescriptorId::Property(PropertyId::from_u128(0x6e7567725da957648b99ac075c73d974)),
+        "Kernel-Interactions-A_participantFeature_Interaction-",
+        [230032, 230315],
+    ),
+    (
+        DescriptorId::Property(PropertyId::from_u128(0x7e19278d53e55cb0ad3b91a380383ff9)),
+        "Kernel-Interactions-A_participantFeature_Interaction-participantFeature",
+        [230326, 231197],
+    ),
+    (
+        DescriptorId::Property(PropertyId::from_u128(0xb26d54f02b81520bab0ffc1ca39f068e)),
+        "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+        [303187, 303938],
+    ),
+    (
+        DescriptorId::Property(PropertyId::from_u128(0xed11f4a307955d6ab39102252ee0e096)),
+        "Kernel-Connectors-A_participantFeature_Association-",
+        [302897, 303176],
+    ),
+    (
+        DescriptorId::Association(AssociationId::from_u128(0x6b53ef0633525d90a0e337567f9b284f)),
+        "Kernel-Connectors-A_participantFeature_Association",
+        [302437, 303965],
+    ),
+    (
+        DescriptorId::Association(AssociationId::from_u128(0x91f4b58ffd94516a8aa9e47ac23bbd62)),
+        "Kernel-Interactions-A_participantFeature_Interaction",
+        [229264, 231224],
+    ),
+];

@@ -20,6 +20,7 @@ struct Record {
     slots: BTreeMap<PropertyId, SlotValue>,
 }
 struct Builder {
+    profile: agq_kerml::BaselineProfile,
     base: Snapshot,
     records: BTreeMap<ElementId, Record>,
     order: Vec<ElementId>,
@@ -38,9 +39,14 @@ struct Job<'a> {
 pub(super) fn construct(
     inputs: &[Input],
     resolved: &BTreeMap<(ElementId, PropertyId), ElementId>,
+    profile: agq_kerml::BaselineProfile,
 ) -> Result<LibraryDraft, LibraryLoadError> {
     let mut builder = Builder {
-        base: Snapshot::new(Arc::new(agq_kerml::registry().expect("complete registry"))),
+        profile,
+        base: Snapshot::new(Arc::new(
+            agq_kerml::registry_for_profile(profile)
+                .map_err(|e| LibraryLoadError::Interpretation(e.to_string()))?,
+        )),
         records: BTreeMap::new(),
         order: vec![],
         references: vec![],
@@ -745,6 +751,7 @@ impl Builder {
         }
         let candidate = self.base.preview(&changes)?;
         Ok(LibraryDraft {
+            profile: self.profile,
             candidate,
             source_map,
             roots: self.roots,

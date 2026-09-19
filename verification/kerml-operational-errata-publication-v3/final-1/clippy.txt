@@ -1,0 +1,34 @@
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+    Checking agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+    Checking agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+    Checking agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+    Checking agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+    Checking agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+    Checking agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+    Checking agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+error: this `impl` can be derived
+  --> crates\kerml\src\profiles.rs:61:1
+   |
+61 | / impl Default for BaselineProfile {
+62 | |     fn default() -> Self {
+63 | |         Self::PublishedKerMl10
+64 | |     }
+65 | | }
+   | |_^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#derivable_impls
+   = note: `-D clippy::derivable-impls` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::derivable_impls)]`
+help: replace the manual implementation with a derive attribute and mark the default variant
+   |
+25 + #[derive(Default)]
+26 | pub enum BaselineProfile {
+27 |     /// Exact source metadata, including published anomalies.
+28 ~     #[default]
+29 ~     PublishedKerMl10,
+   |
+
+error: could not compile `agq-kerml` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `agq-kerml` (lib test) due to 1 previous error

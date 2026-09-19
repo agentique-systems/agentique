@@ -1,0 +1,99 @@
+{
+  "format": "agentique-reviewed-descriptor-errata/1",
+  "profile_id": "agentique-kerml-1.0-operational/1",
+  "published_profile_id": "omg-kerml-1.0-published/1",
+  "entries": [
+    {
+      "agentique_errata_id": "AGQ-KERML10-001",
+      "official_issue_key": "KERML11-81",
+      "issue_url": "https://issues.omg.org/issues/KERML11-81",
+      "issue_title": "Abstract syntax XMI contains spurious associations",
+      "issue_status_at_review": "open",
+      "reviewed_at": "2026-09-19",
+      "specification": "KerML",
+      "version": "1.0",
+      "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+      "artifact_sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+      "operation": "delete-associations-and-exclusive-owned-descriptors",
+      "descriptors": [
+        {
+          "kind": "Property",
+          "external_id": "Kernel-Interactions-A_participantFeature_Interaction-",
+          "descriptor_id": "6e756772-5da9-5764-8b99-ac075c73d974",
+          "byte_range": [
+            230032,
+            230315
+          ]
+        },
+        {
+          "kind": "Property",
+          "external_id": "Kernel-Interactions-A_participantFeature_Interaction-participantFeature",
+          "descriptor_id": "7e19278d-53e5-5cb0-ad3b-91a380383ff9",
+          "byte_range": [
+            230326,
+            231197
+          ]
+        },
+        {
+          "kind": "Property",
+          "external_id": "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+          "descriptor_id": "b26d54f0-2b81-520b-ab0f-fc1ca39f068e",
+          "byte_range": [
+            303187,
+            303938
+          ]
+        },
+        {
+          "kind": "Property",
+          "external_id": "Kernel-Connectors-A_participantFeature_Association-",
+          "descriptor_id": "ed11f4a3-0795-5d6a-b391-02252ee0e096",
+          "byte_range": [
+            302897,
+            303176
+          ]
+        },
+        {
+          "kind": "Association",
+          "external_id": "Kernel-Connectors-A_participantFeature_Association",
+          "descriptor_id": "6b53ef06-3352-5d90-a0e3-37567f9b284f",
+          "byte_range": [
+            302437,
+            303965
+          ]
+        },
+        {
+          "kind": "Association",
+          "external_id": "Kernel-Interactions-A_participantFeature_Interaction",
+          "descriptor_id": "91f4b58f-fd94-516a-8aa9-e47ac23bbd62",
+          "byte_range": [
+            229264,
+            231224
+          ]
+        }
+      ],
+      "xml_owned_closure": [
+        "Kernel-Connectors-A_participantFeature_Association",
+        "Kernel-Connectors-A_participantFeature_Association-",
+        "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+        "Kernel-Connectors-A_participantFeature_Association-participantFeature-lowerValue",
+        "Kernel-Connectors-A_participantFeature_Association-participantFeature-upperValue",
+        "Kernel-Interactions-A_participantFeature_Interaction",
+        "Kernel-Interactions-A_participantFeature_Interaction-",
+        "Kernel-Interactions-A_participantFeature_Interaction-_generalization.Kernel-Connectors-A_participantFeature_Association",
+        "Kernel-Interactions-A_participantFeature_Interaction-participantFeature",
+        "Kernel-Interactions-A_participantFeature_Interaction-participantFeature-lowerValue",
+        "Kernel-Interactions-A_participantFeature_Interaction-participantFeature-upperValue"
+      ],
+      "external_incoming_references": [],
+      "rationale": "The two obsolete associations own both ends; their only incoming XMI references are internal to this exact deletion closure. No class feature is removed or replaced.",
+      "reviewed_disposition": "Approved by explicit Agentique project authority as an operational interpretation informed by official OMG evidence. Not an adopted KerML 1.0 erratum. No KerML 1.1 normative baseline.",
+      "evidence_references": [
+        "verification/kerml-operational-errata-publication-v3/authority-evidence.json",
+        "verification/kerml-operational-errata-publication-v3/KERML11-81.html",
+        "verification/kerml-operational-errata-publication-v3/KERML11-current.html",
+        "verification/kerml-operational-errata-publication-v3/release-2026-05.json",
+        "docs/kerml-standard-library-publication-authority-conflict.md"
+      ]
+    }
+  ]
+}

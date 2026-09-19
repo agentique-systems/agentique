@@ -1,0 +1,14 @@
+[
+  {
+    file: 'KerML.pdf',
+    sha256: '3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697',
+    pages: 454,
+    inspectedPages: [ 1, 109, 172, 208, 249, 264 ]
+  },
+  {
+    file: 'verification/kerml-operational-errata-publication-v3/revised-kerml.pdf',
+    sha256: 'e8b7f33d9dac1a3fdd4eaa64b052608a989b92c580de91fdadb7038d33df99af',
+    pages: 458,
+    inspectedPages: [ 1, 109 ]
+  }
+]

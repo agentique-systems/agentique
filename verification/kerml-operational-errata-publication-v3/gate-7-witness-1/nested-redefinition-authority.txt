@@ -1,0 +1,11 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.18s
+     Running tests\imports.rs (target\debug\deps\imports-d5c889296e0375fc.exe)
+
+running 1 test
+omg-kerml-1.0-published/1: published redefinition scope has no target; extra lexical lookup finds signal, but is not authorized by 8.2.3.5.1
+agentique-kerml-1.0-operational/1: published redefinition scope has no target; extra lexical lookup finds signal, but is not authorized by 8.2.3.5.1
+test kerml11_140_nested_redefinition_cannot_search_the_specific_types_outer_scope ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.17s
+

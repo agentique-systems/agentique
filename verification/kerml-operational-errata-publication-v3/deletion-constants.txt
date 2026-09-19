@@ -1,0 +1,9 @@
+// Exact reviewed source identities; independently checked against the XMI and manifest.
+const DELETIONS: &[(DescriptorId, &str, [usize; 2])] = &[
+    (DescriptorId::Property(PropertyId::from_u128(0x6e7567725da957648b99ac075c73d974)), "Kernel-Interactions-A_participantFeature_Interaction-", [230032, 230315]),
+    (DescriptorId::Property(PropertyId::from_u128(0x7e19278d53e55cb0ad3b91a380383ff9)), "Kernel-Interactions-A_participantFeature_Interaction-participantFeature", [230326, 231197]),
+    (DescriptorId::Property(PropertyId::from_u128(0xb26d54f02b81520bab0ffc1ca39f068e)), "Kernel-Connectors-A_participantFeature_Association-participantFeature", [303187, 303938]),
+    (DescriptorId::Property(PropertyId::from_u128(0xed11f4a307955d6ab39102252ee0e096)), "Kernel-Connectors-A_participantFeature_Association-", [302897, 303176]),
+    (DescriptorId::Association(AssociationId::from_u128(0x6b53ef0633525d90a0e337567f9b284f)), "Kernel-Connectors-A_participantFeature_Association", [302437, 303965]),
+    (DescriptorId::Association(AssociationId::from_u128(0x91f4b58ffd94516a8aa9e47ac23bbd62)), "Kernel-Interactions-A_participantFeature_Interaction", [229264, 231224]),
+];

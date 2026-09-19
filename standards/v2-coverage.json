@@ -430,5 +430,23 @@
       },
       "library_semantic_quality_exit_code": 1
     }
+  },
+  "kerml_operational_errata_publication_v3": {
+    "status": "incomplete-authority-conflict",
+    "published_profile": "omg-kerml-1.0-published/1",
+    "operational_profile": "agentique-kerml-1.0-operational/1",
+    "reviewed_errata": [
+      "AGQ-KERML10-001 / KERML11-81"
+    ],
+    "manifest": "standards/kerml-1.0-operational-errata.json",
+    "adr": "docs/adr/0014-operational-standard-errata-profiles.md",
+    "evidence": "verification/kerml-operational-errata-publication-v3/README.md",
+    "semantic_rule_set": "agq-kerml-query/7",
+    "completed_scope": "Distinct published/operational descriptors; exact checked deletion; independent XML/runtime diff; both-profile witnesses; profile-aware semantic contexts and explicit generation-2 construction defaults.",
+    "blocking_gate": 7,
+    "blocker": "KOPV3-F-001 / KERML11-140: published redefinition lookup cannot search the intended containing scope; no unambiguous correction is authorized.",
+    "authority_review": "docs/kerml-operational-library-publication-authority-conflict.md",
+    "accepted_library_snapshot": false,
+    "remaining": "Gates 7-17: normative unresolved references, effective features, structural validation, strict library publication, accepted bindings and authored-library dependencies. No SysML semantic readiness."
   }
 }

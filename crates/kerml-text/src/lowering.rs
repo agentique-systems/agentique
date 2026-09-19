@@ -131,8 +131,15 @@ pub struct ValidationFailure {
 }
 fn queries(snapshot: &Snapshot) -> KerMlQueries<'_> {
     KerMlQueries::new(
-        SemanticContext::for_snapshot(snapshot, SemanticOptions::default(), BTreeSet::new())
-            .expect("pinned KerML descriptors"),
+        SemanticContext::for_snapshot(
+            snapshot,
+            SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .expect("pinned KerML descriptors"),
     )
 }
 fn authored(source: SourceOrigin) -> DeclaredOrigin {
@@ -155,7 +162,8 @@ struct Builder {
 impl Builder {
     fn new() -> Self {
         let base = Snapshot::new(Arc::new(
-            agq_kerml::registry().expect("generated descriptors"),
+            agq_kerml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL)
+                .expect("reviewed operational descriptors"),
         ));
         let changes = base.change_set();
         Self {
@@ -488,7 +496,10 @@ fn project_queries(
     KerMlQueries::new(
         SemanticContext::for_project_snapshot(
             snapshot,
-            SemanticOptions::default(),
+            SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL,
+                ..Default::default()
+            },
             BTreeSet::new(),
             scopes,
             namespaces,

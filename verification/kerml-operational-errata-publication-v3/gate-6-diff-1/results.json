@@ -1,0 +1,10 @@
+[
+  {
+    "command": "python -X utf8 verification/kerml-operational-errata-publication-v3/obligation-diff.py --output verification/kerml-operational-errata-publication-v3/gate-6-diff-1/obligation-diff.json",
+    "started": "2026-09-19T11:27:47.749Z",
+    "durationMs": 1621,
+    "exitCode": 0,
+    "signal": null,
+    "log": "obligation-diff.txt"
+  }
+]

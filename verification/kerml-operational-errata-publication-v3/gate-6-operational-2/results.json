@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo run --release --config profile.release.lto=false --locked --offline -p agq-kerml-text --example library_obligations -- --output=verification/kerml-operational-errata-publication-v3/gate-6-operational-2/obligations.json",
+    "started": "2026-09-19T11:15:15.341Z",
+    "durationMs": 609143,
+    "exitCode": 0,
+    "signal": null,
+    "log": "library-obligations.txt"
+  }
+]

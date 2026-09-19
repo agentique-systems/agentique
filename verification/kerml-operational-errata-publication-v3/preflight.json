@@ -1,0 +1,23 @@
+{
+  "base": "0927d90e2d882dd798e03e30b25150a75ce3ca4e",
+  "original_branch": "main",
+  "original_status_porcelain": "",
+  "fetch_command": "git fetch origin main",
+  "fetch_exit_code": 0,
+  "fetch_output": "From https://github.com/agentique-systems/agentique\n * branch            main       -> FETCH_HEAD\n",
+  "head_and_origin_main_equal": true,
+  "branch_command": "git switch -c semantics/kerml-operational-errata-publication-v3 origin/main",
+  "branch_exit_code": 0,
+  "required_reading": [
+    "AGENTS.md",
+    "docs/architecture.md",
+    "docs/semantic-kernel.md",
+    "standards/v2-coverage.json",
+    "docs/kerml-standard-library-publication-authority-conflict.md",
+    "crates/kerml-semantics/tests/participant_contract.rs"
+  ],
+  "acquisition_command": "python -X utf8 verification/kerml-operational-errata-publication-v3/acquire-evidence.py",
+  "acquisition_exit_code": 0,
+  "acquisition_evidence": "authority-evidence.json",
+  "note": "Records the initial observed preflight tool results; timestamps were not captured by the initial shell calls. Later verification uses the append-only runner."
+}

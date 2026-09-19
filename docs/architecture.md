@@ -1,5 +1,14 @@
 # Agentique architecture: two generations
 
+The operational errata publication v3 milestone adds explicit published and
+Agentique operational KerML 1.0 profiles ([ADR 0014](adr/0014-operational-standard-errata-profiles.md)).
+Authored generation-2 KerML and standard-library construction explicitly use the
+operational profile; legacy descriptor/registry APIs retain published metadata.
+The reviewed KERML11-81 deletion is independently verified. Canonical library
+publication remains blocked at Gate 7 by the separate
+[KERML11-140 resolution authority conflict](kerml-operational-library-publication-authority-conflict.md).
+No accepted library facade or SysML semantic readiness is claimed.
+
 The [complete structural foundation review](language-core-foundation-review.md)
 is **incomplete**. New full-input audits cover 175 classes and 319 associations;
 they expose Integer/Real domain and association-inheritance gaps as well as the

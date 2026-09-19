@@ -7,3 +7,8 @@ description = "Complete normative KerML 1.0 descriptors and borrowed typed seman
 
 [dependencies]
 agq-kernel = { path = "../kernel" }
+sha2.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

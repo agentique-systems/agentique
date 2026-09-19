@@ -1,0 +1,303 @@
+{
+  "format": "agentique-kerml-operational-publication-verification/1",
+  "result": "KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED",
+  "blocker": "KOPV3-F-001 / KERML11-140",
+  "base": "0927d90e2d882dd798e03e30b25150a75ce3ca4e",
+  "branch": "semantics/kerml-operational-errata-publication-v3",
+  "ordinary_commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "started": "2026-09-19T11:31:27.505Z",
+      "durationMs": 1237,
+      "exitCode": 0,
+      "signal": null,
+      "log": "format.txt",
+      "evidence": "final-lint/format.txt"
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "started": "2026-09-19T11:31:28.742Z",
+      "durationMs": 2225,
+      "exitCode": 0,
+      "signal": null,
+      "log": "clippy.txt",
+      "evidence": "final-lint/clippy.txt"
+    },
+    {
+      "command": "cargo test --workspace",
+      "started": "2026-09-19T11:27:07.855Z",
+      "durationMs": 154991,
+      "exitCode": 0,
+      "signal": null,
+      "log": "rust-tests.txt",
+      "evidence": "final-repair-1/rust-tests.txt"
+    },
+    {
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+      "started": "2026-09-19T11:26:16.807Z",
+      "durationMs": 6514,
+      "exitCode": 0,
+      "signal": null,
+      "log": "generated.txt",
+      "evidence": "final-1/generated.txt"
+    },
+    {
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+      "started": "2026-09-19T11:26:23.322Z",
+      "durationMs": 1681,
+      "exitCode": 0,
+      "signal": null,
+      "log": "kerml-readiness.txt",
+      "evidence": "final-1/kerml-readiness.txt"
+    },
+    {
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+      "started": "2026-09-19T11:26:25.004Z",
+      "durationMs": 3538,
+      "exitCode": 0,
+      "signal": null,
+      "log": "sysml-readiness.txt",
+      "evidence": "final-1/sysml-readiness.txt"
+    },
+    {
+      "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-standard-libraries -p agq-metamodel-gen",
+      "started": "2026-09-19T11:26:28.542Z",
+      "durationMs": 12358,
+      "exitCode": 0,
+      "signal": null,
+      "log": "rustdoc.txt",
+      "evidence": "final-1/rustdoc.txt"
+    },
+    {
+      "command": "npm run standards:check",
+      "started": "2026-09-19T11:29:00.623Z",
+      "durationMs": 654,
+      "exitCode": 0,
+      "signal": null,
+      "log": "standards.txt",
+      "evidence": "review-1/standards.txt"
+    },
+    {
+      "command": "npm run check",
+      "started": "2026-09-19T11:26:42.549Z",
+      "durationMs": 1732,
+      "exitCode": 0,
+      "signal": null,
+      "log": "frontend-check.txt",
+      "evidence": "final-1/frontend-check.txt"
+    },
+    {
+      "command": "npm run build",
+      "started": "2026-09-19T11:26:44.281Z",
+      "durationMs": 2057,
+      "exitCode": 0,
+      "signal": null,
+      "log": "frontend-build.txt",
+      "evidence": "final-1/frontend-build.txt"
+    },
+    {
+      "command": "npm test",
+      "started": "2026-09-19T11:26:46.338Z",
+      "durationMs": 567,
+      "exitCode": 0,
+      "signal": null,
+      "log": "node-tests.txt",
+      "evidence": "final-1/node-tests.txt"
+    },
+    {
+      "command": "npm run test:e2e",
+      "started": "2026-09-19T11:26:46.915Z",
+      "durationMs": 69431,
+      "exitCode": 0,
+      "signal": null,
+      "log": "browser-tests.txt",
+      "evidence": "final-1/browser-tests.txt"
+    },
+    {
+      "command": "python -X utf8 tools/kerml-grammar/inventory.py",
+      "started": "2026-09-19T11:27:56.347Z",
+      "durationMs": 5394,
+      "exitCode": 0,
+      "signal": null,
+      "log": "grammar-inventory.txt",
+      "evidence": "final-1/grammar-inventory.txt"
+    },
+    {
+      "command": "python -X utf8 tools/kerml-grammar/generate.py",
+      "started": "2026-09-19T11:28:01.741Z",
+      "durationMs": 335,
+      "exitCode": 0,
+      "signal": null,
+      "log": "grammar-tables.txt",
+      "evidence": "final-1/grammar-tables.txt"
+    },
+    {
+      "command": "python -X utf8 tools/kerml-grammar/test_inventory.py",
+      "started": "2026-09-19T11:28:02.076Z",
+      "durationMs": 395,
+      "exitCode": 0,
+      "signal": null,
+      "log": "grammar-tests.txt",
+      "evidence": "final-1/grammar-tests.txt"
+    },
+    {
+      "command": "cargo run --locked --offline -p agq-kerml-text --example binding_manifest",
+      "started": "2026-09-19T11:28:02.471Z",
+      "durationMs": 24953,
+      "exitCode": 0,
+      "signal": null,
+      "log": "bindings.txt",
+      "evidence": "final-1/bindings.txt"
+    },
+    {
+      "command": "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check",
+      "started": "2026-09-19T11:28:27.424Z",
+      "durationMs": 2062,
+      "exitCode": 0,
+      "signal": null,
+      "log": "historical-lexical-corpus.txt",
+      "evidence": "final-1/historical-lexical-corpus.txt"
+    },
+    {
+      "command": "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check",
+      "started": "2026-09-19T11:28:29.487Z",
+      "durationMs": 549,
+      "exitCode": 0,
+      "signal": null,
+      "log": "independent-runtime.txt",
+      "evidence": "final-1/independent-runtime.txt"
+    },
+    {
+      "command": "python -X utf8 verification/kerml-operational-errata-publication-v3/preservation.py",
+      "started": "2026-09-19T11:28:59.146Z",
+      "durationMs": 1476,
+      "exitCode": 0,
+      "signal": null,
+      "log": "preservation.txt",
+      "evidence": "review-1/preservation.txt"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-semantics --test profiles",
+      "started": "2026-09-19T11:30:25.785Z",
+      "durationMs": 9506,
+      "exitCode": 0,
+      "signal": null,
+      "log": "context.txt",
+      "evidence": "profiles-final/context.txt"
+    },
+    {
+      "command": "python -X utf8 verification/kerml-operational-errata-publication-v3/independent-profiles.py",
+      "started": "2026-09-19T11:28:55.139Z",
+      "durationMs": 4006,
+      "exitCode": 0,
+      "signal": null,
+      "log": "independent-diff.txt",
+      "evidence": "review-1/independent-diff.txt"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml --test profiles -- --nocapture",
+      "started": "2026-09-19T11:30:36.012Z",
+      "durationMs": 1098,
+      "exitCode": 0,
+      "signal": null,
+      "log": "profiles.txt",
+      "evidence": "profiles-final/profiles.txt"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-semantics --test participant_contract -- --nocapture",
+      "started": "2026-09-19T11:30:37.111Z",
+      "durationMs": 1347,
+      "exitCode": 0,
+      "signal": null,
+      "log": "witness.txt",
+      "evidence": "profiles-final/witness.txt"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-semantics --test imports kerml11_140 -- --nocapture",
+      "started": "2026-09-19T11:20:37.812Z",
+      "durationMs": 1643,
+      "exitCode": 0,
+      "signal": null,
+      "log": "nested-redefinition-authority.txt",
+      "evidence": "gate-7-witness-1/nested-redefinition-authority.txt"
+    },
+    {
+      "command": "python -X utf8 verification/kerml-operational-errata-publication-v3/obligation-diff.py --output verification/kerml-operational-errata-publication-v3/gate-6-diff-1/obligation-diff.json",
+      "started": "2026-09-19T11:27:47.749Z",
+      "durationMs": 1621,
+      "exitCode": 0,
+      "signal": null,
+      "log": "obligation-diff.txt",
+      "evidence": "gate-6-diff-1/obligation-diff.txt"
+    },
+    {
+      "command": "node verification/kerml-operational-errata-publication-v3/inspect-authority.mjs --check",
+      "started": "2026-09-19T11:28:51.484Z",
+      "durationMs": 3655,
+      "exitCode": 0,
+      "signal": null,
+      "log": "authority-inspection.txt",
+      "evidence": "review-1/authority-inspection.txt"
+    },
+    {
+      "command": "git diff HEAD --check",
+      "started": "2026-09-19T11:29:01.278Z",
+      "durationMs": 82,
+      "exitCode": 0,
+      "signal": null,
+      "log": "diff.txt",
+      "evidence": "review-1/diff.txt"
+    }
+  ],
+  "ordinary_command_count": 27,
+  "ordinary_exit_zero": 27,
+  "strict_published_conformance": [
+    {
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-conformance --check",
+      "started": "2026-09-19T11:27:49.420Z",
+      "durationMs": 2158,
+      "exitCode": 1,
+      "signal": null,
+      "log": "kerml-conformance.txt"
+    },
+    {
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-conformance --check",
+      "started": "2026-09-19T11:27:51.578Z",
+      "durationMs": 1334,
+      "exitCode": 1,
+      "signal": null,
+      "log": "sysml-conformance.txt"
+    }
+  ],
+  "quality_command": [
+    {
+      "command": "cargo run --release --config profile.release.lto=false --locked --offline -p agq-kerml-text --example library_quality -- --output=verification/kerml-operational-errata-publication-v3/quality-1/library-quality.json",
+      "started": "2026-09-19T11:23:31.638Z",
+      "durationMs": 640141,
+      "exitCode": 1,
+      "signal": null,
+      "log": "library-quality.txt"
+    }
+  ],
+  "published_participant_obligations": 5,
+  "operational_participant_obligations": 0,
+  "unchanged_other_obligations": 5,
+  "library_quality": {
+    "baseline_profile": "agentique-kerml-1.0-operational/1",
+    "sources": 36,
+    "lossless": 36,
+    "recovery": 0,
+    "unresolved": 5,
+    "ambiguous": 0,
+    "incomplete_references": 57,
+    "mismatched": 0,
+    "incomplete_queries": 530,
+    "invalid_queries": 0,
+    "mandatory_obligations": 5,
+    "unevaluated_expressions": 3899,
+    "accepted_snapshot": false,
+    "quality_gate_passed": false
+  },
+  "protected_files": 838,
+  "historical_attempts": "Initial compiler and Clippy failures remain in their original run directories; subsequent successful corrections are listed above."
+}

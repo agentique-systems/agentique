@@ -1,0 +1,200 @@
+{
+  "format": "agentique-errata-authority-evidence/1",
+  "reviewed_at": "2026-09-19",
+  "issue_status": "open",
+  "disposition": "Agentique operational interpretation; not an adopted KerML 1.0 erratum",
+  "remote": [
+    {
+      "path": "KERML11-81.html",
+      "url": "https://issues.omg.org/issues/KERML11-81",
+      "resolved_url": "https://issues.omg.org/issues/KERML11-81",
+      "retrieved_at": "2026-09-19T11:08:06.231723+00:00",
+      "sha256": "d861d7be326c0d507095c2705364afd2cb5133d86286febf246da96c7a3fe9eb",
+      "bytes": 11164
+    },
+    {
+      "path": "KERML11-current.html",
+      "url": "https://issues.omg.org/issues/task-force/KERML11",
+      "resolved_url": "https://issues.omg.org/issues/task-force/KERML11",
+      "retrieved_at": "2026-09-19T11:08:08.325343+00:00",
+      "sha256": "3d04edc64dd645c593d30b8b469ab3198c7288062883ad5ad6088263fa5b84d0",
+      "bytes": 455653
+    },
+    {
+      "path": "release-head.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits/master",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits/master",
+      "retrieved_at": "2026-09-19T11:08:09.402016+00:00",
+      "sha256": "5e8d765bbe0172f0ce34263526069fae57db355327322319ebb4c08a5a65ee49",
+      "bytes": 34566
+    },
+    {
+      "path": "release-latest.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/releases/latest",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/releases/latest",
+      "retrieved_at": "2026-09-19T11:08:09.643491+00:00",
+      "sha256": "f8c7ef95fff6939204dd0e4a9388af90499c1b94eb912fdebc444dfb4edb44b7",
+      "bytes": 5033
+    },
+    {
+      "path": "release-2026-05.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/releases/tags/2026-05",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/releases/tags/2026-05",
+      "retrieved_at": "2026-09-19T11:08:09.917715+00:00",
+      "sha256": "e3f229da42490d18092f9965e7bb73e6b6885a0a04056c4d7ddc279fd67af66b",
+      "bytes": 18538
+    },
+    {
+      "path": "release-tree.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/fb97b754f29588b8e9c7a35f370880cd15eb29e7?recursive=1",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/fb97b754f29588b8e9c7a35f370880cd15eb29e7?recursive=1",
+      "retrieved_at": "2026-09-19T11:08:10.264497+00:00",
+      "sha256": "3c158a86c9086688226c287126f2e3d0afef269ec2141fcad445435ba3c72569",
+      "bytes": 489280
+    },
+    {
+      "path": "revised-kerml.pdf",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/doc/1-Kernel_Modeling_Language.pdf",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/doc/1-Kernel_Modeling_Language.pdf",
+      "retrieved_at": "2026-09-19T11:08:10.706508+00:00",
+      "sha256": "e8b7f33d9dac1a3fdd4eaa64b052608a989b92c580de91fdadb7038d33df99af",
+      "bytes": 1844440
+    }
+  ],
+  "preserved": [
+    {
+      "path": "standards/normative/kerml-1.0/KerML.xmi",
+      "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+      "bytes": 962254
+    },
+    {
+      "path": "KerML.pdf",
+      "sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697",
+      "bytes": 1821407
+    },
+    {
+      "path": "docs/kerml-standard-library-publication-authority-conflict.md",
+      "sha256": "7c33932f8753e5886fb4cf1bdb7225807d9a71c78265b5e84e11d69491c63099",
+      "bytes": 5932
+    },
+    {
+      "path": "crates/kerml-semantics/tests/participant_contract.rs",
+      "sha256": "10ba7e2a7e2703fce3c514409d918fd9cf346b6a86206502e462321e6ad60e1f",
+      "bytes": 5780
+    },
+    {
+      "path": "standards/artifacts/Semantic-Library.kpar",
+      "sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+      "bytes": 33031
+    },
+    {
+      "path": "standards/artifacts/Data-Type-Library.kpar",
+      "sha256": "957e4ff5c60f7fc5eedaf0b6d4f776856061c0aa7a424e260eeccb8d6ed7bfbd",
+      "bytes": 4260
+    },
+    {
+      "path": "standards/artifacts/Function-Library.kpar",
+      "sha256": "a8319da3ab1d8ffc0f390ea1aef29d85a00451655c41a9267ce396845c2b1c8d",
+      "bytes": 15929
+    },
+    {
+      "path": "standards/artifacts/Systems-Library.kpar",
+      "sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+      "bytes": 27577
+    }
+  ],
+  "current_release_commit": "fb97b754f29588b8e9c7a35f370880cd15eb29e7",
+  "revised_abstract_syntax_paths": [],
+  "revised_abstract_syntax_availability": "No KerML.xmi in the current release tree; revised PDF pinned as corroboration",
+  "published_association_xml": [
+    "<packagedElement xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Interactions-A_participantFeature_Interaction\" ns0:type=\"uml:Association\" name=\"A_participantFeature_Interaction\">\n          <generalization ns0:id=\"Kernel-Interactions-A_participantFeature_Interaction-_generalization.Kernel-Connectors-A_participantFeature_Association\" ns0:type=\"uml:Generalization\">\n            <general ns0:idref=\"Kernel-Connectors-A_participantFeature_Association\" />\n          </generalization>\n          <memberEnd ns0:idref=\"Kernel-Interactions-A_participantFeature_Interaction-participantFeature\" />\n          <memberEnd ns0:idref=\"Kernel-Interactions-A_participantFeature_Interaction-\" />\n          <navigableOwnedEnd ns0:idref=\"Kernel-Interactions-A_participantFeature_Interaction-participantFeature\" />\n          <ownedEnd ns0:id=\"Kernel-Interactions-A_participantFeature_Interaction-\" ns0:type=\"uml:Property\" name=\"\">\n            <association ns0:idref=\"Kernel-Interactions-A_participantFeature_Interaction\" />\n            <type ns0:idref=\"Kernel-Interactions-Interaction\" />\n          </ownedEnd>\n          <ownedEnd ns0:id=\"Kernel-Interactions-A_participantFeature_Interaction-participantFeature\" ns0:type=\"uml:Property\" name=\"participantFeature\">\n            <association ns0:idref=\"Kernel-Interactions-A_participantFeature_Interaction\" />\n            <lowerValue ns0:id=\"Kernel-Interactions-A_participantFeature_Interaction-participantFeature-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" value=\"2\" />\n            <redefinedProperty ns0:idref=\"Kernel-Connectors-A_participantFeature_Association-participantFeature\" />\n            <subsettedProperty ns0:idref=\"Kernel-Behaviors-A_involvesFeature_Behavior-involvesFeature\" />\n            <type ns0:idref=\"Core-Features-Feature\" />\n            <upperValue ns0:id=\"Kernel-Interactions-A_participantFeature_Interaction-participantFeature-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n          </ownedEnd>\n        </packagedElement>\n        ",
+    "<packagedElement xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Connectors-A_participantFeature_Association\" ns0:type=\"uml:Association\" name=\"A_participantFeature_Association\">\n          <memberEnd ns0:idref=\"Kernel-Connectors-A_participantFeature_Association-participantFeature\" />\n          <memberEnd ns0:idref=\"Kernel-Connectors-A_participantFeature_Association-\" />\n          <navigableOwnedEnd ns0:idref=\"Kernel-Connectors-A_participantFeature_Association-participantFeature\" />\n          <ownedEnd ns0:id=\"Kernel-Connectors-A_participantFeature_Association-\" ns0:type=\"uml:Property\" name=\"\">\n            <association ns0:idref=\"Kernel-Connectors-A_participantFeature_Association\" />\n            <type ns0:idref=\"Kernel-Associations-Association\" />\n          </ownedEnd>\n          <ownedEnd ns0:id=\"Kernel-Connectors-A_participantFeature_Association-participantFeature\" ns0:type=\"uml:Property\" isDerived=\"true\" isOrdered=\"true\" name=\"participantFeature\">\n            <association ns0:idref=\"Kernel-Connectors-A_participantFeature_Association\" />\n            <lowerValue ns0:id=\"Kernel-Connectors-A_participantFeature_Association-participantFeature-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" value=\"2\" />\n            <subsettedProperty ns0:idref=\"Core-Types-Type-ownedFeature\" />\n            <type ns0:idref=\"Core-Features-Feature\" />\n            <upperValue ns0:id=\"Kernel-Connectors-A_participantFeature_Association-participantFeature-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n          </ownedEnd>\n        </packagedElement>\n        "
+  ],
+  "xml_deletion_closure": [
+    "Kernel-Connectors-A_participantFeature_Association",
+    "Kernel-Connectors-A_participantFeature_Association-",
+    "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+    "Kernel-Connectors-A_participantFeature_Association-participantFeature-lowerValue",
+    "Kernel-Connectors-A_participantFeature_Association-participantFeature-upperValue",
+    "Kernel-Interactions-A_participantFeature_Interaction",
+    "Kernel-Interactions-A_participantFeature_Interaction-",
+    "Kernel-Interactions-A_participantFeature_Interaction-_generalization.Kernel-Connectors-A_participantFeature_Association",
+    "Kernel-Interactions-A_participantFeature_Interaction-participantFeature",
+    "Kernel-Interactions-A_participantFeature_Interaction-participantFeature-lowerValue",
+    "Kernel-Interactions-A_participantFeature_Interaction-participantFeature-upperValue"
+  ],
+  "incoming_references": [
+    {
+      "tag": "general",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Connectors-A_participantFeature_Association",
+      "inside_closure": true
+    },
+    {
+      "tag": "memberEnd",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Interactions-A_participantFeature_Interaction-participantFeature",
+      "inside_closure": true
+    },
+    {
+      "tag": "memberEnd",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Interactions-A_participantFeature_Interaction-",
+      "inside_closure": true
+    },
+    {
+      "tag": "navigableOwnedEnd",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Interactions-A_participantFeature_Interaction-participantFeature",
+      "inside_closure": true
+    },
+    {
+      "tag": "association",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Interactions-A_participantFeature_Interaction",
+      "inside_closure": true
+    },
+    {
+      "tag": "association",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Interactions-A_participantFeature_Interaction",
+      "inside_closure": true
+    },
+    {
+      "tag": "redefinedProperty",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+      "inside_closure": true
+    },
+    {
+      "tag": "memberEnd",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+      "inside_closure": true
+    },
+    {
+      "tag": "memberEnd",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Connectors-A_participantFeature_Association-",
+      "inside_closure": true
+    },
+    {
+      "tag": "navigableOwnedEnd",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+      "inside_closure": true
+    },
+    {
+      "tag": "association",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Connectors-A_participantFeature_Association",
+      "inside_closure": true
+    },
+    {
+      "tag": "association",
+      "attribute": "{http://www.omg.org/spec/XMI/20161101}idref",
+      "target": "Kernel-Connectors-A_participantFeature_Association",
+      "inside_closure": true
+    }
+  ]
+}

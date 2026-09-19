@@ -1,0 +1,34 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-semantics --test profiles",
+    "started": "2026-09-19T11:30:25.785Z",
+    "durationMs": 9506,
+    "exitCode": 0,
+    "signal": null,
+    "log": "context.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-operational-errata-publication-v3/independent-profiles.py",
+    "started": "2026-09-19T11:30:35.292Z",
+    "durationMs": 719,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-diff.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-kerml --test profiles -- --nocapture",
+    "started": "2026-09-19T11:30:36.012Z",
+    "durationMs": 1098,
+    "exitCode": 0,
+    "signal": null,
+    "log": "profiles.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-semantics --test participant_contract -- --nocapture",
+    "started": "2026-09-19T11:30:37.111Z",
+    "durationMs": 1347,
+    "exitCode": 0,
+    "signal": null,
+    "log": "witness.txt"
+  }
+]
