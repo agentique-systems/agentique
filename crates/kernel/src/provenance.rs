@@ -57,6 +57,23 @@ pub enum DeclaredOrigin {
     Authored { source: Option<SourceOrigin> },
     /// Submitted from a separately pinned standard-library artifact.
     StandardLibrary { library: LibraryId },
+    /// A reviewed, versioned correction to a pinned external model. This is
+    /// neither a claim about the original source nor ordinary semantic inference.
+    /// Authority interpretation belongs to the language or importing layer.
+    ReviewedCorrection {
+        /// Exact correction profile, including its version.
+        profile: String,
+        /// Reviewed entry within that profile.
+        entry: String,
+        /// Stable evidence URIs or content-qualified evidence references.
+        authority: BTreeSet<String>,
+        /// Content-qualified identity of the originating library.
+        library: LibraryId,
+        /// Deterministic locator for the reviewed input assertion.
+        source_key: String,
+        /// Deterministic semantic operation path and output role.
+        output_key: String,
+    },
     /// Inputs are historical provenance, not current semantic references.
     Transformation {
         transformation: TransformationId,

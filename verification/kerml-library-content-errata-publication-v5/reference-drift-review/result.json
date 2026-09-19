@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "verification/kerml-library-content-errata-publication-v5/review-reference-drift.py"
+  ],
+  "started_at": "2026-09-19T16:37:41.672968+00:00",
+  "duration_seconds": 1.047000000020489,
+  "exit_code": 0,
+  "output": "output.txt"
+}

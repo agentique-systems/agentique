@@ -55,13 +55,37 @@ fn serialized_diagnostics(values: &BTreeMap<(&'static str, ElementId), String>) 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
-    let draft =
-        agq_kerml_text::library::refine_declarations(&sources, |round, refs, obligations| {
+    let profile = if std::env::args().any(|a| a == "--v3") {
+        agq_kerml::BaselineProfile::OPERATIONAL_V3
+    } else {
+        agq_kerml::BaselineProfile::OPERATIONAL_V2
+    };
+    let draft = agq_kerml_text::library::refine_declarations_with_profile(
+        &sources,
+        profile,
+        |round, refs, obligations| {
             println!("refinement {round}: {refs} provisional endpoints; {obligations} obligations");
-        })?;
+        },
+    )?;
     let model = draft.candidate().model();
     let mut queries = draft.queries(&sources)?;
     let context = queries.context().clone();
+    let document_of = |element| {
+        if let Some(source) = draft.source_map().get(&FactKey::Element(element)) {
+            return source.document;
+        }
+        let agq_kernel::provenance::Origin::Declared(
+            agq_kernel::provenance::DeclaredOrigin::ReviewedCorrection { source_key, .. },
+        ) = model.element(element).unwrap().origin()
+        else {
+            panic!("unidentified audit origin")
+        };
+        sources
+            .documents()
+            .find(|d| source_key == &format!("{}#sha256:{}", d.path(), d.sha256()))
+            .expect("exact correction source identity")
+            .document()
+    };
     let mut counts = BTreeMap::<DocumentId, Counts>::new();
     for (index, record) in model.elements().enumerate() {
         // Bound memoized proof populations during a complete corpus audit.
@@ -70,8 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             queries = draft.queries(&sources)?;
             assert_eq!(queries.context(), &context);
         }
-        let origin = &draft.source_map()[&FactKey::Element(record.id())];
-        let row = counts.entry(origin.document).or_default();
+        let row = counts.entry(document_of(record.id())).or_default();
         let is = |class| {
             model
                 .registry()
@@ -166,12 +189,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         diagnostics(&mut row.resolution, result.diagnostics);
     }
     for obligation in draft.candidate().obligations() {
-        let origin = &draft.source_map()[&FactKey::Element(obligation.element)];
-        counts.get_mut(&origin.document).unwrap().obligations.push(json!({
+        let origin = draft
+            .source_map()
+            .get(&FactKey::Element(obligation.element));
+        counts.get_mut(&document_of(obligation.element)).unwrap().obligations.push(json!({
             "code":"KLS_STRUCTURAL_OBLIGATION", "element":obligation.element.to_string(),
             "property":model.registry().property(obligation.property)?.name,
             "property_id":obligation.property.to_string(), "required_lower":obligation.required.lower,
-            "actual":obligation.actual, "range":[origin.range.start(),origin.range.end()]
+            "actual":obligation.actual, "range":origin.map(|o| [o.range.start(),o.range.end()]),
+            "provenance":format!("{:?}",model.element(obligation.element).unwrap().origin())
         }));
     }
     let mut documents = vec![];

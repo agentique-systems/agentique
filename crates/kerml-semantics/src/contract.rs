@@ -124,7 +124,7 @@ pub enum Rule {
     DeclaredMemberName,
     DeclaredReferenceResolution,
     NamespaceResolution,
-    /// Non-normative Agentique semantic erratum, only operational KerML 1.0/v2.
+    /// Agentique semantic erratum, operational KerML 1.0/v2 and its successors.
     OperationalRedefinitionTargetV1,
     ParameterRedefinition,
     ResultRedefinition,

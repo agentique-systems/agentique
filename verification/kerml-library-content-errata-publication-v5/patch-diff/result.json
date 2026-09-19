@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "verification/kerml-library-content-errata-publication-v5/verify-patch.py"
+  ],
+  "started_at": "2026-09-19T15:31:38.709698+00:00",
+  "duration_seconds": 6.5,
+  "exit_code": 1,
+  "output": "output.txt"
+}

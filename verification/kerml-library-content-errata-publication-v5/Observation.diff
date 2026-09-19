@@ -1,0 +1,10 @@
+--- standards\libraries\Semantic-Library\Kernel Semantic Library\Observation.kerml
++++ verification\kerml-library-content-errata-publication-v5\release\sysml.library\Kernel Libraries\Kernel Semantic Library\Observation.kerml
+@@ -92,6 +92,7 @@
+ 	    	end feature source {
+ 	    		feature redefines sourceOutput = changeSignal;
+ 	    	}
++	    	end feature target;
+ 	    }
+ 	}
+ 	

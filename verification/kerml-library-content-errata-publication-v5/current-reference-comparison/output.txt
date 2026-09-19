@@ -1,0 +1,6 @@
+{"files": 36, "compared_assertions": 291, "mismatched_assertions": 0, "incomplete_compared_assertions": 0, "mismatched_target_sets": 1, "accepted_semantic_publication": false}
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-library-content-errata-publication-v5\compare-current-xmi.py", line 71, in <module>
+    assert not report['mismatched_target_sets']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

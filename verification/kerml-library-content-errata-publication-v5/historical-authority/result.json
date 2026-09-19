@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "verification/kerml-library-content-errata-publication-v5/verify-historical-authority.py"
+  ],
+  "started_at": "2026-09-19T16:24:46.798918+00:00",
+  "duration_seconds": 0.10999999998603016,
+  "exit_code": 0,
+  "output": "output.txt"
+}

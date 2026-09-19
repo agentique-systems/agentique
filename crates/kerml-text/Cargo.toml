@@ -13,6 +13,5 @@ agq-kerml-syntax = { path = "../kerml-syntax" }
 thiserror.workspace = true
 agq-standard-libraries = { path = "../standard-libraries" }
 uuid.workspace = true
-
-[dev-dependencies]
+serde.workspace = true
 serde_json.workspace = true

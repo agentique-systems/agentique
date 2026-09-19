@@ -1,0 +1,3 @@
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+   Compiling agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.47s

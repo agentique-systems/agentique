@@ -1,0 +1,6 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.20s
+     Running `target\debug\examples\library_model_audit.exe --v3 --declarations-only --output=verification/kerml-library-content-errata-publication-v5/operational-declarations/model.json`
+Exported 29140 canonical records

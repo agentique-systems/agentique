@@ -1,0 +1,1 @@
+{"original_v2_algorithm_sha256": "d25df7cca2777bc87c9c667949249f346db62192689cacfbd96e66574a7f48b5", "historical_acquisitions": 86, "historical_matrix_rows": 42, "historical_source_conflicts": 3, "hash_mismatches": 0, "artifact_resolution": "Exact frozen v2 text plus asserted unchanged prefix of extended living document; no v4 files rewritten."}

@@ -95,6 +95,27 @@ impl KerMlQueries<'_> {
             !implied || included,
         );
         out.merge(owned_relationships);
+        if self.is(element, c::REDEFINITION) {
+            let redefining =
+                self.read_reference(&mut out, element, p::REDEFINITION_REDEFINING_FEATURE);
+            let redefined =
+                self.read_reference(&mut out, element, p::REDEFINITION_REDEFINED_FEATURE);
+            if let (Some(redefining), Some(redefined)) = (redefining, redefined) {
+                let target_end = matches!(
+                    self.read_value(&mut out, redefined, p::FEATURE_IS_END),
+                    Some(Value::Boolean(true))
+                );
+                let source_end = matches!(
+                    self.read_value(&mut out, redefining, p::FEATURE_IS_END),
+                    Some(Value::Boolean(true))
+                );
+                check(
+                    &mut out,
+                    "validateRedefinitionEndConformance",
+                    !target_end || source_end,
+                );
+            }
+        }
         if self.is(element, c::FEATURE) {
             let mut flags = BTreeMap::new();
             for property in [

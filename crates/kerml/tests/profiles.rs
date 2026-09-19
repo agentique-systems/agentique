@@ -154,7 +154,16 @@ fn semantic_v2_pins_its_authority_without_an_additional_descriptor_change() {
         (&entry["algorithm"], &entry["algorithm_sha256"]),
         (&entry["evidence_packet"], &entry["evidence_packet_sha256"]),
     ] {
-        let bytes = std::fs::read(root.join(path.as_str().unwrap())).unwrap();
+        let current = std::fs::read(root.join(path.as_str().unwrap())).unwrap();
+        let bytes = if path == &entry["algorithm"] {
+            // V3 appends its definition to the living document. The exact V2
+            // authority remains frozen, and must still be its unchanged prefix.
+            let frozen = std::fs::read(root.join("verification/kerml-library-content-errata-publication-v5/operational-profile-v2-frozen.md")).unwrap();
+            assert!(current.starts_with(&frozen));
+            frozen
+        } else {
+            current
+        };
         assert_eq!(
             format!("{:x}", Sha256::digest(bytes)),
             hash.as_str().unwrap()
@@ -163,5 +172,23 @@ fn semantic_v2_pins_its_authority_without_an_additional_descriptor_change() {
     assert_ne!(
         BaselineProfile::OPERATIONAL_V1.errata_manifest_sha256(),
         BaselineProfile::OPERATIONAL_V2.errata_manifest_sha256()
+    );
+}
+
+#[test]
+fn library_v3_has_distinct_authority_and_the_same_reviewed_descriptor_graph() {
+    let v2 = descriptors_for_profile(BaselineProfile::OPERATIONAL_V2).unwrap();
+    let v3 = descriptors_for_profile(BaselineProfile::OPERATIONAL_V3).unwrap();
+    assert_eq!(v2.models, v3.models);
+    assert_eq!(v2.classes, v3.classes);
+    assert_eq!(v2.properties, v3.properties);
+    assert_eq!(v2.associations, v3.associations);
+    assert_eq!(v2.enumerations, v3.enumerations);
+    assert_eq!(v2.primitives, v3.primitives);
+    assert_eq!(v2.sources, v3.sources);
+    assert_eq!(v2.reviews, v3.reviews);
+    assert_ne!(
+        BaselineProfile::OPERATIONAL_V2.errata_manifest_sha256(),
+        BaselineProfile::OPERATIONAL_V3.errata_manifest_sha256()
     );
 }

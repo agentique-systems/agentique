@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--release",
+    "--target-dir",
+    "target/kerml-v4",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "library_obligations",
+    "--",
+    "--v3",
+    "--output=verification/kerml-library-content-errata-publication-v5/operational-obligations-2/obligations.json"
+  ],
+  "started_at": "2026-09-19T16:13:28.566557+00:00",
+  "duration_seconds": 904.5939999999246,
+  "exit_code": 0,
+  "output": "output.txt"
+}

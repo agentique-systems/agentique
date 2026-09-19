@@ -1,0 +1,13 @@
+--- standards\libraries\Function-Library\Kernel Function Library\VectorFunctions.kerml
++++ verification\kerml-library-content-errata-publication-v5\release\sysml.library\Kernel Libraries\Kernel Function Library\VectorFunctions.kerml
+@@ -179,7 +179,9 @@
+ 	}
+ 	function CartesianThreeVectorOf specializes CartesianVectorOf { 
+ 		in components: Real[3] ordered nonunique;
+-		return : CartesianThreeVectorValue[1];
++		return : CartesianThreeVectorValue[1] {
++		    feature :>> CartesianVectorOf::result::dimension, CartesianThreeVectorValue::dimension;
++		}
+ 	}
+ 	
+ 	feature cartesianZeroVector: CartesianVectorValue[3] =

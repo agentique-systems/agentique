@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-library-content-errata-publication-v5\verify-four-models.py", line 85, in <module>
+    assert not members(old,before)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

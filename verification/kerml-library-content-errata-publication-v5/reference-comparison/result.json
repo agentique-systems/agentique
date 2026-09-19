@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "verification/kerml-name-resolution-errata-publication-v4/compare-reference-xmi.py",
+    "--audit",
+    "verification/kerml-library-content-errata-publication-v5/operational-obligations-2/obligations.json",
+    "--output",
+    "verification/kerml-library-content-errata-publication-v5/reference-comparison.json"
+  ],
+  "started_at": "2026-09-19T16:33:44.970636+00:00",
+  "duration_seconds": 0.9849999999860302,
+  "exit_code": 0,
+  "output": "output.txt"
+}

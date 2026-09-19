@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-library-content-errata-publication-v5\verify-four-models.py", line 89, in <module>
+    assert {new.path(t) for t in targets}=={'VectorFunctions::CartesianVectorOf::result::dimension','VectorValues::CartesianThreeVectorValue::dimension'}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

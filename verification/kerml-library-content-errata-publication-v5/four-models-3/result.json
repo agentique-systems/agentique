@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "verification/kerml-library-content-errata-publication-v5/verify-four-models.py"
+  ],
+  "started_at": "2026-09-19T15:47:54.947700+00:00",
+  "duration_seconds": 3.687000000034459,
+  "exit_code": 1,
+  "output": "output.txt"
+}
