@@ -105,17 +105,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "result":"incomplete","semantic_quality_gate_passed":false,"documents":quality});
     let args: Vec<_> = std::env::args().skip(1).collect();
     let write = args.iter().any(|a| a == "--write");
+    if write {
+        return Err("Historical lexical evidence is immutable. Use tools/kerml-grammar/inventory.py for the production inventory and agq-kerml-text --example library_quality for current KerML quality.".into());
+    }
     for (path, value) in [
-        ("standards/library-syntax-coverage.json", inventory),
+        (
+            "verification/kerml-standard-library-bootstrap-v1/baseline-library-syntax-coverage.json",
+            inventory,
+        ),
         (
             "verification/sysml-semantic-foundation-v1/library-quality.json",
             report,
         ),
     ] {
         let bytes = format!("{}\n", serde_json::to_string_pretty(&value)?);
-        if write {
-            std::fs::write(root.join(path), bytes)?;
-        } else if std::fs::read(root.join(path))? != bytes.as_bytes() {
+        if std::fs::read(root.join(path))? != bytes.as_bytes() {
             return Err(format!("stale corpus report {path}").into());
         }
     }

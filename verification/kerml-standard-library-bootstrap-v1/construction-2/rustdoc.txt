@@ -1,0 +1,5 @@
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+ Documenting agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+ Documenting agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.08s
+   Generated C:\Users\phili\github\agentique-systems\agentique\target\doc\agq_kerml_semantics\index.html and 2 other files

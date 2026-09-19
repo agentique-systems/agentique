@@ -92,8 +92,34 @@ pub enum LibraryElementRole {
     Relationship(u32),
     Annotation,
     Expression,
+    /// A canonical grammar output at this exact immutable range. The ordinal
+    /// distinguishes nested zero-width outputs and repeated grammar roles.
+    Canonical {
+        role: &'static str,
+        ordinal: u32,
+    },
 }
 impl LibraryDocument {
+    /// Content-qualified identity for a required implicit structural child of a
+    /// canonical library declaration. The owner's semantic identity disambiguates
+    /// multiple expression nodes sharing one source range. This is not an OMG ID.
+    pub fn owned_element_id(
+        &self,
+        range: ByteRange,
+        owner: ElementId,
+        role: &str,
+    ) -> Result<ElementId, LibraryError> {
+        self.element_id(range, LibraryElementRole::Declaration)?;
+        Ok(ElementId::from_u128(identity(&serde_json::json!([
+            "agentique-library-owned-element/1",
+            self.document.to_string(),
+            self.sha256,
+            range.start(),
+            range.end(),
+            owner.to_string(),
+            role
+        ]))))
+    }
     pub fn library(&self) -> LibraryId {
         self.library
     }
@@ -139,6 +165,7 @@ impl LibraryDocument {
             LibraryElementRole::Relationship(n) => ("relationship", n),
             LibraryElementRole::Annotation => ("annotation", 0),
             LibraryElementRole::Expression => ("expression", 0),
+            LibraryElementRole::Canonical { role, ordinal } => (role, ordinal),
         };
         Ok(ElementId::from_u128(identity(&serde_json::json!([
             "agentique-library-element/1",

@@ -1,0 +1,152 @@
+# KerML standard-library foundation review
+
+Result: **KERML STANDARD LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**.
+
+This is implementation work in generation 2, with no external-authority approval
+blocker. Gates 0–2 pass. Later gates have substantial implementation, but the
+three-library graph is an unpublished construction, not a validated Snapshot.
+SysML semantics and the modeling platform must not depend on this candidate.
+
+Authority remains the exact pinned KerML 1.0 specification, XMI and three KPAR
+libraries. No Systems Library semantic loading, SysML frontend, execution,
+persistence or platform work was introduced. The branch is
+`semantics/kerml-standard-library-bootstrap-v1`, based on fetched main `1eb1424`.
+The initial working tree was clean. Earlier verification evidence is preserved.
+
+## Acceptance questions
+
+| Question | Finding |
+| --- | --- |
+| 1. Do all 36 pinned documents parse without unexplained recovery? | **Yes.** The production frontend parses all 36 with zero recovery. The grammar-context inventory contains 199 used production kinds. |
+| 2. Are all bytes preserved? | **Yes.** Exact contiguous UTF-8 token partitions reproduce every source; KPAR verification and repeated corpus tests retain immutable source identities. |
+| 3. Are all structurally meaningful declarations lowered? | **Not accepted.** The builder traverses all production trees and constructs declarations, relationships, imports, aliases, multiplicities, documentation and expression structure. Unmet structural obligations and incomplete language interpretation remain. |
+| 4. Are libraries canonical kernel elements rather than side objects? | **Candidate records use the ordinary complete KerML registry and kernel ModelView.** There is no parallel library model. There is not yet a successfully published library Snapshot. |
+| 5. Are ElementIds deterministic for the exact bytes? | **Yes for the implemented construction.** Repeat loads compare every record, slot, association occurrence, source-map entry and unmet obligation. Locators include immutable document content, byte range and structural role; anonymous required children additionally include their owner ID. Qualified names are not identity. |
+| 6. Is StandardLibrary provenance preserved? | **Yes in construction.** Every record, authored slot and association occurrence retains the exact LibraryId. DocumentId, revision, range and syntax-node evidence live separately in the source map. |
+| 7. Are packages/namespaces/imports/aliases represented semantically? | **Yes in construction.** The corpus includes 204 canonical imports: 167 membership and 37 namespace imports. Aliases retain Membership identity. |
+| 8. Does resolution handle imports and visibility? | **Implemented with remaining corpus gaps.** Semantic queries cover qualified/root lookup, membership and namespace imports, recursion, aliases, public/private/protected boundaries, inheritance, shadowing and ambiguity. Full-corpus complete resolution is not accepted. |
+| 9. Are cyclic imports safe? | **Yes for the implemented queries.** Iterative graph traversal and fixed-point propagation terminate on tested cycles; repeated nonconvergent filtering states report incompleteness. No call-stack traversal proportional to import depth. |
+| 10. Are unresolved/ambiguous structural references eliminated or justified? | **No.** The current quality report retains unresolved redefinitions and incomplete query evidence. They have not been relabeled as published-source anomalies. |
+| 11. Do bindings point into the canonical graph? | **Yes, into the candidate kernel graph.** They are IDs of actual parsed declarations, not substitute objects. Whole-library publication remains unaccepted. |
+| 12. Are bindings validated rather than name-hardcoded? | **Yes for 22 implemented roles.** Contracts specify full public ownership paths, exact metaclasses and exact library provenance; missing, duplicate, wrong-kind, wrong-library and inaccessible fixtures fail. The checked-in manifest is generated and stale-checked. These are Agentique IDs, not OMG-assigned IDs. |
+| 13. Does SemanticContext identify actual loaded libraries? | **Partially.** Construction contexts include exact three-archive hashes, canonical StandardLibrary record/occurrence digest, validated target IDs, binding version and rule version. A first-class accepted publication input remains to be implemented. |
+| 14. Can authored projects resolve against them? | **Not yet accepted or integrated.** Authored inheritance lookup was improved and project regressions pass, but no authored project is allowed to treat the unpublished library candidate as an accepted dependency. |
+| 15. Are unsupported executable semantics distinguished? | **Yes.** Expression/function records and syntax survive. The quality report counts unevaluated bodies separately from syntax, resolution, structural/language diagnostics and reviewed grammar discrepancies. No evaluator was added. |
+| 16. Is the quality gate green in its defined scope? | **No.** It requires strict publication and complete structural-semantic validation. Candidate endpoints and successful process execution cannot pass it. |
+| 17. Do both structural runtime gates remain green? | **Yes in the recorded focused checks.** The final workspace verification also records both gate results; strict metamodel-authoring conformance is separate and retains its errors. |
+
+## Implemented architecture
+
+[ADR 0013](adr/0013-kerml-library-grammar.md) compares the frontend alternatives
+against the actual corpus. Maintained grammar data generates deterministic Rust
+recognition tables. A lossless production arena provides typed borrowed views,
+Table 6 precedence, recovery, source ranges and conservative edit reconciliation.
+The old bounded authored adapter remains available; it does not silently gain
+support merely because the production recognizer can parse a construct.
+
+Canonical construction is a transaction builder over complete `agq-kerml`
+descriptors. `Snapshot::preview` provides an explicitly unpublished
+`ConstructionView`, retaining mandatory lower-bound obligations. It still checks
+present value kinds, targets, upper bounds, uniqueness, composition and association
+constraints. `Snapshot::apply` continues to enforce complete structural publication.
+No partially valid library Snapshot is exposed.
+
+`refine_declarations` reconstructs immutable candidates from the same verified
+sources while semantic queries establish relationship endpoints. A unique candidate
+with incomplete evidence remains provisional. Stability of endpoint candidates is
+not completeness, language validity or publication acceptance. Cyclic refinement
+states fail explicitly. Neither parser names nor regex extraction resolve targets.
+
+Namespace membership queries retain actual Membership identities and filter
+redefinition populations before selecting names. Search evidence includes member
+populations, import sets, imported namespaces, visibility/property reads and project
+root availability. Proofs retain StandardLibrary fact origins. Per-evaluator
+memoization is bound to one immutable context; there is no persistent incremental
+cache or reuse across changed source revisions.
+
+## Remaining implementation work
+
+The completed quality run constructed 29,265 candidate elements, including
+16,747 relationships. Of 4,003 reference assertions, 3,998 have provisional
+endpoints; five names are unresolved, none ambiguous, and 57 reference answers
+remain incomplete. No established endpoint differs from its current unique
+candidate. There are ten unmet structural lower bounds: five redefinition
+endpoints and five Interaction participant relationships. Resolution is complete
+in 33 of the 36 document reports, but the whole publication is incomplete.
+
+The audit evaluated 60,560 existing structural queries: 530 were incomplete and
+none invalid. This does not establish the unimplemented broader language
+constraint scope. It retains 3,899 unevaluated expression/function elements.
+
+The quality report is the current machine-readable diagnostic register. In
+particular, construction does not yet populate the five required
+`Interaction::participantFeature` relationships in `Transfers.kerml`. Correct
+handling must reconcile actual end-feature semantics, inherited features, the
+association redefinition and its opposite multiplicity. The kernel gate has not
+been weakened and inherited features have not been copied to satisfy the bounds.
+This is a remaining implementation/interpretation obligation, not an external
+authority blocker or a newly accepted source anomaly.
+
+Remaining redefinition references include `InsideOf`'s `source`/`target`,
+Observation's nested `observations`, and two nested `monitoredFeature` references
+in FeatureReferencingPerformances. Candidate searches and their completeness are
+recorded precisely. The implementation has not established a normative resolution
+for these names. A more permissive lexical fallback or a manually manufactured
+library declaration would not discharge this work.
+
+The checked-in bindings support selected base specializations and positional
+parameter/result/end redefinitions. They are not a complete implementation of all
+implicit KerML relationships. Full constraint validation, complete feature-chain
+interpretation and the existing effective-feature query's remaining unsupported
+cases still require implementation. The quality command evaluates its named query
+families and reports missing broader validation explicitly; null is never zero.
+
+Next acceptance requires complete lowering and revalidation, strict transactional
+Snapshot publication, a validated publication facade, authored SourceProject
+integration, the full library-aware dependency audit, and combined corpus/project
+stress tests. No `LoadedKermlStandardLibraries` facade is offered before it can
+actually promise these invariants.
+
+## Discrepancies and diagnostic boundaries
+
+ADR 0013 documents grammar transcription dispositions. Anonymous invariants have
+42 grammar discrepancies across nine corpus files, distinct from recovery. Casts
+have a typed result and an appended zero-width empty-result production in the
+printed grammar; construction uses the typed result to satisfy the empty default.
+Both syntax productions remain present. The report identifies each affected cast.
+This follows the expression's single-result constraint and the exact
+`BaseFunctions::as` / `::meta` signatures. It does not execute either function.
+
+Unknown ordinary semantics remain incomplete. Published XMI conformance errors
+remain errors in their separate strict gate. Historical lexical reports and prior
+milestone results have not been rewritten to imply later success.
+
+## Verification and complexity
+
+Evidence is in [the milestone directory](../verification/kerml-standard-library-bootstrap-v1/README.md).
+`gate-0`, `gate-1`, `gate-2`, `construction-1` and `construction-2` contain focused
+commands, full output and actual exit codes. `quality-1` records the current
+semantic quality command. `final-1` records workspace and application checks;
+`strict-1` preserves separate strict conformance failures.
+All 19 commands in `final-1` passed, including both runtime gates and strict
+Rustdoc for all eight public generation-2 crates. Preservation checked 693 prior
+files. `review-1` repeats standards integrity after the coverage/review update.
+The semantic quality command exited **1**; both separate strict metamodel
+conformance commands exited **1**. These failures remain visible and are not
+folded into the successful structural runtime result.
+
+Tests include per-family syntax fixtures; repeated lossless corpus parses;
+repeatable canonical construction; corrupt binding fixtures; import and alias
+ambiguity; visibility changes; insertion after misses; import removal; inherited
+and renamed diamond lookup; project boundaries; a 64-namespace import cycle;
+256 levels of inheritance; and simultaneous immutable semantic queries. The
+required combined accepted-library/many-authored-document stress case is not yet
+available because accepted library publication is incomplete.
+
+Chart parsing has the documented generalized-parser worst-case bounds and an
+explicit work budget. Semantic graph traversal uses indexes and iterative work
+queues. Namespace populations are cached per immutable evaluator; evidence is
+shared through aggregate claims instead of repeated per-member proof expansion.
+Fixed-point propagation can require many rounds; dense redefinition filtering and
+library refinement are not claimed linear. There are no timing-based correctness
+thresholds or claimed production-performance guarantees.

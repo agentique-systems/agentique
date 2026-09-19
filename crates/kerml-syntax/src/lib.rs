@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 mod lexer;
 mod parser;
+pub mod production;
 mod reconcile;
 
 pub use agq_kernel::{DocumentId, SourceRevisionId, SyntaxNodeId, provenance::ByteRange};

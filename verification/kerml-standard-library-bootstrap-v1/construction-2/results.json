@@ -1,0 +1,50 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text",
+    "started": "2026-09-18T22:59:22.766Z",
+    "durationMs": 72041,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kernel-and-semantic-tests.txt"
+  },
+  {
+    "command": "cargo clippy --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text --all-targets -- -D warnings",
+    "started": "2026-09-18T23:00:34.808Z",
+    "durationMs": 436,
+    "exitCode": 0,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text",
+    "started": "2026-09-18T23:00:35.244Z",
+    "durationMs": 5170,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rustdoc.txt"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T23:00:40.415Z",
+    "durationMs": 1249,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T23:00:41.665Z",
+    "durationMs": 2089,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T23:00:43.755Z",
+    "durationMs": 3437,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  }
+]

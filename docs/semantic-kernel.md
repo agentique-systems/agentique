@@ -209,3 +209,16 @@ available. Unsafe effective replacement and ambiguous alias queries fail explici
 Association facts have one writable carrier; links, indexes and derived results
 remain revision-bound. Source and library bytes, generation-1 obligations and
 historical blocker reports remain unchanged.
+
+## Unpublished construction
+
+`Snapshot::preview` inspects a transaction as a distinct `ConstructionView`.
+Its ordinary canonical records and indexes can support semantic resolution before
+every required endpoint is available. Missing lower bounds are sorted, typed
+`ConstructionObligation` values. Present values, reference types, dangling targets,
+upper bounds, uniqueness, containment and association ordering remain validated.
+
+A construction view is never a Snapshot and has no publication shortcut. Preview
+does not change its base or consume identities; `Snapshot::apply` still enforces
+all structural invariants. This supports mutually dependent declarations without
+inventing endpoints or weakening either structural runtime gate.

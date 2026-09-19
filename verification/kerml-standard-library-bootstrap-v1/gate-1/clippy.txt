@@ -1,0 +1,4 @@
+    Checking uuid v1.26.1
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.59s

@@ -1,0 +1,4 @@
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.43s
+     Running `target\debug\examples\binding_manifest.exe`
+22 canonical anchor bindings validated

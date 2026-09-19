@@ -44,6 +44,7 @@ pub(crate) fn project(
     registry: &MetamodelRegistry,
     records: &BTreeMap<ElementId, Arc<ElementRecord>>,
     links: &BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    validation: &mut crate::model::Validation,
 ) -> Result<Navigation, ModelError> {
     type Group<'a> = Vec<(Option<usize>, ElementId, &'a AssociationOccurrence)>;
     let mut groups: BTreeMap<(ElementId, PropertyId), Group<'_>> = BTreeMap::new();
@@ -93,14 +94,7 @@ pub(crate) fn project(
     let mut navigation = BTreeMap::new();
     for ((context, end), mut values) in groups {
         let p = registry.property(end)?;
-        if !p.multiplicity.accepts(values.len()) {
-            return Err(ModelError::Multiplicity {
-                element: context,
-                property: end,
-                required: p.multiplicity,
-                actual: values.len(),
-            });
-        }
+        validation.multiplicity(context, end, p.multiplicity, values.len())?;
         let unique: BTreeSet<_> = values.iter().map(|(_, target, _)| *target).collect();
         if p.unique && unique.len() != values.len() {
             return Err(ModelError::DuplicateValue {
@@ -156,12 +150,7 @@ pub(crate) fn project(
             if registry.is_subtype(record.metaclass(), context)?
                 && !navigation.contains_key(&(record.id(), p.id))
             {
-                return Err(ModelError::Multiplicity {
-                    element: record.id(),
-                    property: p.id,
-                    required: p.multiplicity,
-                    actual: 0,
-                });
+                validation.multiplicity(record.id(), p.id, p.multiplicity, 0)?;
             }
         }
     }

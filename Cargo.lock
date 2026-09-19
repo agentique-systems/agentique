@@ -74,6 +74,7 @@ version = "0.1.0"
 dependencies = [
  "agq-kernel",
  "thiserror",
+ "uuid",
 ]
 
 [[package]]
@@ -84,7 +85,10 @@ dependencies = [
  "agq-kerml-semantics",
  "agq-kerml-syntax",
  "agq-kernel",
+ "agq-standard-libraries",
+ "serde_json",
  "thiserror",
+ "uuid",
 ]
 
 [[package]]

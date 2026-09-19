@@ -1,0 +1,88 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.84s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_syntax-ac5835ee13279f1b.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\numeric_tokens.rs (target\debug\deps\numeric_tokens-15e778e74d01964e.exe)
+
+running 1 test
+test normative_unsigned_numeric_tokens_preserve_literal_and_range_punctuation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\productions.rs (target\debug\deps\productions-dc1289104dc40816.exe)
+
+running 5 tests
+test grammar_discrepancies_do_not_become_unknown_syntax_or_fabricated_names ... ok
+test parse_identity_is_deterministic_within_an_exact_source_revision_and_work_is_bounded ... ok
+test incomplete_authored_input_recovers_without_hoisting_or_source_loss ... ok
+test expression_precedence_and_associativity_are_structural ... ok
+test contextual_production_families_are_lossless_and_inspectable ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_text-85b3b346b3bd8a7f.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\equivalence.rs (target\debug\deps\equivalence-bb6d1d01fdcaa65f.exe)
+
+running 1 test
+test programmatic_and_textual_models_have_equivalent_canonical_records ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests\frontend.rs (target\debug\deps\frontend-d99e988170d17724.exe)
+
+running 12 tests
+test unresolved_ambiguous_wrong_kind_are_explicit_and_never_kernel_targets ... ok
+test regular_comments_are_preserved_but_not_mistaken_for_notes ... ok
+test unresolved_specialization_obligations_block_inherited_name_lookup ... ok
+test limits_invalid_utf8_edits_and_atomic_history ... ok
+test source_tokens_trivia_utf8_and_old_revisions_are_lossless ... ok
+test vertical_slice_uses_normative_relationships_and_queries ... ok
+test declared_resolution_has_lexical_shadowing_and_reports_inheritance_gaps ... ok
+test structural_replacements_and_ambiguous_duplicates_are_not_reconciled ... ok
+test membership_and_relationship_identity_survive_rename_and_formatting ... ok
+test opaque_unsupported_constructs_cannot_inject_declarations_during_recovery ... ok
+test rename_and_formatting_preserve_ids_but_replacement_and_recreation_do_not ... ok
+test malformed_and_incomplete_text_never_invents_semantics ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.62s
+
+     Running tests\project.rs (target\debug\deps\project-be933358712ff87d.exe)
+
+running 10 tests
+test mixed_project_retains_sysml_and_marks_missing_frontend_evidence_incomplete ... ok
+test recovered_namespaces_block_guessed_denotation_without_poisoning_unrelated_scopes ... ok
+test recovered_type_body_keeps_effective_feature_answers_incomplete ... ok
+test failed_batch_publishes_no_document_or_semantic_revision ... ok
+test two_documents_share_one_root_and_resolve_in_both_directions ... ok
+test unchanged_document_origin_and_identity_survive_format_and_path_edits ... ok
+test adding_a_document_invalidates_an_earlier_namespace_miss ... ok
+test edit_preserves_other_document_and_old_revision_and_rebuilds_dependents ... ok
+test deletion_recreation_and_cross_document_move_allocate_new_ids ... ok
+test many_documents_and_specialization_chain_preserve_one_inherited_feature ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.06s
+
+   Doc-tests agq_kerml_syntax
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_kerml_text
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

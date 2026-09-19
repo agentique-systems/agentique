@@ -1,9 +1,10 @@
 use agq_kernel::{ElementId, ModelView, RevisionId, Snapshot, derived::DerivedOverlay};
 use sha2::{Digest, Sha256};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/5";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/6";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -35,6 +36,16 @@ pub struct SemanticContextId {
     pub pending_specialization_scopes: BTreeSet<ElementId>,
     /// Namespaces whose declaration populations are not fully available yet.
     pub pending_namespace_scopes: BTreeSet<ElementId>,
+    /// Unpublished canonical values whose required lower bound is unsatisfied.
+    pub construction_obligations: Arc<BTreeSet<(ElementId, agq_kernel::PropertyId)>>,
+    /// Explicit project/dependency availability; absent entries see only their own root.
+    pub available_roots: Arc<BTreeMap<ElementId, BTreeSet<ElementId>>>,
+    /// Validated target IDs, independently versioned from semantic rules.
+    pub standard_bindings: Option<Arc<crate::StandardKermlBindings>>,
+    pub binding_version: &'static str,
+    /// Exact canonical StandardLibrary records/occurrences, independent of authored
+    /// revision changes. None means no validated canonical binding input was attached.
+    pub library_graph_digest: Option<[u8; 32]>,
 }
 
 /// Validated identity bound to an immutable input, never to a caller-provided revision label.
@@ -50,6 +61,90 @@ pub enum ContextError {
 }
 
 impl<'m> SemanticContext<'m> {
+    /// Attach bindings only after validating them against this exact canonical view.
+    pub fn with_standard_bindings(
+        mut self,
+        roots: &[ElementId],
+        library: agq_kernel::LibraryId,
+    ) -> Result<Self, crate::BindingError> {
+        let queries = crate::KerMlQueries::new(self);
+        let bindings = crate::StandardKermlBindings::validate(&queries, roots, library)?;
+        self = queries.context;
+        self.id.standard_bindings = Some(Arc::new(bindings));
+        let mut digest = Sha256::new();
+        digest.update(b"agq-canonical-library-graph/1");
+        for encoded in self
+            .model
+            .elements()
+            .filter(|r| {
+                matches!(
+                    r.origin(),
+                    agq_kernel::provenance::Origin::Declared(
+                        agq_kernel::provenance::DeclaredOrigin::StandardLibrary { .. }
+                    )
+                )
+            })
+            .map(|r| format!("{r:?}"))
+            .chain(
+                self.model
+                    .association_occurrences()
+                    .filter(|r| {
+                        matches!(
+                            r.origin(),
+                            agq_kernel::provenance::DeclaredOrigin::StandardLibrary { .. }
+                        )
+                    })
+                    .map(|r| format!("{r:?}")),
+            )
+        {
+            digest.update((encoded.len() as u64).to_be_bytes());
+            digest.update(encoded.as_bytes());
+        }
+        self.id.library_graph_digest = Some(digest.finalize().into());
+        Ok(self)
+    }
+    /// Bind an unpublished candidate without claiming structural publication.
+    /// A query reading an outstanding obligation must report incompleteness.
+    pub fn for_construction(
+        candidate: &'m agq_kernel::ConstructionView,
+        options: SemanticOptions,
+        libraries: BTreeSet<LibraryPin>,
+    ) -> Result<Self, ContextError> {
+        let mut context = Self::bind(candidate.model(), candidate.revision(), options, libraries)?;
+        context.id.construction_obligations = candidate
+            .obligations()
+            .iter()
+            .map(|o| (o.element, o.property))
+            .collect::<BTreeSet<_>>()
+            .into();
+        Ok(context)
+    }
+    /// Install exact root availability. Library roots can exclude authored roots
+    /// while authored projects explicitly depend on the library roots.
+    pub fn with_available_roots(
+        mut self,
+        mut roots: BTreeMap<ElementId, BTreeSet<ElementId>>,
+    ) -> Result<Self, ContextError> {
+        for id in roots.keys().chain(roots.values().flatten()) {
+            if !self.model.element(*id).is_some_and(|record| {
+                self.model
+                    .registry()
+                    .is_subtype(record.metaclass(), agq_kerml::classes::NAMESPACE)
+                    .unwrap_or(false)
+            }) || self
+                .model
+                .incoming(*id)
+                .any(|r| r.property == agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT)
+            {
+                return Err(ContextError::InvalidPendingScope(*id));
+            }
+        }
+        for (root, available) in &mut roots {
+            available.insert(*root);
+        }
+        self.id.available_roots = Arc::new(roots);
+        Ok(self)
+    }
     /// Bind a project with unavailable declaration evidence. A namespace barrier
     /// prevents a lookup miss (or a candidate) from being reported as definitive.
     pub fn for_project_snapshot(
@@ -193,6 +288,11 @@ impl<'m> SemanticContext<'m> {
                 options,
                 pending_specialization_scopes: BTreeSet::new(),
                 pending_namespace_scopes: BTreeSet::new(),
+                construction_obligations: Arc::default(),
+                available_roots: Arc::default(),
+                standard_bindings: None,
+                binding_version: crate::BINDING_VERSION,
+                library_graph_digest: None,
             },
         })
     }

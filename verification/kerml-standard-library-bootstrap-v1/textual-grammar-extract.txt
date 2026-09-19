@@ -1,0 +1,2345 @@
+PDF PAGE 99
+8.2 Concrete Syntax
+8.2.1 Concrete Syntax Overview
+The concrete syntax for KerML is a textual notation that can be used to express or construct an abstract syntax
+representation of a model. Thelexical structureof the KerML textual notation defines how the string of characters
+in a text is divided into a set oflexical elements. Such lexical elements can be categorized aswhitespace,notes,or
+tokens.Only tokens are significant for the mapping of the notation to the abstract syntax. Thesyntactic structureof
+the KerML textual notation defines how lexical tokens are grouped and mapped to an abstract syntax representation
+of a model.
+Both the lexical and syntactic structures are specified asgrammarsconsisting of productions for lexical elements or
+non-terminal syntactic elements (seeTable 1). The body of a production is specified using an Extended Backus
+Naur Form (EBNF) notation (see Table 2). The syntactic grammar includes further notations to describe how the
+concrete syntax maps to the abstract syntax element being synthesized (seeTable 3).
+Subclause8.2.2presents the lexical grammar for KerML. Subclauses8.2.3, 8.2.4, and 8.2.5then each present the
+portion of the syntactic grammar for KerML covering the Root, Core and Kernel Layers of KerML (see 6.1). Each
+of these subclauses is further divided into subclauses corresponding to each of the packages from the abstract syntax
+model (see8.3). The starting production for the syntactic grammar isRootNamespace(see8.2.3.4.1).
+Table 1. Grammar Production Definitions
+LEXICAL_ELEMENT = ... Define a production for theLEXICAL_ELEMENT.
+NonterminalElement :
+AbstractSyntaxElement = ...
+Define a production for theNonterminalElementthat
+synthesizes theAbstractSyntaxElement. If the
+NonterminalElementhas the same name as the
+AbstractSyntaxElement, then ":
+AbstractSyntaxElement" may be omitted.
+Table 2. EBNF Notation Conventions
+Lexical element LEXICAL_ELEMENT
+Terminal element 'terminal'
+Non-terminal element NonterminalElement
+Sequential elements Element1 Element2
+Alternative elements Element1 | Element2
+Optional elements (zero or one) Element ?
+Repeated elements (zero or more) Element *
+Repeated elements (one or more) Element +
+Grouping ( Elements ... )
+Table 3. Abstract Syntax Synthesis Notation
+Property assignment p = Element
+Assign the result of parsing the
+concrete syntaxElementto abstract
+syntax propertyp.
+74 Kernel Modeling Language v1.0
+PDF PAGE 100
+List property construction p += Element
+Add the result of parsing the
+concrete syntaxElementto the
+abstract syntax list propertyp.
+Boolean property assignment p ?= Element
+If the concrete syntaxElementis
+parsed, then set the abstract Boolean
+propertypto true.
+Non-parsing assignment { p = value }
+{ p += value }
+Assign (or add) the givenvalueto
+the abstract syntax propertyp,
+without parsing any input.The
+valuemay be a literal or a reference
+to another abstract syntax property.
+The symbol "this" refers to the
+element being synthesized.
+Name resolution [QualifiedName]
+Parse aQualifiedName, then
+resolve that name to anElement
+reference (see8.2.3.5) for use as a
+value in an assignment as above.
+8.2.2 Lexical Structure
+8.2.2.1 Line Terminators and White Space
+LINE_TERMINATOR =
+implementation defined character sequence
+LINE_TEXT =
+character sequence excluding LINE_TERMINATORs
+WHITE_SPACE =
+space | tab | form_feed | LINE_TERMINATOR
+Notes
+1. Notation text is divided up into lines separated byline terminators. A line terminator may be a single
+character (such as a line feed) or a sequence of characters (such as a carriage return/line feed
+combination). This specification does not require any specific encoding for a line terminator, but any
+encoding used must be consistent throughout any specific input text.
+2. Any characters in text line that are not a part of the line terminator are referred to asline text.
+3. Awhite spacecharacter is a space, tab, form feed or line terminator. Any contiguous sequence of white
+space characters can be used to separate tokens that would otherwise be considered to be part of a single
+token. It is otherwise ignored, with the single exception that a line terminator is used to mark the end of a
+single-line note (see8.2.2.2).
+Kernel Modeling Language v1.0 75
+PDF PAGE 101
+8.2.2.2 Notes and Comments
+SINGLE_LINE_NOTE =
+'//' LINE_TEXT
+MULTILINE_NOTE =
+'//*' COMMENT_TEXT '*/'
+REGULAR_COMMENT =
+'/*' COMMENT_TEXT '*/'
+COMMENT_TEXT =
+( COMMENT_LINE_TEXT | LINE_TERMINATOR )*
+COMMENT_LINE_TEXT =
+LINE_TEXT excluding the sequence '*/'
+8.2.2.3 Names
+NAME =
+BASIC_NAME | UNRESTRICTED_NAME
+BASIC_NAME =
+BASIC_INITIAL_CHARACTER BASIC_NAME_CHARACTER*
+UNRESTRICTED_NAME =
+single_quote ( NAME_CHARACTER | ESCAPE_SEQUENCE )* single_quote
+(see Note 1)
+BASIC_INITIAL_CHARACTER =
+ALPHABETIC_CHARACTER | '_'
+BASIC_NAME_CHARACTER =
+BASIC_INITIAL_CHARACTER | DECIMAL_DIGIT
+ALPHABETIC_CHARACTER =
+any character 'a' through 'z' or 'A' through 'Z'
+DECIMAL_DIGIT =
+any character '0' through '9'
+NAME_CHARACTER =
+any printable character other than backslash or single_quote
+ESCAPE_SEQUENCE =
+see Note 2
+Notes
+1. Thesingle_quotecharacter is'. The name represented by anUNRESTRICTED_NAMEshall consist of
+the characterswithinthe single quotes, with escape characters resolved as described below. The
+surrounding single quote characters arenotpart of the represented name.
+2. AnESCAPE_SEQUENCEis a sequence of two text characters starting with a backslash that actually denotes
+only a single character, except for the newline escape sequence, which represents however many
+characters is necessary to represent an end of line in a specific implementation (see also8.2.2.1).Table 4
+shows the meaning of the allowed escape sequences. TheESCAPE_SEQUENCESin an
+UNRESTRICTED_NAMEshall be replaced by the characters specified as their meanings in the actual
+represented name.
+76 Kernel Modeling Language v1.0
+PDF PAGE 102
+Table 4. Escape Sequences
+Escape Sequence Meaning
+\' Single Quote
+\" Double Quote
+\b Backspace
+\f Form Feed
+\t Tab
+\n Line Terminator
+\\ Backslash
+8.2.2.4 Numeric Values
+DECIMAL_VALUE =
+DECIMAL_DIGIT+
+EXPONENTIAL_VALUE =
+DECIMAL_VALUE ('e' | 'E') ('+' | '-')? DECIMAL_VALUE
+Notes
+1. ADECIMAL_VALUEmay specify a natural literal, or it may be part of the specification of a real literal (see
+8.2.5.8.4). Note that aDECIMAL_VALUEdoes not include a sign, because negating a literal is an operator
+in the KerMLExpressionsyntax.
+2. AnEXPONENTIAL_VALUEmay be used in the specification of a real literal (see8.2.5.8.4). Note that a
+decimal point and fractional part are not included in the lexical structure of an exponential value. They are
+handled as part of the syntax of real literals.
+8.2.2.5 String Value
+STRING_VALUE =
+'"' ( STRING_CHARACTER | ESCAPE_SEQUENCE )* '"'
+STRING_CHARACTER =
+any printable character other than backslash or '"'
+Notes
+1. ESCAPE_SEQUENCEis specified in8.2.2.3.
+8.2.2.6 Reserved Words
+Areserved keywordis a token that has the lexical structure of a basic name but cannot actually be used as a basic
+name. The following keywords are so reserved in KerML.
+about abstract alias all and as assoc behavior binding bool by chains class
+classifier comment composite conjugate conjugates conjugation connector const
+crosses datatype default dependency derived differences disjoining disjoint doc
+else end expr false feature featured featuring filter first flow for from
+function hastype if implies import in inout interaction intersects inv inverse
+Kernel Modeling Language v1.0 77
+PDF PAGE 103
+inverting istype language library locale member meta metaclass metadata
+multiplicity namespace nonunique not null of or ordered out package portion
+predicate private protected public redefines redefinition references rep return
+specialization specializes standard step struct subclassifier subset subsets
+subtype succession then to true type typed typing unions var xor
+Tooling for the KerML textual notation should generally highlight keywords relative to other text, for example by
+using boldface and/or distinctive coloring. However, while keywords are shown in boldface in this specification, the
+specification does not require any specific highlighting (or any highlighting at all), and KerML textual notation
+documents are expected to be interchanged as plain text (see alsoClause 10on Model Interchange).
+8.2.2.7 Symbols
+Thesymbolsshown below are non-name tokens composed entirely of characters that are not alphanumeric. In some
+cases these symbols have no meaning themselves, but are used to allow unambiguous separation between other
+tokens that do have meaning. In other cases, they are distinguished notations in the KerML Expression sublanguage
+(see8.2.5.8) that map to particular library Functions or symbolic shorthand for meaningful relationships.
+( ) { } [ ] ; , ~ @ # % & ^ | * ** + - / -> $ . .. :
+:: :> :>> ::> => < <= = := == === != !== > >= ? ?? .?
+Some symbols are made of of multiple characters that may themselves individually be valid symbol tokens.
+Nevertheless, a multi-symbol token is not considered a combination of the individual symbol tokens. For example,
+“::” is considered a single token, not a combination of two “:” tokens. Input characters shall be grouped from left
+to right to form the longest possible sequence of characters to be grouped into a single token. So“a:::b” would be
+analyzed into four tokens: “a”, “::”, “:” and “b” (which, as it turns out, is not a valid sequence of tokens in the
+KerML textual concrete syntax).
+Certain keywords in the concrete syntax have an equivalent symbolic representation. For convenience, the concrete
+syntax grammar uses the following special lexical terminals, which match either the symbol or the corresponding
+keyword.
+TYPED_BY    = ':'   | 'typed' 'by'
+SPECIALIZES = ':>'  | 'specializes'
+SUBSETS     = ':>'  | 'subsets'
+REFERENCES  = '::>' | 'references'
+CROSSES     = '=>'  | 'crosses'
+REDEFINES   = ':>>' | 'redefines'
+CONJUGATES  = '~'   | 'conjugates'
+8.2.3 Root Concrete Syntax
+8.2.3.1 Elements and Relationships Concrete Syntax
+Identification : Element =
+( '<' declaredShortName = NAME '>' )?
+( declaredName = NAME )?
+RelationshipBody : Relationship =
+';' | '{' RelationshipOwnedElement* '}'
+RelationshipOwnedElement : Relationship =
+ownedRelatedElement += OwnedRelatedElement
+| ownedRelationship += OwnedAnnotation
+OwnedRelatedElement : Element =
+NonFeatureElement | FeatureElement
+8.2.3.2 Dependencies Concrete Syntax
+78 Kernel Modeling Language v1.0
+PDF PAGE 104
+Dependency =
+( ownedRelationship += PrefixMetadataAnnotation )*
+'dependency' ( Identification? 'from' )?
+client += [QualifiedName] ( ',' client += [QualifiedName] )* 'to'
+supplier += [QualifiedName] ( ',' supplier += [QualifiedName] )*
+RelationshipBody
+Notes
+1. PrefixMetadataAnnotationis defined in the Kernel layer (see8.2.5.12).
+8.2.3.3 Annotations Concrete Syntax
+8.2.3.3.1 Annotations
+Annotation =
+annotatedElement = [QualifiedName]
+OwnedAnnotation : Annotation =
+ownedRelatedElement += AnnotatingElement
+AnnotatingElement =
+Comment
+| Documentation
+| TextualRepresentation
+| MetadataFeature
+Notes
+1. MetadataFeatureis defined in the Kernel layer (see8.2.5.12).
+8.2.3.3.2 Comments and Documentation
+Comment =
+( 'comment' Identification
+( 'about' ownedRelationsip += Annotation
+( ',' ownedRelationship += Annotation )*
+)?
+)?
+( 'locale' locale = STRING_VALUE )?
+body = REGULAR_COMMENT
+Documentation =
+'doc' Identification
+( 'locale' locale = STRING_VALUE )?
+body = REGULAR_COMMENT
+Notes
+1. The text of a lexicalREGULAR_COMMENTorPREFIX_COMMENTshall be processed as follows before it is
+included as the body of aCommentorDocumentation:
+1. Remove the initial/*and final*/characters.
+2. Remove any white space immediately after the initial/*, up to and including the first line
+terminator (if any).
+3. On each subsequent line of the text:
+1. Strip initial white space other than line terminators.
+Kernel Modeling Language v1.0 79
+PDF PAGE 105
+2. Then, if the first remaining character is "*", remove it.
+3. Then, if the first remaining character is now a space, remove it.
+2. The body text of aCommentcan include markup information (such as HTML), and a conforming tool may
+display such text as rendered according to the markup. However, marked up "rich text" for aComment
+written using the KerML textual concrete syntax shall be stored in theCommentbody in plain text
+including all mark up text, with all line terminators and white space included as entered, other than what is
+removed according to the rules above.
+8.2.3.3.3 Textual Representation
+TextualRepresentation =
+( 'rep' Identification )?
+'language' language = STRING_VALUE
+body = REGULAR_COMMENT
+Notes
+1. The lexical text of aREGULAR_COMMENTshall be processed as specified in8.2.3.3.2forCommentsbefore
+being included as the body of aTextualRepresentation.
+2. See also8.3.2.3.6on the standardlanguagenames recognized for aTextualRepresentation.
+8.2.3.4 Namespaces Concrete Syntax
+8.2.3.4.1 Namespaces
+RootNamespace : Namespace =
+NamespaceBodyElement*
+(See Note 1)
+Namespace =
+( ownedRelationship += PrefixMetadataMember )*
+NamespaceDeclaration NamespaceBody
+(See Note 2)
+NamespaceDeclaration : Namespace =
+'namespace' Identification
+NamespaceBody : Namespace =
+';' | '{' NamespaceBodyElement* '}'
+NamespaceBodyElement : Namespace =
+ownedRelationship += NamespaceMember
+| ownedRelationship += AliasMember
+| ownedRelationship += Import
+MemberPrefix : Membership =
+( visibility = VisibilityIndicator )?
+VisibilityIndicator : VisibilityKind =
+'public' | 'private' | 'protected'
+NamespaceMember : OwningMembership =
+NonFeatureMember
+| NamespaceFeatureMember
+NonFeatureMember : OwningMembership =
+MemberPrefix
+ownedRelatedElement += MemberElement
+80 Kernel Modeling Language v1.0
+PDF PAGE 106
+NamespaceFeatureMember : OwningMembership =
+MemberPrefix
+ownedRelatedElement += FeatureElement
+AliasMember : Membership =
+MemberPrefix
+'alias' ( '<' memberShortName = NAME '>' )?
+( memberName = NAME )?
+'for' memberElement = [QualifiedName]
+RelationshipBody
+QualifiedName =
+( '$' '::' )? ( NAME '::' )* NAME
+(See Note 3)
+Notes
+1. ArootNamespaceis aNamespacethat has noowningNamespace(see8.3.2.4). EveryElementother
+than a rootNamespacemust be contained, directly or indirectly, within some rootNamespace. Therefore,
+every valid KerML concrete syntax text can be parsed starting from theRootNamespaceproduction.
+2. PrefixMetadataMemberis defined in the Kernel layer (see8.2.5.12).
+3. A qualified name is notated as a sequence ofsegment namesseparated by "::" punctuation, optionally
+with the global scope qualifier "$" as an initial segment. Anunqualifiedname can be considered the
+degenerate case of a qualified name with a single segment name. A qualified name is used in the KerML
+textual concrete syntax to identify anElementthat is being referred to in the representation of another
+Element. A qualified name used in this way does not appear in the corresponding abstract
+syntax—instead, the abstract syntax representation contains an actual reference to the identifiedElement.
+Name resolutionis the process of determining theElementthat is identified by a qualified name. The
+segment names of the qualified name other than the last identify a sequence of nestedNamespacesthat
+provide the context for resolving the final segment name (see8.2.3.5). The notation[QualifiedName]
+is used in concrete syntax grammar productions to indicate the result of resolving text parsed as a
+QualifiedName(see also8.2.1).
+8.2.3.4.2 Imports
+Import =
+visibility = VisibilityIndicator
+'import' ( isImportAll ?= 'all' )?
+ImportDeclaration RelationshipBody
+ImportDeclaration : Import
+MembershipImport | NamespaceImport
+MembershipImport =
+importedMembership = [QualifiedName]
+( '::' isRecursive ?= '**' )?
+(see Note 1)
+NamespaceImport =
+importedNamespace = [QualifiedName] '::' '*'
+( '::' isRecursive ?= '**' )?
+| importedNamespace = FilterPackage
+{ ownedRelatedElement += importedNamespace }
+FilterPackage : Package =
+ownedRelationship += ImportDeclaration
+( ownedRelationship += FilterPackageMember )+
+FilterPackageMember : ElementFilterMembership =
+'[' ownedRelatedElement += OwnedExpression ']'
+Kernel Modeling Language v1.0 81
+PDF PAGE 107
+Notes
+1. TheimportedMembershipof aMembershipImportis the single case in which theElementrequired
+from the resolution[QualifiedName]is the actualMembershipidentified by theQualifedName,not
+thememberElementof thatMembership(see8.2.3.5).
+8.2.3.4.3 Namespace Elements
+MemberElement : Element =
+AnnotatingElement | NonFeatureElement
+NonFeatureElement : Element =
+Dependency
+| Namespace
+| Type
+| Classifier
+| DataType
+| Class
+| Structure
+| Metaclass
+| Association
+| AssociationStructure
+| Interaction
+| Behavior
+| Function
+| Predicate
+| Multiplicity
+| Package
+| LibraryPackage
+| Specialization
+| Conjugation
+| Subclassification
+| Disjoining
+| FeatureInverting
+| FeatureTyping
+| Subsetting
+| Redefinition
+| TypeFeaturing
+FeatureElement : Feature =
+Feature
+| Step
+| Expression
+| BooleanExpression
+| Invariant
+| Connector
+| BindingConnector
+| Succession
+| Flow
+| SuccessionFlow
+8.2.3.5 Name Resolution
+8.2.3.5.1 Name Resolution Overview
+A qualified name consists of a sequence of one or moresegment names(see8.2.3.4.1). Each segment names is a
+simple name,that is, it is a lexicalNAMEtoken (see8.2.2.3). Thequalification partof a qualified name with more
+than one segment name is itself a qualified name, consisting of all the segment names of the original qualified name
+except for the last. For example the qualified nameA::B::Cconsists of the segment namesA,BandC, and its
+qualification part isA::B.A qualified name may also have theglobal scope qualifier"$" as an initial segment, for
+example,$::A::B::C.
+82 Kernel Modeling Language v1.0
+PDF PAGE 108
+Name resolutionis a process for determining theElementthat is identified by a qualified name. The result of the
+process is actually aMembershiprelationship identified by the qualified name. However, in all cases but one, the
+requiredElementto be inserted into the abstract syntax is thememberElementof thatMembership, in which case
+the metaclass of thememberElementmust conform to the expected metaclass in the context of the name resolution.
+The one exception is the resolution of the qualified name for theimportedMembershipof aMembershipImport
+(see8.2.3.4.2), in which case the requiredElementis the identifiedMembershipitself.
+Thebasicname resolution process consists of the following two steps. The terms "localNamespace", "visible
+resolution" and "full resolution" used below are defined in8.2.3.5.2,8.2.3.5.3, and 8.2.3.5.4.
+1. If the qualified name has only one segment name, with no global scope qualifier, then the resolution of the
+qualified name is thefull resolutionof that segment name relative to thelocalNamespacefor the
+qualified name – unless the localNamespaceis a rootNamespace, in which case the globalNamespace
+is used instead.
+2. If the qualified name consists of a global scope qualifier and a single segment name, the resolution of the
+qualified name is the resolution of the segment name relative to the globalNamespace.
+3. Otherwise, resolve the qualification part of the qualified name relative to the localNamespaceof the
+original qualified name. This must resolve to aNamespace, and the resolution of the original qualified
+name is then thevisible resolutionof its last segment name relative to thisNamespace.
+If the above steps fail, or if the resultingElementdoes not have the proper type for its context, then the qualified
+name has no resolution, and the parsing of the text containing it fails with aname resolution error.
+Note. Invoking theNamespace::resolve, as defined in the abstract syntax (see8.3.2.4.5), carries out the above
+basic resolution process with the targetNamespaceconsidered as the localNamespacefor the given qualified
+name.
+The basic name resolution process is used directly to resolve a qualified name in all casesexceptwhen the qualified
+name specifies theredefinedFeatureof aRedefinitionwith anowningFeaturethat has anowningType. In
+this case, the basic name resolution processes is repeated with the general Type of eachownedSpecializationof
+theowningTypeconsidered in turn as the localNamespace, until a resolution is found. If no resolution is found for
+any of these, then the overall resolution fails.
+Note. When implementing the name resolution process as specified here, some additional points need to be
+considered.
+• The descriptions given in8.2.3.5.2,8.2.3.5.3, and 8.2.3.5.4presume thatthe derivedmembership,
+importedMembershipand (for aType)inheritedMembershipproperties of aNamespacehave been
+fully computed, includingmembershipsresulting from impliedRelationships(see8.4.2). However,
+when parsing a complete KerML concrete syntax text, the values of these properties may themselves be
+based on otherRelationships(e.g., aliasMemberships,ImportsandSpecializations) whose
+target references are given by qualified names that must be resolved. Name resolution must therefore
+proceed incrementally during a parse, avoiding infinite loops caused by attempting to resolve again names
+that are already pending resolution. Note, however, that itispossible to at least locally resolve a name to a
+Membershipin aNamespacewithout immediately resolving thememberElementof thatMembership.
+• Circularity is allowed forImportsandSpecializations. Therefore, when traversing the graph of
+theseRelationships, an implementation must avoid re-processing aNamespacethat has already been
+visited.
+8.2.3.5.2 Local and Global Namespaces
+EveryNamespaceother than a rootNamespace(see8.2.3.4.1) is nested in a containingNamespacecalled its
+owningNamespace(see8.3.2.4).
+Kernel Modeling Language v1.0 83
+PDF PAGE 109
+A rootNamespacehas an implicit containingNamespaceknown as itsglobalNamespace.The globalNamespace
+for a rootNamespaceincludes all thevisibleMembershipsof all other rootNamespacesthat areavailableto the
+firstNamespace, which shall include at least all the rootNamespacesfrom the KerML Model Libraries (seeClause
+9). If a tool imports amodel interchange project(see10.3), then the availableNamespacesshall also include all
+the rootNamespacesfrom any used project of the imported project. A conforming tool can also provide means for
+making additionalNamespacesavailable to a rootNamespace, such as by creating a new rootNamespaceor
+adding an additional used project.
+A qualified name is always used to identify anElementthat is atargetElementof somecontext
+Relationship. ThelocalNamespacefor resolving the qualified name is then determined depending on the kind
+of contextRelationship, as given in the following.
+Import(see8.3.2.4.2)
+• The localNamespaceis theimportOwningNamespace.
+Membership(see8.3.2.4.3)
+• If themembershipOwningNamespaceis aFeatureReferenceExpression(see8.3.4.8.5), then the
+localNamespaceis thenon-invocation Namespacefor themembershipOwningNamespace, which is
+defined to be the nearest containingNamespacethat is none of the following:
+◦ FeatureReferenceExpression
+◦ InstantiationExpression
+◦ ownedFeatureof anInstantiationExpression
+◦ ownedFeatureof theresultof aConstructorExpression
+• If theMembershipis not aFeatureMembershipand themembershipOwningNamespaceis an
+InstantiationExpression(see8.3.4.8.7), then the localNamespaceis the non-invocation
+Namespacefor themembershipOwningNamespace, determined as for a
+FeatureReferenceExpressionabove.
+• If themembershipOwningNamespaceis aFeatureChainExpressionsee8.3.4.8.4, then the local
+Namespaceis theresultparameter of theargumentExpressionof theFeatureChainExpression.
+• Otherwise, the localNamespaceis themembershipOwningNamespace.
+Specialization(see8.3.3.1.8)
+• If theSpecializationis aReferenceSubsetting(see8.3.3.3.9), and itsreferencingFeatureis
+an endFeaturewhoseowningTypeis aConnector, then the localNamespaceis the
+owningNamespaceof theConnector.
+• Otherwise, if theowningTypeis not null, then the localNamespaceis theowningNamespaceof the
+owningType.
+• Otherwise, the localNamespaceis theowningNamespaceof theSpecialization.
+Conjugation(see8.3.3.1.2)
+• If theowningTypeis not null, the localNamespaceis theowningNamespaceof theowningType.
+• Otherwise, the localNamespaceis theowningNamespaceof theConjugation.
+FeatureChaining(see8.3.3.3.5)
+• If theFeatureChainingis the firstownedFeatureChainingof itsfeatureChained, then the local
+Namespaceis determined as if theowningRelationshipof thefeatureChained(which will be a
+Membership,SubsettingorConjugation) was the contextRelationship(see above).
+• Otherwise, the localNamespaceis thechainingFeatureof the previousFeatureChainingin the
+ownedFeatureChaininglist.
+84 Kernel Modeling Language v1.0
+PDF PAGE 110
+8.2.3.5.3 Local and Visible Resolution
+ANamespacedefines a mapping from names to itsmemberships, know as thelocal resolutionof those names.
+Eachmembershipof aNamespaceis the local resolution for itsmemberShortNameandmemberName(if non-
+null). Note that this includes owned, imported and (if theNamespaceis aType) inheritedMemberships.
+Note. If theNamespaceis well formed, then there can be at most oneMembershipthat is the local resolution of
+any given name.
+Thevisible resolutionof a name is similar to its local resolution, but themembershipsconsidered are restricted to
+those that arevisibleoutside theNamespace. ThevisibleMembershipsof aNamespaceshall comprise the
+following:
+• AllownedMembershipsof theNamespacewithvisibility=public.
+• AllimportedMembershipsof theNamespacethat are derived fromImportRelationshipswith
+visibility=public.
+• If theNamespaceis aType, then allinheritedMembershipsof theTypewithvisibility =
+public.
+8.2.3.5.4 Full Resolution
+Thefull resolutionof a simple name relative to aNamespaceconsidersMembershipsnot only in thatNamespace,
+but also in directly or indirectly containingNamespaces, all the way out to the globalNamespace. Full resolution
+relative to aNamespaceotherthan the globalNamespaceproceeds as follows:
+1. If the name has a local resolution relative to aNamespace(see8.2.3.5.3), then that is also its full
+resolution relative to thatNamespace.
+2. Otherwise:
+◦ If theNamespaceisnota rootNamespace, then the full resolution of the name relative to the
+originalNamespaceis determined as its full resolution relative to theowningNamespaceof the
+originalNamespace.
+◦ If theNamespaceisa rootNamespace, then the full resolution of the name resolution relative
+to the originalNamespaceis its resolution in the globalNamespace.
+The resolution of a simple name in the globalNamespaceis the theMembershipin the globalNamespace(as
+defined in8.2.3.5.2) whose (non-null)shortMemberNameormemberNameis equal to the simple name.
+Note. It is possible that there will be more than oneMembershipin the globalNamespacethat resolves a given
+simple name. In this case, one of theseMembershipsis chosen for the resolution of the name, but which one is
+chosen is not otherwise determined by this specification.
+Kernel Modeling Language v1.0 85
+PDF PAGE 111
+8.2.4 Core Concrete Syntax
+8.2.4.1 Types Concrete Syntax
+8.2.4.1.1 Types
+Type =
+TypePrefix 'type'
+TypeDeclaration TypeBody
+TypePrefix : Type =
+( isAbstract ?= 'abstract' )?
+( ownedRelationship += PrefixMetadataMember )*
+TypeDeclaration : Type =
+( isSufficient ?= 'all' )? Identification
+( ownedRelationship += OwnedMultiplicity )?
+( SpecializationPart | ConjugationPart )+
+TypeRelationshipPart*
+SpecializationPart : Type =
+SPECIALIZES ownedRelationship += OwnedSpecialization
+( ',' ownedRelationship += OwnedSpecialization )*
+ConjugationPart : Type =
+CONJUGATES ownedRelationship += OwnedConjugation
+TypeRelationshipPart : Type =
+DisjoiningPart
+| UnioningPart
+| IntersectingPart
+| DifferencingPart
+DisjoiningPart : Type =
+'disjoint' 'from' ownedRelationship += OwnedDisjoining
+( ',' ownedRelationship += OwnedDisjoining )*
+UnioningPart : Type =
+'unions' ownedRelationship += Unioning
+( ',' ownedRelationship += Unioning )*
+IntersectingPart : Type =
+'intersects' ownedRelationship += Intersecting
+( ',' ownedRelationship += Intersecting )*
+DifferencingPart : Type =
+'differences' ownedRelationship += Differencing
+( ',' ownedRelationship += Differencing )*
+TypeBody : Type =
+';' | '{' TypeBodyElement* '}'
+TypeBodyElement : Type =
+ownedRelationship += NonFeatureMember
+| ownedRelationship += FeatureMember
+| ownedRelationship += AliasMember
+| ownedRelationship += Import
+8.2.4.1.2 Specialization
+Specialization =
+( 'specialization' Identification )?
+'subtype' SpecificType
+86 Kernel Modeling Language v1.0
+PDF PAGE 112
+SPECIALIZES GeneralType
+RelationshipBody
+OwnedSpecialization : Specialization =
+GeneralType
+SpecificType : Specialization :
+specific = [QualifiedName]
+| specific += OwnedFeatureChain
+{ ownedRelatedElement += specific }
+GeneralType : Specialization =
+general = [QualifiedName]
+| general += OwnedFeatureChain
+{ ownedRelatedElement += general }
+8.2.4.1.3 Conjugation
+Conjugation =
+( 'conjugation' Identification )?
+'conjugate'
+( conjugatedType = [QualifiedName]
+| conjugatedType = FeatureChain
+{ ownedRelatedElement += conjugatedType }
+)
+CONJUGATES
+( originalType = [QualifiedName]
+| originalType = FeatureChain
+{ ownedRelatedElement += originalType }
+)
+RelationshipBody
+OwnedConjugation : Conjugation =
+originalType = [QualifiedName]
+| originalType = FeatureChain
+{ ownedRelatedElement += originalType }
+8.2.4.1.4 Disjoining
+Disjoining =
+( 'disjoining' Identification )?
+'disjoint'
+( typeDisjoined = [QualifiedName]
+| typeDisjoined = FeatureChain
+{ ownedRelatedElement += typeDisjoined }
+)
+'from'
+( disjoiningType = [QualifiedName]
+| disjoiningType = FeatureChain
+{ ownedRelatedElement += disjoiningType }
+)
+RelationshipBody
+OwnedDisjoining : Disjoining =
+disjoiningType = [QualifiedName]
+| disjoiningType = FeatureChain
+{ ownedRelatedElement += disjoiningType }
+8.2.4.1.5 Unioning, Intersecting and Differencing
+Unioning =
+unioningType = [QualifiedName]
+Kernel Modeling Language v1.0 87
+PDF PAGE 113
+| ownedRelatedElement += OwnedFeatureChain
+Intersecting =
+intersectingType = [QualifiedName]
+| ownedRelatedElement += OwnedFeatureChain
+Differencing =
+differencingType = [QualifiedName]
+| ownedRelatedElement += OwnedFeatureChain
+8.2.4.1.6 Feature Membership
+FeatureMember : OwningMembership =
+TypeFeatureMember
+| OwnedFeatureMember
+TypeFeatureMember : OwningMembership =
+MemberPrefix 'member' ownedRelatedElement += FeatureElement
+OwnedFeatureMember : FeatureMembership =
+MemberPrefix ownedRelatedElement += FeatureElement
+8.2.4.2 Classifiers Concrete Syntax
+8.2.4.2.1 Classifiers
+Classifier =
+TypePrefix 'classifier'
+ClassifierDeclaration TypeBody
+ClassifierDeclaration : Classifier =
+( isSufficient ?= 'all' )? Identification
+( ownedRelationship += OwnedMultiplicity )?
+( SuperclassingPart | ConjugationPart )?
+TypeRelationshipPart*
+SuperclassingPart : Classifier =
+SPECIALIZES ownedRelationship += OwnedSubclassification
+( ',' ownedRelationship += OwnedSubclassification )*
+8.2.4.2.2 Subclassification
+Subclassification =
+( 'specialization' Identification )?
+'subclassifier' subclassifier = [QualifiedName]
+SPECIALIZES superclassifier = [QualifiedName]
+RelationshipBody
+OwnedSubclassification : Subclassification =
+superclassifier = [QualifiedName]
+8.2.4.3 Features Concrete Syntax
+8.2.4.3.1 Features
+Feature =
+( FeaturePrefix
+( 'feature' | ownedRelationship += PrefixMetadataMember )
+FeatureDeclaration?
+)
+| ( EndFeaturePrefix | BasicFeaturePrefix )
+FeatureDeclaration
+88 Kernel Modeling Language v1.0
+PDF PAGE 114
+)
+ValuePart? TypeBody
+(See Note 1)
+EndFeaturePrefix : Feature =
+( isConstant ?= 'const' { isVariable = true } )?
+isEnd ?= 'end'
+BasicFeaturePrefix : Feature :
+( direction = FeatureDirection )?
+( isDerived ?= 'derived' )?
+( isAbstract ?= 'abstract' )?
+( isComposite ?= 'composite' | isPortion ?= 'portion' )?
+( isVariable ?= 'var' | isConstant ?= 'const' { isVariable = true } )?
+FeaturePrefix :
+( EndFeaturePrefix ( ownedRelationship += OwnedCrossFeatureMember )?
+| BasicFeaturePrefix
+)
+( ownedRelationship += PrefixMetadataMember )*
+(see Note 1)
+OwnedCrossFeatureMember : OwningMembership =
+ownedRelatedElement += OwnedCrossFeature
+OwnedCrossFeature : Feature =
+BasicFeaturePrefix FeatureDeclaration
+FeatureDirection : FeatureDirectionKind =
+'in' | 'out' | 'inout'
+FeatureDeclaration : Feature =
+( isSufficient ?= 'all' )?
+( FeatureIdentification
+( FeatureSpecializationPart | ConjugationPart )?
+| FeatureSpecializationPart
+| ConjugationPart
+)
+FeatureRelationshipPart*
+FeatureIdentification : Feature =
+'<' declaredShortName = NAME '>' ( declaredName = NAME )?
+| declaredName = NAME
+FeatureRelationshipPart : Feature =
+TypeRelationshipPart
+| ChainingPart
+| InvertingPart
+| TypeFeaturingPart
+ChainingPart : Feature =
+'chains'
+( ownedRelationship += OwnedFeatureChaining
+| FeatureChain )
+InvertingPart : Feature =
+'inverse' 'of' ownedRelationship += OwnedFeatureInverting
+TypeFeaturingPart : Feature =
+'featured' 'by' ownedRelatioship += OwnedTypeFeaturing
+( ',' ownedTypeFeaturing += OwnedTypeFeaturing )*
+FeatureSpecializationPart : Feature =
+Kernel Modeling Language v1.0 89
+PDF PAGE 115
+FeatureSpecialization+ MultiplicityPart? FeatureSpecialization*
+| MultiplicityPart FeatureSpecialization*
+MultiplicityPart : Feature =
+ownedRelationship += OwnedMultiplicity
+| ( ownedRelationship += OwnedMultiplicity )?
+( isOrdered ?= 'ordered' ( {isUnique = false} 'nonunique' )?
+| {isUnique = false} 'nonunique' ( isOrdered ?= 'ordered' )? )
+FeatureSpecialization : Feature =
+Typings | Subsettings | References | Crosses | Redefinitions
+Typings : Feature =
+TypedBy ( ',' ownedRelationship += OwnedFeatureTyping )*
+TypedBy : Feature =
+TYPED_BY ownedRelationship += OwnedFeatureTyping
+Subsettings : Feature =
+Subsets ( ',' ownedRelationship += OwnedSubsetting )*
+Subsets : Feature =
+SUBSETS ownedRelationship += OwnedSubsetting
+References : Feature =
+REFERENCES ownedRelationship += OwnedReferenceSubsetting
+Crosses : Feature =
+CROSSES ownedRelationship += OwnedCrossSubsetting
+Redefinitions : Feature =
+Redefines ( ',' ownedRelationship += OwnedRedefinition )*
+Redefines : Feature =
+REDEFINES ownedRelationship += OwnedRedefinition
+Notes
+1. PrefixMetadataMemberis defined in the Kernel layer (see8.3.4.12).
+8.2.4.3.2 Feature Typing
+FeatureTyping =
+( 'specialization' Identification )?
+'typing' typedFeature = [QualifiedName]
+TYPED_BY GeneralType
+RelationshipBody
+OwnedFeatureTyping : FeatureTyping =
+GeneralType
+8.2.4.3.3 Subsetting
+Subsetting =
+( 'specialization' Identification )?
+'subset' SpecificType
+SUBSETS GeneralType
+RelationshipBody
+OwnedSubsetting : Subsetting =
+GeneralType
+90 Kernel Modeling Language v1.0
+PDF PAGE 116
+OwnedReferenceSubsetting : ReferenceSubsetting =
+GeneralType
+OwnedCrossSubsetting : CrossSubsetting =
+GeneralType
+8.2.4.3.4 Redefinition
+Redefinition =
+( 'specialization' Identification )?
+'redefinition' SpecificType
+REDEFINES GeneralType
+RelationshipBody
+OwnedRedefinition : Redefinition =
+GeneralType
+8.2.4.3.5 Feature Chaining
+OwnedFeatureChain : Feature =
+FeatureChain
+FeatureChain : Feature =
+ownedRelationship += OwnedFeatureChaining
+( '.' ownedRelationship += OwnedFeatureChaining )+
+OwnedFeatureChaining : FeatureChaining =
+chainingFeature = [QualifiedName]
+8.2.4.3.6 Feature Inverting
+FeatureInverting =
+( 'inverting' Identification? )?
+'inverse'
+( featureInverted = [QualifiedName]
+| featureInverted = OwnedFeatureChain
+{ ownedRelatedElement += featureInverted }
+)
+'of'
+( invertingFeature = [QualifiedName]
+| ownedRelatedElement += OwnedFeatureChain
+{ ownedRelatedElement += invertingFeature }
+)
+RelationshipBody
+OwnedFeatureInverting : FeatureInverting =
+invertingFeature = [QualifiedName]
+| invertingFeature = OwnedFeatureChain
+{ ownedRelatedElement += invertingFeature }
+8.2.4.3.7 Type Featuring
+TypeFeaturing =
+'featuring' ( Identification 'of' )?
+featureOfType = [QualifiedName]
+'by' featuringType = [QualifiedName]
+RelationshipBody
+OwnedTypeFeaturing : TypeFeaturing =
+featuringType = [QualifiedName]
+Kernel Modeling Language v1.0 91
+PDF PAGE 117
+8.2.5 Kernel Concrete Syntax
+8.2.5.1 Data Types Concrete Syntax
+DataType =
+TypePrefix 'datatype'
+ClassifierDeclaration TypeBody
+8.2.5.2 Classes Concrete Syntax
+Class =
+TypePrefix 'class'
+ClassifierDeclaration TypeBody
+8.2.5.3 Structures Concrete Syntax
+Structure =
+TypePrefix 'struct'
+ClassifierDeclaration TypeBody
+8.2.5.4 Associations Concrete Syntax
+Association =
+TypePrefix 'assoc'
+ClassifierDeclaration TypeBody
+AssociationStructure =
+TypePrefix 'assoc' 'struct'
+ClassifierDeclaration TypeBody
+8.2.5.5 Connectors Concrete Syntax
+8.2.5.5.1 Connectors
+Connector =
+FeaturePrefix 'connector'
+( FeatureDeclaration? ValuePart?
+| ConnectorDeclaration
+)
+TypeBody
+ConnectorDeclaration : Connector =
+BinaryConnectorDeclaration | NaryConnectorDeclaration
+BinaryConnectorDeclaration : Connector =
+( FeatureDeclaration? 'from' | isSufficient ?= 'all' 'from'? )?
+ownedRelationship += ConnectorEndMember 'to'
+ownedRelationship += ConnectorEndMember
+NaryConnectorDeclaration : Connector =
+FeatureDeclaration?
+'(' ownedRelationship += ConnectorEndMember ','
+ownedRelationship += ConnectorEndMember
+( ',' ownedRelationship += ConnectorEndMember )*
+')'
+ConnectorEndMember : EndFeatureMembership =
+ownedRelatedElement += ConnectorEnd
+ConnectorEnd : Feature =
+( ownedRelationship += OwnedCrossMultiplicityMember )?
+( declaredName = NAME REFERENCES )?
+92 Kernel Modeling Language v1.0
+PDF PAGE 118
+ownedRelationship += OwnedReferenceSubsetting
+OwnedCrossMultiplicityMember : OwningMembership =
+ownedRelatedElement += OwnedCrossMultiplicity
+OwnedCrossMultiplicity : Feature =
+ownedRelationship += OwnedMultiplicity
+8.2.5.5.2 Binding Connectors
+BindingConnector =
+FeaturePrefix 'binding'
+BindingConnectorDeclaration TypeBody
+BindingConnectorDeclaration : BindingConnector =
+FeatureDeclaration
+( 'of' ownedRelationship += ConnectorEndMember
+'='  ownedRelationship += ConnectorEndMember )?
+| ( isSufficient ?= 'all' )?
+( 'of'? ownedRelationship += ConnectorEndMember
+'='   ownedRelationship += ConnectorEndMember )?
+8.2.5.5.3 Successions
+Succession =
+FeaturePrefix 'succession'
+SuccessionDeclaration TypeBody
+SuccessionDeclaration : Succession =
+FeatureDeclaration
+( 'first' ownedRelationship += ConnectorEndMember
+'then'  ownedRelationship += ConnectorEndMember )?
+| ( s.isSufficient ?= 'all' )?
+( 'first'? ownedRelationship += ConnectorEndMember
+'then'   ownedRelationship += ConnectorEndMember )?
+8.2.5.6 Behaviors Concrete Syntax
+8.2.5.6.1 Behaviors
+Behavior =
+TypePrefix 'behavior'
+ClassifierDeclaration TypeBody
+8.2.5.6.2 Steps
+Step =
+FeaturePrefix
+'step' FeatureDeclaration ValuePart?
+TypeBody
+8.2.5.7 Functions Concrete Syntax
+8.2.5.7.1 Functions
+Function =
+TypePrefix 'function'
+ClassifierDeclaration FunctionBody
+FunctionBody : Type =
+';' | '{' FunctionBodyPart '}'
+Kernel Modeling Language v1.0 93
+PDF PAGE 119
+FunctionBodyPart : Type =
+( TypeBodyElement
+| ownedRelationship += ReturnFeatureMember
+)*
+( ownedRelationship += ResultExpressionMember )?
+ReturnFeatureMember : ReturnParameterMembership =
+MemberPrefix 'return'
+ownedRelatedElement += FeatureElement
+ResultExpressionMember : ResultExpressionMembership =
+MemberPrefix
+ownedRelatedElement += OwnedExpression
+8.2.5.7.2 Expressions
+Expression =
+FeaturePrefix
+'expr' FeatureDeclaration ValuePart?
+FunctionBody
+8.2.5.7.3 Predicates
+Predicate =
+TypePrefix 'predicate'
+ClassifierDeclaration FunctionBody
+8.2.5.7.4 Boolean Expressions and Invariants
+BooleanExpression =
+FeaturePrefix
+'bool' FeatureDeclaration ValuePart?
+FunctionBody
+Invariant =
+FeaturePrefix
+'inv' ( 'true' | isNegated ?= 'false' )?
+FeatureDeclaration ValuePart?
+FunctionBody
+8.2.5.8 Expressions Concrete Syntax
+8.2.5.8.1 Operator Expressions
+OwnedExpressionReferenceMember : FeatureMembership =
+ownedRelationship += OwnedExpressionReference
+OwnedExpressionReference : FeatureReferenceExpression =
+ownedRelationship += OwnedExpressionMember
+OwnedExpressionMember : FeatureMembership =
+ownedFeatureMember = OwnedExpression
+OwnedExpression : Expression =
+ConditionalExpression
+| ConditionalBinaryOperatorExpression
+| BinaryOperatorExpression
+| UnaryOperatorExpression
+| ClassificationExpression
+| MetaclassificationExpression
+| ExtentExpression
+| PrimaryExpression
+94 Kernel Modeling Language v1.0
+PDF PAGE 120
+ConditionalExpression : OperatorExpression =
+operator = 'if'
+ownedRelationship += ArgumentMember '?'
+ownedRelationship += ArgumentExpressionMember 'else'
+ownedRelationship += ArgumentExpressionMember
+ownedRelationship += EmptyResultMember
+ConditionalBinaryOperatorExpression : OperatorExpression =
+ownedRelationship += ArgumentMember
+operator = ConditionalBinaryOperator
+ownedRelationship += ArgumentExpressionMember
+ownedRelationship += EmptyResultMember
+ConditionalBinaryOperator =
+'??' | 'or' | 'and' | 'implies'
+BinaryOperatorExpression : OperatorExpression =
+ownedRelationship += ArgumentMember
+operator = BinaryOperator
+ownedRelationship += ArgumentMember
+ownedRelationship += EmptyResultMember
+BinaryOperator =
+'|'  | '&'  | 'xor' | '..'
+| '==' | '!=' | '===' | '!=='
+| '<'  | '>'  | '<='  | '>='
+| '+'  | '-'  | '*'   | '/'
+| '%'  | '^'  | '**'
+UnaryOperatorExpression : OperatorExpression =
+operator = UnaryOperator
+ownedRelationship += ArgumentMember
+ownedRelationship += EmptyResultMember
+UnaryOperator =
+'+' | '-' | '~' | 'not'
+ClassificationExpression : OperatorExpression =
+( ownedRelationship += ArgumentMember )?
+( operator = ClassificationTestOperator
+ownedRelationship += TypeReferenceMember
+| operator = CastOperator
+ownedRelationship += TypeResultMember
+)
+ownedRelationship += EmptyResultMember
+ClassificationTestOperator =
+'istype' | 'hastype' | '@'
+CastOperator =
+'as'
+MetaclassificationExpression : OperatorExpression =
+ownedRelationship += MetadataArgumentMember
+( operator = MetaClassificationTestOperator
+ownedRelationship += TypeReferenceMember
+| operator = MetaCastOperator
+ownedRelationship += TypeResultMember
+)
+ownedRelationship += EmptyResultMember
+ArgumentMember : ParameterMembership =
+Kernel Modeling Language v1.0 95
+PDF PAGE 121
+ownedMemberParameter = Argument
+Argument : Feature =
+ownedRelationship += ArgumentValue
+ArgumentValue : FeatureValue =
+value = OwnedExpression
+ArgumentExpressionMember : FeatureMembership =
+ownedRelatedElement += ArgumentExpression
+ArgumentExpression : Feature =
+ownedRelationship += ArgumentExpressionValue
+ArgumentExpressionValue : FeatureValue =
+value = OwnedExpressionReference
+MetadataArgumentMember : ParameterMembership =
+ownedRelatedElement += MetadataArgument
+MetadataArgument : Feature =
+ownedRelationship += MetadataValue
+MetadataValue : FeatureValue =
+value = MetadataReference
+MetadataReference : MetadataAccessExpression =
+ownedRelationship += ElementReferenceMember
+MetaclassificationTestOperator =
+'@@'
+MetaCastOperator =
+'meta'
+ExtentExpression : OperatorExpression =
+operator = 'all'
+ownedRelationship += TypeReferenceMember
+TypeReferenceMember : ParameterMembership =
+ownedMemberFeature = TypeReference
+TypeResultMember : ResultParameterMembership =
+ownedMemberFeature = TypeReference
+TypeReference : Feature =
+ownedRelationship += ReferenceTyping
+ReferenceTyping : FeatureTyping =
+type = [QualifiedName]
+EmptyResultMember : ReturnParameterMembership =
+ownedRelatedElement += EmptyFeature
+EmptyFeature : Feature =
+{ }
+Notes
+1. OperatorExpressionsprovide a shorthand notation forInvocationExpressionsthat invoke a
+libraryFunctionrepresented as anoperatorsymbol. Table 5shows the mapping fromoperator
+symbols to theFunctionsthey represent from the Kernel Model Library (seeClause 9). An
+96 Kernel Modeling Language v1.0
+PDF PAGE 122
+OperatorExpressioncontains subexpressions called itsoperandsthat generally correspond to the
+argumentExpressionsof theOperatorExpression, except in the case ofoperatorsrepresenting
+controlFunctions, in which case the evaluation of certain operands is as determined by theFunction
+(see8.4.4.9for details).
+2. Though not directly expressed in the syntactic productions given above, in anyOperatorExpression
+containing nestedOperatorExpressions, the nestedOperatorExpressionsshall be implicitly
+grouped according to theprecedenceof theoperatorsinvolved, as given inTable 6.
+OperatorExpressionswith higher precedenceoperatorsshall be grouped more tightly than those
+with lower precedenceoperators. Further, allBinaryOperatorsother than exponentiation are left-
+associative (i.e, they group to the left), while the exponentiation operators (^and**) are right-associative
+(i.e., they group to the right).
+3. The unaryoperatorsymbol~maps to the libraryFunctionDataFunctions::'~', as shown inTable
+5. This abstractFunctionmay be given a concrete definition in a domain-specificFunctionlibrary, but
+no default definition is provided in the Kernel Functions Library. If no domain-specific definition is
+available, a tool should give a warning if thisoperatoris used.
+Table 5. Operator Mapping
+Operator Library Function Description Model-Level Evaluable?
+all BaseFunctions::'all' Type extent No
+istype BaseFunctions::'istype'
+All argument values are
+directly or indirectly instances
+of a type
+Yes
+hastype BaseFunctions::'hastype' All argument values are
+directly instances of a type Yes
+@ BaseFunctions::'@'
+Any argument value is
+directly or indirectly an
+instance of a type
+Yes
+@@ BaseFunctions::'@@'
+Any argument value is
+directly or indirectly an
+instance of a metaclass
+Yes
+as BaseFunctions::as Select instances of type (cast) Yes
+meta BaseFunctions::meta Select instances of a
+metaclass (metacast) Yes
+== BaseFunctions::'==' Equality Yes
+!= BaseFunctions::'!=' Inequality Yes
+=== BaseFunctions::'==='
+Same (equality for data
+values, same lives for
+occurrences)
+Yes
+!== BaseFunctions::'!==' Not same Yes
+xor DataFunctions::'xor' Logical "exclusive or" Yes
+not DataFunctions::'not' Logical "not" Yes
+~ DataFunctions::'~' Undefined No
+| DataFunctions::'|' Logical "inclusive or" Yes
+& DataFunctions::'&' Logical "and" Yes
+< DataFunctions::'<' Less than Yes
+Kernel Modeling Language v1.0 97
+PDF PAGE 123
+Operator Library Function Description Model-Level Evaluable?
+> DataFunctions::'>' Greater than Yes
+<= DataFunctions::'<=' Less than or equal to Yes
+>= DataFunctions::'>=' Greater than or equal to Yes
++ DataFunctions::'+' Addition Yes
+- DataFunctions::'-' Subtraction Yes
+* DataFunctions::'*' Multiplication Yes
+/ DataFunctions::'/' Division Yes
+% DataFunctions::'%' Remainder Yes
+^ ** DataFunctions::'^' Exponentiation Yes
+.. DataFunctions::'..' Range construction Yes
+?? ControlFunctions::'??' Null coalescing Yes
+if ControlFunctions::'if' Conditional test (ternary) Yes
+or ControlFunctions::'or' Conditional "or" Yes
+and ControlFunctions::'and' Conditional "and" Yes
+implies ControlFunctions::'implies' Conditional "implication" Yes
+Table 6. Operator Precedence (highest to lowest)
+Unary
+all
++ - ~ not
+Binary
+^ **
+* / %
++ -
+..
+< > <= >=
+istype hastype @ @@ as meta
+== != === !==
+& and
+98 Kernel Modeling Language v1.0
+PDF PAGE 124
+xor
+| or
+implies
+??
+Ternary
+if
+8.2.5.8.2 Primary Expressions
+PrimaryExpression : Expression =
+FeatureChainExpression
+| NonFeatureChainPrimaryExpression
+PrimaryArgumentValue : FeatureValue =
+value = PrimaryExpression
+PrimaryArgument : Feature =
+ownedRelationship += PrimaryArgumentValue
+PrimaryArgumentMember : ParameterMembership =
+ownedMemberParameter = PrimaryArgument
+NonFeatureChainPrimaryExpression : Expression =
+BracketExpression
+| IndexExpression
+| SequenceExpression
+| SelectExpression
+| CollectExpression
+| FunctionOperationExpression
+| BaseExpression
+NonFeatureChainPrimaryArgumentValue : FeatureValue =
+value = NonFeatureChainPrimaryExpression
+NonFeatureChainPrimaryArgument : Feature =
+ownedRelationship += NonFeatureChainPrimaryArgumentValue
+NonFeatureChainPrimaryArgumentMember : ParameterMembership =
+ownedMemberParameter = PrimaryArgument
+BracketExpression : OperatorExpression =
+ownedRelationship += PrimaryArgumentMember
+operator = '['
+ownedRelationship += SequenceExpressionListMember ']'
+IndexExpression =
+ownedRelationship += PrimaryArgumentMember '#'
+'(' ownedRelationship += SequenceExpressionListMember ')'
+SequenceExpression : Expression =
+'(' SequenceExpressionList ')'
+SequenceExpressionList : Expression =
+Kernel Modeling Language v1.0 99
+PDF PAGE 125
+OwnedExpression ','? | SequenceOperatorExpression
+SequenceOperatorExpression : OperatorExpression =
+ownedRelationship += OwnedExpressionMember
+operator = ','
+ownedRelationship += SequenceExpressionListMember
+SequenceExpressionListMember : FeatureMembership =
+ownedMemberFeature = SequenceExpressionList
+FeatureChainExpression =
+ownedRelationship += NonFeatureChainPrimaryArgumentMember '.'
+ownedRelationship += FeatureChainMember
+CollectExpression =
+ownedRelationship += PrimaryArgumentMember '.'
+ownedRelationship += BodyArgumentMember
+SelectExpression =
+ownedRelationship += PrimaryArgumentMember '.?'
+ownedRelationship += BodyArgumentMember
+FunctionOperationExpression : InvocationExpression =
+ownedRelationship += PrimaryArgumentMember '->'
+ownedRelationship += InvocationTypeMember
+( ownedRelationship += BodyArgumentMember
+| ownedRelationship += FunctionReferenceArgumentMember
+| ArgumentList )
+ownedRelationship += EmptyResultMember
+BodyArgumentMember : ParameterMembership =
+ownedMemberParameter = BodyArgument
+BodyArgument : Feature =
+ownedRelationship += BodyArgumentValue
+BodyArgumentValue : FeatureValue =
+value = BodyExpression
+FunctionReferenceArgumentMember : ParameterMembership =
+ownedMemberParameter = FunctionReferenceArgument
+FunctionReferenceArgument : Feature =
+ownedRelationship += FunctionReferenceArgumentValue
+FunctionReferenceArgumentValue : FeatureValue =
+value = FunctionReferenceExpression
+FunctionReferenceExpression : FeatureReferenceExpression =
+ownedRelationship += FunctionReferenceMember
+FunctionReferenceMember : FeatureMembership =
+ownedMemberFeature = FunctionReference
+FunctionReference : Expression =
+ownedRelationship += ReferenceTyping
+FeatureChainMember : Membership =
+FeatureReferenceMember
+| OwnedFeatureChainMember
+OwnedFeatureChainMember : OwningMembership =
+ownedMemberElement = FeatureChain
+100 Kernel Modeling Language v1.0
+PDF PAGE 126
+Notes
+1. Primary expressions provide additional shorthand notations for certain kinds of
+InvocationExpressions. For those cases in which theInvocationExpressionis an
+OperatorExpression, itsoperatorshall be resolved to the appropriate library function as given in
+Table 7. Note also that, for aCollectionExpressionorSelectExpression, the abstract syntax
+constrains theoperatorto becollectandselect, respectively, separately from the.and.?symbols
+used in their concrete syntax notation (see8.3.4.8.2and8.3.4.8.18).
+2. The grammar allows a bracket syntax[...]that parses to an invocation of the libraryFunction
+BaseFunctions::'[',as shown inTable 7. This notation is available for use with domain-specific
+library models that given a concrete definition to the abstract base'['Function, but no default
+definition is provided in the Kernel Functions Library. If no domain-specific definition is available, a tool
+should give a warning if this operator is used.
+Table 7. Primary Expression Operator Mapping
+Operator Library Function Description Model-level Evaluable?
+[ BaseFunctions::'[' Undefined No
+# BaseFunctions::'#' Indexing Yes
+, BaseFunctions::',' Sequence construction Yes
+. ControlFunctions::'.' Feature chaining Yes
+collect ControlFunctions::collect Sequence collection Yes
+select ControlFunctions::select Sequence selection Yes
+8.2.5.8.3 Base Expressions
+BaseExpression : Expression =
+NullExpression
+| LiteralExpression
+| FeatureReferenceExpression
+| MetadataAccessExpression
+| InvocationExpression
+| ConstructorExpression
+| BodyExpression
+NullExpression : NullExpression =
+'null' | '(' ')'
+FeatureReferenceExpression : FeatureReferenceExpression =
+ownedRelationship += FeatureReferenceMember
+ownedRelationship += EmptyResultMember
+FeatureReferenceMember : Membership =
+memberElement = FeatureReference
+FeatureReference : Feature =
+[QualifiedName]
+MetadataAccessExpression =
+ownedRelationship += ElementReferenceMember '.' 'metadata'
+ElementReferenceMember : Membership =
+memberElement = [QualifiedName]
+InvocationExpression : InvocationExpression =
+ownedRelationship += InstatiatedTypeMember
+Kernel Modeling Language v1.0 101
+PDF PAGE 127
+ArgumentList
+ownedRelationship += EmptyResultMember
+ConstructorExpression =
+'new' ownedRelationship += InstantiatedTypeMember
+ownedRelationship += ConstructorResultMember
+ConstructorResultMember : ReturnParameterMembership =
+ownedRelatedElement += ConstructorResult
+ConstructorResult : Feature =
+ArgumentList
+InstantiatedTypeMember : Membership =
+memberElement = InstantiatedTypeReference
+| OwnedFeatureChainMember
+InstantiatedTypeReference : Type =
+[QualifiedName]
+ArgumentList : Feature =
+'(' ( PositionalArgumentList | NamedArgumentList )? ')'
+PositionalArgumentList : Feature =
+e.ownedRelationship += ArgumentMember
+( ',' e.ownedRelationship += ArgumentMember )*
+NamedArgumentList : Feature =
+ownedRelationship += NamedArgumentMember
+( ',' ownedRelationship += NamedArgumentMember )*
+NamedArgumentMember : FeatureMembership =
+ownedMemberFeature = NamedArgument
+NamedArgument : Feature =
+ownedRelationship += ParameterRedefinition '='
+ownedRelationship += ArgumentValue
+ParameterRedefinition : Redefinition =
+redefinedFeature = [QualifiedName]
+BodyExpression : FeatureReferenceExpression =
+ownedRelationship += ExpressionBodyMember
+ExpressionBodyMember : FeatureMembership =
+ownedMemberFeature = ExpressionBody
+ExpressionBody : Expression =
+'{' FunctionBodyPart '}'
+8.2.5.8.4 Literal Expressions
+LiteralExpression =
+LiteralBoolean
+| LiteralString
+| LiteralInteger
+| LiteralReal
+| LiteralInfinity
+LiteralBoolean =
+value = BooleanValue
+BooleanValue : Boolean =
+102 Kernel Modeling Language v1.0
+PDF PAGE 128
+'true' | 'false'
+LiteralString =
+value = STRING_VALUE
+LiteralInteger =
+value = DECIMAL_VALUE
+LiteralReal =
+value = RealValue
+RealValue : Real =
+DECIMAL_VALUE? '.' ( DECIMAL_VALUE | EXPONENTIAL_VALUE )
+| EXPONENTIAL_VALUE
+LiteralInfinity =
+'*'
+8.2.5.9 Interactions Concrete Syntax
+8.2.5.9.1 Interactions
+Interaction =
+TypePrefix 'interaction'
+ClassifierDeclaration TypeBody
+8.2.5.9.2 Flows
+Flow =
+FeaturePrefix 'flow'
+ItemFlowDeclaration TypeBody
+SuccessionFlow =
+FeaturePrefix 'succession' 'flow'
+ItemFlowDeclaration TypeBody
+FlowDeclaration : Flow =
+FeatureDeclaration ValuePart?
+( 'of' ownedRelationship += PayloadFeatureMember )?
+( 'from' ownedRelationship += FlowEndMember
+'to' ownedRelationship += FlowEndMember )?
+| ( isSufficient ?= 'all' )?
+ownedRelationship += FlowEndMember 'to'
+ownedRelationship += FlowEndMember
+PayloadFeatureMember : FeatureMembership =
+ownedRelatedElement = PayloadFeature
+PayloadFeature =
+Identification PayloadFeatureSpecializationPart ValuePart?
+| Identification ValuePart
+| ( ownedRelationship += OwnedFeatureTyping
+( ownedRelationship += OwnedMultiplicity )?
+| ownedRelationship += OwnedMultiplicity
+( ownedRelationship += OwnedFeatureTyping )?
+PayloadFeatureSpecializationPart : Feature =
+FeatureSpecialization+ MultiplicityPart?
+FeatureSpecialization*
+| MultiplicityPart FeatureSpecialization+
+FlowEndMember : EndFeatureMembership =
+ownedRelatedElement += FlowEnd
+Kernel Modeling Language v1.0 103
+PDF PAGE 129
+FlowEnd =
+( ownedRelationship += OwnedReferenceSubsetting '.' )?
+ownedRelationship += FlowFeatureMember
+FlowFeatureMember : FeatureMembership =
+ownedRelatedElement += FlowFeature
+FlowFeature : Feature =
+ownedRelationship += FlowFeatureRedefinition
+(See Note 1)
+FlowFeatureRedefinition : Redefinition =
+redefinedFeature = [QualifiedName]
+Notes
+1. To ensure that anFlowFeaturepasses thevalidateRedefinitionDirectionConformance
+constraint (see8.3.3.3.8), itsdirectionmust be set to the direction of itsredefinedFeature, relative
+to its owningFlowEnd, that is, the result of the following OCL expression:
+owningType.directionOf(ownedRedefinition->at(1).redefinedFeature)
+8.2.5.10 Feature Values Concrete Syntax
+ValuePart : Feature =
+ownedRelationship += FeatureValue
+FeatureValue =
+( '='
+| isInitial ?= ':='
+| isDefault ?= 'default' ( '=' | isInitial ?= ':=' )?
+)
+ownedRelatedElement += OwnedExpression
+8.2.5.11 Multiplicities Concrete Syntax
+Multiplicity =
+MultiplicitySubset | MultiplicityRange
+MultiplicitySubset : Multiplicity =
+'multiplicity' Identification Subsets
+TypeBody
+MultiplicityRange =
+'multiplicity' Identification MultiplicityBounds
+TypeBody
+OwnedMultiplicity : OwningMembership =
+ownedRelatedElement += OwnedMultiplicityRange
+OwnedMultiplicityRange : MultiplicityRange =
+MultiplicityBounds
+MultiplicityBounds : MultiplicityRange =
+'[' ( ownedRelationship += MultiplicityExpressionMember '..' )?
+ownedRelationship += MultiplicityExpressionMember ']'
+MultiplicityExpressionMember : OwningMembership =
+ownedRelatedElement += ( LiteralExpression | FeatureReferenceExpression )
+104 Kernel Modeling Language v1.0
+PDF PAGE 130
+8.2.5.12 Metadata Concrete Syntax
+Metaclass =
+TypePrefix 'metaclass'
+ClassifierDeclaration TypeBody
+PrefixMetadataAnnotation : Annotation =
+'#' ownedRelatedElement += PrefixMetadataFeature
+PrefixMetadataMember : OwningMembership =
+'#' ownedRelatedElement += PrefixMetadataFeature
+PrefixMetadataFeature : MetadataFeature :
+ownedRelationship += OwnedFeatureTyping
+MetadataFeature =
+( ownedRelationship += PrefixMetadataMember )*
+( '@' | 'metadata' )
+MetadataFeatureDeclaration
+( 'about' ownedRelationship += Annotation
+( ',' ownedRelationship += Annotation )*
+)?
+MetadataBody
+MetadataFeatureDeclaration : MetadataFeature =
+( Identification ( ':' | 'typed' 'by' ) )?
+ownedRelationship += OwnedFeatureTyping
+MetadataBody : Feature =
+';' | '{' ( ownedRelationship += MetadataBodyElement )* '}'
+MetadataBodyElement : Membership =
+NonFeatureMember
+| MetadataBodyFeatureMember
+| AliasMember
+| Import
+MetadataBodyFeatureMember : FeatureMembership =
+ownedMemberFeature = MetadataBodyFeature
+MetadataBodyFeature : Feature =
+'feature'? ( ':>>' | 'redefines')? ownedRelationship += OwnedRedefinition
+FeatureSpecializationPart? ValuePart?
+MetadataBody
+8.2.5.13 Packages Concrete Syntax
+Package =
+( ownedRelationship += PrefixMetadataMember )*
+PackageDeclaration PackageBody
+LibraryPackage =
+( isStandard ?= 'standard' ) 'library'
+( ownedRelationship += PrefixMetadataMember )*
+PackageDeclaration PackageBody
+PackageDeclaration : Package =
+'package' Identification
+PackageBody : Package =
+';'
+| '{' ( NamespaceBodyElement
+| ownedRelationship += ElementFilterMember
+Kernel Modeling Language v1.0 105
+PDF PAGE 131
+)*
+'}'
+ElementFilterMember : ElementFilterMembership =
+MemberPrefix
+'filter' condition = OwnedExpression ';'
+8.3 Abstract Syntax
+8.3.1 Abstract Syntax Overview
+Kernel
+Root
+Core
+The Kernel layer completes the 
+KerML metamodel.
+The Core layer provides the 
+semantic foundation for KerML.
+The Root layer provides the 
+syntactic foundation for KerML.
+FeatureValues
+Multiplicities
+Associations
+Expressions
+Interactions
+Connectors
+Structures
+DataTypes
+Functions
+Behaviors
+Packages
+Metadata
+Classes
+Dependencies
+Namespaces
+Annotations
+Elements
+Classifiers
+Features
+Types
+«import»
+«import»
+Figure 1. KerML Syntax Layers
+The KerML abstract syntax is specified as a UML model conforming to the CMOF conformance point of the Meta
+Object Facility Core Specification [MOF]. As shown inFig. 1, this model is divided into three top-level packages
+corresponding to the three layers of KerML (see 8.1). Each top-level packagecontains nested packages for the
+modeling areas it addresses. Further, the Core package imports the Root package and the Kernel package imports the
+Core package, so that the Kernel package contains (as owned or imported members) all abstract syntax elements.
+106 Kernel Modeling Language v1.0
+PDF PAGE 132
+Fig. 2shows the generalization hierarchy for all abstract syntax elements, other than those that represent KerML
+Relationships, andFig. 3shows a similar hierarchy for all abstract syntax elements that represent Relationships.
+FeatureReferenceExpressionMetadataAccessExpression
+FeatureChainExpression
+InstantiationExpression
+ConstructorExpression
+TextualRepresentation
+InvocationExpression
+AssociationStructure
+SuccessionFlow
+OperatorExpression
+BooleanExpression
+AnnotatingElement
+MetadataFeature
+BindingConnector
+CollectExpression
+MultiplicityRange
+LiteralExpression
+SelectExpression IndexExpression
+Documentation
+NullExpression
+LiteralBoolean LiteralRational
+Type
+Metaclass
+Structure
+Package
+Succession
+Association Class
+Behavior
+Function
+Feature
+Multiplicity
+Namespace
+Predicate
+Comment
+Connector
+Classifier
+LiteralString
+Interaction
+Invariant
+Step
+Expression
+DataType
+Element
+LiteralInteger LiteralInfinity
+Flow
+Figure 2. KerML Element Hierarchy
+ResultExpressionMembership
+ReturnParameterMembership
+EndFeatureMembership
+ElementFilterMembership
+ParameterMembership
+ReferenceSubsetting
+OwningMembership
+FeatureMembership
+MembershipImport NamespaceImport
+Subclassification
+CrossSubsetting
+FeatureChaining
+TypeFeaturing
+Specialization
+FeatureTyping
+Membership IntersectingDifferencingUnioning
+Disjoining ConnectorConjugation
+Annotation Association
+Subsetting
+Redefinition
+FeatureValue
+Element
+Relationship
+Import
+Figure 3. KerML Relationship Hierarchy
+The MOF-compliant class model for the abstract syntax defines the basic structural representation for any KerML
+model. It is also the basis for the textual concrete syntax (see8.2) and for other forms of serialization used for
+interchanging models (seeClause 10). In addition to this basic structure, the abstract syntax also includes
+constraintsdefined on various metaclasses. A conformant tool shall be able to accept any KerML model that
+conforms to the structural abstract syntax class model, and it may then additionally report on and/or enforce the
+constraints on a model so represented (as further described below).
+Kernel Modeling Language v1.0 107
+PDF PAGE 133
+The abstract syntax model includes three kinds of constraints:
+1. Derivation constraints.These constraints specify the how the values of the derived properties of a
+metaclass are computed from the values of other properties in the abstract syntax model. A tool
+conformant to the KerML abstract syntax shall always enforce derivation constraints. However, the
+computed values of derived properties may depend on whether implied relationships are included in the
+model or not (see below). A derivation constraint has a name starting with the wordderive, followed by
+the name of the metaclass it constrains, followed by the name of the derived property it is for. The OCL
+specification of such a constraint always has the form of an equality, with the derived property on the left-
+hand side and the derivation expression on the right-hand side. For example, the derivation constraint for
+the derived propertyElement::ownedElementis calledderiveElementOwnedElementand has the
+OCL specificationownedElement = ownedRelationship.ownedRelatedElement.
+Note. Derivation constraints arenotincluded for derived properties in the following cases:
+◦ The derived property subsets a property with multiplicity upper bound 1. In this case, if the
+derived property has a value, it must be the same as that of the subsetted property.
+◦ The derived property redefines another derived property. In this case, the derivation of the
+redefined property also applies to the redefining property, though the redefining property will
+generally place additional constraints on type and/or multiplicity.
+2. Semantic constraints.These constraints specify relationships that are semantically required in a KerML
+model (see8.4.2), particularly relationships with elements in the Kernel Semantic Library (see9.2).
+These constraints may be violated by a model as entered by a user or as interchanged. In this case, a tool
+may satisfy the constraints by introducingimpliedrelationshipsinto the model, it may simply report their
+violation, or it may ignore the violations. Semantic constraints have names that start with the wordcheck,
+followed by the name of the constrained metaclass, followed by a descriptive word or phrase. For
+example,checkTypeSpecialization.
+3. Validation constraints.These constraints specify additional syntactic conditions that must be satisfied in
+order to give a model a proper semantic interpretation. They are written presuming that all semantic
+constraints are satisfied. Avalidmodel is a model that satisfies all validation constraints. A tool
+conformant to the KerML abstract syntax should report violations of validation constraints. A tool
+conformant to the KerML semantics is only required to operate on valid models. Validation constraints
+have names that start with the wordvalidate, followed by the name of the metaclass, followed by a
+descriptive word or phrase. For example,validateConnectorRelatedFeatures.
+108 Kernel Modeling Language v1.0
+PDF PAGE 134
+8.3.2 Root Abstract Syntax
+8.3.2.1 Elements and Relationships Abstract Syntax
+8.3.2.1.1 Overview
++path() : String{redefines path}
++libraryNamespace() : Namespace [0..1]{redefines libraryNamespace}
++isImplied : Boolean = false
+Relationship
++path() : String
++libraryNamespace() : Namespace [0..1]
++effectiveName() : String [0..1]
++effectiveShortName() : String [0..1]
++escapedName() : String [0..1]
++/isLibraryElement : Boolean
++isImpliedIncluded : Boolean = false
++/qualifiedName : String [0..1]
++/name : String [0..1]
++/shortName : String [0..1]
++declaredName : String [0..1]
++declaredShortName : String [0..1]
++aliasIds : String [0..*]{ordered}
++elementId : String{id}
+Element
+{subsets relationship}
++targetRelationship
+0..*
+{subsets relatedElement, 
+ordered}
++target
+0..*
+{subsets relationship}
++owningRelationship
+0..1
+{subsets relatedElement, 
+ordered}
++ownedRelatedElement
+0..*
+{subsets relationship}
++sourceRelationship
+0..*
+{subsets relatedElement, 
+ordered}
++source
+0..*
+{subsets relationship, 
+ordered}
++ownedRelationship
+0..*
+{subsets 
+relatedElement}
++owningRelatedElement
+0..1
+{union, nonunique}
++/relationship
+0..*
+{ordered, nonunique}
++/relatedElement
+0..*
++/owner 0..1+/ownedElement
+{ordered}
+0..*
+Figure 4. Elements
+It is a general design principle of the KerML abstract syntax that non-RelationshipElementsare related only by
+reified instances ofRelationships. All other meta-associations betweenElementsare derived from these reified
+Relationships. For example, theowningRelatedElement/ownedRelationshipmeta-association between an
+Elementand aRelationshipis fundamental to establishing the structure of a model. However, the
+owner/ownedElementmeta-association between twoElementsis derived, based on theRelationshipstructure
+between them.
+8.3.2.1.2 Element
+Description
+AnElementis a constituent of a model that is uniquely identified relative to all otherElements. It can have
+Relationshipswith otherElements. Some of theseRelationshipsmight imply ownership of other
+Elements, which means that if anElementis deleted from a model, then so are all theElementsthat it owns.
+General Classes
+None.
+Kernel Modeling Language v1.0 109
+PDF PAGE 135
+Attributes
+aliasIds : String [0..*] {ordered}
+Various alternative identifiers for this Element. Generally, these will be set by tools.
+declaredName : String [0..1]
+The declared name of thisElement.
+declaredShortName : String [0..1]
+An optional alternative name for theElementthat is intended to be shorter or in some way more succinct than its
+primaryname. It may act as a modeler-specified identifier for theElement, though it is then the responsibility of
+the modeler to maintain the uniqueness of this identifier within a model or relative to some other context.
+/documentation : Documentation [0..*] {subsets ownedElement, annotatingElement, ordered}
+The Documentation owned by this Element.
+elementId : String
+The globally unique identifier for this Element. This is intended to be set by tooling, and it must not change during
+the lifetime of the Element.
+isImpliedIncluded : Boolean
+Whether all necessary implied Relationships have been included in theownedRelationshipsof this Element.
+This property may be true, even if there are not actually anyownedRelationshipswithisImplied = true,
+meaning that no such Relationships are actually implied for this Element. However, if it is false, then
+ownedRelationshipsmaynotcontain any implied Relationships. That is, eitherallrequired implied
+Relationships must be included, or none of them.
+/isLibraryElement : Boolean
+Whether this Element is contained in the ownership tree of a library model.
+/name : String [0..1]
+The name to be used for thisElementduring name resolution within itsowningNamespace. This is derived using
+theeffectiveName()operation. By default, it is the same as thedeclaredName, but this is overridden for certain
+kinds ofElementsto compute anameeven when thedeclaredNameis null.
+/ownedAnnotation : Annotation [0..*] {subsets ownedRelationship, annotation, ordered}
+TheownedRelationshipsof thisElementthat areAnnotations, for which thisElementis the
+annotatedElement.
+/ownedElement : Element [0..*] {ordered}
+The Elements owned by this Element, derived as theownedRelatedElementsof the
+ownedRelationshipsof this Element.
+ownedRelationship : Relationship [0..*] {subsets relationship, ordered}
+The Relationships for which this Element is theowningRelatedElement.
+110 Kernel Modeling Language v1.0
+PDF PAGE 136
+/owner : Element [0..1]
+The owner of this Element, derived as theowningRelatedElementof theowningRelationshipof this
+Element, if any.
+/owningMembership : OwningMembership [0..1] {subsets owningRelationship, membership}
+TheowningRelationshipof thisElement, if thatRelationshipis aMembership.
+/owningNamespace : Namespace [0..1] {subsets namespace}
+TheNamespacethat owns thisElement, which is themembershipOwningNamespaceof the
+owningMembershipof thisElement, if any.
+owningRelationship : Relationship [0..1] {subsets relationship}
+The Relationship for which this Element is anownedRelatedElement, if any.
+/qualifiedName : String [0..1]
+The full ownership-qualified name of thisElement, represented in a form that is valid according to the KerML
+textual concrete syntax for qualified names (including use of unrestricted name notation and escaped characters, as
+necessary). ThequalifiedNameis null if thisElementhas noowningNamespaceor if there is not a complete
+ownership chain of namedNamespacesfrom a rootNamespaceto thisElement. If theowningNamespacehas
+otherElementswith the same name as this one, then thequalifiedNameis null for all suchElementsother than
+the first.
+/shortName : String [0..1]
+The short name to be used for thisElementduring name resolution within itsowningNamespace. This is derived
+using theeffectiveShortName()operation. By default, it is the same as thedeclaredShortName, but this is
+overridden for certain kinds ofElementsto compute ashortNameeven when thedeclaredNameis null.
+/textualRepresentation : TextualRepresentation [0..*] {subsets ownedElement, annotatingElement, ordered}
+TheTextualRepresentationsthat annotate thisElement.
+Operations
+effectiveName() : String [0..1]
+Return an effectivenamefor thisElement. By default this is the same as itsdeclaredName.
+body: declaredName
+effectiveShortName() : String [0..1]
+Return an effectiveshortNamefor thisElement. By default this is the same as itsdeclaredShortName.
+body: declaredShortName
+escapedName() : String [0..1]
+Returnname, if that is not null, otherwise theshortName, if that is not null, otherwise null. If the returned value is
+non-null, it is returned as-is if it has the form of a basic name, or, otherwise, represented as a restricted name
+Kernel Modeling Language v1.0 111
+PDF PAGE 137
+according to the lexical structure of the KerML textual notation (i.e., surrounded by single quote characters and with
+special characters escaped).
+libraryNamespace() : Namespace [0..1]
+By default, return the library Namespace of theowningRelationshipof this Element, if it has one.
+body: if owningRelationship <> null then owningRelationship.libraryNamespace()
+else null endif
+path() : String
+Return a unique description of the location of thisElementin the containment structure rooted in a root
+Namespace. If theElementhas a non-nullqualifiedName, then return that. Otherwise, if it has an
+owningRelationship, then return the string constructed by appending to thepathof it'sowningRelationship
+the character/followed by the string representation of its position in the list ofownedRelatedElementsof the
+owningRelationship(indexed starting at 1). Otherwise, return the empty string.
+(Note that this operation is overridden forRelationshipsto useowningRelatedElementwhen appropriate.)
+body: if qualifiedName <> null then qualifiedName
+else if owningRelationship <> null then
+owningRelationship.path() + '/' +
+owningRelationship.ownedRelatedElement->indexOf(self).toString()
+-- A position index shall be converted to a decimal string representation
+-- consisting of only decimal digits, with no sign, leading zeros or leading
+-- or trailing whitespace.
+else ''
+endif endif
+Constraints
+deriveElementDocumentation
+Thedocumentationof anElementis itsownedElementsthat areDocumentation.
+documentation = ownedElement->selectByKind(Documentation)
+deriveElementIsLibraryElement
+AnElementisLibraryElementiflibraryNamespace()is not null.
+isLibraryElement = libraryNamespace() <> null
+deriveElementName
+Thenameof anElementis given by the result of theeffectiveName()operation.
+name = effectiveName()
+deriveElementOwnedAnnotation
+TheownedAnnotationsof anElementare itsownedRelationshipsthat areAnnotations, for which the
+Elementis theannotatedElement.
+ownedAnnotation = ownedRelationship->
+selectByKind(Annotation)->
+select(a | a.annotatedElement = self)
+112 Kernel Modeling Language v1.0
+PDF PAGE 138
+deriveElementOwnedElement
+TheownedElementsof anElementare theownedRelatedElementsof itsownedRelationships.
+ownedElement = ownedRelationship.ownedRelatedElement
+deriveElementOwner
+Theownerof anElementis theowningRelatedElementof itsowningRelationship.
+owner = owningRelationship.owningRelatedElement
+deriveElementQualifiedName
+If thisElementdoes not have anowningNamespace, then itsqualifiedNameis null. If theowningNamespace
+of this Element is a rootNamespace, then thequalifiedNameof theElementis the escaped name of the
+Element(if any). If theowningNamespaceis non-null but not a rootNamespace, then thequalifiedNameof
+thisElementis constructed from thequalifiedNameof theowningNamespaceand the escaped name of the
+Element, unless thequalifiedNameof theowningNamespaceis null or the escaped name is null, in which case
+thequalifiedNameof thisElementis also null. Further, if theowningNamespacehas otherownedMembers
+with the same non-null name as thisElement, and thisElementis not the first, then thequalifiedNameof this
+Elementis null.
+qualifiedName =
+if owningNamespace = null then null
+else if name <> null and
+owningNamespace.ownedMember->
+select(m | m.name = name).indexOf(self) <> 1 then null
+else if owningNamespace.owner = null then escapedName()
+else if owningNamespace.qualifiedName = null or
+escapedName() = null then null
+else owningNamespace.qualifiedName + '::' + escapedName()
+endif endif endif endif
+deriveElementShortName
+TheshortNameof anElementis given by the result of theeffectiveShortName()operation.
+shortName = effectiveShortName()
+deriveElementTextualRepresentation
+ThetextualRepresentationsof anElementare itsownedElementsthat areTextualRepresentations.
+textualRepresentation = ownedElement->selectByKind(TextualRepresentation)
+deriveOwningNamespace
+TheowningNamespaceof anElementis themembershipOwningNamspaceof itsowningMembership(if any).
+owningNamespace =
+if owningMembership = null then null
+else owningMembership.membershipOwningNamespace
+endif
+validateElementIsImpliedIncluded
+Kernel Modeling Language v1.0 113
+PDF PAGE 139
+If anElementhas anyownedRelationshipsfor whichisImplied = true, then theElementmust also have
+isImpliedIncluded = true. (Note that anElementcanhaveisImplied = trueeven if no
+ownedRelationshipshaveisImplied = true, indicating theElementsimply has no implied
+Relationships.
+ownedRelationship->exists(isImplied) implies isImpliedIncluded
+8.3.2.1.3 Relationship
+Description
+ARelationshipis anElementthat relates otherElement. Some of itsrelatedElementsmay be owned, in
+which case thoseownedRelatedElementswill be deleted from a model if theirowningRelationshipis. A
+Relationshipmay also be owned by anotherElement, in which case theownedRelatedElementsof the
+Relationshipare also considered to be transitively owned by theowningRelatedElementof the
+Relationship.
+TherelatedElementsof aRelationshipare divided intosourceandtargetElements. The
+Relationshipis considered to be directed from thesourceto thetargetElements. An undirected
+Relationshipmay have either allsourceor alltargetElements.
+A "relationshipElement" in the abstract syntax is generically anyElementthat is an instance of either
+Relationshipor a direct or indirect specialization ofRelationship. Any other kind ofElementis a "non-
+relationshipElement". It is a convention of that non-relationshipElementsareonlyrelated via reified relationship
+Elements. Any meta-associations directly between non-relationshipElementsmust be derived from underlying
+reifiedRelationship.
+General Classes
+Element
+Attributes
+isImplied : Boolean
+Whether this Relationship was generated by tooling to meet semantic rules, rather than being directly created by a
+modeler.
+ownedRelatedElement : Element [0..*] {subsets relatedElement, ordered}
+TherelatedElementsof this Relationship that are owned by the Relationship.
+owningRelatedElement : Element [0..1] {subsets relatedElement}
+TherelatedElementof this Relationship that owns the Relationship, if any.
+/relatedElement : Element [0..*] {ordered, nonunique}
+The Elements that are related by this Relationship, derived as the union of thesourceandtargetElements of the
+Relationship.
+source : Element [0..*] {subsets relatedElement, ordered}
+TherelatedElements from which this Relationship is considered to be directed.
+target : Element [0..*] {subsets relatedElement, ordered}
+114 Kernel Modeling Language v1.0
+PDF PAGE 140
+TherelatedElementsto which this Relationship is considered to be directed.
+Operations
+libraryNamespace() : Namespace [0..1] {redefines libraryNamespace}
+Return whether this Relationship has either anowningRelatedElementorowningRelationshipthat is a
+library element.
+body: if owningRelatedElement <> null then owningRelatedElement.libraryNamespace()
+else if owningRelationship <> null then owningRelationship.libraryNamespace()
+else null endif endif
+path() : String {redefines path}
+If theowningRelationshipof theRelationshipis null but itsowningRelatedElementis non-null, construct
+thepathusing the position of theRelationshipin the list ofownedRelationshipsof its
+owningRelatedElement. Otherwise, return thepathof theRelationshipas specified for anElementin
+general.
+body: if owningRelationship = null and owningRelatedElement <> null then
+owningRelatedElement.path() + '/' +
+owningRelatedElement.ownedRelationship->indexOf(self).toString()
+-- A position index shall be converted to a decimal string representation
+-- consisting of only decimal digits, with no sign, leading zeros or leading
+-- or trailing whitespace.
+else self.oclAsType(Element).path()
+endif
+Constraints
+deriveRelationshipRelatedElement
+TherelatedElementsof aRelationshipconsist of all of itssourceElementsfollowed by all of itstarget
+Elements.
+relatedElement = source->union(target)
+8.3.2.2 Dependencies Abstract Syntax
+8.3.2.2.1 Overview
+Element
+Relationship
+Dependency
+{subsets sourceRelationship}
++clientDependency
+0..*
+{redefines source, 
+ordered}
++client
+1..*
+{subsets targetRelationship}
++supplierDependency
+0..*
+{redefines 
+target, ordered}
++supplier
+1..*
+Figure 5. Dependencies
+Kernel Modeling Language v1.0 115
+PDF PAGE 141
+8.3.2.2.2 Dependency
+Description
+ADependencyis aRelationshipthat indicates that one or moreclientElementsrequire one more
+supplierElementsfor their complete specification. In general, this means that a change to one of thesupplier
+Elementsmay necessitate a change to, or re-specification of, theclientElements.
+Note that aDependencyis entirely a model-levelRelationship, without instance-level semantics.
+General Classes
+Relationship
+Attributes
+client : Element [1..*] {redefines source, ordered}
+TheElementorElementsdependent on thesupplierElements.
+supplier : Element [1..*] {redefines target, ordered}
+TheElementorElementson which theclientElementsdepend in some respect.
+Operations
+None.
+Constraints
+None.
+116 Kernel Modeling Language v1.0
+PDF PAGE 142
+8.3.2.3 Annotations Abstract Syntax
+8.3.2.3.1 Overview
+AnnotationAnnotatingElement
++body : String [1]
++language : String [1]
+TextualRepresentation
+Element
++body : String [1]
++locale : String [0..1]
+Comment
+Documentation
+Relationship
+{subsets owner, redefines annotatedElement}
++/representedElement
+1
+{subsets annotatingElement, 
+subsets ownedElement, ordered}
++/textualRepresentation
+0..*
+{subsets annotatingElement, 
+subsets ownedElement, ordered}
++/documentation
+0..*
+{subsets owner, redefines annotatedElement}
++/documentedElement
+1
+{subsets annotatedElement, subsets owningRelatedElement}
++/owningAnnotatedElement
+0..1
+{subsets annotation, 
+subsets 
+ownedRelationship, 
+ordered}
++/ownedAnnotation0..*
+{subsets targetRelationship, 
+ordered} +annotation 0..*
++annotatedElement
+{redefines target}
+1
++/owningAnnotatingRelationship
+{subsets annotation, 
+subsets owningRelationship}
+0..1
+{subsets annotatingElement, 
+subsets ownedRelatedElement}
++/ownedAnnotatingElement
+0..1
+{subsets annotatingElement, 
+subsets owningRelatedElement}
++/owningAnnotatingElement
+0..1
++/ownedAnnotatingRelationship
+{subsets annotation, 
+subsets ownedRelationship, 
+ordered}
+0..*
+{subsets sourceRelationship, 
+ordered}
++/annotation
+0..*
++/annotatingElement
+{redefines source}
+1
++/annotatedElement
+{ordered}
+1..*
++/annotatingElement
+{ordered}
+0..*
+Figure 6. Annotation
+8.3.2.3.2 AnnotatingElement
+Description
+AnAnnotatingElementis anElementthat provides additional description of or metadata on some other
+Element. AnAnnotatingElementis either attached to itsannotatedElementsbyAnnotation
+Relationships, or it implicitly annotates itsowningNamespace.
+General Classes
+Element
+Attributes
+/annotatedElement : Element [1..*] {ordered}
+TheElementsthat are annotated by thisAnnotatingElement. Ifannotationis not empty, these are the
+annotatedElementsof theannotations. Ifannotationis empty, then it is theowningNamespaceof the
+AnnotatingElement.
+/annotation : Annotation [0..*] {subsets sourceRelationship, ordered}
+Kernel Modeling Language v1.0 117
+PDF PAGE 143
+TheAnnotationsthat relate thisAnnotatingElementto itsannotatedElements. This includes the
+owningAnnotatingRelationship(if any) followed by all theownedAnnotatingRelationshps.
+/ownedAnnotatingRelationship : Annotation [0..*] {subsets annotation, ownedRelationship, ordered}
+TheownedRelationshipsof thisAnnotatingElementthat areAnnotations, for which this
+AnnotatingElementis theannotatingElement.
+/owningAnnotatingRelationship : Annotation [0..1] {subsets owningRelationship, annotation}
+TheowningRelationshipof thisAnnotatingRelationship, if it is anAnnotation
+Operations
+None.
+Constraints
+deriveAnnotatingElementAnnotatedElement
+If anAnnotatingElementhasannotations, then itsannotatedElementsare theannotatedElementsof all
+itsannotations. Otherwise, it's singleannotatedElementis itsowningNamespace.
+annotatedElement =
+if annotation->notEmpty() then annotation.annotatedElement
+else Sequence{owningNamespace} endif
+deriveAnnotatingElementAnnotation
+Theannotationsof anAnnotatingElementare itsowningAnnotatingRelationship(if any) followed by
+all itsownedAnnotatingRelationships.
+annotation =
+if owningAnnotatingRelationship = null then ownedAnnotatingRelationship
+else owningAnnotatingRelationship->prepend(owningAnnotatingRelationship)
+endif
+deriveAnnotatingElementOwnedAnnotatingRelationship
+TheownedAnnotatingRelationshipsof anAnnotatingElementare itsownedRelationshipsthat are
+Annotations, for which theAnnotatingElementis not theannotatedElement.
+ownedAnnotatingRelationship = ownedRelationship->
+selectByKind(Annotation)->
+select(a | a.annotatedElement <> self)
+8.3.2.3.3 Annotation
+Description
+AnAnnotationis a Relationship between anAnnotatingElementand theElementthat is annotated by that
+AnnotatingElement.
+General Classes
+Relationship
+118 Kernel Modeling Language v1.0
+PDF PAGE 144
+Attributes
+annotatedElement : Element {redefines target}
+TheElementthat is annotated by theannotatingElementof this Annotation.
+/annotatingElement : AnnotatingElement {redefines source}
+TheAnnotatingElementthat annotates theannotatedElementof thisAnnotation. This is always either the
+ownedAnnotatingElementor theowningAnnotatingElement.
+/ownedAnnotatingElement : AnnotatingElement [0..1] {subsets annotatingElement, ownedRelatedElement}
+TheannotatingElementof thisAnnotation, when it is anownedRelatedElement.
+/owningAnnotatedElement : Element [0..1] {subsets annotatedElement, owningRelatedElement}
+TheannotatedElementof thisAnnotation, when it is also theowningRelatedElement.
+/owningAnnotatingElement : AnnotatingElement [0..1] {subsets annotatingElement, owningRelatedElement}
+TheannotatingElementof thisAnnotation, when it is theowningRelatedElement.
+Operations
+None.
+Constraints
+deriveAnnotationAnnotatingElement
+TheannotatingElementof anAnnotationis either itsownedAnnotatingElementor its
+owningAnnotatingElement.
+annotatingElement =
+if ownedAnnotatingElement <> null then ownedAnnotatingElement
+else owningAnnotatingElement
+endif
+deriveAnnotationOwnedAnnotatingElement
+TheownedAnnotatingElementof anAnnotationis the firstownedRelatedElementthat is an
+AnnotatingElement, if any.
+ownedAnnotatingElement =
+let ownedAnnotatingElements : Sequence(AnnotatingElement) =
+ownedRelatedElement->selectByKind(AnnotatingElement) in
+if ownedAnnotatingElements->isEmpty() then null
+else ownedAnnotatingElements->first()
+endif
+validateAnnotationAnnotatedElementOwnership
+AnAnnotationowns itsannotatingElementif and only if it is owned by itsannotatedElement.
+(owningAnnotatedElement <> null) = (ownedAnnotatingElement <> null)
+Kernel Modeling Language v1.0 119
+PDF PAGE 145
+validateAnnotationAnnotatingElement
+Either theownedAnnotatingElementof anAnnotationmust be non-null, or theowningAnnotatingElement
+must be non-null, but not both.
+ownedAnnotatingElement <> null xor owningAnnotatingElement <> null
+8.3.2.3.4 Comment
+Description
+ACommentis anAnnotatingElementwhosebodyin some way describes itsannotatedElements.
+General Classes
+AnnotatingElement
+Attributes
+body : String
+The annotation text for theComment.
+locale : String [0..1]
+Identification of the language of thebodytext and, optionally, the region and/or encoding. The format shall be a
+POSIX locale conformant to ISO/IEC 15897, with the format
+[language[_territory][.codeset][@modifier]].
+Operations
+None.
+Constraints
+None.
+8.3.2.3.5 Documentation
+Description
+Documentationis aCommentthat specifically documents adocumentedElement, which must be itsowner.
+General Classes
+Comment
+Attributes
+/documentedElement : Element {subsets owner, redefines annotatedElement}
+TheElementthat is documented by thisDocumentation.
+Operations
+None.
+120 Kernel Modeling Language v1.0
+PDF PAGE 146
+Constraints
+None.
+8.3.2.3.6 TextualRepresentation
+Description
+ATextualRepresentationis anAnnotatingElementwhosebodyrepresents therepresentedElementin a
+givenlanguage. TherepresentedElementmust be theownerof theTextualRepresentation. The named
+languagecan be a natural language, in which case thebodyis an informal representation, or an artificial language,
+in which case thebodyis expected to be a formal, machine-parsable representation.
+If the namedlanguageof aTextualRepresentationis machine-parsable, then thebodytext should be legal
+input text as defined for thatlanguage. The interpretation of the named language string shall be case insensitive.
+The followinglanguagenames are defined to correspond to the given standard languages:
+kerml Kernel Modeling Language
+ocl Object Constraint Language
+alf Action Language for fUML
+Other specifications may define specificlanguagestrings, other than those shown above, to be used to indicate the
+use of languages from those specifications in KerMLTextualRepresentation.
+If thelanguageof aTextualRepresentationis "kerml", then thebodytext shall be a legal representation of
+therepresentedElementin the KerML textual concrete syntax. A conforming tool can use such a
+TextualRepresentationAnnotationto record the original KerML concrete syntax text from which an
+Elementwas parsed. In this case, it is a tool responsibility to ensure that thebodyof the
+TextualRepresentationremains correct (or the Annotation is removed) if the annotatedElementchanges other
+than by re-parsing thebodytext.
+AnElementwith aTextualRepresentationin a language other than KerML is essentially a semantically
+"opaque"Elementspecified in the other language. However, a conforming KerML tool may interpret such an
+element consistently with the specification of the named language.
+General Classes
+AnnotatingElement
+Attributes
+body : String
+The textual representation of therepresentedElementin the givenlanguage.
+language : String
+The natural or artifical language in which thebodytext is written.
+/representedElement : Element {subsets owner, redefines annotatedElement}
+TheElementthat is represented by thisTextualRepresentation.
+Kernel Modeling Language v1.0 121
+PDF PAGE 147
+Operations
+None.
+Constraints
+None.
+122 Kernel Modeling Language v1.0
+PDF PAGE 148
+8.3.2.4 Namespaces Abstract Syntax
+8.3.2.4.1 Overview
++unqualifiedNameOf( qualifiedName : String ) : String
++qualificationOf( qualifiedName : String ) : String [0..1]
++resolveVisible( name : String ) : Membership [0..1]
++resolveLocal( name : String ) : Membership [0..1]
++resolveGlobal( qualifiedName : String ) : Membership [0..1]
++resolve( qualifiedName : String ) : Membership [0..1]
++membershipsOfVisibility( visibility : VisibilityKind [0..1], excluded : Namespace [0..*] ) : Membership [0..*]
++importedMemberships( excluded : Namespace [0..*] ) : Membership [0..*]
++visibleMemberships( excluded : Namespace [0..*], isRecursive : Boolean, includeAll : Boolean ) : Membership [0..*]
++visibilityOf( mem : Membership ) : VisibilityKind
++namesOf( element : Element ) : String [0..*]
+Namespace
++path() : String{redefines path}
++/ownedMemberName : String [0..1]{redefines memberName}
++/ownedMemberShortName : String [0..1]{redefines memberShortName}
++/ownedMemberElementId : String{redefines memberElementId}
+OwningMembership
++visibility : VisibilityKind = public
++memberName : String [0..1]
++memberShortName : String [0..1]
++/memberElementId : String
++isDistinguishableFrom( other : Membership ) : Boolean
+Membership
+Element
+public
+protected
+private
+VisibilityKind
+«enumeration»
+Relationship
+{subsets membership, 
+subsets owningRelationship}
++/owningMembership
+0..1
+{subsets ownedRelatedElement, 
+redefines memberElement}
++/ownedMemberElement
+1
+{subsets targetRelationship}
++membership
+0..*
++memberElement
+{redefines target}
+1
+{subsets 
+membershipNamespace}
++/importingNamespace 0..*
+{subsets membership, 
+ordered}
++/importedMembership 0..*
+{subsets membershipNamespace, 
+subsets owningRelatedElement, 
+redefines source}
++/membershipOwningNamespace
+1
+{subsets membership, subsets 
+ownedRelationship, subsets 
+sourceRelationship, ordered}
++/ownedMembership 0..*
++/membershipNamespace
+{union}
+1..*
+{union, ordered}
++/membership 0..*
+{subsets namespace}
++/owningNamespace 0..1
+{subsets member, ordered}
++/ownedMember 0..*
++/namespace0..*
++/member
+{ordered}
+0..*
+Figure 7. Namespaces
+Kernel Modeling Language v1.0 123
+PDF PAGE 149
++importedMemberships( excluded : Namespace [0..*] ) : Membership [0..*]{redefines importedMemberships}
+MembershipImport
++importedMemberships( excluded : Namespace [0..*] ) : Membership [0..*]{redefines importedMemberships}
+NamespaceImport
++importedMemberships( excluded : Namespace [0..*] ) : Membership [0..*]
++isImportAll : Boolean = false
++isRecursive : Boolean = false
++visibility : VisibilityKind = private
+Import
+Namespace
+Relationship
+Membership
+Element
+{subsets owningRelatedElement, 
+redefines source}
++/importOwningNamespace
+1
+{subsets ownedRelationship, 
+subsets sourceRelationship, 
+ordered}
++/ownedImport
+0..*
++/membershipImport
+0..*
++/importedElement
+1
++memberElement
+{redefines target}
+1
+{subsets targetRelationship}
++membership
+0..*
+{subsets targetRelationship}
++import
+0..*
++importedNamespace
+{redefines target}
+1
++importedMembership {redefines target}
+1
+{redefines targetRelationship}
++import 0..*
+Figure 8. Imports
+8.3.2.4.2 Import
+Description
+AnImportis anRelationshipbetween itsimportOwningNamespaceand either aMembership(for a
+MembershipImport) or anotherNamespace(for aNamespaceImport), which determines a set ofMemberships
+that becomeimportedMembershipsof theimportOwningNamespace. IfisImportAll = false(the default),
+then only publicMembershipsare considered "visible". IfisImportAll = true, then allMembershipsare
+considered "visible", regardless of their declaredvisibility. IfisRecursive = true, then visible
+Membershipsare also recursively imported from owned sub-Namespaces.
+General Classes
+Relationship
+Attributes
+/importedElement : Element
+The effectively importedElementfor this Import. For aMembershipImport, this is thememberElementof the
+importedMembership. For aNamespaceImport, it is theimportedNamespace.
+/importOwningNamespace : Namespace {subsets owningRelatedElement, redefines source}
+The Namespace into which Memberships are imported by this Import, which must be theowningRelatedElement
+of the Import.
+isImportAll : Boolean
+Whether to import memberships without regard to declared visibility.
+isRecursive : Boolean
+Whether to recursively import Memberships from visible, owned sub-Namespaces.
+visibility : VisibilityKind
+The visibility level of the importedmembersfrom this Import relative to theimportOwningNamespace. The
+default isprivate.
+Operations
+124 Kernel Modeling Language v1.0

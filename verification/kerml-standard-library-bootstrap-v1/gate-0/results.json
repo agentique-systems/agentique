@@ -1,0 +1,50 @@
+[
+  {
+    "command": "python -X utf8 tools/kerml-grammar/inventory.py",
+    "started": "2026-09-18T21:21:43.096Z",
+    "durationMs": 4184,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-inventory.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/test_inventory.py",
+    "started": "2026-09-18T21:21:47.280Z",
+    "durationMs": 194,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-tests.txt"
+  },
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-syntax -p agq-standard-libraries",
+    "started": "2026-09-18T21:21:47.475Z",
+    "durationMs": 1979,
+    "exitCode": 0,
+    "signal": null,
+    "log": "syntax-and-sources.txt"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-18T21:21:49.454Z",
+    "durationMs": 1043,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-18T21:21:50.497Z",
+    "durationMs": 1535,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-18T21:21:52.033Z",
+    "durationMs": 3203,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  }
+]

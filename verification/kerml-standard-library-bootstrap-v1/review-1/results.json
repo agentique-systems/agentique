@@ -1,0 +1,18 @@
+[
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-18T23:06:39.953Z",
+    "durationMs": 520,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "git diff --check",
+    "started": "2026-09-18T23:06:40.474Z",
+    "durationMs": 90,
+    "exitCode": 0,
+    "signal": null,
+    "log": "diff.txt"
+  }
+]

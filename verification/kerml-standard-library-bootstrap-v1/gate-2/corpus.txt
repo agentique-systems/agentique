@@ -1,0 +1,38 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running `target\debug\examples\syntax_audit.exe --output verification/kerml-standard-library-bootstrap-v1/gate-2/syntax-quality.json`
+Kernel Function Library/BaseFunctions.kerml: 718 tokens, 1345 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/BooleanFunctions.kerml: 312 tokens, 580 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/CollectionFunctions.kerml: 789 tokens, 1956 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/ComplexFunctions.kerml: 888 tokens, 1856 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/ControlFunctions.kerml: 1297 tokens, 2483 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/DataFunctions.kerml: 935 tokens, 1856 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/IntegerFunctions.kerml: 951 tokens, 1845 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/NaturalFunctions.kerml: 600 tokens, 1149 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/NumericalFunctions.kerml: 936 tokens, 1845 syntax nodes, 0 recovery ranges, 2 grammar discrepancies
+Kernel Function Library/OccurrenceFunctions.kerml: 802 tokens, 1507 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/RationalFunctions.kerml: 1074 tokens, 2130 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/RealFunctions.kerml: 1084 tokens, 2112 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/ScalarFunctions.kerml: 920 tokens, 1693 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/SequenceFunctions.kerml: 1699 tokens, 4080 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/StringFunctions.kerml: 421 tokens, 820 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/TrigFunctions.kerml: 407 tokens, 962 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Function Library/VectorFunctions.kerml: 1954 tokens, 5180 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Data Type Library/Collections.kerml: 489 tokens, 784 syntax nodes, 0 recovery ranges, 1 grammar discrepancies
+Kernel Data Type Library/ScalarValues.kerml: 130 tokens, 191 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Data Type Library/VectorValues.kerml: 187 tokens, 267 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/Base.kerml: 261 tokens, 383 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/Clocks.kerml: 560 tokens, 1258 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/ControlPerformances.kerml: 645 tokens, 1244 syntax nodes, 0 recovery ranges, 4 grammar discrepancies
+Kernel Semantic Library/FeatureReferencingPerformances.kerml: 1072 tokens, 1811 syntax nodes, 0 recovery ranges, 2 grammar discrepancies
+Kernel Semantic Library/KerML.kerml: 5644 tokens, 8744 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/Links.kerml: 333 tokens, 504 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/Metaobjects.kerml: 186 tokens, 266 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/Objects.kerml: 1038 tokens, 1919 syntax nodes, 0 recovery ranges, 6 grammar discrepancies
+Kernel Semantic Library/Observation.kerml: 723 tokens, 1309 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/Occurrences.kerml: 5542 tokens, 10581 syntax nodes, 0 recovery ranges, 18 grammar discrepancies
+Kernel Semantic Library/Performances.kerml: 1193 tokens, 1875 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/SpatialFrames.kerml: 1054 tokens, 2411 syntax nodes, 0 recovery ranges, 0 grammar discrepancies
+Kernel Semantic Library/StatePerformances.kerml: 1194 tokens, 2897 syntax nodes, 0 recovery ranges, 6 grammar discrepancies
+Kernel Semantic Library/Transfers.kerml: 1535 tokens, 2625 syntax nodes, 0 recovery ranges, 2 grammar discrepancies
+Kernel Semantic Library/TransitionPerformances.kerml: 647 tokens, 1177 syntax nodes, 0 recovery ranges, 1 grammar discrepancies
+Kernel Semantic Library/Triggers.kerml: 592 tokens, 1113 syntax nodes, 0 recovery ranges, 0 grammar discrepancies

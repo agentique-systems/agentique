@@ -1,0 +1,491 @@
+{
+  "entries": [
+    {
+      "element_id": "6f13209e-37d6-5a92-829e-125adb0d5f4f",
+      "expected_metaclass": "544f580c-594e-56df-a6d0-926782540584",
+      "expected_metaclass_name": "Classifier",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Base",
+        "Anything"
+      ],
+      "semantic_role": "Anything",
+      "source": {
+        "byte_range": [
+          182,
+          615
+        ],
+        "document_id": "e2cc3fe6-8ab4-546a-9f75-b3cc47a5208c",
+        "path": "Kernel Semantic Library/Base.kerml",
+        "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+        "source_revision_id": "a725e616-d38d-5d44-ad34-e020203ff4c2",
+        "syntax_node_id": "738a02a4-d5a7-5468-a955-444b54a49220"
+      }
+    },
+    {
+      "element_id": "67ed682c-460b-529a-be0e-4ea5aea81013",
+      "expected_metaclass": "0c822855-7af2-5b2d-9e46-427117f5b070",
+      "expected_metaclass_name": "DataType",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Base",
+        "DataValue"
+      ],
+      "semantic_role": "DataValue",
+      "source": {
+        "byte_range": [
+          619,
+          849
+        ],
+        "document_id": "e2cc3fe6-8ab4-546a-9f75-b3cc47a5208c",
+        "path": "Kernel Semantic Library/Base.kerml",
+        "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+        "source_revision_id": "a725e616-d38d-5d44-ad34-e020203ff4c2",
+        "syntax_node_id": "febe33b5-29b5-5cc8-b2f9-400b62a782ec"
+      }
+    },
+    {
+      "element_id": "f08c85e0-4042-5665-bd45-ce73cb6c74b2",
+      "expected_metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+      "expected_metaclass_name": "Feature",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Base",
+        "things"
+      ],
+      "semantic_role": "Things",
+      "source": {
+        "byte_range": [
+          853,
+          1245
+        ],
+        "document_id": "e2cc3fe6-8ab4-546a-9f75-b3cc47a5208c",
+        "path": "Kernel Semantic Library/Base.kerml",
+        "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+        "source_revision_id": "a725e616-d38d-5d44-ad34-e020203ff4c2",
+        "syntax_node_id": "08b50625-10fa-5c1f-9df5-752a56b97afe"
+      }
+    },
+    {
+      "element_id": "170bd54f-53f0-512b-b16b-2c96e7fe9021",
+      "expected_metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+      "expected_metaclass_name": "Feature",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Base",
+        "dataValues"
+      ],
+      "semantic_role": "DataValues",
+      "source": {
+        "byte_range": [
+          1249,
+          1416
+        ],
+        "document_id": "e2cc3fe6-8ab4-546a-9f75-b3cc47a5208c",
+        "path": "Kernel Semantic Library/Base.kerml",
+        "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+        "source_revision_id": "a725e616-d38d-5d44-ad34-e020203ff4c2",
+        "syntax_node_id": "6c376af1-8016-57c1-9f17-0a7d332e4ad3"
+      }
+    },
+    {
+      "element_id": "8d7d47c5-1282-5158-ba6c-93b5ebe5b82d",
+      "expected_metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+      "expected_metaclass_name": "Feature",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Base",
+        "naturals"
+      ],
+      "semantic_role": "Naturals",
+      "source": {
+        "byte_range": [
+          1422,
+          1758
+        ],
+        "document_id": "e2cc3fe6-8ab4-546a-9f75-b3cc47a5208c",
+        "path": "Kernel Semantic Library/Base.kerml",
+        "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+        "source_revision_id": "a725e616-d38d-5d44-ad34-e020203ff4c2",
+        "syntax_node_id": "ad047f6f-9ba7-5cc8-b6ce-52f25a087484"
+      }
+    },
+    {
+      "element_id": "dcced8c6-8802-5b1c-bb99-698a22eaed4c",
+      "expected_metaclass": "8d5cc4af-3206-592c-b97b-831bf68846ec",
+      "expected_metaclass_name": "Class",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Occurrences",
+        "Occurrence"
+      ],
+      "semantic_role": "Occurrence",
+      "source": {
+        "byte_range": [
+          784,
+          24813
+        ],
+        "document_id": "4a1cd77b-18ab-5c14-ac40-1edbc22d8d48",
+        "path": "Kernel Semantic Library/Occurrences.kerml",
+        "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+        "source_revision_id": "5f2e42fe-8adb-52a7-974a-a54cbac87e51",
+        "syntax_node_id": "89604d8e-db2d-5c6d-85b6-ec170f76a495"
+      }
+    },
+    {
+      "element_id": "8a1cb0f4-a94c-5763-9351-5d390c4d3d37",
+      "expected_metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+      "expected_metaclass_name": "Feature",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Occurrences",
+        "occurrences"
+      ],
+      "semantic_role": "Occurrences",
+      "source": {
+        "byte_range": [
+          24980,
+          25052
+        ],
+        "document_id": "4a1cd77b-18ab-5c14-ac40-1edbc22d8d48",
+        "path": "Kernel Semantic Library/Occurrences.kerml",
+        "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+        "source_revision_id": "5f2e42fe-8adb-52a7-974a-a54cbac87e51",
+        "syntax_node_id": "40289e41-c8f1-5016-897c-3f78efa46114"
+      }
+    },
+    {
+      "element_id": "179d17b1-b18a-5f0c-9706-6d2ce7cb48f5",
+      "expected_metaclass": "c3a7c498-8a72-5d8b-980c-ac2cf0dc851a",
+      "expected_metaclass_name": "Structure",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Objects",
+        "Object"
+      ],
+      "semantic_role": "Object",
+      "source": {
+        "byte_range": [
+          822,
+          2255
+        ],
+        "document_id": "ba00efce-196d-5065-bf42-c08f875c8dd2",
+        "path": "Kernel Semantic Library/Objects.kerml",
+        "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+        "source_revision_id": "46ba4cdd-b4d2-5ea0-a9df-f17a0980ba72",
+        "syntax_node_id": "e09aef54-d8c5-5e65-8e50-e3b244942225"
+      }
+    },
+    {
+      "element_id": "5a5fe3b8-a28e-573c-b725-37f9db29c6e0",
+      "expected_metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+      "expected_metaclass_name": "Feature",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Objects",
+        "objects"
+      ],
+      "semantic_role": "Objects",
+      "source": {
+        "byte_range": [
+          2702,
+          2867
+        ],
+        "document_id": "ba00efce-196d-5065-bf42-c08f875c8dd2",
+        "path": "Kernel Semantic Library/Objects.kerml",
+        "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+        "source_revision_id": "46ba4cdd-b4d2-5ea0-a9df-f17a0980ba72",
+        "syntax_node_id": "42112694-ac71-54b5-8a95-0417a7c2a4eb"
+      }
+    },
+    {
+      "element_id": "88fcca71-118c-5fd8-908c-e84ae1174053",
+      "expected_metaclass": "34746f6e-250d-5cb8-9d00-29662489c816",
+      "expected_metaclass_name": "Association",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Links",
+        "Link"
+      ],
+      "semantic_role": "Link",
+      "source": {
+        "byte_range": [
+          229,
+          452
+        ],
+        "document_id": "d2644cca-61b5-5826-9f13-cb7b540aefc2",
+        "path": "Kernel Semantic Library/Links.kerml",
+        "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+        "source_revision_id": "6652d2e2-6db3-5454-b2cc-be6e3983a035",
+        "syntax_node_id": "bc9f603c-3347-5570-82d2-234dbfd397db"
+      }
+    },
+    {
+      "element_id": "012863c9-0e1b-54b0-bfd2-6e159a2ce4e1",
+      "expected_metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+      "expected_metaclass_name": "Feature",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Links",
+        "links"
+      ],
+      "semantic_role": "Links",
+      "source": {
+        "byte_range": [
+          1336,
+          1513
+        ],
+        "document_id": "d2644cca-61b5-5826-9f13-cb7b540aefc2",
+        "path": "Kernel Semantic Library/Links.kerml",
+        "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+        "source_revision_id": "6652d2e2-6db3-5454-b2cc-be6e3983a035",
+        "syntax_node_id": "f3636a4f-aa5f-5ca6-9895-883ac57db380"
+      }
+    },
+    {
+      "element_id": "eedaa5a9-4d15-5e29-9cc7-f5c9ff0a1893",
+      "expected_metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+      "expected_metaclass_name": "Feature",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Links",
+        "selfLinks"
+      ],
+      "semantic_role": "SelfLinks",
+      "source": {
+        "byte_range": [
+          1729,
+          2114
+        ],
+        "document_id": "d2644cca-61b5-5826-9f13-cb7b540aefc2",
+        "path": "Kernel Semantic Library/Links.kerml",
+        "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+        "source_revision_id": "6652d2e2-6db3-5454-b2cc-be6e3983a035",
+        "syntax_node_id": "5639deea-20bf-5abb-91f4-5aad66c96f1b"
+      }
+    },
+    {
+      "element_id": "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+      "expected_metaclass": "64c42590-d777-523a-8f48-96ee1c2fbb4c",
+      "expected_metaclass_name": "Behavior",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Performances",
+        "Performance"
+      ],
+      "semantic_role": "Performance",
+      "source": {
+        "byte_range": [
+          706,
+          2583
+        ],
+        "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+        "path": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+        "syntax_node_id": "6d322a87-d3ed-56fc-afd2-526da4ac1a2e"
+      }
+    },
+    {
+      "element_id": "66ef9507-4c0b-5a78-93db-e907945d78d6",
+      "expected_metaclass": "e697ac5a-310a-59cb-b50e-0d9b9fca56d8",
+      "expected_metaclass_name": "Step",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Performances",
+        "performances"
+      ],
+      "semantic_role": "Performances",
+      "source": {
+        "byte_range": [
+          5663,
+          5837
+        ],
+        "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+        "path": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+        "syntax_node_id": "f65e7e0e-a9ca-59ad-9583-066c22be2bda"
+      }
+    },
+    {
+      "element_id": "ea9ebd7a-a580-56ec-a041-8bd7a5694895",
+      "expected_metaclass": "96e1cdee-d62d-587e-861e-fe25512dede8",
+      "expected_metaclass_name": "Function",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Performances",
+        "Evaluation"
+      ],
+      "semantic_role": "Evaluation",
+      "source": {
+        "byte_range": [
+          2587,
+          2810
+        ],
+        "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+        "path": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+        "syntax_node_id": "3e105362-6cc3-55e7-87cf-f0dd2924137e"
+      }
+    },
+    {
+      "element_id": "74a54a73-ebe5-5778-a847-4b0c80867caf",
+      "expected_metaclass": "a0786376-5651-53c1-8cfb-bbcffc3508cf",
+      "expected_metaclass_name": "Expression",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Performances",
+        "evaluations"
+      ],
+      "semantic_role": "Evaluations",
+      "source": {
+        "byte_range": [
+          5841,
+          6020
+        ],
+        "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+        "path": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+        "syntax_node_id": "b9645ea6-ffb2-50d9-933f-61216189806b"
+      }
+    },
+    {
+      "element_id": "309f7156-fede-55ce-8810-ab1c33e83378",
+      "expected_metaclass": "fce20ec7-035c-543a-bac1-61fb5e675402",
+      "expected_metaclass_name": "Predicate",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Performances",
+        "BooleanEvaluation"
+      ],
+      "semantic_role": "BooleanEvaluation",
+      "source": {
+        "byte_range": [
+          2814,
+          3084
+        ],
+        "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+        "path": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+        "syntax_node_id": "88fbf69e-6540-5948-8900-f7d1ed786896"
+      }
+    },
+    {
+      "element_id": "a30dba83-6246-5072-9448-96b826c260e0",
+      "expected_metaclass": "a0786376-5651-53c1-8cfb-bbcffc3508cf",
+      "expected_metaclass_name": "Expression",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Performances",
+        "booleanEvaluations"
+      ],
+      "semantic_role": "BooleanEvaluations",
+      "source": {
+        "byte_range": [
+          6371,
+          6577
+        ],
+        "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+        "path": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+        "syntax_node_id": "c9837abc-0872-535e-a07d-ae2cb8930dab"
+      }
+    },
+    {
+      "element_id": "e7c46dce-5b41-53fa-9098-d00508d2658b",
+      "expected_metaclass": "a0786376-5651-53c1-8cfb-bbcffc3508cf",
+      "expected_metaclass_name": "Expression",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Performances",
+        "trueEvaluations"
+      ],
+      "semantic_role": "TrueEvaluations",
+      "source": {
+        "byte_range": [
+          6581,
+          6876
+        ],
+        "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+        "path": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+        "syntax_node_id": "f8299fc3-cfcc-5103-b371-d2ed13eb8cbd"
+      }
+    },
+    {
+      "element_id": "8a0b12bd-3c8b-5637-bd48-a4ce2deed6bd",
+      "expected_metaclass": "a0786376-5651-53c1-8cfb-bbcffc3508cf",
+      "expected_metaclass_name": "Expression",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Performances",
+        "falseEvaluations"
+      ],
+      "semantic_role": "FalseEvaluations",
+      "source": {
+        "byte_range": [
+          6880,
+          7188
+        ],
+        "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+        "path": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+        "syntax_node_id": "f97afc66-e8d0-5c6d-a48f-b89bc76f1078"
+      }
+    },
+    {
+      "element_id": "6deb573f-bdcb-5eda-9d35-bd4a65671b87",
+      "expected_metaclass": "bd9e224b-a052-57c1-b0c1-13a28979c21a",
+      "expected_metaclass_name": "Metaclass",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Metaobjects",
+        "Metaobject"
+      ],
+      "semantic_role": "Metaobject",
+      "source": {
+        "byte_range": [
+          302,
+          847
+        ],
+        "document_id": "dfa02f6c-1048-56c8-9ea8-8ffba377bcec",
+        "path": "Kernel Semantic Library/Metaobjects.kerml",
+        "sha256": "983dbd85a4b183d8859326ee512fc59d991fb98a115e009e72fad21d1f9d1685",
+        "source_revision_id": "73f01c2a-0fa2-517e-812a-a86f47f5fa0c",
+        "syntax_node_id": "44f75889-d227-5662-aed4-23376a99e4fb"
+      }
+    },
+    {
+      "element_id": "326e4dc9-75e8-50a8-aaf8-90ef0ccda6ca",
+      "expected_metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+      "expected_metaclass_name": "Feature",
+      "library": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "qualified_path": [
+        "Metaobjects",
+        "metaobjects"
+      ],
+      "semantic_role": "Metaobjects",
+      "source": {
+        "byte_range": [
+          1392,
+          1646
+        ],
+        "document_id": "dfa02f6c-1048-56c8-9ea8-8ffba377bcec",
+        "path": "Kernel Semantic Library/Metaobjects.kerml",
+        "sha256": "983dbd85a4b183d8859326ee512fc59d991fb98a115e009e72fad21d1f9d1685",
+        "source_revision_id": "73f01c2a-0fa2-517e-812a-a86f47f5fa0c",
+        "syntax_node_id": "5dfd8916-3fe0-5995-8f45-1449bf0e5da4"
+      }
+    }
+  ],
+  "format": "agq-kerml-bindings/1",
+  "identity_authority": "Agentique content- and role-qualified IDs; not OMG-assigned semantic IDs",
+  "scope": "Validated public canonical anchor declarations; whole-library publication is a separate gate"
+}

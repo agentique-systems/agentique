@@ -1,0 +1,8 @@
+ Documenting agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Checking agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+ Documenting agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+ Documenting agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+ Documenting agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+ Documenting agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.77s
+   Generated C:\Users\phili\github\agentique-systems\agentique\target\doc\agq_kerml\index.html and 8 other files

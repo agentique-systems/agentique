@@ -1,0 +1,1404 @@
+{
+  "documents": [
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              3150,
+              3189
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "5ea4648e-f29c-577e-b00c-09df3442524c",
+      "exact_source_preservation": true,
+      "file": "Kernel Data Type Library/Collections.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "8d8359beb4c4613ded0abb780a890ccafa0a4aaa720a22334f602ca38301b92e",
+      "source_coverage_percent": 100,
+      "source_revision_id": "6123528d-25ea-5ae9-a2c5-8f0d98a7b1d9",
+      "syntax_nodes": 784,
+      "syntax_status": "parsed",
+      "tokens": 489,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "963e008b-f05c-5723-a389-d5dc968ec98e",
+      "exact_source_preservation": true,
+      "file": "Kernel Data Type Library/ScalarValues.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "4db25ce00dd170fd67261f6e7e21a2616bda15d233579dc5fb3193aaf61fa5a5",
+      "source_coverage_percent": 100,
+      "source_revision_id": "8eb30012-e31a-5dcb-8d2d-87f378436658",
+      "syntax_nodes": 191,
+      "syntax_status": "parsed",
+      "tokens": 130,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "94cc230b-1b20-5e71-9e35-301bb21ce7f1",
+      "exact_source_preservation": true,
+      "file": "Kernel Data Type Library/VectorValues.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "7b22f8867e1cf46ac6a8226175db4405f6c29f047b3d6ad54a044fef3ce683dc",
+      "source_coverage_percent": 100,
+      "source_revision_id": "2f8fe50c-931c-54da-b8ca-371055fa5db4",
+      "syntax_nodes": 267,
+      "syntax_status": "parsed",
+      "tokens": 187,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "44f799bb-64d1-574e-8bb9-1e62ceffc189",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/BaseFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "c7700f36c786ff25796eb37d321a7a85f5f67b785e08a548c1cf4cd207c8b27f",
+      "source_coverage_percent": 100,
+      "source_revision_id": "724351d3-f15a-5224-9fbe-90d356a11cd9",
+      "syntax_nodes": 1345,
+      "syntax_status": "parsed",
+      "tokens": 718,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "cce8cfde-ddbf-5e08-91aa-b0d18a25aa10",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/BooleanFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "f836553db8e0ab1fb782043090198bdcd33ab6f168773e099fa2e192646ecc46",
+      "source_coverage_percent": 100,
+      "source_revision_id": "54737768-87fe-5b85-a02c-0ce65ee9d6a8",
+      "syntax_nodes": 580,
+      "syntax_status": "parsed",
+      "tokens": 312,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "f0ac7ee0-3bfc-5612-95f5-55b90a0d192f",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/CollectionFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+      "source_coverage_percent": 100,
+      "source_revision_id": "5f59aa26-5fd8-5032-ae38-9031f09860fb",
+      "syntax_nodes": 1956,
+      "syntax_status": "parsed",
+      "tokens": 789,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "b703fd93-ee4f-5106-a368-781522382be4",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/ComplexFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "cdb8ab38b5937f3716d66e2c71d6811d2ae7df08c1704f4dce7a815be1c01563",
+      "source_coverage_percent": 100,
+      "source_revision_id": "6fbd46b7-aacb-5bfe-a180-9a7d56b745ec",
+      "syntax_nodes": 1856,
+      "syntax_status": "parsed",
+      "tokens": 888,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "c94a050e-18a5-55ca-bb9f-8dd5edfd73a2",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/ControlFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+      "source_coverage_percent": 100,
+      "source_revision_id": "60d7482f-6bee-5bc4-b569-f5860428b79f",
+      "syntax_nodes": 2483,
+      "syntax_status": "parsed",
+      "tokens": 1297,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "479e60ce-ba5b-57fb-bf65-e91c6a963362",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/DataFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "896b81cd660948084efd0ee9ebc9125a1588b1e2d360bdebb03430d0317b7b5b",
+      "source_coverage_percent": 100,
+      "source_revision_id": "e5697eb6-0a8e-5c78-9c89-e7d55dd3c5c3",
+      "syntax_nodes": 1856,
+      "syntax_status": "parsed",
+      "tokens": 935,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "03e75094-2ba8-5a83-b3a1-afaff4fcc75e",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/IntegerFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "3da7c23ee95290d768dae67e75287122d5512d054c0f9ca57b78a8aab81ee309",
+      "source_coverage_percent": 100,
+      "source_revision_id": "ef2022bc-c4af-57c3-89b7-cb517c17d995",
+      "syntax_nodes": 1845,
+      "syntax_status": "parsed",
+      "tokens": 951,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "40e5880e-4055-5a56-9bee-50339a934d2a",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/NaturalFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "f83daf1bbcf124fb9c535273c3c536d08424031991013f2f6c563706afde92ae",
+      "source_coverage_percent": 100,
+      "source_revision_id": "4d1aa1e9-3436-5f72-b835-e6e8ff5d7de0",
+      "syntax_nodes": 1149,
+      "syntax_status": "parsed",
+      "tokens": 600,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              2526,
+              2546
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              2699,
+              2718
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "4abde1ff-74aa-5258-8226-478cb4204d69",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/NumericalFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+      "source_coverage_percent": 100,
+      "source_revision_id": "a10c9752-c9b8-59de-be5e-27fc9ee831a8",
+      "syntax_nodes": 1845,
+      "syntax_status": "parsed",
+      "tokens": 936,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "ac877498-e84f-5b6e-8007-760e663ca5fc",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/OccurrenceFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+      "source_coverage_percent": 100,
+      "source_revision_id": "317934a5-74f7-51a0-8bc9-5f6dac68e76f",
+      "syntax_nodes": 1507,
+      "syntax_status": "parsed",
+      "tokens": 802,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "efd4186c-60ae-506d-a160-e1b3df452631",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/RationalFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "a7ef0870a5282f5dc489ab85ef424b66cd8909f5f52b2efe5f14ed1765afc768",
+      "source_coverage_percent": 100,
+      "source_revision_id": "26b29f71-3b50-5dc4-8824-d0bb7e812d85",
+      "syntax_nodes": 2130,
+      "syntax_status": "parsed",
+      "tokens": 1074,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "2ff587d5-e37a-59f5-8301-f5486ba8a959",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/RealFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "4b469aafc18d801ae733734066d3e43aa767c44a89e912cf60772933ab568a76",
+      "source_coverage_percent": 100,
+      "source_revision_id": "70375057-271b-5425-a284-6aa793e4b912",
+      "syntax_nodes": 2112,
+      "syntax_status": "parsed",
+      "tokens": 1084,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "1a0d8289-3c21-5e23-99da-e24b8392d40c",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/ScalarFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "3a6baf3962079a395304f0a811f3b58da09f18f91aaf76ceef5f81ebeae7a258",
+      "source_coverage_percent": 100,
+      "source_revision_id": "92bf8498-c881-59ca-a234-dcfe182d5054",
+      "syntax_nodes": 1693,
+      "syntax_status": "parsed",
+      "tokens": 920,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "38b033af-3831-5be6-a78b-19165b1ffe88",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/SequenceFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+      "source_coverage_percent": 100,
+      "source_revision_id": "bdf933a7-38ca-5eb1-bd3b-93df0cdf8cb0",
+      "syntax_nodes": 4080,
+      "syntax_status": "parsed",
+      "tokens": 1699,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "ed34044d-8c11-592f-a621-bbb15f579959",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/StringFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "b3bbcad2251f9152f4b730754ad172e9a4e52d61fbdb9bdf55b968d92fcaa831",
+      "source_coverage_percent": 100,
+      "source_revision_id": "9dfef113-ce97-5c87-a999-79e7fc6c5975",
+      "syntax_nodes": 820,
+      "syntax_status": "parsed",
+      "tokens": 421,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "1f9c1504-fa52-57ed-8aee-65fc3d194614",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/TrigFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "04af7eb3aa5be68c60bab85097b870b3a2540e646079c642d44b6a47150b0ce1",
+      "source_coverage_percent": 100,
+      "source_revision_id": "b333cd21-ac27-5f27-8b6b-d95700669ce2",
+      "syntax_nodes": 962,
+      "syntax_status": "parsed",
+      "tokens": 407,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "b30b74b4-4805-5068-9f0a-4cf5b0a5e270",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/VectorFunctions.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+      "source_coverage_percent": 100,
+      "source_revision_id": "26e7c948-ff2d-5e07-b118-668b38ffbe0b",
+      "syntax_nodes": 5180,
+      "syntax_status": "parsed",
+      "tokens": 1954,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "e2cc3fe6-8ab4-546a-9f75-b3cc47a5208c",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Base.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+      "source_coverage_percent": 100,
+      "source_revision_id": "a725e616-d38d-5d44-ad34-e020203ff4c2",
+      "syntax_nodes": 383,
+      "syntax_status": "parsed",
+      "tokens": 261,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "56c86fee-9d49-5177-a14c-e2070b93e7ff",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Clocks.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "960ac0884935e308beea55c78ed11b6946c37a386eb7958ef2c913aa275ae4c7",
+      "source_coverage_percent": 100,
+      "source_revision_id": "698fd1c3-0a39-581f-a664-5e8b5143f519",
+      "syntax_nodes": 1258,
+      "syntax_status": "parsed",
+      "tokens": 560,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              2638,
+              2680
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              3012,
+              3058
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              3457,
+              3503
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              4438,
+              4491
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "840f040a-99aa-5eb4-b3fe-22830f6643e5",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/ControlPerformances.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "31385be7dca94bd0538f011d5c8f7925626d54f96970769f0fdb28b2186a9a03",
+      "source_coverage_percent": 100,
+      "source_revision_id": "28214229-7720-5575-a5af-26149e39ca7c",
+      "syntax_nodes": 1244,
+      "syntax_status": "parsed",
+      "tokens": 645,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              4331,
+              4376
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              7223,
+              7286
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "5bc48069-6f4d-51d0-9bd5-548ea09ba511",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "source_coverage_percent": 100,
+      "source_revision_id": "6ecdaae3-3b1f-564a-8441-42a8524f5eba",
+      "syntax_nodes": 1811,
+      "syntax_status": "parsed",
+      "tokens": 1072,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "2a03ffc1-1cbe-567e-baa8-8cbdb71229fc",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/KerML.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "8fdf4b7416e981c895cd74b75dc14b18091d13cbcaff7cdded6f9c23e2483d58",
+      "source_coverage_percent": 100,
+      "source_revision_id": "02c7f4f1-8283-5191-b51c-b3fbed4afd4e",
+      "syntax_nodes": 8744,
+      "syntax_status": "parsed",
+      "tokens": 5644,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "d2644cca-61b5-5826-9f13-cb7b540aefc2",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Links.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+      "source_coverage_percent": 100,
+      "source_revision_id": "6652d2e2-6db3-5454-b2cc-be6e3983a035",
+      "syntax_nodes": 504,
+      "syntax_status": "parsed",
+      "tokens": 333,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "dfa02f6c-1048-56c8-9ea8-8ffba377bcec",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Metaobjects.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "983dbd85a4b183d8859326ee512fc59d991fb98a115e009e72fad21d1f9d1685",
+      "source_coverage_percent": 100,
+      "source_revision_id": "73f01c2a-0fa2-517e-812a-a86f47f5fa0c",
+      "syntax_nodes": 266,
+      "syntax_status": "parsed",
+      "tokens": 186,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              3815,
+              3855
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              5039,
+              5127
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              5404,
+              5469
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              5473,
+              5569
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              5776,
+              5827
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              5831,
+              5913
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "ba00efce-196d-5065-bf42-c08f875c8dd2",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Objects.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "source_coverage_percent": 100,
+      "source_revision_id": "46ba4cdd-b4d2-5ea0-a9df-f17a0980ba72",
+      "syntax_nodes": 1919,
+      "syntax_status": "parsed",
+      "tokens": 1038,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "9e497777-c074-5985-914f-b3ec40c07a51",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Observation.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "603aecde2ef64d519c1bfc89bfc52f5315c05a36aa0cf86174badba5b371ddbf",
+      "source_coverage_percent": 100,
+      "source_revision_id": "f8473c09-fe96-5f0e-84bf-69b75e8cf324",
+      "syntax_nodes": 1309,
+      "syntax_status": "parsed",
+      "tokens": 723,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              3288,
+              3345
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              9950,
+              10012
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              10328,
+              10360
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              10882,
+              11004
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              12468,
+              12548
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              13140,
+              13261
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              14805,
+              14898
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              15536,
+              15628
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              18615,
+              18664
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              18669,
+              18747
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              19403,
+              19499
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              20341,
+              20388
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              20393,
+              20469
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              20713,
+              20762
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              20773,
+              20878
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              20882,
+              20945
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              22071,
+              22151
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              22807,
+              22870
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "4a1cd77b-18ab-5c14-ac40-1edbc22d8d48",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Occurrences.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+      "source_coverage_percent": 100,
+      "source_revision_id": "5f2e42fe-8adb-52a7-974a-a54cbac87e51",
+      "syntax_nodes": 10581,
+      "syntax_status": "parsed",
+      "tokens": 5542,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Performances.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+      "source_coverage_percent": 100,
+      "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+      "syntax_nodes": 1875,
+      "syntax_status": "parsed",
+      "tokens": 1193,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "1b2c0d3b-d225-5fb0-af67-698b794f5e80",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/SpatialFrames.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "source_coverage_percent": 100,
+      "source_revision_id": "97c0a433-39b1-5c6b-a170-bfe12ac8aee4",
+      "syntax_nodes": 2411,
+      "syntax_status": "parsed",
+      "tokens": 1054,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              1649,
+              1697
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              2395,
+              2458
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              2464,
+              2847
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              3431,
+              3640
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              4211,
+              4278
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              4658,
+              4777
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "696b61fc-f740-5530-8062-6eedb34218ca",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/StatePerformances.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+      "source_coverage_percent": 100,
+      "source_revision_id": "e5a72145-ad62-5984-b22f-1b1f1a648102",
+      "syntax_nodes": 2897,
+      "syntax_status": "parsed",
+      "tokens": 1194,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              4601,
+              4662
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              4981,
+              5043
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "bf0ba3e5-5122-5afc-8738-e79d43981419",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Transfers.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+      "source_coverage_percent": 100,
+      "source_revision_id": "610a4d41-d4cd-5931-a6ac-a2b64d3a9121",
+      "syntax_nodes": 2625,
+      "syntax_status": "parsed",
+      "tokens": 1535,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "production": "Invariant",
+            "range": [
+              2543,
+              2578
+            ]
+          }
+        ],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "1a5607ea-4d01-512f-9f16-985cf56dbd13",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/TransitionPerformances.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+      "source_coverage_percent": 100,
+      "source_revision_id": "dcc8f10c-4dda-5d49-8ad8-8ba1cae1ebd0",
+      "syntax_nodes": 1177,
+      "syntax_status": "parsed",
+      "tokens": 647,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": null,
+      "ambiguous_count": null,
+      "canonical_element_count": null,
+      "canonical_relationship_count": null,
+      "diagnostics_by_category": {
+        "KerML_semantic": null,
+        "published_source_anomaly": [],
+        "resolution": null,
+        "syntax": [],
+        "unevaluated_expression_function_semantics": null
+      },
+      "document_id": "b0c9187f-452e-5fc1-9225-ce9263726034",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Triggers.kerml",
+      "parser_diagnostics": 0,
+      "recovery_count": 0,
+      "resolution_status": null,
+      "sha256": "124cad3625935e078d1363e6100ee12537ca9c51445a18108e056db8b4885609",
+      "source_coverage_percent": 100,
+      "source_revision_id": "4388d884-ea25-5f25-8a87-45d4eaf9710a",
+      "syntax_nodes": 1113,
+      "syntax_status": "parsed",
+      "tokens": 592,
+      "unevaluated_expression_count": null,
+      "unresolved_count": null,
+      "unsupported_syntax": 0
+    }
+  ],
+  "format": "agentique-kerml-library-syntax-quality/1",
+  "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "scope": "36 pinned KerML documents; syntax only. Null means not evaluated.",
+  "semantic_quality_gate_passed": false,
+  "syntax_quality_gate_passed": true
+}

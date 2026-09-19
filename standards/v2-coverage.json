@@ -1,6 +1,29 @@
 {
   "format": "agentique-generation-2-coverage/1",
   "generation": 2,
+  "kerml_standard_library_bootstrap": {
+    "result": "incomplete-do-not-proceed",
+    "review": "docs/kerml-standard-library-foundation-review.md",
+    "evidence": "verification/kerml-standard-library-bootstrap-v1/README.md",
+    "grammar_inventory": "199 actual production kinds across 36 pinned KerML documents; complete context/range inventory",
+    "syntax": "36/36 lossless production parses, zero recovery; reviewed grammar discrepancies recorded separately",
+    "canonical_construction": "ordinary complete-registry kernel construction with deterministic StandardLibrary IDs/provenance; mandatory obligations remain; no accepted Snapshot",
+    "resolution": "semantic import/alias/visibility/inheritance queries implemented with completeness, proofs and search dependencies; full corpus acceptance incomplete",
+    "bindings": "22 validated canonical candidate anchors; generated standards/kerml-standard-bindings.json; not substitute model objects",
+    "context": "exact archive hashes, canonical library graph digest, binding IDs/version and rule version; accepted-publication integration pending",
+    "quality_gate": "cargo run --release --config profile.release.lto=false --locked --offline -p agq-kerml-text --example library_quality",
+    "quality_report": "verification/kerml-standard-library-bootstrap-v1/quality-1/library-quality.json",
+    "remaining": [
+      "resolve all structural references and complete implied structural interpretation",
+      "complete Interaction participant construction and strict atomic publication",
+      "complete KerML structural-language validation",
+      "integrate accepted libraries into authored SourceProjects",
+      "complete combined library/project dependency and stress acceptance"
+    ],
+    "execution": "unsupported; expression/function structure retained",
+    "systems_library_semantics": "out of scope",
+    "sysml_semantics_and_platform": "do not proceed"
+  },
   "language_core_foundation": {
     "result": "complete-ready-for-sysml-semantics",
     "review": "docs/language-core-foundation-review.md",

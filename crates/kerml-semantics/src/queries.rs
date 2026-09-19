@@ -9,11 +9,15 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 /// An immutable evaluator; per-invocation traversal state is always discardable.
 pub struct KerMlQueries<'m> {
     pub(crate) context: SemanticContext<'m>,
+    pub(crate) namespace_cache: crate::namespaces::NamespaceCache,
 }
 
 impl<'m> KerMlQueries<'m> {
     pub fn new(context: SemanticContext<'m>) -> Self {
-        Self { context }
+        Self {
+            context,
+            namespace_cache: Default::default(),
+        }
     }
     pub fn context(&self) -> &SemanticContextId {
         self.context.id()
@@ -45,6 +49,14 @@ impl<'m> KerMlQueries<'m> {
             Ok(value) => Some(value),
             Err(error) => {
                 let status = match &error {
+                    ViewError::MissingRequired { element, property }
+                        if self
+                            .context()
+                            .construction_obligations
+                            .contains(&(*element, *property)) =>
+                    {
+                        Completeness::Incomplete
+                    }
                     ViewError::NotComputed { .. } | ViewError::UnsupportedAssociationStorage(_) => {
                         Completeness::Incomplete
                     }
@@ -89,6 +101,18 @@ impl<'m> KerMlQueries<'m> {
             return vec![];
         };
         let property = descriptor.id;
+        if self
+            .context()
+            .construction_obligations
+            .contains(&(element, property))
+        {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_CONSTRUCTION_OBLIGATION",
+                element,
+                format!("Required property {property} is pending structural construction"),
+            );
+        }
         let search = SearchDependency::PropertySet { element, property };
         out.search_dependencies.insert(search.clone());
         let mut evidence = vec![Evidence::Search(search)];
@@ -488,7 +512,34 @@ impl<'m> KerMlQueries<'m> {
     /// All explicit Specialization relationships with this specific endpoint,
     /// including FeatureTyping/Subsetting/Redefinition through generated upcasts.
     pub fn direct_specializations(&self, specific: ElementId) -> QueryResult<Vec<ElementId>> {
-        self.targets(specific, QueryKind::DirectSpecializations)
+        let mut out = self.targets(specific, QueryKind::DirectSpecializations);
+        if !self.context().options.exclude_implied {
+            let implied = self.library_specializations(specific);
+            out.value.extend(implied.value.iter().copied());
+            out.merge(implied);
+            out.value.sort();
+            out.value.dedup();
+        }
+        if self.is(specific, c::FEATURE) && !self.context().options.exclude_implied {
+            let result = self.reference_expression_result(specific);
+            out.value.extend(result.value.iter().copied());
+            out.merge(result);
+            let redefinitions = self.implied_redefinitions(specific);
+            for &target in &redefinitions.value {
+                out.value.push(target);
+                out.prove(
+                    QueryKind::DirectSpecializations,
+                    specific,
+                    target,
+                    Rule::Redefinition,
+                    [claim(QueryKind::RedefinedFeatures, specific, target)],
+                );
+            }
+            out.merge(redefinitions);
+            out.value.sort();
+            out.value.dedup();
+        }
+        out
     }
     /// Direct FeatureTyping endpoints only; not the complete derived Feature::type.
     pub fn direct_feature_types(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
@@ -498,10 +549,20 @@ impl<'m> KerMlQueries<'m> {
         self.targets(feature, QueryKind::SubsettedFeatures)
     }
     pub fn redefined_features(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
-        self.targets(feature, QueryKind::RedefinedFeatures)
+        let mut out = self.targets(feature, QueryKind::RedefinedFeatures);
+        let implied = self.implied_redefinitions(feature);
+        out.value.extend(implied.value.iter().copied());
+        out.merge(implied);
+        out.value.sort();
+        out.value.dedup();
+        out
     }
 
-    fn targets(&self, source: ElementId, kind: QueryKind) -> QueryResult<Vec<ElementId>> {
+    pub(crate) fn targets(
+        &self,
+        source: ElementId,
+        kind: QueryKind,
+    ) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
         let (class, source_property, target_property, rule) = match kind {
             QueryKind::DirectSpecializations => (
@@ -543,18 +604,35 @@ impl<'m> KerMlQueries<'m> {
         out.search_dependencies
             .insert(SearchDependency::Incoming { target: source });
         // Uses the kernel incoming index, not a population scan per queried type.
-        let candidates: BTreeSet<_> = self
+        let mut candidates: BTreeSet<_> = self
             .model()
             .incoming(source)
             .filter(|r| self.is(r.source, class))
             .map(|r| r.source)
             .collect();
+        let owned = self.owned_relationships(source);
+        candidates.extend(
+            owned
+                .value
+                .iter()
+                .copied()
+                .filter(|id| self.is(*id, c::REFERENCE_SUBSETTING) && self.is(*id, class)),
+        );
+        out.merge(owned);
         for id in candidates {
             let Some(view) = self.checked::<views::Specialization, _>(&mut out, id) else {
                 continue;
             };
             let mut evidence = self.property(&mut out, id, source_property);
-            if self.accept(&mut out, id, view.specific()) != Some(source) {
+            let specific = if self.is(id, c::REFERENCE_SUBSETTING) {
+                let owner = self.owning_related_element(id);
+                let value = owner.value;
+                out.merge(owner);
+                value
+            } else {
+                self.accept(&mut out, id, view.specific())
+            };
+            if specific != Some(source) {
                 continue;
             }
             evidence.extend(self.property(&mut out, id, p::RELATIONSHIP_IS_IMPLIED));
