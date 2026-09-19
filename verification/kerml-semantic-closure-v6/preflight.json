@@ -1,0 +1,23 @@
+{
+  "base_commit": "82145291d9cc398cbb1c10805e48b97d756224f3",
+  "branch": "semantics/kerml-validation-errata-semantic-closure-v6",
+  "initial_worktree": "clean; verified before branch creation",
+  "fetch": {
+    "command": [
+      "git",
+      "fetch",
+      "origin",
+      "main"
+    ],
+    "exit_code": 0
+  },
+  "fast_forward": {
+    "command": [
+      "git",
+      "merge",
+      "--ff-only",
+      "origin/main"
+    ],
+    "exit_code": 0
+  }
+}

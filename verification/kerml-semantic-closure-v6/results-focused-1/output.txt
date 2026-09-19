@@ -1,0 +1,12 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.25s
+     Running tests\structural_validation.rs (target\debug\deps\structural_validation-cf27f947e3ed5c6c.exe)
+
+running 4 tests
+test one_step_feature_chain_is_a_structural_failure_even_with_a_resolved_target ... ok
+test structural_end_checks_reject_directions_and_nonconstant_variable_ends ... ok
+test duplicate_feature_names_are_invalid_but_distinct_kinds_remain_distinguishable ... ok
+test redefinition_end_conformance_checks_both_flags_with_exact_evidence ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+

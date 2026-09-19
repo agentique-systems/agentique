@@ -51,6 +51,8 @@ pub enum SearchDependency {
         root: ElementId,
     },
     StandardLibraries,
+    /// The selected validation algorithm and its reviewed profile/manifest context.
+    ValidationRule(&'static str),
     Instances {
         class: MetaclassId,
     },
@@ -96,6 +98,10 @@ pub enum QueryKind {
     InheritedFeature,
     EffectiveFeatures,
     SuppressedFeature,
+    OwningType,
+    ExpressionResults,
+    NamingSource,
+    RedefinitionEndConformance,
 }
 
 /// Subject is part of every conclusion; a target ID alone cannot identify a proof.
@@ -142,6 +148,13 @@ pub enum Rule {
     InheritedFeature,
     EffectiveOwnedFeature,
     RemoveRedefinedFeature,
+    FeatureOwningType,
+    InheritedResult,
+    OrderedNamingFeature,
+    ImpliedNamingAgreement,
+    PublishedRedefinitionEndConformance,
+    /// AGQ-KERML10-004 / KERML11-68; operational v4 only.
+    OperationalRedefinitionEndConformanceV1,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]

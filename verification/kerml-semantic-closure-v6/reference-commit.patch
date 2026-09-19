@@ -1,0 +1,104 @@
+From d9231d21e621aeabeafa92aef026b3929c859116 Mon Sep 17 00:00:00 2001
+From: Ed Seidewitz <ed-s@modeldriven.com>
+Date: Sun, 2 Aug 2026 16:05:43 -0400
+Subject: [PATCH] KERML11-68 Revised validateRedefinitionEndConformance impl as
+ resolved.
+
+- Also updated Xpect test Redefinition_End_Invalid.kerml.
+---
+ .../Redefinition_End_Invalid.kerml.xt         | 23 ++++++++++++++++++-
+ .../xtext/validation/KerMLValidator.xtend     |  9 +++++---
+ .../sysml/logic/KERML11_Ballot3_Tests.java    |  4 +++-
+ 3 files changed, 31 insertions(+), 5 deletions(-)
+
+diff --git a/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_End_Invalid.kerml.xt b/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_End_Invalid.kerml.xt
+index a7aaac6cd3..5030bc677b 100644
+--- a/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_End_Invalid.kerml.xt
++++ b/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_End_Invalid.kerml.xt
+@@ -3,6 +3,7 @@ XPECT_SETUP org.omg.kerml.xpect.tests.validation.KerMLValidationTest
+ 	ResourceSet {
+        ThisFile {}
+         File {from ="/library/Base.kerml"}
++        File {from ="/library/Links.kerml"}
+         File {from ="/library/Occurrences.kerml"}
+         File {from ="/library/Objects.kerml"}
+         File {from ="/library/Performances.kerml"}
+@@ -12,6 +13,7 @@ XPECT_SETUP org.omg.kerml.xpect.tests.validation.KerMLValidationTest
+             SrcFolder {
+                 ThisFile {}
+ 		            File {from ="/library/Base.kerml"}
++		            File {from ="/library/Links.kerml"}
+ 		            File {from ="/library/Occurrences.kerml"}
+ 		            File {from ="/library/Objects.kerml"}
+ 		            File {from ="/library/Performances.kerml"}
+@@ -26,8 +28,27 @@ package RedefinitionEnd {
+ 	}
+ 	
+ 	classifier B :> A {
+-		// XPECT errors ---> "Redefining feature must be an end feature" at "e"
+ 		feature :>> e;
+ 	}
++	
++	assoc R {
++		end a : A;
++		end b : B;
++	}
++	
++	abstract connector r : R {
++		end a;
++		end b;
++	}
++	
++	abstract assoc R1 :> R {
++		// XPECT errors ---> "Redefining feature must be an end feature" at "a"
++		feature a1 :>> a;
++	}
++	
++	abstract connector r1 :> r {
++		// XPECT errors ---> "Redefining feature must be an end feature" at "a"
++		feature a1 :>> a;
++	}
+ 
+ }
+\ No newline at end of file
+diff --git a/org.omg.kerml.xtext/src/org/omg/kerml/xtext/validation/KerMLValidator.xtend b/org.omg.kerml.xtext/src/org/omg/kerml/xtext/validation/KerMLValidator.xtend
+index 04896a2b04..019218c841 100644
+--- a/org.omg.kerml.xtext/src/org/omg/kerml/xtext/validation/KerMLValidator.xtend
++++ b/org.omg.kerml.xtext/src/org/omg/kerml/xtext/validation/KerMLValidator.xtend
+@@ -725,10 +725,13 @@ class KerMLValidator extends AbstractKerMLValidator {
+ 				}
+ 			}
+ 			
+-			// validatRedefinitionEndConformance			
++			// validateRedefinitionEndConformance			
+ 			if (redefinedFeature.isEnd && !redefiningFeature.isEnd) {
+-				error(INVALID_REDEFINITION_END_CONFORMANCE_MSG, redef, 
+-						SysMLPackage.eINSTANCE.redefinition_RedefinedFeature, INVALID_REDEFINITION_END_CONFORMANCE)
++				val redefiningOwner = redefiningFeature.owningType
++				if (redefiningOwner instanceof Association || redefiningOwner instanceof Connector) {
++					error(INVALID_REDEFINITION_END_CONFORMANCE_MSG, redef, 
++							SysMLPackage.eINSTANCE.redefinition_RedefinedFeature, INVALID_REDEFINITION_END_CONFORMANCE)
++				}
+ 			}
+ 		}		
+ 	}
+diff --git a/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java b/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java
+index 455af328f0..1b7e1a948a 100644
+--- a/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java
++++ b/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java
+@@ -22,7 +22,6 @@
+ import static org.junit.Assert.assertEquals;
+ import static org.junit.Assert.assertFalse;
+ import static org.junit.Assert.assertNotNull;
+-
+ import org.junit.BeforeClass;
+ import org.junit.Test;
+ 
+@@ -129,4 +128,7 @@ public void testKERML11_3() {
+ 		assertEquals("upperBound.featuringType", association, upperBound.getFeaturingType().get(0));
+ 	}
+ 
++	/* 
++	 * KERML11-68 is a validation change.
++	 */
+ }

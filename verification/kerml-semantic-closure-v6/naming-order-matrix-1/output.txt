@@ -1,0 +1,13 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.30s
+     Running tests\ordered_results.rs (target\debug\deps\ordered_results-14341fe0a0a1dca7.exe)
+
+running 5 tests
+test ordered_specializations_follow_ownership_not_creation_or_id_order ... ok
+test feature_chain_terminal_type_supplies_positional_end_population ... ok
+test local_result_redefines_canonical_inherited_result_without_copying ... ok
+test implied_naming_requires_agreement_and_retains_typed_ambiguity ... ok
+test multiple_inheritance_preserves_distinct_results_until_local_redefinition ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+

@@ -127,7 +127,9 @@ impl OperationalLibraryPatchSet {
         draft: LibraryDraft,
         sources: &VerifiedLibrarySet,
     ) -> Result<LibraryDraft, LibraryLoadError> {
-        if draft.profile.id() != self.profile_id || sources.content_set_id() != self.library_set {
+        if !draft.profile.accepts_correction_profile(&self.profile_id)
+            || sources.content_set_id() != self.library_set
+        {
             return Err(failure(
                 "Correction profile or exact library content set mismatch",
             ));

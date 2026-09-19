@@ -11,6 +11,8 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 pub struct KerMlQueries<'m> {
     pub(crate) context: SemanticContext<'m>,
     pub(crate) namespace_cache: crate::namespaces::NamespaceCache,
+    pub(crate) library_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
+    pub(crate) result_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
 }
 
 impl<'m> KerMlQueries<'m> {
@@ -18,6 +20,8 @@ impl<'m> KerMlQueries<'m> {
         Self {
             context,
             namespace_cache: Default::default(),
+            library_cache: Default::default(),
+            result_cache: Default::default(),
         }
     }
     pub fn context(&self) -> &SemanticContextId {

@@ -1,0 +1,1 @@
+sysml-validate: 0 diagnostics written to verification/kerml-semantic-closure-v6/product-regression/independent-validation.json

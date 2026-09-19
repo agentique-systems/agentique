@@ -15,24 +15,21 @@ impl KerMlQueries<'_> {
         out: &mut QueryResult<T>,
         expression: ElementId,
     ) -> Option<ElementId> {
-        let memberships = self.memberships(expression);
-        let mut result = None;
-        for &membership in &memberships.value {
-            if self.is(membership, c::RETURN_PARAMETER_MEMBERSHIP) {
-                let member = self.member(membership);
-                if result.is_some() {
-                    out.problem(
-                        Completeness::Invalid,
-                        "KQ_RESULT_ARITY",
-                        expression,
-                        "Expression has multiple owned results",
-                    );
-                }
-                result = member.value;
-                out.merge(member);
+        let results = self.result_parameters(expression);
+        let result = match results.value.as_slice() {
+            [result] => Some(*result),
+            [] => None,
+            _ => {
+                out.problem(
+                    Completeness::Invalid,
+                    "KQ_RESULT_ARITY",
+                    expression,
+                    "Expression has multiple effective result memberships",
+                );
+                None
             }
-        }
-        out.merge(memberships);
+        };
+        out.merge(results);
         result
     }
     pub(crate) fn argument_expression<T>(
@@ -71,7 +68,7 @@ impl KerMlQueries<'_> {
         if !is_result {
             return out;
         }
-        let owner = self.owner(feature);
+        let owner = self.owning_type(feature);
         let expression = owner.value;
         out.merge(owner);
         let Some(expression) = expression.filter(|e| self.is(*e, c::FEATURE_REFERENCE_EXPRESSION))
@@ -114,6 +111,24 @@ impl KerMlQueries<'_> {
         out
     }
     pub(crate) fn library_specializations(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
+        if let Some(result) = self
+            .library_cache
+            .lock()
+            .expect("query cache")
+            .get(&source)
+            .cloned()
+        {
+            return result;
+        }
+        let result = self.compute_library_specializations(source);
+        let mut cache = self.library_cache.lock().expect("query cache");
+        if cache.len() >= 256 {
+            cache.clear();
+        }
+        cache.insert(source, result.clone());
+        result
+    }
+    fn compute_library_specializations(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
         use StandardRole as R;
         let mut out = self.result(vec![]);
         let Some(bindings) = self.context().standard_bindings.as_ref() else {
@@ -180,9 +195,41 @@ impl KerMlQueries<'_> {
             }
             out.merge(typing);
         }
+        let candidates: std::collections::BTreeSet<_> = roles
+            .iter()
+            .map(|&role| bindings.get(role))
+            .filter(|&target| target != source)
+            .collect();
+        let explicit = self.targets(source, QueryKind::DirectSpecializations);
+        let mut roots = explicit.value.clone();
+        roots.extend(candidates.iter().copied());
+        let mut reachable = std::collections::BTreeMap::new();
+        for root in roots {
+            let mut visited = std::collections::BTreeSet::new();
+            let mut pending = vec![root];
+            while let Some(current) = pending.pop() {
+                // 8.4.2 redundancy is tested without assuming source's own
+                // proposed implication, including in specialization cycles.
+                if current == source || !visited.insert(current) {
+                    continue;
+                }
+                let generals = self.targets(current, QueryKind::DirectSpecializations);
+                pending.extend(generals.value.iter().copied());
+                out.merge(generals);
+            }
+            reachable.insert(root, visited);
+        }
         for role in roles {
             let target = bindings.get(role);
-            if target == source {
+            if target == source
+                || explicit
+                    .value
+                    .iter()
+                    .any(|e| reachable[e].contains(&target))
+                || candidates
+                    .iter()
+                    .any(|&other| other != target && reachable[&other].contains(&target))
+            {
                 continue;
             }
             self.fact(&mut out, agq_kernel::provenance::FactKey::Element(target));
@@ -207,6 +254,7 @@ impl KerMlQueries<'_> {
                 premises,
             );
         }
+        out.merge(explicit);
         out.value.sort();
         out.value.dedup();
         out
@@ -250,12 +298,6 @@ impl KerMlQueries<'_> {
     }
     pub(crate) fn implied_redefinitions(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
-        let owner = self.owner(feature);
-        let Some(ty) = owner.value.filter(|t| self.is(*t, c::TYPE)) else {
-            out.merge(owner);
-            return out;
-        };
-        out.merge(owner);
         let membership = self.owning_relationship(feature);
         let result = membership
             .value
@@ -268,6 +310,15 @@ impl KerMlQueries<'_> {
             self.read_value(&mut out, feature, p::FEATURE_IS_END),
             Some(Value::Boolean(true))
         );
+        if !result && !directed && !end {
+            return out;
+        }
+        let owner = self.owning_type(feature);
+        let Some(ty) = owner.value else {
+            out.merge(owner);
+            return out;
+        };
+        out.merge(owner);
         let behavioral = self.is(ty, c::BEHAVIOR) || self.is(ty, c::STEP);
         let mut positions = vec![];
         if result && (self.is(ty, c::FUNCTION) || self.is(ty, c::EXPRESSION)) {
@@ -291,7 +342,7 @@ impl KerMlQueries<'_> {
             }
             out.merge(explicit);
         }
-        let mut supers = self.targets(ty, QueryKind::DirectSpecializations);
+        let mut supers = self.owned_specialization_targets(ty);
         let library = self.library_specializations(ty);
         supers.value.extend(library.value.iter().copied());
         supers.merge(library);
@@ -305,6 +356,18 @@ impl KerMlQueries<'_> {
                     let ends = self.structural_end_features(general);
                     let values = ends.value.clone();
                     out.merge(ends);
+                    values
+                } else if matches!(position, Position::Result) {
+                    if !self.is(general, c::FUNCTION) && !self.is(general, c::EXPRESSION) {
+                        continue;
+                    }
+                    let results = self.result_parameters(general);
+                    if results.value.len() > 1 {
+                        out.problem(Completeness::Invalid,"KQ_RESULT_ARITY",general,
+                            "Positional result redefinition requires one effective general result membership");
+                    }
+                    let values = results.value.clone();
+                    out.merge(results);
                     values
                 } else {
                     self.positioned_features(&mut out, general, position)
@@ -355,24 +418,36 @@ impl KerMlQueries<'_> {
             let ends = self.positioned_features(&mut out, current, Position::End);
             owned.insert(current, ends);
             let relationships = self.owned_relationships(current);
-            let mut generals = vec![];
+            let targets = self.owned_specialization_targets(current);
+            let mut generals: Vec<_> = targets
+                .value
+                .iter()
+                .copied()
+                .filter(|&g| g != current)
+                .collect();
+            out.merge(targets);
+            let mut conjugated = None;
+            let mut chained = None;
             for &relationship in &relationships.value {
-                if self.is(relationship, c::SPECIALIZATION) {
-                    if let Some(general) =
-                        self.read_reference(&mut out, relationship, p::SPECIALIZATION_GENERAL)
-                    {
-                        if general != current && !generals.contains(&general) {
-                            generals.push(general);
-                        }
-                    } else {
-                        out.problem(
-                            Completeness::Incomplete,
-                            "KQ_END_GENERAL",
-                            relationship,
-                            "End feature ordering requires the unresolved general Type",
-                        );
-                    }
+                if self.is(relationship, c::CONJUGATION) {
+                    conjugated =
+                        self.read_reference(&mut out, relationship, p::CONJUGATION_ORIGINAL_TYPE);
                 }
+                if self.is(relationship, c::FEATURE_CHAINING) {
+                    chained = self.read_reference(
+                        &mut out,
+                        relationship,
+                        p::FEATURE_CHAINING_CHAINING_FEATURE,
+                    );
+                }
+            }
+            if let Some(original) = conjugated {
+                generals = vec![original];
+            }
+            if let Some(target) = chained.filter(|&target| target != current)
+                && !generals.contains(&target)
+            {
+                generals.push(target);
             }
             out.merge(relationships);
             queue.extend(generals.iter().copied());

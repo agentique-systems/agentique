@@ -163,7 +163,7 @@ fn apply_profile(
     draft: LibraryDraft,
     sources: &VerifiedLibrarySet,
 ) -> Result<LibraryDraft, LibraryLoadError> {
-    if draft.profile == agq_kerml::BaselineProfile::OPERATIONAL_V3 {
+    if draft.profile.corrects_library_content() {
         corrections::OperationalLibraryPatchSet::reviewed()?.apply(draft, sources)
     } else {
         Ok(draft)
@@ -225,9 +225,16 @@ pub fn refine_declarations_with_profile(
             sources,
         )?;
         progress(round, resolved.len(), draft.candidate.obligations().len());
-        let queries = draft.queries(sources)?;
+        let mut queries = draft.queries(sources)?;
+        let context = queries.context().clone();
         let mut next = BTreeMap::new();
-        for reference in &draft.references {
+        for (index, reference) in draft.references.iter().enumerate() {
+            // Bound retained proof populations, as in the complete corpus audit.
+            // Each batch evaluates exactly the same immutable semantic context.
+            if index > 0 && index % 128 == 0 {
+                queries = draft.queries(sources)?;
+                assert_eq!(queries.context(), &context);
+            }
             let result = queries.lookup_relationship_target(
                 reference.relationship,
                 reference.property,

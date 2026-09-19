@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "verification/kerml-semantic-closure-v6/inspect-subobject-authority.mjs"
+  ],
+  "started": "2026-09-19T18:56:28.082531+00:00",
+  "duration_seconds": 3.734000000054948,
+  "exit_code": 0,
+  "output": "output.txt"
+}

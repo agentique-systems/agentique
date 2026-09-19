@@ -1,0 +1,34 @@
+{
+  "format": "agentique-reviewed-validation-errata/1",
+  "profile_id": "agentique-kerml-1.0-operational/4",
+  "published_profile_id": "omg-kerml-1.0-published/1",
+  "extends": {
+    "profile_id": "agentique-kerml-1.0-operational/3",
+    "manifest": "standards/kerml-1.0-operational-library-errata-v3.json",
+    "sha256": "c762275c6a7c4cb310c4ba3084683d62125a9319228d8653f39956c61794ae30"
+  },
+  "entries": [
+    {
+      "agentique_errata_id": "AGQ-KERML10-004",
+      "official_issue_key": "KERML11-68",
+      "issue_url": "https://issues.omg.org/issues/KERML11-68",
+      "issue_status_at_review": "open",
+      "reviewed_at": "2026-09-19",
+      "specification": "KerML",
+      "version": "1.0",
+      "pdf_sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697",
+      "xmi_sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+      "affected_clause": "8.3.3.3.8",
+      "constraint": "validateRedefinitionEndConformance",
+      "published_rule": "redefinedFeature.isEnd implies redefiningFeature.isEnd",
+      "operational_rule": "redefinedFeature.isEnd and redefiningFeature.owningType <> null and (redefiningFeature.owningType.oclIsKindOf(Association) or redefiningFeature.owningType.oclIsKindOf(Connector)) implies redefiningFeature.isEnd",
+      "algorithm_id": "agentique-kerml10-redefinition-end-conformance/1",
+      "reference_repository": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation",
+      "reference_commit": "d9231d21e621aeabeafa92aef026b3929c859116",
+      "evidence_packet": "verification/kerml-semantic-closure-v6/authority-packet.json",
+      "operation": "replace-profile-scoped-validation-rule",
+      "model_mutations": [],
+      "reviewed_disposition": "Project-authorized Agentique operational validation semantic erratum. Not an adopted final KerML 1.1 correction. Published and operational v1-v3 retain the published rule. Metaclass conformance includes Association and Connector subtypes. No effect on source, metamodel, KPAR bytes, end flags or feature-chain lowering."
+    }
+  ]
+}

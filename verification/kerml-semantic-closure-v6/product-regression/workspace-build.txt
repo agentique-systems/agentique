@@ -1,0 +1,11 @@
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+   Compiling agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+   Compiling agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+   Compiling agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+   Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+error: failed to remove file `C:\Users\phili\github\agentique-systems\agentique\target\debug\agq-server.exe`
+
+Caused by:
+  Access is denied. (os error 5)
+warning: build failed, waiting for other jobs to finish...

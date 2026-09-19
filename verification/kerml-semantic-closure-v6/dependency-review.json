@@ -1,0 +1,83 @@
+{
+  "format": "agentique-kerml-v6-dependency-review/1",
+  "complete_publication_dependency_audit": false,
+  "scope": "Implemented query paths only; no incremental cache or accepted publication dependency closure is claimed",
+  "review": [
+    {
+      "dependency": "library_snapshot",
+      "implementation": "SemanticContext model revision and library graph digest; no accepted library snapshot issued"
+    },
+    {
+      "dependency": "operational_profile",
+      "implementation": "SemanticContext baseline profile ID and frozen errata manifest digest"
+    },
+    {
+      "dependency": "validation_erratum",
+      "implementation": "ValidationRule search dependency, profile context, exact end flags, membership and owner metaclass facts"
+    },
+    {
+      "dependency": "correction_entries",
+      "implementation": "ReviewedCorrection fact origins retain v3 profile/entry/library/source/output identities under explicit v4 lineage"
+    },
+    {
+      "dependency": "imports_and_namespace_population",
+      "implementation": "Existing incoming/property/population/search contracts retained by namespace lookups"
+    },
+    {
+      "dependency": "inherited_positional_order",
+      "implementation": "Ordered ownedRelationship property, specialization endpoints, feature memberships, visibility and redefinition dependencies"
+    },
+    {
+      "dependency": "feature_chains",
+      "implementation": "Owned FeatureChaining relationships and terminal target property dependencies"
+    },
+    {
+      "dependency": "implied_relationships",
+      "implementation": "Result/parameter/end redefinition proofs with positive facts, searches and query rule-set identity"
+    },
+    {
+      "dependency": "standard_bindings",
+      "implementation": "Existing anchor bindings and StandardLibraries context/search dependencies; accepted generation remains unavailable"
+    }
+  ],
+  "sources": [
+    {
+      "path": "crates/kerml-semantics/src/context.rs",
+      "sha256": "594fad6f7307624be2e2f8f195dd4e31faa0a9e75f5e58f95a5deea2539dfdd3"
+    },
+    {
+      "path": "crates/kerml-semantics/src/contract.rs",
+      "sha256": "087dd2b21bc7cead15b7d84e927d98753aa490fb5df83996dcd3465139cef072"
+    },
+    {
+      "path": "crates/kerml-semantics/src/validation.rs",
+      "sha256": "9729c12fed5fbd20f0acf56637d73e955cd229291b19712e7d9c3fc9df833db0"
+    },
+    {
+      "path": "crates/kerml-semantics/src/ordering.rs",
+      "sha256": "9d397763befd0269e1dd62c552adc772c651f2ad7e17157afbcb1a38f9d49155"
+    },
+    {
+      "path": "crates/kerml-semantics/src/naming.rs",
+      "sha256": "36821cdfe855e7e7b9c4a9b5b9ad84dd6ca67f857fef96cfaec2cfe0ae26f934"
+    },
+    {
+      "path": "crates/kerml-semantics/src/implicit.rs",
+      "sha256": "5a16e349290f76acc761fc10762c4f8241dc13e923e37fac0a339038a7269743"
+    },
+    {
+      "path": "crates/kerml-semantics/src/namespaces.rs",
+      "sha256": "94fa010ce531393411dd7b0fa971d7a173c366ec516fadbd3d7c5f078cf67fdf"
+    },
+    {
+      "path": "crates/kerml-semantics/src/queries.rs",
+      "sha256": "54b9698f19f287f737e609dfba88a281e9902a84dc22cafcaf5ec735db922cbe"
+    }
+  ],
+  "focused_evidence": [
+    "end-matrix-final",
+    "ordering-projection-regression-1",
+    "authored-profile-matrix-final"
+  ],
+  "remaining": "Accepted library publication/bindings and complete implied expansion dependencies remain mandatory after KLCV6-F-001 authority resolution"
+}
