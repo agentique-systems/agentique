@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo test --offline -p agq-kerml-semantics --test redefinition_v2 -- --nocapture",
+    "started": "2026-09-19T12:37:42.217Z",
+    "durationMs": 9756,
+    "exitCode": 0,
+    "signal": null,
+    "log": "matrix.txt"
+  }
+]

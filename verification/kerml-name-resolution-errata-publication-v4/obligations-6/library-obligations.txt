@@ -1,0 +1,71 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.24
+   Compiling cfg-if v1.0.5
+   Compiling serde_core v1.0.229
+   Compiling version_check v0.9.5
+   Compiling autocfg v1.5.1
+   Compiling serde v1.0.229
+   Compiling getrandom v0.4.3
+   Compiling typenum v1.20.1
+   Compiling thiserror v2.0.20
+   Compiling crc32fast v1.5.2
+   Compiling sha1_smol v1.0.1
+   Compiling simd-adler32 v0.3.10
+   Compiling generic-array v0.14.7
+   Compiling num-traits v0.2.19
+   Compiling adler2 v2.0.1
+   Compiling zmij v1.0.23
+   Compiling cpufeatures v0.2.17
+   Compiling zip v2.4.2
+   Compiling miniz_oxide v0.9.1
+   Compiling memchr v2.8.3
+   Compiling serde_json v1.0.151
+   Compiling bumpalo v3.20.3
+   Compiling equivalent v1.0.2
+   Compiling hashbrown v0.17.1
+   Compiling log v0.4.34
+   Compiling itoa v1.0.18
+   Compiling zopfli v0.8.3
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling syn v3.0.5
+   Compiling digest v0.10.7
+   Compiling flate2 v1.1.10
+   Compiling indexmap v2.14.2
+   Compiling sha2 v0.10.9
+   Compiling num-integer v0.1.47
+   Compiling uuid v1.26.1
+   Compiling thiserror-impl v2.0.20
+   Compiling serde_derive v1.0.229
+   Compiling displaydoc v0.2.7
+   Compiling num-bigint v0.4.8
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+error: failed to build archive at `C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kernel-1cec3166dfe81247.rlib`: There is not enough space on the disk. (os error 112)
+
+error: could not compile `agq-kernel` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+rustc-LLVM ERROR: IO failure on output stream: no space on device
+error: could not compile `agq-kerml-text` (lib)
+
+Caused by:
+  process didn't exit successfully: `C:\Users\phili\.rustup\toolchains\1.92.0-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name agq_kerml_text --edition=2024 crates\kerml-text\src\lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C opt-level=3 -C embed-bitcode=no --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values())" -C metadata=e95dec0f65055b31 -C extra-filename=-39c26604e4822356 --out-dir C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps -C strip=debuginfo -L dependency=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps --extern agq_kerml=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kerml-6e2e7b0b8d5545c6.rmeta --extern agq_kerml_semantics=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kerml_semantics-58dce8ab9ae13d76.rmeta --extern agq_kerml_syntax=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kerml_syntax-38b07dc99327ade1.rmeta --extern agq_kernel=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kernel-1cec3166dfe81247.rmeta --extern agq_standard_libraries=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_standard_libraries-1a7fc05eb35f4ee4.rmeta --extern thiserror=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libthiserror-d88a1abd98b86a26.rmeta --extern uuid=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libuuid-1855f7d655408e3e.rmeta` (exit code: 101)
+rustc-LLVM ERROR: IO failure on output stream: no space on device
+error: could not compile `agq-kerml-semantics` (lib)
+
+Caused by:
+  process didn't exit successfully: `C:\Users\phili\.rustup\toolchains\1.92.0-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name agq_kerml_semantics --edition=2024 crates\kerml-semantics\src\lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C opt-level=3 -C embed-bitcode=no --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values())" -C metadata=d26e88d90a3aed21 -C extra-filename=-58dce8ab9ae13d76 --out-dir C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps -C strip=debuginfo -L dependency=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps --extern agq_kerml=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kerml-6e2e7b0b8d5545c6.rmeta --extern agq_kernel=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kernel-1cec3166dfe81247.rmeta --extern sha2=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libsha2-a6345c30604b4813.rmeta` (exit code: 101)
+rustc-LLVM ERROR: out of memory
+Allocation failed
+error: could not compile `agq-kerml` (lib)
+
+Caused by:
+  process didn't exit successfully: `C:\Users\phili\.rustup\toolchains\1.92.0-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name agq_kerml --edition=2024 crates\kerml\src\lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C opt-level=3 -C embed-bitcode=no --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values())" -C metadata=2988649dff13ff7e -C extra-filename=-6e2e7b0b8d5545c6 --out-dir C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps -C strip=debuginfo -L dependency=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps --extern agq_kernel=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kernel-1cec3166dfe81247.rmeta --extern sha2=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libsha2-a6345c30604b4813.rmeta --extern thiserror=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libthiserror-d88a1abd98b86a26.rmeta` (exit code: 0xc0000409, STATUS_STACK_BUFFER_OVERRUN)

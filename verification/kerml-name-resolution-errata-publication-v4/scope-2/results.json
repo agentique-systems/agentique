@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-semantics --test imports kerml11_140 -- --nocapture",
+    "started": "2026-09-19T11:48:38.656Z",
+    "durationMs": 4163,
+    "exitCode": 0,
+    "signal": null,
+    "log": "nested-redefinition-authority.txt"
+  }
+]

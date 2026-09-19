@@ -7,7 +7,7 @@ use agq_kernel::{
 };
 use std::collections::BTreeMap;
 
-pub const BINDING_VERSION: &str = "agq-kerml-bindings/1";
+pub const BINDING_VERSION: &str = "agq-kerml-bindings/2";
 
 /// KerML 1.0 semantic roles, not substitute declarations or OMG-defined IDs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -22,6 +22,7 @@ pub enum StandardRole {
     Object,
     Objects,
     Link,
+    BinaryLink,
     Links,
     SelfLinks,
     Performance,
@@ -50,6 +51,7 @@ impl StandardRole {
             Object => (&["Objects", "Object"], c::STRUCTURE),
             Objects => (&["Objects", "objects"], c::FEATURE),
             Link => (&["Links", "Link"], c::ASSOCIATION),
+            BinaryLink => (&["Links", "BinaryLink"], c::ASSOCIATION),
             Links => (&["Links", "links"], c::FEATURE),
             SelfLinks => (&["Links", "selfLinks"], c::FEATURE),
             Performance => (&["Performances", "Performance"], c::BEHAVIOR),
@@ -64,7 +66,7 @@ impl StandardRole {
             Metaobjects => (&["Metaobjects", "metaobjects"], c::FEATURE),
         }
     }
-    pub const ALL: [Self; 22] = [
+    pub const ALL: [Self; 23] = [
         Self::Anything,
         Self::DataValue,
         Self::Things,
@@ -75,6 +77,7 @@ impl StandardRole {
         Self::Object,
         Self::Objects,
         Self::Link,
+        Self::BinaryLink,
         Self::Links,
         Self::SelfLinks,
         Self::Performance,

@@ -1,0 +1,12 @@
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 11.12s
+     Running `target\release\examples\library_obligations.exe --output=verification/kerml-name-resolution-errata-publication-v4/obligations-5/obligations.json`
+refinement 0: 0 provisional endpoints; 4003 obligations
+refinement 1: 2108 provisional endpoints; 1895 obligations
+refinement 2: 3661 provisional endpoints; 342 obligations
+refinement 3: 3839 provisional endpoints; 164 obligations
+refinement 4: 3920 provisional endpoints; 83 obligations
+refinement 5: 3953 provisional endpoints; 50 obligations
+refinement 6: 3974 provisional endpoints; 29 obligations
+memory allocation of 278336 bytes failed
+error: process didn't exit successfully: `target\release\examples\library_obligations.exe --output=verification/kerml-name-resolution-errata-publication-v4/obligations-5/obligations.json` (exit code: 0xc0000409, STATUS_STACK_BUFFER_OVERRUN)

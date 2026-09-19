@@ -1,0 +1,10 @@
+{
+  "base_commit": "7f1897e8c18ce0d8ab418984dc5c57f794965dd1",
+  "branch": "semantics/kerml-name-resolution-errata-publication-v4",
+  "initial_worktree": "clean; checked before creating branch and evidence",
+  "fetch": {
+    "command": "git fetch origin main",
+    "exit_code": 0
+  },
+  "captured_at": "2026-09-19T11:41:11.376218+00:00"
+}

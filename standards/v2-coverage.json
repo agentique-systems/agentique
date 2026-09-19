@@ -448,5 +448,29 @@
     "authority_review": "docs/kerml-operational-library-publication-authority-conflict.md",
     "accepted_library_snapshot": false,
     "remaining": "Gates 7-17: normative unresolved references, effective features, structural validation, strict library publication, accepted bindings and authored-library dependencies. No SysML semantic readiness."
+  },
+  "kerml_name_resolution_errata_publication_v4": {
+    "status": "incomplete-separate-library-authority-conflict",
+    "published_profile": "omg-kerml-1.0-published/1",
+    "operational_v1_profile": "agentique-kerml-1.0-operational/1",
+    "operational_v2_profile": "agentique-kerml-1.0-operational/2",
+    "reviewed_errata": [
+      "AGQ-KERML10-001 / KERML11-81 (unchanged)",
+      "AGQ-KERML10-002 / KERML11-140 (Agentique operational semantic interpretation)"
+    ],
+    "manifest": "standards/kerml-1.0-operational-errata-v2.json",
+    "profile_review": "docs/operational-kerml-profile.md",
+    "semantic_rule_set": "agq-kerml-query/11",
+    "completed_scope": "Versioned operational owned-redefinition resolution, distinct profile/context identities, published/v1 failure witnesses, adversarial matrix, explicit authored profile selection, ordinary structural inheritance and name corrections, partial structural validation inventory.",
+    "blocker": "KNRV4-F-001: pinned Objects::StructuredSpaceObject::{faces,edges,vertices} retain indistinguishable innerSpaceDimension redefinitions. The reference library explicitly repairs its source; that separate correction is outside the authorized KERML11-140 semantic erratum.",
+    "authority_review": "docs/kerml-pinned-objects-authority-conflict.md",
+    "authority_packet": "verification/kerml-name-resolution-errata-publication-v4/separate-authority/authority-packet.json",
+    "evidence": "verification/kerml-name-resolution-errata-publication-v4/README.md",
+    "audit_summary": "verification/kerml-name-resolution-errata-publication-v4/summary.json",
+    "accepted_library_snapshot": false,
+    "accepted_library_facade": false,
+    "accepted_bindings_regenerated": false,
+    "authored_accepted_library_consumption": false,
+    "remaining": "Separate reviewed library-source authority correction; remaining structural/derived/implied constraints and any reported ordinary query obligations; accepted semantic publication, facade, bindings and authored library dependencies. No SysML semantic readiness."
   }
 }

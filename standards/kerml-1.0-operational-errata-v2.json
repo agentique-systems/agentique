@@ -1,0 +1,36 @@
+{
+  "format": "agentique-reviewed-semantic-errata/2",
+  "profile_id": "agentique-kerml-1.0-operational/2",
+  "published_profile_id": "omg-kerml-1.0-published/1",
+  "extends": {
+    "profile_id": "agentique-kerml-1.0-operational/1",
+    "manifest": "standards/kerml-1.0-operational-errata.json",
+    "sha256": "7614fec2b75e14e7181d7e8a0d474cbd3000f53ca3470d8d9814f4b40fd82994"
+  },
+  "entries": [
+    {
+      "agentique_errata_id": "AGQ-KERML10-002",
+      "official_issue_key": "KERML11-140",
+      "issue_url": "https://issues.omg.org/issues/KERML11-140",
+      "issue_status_at_review": "open",
+      "issue_updated_at": "2025-11-11T23:25:00Z",
+      "reviewed_at": "2026-09-19",
+      "specification": "KerML",
+      "version": "1.0",
+      "affected_clause": "8.2.3.5.1",
+      "affected_semantic_rule": "owned Redefinition::redefinedFeature name resolution",
+      "operation": "replace-profile-scoped-semantic-algorithm",
+      "algorithm_id": "agentique-kerml10-redefinition-target/1",
+      "algorithm": "docs/operational-kerml-profile.md",
+      "algorithm_sha256": "d25df7cca2777bc87c9c667949249f346db62192689cacfbd96e66574a7f48b5",
+      "evidence_packet": "verification/kerml-name-resolution-errata-publication-v4/authority-packet.json",
+      "evidence_packet_sha256": "cf79b9b1f95dc5591975c3a201ca58fd89dd55c894428e7ee5ecddf874a39747",
+      "reference_implementation_corroboration": "authority packet inspected_code_path and independent_exact_mappings",
+      "test_witnesses": [
+        "crates/kerml-semantics/tests/imports.rs::kerml11_140_nested_redefinition_cannot_search_the_specific_types_outer_scope",
+        "crates/kerml-semantics/tests/redefinition_v2.rs"
+      ],
+      "reviewed_disposition": "Explicitly authorized Agentique non-normative operational interpretation. Not an adopted OMG erratum. No effect on published, operational v1, ordinary references, or future KerML versions."
+    }
+  ]
+}

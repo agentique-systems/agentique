@@ -25,6 +25,8 @@ pub(crate) struct State {
     namespace: ElementId,
     access: MemberAccess,
     recursive: bool,
+    excluded: Option<ElementId>,
+    inherited_projection: bool,
 }
 pub(crate) type NamespaceCache =
     std::sync::Mutex<BTreeMap<State, std::sync::Arc<QueryResult<Vec<MemberMatch>>>>>;
@@ -112,7 +114,7 @@ impl KerMlQueries<'_> {
             MemberAccess::NonPrivate => name != "private",
         }
     }
-    fn names<T>(
+    pub(crate) fn names<T>(
         &self,
         out: &mut QueryResult<T>,
         membership: ElementId,
@@ -125,14 +127,20 @@ impl KerMlQueries<'_> {
                     names.insert(name.clone());
                 }
             }
-            if !names.is_empty() {
-                return names;
-            }
+            // Plain Membership names are optional stored values. Only an
+            // OwningMembership derives its names from the member Element.
+            return names;
         }
         let mut pending: Vec<_> = element.into_iter().collect();
         let mut seen = BTreeSet::new();
         while let Some(id) = pending.pop() {
             if !seen.insert(id) {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_NAMING_CYCLE",
+                    id,
+                    "Cyclic namingFeature dependencies do not establish an effective name",
+                );
                 continue;
             }
             let before = names.len();
@@ -142,9 +150,37 @@ impl KerMlQueries<'_> {
                 }
             }
             if names.len() == before && self.is(id, c::FEATURE) {
-                let redefined = self.redefined_features(id);
-                pending.extend(redefined.value.iter().copied());
-                out.merge(redefined);
+                // Feature::namingFeature is the FIRST owned Redefinition. It
+                // does not combine names from all redefinition targets.
+                let relationships = self.owned_relationships(id);
+                if let Some(relationship) = relationships
+                    .value
+                    .iter()
+                    .find(|r| self.is(**r, c::REDEFINITION))
+                {
+                    pending.extend(self.read_reference(
+                        out,
+                        *relationship,
+                        p::REDEFINITION_REDEFINED_FEATURE,
+                    ));
+                } else {
+                    // A required implied positional redefinition participates
+                    // in naming too. A singleton establishes its first target
+                    // without inventing an order among implied relationships.
+                    let implied = self.implied_redefinitions(id);
+                    if implied.value.len() == 1 {
+                        pending.extend(implied.value.iter().copied());
+                    } else if implied.value.len() > 1 {
+                        out.problem(
+                            Completeness::Incomplete,
+                            "KQ_IMPLIED_NAMING_ORDER",
+                            id,
+                            "Multiple implied redefinitions require an established owned relationship order for naming",
+                        );
+                    }
+                    out.merge(implied);
+                }
+                out.merge(relationships);
             }
         }
         names
@@ -217,10 +253,50 @@ impl KerMlQueries<'_> {
         namespace: ElementId,
         access: MemberAccess,
     ) -> QueryResult<Vec<MemberMatch>> {
+        self.namespace_members_excluding(namespace, access, None)
+    }
+
+    pub(crate) fn namespace_members_excluding(
+        &self,
+        namespace: ElementId,
+        access: MemberAccess,
+        excluded: Option<ElementId>,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        self.membership_population(namespace, access, excluded, false)
+    }
+
+    /// Type::inheritedMemberships retains Membership identity during suppression.
+    pub(crate) fn inherited_memberships(
+        &self,
+        namespace: ElementId,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        self.membership_population(namespace, MemberAccess::NonPrivate, None, true)
+    }
+
+    fn membership_population(
+        &self,
+        namespace: ElementId,
+        access: MemberAccess,
+        excluded: Option<ElementId>,
+        inherited_projection: bool,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        // Exclusion cannot change a population that did not read the excluded
+        // declaration. Reuse its full evidence within this immutable context.
+        if let Some(feature) = excluded {
+            let ordinary = self.namespace_members(namespace, access);
+            if !ordinary
+                .positive_dependencies
+                .contains(&FactKey::Element(feature))
+            {
+                return ordinary;
+            }
+        }
         let start = State {
             namespace,
             access,
             recursive: false,
+            excluded,
+            inherited_projection,
         };
         if let Some(cached) = self
             .namespace_cache
@@ -271,6 +347,10 @@ impl KerMlQueries<'_> {
             let memberships = self.memberships(namespace);
             for &membership in &memberships.value {
                 let member = self.member(membership);
+                if excluded.is_some() && member.value == excluded {
+                    out.merge(member);
+                    continue;
+                }
                 let member_names = self.names(&mut out, membership, member.value);
                 pop.owned_names.extend(member_names.iter().cloned());
                 names.insert(membership, member_names);
@@ -279,8 +359,11 @@ impl KerMlQueries<'_> {
                 if let Some(element) = member.value {
                     if self.is(element, c::FEATURE) {
                         let redefined = self.redefined_features(element);
-                        pop.local_redefinitions
-                            .extend(redefined.value.iter().copied());
+                        // removeRedefinedFeatures uses ownedFeature, not aliases.
+                        if self.is(membership, c::FEATURE_MEMBERSHIP) {
+                            pop.local_redefinitions
+                                .extend(redefined.value.iter().copied());
+                        }
                         out.merge(redefined);
                         if let std::collections::btree_map::Entry::Vacant(entry) =
                             closures.entry(element)
@@ -290,13 +373,14 @@ impl KerMlQueries<'_> {
                             entry.insert(closure);
                         }
                     }
-                    if visible {
+                    if visible && !state.inherited_projection {
                         pop.own.insert(MemberMatch {
                             membership,
                             element,
                         });
                     }
                     if state.recursive
+                        && !state.inherited_projection
                         && visible
                         && self.is(element, c::NAMESPACE)
                         && self.is(membership, c::OWNING_MEMBERSHIP)
@@ -311,7 +395,7 @@ impl KerMlQueries<'_> {
             }
             out.merge(memberships);
             if self.is(namespace, c::TYPE) {
-                let supers = self.direct_specializations(namespace);
+                let supers = self.supertypes(namespace);
                 for &general in &supers.value {
                     pop.inherited.push(State {
                         namespace: general,
@@ -321,13 +405,16 @@ impl KerMlQueries<'_> {
                             MemberAccess::NonPrivate
                         },
                         recursive: state.recursive,
+                        excluded,
+                        inherited_projection: false,
                     });
                 }
                 out.merge(supers);
             }
             let owned = self.owned_relationships(namespace);
             for &import in &owned.value {
-                if !self.is(import, c::IMPORT)
+                if state.inherited_projection
+                    || !self.is(import, c::IMPORT)
                     || !self.visible(&mut out, import, p::IMPORT_VISIBILITY, state.access)
                 {
                     continue;
@@ -347,7 +434,7 @@ impl KerMlQueries<'_> {
                         p::MEMBERSHIP_IMPORT_IMPORTED_MEMBERSHIP,
                     ) {
                         let member = self.member(membership);
-                        if let Some(element) = member.value {
+                        if let Some(element) = member.value.filter(|e| Some(*e) != excluded) {
                             names.insert(
                                 membership,
                                 self.names(&mut out, membership, Some(element)),
@@ -384,6 +471,8 @@ impl KerMlQueries<'_> {
                         namespace: target,
                         access,
                         recursive,
+                        excluded,
+                        inherited_projection: false,
                     });
                 }
             }

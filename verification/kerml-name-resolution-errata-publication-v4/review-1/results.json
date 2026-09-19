@@ -1,0 +1,50 @@
+[
+  {
+    "command": "python -X utf8 verification/kerml-name-resolution-errata-publication-v4/review-evidence.py",
+    "started": "2026-09-19T13:30:03.073Z",
+    "durationMs": 1230,
+    "exitCode": 0,
+    "signal": null,
+    "log": "v4-authority-integrity.txt"
+  },
+  {
+    "command": "node verification/kerml-operational-errata-publication-v3/inspect-authority.mjs --check",
+    "started": "2026-09-19T13:30:04.304Z",
+    "durationMs": 4976,
+    "exitCode": 0,
+    "signal": null,
+    "log": "authority-inspection.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-operational-errata-publication-v3/independent-profiles.py",
+    "started": "2026-09-19T13:30:09.280Z",
+    "durationMs": 1047,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-diff.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-name-resolution-errata-publication-v4/preservation.py",
+    "started": "2026-09-19T13:30:10.327Z",
+    "durationMs": 5439,
+    "exitCode": 0,
+    "signal": null,
+    "log": "preservation.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-19T13:30:15.768Z",
+    "durationMs": 733,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "git diff HEAD --check",
+    "started": "2026-09-19T13:30:16.502Z",
+    "durationMs": 130,
+    "exitCode": 2,
+    "signal": null,
+    "log": "diff.txt"
+  }
+]

@@ -10,6 +10,7 @@ mod inheritance;
 mod namespaces;
 mod queries;
 mod resolution;
+mod validation;
 
 pub use bindings::*;
 pub use context::*;

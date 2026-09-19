@@ -741,7 +741,7 @@ fn overlay_proofs_retain_recursive_kernel_evidence() {
 }
 
 #[test]
-fn unsupported_conjugation_is_not_a_complete_empty_result() {
+fn conjugation_without_original_type_is_not_a_complete_empty_result() {
     let mut f = Fixture::new();
     f.create(A, c::TYPE);
     let s = f.finish();
@@ -765,7 +765,7 @@ fn unsupported_conjugation_is_not_a_complete_empty_result() {
     assert!(
         r.diagnostics
             .iter()
-            .any(|d| d.code == "KQ_UNSUPPORTED_INHERITANCE")
+            .any(|d| d.code == "KQ_MISSING_CONJUGATOR")
     );
 }
 
@@ -901,12 +901,8 @@ fn feature_aliases_do_not_silently_bypass_inheritance_filtering() {
     f.link(A, p::ELEMENT_OWNED_RELATIONSHIP, id(30));
     let s = f.finish();
     let r = queries(&s).effective_features(A);
-    assert_eq!(r.completeness, Completeness::Incomplete);
-    assert!(
-        r.diagnostics
-            .iter()
-            .any(|d| d.code == "KQ_NONFEATURE_MEMBERSHIP")
-    );
+    assert_eq!(r.completeness, Completeness::Complete);
+    assert!(r.value.is_empty(), "Aliases are not FeatureMemberships");
 }
 
 #[test]

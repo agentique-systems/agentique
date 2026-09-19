@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kerml -p agq-kerml-semantics -p agq-kerml-text",
+    "started": "2026-09-19T12:00:41.435Z",
+    "durationMs": 89807,
+    "exitCode": 0,
+    "signal": null,
+    "log": "language-tests.txt"
+  }
+]

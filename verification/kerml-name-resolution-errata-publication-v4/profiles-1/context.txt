@@ -1,0 +1,10 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.69s
+     Running tests\profiles.rs (target\debug\deps\profiles-6a40d894772077ed.exe)
+
+running 2 tests
+test operational_context_cannot_smuggle_deleted_descriptors_back_as_an_extension ... ok
+test contexts_bind_profile_artifact_effective_graph_and_errata_content ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+

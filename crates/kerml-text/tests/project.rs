@@ -25,6 +25,48 @@ fn named(project: &SourceProject, name: &str) -> ElementId {
 }
 
 #[test]
+fn authored_redefinition_profile_matrix() {
+    use agq_kerml::BaselineProfile as P;
+    let source = "feature Quartz { feature segments; } feature Cobalt { feature signal; feature interval : Quartz :> Quartz::segments { feature capture redefines signal; } }";
+    let mut contexts = std::collections::BTreeSet::new();
+    for profile in [P::PublishedKerMl10, P::OPERATIONAL_V1, P::OPERATIONAL_V2] {
+        let mut project = SourceProject::with_profile(profile).unwrap();
+        let m = project
+            .apply(project.current().revision(), [add("witness.kerml", source)])
+            .unwrap();
+        assert_eq!(project.baseline_profile(), profile);
+        assert_eq!(m.queries().context().baseline_profile_id, profile.id());
+        contexts.insert((
+            m.queries().context().baseline_profile_id,
+            m.queries().context().errata_manifest_digest,
+        ));
+        let r = m
+            .references()
+            .iter()
+            .find(|r| r.kind == agq_kerml_text::syntax::ReferenceKind::Redefinition)
+            .unwrap();
+        if profile == P::OPERATIONAL_V2 {
+            assert!(
+                matches!(r.resolution.value, Resolution::Resolved(_)),
+                "{:?}",
+                r.resolution
+            );
+            assert!(
+                r.resolution
+                    .explanations
+                    .values()
+                    .flatten()
+                    .any(|e| e.rule == agq_kerml_semantics::Rule::OperationalRedefinitionTargetV1)
+            );
+        } else {
+            assert_eq!(r.resolution.value, Resolution::Unresolved);
+        }
+        println!("{}: {:?}", profile.id(), r.resolution.value);
+    }
+    assert_eq!(contexts.len(), 3);
+}
+
+#[test]
 fn two_documents_share_one_root_and_resolve_in_both_directions() {
     let mut project = SourceProject::new().unwrap();
     let m = project

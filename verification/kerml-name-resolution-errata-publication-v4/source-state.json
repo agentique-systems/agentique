@@ -1,0 +1,979 @@
+{
+  "format": "agentique-source-verification-state/1",
+  "captured_at": "2026-09-19T14:48:05.451862+00:00",
+  "branch": "semantics/kerml-name-resolution-errata-publication-v4",
+  "head": "7f1897e8c18ce0d8ab418984dc5c57f794965dd1",
+  "status": [
+    " M .gitattributes",
+    " M Cargo.lock",
+    " M crates/kerml-semantics/Cargo.toml",
+    " M crates/kerml-semantics/src/bindings.rs",
+    " M crates/kerml-semantics/src/context.rs",
+    " M crates/kerml-semantics/src/contract.rs",
+    " M crates/kerml-semantics/src/implicit.rs",
+    " M crates/kerml-semantics/src/inheritance.rs",
+    " M crates/kerml-semantics/src/lib.rs",
+    " M crates/kerml-semantics/src/namespaces.rs",
+    " M crates/kerml-semantics/src/queries.rs",
+    " M crates/kerml-semantics/src/resolution.rs",
+    " M crates/kerml-semantics/tests/foundation.rs",
+    " M crates/kerml-semantics/tests/imports.rs",
+    " M crates/kerml-semantics/tests/profiles.rs",
+    " M crates/kerml-text/examples/library_obligations.rs",
+    " M crates/kerml-text/examples/library_quality.rs",
+    " M crates/kerml-text/src/library/construction.rs",
+    " M crates/kerml-text/src/lowering.rs",
+    " M crates/kerml-text/src/project.rs",
+    " M crates/kerml-text/tests/library_construction.rs",
+    " M crates/kerml-text/tests/project.rs",
+    " M crates/kerml/examples/profile_descriptors.rs",
+    " M crates/kerml/src/profiles.rs",
+    " M crates/kerml/tests/profiles.rs",
+    " M docs/kerml-standard-library-foundation-review.md",
+    " M standards/kerml-1.0-operational-errata.json",
+    " M standards/v2-coverage.json",
+    "?? crates/kerml-semantics/src/validation.rs",
+    "?? crates/kerml-semantics/tests/common/",
+    "?? crates/kerml-semantics/tests/library_authority_conflict.rs",
+    "?? crates/kerml-semantics/tests/redefinition_v2.rs",
+    "?? crates/kerml-semantics/tests/structural_validation.rs",
+    "?? crates/kerml-text/examples/library_elements.rs",
+    "?? docs/kerml-pinned-objects-authority-conflict.md",
+    "?? docs/kerml-v4-structural-rule-review.md",
+    "?? docs/operational-kerml-profile.md",
+    "?? standards/kerml-1.0-operational-errata-v2.json",
+    "?? verification/kerml-name-resolution-errata-publication-v4/"
+  ],
+  "source_files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 1080,
+      "sha256": "3188c6c18e933263a2eea238de5e2581ece1e0b945529f0198060a9243da9013"
+    },
+    {
+      "path": "Cargo.lock",
+      "bytes": 54664,
+      "sha256": "f903b44bb86ca922485f945b21009de3cf605dae82ad1922d1d5a3bb0ec34d28"
+    },
+    {
+      "path": "Cargo.toml",
+      "bytes": 1718,
+      "sha256": "24fa44b791476bea16d0eaf6bc1941c2c284731f8565348f6ed3c88b75f75f14"
+    },
+    {
+      "path": "crates/application/Cargo.toml",
+      "bytes": 364,
+      "sha256": "c320ce910cfe545c62ea87f010bdcec57aceb190b5052aaf576ce072dfe9f523"
+    },
+    {
+      "path": "crates/application/build.rs",
+      "bytes": 1645,
+      "sha256": "d88c6dea69ae63eee8dea02ced89950c1bff096c3c929da3050ec135d7711a2c"
+    },
+    {
+      "path": "crates/application/src/lib.rs",
+      "bytes": 29895,
+      "sha256": "3addda76618c13339fb7214eed7072c810980ff14ee5b37e083e6d08cf8c2367"
+    },
+    {
+      "path": "crates/application/tests/cancellation.rs",
+      "bytes": 2643,
+      "sha256": "ff6558448f6927571cc775721814894ab13e4d3b2651798dae08d867fe91c81f"
+    },
+    {
+      "path": "crates/application/tests/traceability.rs",
+      "bytes": 2056,
+      "sha256": "b1b3940f58c3e8aad0e31dc26c7fb180cf973c403a25a0cdbb14db8d8d9e6281"
+    },
+    {
+      "path": "crates/cli/Cargo.toml",
+      "bytes": 404,
+      "sha256": "afe549bacb0f565f60df3960ac1494fa0491a1a8bce4b3ddf8e61a859cc0181e"
+    },
+    {
+      "path": "crates/cli/examples/benchmark.rs",
+      "bytes": 6477,
+      "sha256": "1e197d9758047e6b8a449e1ded932ba11a9d6a8fe25c297f78e068699f1791b0"
+    },
+    {
+      "path": "crates/cli/src/main.rs",
+      "bytes": 15105,
+      "sha256": "5575f72ecd729ac85fc321dd24d2ed7b744b940ca8b1a58490dd1c1b464eab47"
+    },
+    {
+      "path": "crates/kerml-semantics/Cargo.toml",
+      "bytes": 391,
+      "sha256": "a3a46acc651409fc3e3fb6a0a4adfc395fd36dc285c7241ce9d82289ad44e324"
+    },
+    {
+      "path": "crates/kerml-semantics/src/bindings.rs",
+      "bytes": 8928,
+      "sha256": "93eb4f8a6d2181318e6531605eadc143fb11364683fdbd628642f2cbde9adf2c"
+    },
+    {
+      "path": "crates/kerml-semantics/src/context.rs",
+      "bytes": 13787,
+      "sha256": "64b03d3a61a52982d6bba1854dde289e6fe7369c8fc8db1babe79d327f9b1dc6"
+    },
+    {
+      "path": "crates/kerml-semantics/src/contract.rs",
+      "bytes": 6970,
+      "sha256": "9ca451825183218a90b30731ef3f56ac290c65f7409eafdefdc9cfcbeccb7848"
+    },
+    {
+      "path": "crates/kerml-semantics/src/implicit.rs",
+      "bytes": 17479,
+      "sha256": "452609da14cf03e37db31df792910eef9c09d599848e650c6350a78630d855a9"
+    },
+    {
+      "path": "crates/kerml-semantics/src/inheritance.rs",
+      "bytes": 14316,
+      "sha256": "96cccf81dfc42ff146c1a0613c7b53044a134aa1004cbf93a262da07b9b294e9"
+    },
+    {
+      "path": "crates/kerml-semantics/src/lib.rs",
+      "bytes": 486,
+      "sha256": "87dc976ed7d42ae3e45af9847bd8903383ba17c6076e0733512939cdcefc1c52"
+    },
+    {
+      "path": "crates/kerml-semantics/src/namespaces.rs",
+      "bytes": 22601,
+      "sha256": "e85ff18196de2bab6da7d23ea7ddaab94c22ea378e2291d5a64c0837eccb5c7e"
+    },
+    {
+      "path": "crates/kerml-semantics/src/queries.rs",
+      "bytes": 33772,
+      "sha256": "dffad6528f10207ce1830d21a8a35019e4237abf4d541cb30f48703b8e785eac"
+    },
+    {
+      "path": "crates/kerml-semantics/src/resolution.rs",
+      "bytes": 25137,
+      "sha256": "a124922906f9296560de20967756f0ecc6395dd63bed39df650607423f9036eb"
+    },
+    {
+      "path": "crates/kerml-semantics/src/validation.rs",
+      "bytes": 13700,
+      "sha256": "a006ffe1dceaba2cd679ecc5540059c0f1a134095ff6297c76d444c844c283d7"
+    },
+    {
+      "path": "crates/kerml-semantics/tests/common/namespace_fixture.rs",
+      "bytes": 6137,
+      "sha256": "d90f2663ece63367ca07040f4dd2329adab4dd611b431d6c0e854644e8b1e474"
+    },
+    {
+      "path": "crates/kerml-semantics/tests/foundation.rs",
+      "bytes": 32035,
+      "sha256": "0a6ac3f71837952f3e3337dcd5d0b38ef919d928c5a4032e486d78977c4680bf"
+    },
+    {
+      "path": "crates/kerml-semantics/tests/imports.rs",
+      "bytes": 17868,
+      "sha256": "dc303f3e6c0760d3731f23595e5bea721e487dbf8c4371d951317c2a529ef305"
+    },
+    {
+      "path": "crates/kerml-semantics/tests/library_authority_conflict.rs",
+      "bytes": 5152,
+      "sha256": "396297740d43c430f1aee467f98fb8280a33036ce4a534e7e249f7ca80f660ff"
+    },
+    {
+      "path": "crates/kerml-semantics/tests/participant_contract.rs",
+      "bytes": 6914,
+      "sha256": "0693045622ede38d6e447b69bbe51b396f8ee367501889629d1f51553d291651"
+    },
+    {
+      "path": "crates/kerml-semantics/tests/profiles.rs",
+      "bytes": 3379,
+      "sha256": "d9875089753fb4373cad5a73850cc68e2fd628bfb50f30de74ec89cd84f09681"
+    },
+    {
+      "path": "crates/kerml-semantics/tests/redefinition_v2.rs",
+      "bytes": 24336,
+      "sha256": "81aa742d26d30be5aaa09ca63c759bda08eb313392bf9ace5433c9f48005fa47"
+    },
+    {
+      "path": "crates/kerml-semantics/tests/structural_validation.rs",
+      "bytes": 3612,
+      "sha256": "a14535e9c0a903689a6af2846c844ec9d7b66680507f450e1ad44aee44c16870"
+    },
+    {
+      "path": "crates/kerml-syntax/Cargo.toml",
+      "bytes": 300,
+      "sha256": "af1835933b0487e8b1e08de98c90a111eed006ba3ab0efcf176091799fd666b9"
+    },
+    {
+      "path": "crates/kerml-syntax/src/lexer.rs",
+      "bytes": 7399,
+      "sha256": "aee461213ee4148ca70496feb813ce8a51ce0457e2514dbfbb8cf07eec0ae772"
+    },
+    {
+      "path": "crates/kerml-syntax/src/lib.rs",
+      "bytes": 6015,
+      "sha256": "0879090a892db29584584183804277e37c8564bc9c9f1312fa1ca2c502762973"
+    },
+    {
+      "path": "crates/kerml-syntax/src/parser.rs",
+      "bytes": 9627,
+      "sha256": "b0e1dd876494a5dbaedad5b7c81f63421d05061516e6c4bd8933ac5887f3f160"
+    },
+    {
+      "path": "crates/kerml-syntax/src/production/chart.rs",
+      "bytes": 8961,
+      "sha256": "f38220cbc02acc39856d61ec29fa93128416a44c46cf0c4f73a33cf2933385ff"
+    },
+    {
+      "path": "crates/kerml-syntax/src/production/generated.rs",
+      "bytes": 171947,
+      "sha256": "e8871299c4c94e3e2b99db069431d672fb0d7566cba14bb6630584a14c508acb"
+    },
+    {
+      "path": "crates/kerml-syntax/src/production/mod.rs",
+      "bytes": 9777,
+      "sha256": "42d6da74592222cec3612c6a716167eb1697557d2acf103bbe497e20734e5fb5"
+    },
+    {
+      "path": "crates/kerml-syntax/src/reconcile.rs",
+      "bytes": 6317,
+      "sha256": "148e3e66a5be99785a0247faf2df23ef9ca9d57684e184748852da0911b96649"
+    },
+    {
+      "path": "crates/kerml-syntax/tests/numeric_tokens.rs",
+      "bytes": 1506,
+      "sha256": "644319f7fdd9f121fdba2d7ff2341ea0a42cb9dd4f1a5803a8c13095f6a75bcb"
+    },
+    {
+      "path": "crates/kerml-syntax/tests/productions.rs",
+      "bytes": 6056,
+      "sha256": "233d10106ee57878d176f4b081268aa29582400cadcc3eec0710f04fffb47090"
+    },
+    {
+      "path": "crates/kerml-text/Cargo.toml",
+      "bytes": 529,
+      "sha256": "0d91684ae66ea55155c7abb73cc92c3afe4700c04390b59954840f486657d50e"
+    },
+    {
+      "path": "crates/kerml-text/examples/binding_manifest.rs",
+      "bytes": 2546,
+      "sha256": "2cb2f8f1882a37f674ad07843b409db187e5560c6f29431269409c04346bb8f2"
+    },
+    {
+      "path": "crates/kerml-text/examples/library_draft.rs",
+      "bytes": 3976,
+      "sha256": "933c382abdea93c7c1376700f909db13aacdc9a749ad35c1f309a55efff15a61"
+    },
+    {
+      "path": "crates/kerml-text/examples/library_elements.rs",
+      "bytes": 2045,
+      "sha256": "20011a1ebd896ab9503e95b1304057ea8692b7b1dead9e3e6e82b3b309d6881c"
+    },
+    {
+      "path": "crates/kerml-text/examples/library_obligations.rs",
+      "bytes": 13968,
+      "sha256": "939ecf3b17d4545e54b43e851dfd74f7a488fcf524ffe8c11f802a3fbb280aac"
+    },
+    {
+      "path": "crates/kerml-text/examples/library_quality.rs",
+      "bytes": 13834,
+      "sha256": "7f9c72529d012684ce8050da7f32d0c1e7c5e295efa4125cccfd4f766067807c"
+    },
+    {
+      "path": "crates/kerml-text/src/lib.rs",
+      "bytes": 2706,
+      "sha256": "f081874b0af143d07b0224a5845bb048eca78a8f7a0c1dca0bc233baeb2d420f"
+    },
+    {
+      "path": "crates/kerml-text/src/library/construction.rs",
+      "bytes": 33072,
+      "sha256": "12b8e553e2263aec83c13ba39a50a9e31e029a1a0ee8340640739d7186711d4f"
+    },
+    {
+      "path": "crates/kerml-text/src/library/mod.rs",
+      "bytes": 8752,
+      "sha256": "fd6ab0b440cc057db07882f694f04528fdbe5ae78d8db6bcba309ee64ffefc71"
+    },
+    {
+      "path": "crates/kerml-text/src/library/vocabulary.rs",
+      "bytes": 6518,
+      "sha256": "3b953aa75a931d0fbccd5be48a16cb069fbf9b919b41bf9c7ab9a97be3af380d"
+    },
+    {
+      "path": "crates/kerml-text/src/lowering.rs",
+      "bytes": 24718,
+      "sha256": "48bd187109013ccc4bf7e6e37cfb3e40d86aae5f5eeee5e441a97c584980bde4"
+    },
+    {
+      "path": "crates/kerml-text/src/project.rs",
+      "bytes": 12997,
+      "sha256": "cc4d9c7edd404cc52c550e006b15437716816f80802877f87f9479c25f6ef4ad"
+    },
+    {
+      "path": "crates/kerml-text/tests/equivalence.rs",
+      "bytes": 7513,
+      "sha256": "b3c610925de214f4bbb4e2b13af46e4f273becb5e2cea46326fa6c215e98cb63"
+    },
+    {
+      "path": "crates/kerml-text/tests/fixtures/editing.kerml",
+      "bytes": 14,
+      "sha256": "62c35c403af2898f57b16f428578e8a69f9e8e3a6e9f0ee0b7d615e45a7d47cf"
+    },
+    {
+      "path": "crates/kerml-text/tests/fixtures/equivalence.kerml",
+      "bytes": 131,
+      "sha256": "0207f47a692957626ba8b0b2166f2770fe573979f8e7392b6b66f64c71ac9510"
+    },
+    {
+      "path": "crates/kerml-text/tests/fixtures/recovery.kerml",
+      "bytes": 181,
+      "sha256": "a551ddc26e6665324e5e7a411a3a504b500a6dfbb9e3991486c8c39efaad42dc"
+    },
+    {
+      "path": "crates/kerml-text/tests/fixtures/references.kerml",
+      "bytes": 179,
+      "sha256": "10ec348fe68f24a109e33342995e9a502853db54a9083c55214aa9d420b3e6c6"
+    },
+    {
+      "path": "crates/kerml-text/tests/fixtures/trivia.kerml",
+      "bytes": 210,
+      "sha256": "3d935f85fad781d201e04d42995abc009cda15e83733229a7631e78f26fe396d"
+    },
+    {
+      "path": "crates/kerml-text/tests/fixtures/vertical.kerml",
+      "bytes": 384,
+      "sha256": "1dd0ea3b9e01a567ed448945361de2ed31f994d0e001450070f16c4ff1bb7510"
+    },
+    {
+      "path": "crates/kerml-text/tests/frontend.rs",
+      "bytes": 16709,
+      "sha256": "66df3a69ea61253ed4953fc8a318243055e51507dca3311aa6c1be91fa794dad"
+    },
+    {
+      "path": "crates/kerml-text/tests/library_construction.rs",
+      "bytes": 12540,
+      "sha256": "c7f87527d18bd714172bc9da2dde73c7d3a629f6780ef3bfdab889358ae9e8c0"
+    },
+    {
+      "path": "crates/kerml-text/tests/project.rs",
+      "bytes": 16054,
+      "sha256": "76c5c9d7a1825d4bafea0975f347487ec5c7ee99353fabf7ce56323329da68f2"
+    },
+    {
+      "path": "crates/kerml/Cargo.toml",
+      "bytes": 344,
+      "sha256": "7337c52d0c25e69bbc596ef4c08853a5338050572ed67e6c8c2603dd89f65caf"
+    },
+    {
+      "path": "crates/kerml/examples/profile_descriptors.rs",
+      "bytes": 1388,
+      "sha256": "c0b3ed4bbc61e541ac93deb666ead9ad68f13cc6e8d728594d97fc5439e933cf"
+    },
+    {
+      "path": "crates/kerml/src/generated/complete.rs",
+      "bytes": 625457,
+      "sha256": "005b880ddca192ffaca9ed5675985a9bbc97e423fdf8fc44ef94d30a10d85dfa"
+    },
+    {
+      "path": "crates/kerml/src/generated/root_core.rs",
+      "bytes": 366668,
+      "sha256": "9113a8e4f39e6d78e4c25a8d51d83861ebf3e60f079c71c72f2f027be2d3ab67"
+    },
+    {
+      "path": "crates/kerml/src/generated/root_core_views.rs",
+      "bytes": 379148,
+      "sha256": "ce1d2d306ade195fa43042c1614c5af771c5a87973f114f1ee0c7ab79602da08"
+    },
+    {
+      "path": "crates/kerml/src/generated/typed_views.rs",
+      "bytes": 1564665,
+      "sha256": "932fa2b8d80e5916232e95c734206118565905bac142a418a1f9d35d20c0a05f"
+    },
+    {
+      "path": "crates/kerml/src/lib.rs",
+      "bytes": 2626,
+      "sha256": "4b91d135b343c24ce08ee21e14469e7a6fe91995a5921d879dca0cb8799f6b2d"
+    },
+    {
+      "path": "crates/kerml/src/profiles.rs",
+      "bytes": 10807,
+      "sha256": "0b1a9148479953520f04b53d4fbf28c525a93d7a2be5a7f37f50b2ab6508e302"
+    },
+    {
+      "path": "crates/kerml/src/view.rs",
+      "bytes": 15924,
+      "sha256": "8b6eccc5f6e7417020e9e886a1ecb9bae1d79d308357be5fe82726bb5e3780fe"
+    },
+    {
+      "path": "crates/kerml/tests/descriptors.rs",
+      "bytes": 8623,
+      "sha256": "33dd463ec173faf1a4b2cecd27ec0ebf09e78e152f01319e537d2e3e01c01112"
+    },
+    {
+      "path": "crates/kerml/tests/profiles.rs",
+      "bytes": 6474,
+      "sha256": "6cbce00b3fda3616ea768b40dabec3ea82cca1090dd7ec7c67436ec7093d0f1e"
+    },
+    {
+      "path": "crates/kerml/tests/typed_views.rs",
+      "bytes": 16892,
+      "sha256": "adebe3365078d1284450b2d9e9e6c357f80a28168ec6e5076bff3144189aaacf"
+    },
+    {
+      "path": "crates/kernel/Cargo.toml",
+      "bytes": 308,
+      "sha256": "5f32c687b2a614b23988d622a09f893b4320f519d575856ffcbe8a9bd01383fd"
+    },
+    {
+      "path": "crates/kernel/src/association.rs",
+      "bytes": 6423,
+      "sha256": "c9fe4156493de0dd1de5d2a786811dfcce262dc2502096455ec4bc565b643c20"
+    },
+    {
+      "path": "crates/kernel/src/conformance.rs",
+      "bytes": 10538,
+      "sha256": "e10df9b237a889bf3fa6ab53a8d5f62d17acac3f2b83a99f2bf8cfe56396a636"
+    },
+    {
+      "path": "crates/kernel/src/derived.rs",
+      "bytes": 16318,
+      "sha256": "de1d2bab2dabd4e054d82b096a529a819b83b0f51d74a5318cc3928a4e5bbae7"
+    },
+    {
+      "path": "crates/kernel/src/ids.rs",
+      "bytes": 3801,
+      "sha256": "db5a5ed86d3a6aea5c6bc92c2ee35d9e10d8f1eecc7ce90bfc60d4f8794d07b0"
+    },
+    {
+      "path": "crates/kernel/src/lib.rs",
+      "bytes": 1807,
+      "sha256": "16edf8036e920898ee6c177a657bf3fbb850e1b645f1651121857b35126133bf"
+    },
+    {
+      "path": "crates/kernel/src/metamodel.rs",
+      "bytes": 46068,
+      "sha256": "471103793dc9f359010a43cb83b13c7f6591286379f9214d1dde685ea51a4e9b"
+    },
+    {
+      "path": "crates/kernel/src/model.rs",
+      "bytes": 51125,
+      "sha256": "65175093eea3e7fb3cb9b051d94dd9c594136afb9661fda6dd42d9e12eb757ba"
+    },
+    {
+      "path": "crates/kernel/src/numeric.rs",
+      "bytes": 4551,
+      "sha256": "6f2480711fa0a54bd6d2be4d81e6b4b3469bca7f9fa183e5af5f9f6a2565b558"
+    },
+    {
+      "path": "crates/kernel/src/provenance.rs",
+      "bytes": 3686,
+      "sha256": "610430bff22a09a3a0cf780564516c591365e12f1fca2721a032376ea5a77824"
+    },
+    {
+      "path": "crates/kernel/src/value.rs",
+      "bytes": 1494,
+      "sha256": "c1335d67916f5a5ce5984be6be83631270baa5dfc552659128f3d36aff8dad80"
+    },
+    {
+      "path": "crates/kernel/tests/association_slots.rs",
+      "bytes": 4211,
+      "sha256": "aa4200c34654e372051b3646fa28955abd3f0983f02b628aa971b87eb3911cd1"
+    },
+    {
+      "path": "crates/kernel/tests/common/mod.rs",
+      "bytes": 8972,
+      "sha256": "7c55dc1fce0aee596cab000b1ceb810f40c77e5554122efa5c85489cf9134ca3"
+    },
+    {
+      "path": "crates/kernel/tests/construction.rs",
+      "bytes": 2468,
+      "sha256": "b1700d2f3e4e7af1a450226dc1caccb0351548ff7aed1ec137836f85ba4792dd"
+    },
+    {
+      "path": "crates/kernel/tests/derivations.rs",
+      "bytes": 13752,
+      "sha256": "9bb9283978e6dc57e7c86becb2f2cb8c418560212e2882ba23816c01dbf251f8"
+    },
+    {
+      "path": "crates/kernel/tests/foundation_v3.rs",
+      "bytes": 20087,
+      "sha256": "f1fc7e4d6c0c5392e5ec53eee7d69b01642a6e10f02d0b7577333f33e9515e6d"
+    },
+    {
+      "path": "crates/kernel/tests/metamodel.rs",
+      "bytes": 16343,
+      "sha256": "73111ecf084ccc5c417f78949e3114b829a89e1d65b9b5d8f91aace3b8708c12"
+    },
+    {
+      "path": "crates/kernel/tests/snapshots.rs",
+      "bytes": 14698,
+      "sha256": "c5c342431b1ae5ae95b5fb699a07db72e09bb359b3ebde607374617e4eeed43b"
+    },
+    {
+      "path": "crates/model/Cargo.toml",
+      "bytes": 269,
+      "sha256": "1738ae3646b241442e4e521dd7cc0991f2495d7925c848d21c02d71d44636ce4"
+    },
+    {
+      "path": "crates/model/src/lib.rs",
+      "bytes": 6422,
+      "sha256": "9c62ecb29f1c5ab8bd7860b0b7c024cd468333258420ac344098948a5a3ce6f7"
+    },
+    {
+      "path": "crates/model/src/work.rs",
+      "bytes": 2102,
+      "sha256": "13cdfaa1d95d2c201263f315d1afc5ae4ef3675734bac79b6c3187a56639b2f3"
+    },
+    {
+      "path": "crates/semantics/Cargo.toml",
+      "bytes": 277,
+      "sha256": "965a3a920278b8539a98c6bd7a83870eb709f9c23a2e8a8de7c4ea8a412478a8"
+    },
+    {
+      "path": "crates/semantics/build.rs",
+      "bytes": 3135,
+      "sha256": "f2ffa497a22c0016e59a02e7f270fd42b451ccf8d43e514b6ebff572a6cfb94e"
+    },
+    {
+      "path": "crates/semantics/src/expansion.rs",
+      "bytes": 14436,
+      "sha256": "bcb1ae58e3602c3e0c09fdcaefa4db0f0f4ff70e07e77182a67c3e8ed22c4420"
+    },
+    {
+      "path": "crates/semantics/src/lib.rs",
+      "bytes": 27284,
+      "sha256": "648d46cf1eb1f258d32f10002e98f6eabc83d80bbb2b9a1d82fbbb22c68470c7"
+    },
+    {
+      "path": "crates/server/Cargo.toml",
+      "bytes": 473,
+      "sha256": "e09222fdf0e8a7fa25546571c25d511579a1f3e4c1afd3fb58c22e692db93a19"
+    },
+    {
+      "path": "crates/server/src/jobs.rs",
+      "bytes": 3656,
+      "sha256": "fb2490b49a9faf8993484bec95e2678d607e6e7c344665995440b0267ffafad2"
+    },
+    {
+      "path": "crates/server/src/main.rs",
+      "bytes": 11338,
+      "sha256": "6f524bd2b56f59697e7992246b212b1c1f38bf1bd610907eeda762b56f967bb5"
+    },
+    {
+      "path": "crates/server/src/model_api.rs",
+      "bytes": 8167,
+      "sha256": "1cc60c108deaeb10a12f5e2e993e3d2601a7f92640c1e222cb6ed848b5805322"
+    },
+    {
+      "path": "crates/simulation/Cargo.toml",
+      "bytes": 261,
+      "sha256": "e5cf18e15e5118055ad29b5928335a8561d3ee0baada8f009e2dfc80b04b9b3e"
+    },
+    {
+      "path": "crates/simulation/src/lib.rs",
+      "bytes": 37101,
+      "sha256": "fe69df85237ac33e8f8840055fb65e332b97e1a0a5a8e4d95cf70b484bbafb32"
+    },
+    {
+      "path": "crates/simulation/tests/contract.rs",
+      "bytes": 10793,
+      "sha256": "84aac28041bda8f5fcd6f4fa469be08d02252952a699478e0957e48999228984"
+    },
+    {
+      "path": "crates/standard-libraries/Cargo.toml",
+      "bytes": 470,
+      "sha256": "8bc4d248064577de4b2ae9233858aa5de180cbed11023f93618379d152568098"
+    },
+    {
+      "path": "crates/standard-libraries/examples/audit.rs",
+      "bytes": 9453,
+      "sha256": "e46c39672da518e644b41d0753774c4a0e4bf2ee1e1668651dcefe921316b8e5"
+    },
+    {
+      "path": "crates/standard-libraries/examples/grammar_inputs.rs",
+      "bytes": 1749,
+      "sha256": "df63fd25b1e02717a22300492bc677f04ab26d5227baac6e6710fff0a0e02661"
+    },
+    {
+      "path": "crates/standard-libraries/examples/syntax_audit.rs",
+      "bytes": 4116,
+      "sha256": "cc1b5d649f449792fe26fbd0ff761c720fcefd539216791d59445008930f4c8e"
+    },
+    {
+      "path": "crates/standard-libraries/src/lib.rs",
+      "bytes": 21872,
+      "sha256": "a535d4ffb5de3c19a05e75489d2feb45bbdb6035ca5b8505caab1034311ddf41"
+    },
+    {
+      "path": "crates/standard-libraries/tests/corpus.rs",
+      "bytes": 1984,
+      "sha256": "e4b67bdbec4aa3aab939a5e63a2a6c1bf4795a23bad39a7149939b6d0000e46e"
+    },
+    {
+      "path": "crates/standard-libraries/tests/pinned.rs",
+      "bytes": 6525,
+      "sha256": "3b8093129ec61def4f014616279b3adaefe6506296e614a114ebc34d44a31704"
+    },
+    {
+      "path": "crates/syntax/Cargo.toml",
+      "bytes": 198,
+      "sha256": "ea609a0bc4cccd47117e9d66c21e638666c3028b594dc56cc80df76fb87a5444"
+    },
+    {
+      "path": "crates/syntax/src/lib.rs",
+      "bytes": 31100,
+      "sha256": "ebc6a65997829f7016e114438db010e66df9a1495b064d1f1515836c999aee48"
+    },
+    {
+      "path": "crates/sysml/Cargo.toml",
+      "bytes": 267,
+      "sha256": "8ace8232b19d08a0368bb7f54d3c6d27d53cae2588fe1d3098173ca0d289a0ae"
+    },
+    {
+      "path": "crates/sysml/src/generated/complete.rs",
+      "bytes": 834660,
+      "sha256": "b81a3bedbdd153a6fe4c86863b041cb64ab759191d34eae98add631295b488fe"
+    },
+    {
+      "path": "crates/sysml/src/generated/typed_views.rs",
+      "bytes": 3135938,
+      "sha256": "fffbcca0a58368809ad6cc96360844b5cb2c23761f7eca5a835642ae8247a95d"
+    },
+    {
+      "path": "crates/sysml/src/lib.rs",
+      "bytes": 1501,
+      "sha256": "a5b81890f74437f9bb38667298a5a1446367b14dda4f58fad9e623d20aa9e721"
+    },
+    {
+      "path": "crates/sysml/tests/foundation.rs",
+      "bytes": 6510,
+      "sha256": "772b01c714a76feda36676db591ea0a080a66e6f227d41e3527d70eef385ac29"
+    },
+    {
+      "path": "crates/workspace/Cargo.toml",
+      "bytes": 305,
+      "sha256": "ea38936d9a11d60452983f86d2efca818b14c8caf6a4f49c5b92088644562a29"
+    },
+    {
+      "path": "crates/workspace/src/lib.rs",
+      "bytes": 29492,
+      "sha256": "30d643ce3d3d66ec8d0acd6e56d559a82fcc6e39b74515a2386b5572017cc99d"
+    },
+    {
+      "path": "crates/workspace/tests/editing.rs",
+      "bytes": 5943,
+      "sha256": "6a2c3062de2a48f4d68057ffbd4caa2e897f7b91e9ef18fc9836cd9c709703a0"
+    },
+    {
+      "path": "docs/adr/0001-semantic-kernel-v2.md",
+      "bytes": 8967,
+      "sha256": "7912bda7bd5881d0738ee947291ee71f647f63bf92aa4d26d2cb9a6962ec2eb7"
+    },
+    {
+      "path": "docs/adr/0002-normative-metamodel-pipeline.md",
+      "bytes": 12093,
+      "sha256": "30b09346299b4eb469e77d153116cb2889bdc5cb5cacc2c5fbe6d31bd4cf312e"
+    },
+    {
+      "path": "docs/adr/0003-normative-root-core-descriptors.md",
+      "bytes": 15858,
+      "sha256": "a97c4f33a56d563941313578e504dd6e93c315a282a0b35312e5e0454837d0ab"
+    },
+    {
+      "path": "docs/adr/0004-kerml-typed-views.md",
+      "bytes": 10205,
+      "sha256": "b045fd4e1fecdf342626b2980d4cf3d042123aa8dbc5c503577510d106e98031"
+    },
+    {
+      "path": "docs/adr/0005-kerml-semantic-query-foundation.md",
+      "bytes": 11666,
+      "sha256": "490872dc28d92c840cb8912fb9114b2a27698b076c3c227370b24bb92118106b"
+    },
+    {
+      "path": "docs/adr/0006-lossless-kerml-text-frontend.md",
+      "bytes": 8420,
+      "sha256": "fb9f9f1e0f675ecca6f1178e3725214f6f5165c1a6b9c40e28b2e8cd986baaa3"
+    },
+    {
+      "path": "docs/adr/0007-multiple-metamodel-baselines.md",
+      "bytes": 2873,
+      "sha256": "40817112a3ab6e23e19a6931a0ce473e636f604c4792def7fdfb8014ceaf1fe8"
+    },
+    {
+      "path": "docs/adr/0008-property-subsetting-cycle-semantics.md",
+      "bytes": 9102,
+      "sha256": "04eb1504d79ceab9ae3f034a4f542d75bc81d94cb80c70fd862561a7dc4232b5"
+    },
+    {
+      "path": "docs/adr/0009-property-redefinition-context.md",
+      "bytes": 8862,
+      "sha256": "0a9c4661599786e3d049e346425db57d5f6bfdcb15a888923f95c497c40e9735"
+    },
+    {
+      "path": "docs/adr/0010-property-redefinition-validity.md",
+      "bytes": 11070,
+      "sha256": "dedd27539907a0c1a2f134580c37d2dc0655bde6d2aff6aadde3c1db4d0cdd1d"
+    },
+    {
+      "path": "docs/adr/0011-structural-registration-vs-metamodel-conformance.md",
+      "bytes": 7541,
+      "sha256": "dbe613e8a75e7ae23c9f81d4e70f263a1b834b4e20aff5f096f94a2cdb7521c7"
+    },
+    {
+      "path": "docs/adr/0012-sysml-semantic-layer.md",
+      "bytes": 5188,
+      "sha256": "233cdc4670b0836cd3a7ca2faba3ce16fd35c94614812b526e036f352717f75a"
+    },
+    {
+      "path": "docs/adr/0013-kerml-library-grammar.md",
+      "bytes": 8300,
+      "sha256": "e034f1c53c769d0b1518300541d5367390f05e83905ff37855892c0e657eccc5"
+    },
+    {
+      "path": "docs/adr/0014-operational-standard-errata-profiles.md",
+      "bytes": 3465,
+      "sha256": "650b0c709c1bd2783e37a0fc61ab11b65a5372215d4bd8278af203790f238492"
+    },
+    {
+      "path": "docs/architecture.md",
+      "bytes": 19781,
+      "sha256": "a0fd5c6ab85a182a7066a5606a08217ca8cc85ede1f2e3a506493bed27c6e0f1"
+    },
+    {
+      "path": "docs/dependencies.md",
+      "bytes": 4680,
+      "sha256": "ee449039eb231aa0dac65f303b0fe28e1cf22bbc510cf03db4ef3dc6622f2d3d"
+    },
+    {
+      "path": "docs/kerml-operational-library-publication-authority-conflict.md",
+      "bytes": 3924,
+      "sha256": "2f241d90db775248e55ecd5b2874fb79f7c5f811bca172b7e49a849808f68288"
+    },
+    {
+      "path": "docs/kerml-pinned-objects-authority-conflict.md",
+      "bytes": 4627,
+      "sha256": "4b4f963b5d0a00bb8d57cea23ea834e168d676bfe5428e05968a6b510104e0fd"
+    },
+    {
+      "path": "docs/kerml-standard-library-foundation-review.md",
+      "bytes": 26572,
+      "sha256": "434661c8a90a491759a0eb26090b65686865ee87c2f15392adc5043f0eeb70ad"
+    },
+    {
+      "path": "docs/kerml-standard-library-publication-authority-conflict.md",
+      "bytes": 5932,
+      "sha256": "7c33932f8753e5886fb4cf1bdb7225807d9a71c78265b5e84e11d69491c63099"
+    },
+    {
+      "path": "docs/kerml-text.md",
+      "bytes": 4846,
+      "sha256": "56b1721c847a3078af3de5e01d8166e9c38d5071e6232efdfcbd2c4ac805ba89"
+    },
+    {
+      "path": "docs/kerml-v4-structural-rule-review.md",
+      "bytes": 4239,
+      "sha256": "312dc40f32af9e6eff8b86b819a402f829f7e18c5ef16e3c94b38cb8989926aa"
+    },
+    {
+      "path": "docs/language-core-foundation-review.md",
+      "bytes": 20832,
+      "sha256": "12384e2faf02616ee9246153e0b96b946ebe2e84fed1fd7537de2980f1ec6cb1"
+    },
+    {
+      "path": "docs/language-core-runtime-contract.md",
+      "bytes": 9261,
+      "sha256": "0894758ef7f218837fcc0590c2c8910febe347e6751aefdcd8dd69e3c53b8009"
+    },
+    {
+      "path": "docs/operational-kerml-profile.md",
+      "bytes": 4371,
+      "sha256": "d25df7cca2777bc87c9c667949249f346db62192689cacfbd96e66574a7f48b5"
+    },
+    {
+      "path": "docs/pinned-library-source-contract.md",
+      "bytes": 3444,
+      "sha256": "b868efc6f1fbfcc3cde1fa104b09a3ced00d1dcfdec39879ed2de6a503235f35"
+    },
+    {
+      "path": "docs/semantic-kernel.md",
+      "bytes": 14353,
+      "sha256": "c98ad48ee9fb0c9d5ac2c00f54cdc36844b0bc3edb2b8374aaba19c86adb82fb"
+    },
+    {
+      "path": "docs/source-project-contract.md",
+      "bytes": 2862,
+      "sha256": "6022782c94bf54a1639e9051c75ef93796f3ac25f2a11f674037230cb4d553d4"
+    },
+    {
+      "path": "docs/standards-discrepancies.md",
+      "bytes": 6914,
+      "sha256": "36b02a7daac46f24356d7c05d00bc4d45395a510957b547be8995cbcab02f770"
+    },
+    {
+      "path": "docs/sysml-semantic-foundation-review.md",
+      "bytes": 7615,
+      "sha256": "f8fb04ccaae33fe3fc5a79c5e63fda5e960f6749292e36dd6de7edbd0a75415c"
+    },
+    {
+      "path": "docs/sysml-v2-runtime-blocker.md",
+      "bytes": 7102,
+      "sha256": "7ffd03912cb880960bf2fd13cf2b8850f9b5258d14af7d72b4e96bd3b0bf3bd3"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 49312,
+      "sha256": "7b87a7e558512fd6132378a523bf946d75cc010a541496b9dd70ca78c8dbb6fc"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1114,
+      "sha256": "b519ffe4d345ca0aa1f912cc649ce26e7139cd90e66040003705a3d38878e82c"
+    },
+    {
+      "path": "standards/kerml-1.0-operational-errata-v2.json",
+      "bytes": 1924,
+      "sha256": "6744a4e589ad3878c2b74c8760d7714500a12f3584f25cfe1175cdd58f02a27d"
+    },
+    {
+      "path": "standards/kerml-1.0-operational-errata.json",
+      "bytes": 4478,
+      "sha256": "7614fec2b75e14e7181d7e8a0d474cbd3000f53ca3470d8d9814f4b40fd82994"
+    },
+    {
+      "path": "standards/kerml-standard-bindings.json",
+      "bytes": 17671,
+      "sha256": "e085c983472147b1a044467f2cdfe7d9e6362a6e5f9353de0d9810373f434567"
+    },
+    {
+      "path": "standards/v2-coverage.json",
+      "bytes": 23410,
+      "sha256": "4a1fcffb12db93c390f78d79bdd87373c9c715dfc2d8ed3897b02c4efb16a52e"
+    },
+    {
+      "path": "tools/metamodel-gen/Cargo.toml",
+      "bytes": 449,
+      "sha256": "733051a204b2fae6a64f79aeb39da8793c5dcff323fa34d60b4ea202750ea4cb"
+    },
+    {
+      "path": "tools/metamodel-gen/README.md",
+      "bytes": 4505,
+      "sha256": "9035890a2f22864beb4fb0ac4588087023067345740ffabbe1c9c0c59f180750"
+    },
+    {
+      "path": "tools/metamodel-gen/src/baseline.rs",
+      "bytes": 3409,
+      "sha256": "8b6b951b990e95c988dabd209a10f63ebcf2da30d6ae8eb4b91d9e2e378775ec"
+    },
+    {
+      "path": "tools/metamodel-gen/src/baseline_diagnostics.rs",
+      "bytes": 6651,
+      "sha256": "38c76709877e431ae200d3c127478d5f2e6d29407312b4e8f2027530948c26b1"
+    },
+    {
+      "path": "tools/metamodel-gen/src/closure_audit.rs",
+      "bytes": 8081,
+      "sha256": "e2c2bbaa0d094e41f68a8d938d590d93283cd5af322c94da4b53aecfce57a013"
+    },
+    {
+      "path": "tools/metamodel-gen/src/cross_check.rs",
+      "bytes": 9791,
+      "sha256": "8ef43fd0d37b27edcabbc08e75b89f99152a024aeddf6e3f90dc56bfa96ee92e"
+    },
+    {
+      "path": "tools/metamodel-gen/src/descriptors.rs",
+      "bytes": 26946,
+      "sha256": "7706d7bc270b816c175072a6167dd6c5df12aa2b269ff88800530606cb67cc40"
+    },
+    {
+      "path": "tools/metamodel-gen/src/full_audit.rs",
+      "bytes": 18910,
+      "sha256": "39f3a98c27a6e74a41ff695ebb38fea5f7bbef0c12ddfed27c208b69663702e3"
+    },
+    {
+      "path": "tools/metamodel-gen/src/graph.rs",
+      "bytes": 3012,
+      "sha256": "17345fa64715dbb7f8c180fb8f9cadde1cb112528ba0f21c076fd5a70a074644"
+    },
+    {
+      "path": "tools/metamodel-gen/src/ir.rs",
+      "bytes": 5389,
+      "sha256": "315706fb0770196ec4a780e3d00733e05050fbb5d487f0321269944ad5dcbe76"
+    },
+    {
+      "path": "tools/metamodel-gen/src/lib.rs",
+      "bytes": 866,
+      "sha256": "fe83d4497ad83aa9dbc2f3387f0f5dd905f83ffba4c17d034f7367c0ab87587f"
+    },
+    {
+      "path": "tools/metamodel-gen/src/main.rs",
+      "bytes": 8695,
+      "sha256": "281d996a49b125c8ff7e19c75958ccc42534ee5ccdd38b49fd26a928c5a85cd2"
+    },
+    {
+      "path": "tools/metamodel-gen/src/pipeline.rs",
+      "bytes": 6988,
+      "sha256": "7774d133ff2cde75fc32e27a5772b1eb67d52a56969566f4481a8aca45335b06"
+    },
+    {
+      "path": "tools/metamodel-gen/src/profile.rs",
+      "bytes": 10419,
+      "sha256": "384b10c8d4ff590dd7bd566e2fb67c5ada004327ddbf7c5ce5010f4f06fab9f4"
+    },
+    {
+      "path": "tools/metamodel-gen/src/typed_views.rs",
+      "bytes": 10638,
+      "sha256": "2c8e8e2a2029bef1c0dc8494d9fa7453e1bac8547091fbbe59b6abcf15e1e4d2"
+    },
+    {
+      "path": "tools/metamodel-gen/src/xmi.rs",
+      "bytes": 16918,
+      "sha256": "1950680e506649c454e0f4c571eb9ae77e54c77a05d3a4bd9faa8138f3870b33"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/descriptors.rs",
+      "bytes": 16112,
+      "sha256": "d028bf2ccf0f950ef340ffd19b5bff5e9b4b0401a918f0f9b87ed605df900ad9"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/fixtures/cross-check.json",
+      "bytes": 452,
+      "sha256": "857027a05cb9b526280e82a90e0f77606e56019af192ad2f8852d073b6c21ca1"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/fixtures/cross-check.xmi",
+      "bytes": 609,
+      "sha256": "230bb013d6b2c6542740e22ceeba129713ad1d21e1146e381ce28bba9fb51eaf"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/fixtures/foundation.xmi",
+      "bytes": 2684,
+      "sha256": "18df319e02c27af16d8bc2b39083b04618c455e342e33911c0be5e44a2829dab"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/fixtures/mismatch.json",
+      "bytes": 467,
+      "sha256": "9949849a80a100ed412434a2b044ba7cbc081dcbad4b783e2f3598ee4b7b4ccc"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/full_audit.rs",
+      "bytes": 5331,
+      "sha256": "dba7e2c5849d84a33c0f6764501c5518d12dda74d9f85cb037c062d0e409074d"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/importer.rs",
+      "bytes": 8062,
+      "sha256": "c5a6a29f08136debd2dd68e79c962d443fe6798bd761b4b3717b3e9ef8968a55"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/multiple_metamodels.rs",
+      "bytes": 7054,
+      "sha256": "62f82405691c58f34495b18bebb6b4caebcccf956a308f47ff83a2bfa0549edf"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/normative.rs",
+      "bytes": 4398,
+      "sha256": "4795ddf3344d333222dae771f61721295f0ab0249b328cd36f72862f55b1c4e9"
+    },
+    {
+      "path": "tools/metamodel-gen/tests/sysml_closure.rs",
+      "bytes": 9211,
+      "sha256": "b0cb83ad5c817190f75a55a1f0975ffafab62a58f204d7a4939b5d02af20688d"
+    }
+  ]
+}

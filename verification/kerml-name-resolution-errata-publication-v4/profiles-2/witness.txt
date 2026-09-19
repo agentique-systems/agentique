@@ -1,0 +1,12 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.32s
+     Running tests\participant_contract.rs (target\debug\deps\participant_contract-f76081ff282a99d9.exe)
+
+running 2 tests
+Exact participantFeature mapping rejected: Multiplicity { element: ElementId(3), property: PropertyId(146824676417975850677662638074592745844), required: Multiplicity { lower: 1, upper: Some(1) }, actual: 2 }
+test inherited_end_identity_cannot_satisfy_the_pinned_participant_opposite_bound ... ok
+Agentique operational errata profile: original inherited identities, no participant schema obligation or fabricated links; strict Snapshot accepted
+test operational_profile_publishes_shared_inherited_ends_without_participant_facts ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+

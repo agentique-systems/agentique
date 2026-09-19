@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-text --test project authored_redefinition_profile_matrix -- --nocapture",
+    "started": "2026-09-19T13:28:09.229Z",
+    "durationMs": 12627,
+    "exitCode": 0,
+    "signal": null,
+    "log": "authored-profile-matrix.txt"
+  }
+]

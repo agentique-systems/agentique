@@ -1,0 +1,199 @@
+warning: in the working copy of 'crates/kerml-semantics/tests/foundation.rs', CRLF will be replaced by LF the next time Git touches it
+standards/kerml-1.0-operational-errata.json:1: trailing whitespace.
++{
+standards/kerml-1.0-operational-errata.json:2: trailing whitespace.
++  "format": "agentique-reviewed-descriptor-errata/1",
+standards/kerml-1.0-operational-errata.json:3: trailing whitespace.
++  "profile_id": "agentique-kerml-1.0-operational/1",
+standards/kerml-1.0-operational-errata.json:4: trailing whitespace.
++  "published_profile_id": "omg-kerml-1.0-published/1",
+standards/kerml-1.0-operational-errata.json:5: trailing whitespace.
++  "entries": [
+standards/kerml-1.0-operational-errata.json:6: trailing whitespace.
++    {
+standards/kerml-1.0-operational-errata.json:7: trailing whitespace.
++      "agentique_errata_id": "AGQ-KERML10-001",
+standards/kerml-1.0-operational-errata.json:8: trailing whitespace.
++      "official_issue_key": "KERML11-81",
+standards/kerml-1.0-operational-errata.json:9: trailing whitespace.
++      "issue_url": "https://issues.omg.org/issues/KERML11-81",
+standards/kerml-1.0-operational-errata.json:10: trailing whitespace.
++      "issue_title": "Abstract syntax XMI contains spurious associations",
+standards/kerml-1.0-operational-errata.json:11: trailing whitespace.
++      "issue_status_at_review": "open",
+standards/kerml-1.0-operational-errata.json:12: trailing whitespace.
++      "reviewed_at": "2026-09-19",
+standards/kerml-1.0-operational-errata.json:13: trailing whitespace.
++      "specification": "KerML",
+standards/kerml-1.0-operational-errata.json:14: trailing whitespace.
++      "version": "1.0",
+standards/kerml-1.0-operational-errata.json:15: trailing whitespace.
++      "artifact_uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+standards/kerml-1.0-operational-errata.json:16: trailing whitespace.
++      "artifact_sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+standards/kerml-1.0-operational-errata.json:17: trailing whitespace.
++      "operation": "delete-associations-and-exclusive-owned-descriptors",
+standards/kerml-1.0-operational-errata.json:18: trailing whitespace.
++      "descriptors": [
+standards/kerml-1.0-operational-errata.json:19: trailing whitespace.
++        {
+standards/kerml-1.0-operational-errata.json:20: trailing whitespace.
++          "kind": "Property",
+standards/kerml-1.0-operational-errata.json:21: trailing whitespace.
++          "external_id": "Kernel-Interactions-A_participantFeature_Interaction-",
+standards/kerml-1.0-operational-errata.json:22: trailing whitespace.
++          "descriptor_id": "6e756772-5da9-5764-8b99-ac075c73d974",
+standards/kerml-1.0-operational-errata.json:23: trailing whitespace.
++          "byte_range": [
+standards/kerml-1.0-operational-errata.json:24: trailing whitespace.
++            230032,
+standards/kerml-1.0-operational-errata.json:25: trailing whitespace.
++            230315
+standards/kerml-1.0-operational-errata.json:26: trailing whitespace.
++          ]
+standards/kerml-1.0-operational-errata.json:27: trailing whitespace.
++        },
+standards/kerml-1.0-operational-errata.json:28: trailing whitespace.
++        {
+standards/kerml-1.0-operational-errata.json:29: trailing whitespace.
++          "kind": "Property",
+standards/kerml-1.0-operational-errata.json:30: trailing whitespace.
++          "external_id": "Kernel-Interactions-A_participantFeature_Interaction-participantFeature",
+standards/kerml-1.0-operational-errata.json:31: trailing whitespace.
++          "descriptor_id": "7e19278d-53e5-5cb0-ad3b-91a380383ff9",
+standards/kerml-1.0-operational-errata.json:32: trailing whitespace.
++          "byte_range": [
+standards/kerml-1.0-operational-errata.json:33: trailing whitespace.
++            230326,
+standards/kerml-1.0-operational-errata.json:34: trailing whitespace.
++            231197
+standards/kerml-1.0-operational-errata.json:35: trailing whitespace.
++          ]
+standards/kerml-1.0-operational-errata.json:36: trailing whitespace.
++        },
+standards/kerml-1.0-operational-errata.json:37: trailing whitespace.
++        {
+standards/kerml-1.0-operational-errata.json:38: trailing whitespace.
++          "kind": "Property",
+standards/kerml-1.0-operational-errata.json:39: trailing whitespace.
++          "external_id": "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+standards/kerml-1.0-operational-errata.json:40: trailing whitespace.
++          "descriptor_id": "b26d54f0-2b81-520b-ab0f-fc1ca39f068e",
+standards/kerml-1.0-operational-errata.json:41: trailing whitespace.
++          "byte_range": [
+standards/kerml-1.0-operational-errata.json:42: trailing whitespace.
++            303187,
+standards/kerml-1.0-operational-errata.json:43: trailing whitespace.
++            303938
+standards/kerml-1.0-operational-errata.json:44: trailing whitespace.
++          ]
+standards/kerml-1.0-operational-errata.json:45: trailing whitespace.
++        },
+standards/kerml-1.0-operational-errata.json:46: trailing whitespace.
++        {
+standards/kerml-1.0-operational-errata.json:47: trailing whitespace.
++          "kind": "Property",
+standards/kerml-1.0-operational-errata.json:48: trailing whitespace.
++          "external_id": "Kernel-Connectors-A_participantFeature_Association-",
+standards/kerml-1.0-operational-errata.json:49: trailing whitespace.
++          "descriptor_id": "ed11f4a3-0795-5d6a-b391-02252ee0e096",
+standards/kerml-1.0-operational-errata.json:50: trailing whitespace.
++          "byte_range": [
+standards/kerml-1.0-operational-errata.json:51: trailing whitespace.
++            302897,
+standards/kerml-1.0-operational-errata.json:52: trailing whitespace.
++            303176
+standards/kerml-1.0-operational-errata.json:53: trailing whitespace.
++          ]
+standards/kerml-1.0-operational-errata.json:54: trailing whitespace.
++        },
+standards/kerml-1.0-operational-errata.json:55: trailing whitespace.
++        {
+standards/kerml-1.0-operational-errata.json:56: trailing whitespace.
++          "kind": "Association",
+standards/kerml-1.0-operational-errata.json:57: trailing whitespace.
++          "external_id": "Kernel-Connectors-A_participantFeature_Association",
+standards/kerml-1.0-operational-errata.json:58: trailing whitespace.
++          "descriptor_id": "6b53ef06-3352-5d90-a0e3-37567f9b284f",
+standards/kerml-1.0-operational-errata.json:59: trailing whitespace.
++          "byte_range": [
+standards/kerml-1.0-operational-errata.json:60: trailing whitespace.
++            302437,
+standards/kerml-1.0-operational-errata.json:61: trailing whitespace.
++            303965
+standards/kerml-1.0-operational-errata.json:62: trailing whitespace.
++          ]
+standards/kerml-1.0-operational-errata.json:63: trailing whitespace.
++        },
+standards/kerml-1.0-operational-errata.json:64: trailing whitespace.
++        {
+standards/kerml-1.0-operational-errata.json:65: trailing whitespace.
++          "kind": "Association",
+standards/kerml-1.0-operational-errata.json:66: trailing whitespace.
++          "external_id": "Kernel-Interactions-A_participantFeature_Interaction",
+standards/kerml-1.0-operational-errata.json:67: trailing whitespace.
++          "descriptor_id": "91f4b58f-fd94-516a-8aa9-e47ac23bbd62",
+standards/kerml-1.0-operational-errata.json:68: trailing whitespace.
++          "byte_range": [
+standards/kerml-1.0-operational-errata.json:69: trailing whitespace.
++            229264,
+standards/kerml-1.0-operational-errata.json:70: trailing whitespace.
++            231224
+standards/kerml-1.0-operational-errata.json:71: trailing whitespace.
++          ]
+standards/kerml-1.0-operational-errata.json:72: trailing whitespace.
++        }
+standards/kerml-1.0-operational-errata.json:73: trailing whitespace.
++      ],
+standards/kerml-1.0-operational-errata.json:74: trailing whitespace.
++      "xml_owned_closure": [
+standards/kerml-1.0-operational-errata.json:75: trailing whitespace.
++        "Kernel-Connectors-A_participantFeature_Association",
+standards/kerml-1.0-operational-errata.json:76: trailing whitespace.
++        "Kernel-Connectors-A_participantFeature_Association-",
+standards/kerml-1.0-operational-errata.json:77: trailing whitespace.
++        "Kernel-Connectors-A_participantFeature_Association-participantFeature",
+standards/kerml-1.0-operational-errata.json:78: trailing whitespace.
++        "Kernel-Connectors-A_participantFeature_Association-participantFeature-lowerValue",
+standards/kerml-1.0-operational-errata.json:79: trailing whitespace.
++        "Kernel-Connectors-A_participantFeature_Association-participantFeature-upperValue",
+standards/kerml-1.0-operational-errata.json:80: trailing whitespace.
++        "Kernel-Interactions-A_participantFeature_Interaction",
+standards/kerml-1.0-operational-errata.json:81: trailing whitespace.
++        "Kernel-Interactions-A_participantFeature_Interaction-",
+standards/kerml-1.0-operational-errata.json:82: trailing whitespace.
++        "Kernel-Interactions-A_participantFeature_Interaction-_generalization.Kernel-Connectors-A_participantFeature_Association",
+standards/kerml-1.0-operational-errata.json:83: trailing whitespace.
++        "Kernel-Interactions-A_participantFeature_Interaction-participantFeature",
+standards/kerml-1.0-operational-errata.json:84: trailing whitespace.
++        "Kernel-Interactions-A_participantFeature_Interaction-participantFeature-lowerValue",
+standards/kerml-1.0-operational-errata.json:85: trailing whitespace.
++        "Kernel-Interactions-A_participantFeature_Interaction-participantFeature-upperValue"
+standards/kerml-1.0-operational-errata.json:86: trailing whitespace.
++      ],
+standards/kerml-1.0-operational-errata.json:87: trailing whitespace.
++      "external_incoming_references": [],
+standards/kerml-1.0-operational-errata.json:88: trailing whitespace.
++      "rationale": "The two obsolete associations own both ends; their only incoming XMI references are internal to this exact deletion closure. No class feature is removed or replaced.",
+standards/kerml-1.0-operational-errata.json:89: trailing whitespace.
++      "reviewed_disposition": "Approved by explicit Agentique project authority as an operational interpretation informed by official OMG evidence. Not an adopted KerML 1.0 erratum. No KerML 1.1 normative baseline.",
+standards/kerml-1.0-operational-errata.json:90: trailing whitespace.
++      "evidence_references": [
+standards/kerml-1.0-operational-errata.json:91: trailing whitespace.
++        "verification/kerml-operational-errata-publication-v3/authority-evidence.json",
+standards/kerml-1.0-operational-errata.json:92: trailing whitespace.
++        "verification/kerml-operational-errata-publication-v3/KERML11-81.html",
+standards/kerml-1.0-operational-errata.json:93: trailing whitespace.
++        "verification/kerml-operational-errata-publication-v3/KERML11-current.html",
+standards/kerml-1.0-operational-errata.json:94: trailing whitespace.
++        "verification/kerml-operational-errata-publication-v3/release-2026-05.json",
+standards/kerml-1.0-operational-errata.json:95: trailing whitespace.
++        "docs/kerml-standard-library-publication-authority-conflict.md"
+standards/kerml-1.0-operational-errata.json:96: trailing whitespace.
++      ]
+standards/kerml-1.0-operational-errata.json:97: trailing whitespace.
++    }
+standards/kerml-1.0-operational-errata.json:98: trailing whitespace.
++  ]
+standards/kerml-1.0-operational-errata.json:99: trailing whitespace.
++}

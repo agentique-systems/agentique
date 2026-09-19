@@ -1,0 +1,23 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 7m 22s
+     Running `target/kerml-v4\release\examples\library_quality.exe --output=verification/kerml-name-resolution-errata-publication-v4/quality-3/library-quality.json`
+refinement 0: 0 provisional endpoints; 4003 obligations
+refinement 1: 2108 provisional endpoints; 1895 obligations
+refinement 2: 3663 provisional endpoints; 340 obligations
+refinement 3: 3841 provisional endpoints; 162 obligations
+refinement 4: 3922 provisional endpoints; 81 obligations
+refinement 5: 3955 provisional endpoints; 48 obligations
+refinement 6: 3976 provisional endpoints; 27 obligations
+refinement 7: 3997 provisional endpoints; 6 obligations
+refinement 8: 4003 provisional endpoints; 0 obligations
+error: process didn't exit successfully: `target/kerml-v4\release\examples\library_quality.exe --output=verification/kerml-name-resolution-errata-publication-v4/quality-3/library-quality.json` (exit code: 0xffffffff)

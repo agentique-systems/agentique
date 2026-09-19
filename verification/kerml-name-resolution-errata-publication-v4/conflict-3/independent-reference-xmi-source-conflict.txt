@@ -1,0 +1,1 @@
+{"witnesses": 3, "all_indistinguishable": true, "current_explicit_repairs": 3, "pinned_source_matches_historical_release": true, "publication_blocked": true}

@@ -1,0 +1,17 @@
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.43s
+     Running `target\debug\metamodel-gen.exe --check`
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/metamodel.json (3038685 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/full-audit.json (438064 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/full.golden.json (2320099 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/root_core.rs (366668 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/root_core_views.rs (379148 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/kerml-1.0/root-core.golden.json (1111835 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/full-audit.json (1022899 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/full.golden.json (5886927 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/runtime-closure-audit.json (18967 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/metamodel.json (6888525 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/complete.rs (625457 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/kerml/src/generated/typed_views.rs (1564665 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/sysml/src/generated/complete.rs (834660 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/sysml/src/generated/typed_views.rs (3135938 bytes).

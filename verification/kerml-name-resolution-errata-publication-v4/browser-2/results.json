@@ -1,0 +1,10 @@
+[
+  {
+    "command": "npm run test:e2e",
+    "started": "2026-09-19T13:28:19.541Z",
+    "durationMs": 77985,
+    "exitCode": 0,
+    "signal": null,
+    "log": "browser-tests.txt"
+  }
+]

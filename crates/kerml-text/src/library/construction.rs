@@ -250,6 +250,10 @@ impl Builder {
             .is_some_and(|slot| slot.values().any(|v| matches!(v, Value::Reference(id) if self.is_class(self.records[id].class,c::RETURN_PARAMETER_MEMBERSHIP))))
     }
     fn expression_results(&mut self, inputs: &[Input]) -> Result<(), LibraryLoadError> {
+        let productions: BTreeMap<_, _> = inputs
+            .iter()
+            .flat_map(|input| input.syntax.nodes().map(|node| (node.id(), node.kind())))
+            .collect();
         let expressions: Vec<_> = self
             .order
             .iter()
@@ -258,6 +262,19 @@ impl Builder {
             .collect();
         for expression in expressions {
             if self.has_result(expression) {
+                continue;
+            }
+            if self.records[&expression]
+                .source
+                .syntax_node
+                .and_then(|id| productions.get(&id))
+                .is_some_and(|kind| {
+                    matches!(kind, P::Expression | P::BooleanExpression | P::Invariant)
+                })
+            {
+                // A declared Expression may inherit its ReturnParameterMembership.
+                // Creating an unnamed local result would suppress that inherited
+                // identity and its name (e.g. Performances::trueEvaluations).
                 continue;
             }
             // validateExpressionResultParameterMembership and the result-owning
@@ -283,6 +300,11 @@ impl Builder {
             self.enumeration(feature, p::FEATURE_DIRECTION, "out")?;
             self.link(expression, p::ELEMENT_OWNED_RELATIONSHIP, membership);
             self.link(membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, feature);
+            self.set(
+                expression,
+                p::ELEMENT_IS_IMPLIED_INCLUDED,
+                Value::Boolean(true),
+            )?;
         }
         Ok(())
     }

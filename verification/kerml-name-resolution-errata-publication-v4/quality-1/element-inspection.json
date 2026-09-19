@@ -1,0 +1,585 @@
+{
+  "accepted": false,
+  "classes": {
+    "Association": 26,
+    "AssociationStructure": 3,
+    "Behavior": 29,
+    "BindingConnector": 24,
+    "BooleanExpression": 11,
+    "Class": 2,
+    "Classifier": 1,
+    "Comment": 27,
+    "Connector": 41,
+    "ConstructorExpression": 2,
+    "CrossSubsetting": 29,
+    "DataType": 31,
+    "Disjoining": 6,
+    "Documentation": 334,
+    "EndFeatureMembership": 180,
+    "Expression": 65,
+    "Feature": 6401,
+    "FeatureChainExpression": 104,
+    "FeatureChaining": 258,
+    "FeatureInverting": 16,
+    "FeatureMembership": 1595,
+    "FeatureReferenceExpression": 657,
+    "FeatureTyping": 1502,
+    "FeatureValue": 1144,
+    "Flow": 5,
+    "Function": 305,
+    "IndexExpression": 23,
+    "Interaction": 5,
+    "Intersecting": 43,
+    "Invariant": 68,
+    "InvocationExpression": 243,
+    "LibraryPackage": 36,
+    "LiteralBoolean": 13,
+    "LiteralInfinity": 365,
+    "LiteralInteger": 1770,
+    "LiteralRational": 26,
+    "Membership": 902,
+    "MembershipImport": 167,
+    "Metaclass": 84,
+    "MultiplicityRange": 1498,
+    "Namespace": 36,
+    "NamespaceImport": 37,
+    "NullExpression": 11,
+    "OperatorExpression": 233,
+    "OwningMembership": 4717,
+    "Package": 3,
+    "ParameterMembership": 876,
+    "Predicate": 3,
+    "Redefinition": 293,
+    "ReferenceSubsetting": 184,
+    "ResultExpressionMembership": 103,
+    "ReturnParameterMembership": 3808,
+    "Step": 32,
+    "Structure": 16,
+    "Subclassification": 370,
+    "Subsetting": 292,
+    "Succession": 27,
+    "Unioning": 5
+  },
+  "elements": [
+    {
+      "class": "Membership",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "049b5e50-c93d-532c-9ea6-4f1190b5a180",
+      "range": [
+        23702,
+        23706
+      ],
+      "source": "self"
+    },
+    {
+      "class": "FeatureReferenceExpression",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "0550c85b-8989-51fe-a5c0-715114a4e234",
+      "range": [
+        23702,
+        23706
+      ],
+      "source": "self"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "056a9190-f8d8-55fa-a0d6-e74b3b4570b7",
+      "range": [
+        3654,
+        3696
+      ],
+      "source": "feature redefines innerSpaceDimension = 2;"
+    },
+    {
+      "class": "Step",
+      "document": "Kernel Semantic Library/Observation.kerml",
+      "id": "0597cd26-c12e-52b5-af35-5c3dc4332452",
+      "range": [
+        2364,
+        2662
+      ],
+      "source": "step transfer : TransferBefore[1] \n\t    \tredefines outgoingTransfersFromSelf \n\t    \tsubsets changeObserver.incomingTransfers {\n\t    \tdoc\n\t\t\t/*\n\t\t\t * Then send changeSignal to changeObserver.\n\t\t\t */\n\t\t\t \n\t    \tend feature source {\n\t    \t\tfeature redefines sourceOutput = changeSignal;\n\t    \t}\n\t    }"
+    },
+    {
+      "class": "Membership",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "06917229-f338-545a-8cf9-4c47af613690",
+      "range": [
+        1477,
+        1481
+      ],
+      "source": "self"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "0b3180cf-761d-54ce-99b7-c408de83c5c3",
+      "range": [
+        5555,
+        5555
+      ],
+      "source": ""
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Triggers.kerml",
+      "id": "148b03fa-d657-5895-9a98-58d7d72385be",
+      "range": [
+        3206,
+        3229
+      ],
+      "source": "in signal = timeSignal;"
+    },
+    {
+      "class": "FeatureReferenceExpression",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "166f0baa-79ad-5ce3-a783-2b46979d527b",
+      "range": [
+        23346,
+        23350
+      ],
+      "source": "self"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "172ffcc9-142d-5b0c-ab6c-1ba878491506",
+      "range": [
+        5577,
+        5917
+      ],
+      "source": "portion feature edges : Curve[0..*] ordered subsets structuredSpaceObjectCells {\n\t\t\tfeature redefines vertices subsets StructuredSpaceObject::vertices;\n\t\t\tderived feature redefines spaceBoundary;\n\t\t\tinv { isEmpty(spaceBoundary) == isEmpty(vertices) }\n\t\t\tinv { notEmpty(spaceBoundary) implies contains(spaceBoundary.unionsOf, vertices) }\n\t\t}"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Transfers.kerml",
+      "id": "187318cf-2502-5a15-b37f-0a842cc4ba8a",
+      "range": [
+        5747,
+        5837
+      ],
+      "source": "end feature target: Occurrence redefines Transfer::target, HappensBefore::laterOccurrence;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Function Library/VectorFunctions.kerml",
+      "id": "1dd35c9b-e819-546c-926d-a85dfc883be2",
+      "range": [
+        5151,
+        5184
+      ],
+      "source": ":>> dimension = size(components);"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "24c13ca3-8a54-5049-8bff-7e2c33c6c5c6",
+      "range": [
+        5661,
+        5728
+      ],
+      "source": "feature redefines vertices subsets StructuredSpaceObject::vertices;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Triggers.kerml",
+      "id": "28971587-d46f-5a87-989a-e83ee4f87fa9",
+      "range": [
+        3206,
+        3229
+      ],
+      "source": "in signal = timeSignal;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "2b1f871b-4f04-5d9e-a613-418a204ae412",
+      "range": [
+        4136,
+        4178
+      ],
+      "source": "feature redefines innerSpaceDimension = 0;"
+    },
+    {
+      "class": "FeatureReferenceExpression",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "2b29c11b-7654-50fa-81c5-404e707db6e9",
+      "range": [
+        1477,
+        1481
+      ],
+      "source": "self"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "2f40942c-0c99-53fc-8ed2-660eb17c97fe",
+      "range": [
+        4136,
+        4178
+      ],
+      "source": "feature redefines innerSpaceDimension = 0;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "358391ee-ce1e-529c-bfac-66d5cdade840",
+      "range": [
+        5223,
+        5284
+      ],
+      "source": "feature redefines edges subsets StructuredSpaceObject::edges;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "39fe5c8e-8067-57fd-bf61-77bd9250d04d",
+      "range": [
+        5288,
+        5355
+      ],
+      "source": "feature redefines vertices subsets StructuredSpaceObject::vertices;"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "3fe801e5-cc05-56ad-b3b4-740936d226f4",
+      "range": [
+        24775,
+        24804
+      ],
+      "source": "end feature redefines target;"
+    },
+    {
+      "class": "Step",
+      "document": "Kernel Semantic Library/Triggers.kerml",
+      "id": "4a74747a-c385-5a89-89c8-be2fadaa9ecb",
+      "range": [
+        3141,
+        3233
+      ],
+      "source": "step :> monitor.startObservation {\n\t\t\tin observer = receiver;\n\t\t\tin signal = timeSignal;\n\t\t}"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Performances.kerml",
+      "id": "4be06fa9-ba9c-5c94-a17a-6e3a41da72dc",
+      "range": [
+        904,
+        957
+      ],
+      "source": "feature self: Performance redefines Occurrence::self;"
+    },
+    {
+      "class": "Step",
+      "document": "Kernel Semantic Library/Triggers.kerml",
+      "id": "518b9181-2fd8-5bfa-953c-3292058bc119",
+      "range": [
+        1915,
+        2009
+      ],
+      "source": "step :> monitor.startObservation {\n\t\t\tin observer = receiver;\n\t\t\tin signal = changeSignal;\n\t\t}"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Transfers.kerml",
+      "id": "51e78546-d5e9-5c90-8790-934a0f624b06",
+      "range": [
+        5747,
+        5837
+      ],
+      "source": "end feature target: Occurrence redefines Transfer::target, HappensBefore::laterOccurrence;"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Observation.kerml",
+      "id": "5296c57a-0be4-59b6-be1f-665fe74029a6",
+      "range": [
+        3637,
+        3665
+      ],
+      "source": "in signal : ChangeSignal[1];"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "549a594d-ce56-575c-8cb9-b752f3b41654",
+      "range": [
+        5824,
+        5824
+      ],
+      "source": ""
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Triggers.kerml",
+      "id": "56339403-976c-5381-8f78-18e15777f41b",
+      "range": [
+        1980,
+        2005
+      ],
+      "source": "in signal = changeSignal;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "59e9dfaf-0dda-5e9a-a24b-77781a3532e4",
+      "range": [
+        5921,
+        6003
+      ],
+      "source": "portion feature vertices : Point[0..*] ordered subsets structuredSpaceObjectCells;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Function Library/VectorFunctions.kerml",
+      "id": "6239c627-2efd-50f2-bf4f-c8c6cf5233b8",
+      "range": [
+        5341,
+        5372
+      ],
+      "source": ": CartesianThreeVectorValue[1];"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "64c2f289-1353-5130-9276-27206ad91d5f",
+      "range": [
+        5455,
+        5455
+      ],
+      "source": ""
+    },
+    {
+      "class": "Membership",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "656ea417-f202-51af-a515-3e7798d96fdb",
+      "range": [
+        23346,
+        23350
+      ],
+      "source": "self"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Performances.kerml",
+      "id": "69c4cb88-64a5-5a9d-be5f-df614e16073e",
+      "range": [
+        904,
+        957
+      ],
+      "source": "feature self: Performance redefines Occurrence::self;"
+    },
+    {
+      "class": "Membership",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "6e00b126-0e83-5225-b52e-5ca8438a63d3",
+      "range": [
+        1734,
+        1738
+      ],
+      "source": "self"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "6f8ea8fd-31ac-590a-b94d-5d5b9ace0ecf",
+      "range": [
+        5137,
+        5573
+      ],
+      "source": "portion feature faces : Surface[0..*] ordered subsets structuredSpaceObjectCells {\n\t\t\tfeature redefines edges subsets StructuredSpaceObject::edges;\n\t\t\tfeature redefines vertices subsets StructuredSpaceObject::vertices;\n\t\t\tderived feature redefines spaceBoundary; \n\t\t\tinv { isEmpty(spaceBoundary) == isEmpty(union(edges, vertices)) }\n\t\t\tinv { notEmpty(spaceBoundary) implies contains(spaceBoundary.unionsOf, union(edges, vertices)) }\n\t\t}"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Triggers.kerml",
+      "id": "778b6d60-cb70-51cb-b052-8a548caefa7d",
+      "range": [
+        1980,
+        2005
+      ],
+      "source": "in signal = changeSignal;"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "77bb8601-e88a-5288-a48e-e96c78c46882",
+      "range": [
+        3654,
+        3696
+      ],
+      "source": "feature redefines innerSpaceDimension = 2;"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "804a5b53-24ca-5464-9124-9842634c323c",
+      "range": [
+        3973,
+        4015
+      ],
+      "source": "feature redefines innerSpaceDimension = 1;"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "8b32e5a0-e2a5-5372-b2ef-1607ac24a103",
+      "range": [
+        6009,
+        6119
+      ],
+      "source": "derived feature redefines innerSpaceDimension = \n\t\t\tif notEmpty(faces) ? 2 else if notEmpty(edges) ? 1 else 0;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Data Type Library/VectorValues.kerml",
+      "id": "a5bfbc40-b073-5449-a8a9-b62b57ee3235",
+      "range": [
+        1593,
+        1619
+      ],
+      "source": "feature :>> dimension = 3;"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Data Type Library/VectorValues.kerml",
+      "id": "ab1559f4-ae17-53e1-ba4b-ab8b0ee582cb",
+      "range": [
+        1593,
+        1619
+      ],
+      "source": "feature :>> dimension = 3;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "ab28cdfe-f757-5e2c-abbb-20904c82920f",
+      "range": [
+        3973,
+        4015
+      ],
+      "source": "feature redefines innerSpaceDimension = 1;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "baa49dda-0949-5e4a-9707-8261e0f0956e",
+      "range": [
+        24775,
+        24804
+      ],
+      "source": "end feature redefines target;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Observation.kerml",
+      "id": "bd7f230d-14ac-52e2-9342-c94a13c80fc1",
+      "range": [
+        3637,
+        3665
+      ],
+      "source": "in signal : ChangeSignal[1];"
+    },
+    {
+      "class": "FeatureMembership",
+      "document": "Kernel Function Library/VectorFunctions.kerml",
+      "id": "c1c8a29c-e764-5ca1-b24b-d76ee2fcee93",
+      "range": [
+        5151,
+        5184
+      ],
+      "source": ":>> dimension = size(components);"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "c98a02ef-8074-57d8-8bd0-8859c28452dc",
+      "range": [
+        5565,
+        5565
+      ],
+      "source": ""
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "ccd2a442-8807-5f73-aa0a-5fc676c62560",
+      "range": [
+        1488,
+        1626
+      ],
+      "source": "feature self: Occurrence[1] redefines Anything::self subsets timeSlices, spaceSlices, spaceTimeCoincidentOccurrences, sameLifeOccurrences;"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "dbed26d3-c4a5-5a0a-90e9-0e48be61efaf",
+      "range": [
+        6078,
+        6078
+      ],
+      "source": ""
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "e08f0e12-84db-575a-89f3-1d60fa3fc4c4",
+      "range": [
+        5465,
+        5465
+      ],
+      "source": ""
+    },
+    {
+      "class": "FeatureReferenceExpression",
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "id": "e09bf89a-2296-573a-8b0e-551cad03e2d6",
+      "range": [
+        1734,
+        1738
+      ],
+      "source": "self"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "e2df3ceb-302a-551d-af1c-78dfcd5f9728",
+      "range": [
+        6106,
+        6106
+      ],
+      "source": ""
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Observation.kerml",
+      "id": "ec1f136d-4275-58ed-a069-5a51b0e3c09e",
+      "range": [
+        2346,
+        2354
+      ],
+      "source": "transfer"
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "f6e60ae3-5def-5763-8c0f-8a24b600c49d",
+      "range": [
+        5910,
+        5910
+      ],
+      "source": ""
+    },
+    {
+      "class": "Feature",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "id": "fadfd4f6-26b1-50b5-bb0c-406987627413",
+      "range": [
+        6009,
+        6119
+      ],
+      "source": "derived feature redefines innerSpaceDimension = \n\t\t\tif notEmpty(faces) ? 2 else if notEmpty(edges) ? 1 else 0;"
+    }
+  ]
+}

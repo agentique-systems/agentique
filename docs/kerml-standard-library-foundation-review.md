@@ -231,3 +231,74 @@ intended nested modeling pattern, not by KERML11-81's issue status. A fallback
 that changes the specified scope search has not been introduced. See the
 [v3 evidence](../verification/kerml-operational-errata-publication-v3/README.md)
 for actual commands, outputs, exit codes and preservation results.
+
+## Name-resolution errata publication v4 review, 2026-09-19
+
+The authorized [operational v2 profile](operational-kerml-profile.md) implements
+AGQ-KERML10-002 / KERML11-140 as an explicit, versioned semantic interpretation.
+KERML11-140 remains open, last updated 2025-11-11 23:25 GMT. It is not represented
+as an adopted OMG correction. Published KerML 1.0 remains the formal baseline;
+operational v1 adds only KERML11-81; operational v2 adds the reviewed redefinition
+resolution algorithm. The historical v3 stop above records the authority state
+before this task's authorization.
+
+The new stop is **KNRV4-F-001**, the independently demonstrated
+[pinned Objects library conflict](kerml-pinned-objects-authority-conflict.md).
+`StructuredSpaceObject::faces`, `edges` and `vertices` each inherit two distinct
+same-name `innerSpaceDimension` Features. Published redefinition suppression
+retains both, violating namespace distinguishability. The matching historical
+reference source is byte-for-byte identical to the pinned file. Current
+reference source and XMI explicitly add common redefinitions through combined
+types. This later library-source correction is not covered by KERML11-140.
+
+| V4 acceptance question | Result |
+| --- | --- |
+| Published and operational v1 behavior reproducible? | Yes; the arbitrary-name KERML11-140 witness still fails under both profiles. |
+| Operational v2 semantic correction explicit and separate? | Yes; AGQ-KERML10-002, algorithm version 1, profile `/2`, frozen manifest and evidence hashes. No descriptor anomaly is introduced. |
+| KERML11-81 reopened or broadened? | No; its reviewed bytes, descriptor correction and independent contradiction/diff witnesses remain. Git's normalization of the v1 manifest was repaired to restore its already-frozen CRLF digest. |
+| Generic lexical fallback introduced? | No; only owned Redefinition targets dispatch to v2. Complete empty inherited-prefix lookup permits the actual containing lexical scopes. Qualified suffix failure, wrong kind, ambiguity and incomplete search do not retry. |
+| Deterministic adversarial coverage? | Yes; 21 scenarios in both relationship insertion orders, plus focused tests for incomplete search, derived source ownership, effective membership identity, ordering, ordinary lookup and implied result naming. |
+| Current reference artifacts treated as normative? | No; their source, tests, release notes and XMI are explicitly implementation/interchange corroboration. Original issue and formal/preliminary clause bytes are retained. |
+| Two exact nested monitoredFeature targets independently identified? | Yes; both reference XMI relationships point to the enclosing monitored feature. The full comparison report checks individual assertions and complete target sets. |
+| Remaining ordinary semantics investigated? | Yes; binary association specialization, inherited end ordering, imports, membership identity, conjugation, chains and name/result construction received ordinary implementation fixes. Full obligation reports retain all remaining findings. |
+| Validation inventory complete? | No; evaluated constraints are named explicitly. Further structural, derived and implied relationship constraints remain mandatory. The new distinguishability check exposes KNRV4-F-001. |
+| Kernel validation weakened? | No. The strict Snapshot experiment uses ordinary `Snapshot::apply` and preserves its empty base. Passing kernel storage checks is recorded separately from semantic acceptance. |
+| Accepted library Snapshot and facade published? | No; semantic publication is blocked. No ConstructionView is exported as `LoadedKermlStandardLibraries`. |
+| Accepted bindings regenerated? | No; the historical 22-entry candidate manifest is preserved. BinaryLink adds a 23rd runtime role, so the old manifest check reports stale. No new candidate IDs are labeled accepted. |
+| Authored projects select exact profiles? | Yes; explicit project metadata and contexts distinguish published, v1 and v2, with the same source producing profile-dependent resolution. Consumption of accepted libraries remains unavailable. |
+| Operational conclusions explain their authority? | Yes; query proofs identify the rule, profile/context, source anchor, searched general and lexical scopes, visibility facts, winning target and positive/search dependencies. |
+| Executable evaluation claimed? | No; unevaluated expression/function bodies remain a separate quality category. |
+| Both complete structural runtime gates green? | Yes; fresh KerML and SysML structural runtime commands exit 0. This does not establish SysML language semantics or accepted library publication. |
+
+The [v4 evidence index](../verification/kerml-name-resolution-errata-publication-v4/README.md)
+links actual commands, outputs, exit codes, full profile obligation sets, XMI
+comparison, structural quality, and the separate authority witness. It preserves
+failed and superseded runs alongside successful rechecks. The
+[structural rule review](kerml-v4-structural-rule-review.md) states the implemented
+scope and remaining limits. No generation-1 release obligation is discharged by
+these generation-2 changes, and no SysML semantics work is started.
+
+The completed operational-v2 quality audit reports 4,003 references, zero empty
+candidate sets, zero ambiguous candidate sets, zero mismatched stored endpoints,
+and zero mandatory lower bounds. **453 reference answers remain incomplete**,
+so this is not complete structural resolution. The expanded checks also report
+3,494 expression-result validation findings and 21 distinguishability findings.
+The implied-naming and expression-result findings remain ordinary structural
+implementation/validation work; only the independently checked Objects cases
+are attributed to KNRV4-F-001. Other distinguishability findings require their
+own review. The inventory identifies 258 named formal class constraints and 27
+explicitly implemented validation checks without claiming complete coverage.
+
+All 124 redefinition assertions matched by the independent reference-XMI
+comparison have complete answers and matching target sets, including the exact
+two KERML11-140 cases. Ordinary kernel Snapshot validation accepts the 29,087
+canonical records in its isolated experiment, while accepted semantic library
+publication remains false. These results are intentionally reported separately.
+
+The final published and operational-v1 audits each retain 513 reference
+obligations, including the five original unresolved redefinitions. Their
+mandatory lower-bound counts are 10 and 5 respectively; ordinary strict kernel
+Snapshot validation rejects both. Operational v2 retains 453 incomplete
+reference obligations and zero mandatory lower bounds. The complete profile
+comparison and individual disposition of all five original cases are recorded
+in the [final summary](../verification/kerml-name-resolution-errata-publication-v4/summary.json).

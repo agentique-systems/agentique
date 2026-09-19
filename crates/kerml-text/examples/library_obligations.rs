@@ -31,6 +31,12 @@ impl Evidence {
             })).collect::<Vec<_>>(),
             "positive_dependencies":result.positive_dependencies.iter().map(|v|self.intern(v)).collect::<Vec<_>>(),
             "search_dependencies":result.search_dependencies.iter().map(|v|self.intern(v)).collect::<Vec<_>>(),
+            "resolution_explanations":result.explanations.iter()
+                .filter(|(claim,_)|claim.query == agq_kerml_semantics::QueryKind::ResolveReference)
+                .map(|(claim,proofs)| json!({"subject":claim.subject.to_string(),"target":claim.value.to_string(),
+                    "proofs":proofs.iter().map(|proof|json!({"rule":format!("{:?}",proof.rule),
+                        "premises":proof.premises.iter().map(|premise|self.intern(premise)).collect::<Vec<_>>()
+                    })).collect::<Vec<_>>() })).collect::<Vec<_>>(),
             "rules":result.explanations.values().flatten().map(|e|format!("{:?}",e.rule)).collect::<std::collections::BTreeSet<_>>()
         })
     }
@@ -41,6 +47,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
     let profile = if std::env::args().any(|a| a == "--published") {
         agq_kerml::BaselineProfile::PublishedKerMl10
+    } else if std::env::args().any(|a| a == "--v1") {
+        agq_kerml::BaselineProfile::OPERATIONAL_V1
     } else {
         agq_kerml::BaselineProfile::OPERATIONAL
     };
@@ -82,17 +90,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "source":&document.source()[origin.range.start() as usize..origin.range.end() as usize]
         })
     };
-    let queries = draft.queries(&sources)?;
+    let mut queries = draft.queries(&sources)?;
+    let context = queries.context().clone();
     let model = draft.candidate().model();
+    let output_path = std::env::args()
+        .find_map(|a| a.strip_prefix("--output=").map(str::to_owned))
+        .ok_or("--output required")?;
+    let phase_path = Path::new(&output_path).with_extension("construction.json");
+    serde_json::to_writer_pretty(
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(phase_path)?,
+        &json!({"baseline_profile":profile.id(),"rule_version":queries.context().rule_set_version,
+            "accepted":false,"mandatory_obligations":draft.candidate().obligations().iter()
+                .map(|o|location(o.element,Some(o.property))).collect::<Vec<_>>() }),
+    )?;
     let mut evidence = Evidence::default();
     let mut references = vec![];
     let mut state_expression = vec![];
-    for reference in draft.references() {
+    let mut redefinitions = vec![];
+    for (index, reference) in draft.references().iter().enumerate() {
+        if index > 0 && index % 128 == 0 {
+            queries = draft.queries(&sources)?;
+            assert_eq!(queries.context(), &context);
+        }
         let result = queries.lookup_relationship_target(
             reference.relationship,
             reference.property,
             &reference.name,
         );
+        if reference.property == p::REDEFINITION_REDEFINED_FEATURE {
+            let mut row = location(reference.relationship, Some(reference.property));
+            row["source_declaration"] = json!(qualified_display(
+                &queries,
+                model,
+                queries
+                    .owning_related_element(reference.relationship)
+                    .value
+                    .unwrap_or(reference.relationship)
+            ));
+            row["targets"] = json!(result.value.iter().map(|m|json!({"id":m.element.to_string(),"path":qualified_display(&queries,model,m.element)})).collect::<Vec<_>>());
+            row["result"] = evidence.result(&result);
+            redefinitions.push(row);
+        }
         let inspected = reference
             .name
             .segments
@@ -115,7 +156,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     let mut semantic = vec![];
-    for record in model.elements() {
+    for (index, record) in model.elements().enumerate() {
+        if index % 128 == 0 {
+            queries = draft.queries(&sources)?;
+            assert_eq!(queries.context(), &context);
+        }
         let is = |class| {
             model
                 .registry()
@@ -157,7 +202,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             row["structure_origin"] = json!(if o.property == p::REDEFINITION_REDEFINED_FEATURE {
                 "explicit-source"
             } else {
-                "authority-conflict: no normative derivation identified"
+                "unclassified-mandatory-structural-obligation"
             });
             row
         })
@@ -166,19 +211,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let report = json!({
         "format":"agentique-kerml-library-obligations/3", "baseline_profile":profile.id(),
         "library_set":sources.content_set_id(),"rule_version":queries.context().rule_set_version,
+        "context":format!("{:?}",queries.context()),
         "evidence_encoding":"Dependency indexes reference evidence_dictionary; debug labels are evidence display, not semantic identity hashing.",
         "evidence_dictionary":evidence.values,"references":references,"semantic_queries":semantic,
         "structural_obligations":obligations,"state_expression_inspection":state_expression,
         "strict_publication_attempt":strict,
-        "publication_accepted":false
+        "redefinition_resolutions":redefinitions,
+        "publication_accepted":false, "query_cache_batch_size":128
     });
-    let path = std::env::args()
-        .find_map(|a| a.strip_prefix("--output=").map(str::to_owned))
-        .ok_or("--output required")?;
     let file = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(path)?;
+        .open(output_path)?;
     serde_json::to_writer_pretty(file, &report)?;
     println!(
         "Captured {} reference, {} structural, {} query obligations",
@@ -215,7 +259,66 @@ fn strict_publication(draft: &LibraryDraft) -> Value {
             link.origin().clone(),
         );
     }
-    let error = empty.apply(&changes).expect_err("Baseline cannot publish");
+    let attempt = empty.apply(&changes);
     assert!(empty.model().is_empty());
-    json!({"accepted":false,"error":format!("{error:?}"),"base_unchanged":true})
+    match attempt {
+        Ok(snapshot) => {
+            json!({"accepted":true,"elements":snapshot.model().elements().count(),"base_unchanged":true})
+        }
+        Err(error) => json!({"accepted":false,"error":format!("{error:?}"),"base_unchanged":true}),
+    }
+}
+
+fn qualified_display(
+    q: &agq_kerml_semantics::KerMlQueries<'_>,
+    model: &agq_kernel::ModelView,
+    id: ElementId,
+) -> String {
+    use agq_kernel::value::Value;
+    let mut path = vec![];
+    let mut current = Some(id);
+    let mut seen = std::collections::BTreeSet::new();
+    while let Some(id) = current {
+        if !seen.insert(id) {
+            break;
+        }
+        let mut pending = vec![id];
+        let mut visited = std::collections::BTreeSet::new();
+        let mut names = std::collections::BTreeSet::new();
+        while let Some(named) = pending.pop() {
+            if !visited.insert(named) {
+                continue;
+            }
+            if let Some(Value::String(name)) = model
+                .navigation_slot(named, p::ELEMENT_DECLARED_NAME)
+                .and_then(|s| s.value().values().next())
+            {
+                names.insert(name.clone());
+            } else if model
+                .registry()
+                .is_subtype(model.element(named).unwrap().metaclass(), c::FEATURE)
+                .unwrap()
+                && let Some(relationship) =
+                    q.owned_relationships(named).value.into_iter().find(|r| {
+                        model
+                            .registry()
+                            .is_subtype(model.element(*r).unwrap().metaclass(), c::REDEFINITION)
+                            .unwrap()
+                    })
+                && let Some(Value::Reference(target)) = model
+                    .navigation_slot(relationship, p::REDEFINITION_REDEFINED_FEATURE)
+                    .and_then(|s| s.value().values().next())
+            {
+                pending.push(*target);
+            }
+        }
+        if names.len() == 1 {
+            path.push(names.into_iter().next().unwrap());
+        } else if names.len() > 1 {
+            path.push(format!("{names:?}"));
+        }
+        current = q.owner(id).value;
+    }
+    path.reverse();
+    path.join("::")
 }

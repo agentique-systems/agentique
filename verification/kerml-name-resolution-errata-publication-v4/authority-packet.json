@@ -1,0 +1,672 @@
+{
+  "format": "agentique-semantic-erratum-authority/1",
+  "issue": "KERML11-140",
+  "issue_status": "open",
+  "issue_updated": "2025-11-11T23:25:00Z",
+  "normative_baseline": "KerML 1.0 formal/2026-03-01 clause 8.2.3.5.1",
+  "preliminary_status": "KerML 1.1 Beta 2; corroboration only, unchanged failing rule",
+  "disposition": "User-authorized Agentique operational interpretation; not adopted OMG erratum",
+  "acquisition": [
+    {
+      "path": "KERML11-140.html",
+      "url": "https://issues.omg.org/issues/KERML11-140",
+      "resolved_url": "https://issues.omg.org/issues/KERML11-140",
+      "retrieved_at": "2026-09-19T11:41:14.200424+00:00",
+      "sha256": "6ed180e776971f3fcd922fbd6b106906a447cf235f238c0bbad0ceff32fb6686",
+      "bytes": 12312
+    },
+    {
+      "path": "release-head.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits/master",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits/master",
+      "retrieved_at": "2026-09-19T11:41:14.480151+00:00",
+      "sha256": "5e8d765bbe0172f0ce34263526069fae57db355327322319ebb4c08a5a65ee49",
+      "bytes": 34566
+    },
+    {
+      "path": "release-tree.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/fb97b754f29588b8e9c7a35f370880cd15eb29e7?recursive=1",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/fb97b754f29588b8e9c7a35f370880cd15eb29e7?recursive=1",
+      "retrieved_at": "2026-09-19T11:41:15.081144+00:00",
+      "sha256": "3c158a86c9086688226c287126f2e3d0afef269ec2141fcad445435ba3c72569",
+      "bytes": 489280
+    },
+    {
+      "path": "release-releases.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/releases?per_page=30",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/releases?per_page=30",
+      "retrieved_at": "2026-09-19T11:41:15.464304+00:00",
+      "sha256": "d5956b1f9b600af83bb9e5402eb3c3a4b8e91b1dc47ced8b4df0eab68b3dc3ea",
+      "bytes": 203722
+    },
+    {
+      "path": "release/doc/1-Kernel_Modeling_Language.pdf",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/doc/1-Kernel_Modeling_Language.pdf",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/doc/1-Kernel_Modeling_Language.pdf",
+      "retrieved_at": "2026-09-19T11:41:15.805656+00:00",
+      "sha256": "e8b7f33d9dac1a3fdd4eaa64b052608a989b92c580de91fdadb7038d33df99af",
+      "bytes": 1844440
+    },
+    {
+      "path": "release/kerml/src/examples/Simple Tests/Redefinition.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/kerml/src/examples/Simple%20Tests/Redefinition.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/kerml/src/examples/Simple%20Tests/Redefinition.kerml",
+      "retrieved_at": "2026-09-19T11:41:16.069860+00:00",
+      "sha256": "a9660bd0dc11092720e7975d83b0d48929708b533cd806e5264c2d0992aa1896",
+      "bytes": 325
+    },
+    {
+      "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+      "retrieved_at": "2026-09-19T11:41:16.479731+00:00",
+      "sha256": "42a919d6026df3226dcd40ce168199bdc5f193b6d567e5bc18eb5cb523abc52d",
+      "bytes": 392445
+    },
+    {
+      "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Observation.kermlx",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+      "retrieved_at": "2026-09-19T11:41:16.934598+00:00",
+      "sha256": "0dd206a202f1c0ca274c087d4f3abf5b66cf30444306f75f1f4c30a3a554c99a",
+      "bytes": 451720
+    },
+    {
+      "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/SpatialFrames.kermlx",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kermlx",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kermlx",
+      "retrieved_at": "2026-09-19T11:41:17.413705+00:00",
+      "sha256": "29941c306261e7c9d1f8718e242751fd3671185c237e6a5052897a9566126fda",
+      "bytes": 1183176
+    },
+    {
+      "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+      "retrieved_at": "2026-09-19T11:41:17.737777+00:00",
+      "sha256": "3edc1f3820b93cc507a2b0582fb7c7935125b204cd63c8b252cc816b60aa725b",
+      "bytes": 131951
+    },
+    {
+      "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Observation.kermlx",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+      "retrieved_at": "2026-09-19T11:41:18.079113+00:00",
+      "sha256": "045f0a449e2e8f9983986d64117866f77baae716e3e5e8a4f8deaa291a900f40",
+      "bytes": 96043
+    },
+    {
+      "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/SpatialFrames.kermlx",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kermlx",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kermlx",
+      "retrieved_at": "2026-09-19T11:41:18.399721+00:00",
+      "sha256": "b5aa06cae3207662b7e5285d22acdff388a215b6cb1b4b69f2893ed4fee022d2",
+      "bytes": 221121
+    },
+    {
+      "path": "release/sysml.library/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+      "retrieved_at": "2026-09-19T11:41:18.641119+00:00",
+      "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "bytes": 7681
+    },
+    {
+      "path": "release/sysml.library/Kernel Libraries/Kernel Semantic Library/Observation.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+      "retrieved_at": "2026-09-19T11:41:18.856064+00:00",
+      "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "bytes": 4578
+    },
+    {
+      "path": "release/sysml.library/Kernel Libraries/Kernel Semantic Library/SpatialFrames.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kerml",
+      "retrieved_at": "2026-09-19T11:41:19.086424+00:00",
+      "sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "bytes": 6944
+    },
+    {
+      "path": "release/sysml/src/training/05. Redefinition/Redefinition Example.sysml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml/src/training/05.%20Redefinition/Redefinition%20Example.sysml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml/src/training/05.%20Redefinition/Redefinition%20Example.sysml",
+      "retrieved_at": "2026-09-19T11:41:19.338942+00:00",
+      "sha256": "2a58dadc33f5a752bd4601db23fad1c0396067dff9d0c48c69ea80e6eb8c7e8d",
+      "bytes": 431
+    },
+    {
+      "path": "release/sysml/src/validation/01-Parts Tree/1c-Parts Tree Redefinition.sysml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml/src/validation/01-Parts%20Tree/1c-Parts%20Tree%20Redefinition.sysml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml/src/validation/01-Parts%20Tree/1c-Parts%20Tree%20Redefinition.sysml",
+      "retrieved_at": "2026-09-19T11:41:19.601594+00:00",
+      "sha256": "ee3fd9b693eee0eda5543ba146b1c672dacc06ec913bd3da5da12c240ef6f13e",
+      "bytes": 2231
+    },
+    {
+      "path": "pilot-head.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/master",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/master",
+      "retrieved_at": "2026-09-19T11:41:19.990814+00:00",
+      "sha256": "bc99f0936aad57df0db256fa2972177de11f44348b199befe5bbcca6c97488c5",
+      "bytes": 69731
+    },
+    {
+      "path": "pilot-tree.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/git/trees/5cca16d846016e62bb1e54e0e50e675254a022ef?recursive=1",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/git/trees/5cca16d846016e62bb1e54e0e50e675254a022ef?recursive=1",
+      "retrieved_at": "2026-09-19T11:41:20.508159+00:00",
+      "sha256": "5bdf91c75d9e4fe01e90eb55027e629714efaa11e7a001d71532ec99cdb0df18",
+      "bytes": 1691723
+    },
+    {
+      "path": "pilot-releases.json",
+      "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/releases?per_page=30",
+      "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/releases?per_page=30",
+      "retrieved_at": "2026-09-19T11:41:21.023841+00:00",
+      "sha256": "716e6f63305eb0d0be56094e3754d9ae96f3aa7af16e6b024ee600dc7ea6eae4",
+      "bytes": 443079
+    },
+    {
+      "path": "pilot/kerml/src/examples/Simple Tests/Redefinition.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/kerml/src/examples/Simple%20Tests/Redefinition.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/kerml/src/examples/Simple%20Tests/Redefinition.kerml",
+      "retrieved_at": "2026-09-19T11:41:21.270741+00:00",
+      "sha256": "a9660bd0dc11092720e7975d83b0d48929708b533cd806e5264c2d0992aa1896",
+      "bytes": 325
+    },
+    {
+      "path": "pilot/org.omg.kerml.expressions.xtext/src-gen/org/omg/kerml/expressions/xtext/scoping/AbstractKerMLExpressionsScopeProvider.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.expressions.xtext/src-gen/org/omg/kerml/expressions/xtext/scoping/AbstractKerMLExpressionsScopeProvider.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.expressions.xtext/src-gen/org/omg/kerml/expressions/xtext/scoping/AbstractKerMLExpressionsScopeProvider.java",
+      "retrieved_at": "2026-09-19T11:41:21.539548+00:00",
+      "sha256": "d37313ed99a0858cb4725e7c871454cee18f36fab9e0db02b2e5cbd49050df1f",
+      "bytes": 246
+    },
+    {
+      "path": "pilot/org.omg.kerml.expressions.xtext/src/org/omg/kerml/expressions/xtext/scoping/KerMLExpressionsScopeProvider.xtend",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.expressions.xtext/src/org/omg/kerml/expressions/xtext/scoping/KerMLExpressionsScopeProvider.xtend",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.expressions.xtext/src/org/omg/kerml/expressions/xtext/scoping/KerMLExpressionsScopeProvider.xtend",
+      "retrieved_at": "2026-09-19T11:41:21.766374+00:00",
+      "sha256": "80c20bc28e9c09f51ae2a4be85f49c58e3ce89f3feded65130482910c36bc87b",
+      "bytes": 351
+    },
+    {
+      "path": "pilot/org.omg.kerml.owl/src-gen/org/omg/kerml/owl/scoping/AbstractOwlScopeProvider.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.owl/src-gen/org/omg/kerml/owl/scoping/AbstractOwlScopeProvider.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.owl/src-gen/org/omg/kerml/owl/scoping/AbstractOwlScopeProvider.java",
+      "retrieved_at": "2026-09-19T11:41:22.009368+00:00",
+      "sha256": "476d672e81745f4fff494108afcabdcbbac60e6f9d5ab5e0d30411491cfb98c0",
+      "bytes": 222
+    },
+    {
+      "path": "pilot/org.omg.kerml.owl/src/org/omg/kerml/owl/scoping/OwlScopeProvider.xtend",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.owl/src/org/omg/kerml/owl/scoping/OwlScopeProvider.xtend",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.owl/src/org/omg/kerml/owl/scoping/OwlScopeProvider.xtend",
+      "retrieved_at": "2026-09-19T11:41:22.248668+00:00",
+      "sha256": "5499cf8459b5a4b7e5ab875b5f5bb4045d4c507318fd525fa21ce8a055d2bab7",
+      "bytes": 311
+    },
+    {
+      "path": "pilot/org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml",
+      "retrieved_at": "2026-09-19T11:41:22.479030+00:00",
+      "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "bytes": 7681
+    },
+    {
+      "path": "pilot/org.omg.kerml.xpect.tests/library/Observation.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/Observation.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/Observation.kerml",
+      "retrieved_at": "2026-09-19T11:41:22.711210+00:00",
+      "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "bytes": 4578
+    },
+    {
+      "path": "pilot/org.omg.kerml.xpect.tests/library/SpatialFrames.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/SpatialFrames.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/SpatialFrames.kerml",
+      "retrieved_at": "2026-09-19T11:41:22.940489+00:00",
+      "sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "bytes": 6944
+    },
+    {
+      "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/scoping/KerMLScopingTest.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/scoping/KerMLScopingTest.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/scoping/KerMLScopingTest.java",
+      "retrieved_at": "2026-09-19T11:41:23.187190+00:00",
+      "sha256": "e5dce428ae992437b480e42d64513ee1d783ebf2b01fae64692364cf5cc177c2",
+      "bytes": 344
+    },
+    {
+      "path": "pilot/org.omg.kerml.xtext/src-gen/org/omg/kerml/xtext/scoping/AbstractKerMLScopeProvider.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src-gen/org/omg/kerml/xtext/scoping/AbstractKerMLScopeProvider.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src-gen/org/omg/kerml/xtext/scoping/AbstractKerMLScopeProvider.java",
+      "retrieved_at": "2026-09-19T11:41:23.424356+00:00",
+      "sha256": "b86772bab9891a605f4eec5fae534b3aba9498c235a928866c5b4615c985c655",
+      "bytes": 244
+    },
+    {
+      "path": "pilot/org.omg.kerml.xtext/src/org/omg/kerml/xtext/postprocessing/RedefinitionParserPostProcessor.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/postprocessing/RedefinitionParserPostProcessor.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/postprocessing/RedefinitionParserPostProcessor.java",
+      "retrieved_at": "2026-09-19T11:41:23.665708+00:00",
+      "sha256": "ac71ab8bb8b9df1195a50eadd45af4e335e5e1ce62635cc6e3aa45ced1a0f7c1",
+      "bytes": 2157
+    },
+    {
+      "path": "pilot/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLGlobalScope.xtend",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLGlobalScope.xtend",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLGlobalScope.xtend",
+      "retrieved_at": "2026-09-19T11:41:23.887941+00:00",
+      "sha256": "846b6c5b91db9da4fa7c2890e5bf65cb9b5acb46546490697e40710417b05f25",
+      "bytes": 5586
+    },
+    {
+      "path": "pilot/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLGlobalScopeProvider.xtend",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLGlobalScopeProvider.xtend",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLGlobalScopeProvider.xtend",
+      "retrieved_at": "2026-09-19T11:41:24.120813+00:00",
+      "sha256": "369761b9da6e28936ca7dc5049917f24c5253811f54291d5c86840d233c0a4c5",
+      "bytes": 2162
+    },
+    {
+      "path": "pilot/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLLinker.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLLinker.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLLinker.java",
+      "retrieved_at": "2026-09-19T11:41:24.342546+00:00",
+      "sha256": "325c4be8e43d82dc45cf0c9ce1b013420ae305cbfb8f4a5579bbd753bfee0a43",
+      "bytes": 3179
+    },
+    {
+      "path": "pilot/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLScope.xtend",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLScope.xtend",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLScope.xtend",
+      "retrieved_at": "2026-09-19T11:41:24.578360+00:00",
+      "sha256": "fa7a564822803123b152fb561f3b351e6c416b7e1ee7ed16cc09b7bc12efda6c",
+      "bytes": 19323
+    },
+    {
+      "path": "pilot/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLScopeProvider.xtend",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLScopeProvider.xtend",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/scoping/KerMLScopeProvider.xtend",
+      "retrieved_at": "2026-09-19T11:41:24.800387+00:00",
+      "sha256": "dd9c246972c4cc8247b12deb298fc1cc4caa6022efb94693a818361baa2b1d12",
+      "bytes": 7041
+    },
+    {
+      "path": "pilot/org.omg.sysml.edit/src/org/omg/sysml/lang/sysml/provider/RedefinitionItemProvider.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.edit/src/org/omg/sysml/lang/sysml/provider/RedefinitionItemProvider.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.edit/src/org/omg/sysml/lang/sysml/provider/RedefinitionItemProvider.java",
+      "retrieved_at": "2026-09-19T11:41:25.020158+00:00",
+      "sha256": "09c1b99ca4d5e70cd48e3553425c2e7e9c1d4846a6642264234b6f53396691d4",
+      "bytes": 5236
+    },
+    {
+      "path": "pilot/org.omg.sysml.interactive.tests/src/org/omg/sysml/interactive/tests/GlobalNameRedefinitionTest.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.interactive.tests/src/org/omg/sysml/interactive/tests/GlobalNameRedefinitionTest.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.interactive.tests/src/org/omg/sysml/interactive/tests/GlobalNameRedefinitionTest.java",
+      "retrieved_at": "2026-09-19T11:41:25.269539+00:00",
+      "sha256": "34213166ffc634e4c9f3e8dca5fbfbe7075edfb7050db7a058b7afe4a508a0b1",
+      "bytes": 3850
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/RedefinitionAdapter.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/RedefinitionAdapter.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/RedefinitionAdapter.java",
+      "retrieved_at": "2026-09-19T11:41:25.509032+00:00",
+      "sha256": "dfcf75e7730b216432b7fe473f9cdfc658bda874dba72b4f3cc79662a73e84c1",
+      "bytes": 1319
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_allRedefinedFeatures_InvocationDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_allRedefinedFeatures_InvocationDelegate.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_allRedefinedFeatures_InvocationDelegate.java",
+      "retrieved_at": "2026-09-19T11:41:25.743594+00:00",
+      "sha256": "c658a209a0269460398e02d4a8766761ac4668ac5b23bd3335229140a5273f0d",
+      "bytes": 1690
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_redefinesFromLibrary_InvocationDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_redefinesFromLibrary_InvocationDelegate.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_redefinesFromLibrary_InvocationDelegate.java",
+      "retrieved_at": "2026-09-19T11:41:25.981958+00:00",
+      "sha256": "71b7d6191d0943efe9246eedde945c2956775a6d06043f75c68568bdd53c4d84",
+      "bytes": 2014
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_redefines_InvocationDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_redefines_InvocationDelegate.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Feature_redefines_InvocationDelegate.java",
+      "retrieved_at": "2026-09-19T11:41:26.225988+00:00",
+      "sha256": "d040e11528cbd93529f36be0db9cd99489724a6d4201dbe3c5f72bc96428ea2c",
+      "bytes": 1770
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Type_allRedefinedFeaturesOf_InvocationDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Type_allRedefinedFeaturesOf_InvocationDelegate.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Type_allRedefinedFeaturesOf_InvocationDelegate.java",
+      "retrieved_at": "2026-09-19T11:41:26.458749+00:00",
+      "sha256": "88a1686ca7d4a6e2c64dba2a87a5d0aad7f7ab77eaf8f9c09efcf61fad44644d",
+      "bytes": 1921
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Type_removeRedefinedFeatures_InvocationDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Type_removeRedefinedFeatures_InvocationDelegate.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/invocation/Type_removeRedefinedFeatures_InvocationDelegate.java",
+      "retrieved_at": "2026-09-19T11:41:26.678830+00:00",
+      "sha256": "104e6459fb4f707d7038d0989cecdd27298be9f023c6b055ec445a43eefe7549",
+      "bytes": 1988
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ElementUtil.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ElementUtil.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ElementUtil.java",
+      "retrieved_at": "2026-09-19T11:41:26.930851+00:00",
+      "sha256": "e50851a0c5515b9e78273eaad4003d8384303903b51a527f3b9ef3241f217441",
+      "bytes": 11835
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+      "retrieved_at": "2026-09-19T11:41:27.163405+00:00",
+      "sha256": "332080c8e258a9e27feacb71d963a7d9d51425f9802e42c9e0ade2d18d7f7780",
+      "bytes": 18545
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/NamespaceUtil.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/NamespaceUtil.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/NamespaceUtil.java",
+      "retrieved_at": "2026-09-19T11:41:27.422768+00:00",
+      "sha256": "e411c4c1517fb895f99336d3714d595a94b9ef261180316f517c83014714ffce",
+      "bytes": 7686
+    },
+    {
+      "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/TypeUtil.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/TypeUtil.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/TypeUtil.java",
+      "retrieved_at": "2026-09-19T11:41:27.693901+00:00",
+      "sha256": "993ec81d1eb43e95582f3cee65708a9aee76e704a121192bee567d9ffe486d5c",
+      "bytes": 22188
+    },
+    {
+      "path": "pilot/org.omg.sysml.model/src/main/java/org/omg/sysml/lang/sysml/Redefinition.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.model/src/main/java/org/omg/sysml/lang/sysml/Redefinition.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.model/src/main/java/org/omg/sysml/lang/sysml/Redefinition.java",
+      "retrieved_at": "2026-09-19T11:41:27.938108+00:00",
+      "sha256": "6ccb4b64641ea838dfe79635795bd38dcf1f4f1cb798ff214a8a75d9f88acc4b",
+      "bytes": 6264
+    },
+    {
+      "path": "pilot/org.omg.sysml.model/src/main/java/org/omg/sysml/lang/sysml/impl/RedefinitionImpl.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.model/src/main/java/org/omg/sysml/lang/sysml/impl/RedefinitionImpl.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.model/src/main/java/org/omg/sysml/lang/sysml/impl/RedefinitionImpl.java",
+      "retrieved_at": "2026-09-19T11:41:28.159689+00:00",
+      "sha256": "19d94e44c18548ef43f5b0a4bacf530309e5361ea6605cc95175b150f23381bd",
+      "bytes": 7739
+    },
+    {
+      "path": "pilot/org.omg.sysml.xpect.tests/library.kernel/FeatureReferencingPerformances.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/FeatureReferencingPerformances.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/FeatureReferencingPerformances.kerml",
+      "retrieved_at": "2026-09-19T11:41:28.393648+00:00",
+      "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "bytes": 7681
+    },
+    {
+      "path": "pilot/org.omg.sysml.xpect.tests/library.kernel/Observation.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/Observation.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/Observation.kerml",
+      "retrieved_at": "2026-09-19T11:41:28.667189+00:00",
+      "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "bytes": 4578
+    },
+    {
+      "path": "pilot/org.omg.sysml.xpect.tests/library.kernel/SpatialFrames.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/SpatialFrames.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/SpatialFrames.kerml",
+      "retrieved_at": "2026-09-19T11:41:28.920316+00:00",
+      "sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "bytes": 6944
+    },
+    {
+      "path": "pilot/org.omg.sysml.xtext/src-gen/org/omg/sysml/xtext/scoping/AbstractSysMLScopeProvider.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xtext/src-gen/org/omg/sysml/xtext/scoping/AbstractSysMLScopeProvider.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xtext/src-gen/org/omg/sysml/xtext/scoping/AbstractSysMLScopeProvider.java",
+      "retrieved_at": "2026-09-19T11:41:29.167950+00:00",
+      "sha256": "2a38c0ea60b1bb6b8b6f03e4488add944310f7142015a7dda237b276bd119f14",
+      "bytes": 244
+    },
+    {
+      "path": "pilot/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLGlobalScopeProvider.xtend",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLGlobalScopeProvider.xtend",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLGlobalScopeProvider.xtend",
+      "retrieved_at": "2026-09-19T11:41:29.409548+00:00",
+      "sha256": "c3df90c3f3f354ec5d97bea592b2736ceed401c88f9dfdbaa4dc7fc83e9cbde1",
+      "bytes": 1226
+    },
+    {
+      "path": "pilot/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLLinker.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLLinker.java",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLLinker.java",
+      "retrieved_at": "2026-09-19T11:41:29.679567+00:00",
+      "sha256": "dde65425c95180501181446b1a9628f57dd646a4054619586cb83b60afc00db0",
+      "bytes": 928
+    },
+    {
+      "path": "pilot/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLScopeProvider.xtend",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLScopeProvider.xtend",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xtext/src/org/omg/sysml/xtext/scoping/SysMLScopeProvider.xtend",
+      "retrieved_at": "2026-09-19T11:41:29.909249+00:00",
+      "sha256": "55924aac2ce9a1475555ad5eae84c10b266ca231fbd4e6ee981800a80b47b3a2",
+      "bytes": 3184
+    },
+    {
+      "path": "pilot/sysml.library/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+      "retrieved_at": "2026-09-19T11:41:30.129614+00:00",
+      "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "bytes": 7681
+    },
+    {
+      "path": "pilot/sysml.library/Kernel Libraries/Kernel Semantic Library/Observation.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+      "retrieved_at": "2026-09-19T11:41:30.406621+00:00",
+      "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "bytes": 4578
+    },
+    {
+      "path": "pilot/sysml.library/Kernel Libraries/Kernel Semantic Library/SpatialFrames.kerml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kerml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kerml",
+      "retrieved_at": "2026-09-19T11:41:30.648151+00:00",
+      "sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "bytes": 6944
+    },
+    {
+      "path": "pilot/sysml/src/training/05. Redefinition/Redefinition Example.sysml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml/src/training/05.%20Redefinition/Redefinition%20Example.sysml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml/src/training/05.%20Redefinition/Redefinition%20Example.sysml",
+      "retrieved_at": "2026-09-19T11:41:30.889304+00:00",
+      "sha256": "2a58dadc33f5a752bd4601db23fad1c0396067dff9d0c48c69ea80e6eb8c7e8d",
+      "bytes": 431
+    },
+    {
+      "path": "pilot/sysml/src/validation/01-Parts Tree/1c-Parts Tree Redefinition.sysml",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml/src/validation/01-Parts%20Tree/1c-Parts%20Tree%20Redefinition.sysml",
+      "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml/src/validation/01-Parts%20Tree/1c-Parts%20Tree%20Redefinition.sysml",
+      "retrieved_at": "2026-09-19T11:41:31.109019+00:00",
+      "sha256": "ee3fd9b693eee0eda5543ba146b1c672dacc06ec913bd3da5da12c240ef6f13e",
+      "bytes": 2231
+    }
+  ],
+  "source_byte_comparisons": [
+    {
+      "archive": "standards/artifacts/Semantic-Library.kpar",
+      "entry": "Kernel Semantic Library/Observation.kerml",
+      "pinned_sha256": "603aecde2ef64d519c1bfc89bfc52f5315c05a36aa0cf86174badba5b371ddbf",
+      "pilot_sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "release_sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "same_bytes": false,
+      "normalized_diff": [
+        "--- pinned\n",
+        "+++ current-reference\n",
+        "@@ -92,6 +92,7 @@\n",
+        " \t    \tend feature source {",
+        " \t    \t\tfeature redefines sourceOutput = changeSignal;",
+        " \t    \t}",
+        "+\t    \tend feature target;",
+        " \t    }",
+        " \t}",
+        " \t"
+      ]
+    },
+    {
+      "archive": "standards/artifacts/Semantic-Library.kpar",
+      "entry": "Kernel Semantic Library/SpatialFrames.kerml",
+      "pinned_sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "pilot_sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "release_sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "same_bytes": true,
+      "normalized_diff": []
+    },
+    {
+      "archive": "standards/artifacts/Semantic-Library.kpar",
+      "entry": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "pinned_sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "pilot_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "release_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "same_bytes": false,
+      "normalized_diff": [
+        "--- pinned\n",
+        "+++ current-reference\n",
+        "@@ -133,8 +133,8 @@\n",
+        " \t\t */",
+        " \t\t",
+        " \t\tin feature onOccurrence : Evaluation redefines onOccurrence {",
+        "-\t    \tprotected monitoredOccurrence : Evaluation [1] redefines monitoredOccurrence {",
+        "-\t\t\t\tout result : Anything[*] redefines result, monitoredFeature; ",
+        "+\t    \tprotected expr monitoredOccurrence : Evaluation [1] redefines monitoredOccurrence {",
+        "+\t\t\t\treturn result : Anything[*] redefines result, monitoredFeature; ",
+        " \t\t\t} ",
+        " \t\t} ",
+        " \t}",
+        "@@ -147,7 +147,9 @@\n",
+        " \t\t */\t",
+        " \t\t",
+        " \t  \tin bool redefines onOccurrence {",
+        "-\t    \tprotected bool redefines monitoredOccurrence[1];",
+        "+\t    \tprotected bool redefines monitoredOccurrence[1] {",
+        "+\t    \t    return result : Boolean [1];",
+        "+\t    \t}",
+        " \t\t}",
+        " \t\tout redefines afterValues : Boolean [1]; ",
+        " \t\tout redefines beforeValues : Boolean [1];\t ",
+        "@@ -167,10 +169,16 @@\n",
+        "   \t\tfeature isToTrue : Boolean [1] default true;",
+        "   \t\tout afterValues: Boolean[1] redefines values  = isToTrue;",
+        "   \t\tprivate feature monitor1 : BooleanEvaluationResultMonitorPerformance [1] {",
+        "-    \t\tfeature redefines endWhen : HappensJustBefore;",
+        "+    \t\tfeature redefines endWhen : HappensJustBefore {",
+        "+    \t\t    end feature earlierOccurrence;",
+        "+    \t\t    end feature laterOccurrence;",
+        "+    \t\t}",
+        "   \t\t}",
+        "   \t\tprivate feature monitor2 : BooleanEvaluationResultMonitorPerformance [1] {",
+        "-    \t\tfeature redefines endWhen : HappensJustBefore;",
+        "+    \t\tfeature redefines endWhen : HappensJustBefore {",
+        "+                end feature earlierOccurrence;",
+        "+                end feature laterOccurrence;",
+        "+            }",
+        "   \t\t}",
+        " ",
+        "   \t\tprivate connector : HappensJustBefore from [1] monitor1 to [0..1] monitor2;"
+      ]
+    },
+    {
+      "archive": "standards/artifacts/2026-04/Kernel_Semantic_Library-1.0.0.kpar",
+      "entry": "SpatialFrames.kerml",
+      "pinned_sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "pilot_sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "release_sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "same_bytes": true,
+      "normalized_diff": []
+    },
+    {
+      "archive": "standards/artifacts/2026-04/Kernel_Semantic_Library-1.0.0.kpar",
+      "entry": "Observation.kerml",
+      "pinned_sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "pilot_sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "release_sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+      "same_bytes": true,
+      "normalized_diff": []
+    },
+    {
+      "archive": "standards/artifacts/2026-04/Kernel_Semantic_Library-1.0.0.kpar",
+      "entry": "FeatureReferencingPerformances.kerml",
+      "pinned_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "pilot_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "release_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "same_bytes": true,
+      "normalized_diff": []
+    }
+  ],
+  "independent_exact_mappings": [
+    {
+      "artifact": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+      "sha256": "3edc1f3820b93cc507a2b0582fb7c7935125b204cd63c8b252cc816b60aa725b",
+      "relationship_id": "c56797dc-bd9f-5f66-913b-e412c5e50b11",
+      "source_id": "a82b7f6b-327c-5967-9449-d81dcce43ed4",
+      "source_declaration": "FeatureReferencingPerformances::FeatureMonitorPerformance::onOccurrence::monitoredOccurrence::beforeTimeSlice::monitoredFeature",
+      "target_id": "6b06695b-e0d3-5d4e-aca5-af32f4ad40d8",
+      "target": "FeatureReferencingPerformances::FeatureMonitorPerformance::onOccurrence::monitoredOccurrence::monitoredFeature",
+      "authority_status": "non-normative reference implementation interchange",
+      "xml": "<ownedRelationship xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:Redefinition\" ns1:id=\"c56797dc-bd9f-5f66-913b-e412c5e50b11\" elementId=\"c56797dc-bd9f-5f66-913b-e412c5e50b11\" redefinedFeature=\"6b06695b-e0d3-5d4e-aca5-af32f4ad40d8\" redefiningFeature=\"a82b7f6b-327c-5967-9449-d81dcce43ed4\" />\n                        "
+    },
+    {
+      "artifact": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+      "sha256": "3edc1f3820b93cc507a2b0582fb7c7935125b204cd63c8b252cc816b60aa725b",
+      "relationship_id": "359678fa-d2b4-5a12-afba-024ee3e4a73e",
+      "source_id": "6e441b62-91f5-5ad5-9374-914bb795027a",
+      "source_declaration": "FeatureReferencingPerformances::FeatureMonitorPerformance::onOccurrence::monitoredOccurrence::afterSnapshot::monitoredFeature",
+      "target_id": "6b06695b-e0d3-5d4e-aca5-af32f4ad40d8",
+      "target": "FeatureReferencingPerformances::FeatureMonitorPerformance::onOccurrence::monitoredOccurrence::monitoredFeature",
+      "authority_status": "non-normative reference implementation interchange",
+      "xml": "<ownedRelationship xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:Redefinition\" ns1:id=\"359678fa-d2b4-5a12-afba-024ee3e4a73e\" elementId=\"359678fa-d2b4-5a12-afba-024ee3e4a73e\" redefinedFeature=\"6b06695b-e0d3-5d4e-aca5-af32f4ad40d8\" redefiningFeature=\"6e441b62-91f5-5ad5-9374-914bb795027a\" />\n                        "
+    }
+  ],
+  "local_evidence": [
+    {
+      "path": "KerML.pdf",
+      "sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697"
+    },
+    {
+      "path": "verification/kerml-name-resolution-errata-publication-v4/published-witness-imports.rs",
+      "sha256": "f443e5d6e9eeb647bf249b424f7f9b964ef346d073e08012c275371f1fa24207"
+    },
+    {
+      "path": "verification/kerml-name-resolution-errata-publication-v4/pdf-clauses.json",
+      "sha256": "559fb61f90a4c6e665490d4e8cb8401f54be62e38ee65faa2a7274d8424b7e19"
+    },
+    {
+      "path": "verification/kerml-name-resolution-errata-publication-v4/reference-xmi-targets.json",
+      "sha256": "a4da867bec1b461aa9f70d774172bea045647bc45fd72e93e09d274586136616"
+    },
+    {
+      "path": "verification/kerml-name-resolution-errata-publication-v4/redefinition-release-notes.json",
+      "sha256": "51fdbd9b8740b25ca22a9f03bd51f409b74241abd7a5ed1d84b35e3e3dbb1afb"
+    }
+  ],
+  "inspected_code_path": [
+    "KerMLScopeProvider.getScope -> scope_owningNamespace -> scope_Namespace -> scopeFor",
+    "KerMLScope.resolve -> gen -> resolveIfUnvisited (no general lexical parents)",
+    "KerMLScope.getSingleElement -> parent.getSingleElement only without prefix shadowing",
+    "KerMLScope.gen traverses all generalizations and suppresses redefined inherited candidates",
+    "KerMLScope.owned enforces inherited visibility and skips the redefining owningType"
+  ],
+  "deliberate_agentique_safety": "Preserve all incomparable candidates; do not port findFirst winner selection"
+}

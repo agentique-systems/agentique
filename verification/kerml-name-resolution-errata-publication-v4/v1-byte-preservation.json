@@ -1,0 +1,6 @@
+{
+  "problem": "main Git attributes normalized reviewed CRLF manifest to LF, causing UnreviewedManifest before v2 dispatch",
+  "fetched_blob_sha256": "9b19cbb2219353b2cbdc4e2bb9ccdd89c7d017c59a8a291a786862b21c852bc9",
+  "restored_reviewed_sha256": "7614fec2b75e14e7181d7e8a0d474cbd3000f53ca3470d8d9814f4b40fd82994",
+  "change": "Restore exactly the bytes identified by existing frozen REVIEWED_MANIFEST_SHA256 and prevent future Git normalization; no semantic or descriptor change"
+}

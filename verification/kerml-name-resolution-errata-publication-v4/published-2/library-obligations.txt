@@ -1,0 +1,10 @@
+    Finished `release` profile [optimized] target(s) in 0.15s
+     Running `target/kerml-v4\release\examples\library_obligations.exe --published --output=verification/kerml-name-resolution-errata-publication-v4/published-2/obligations.json`
+refinement 0: 0 provisional endpoints; 4008 obligations
+refinement 1: 2121 provisional endpoints; 1887 obligations
+refinement 2: 3749 provisional endpoints; 259 obligations
+refinement 3: 3964 provisional endpoints; 44 obligations
+refinement 4: 3987 provisional endpoints; 21 obligations
+refinement 5: 3995 provisional endpoints; 13 obligations
+refinement 6: 3998 provisional endpoints; 10 obligations
+Captured 513 reference, 10 structural, 166 query obligations

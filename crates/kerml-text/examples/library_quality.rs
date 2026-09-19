@@ -23,6 +23,7 @@ struct Counts {
     resolution: BTreeMap<(&'static str, ElementId), String>,
     semantic: BTreeMap<(&'static str, ElementId), String>,
     obligations: Vec<Value>,
+    validation_checks: BTreeMap<&'static str, usize>,
 }
 impl Counts {
     fn query<T>(&mut self, result: QueryResult<T>) {
@@ -59,9 +60,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("refinement {round}: {refs} provisional endpoints; {obligations} obligations");
         })?;
     let model = draft.candidate().model();
-    let queries = draft.queries(&sources)?;
+    let mut queries = draft.queries(&sources)?;
+    let context = queries.context().clone();
     let mut counts = BTreeMap::<DocumentId, Counts>::new();
-    for record in model.elements() {
+    for (index, record) in model.elements().enumerate() {
+        // Bound memoized proof populations during a complete corpus audit.
+        // Rebinding the same immutable input must preserve the exact context.
+        if index > 0 && index % 128 == 0 {
+            queries = draft.queries(&sources)?;
+            assert_eq!(queries.context(), &context);
+        }
         let origin = &draft.source_map()[&FactKey::Element(record.id())];
         let row = counts.entry(origin.document).or_default();
         let is = |class| {
@@ -73,6 +81,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         row.elements += 1;
         row.relationships += usize::from(is(c::RELATIONSHIP));
         row.expressions += usize::from(is(c::EXPRESSION) || is(c::FUNCTION));
+        let local = queries.validate_local_structure(record.id());
+        for rule in &local.value {
+            *row.validation_checks.entry(rule).or_default() += 1;
+        }
+        row.query(local);
+        if is(c::NAMESPACE) {
+            let names = queries.validate_namespace_distinguishability(record.id());
+            for rule in &names.value {
+                *row.validation_checks.entry(rule).or_default() += 1;
+            }
+            row.query(names);
+        }
         // These existing query families are actually evaluated. Full KerML
         // constraint validation is a separate, explicitly incomplete scope.
         if is(c::TYPE) {
@@ -90,7 +110,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     println!("Existing structural query families evaluated over candidate declarations");
-    for reference in draft.references() {
+    for (index, reference) in draft.references().iter().enumerate() {
+        if index % 128 == 0 {
+            queries = draft.queries(&sources)?;
+            assert_eq!(queries.context(), &context);
+        }
         let row = counts.get_mut(&reference.origin.document).unwrap();
         let result = queries.lookup_relationship_target(
             reference.relationship,
@@ -196,7 +220,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "resolution_status":if resolution_complete { "complete" } else { "incomplete" },
             "reference_count":row.assertions,"unresolved_count":row.unresolved,"ambiguous_count":row.ambiguous,
             "incomplete_reference_count":row.incomplete,"mismatched_endpoint_count":row.mismatched,
-            "KerML_semantic_status":"incomplete", "full_KerML_constraint_validation":null,
+            "KerML_semantic_status":"incomplete", "full_KerML_constraint_validation":{"status":"incomplete","evaluated_constraints":row.validation_checks,"remaining_scope":"Additional structural, derived and implied relationship constraints remain mandatory before acceptance"},
             "query_count":row.queries, "incomplete_query_count":row.query_incomplete, "invalid_query_count":row.query_invalid,
             "unevaluated_expression_count":row.expressions,
             "diagnostics_by_category":{
@@ -224,7 +248,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "format":"agentique-kerml-library-semantic-quality/1", "library_set":sources.content_set_id(),
         "baseline_profile":draft.baseline_profile().id(),
         "authority_scope":"Agentique operational errata profile; exact published descriptors remain separately accessible",
-        "scope":"Complete pinned three-library KerML corpus. Structural semantic publication required; execution excluded. Null means not evaluated.",
+        "scope":"Complete pinned three-library KerML corpus. Structural semantic publication required; execution excluded. Unevaluated validation scopes are explicit.",
+        "query_cache_batch_size":128,
         "semantic_quality_gate_passed":passed,"published_snapshot":published,
         "structural_obligation_count":draft.candidate().obligations().len(),
         "binding_count":queries.context().standard_bindings.as_ref().unwrap().iter().count(),

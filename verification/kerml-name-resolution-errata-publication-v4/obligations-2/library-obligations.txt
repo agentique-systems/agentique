@@ -1,0 +1,19 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 1m 49s
+     Running `target\release\examples\library_obligations.exe --output=verification/kerml-name-resolution-errata-publication-v4/obligations-2/obligations.json`
+refinement 0: 0 provisional endpoints; 4003 obligations
+refinement 1: 2108 provisional endpoints; 1895 obligations
+refinement 2: 3691 provisional endpoints; 312 obligations
+refinement 3: 3849 provisional endpoints; 154 obligations
+refinement 4: 3924 provisional endpoints; 79 obligations
+refinement 5: 3954 provisional endpoints; 49 obligations
+refinement 6: 3972 provisional endpoints; 31 obligations
+refinement 7: 3993 provisional endpoints; 10 obligations
+refinement 8: 3999 provisional endpoints; 4 obligations
+
+thread 'main' (10148) panicked at crates\kerml-text\examples\library_obligations.rs:101:126:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\release\examples\library_obligations.exe --output=verification/kerml-name-resolution-errata-publication-v4/obligations-2/obligations.json` (exit code: 101)

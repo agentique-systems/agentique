@@ -1,0 +1,154 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-19T13:09:22.148Z",
+    "durationMs": 2006,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "started": "2026-09-19T13:09:24.155Z",
+    "durationMs": 11886,
+    "exitCode": 101,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo test --workspace",
+    "started": "2026-09-19T13:09:36.042Z",
+    "durationMs": 231717,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rust-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+    "started": "2026-09-19T13:13:27.796Z",
+    "durationMs": 12174,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generated.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-19T13:13:39.971Z",
+    "durationMs": 2277,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-19T13:13:42.249Z",
+    "durationMs": 5147,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  },
+  {
+    "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-standard-libraries -p agq-metamodel-gen",
+    "started": "2026-09-19T13:13:47.397Z",
+    "durationMs": 19696,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rustdoc.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-19T13:14:07.096Z",
+    "durationMs": 6392,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "npm run check",
+    "started": "2026-09-19T13:14:13.489Z",
+    "durationMs": 5019,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-check.txt"
+  },
+  {
+    "command": "npm run build",
+    "started": "2026-09-19T13:14:18.509Z",
+    "durationMs": 4873,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-build.txt"
+  },
+  {
+    "command": "npm test",
+    "started": "2026-09-19T13:14:23.384Z",
+    "durationMs": 1713,
+    "exitCode": 0,
+    "signal": null,
+    "log": "node-tests.txt"
+  },
+  {
+    "command": "npm run test:e2e",
+    "started": "2026-09-19T13:14:25.106Z",
+    "durationMs": 83430,
+    "exitCode": 1,
+    "signal": null,
+    "log": "browser-tests.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/inventory.py",
+    "started": "2026-09-19T13:15:48.537Z",
+    "durationMs": 8793,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-inventory.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/generate.py",
+    "started": "2026-09-19T13:15:57.330Z",
+    "durationMs": 417,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-tables.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/test_inventory.py",
+    "started": "2026-09-19T13:15:57.747Z",
+    "durationMs": 539,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-kerml-text --example binding_manifest",
+    "started": "2026-09-19T13:15:58.286Z",
+    "durationMs": 31517,
+    "exitCode": 1,
+    "signal": null,
+    "log": "bindings.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check",
+    "started": "2026-09-19T13:16:29.804Z",
+    "durationMs": 4760,
+    "exitCode": 0,
+    "signal": null,
+    "log": "historical-lexical-corpus.txt"
+  },
+  {
+    "command": "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check",
+    "started": "2026-09-19T13:16:34.565Z",
+    "durationMs": 1162,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-runtime.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-name-resolution-errata-publication-v4/preservation.py",
+    "started": "2026-09-19T13:16:35.727Z",
+    "durationMs": 7439,
+    "exitCode": 0,
+    "signal": null,
+    "log": "preservation.txt"
+  }
+]

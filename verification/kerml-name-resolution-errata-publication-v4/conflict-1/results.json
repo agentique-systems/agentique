@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-semantics --test library_authority_conflict -- --nocapture",
+    "started": "2026-09-19T13:04:07.494Z",
+    "durationMs": 5985,
+    "exitCode": 101,
+    "signal": null,
+    "log": "independent-library-authority-witness.txt"
+  }
+]

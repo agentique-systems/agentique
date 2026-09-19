@@ -158,6 +158,13 @@ impl KerMlQueries<'_> {
                 },
             );
         }
+        if self.is(source, c::ASSOCIATION) {
+            let ends = self.structural_end_features(source);
+            if ends.completeness == Completeness::Complete && ends.value.len() == 2 {
+                roles.push(R::BinaryLink);
+            }
+            out.merge(ends);
+        }
         if self.is(source, c::FEATURE) {
             let typing = self.direct_feature_types(source);
             for target in &typing.value {
@@ -294,7 +301,14 @@ impl KerMlQueries<'_> {
                 continue;
             };
             for &general in &supers.value {
-                let inherited = self.positioned_features(&mut out, general, position);
+                let inherited = if matches!(position, Position::End) {
+                    let ends = self.structural_end_features(general);
+                    let values = ends.value.clone();
+                    out.merge(ends);
+                    values
+                } else {
+                    self.positioned_features(&mut out, general, position)
+                };
                 if let Some(&target) = inherited.get(index).filter(|&&target| target != feature) {
                     out.value.push(target);
                     let premises: Vec<_> = out
@@ -322,6 +336,113 @@ impl KerMlQueries<'_> {
         out.merge(supers);
         out.value.sort();
         out.value.dedup();
+        out
+    }
+
+    /// Structural end ordering used by checkFeatureEndRedefinition and binary
+    /// association specialization. Compute before library implications to avoid
+    /// circularly assuming the very binary base whose obligation is being tested.
+    fn structural_end_features(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
+        use std::collections::{BTreeMap, BTreeSet, VecDeque};
+        let mut out = self.result(vec![]);
+        let mut graph = BTreeMap::new();
+        let mut owned = BTreeMap::new();
+        let mut queue = VecDeque::from([ty]);
+        while let Some(current) = queue.pop_front() {
+            if graph.contains_key(&current) {
+                continue;
+            }
+            let ends = self.positioned_features(&mut out, current, Position::End);
+            owned.insert(current, ends);
+            let relationships = self.owned_relationships(current);
+            let mut generals = vec![];
+            for &relationship in &relationships.value {
+                if self.is(relationship, c::SPECIALIZATION) {
+                    if let Some(general) =
+                        self.read_reference(&mut out, relationship, p::SPECIALIZATION_GENERAL)
+                    {
+                        if general != current && !generals.contains(&general) {
+                            generals.push(general);
+                        }
+                    } else {
+                        out.problem(
+                            Completeness::Incomplete,
+                            "KQ_END_GENERAL",
+                            relationship,
+                            "End feature ordering requires the unresolved general Type",
+                        );
+                    }
+                }
+            }
+            out.merge(relationships);
+            queue.extend(generals.iter().copied());
+            graph.insert(current, generals);
+        }
+        let mut values = BTreeMap::<ElementId, Vec<ElementId>>::new();
+        while values.len() < graph.len() {
+            let ready: Vec<_> = graph
+                .iter()
+                .filter(|(id, parents)| {
+                    !values.contains_key(id) && parents.iter().all(|p| values.contains_key(p))
+                })
+                .map(|(id, _)| *id)
+                .collect();
+            if ready.is_empty() {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_END_CYCLE",
+                    ty,
+                    "Cyclic specialization prevents complete structural end ordering",
+                );
+                return out;
+            }
+            for current in ready {
+                let mut ends = owned[&current].clone();
+                let mut suppressed = BTreeSet::new();
+                // If positional redefinition already replaces every inherited
+                // end, unresolved explicit targets cannot affect this end set.
+                let covered = graph[&current]
+                    .iter()
+                    .all(|g| values[g].len() <= ends.len());
+                for feature in ends.iter().filter(|_| !covered) {
+                    let mut pending = vec![*feature];
+                    let mut seen = BTreeSet::new();
+                    while let Some(f) = pending.pop() {
+                        if !seen.insert(f) {
+                            continue;
+                        }
+                        let explicit = self.targets(f, QueryKind::RedefinedFeatures);
+                        suppressed.extend(explicit.value.iter().copied());
+                        pending.extend(explicit.value.iter().copied());
+                        out.merge(explicit);
+                    }
+                }
+                // Every owned end position implies redefinition of that position
+                // in each direct general, independently of its declared name.
+                for general in &graph[&current] {
+                    suppressed.extend(values[general].iter().take(ends.len()).copied());
+                }
+                for general in &graph[&current] {
+                    for &feature in &values[general] {
+                        let membership = self.owning_relationship(feature);
+                        let visible = membership.value.is_some_and(|m| {
+                            self.visible(
+                                &mut out,
+                                m,
+                                p::MEMBERSHIP_VISIBILITY,
+                                MemberAccess::NonPrivate,
+                            )
+                        });
+                        out.merge(membership);
+                        if visible && !suppressed.contains(&feature) && !ends.contains(&feature) {
+                            ends.push(feature);
+                        }
+                    }
+                }
+                values.insert(current, ends);
+            }
+        }
+        out.value = values.remove(&ty).unwrap_or_default();
         out
     }
 }

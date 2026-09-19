@@ -1,0 +1,35 @@
+{
+  "accepted": false,
+  "baseline_profile": "agentique-kerml-1.0-operational/2",
+  "mandatory_obligations": [
+    {
+      "document": "Kernel Semantic Library/Performances.kerml",
+      "element": "7e1188d3-adb0-528f-a28d-2bfbb1fb023c",
+      "metaclass": "ReferenceSubsetting",
+      "property": "referencedFeature",
+      "property_id": "a50148e3-e9b1-583e-bd5b-d9d35f346af9",
+      "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+      "source": "result",
+      "source_range": [
+        7165,
+        7171
+      ],
+      "syntax_production": "OwnedReferenceSubsetting"
+    },
+    {
+      "document": "Kernel Semantic Library/Performances.kerml",
+      "element": "ab565506-b88a-504d-af1d-fcad3382b969",
+      "metaclass": "ReferenceSubsetting",
+      "property": "referencedFeature",
+      "property_id": "a50148e3-e9b1-583e-bd5b-d9d35f346af9",
+      "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+      "source": "result",
+      "source_range": [
+        6854,
+        6860
+      ],
+      "syntax_production": "OwnedReferenceSubsetting"
+    }
+  ],
+  "rule_version": "agq-kerml-query/10"
+}

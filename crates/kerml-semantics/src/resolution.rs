@@ -101,51 +101,17 @@ impl KerMlQueries<'_> {
                 let ty = owner.value;
                 out.merge(owner);
                 if let Some(ty) = ty.filter(|t| self.is(*t, c::TYPE)) {
-                    let owned = self.owned_relationships(ty);
-                    let specializations: Vec<_> = owned
-                        .value
-                        .iter()
-                        .copied()
-                        .filter(|r| self.is(*r, c::SPECIALIZATION))
-                        .collect();
-                    out.merge(owned);
-                    for specialization in specializations {
-                        if let Some(general) =
-                            self.read_reference(&mut out, specialization, p::SPECIALIZATION_GENERAL)
-                        {
-                            let lookup = self.lookup_path(general, name);
-                            out.value = lookup.value.clone();
-                            out.merge(lookup);
-                            if !out.value.is_empty() {
-                                return out;
-                            }
-                        }
-                    }
-                    // Implied generalizations also participate. Remove redundant
-                    // ancestors before selecting an implied starting namespace;
-                    // their more specific descendants already provide that scope.
-                    let generals = self.direct_specializations(ty);
-                    let mut redundant = BTreeSet::new();
-                    for &general in &generals.value {
-                        let ancestors = self.all_specializations(general);
-                        redundant.extend(ancestors.value.iter().copied());
-                        out.merge(ancestors);
-                    }
-                    let scopes: Vec<_> = generals
-                        .value
-                        .iter()
-                        .copied()
-                        .filter(|g| !redundant.contains(g))
-                        .collect();
-                    out.merge(generals);
-                    for general in scopes {
-                        let lookup = self.lookup_path(general, name);
+                    if self.context().options.baseline_profile
+                        == agq_kerml::BaselineProfile::OPERATIONAL_V2
+                    {
+                        let lookup = self.operational_redefinition_target(context, scope, ty, name);
                         out.value = lookup.value.clone();
                         out.merge(lookup);
-                        if !out.value.is_empty() {
-                            return out;
-                        }
+                        return out;
                     }
+                    let lookup = self.published_redefinition_target(ty, name);
+                    out.value = lookup.value.clone();
+                    out.merge(lookup);
                     return out;
                 }
             }
@@ -208,12 +174,75 @@ impl KerMlQueries<'_> {
             return out;
         }
     }
+    fn published_redefinition_target(
+        &self,
+        ty: ElementId,
+        name: &QualifiedName,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        let mut out = self.result(vec![]);
+        let owned = self.owned_relationships(ty);
+        let specializations: Vec<_> = owned
+            .value
+            .iter()
+            .copied()
+            .filter(|r| self.is(*r, c::SPECIALIZATION))
+            .collect();
+        out.merge(owned);
+        for specialization in specializations {
+            if let Some(general) =
+                self.read_reference(&mut out, specialization, p::SPECIALIZATION_GENERAL)
+            {
+                let lookup = self.lookup_path(general, name);
+                out.value = lookup.value.clone();
+                out.merge(lookup);
+                if !out.value.is_empty() {
+                    return out;
+                }
+            }
+        }
+        // Implied generalizations also participate. Remove redundant
+        // ancestors before selecting an implied starting namespace;
+        // their more specific descendants already provide that scope.
+        let generals = self.direct_specializations(ty);
+        let mut redundant = BTreeSet::new();
+        for &general in &generals.value {
+            let ancestors = self.all_specializations(general);
+            redundant.extend(ancestors.value.iter().copied());
+            out.merge(ancestors);
+        }
+        let scopes: Vec<_> = generals
+            .value
+            .iter()
+            .copied()
+            .filter(|g| !redundant.contains(g))
+            .collect();
+        out.merge(generals);
+        for general in scopes {
+            let lookup = self.lookup_path(general, name);
+            out.value = lookup.value.clone();
+            out.merge(lookup);
+            if !out.value.is_empty() {
+                return out;
+            }
+        }
+        out
+    }
+
     /// Candidate denotations, with completeness and evidence preserved. During
     /// construction these are provisional until every answer-affecting read is complete.
     pub fn lookup_path(
         &self,
         scope: ElementId,
         name: &QualifiedName,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        self.lookup_path_excluding(scope, name, None)
+    }
+
+    fn lookup_path_excluding(
+        &self,
+        scope: ElementId,
+        name: &QualifiedName,
+        excluded: Option<(ElementId, ElementId, RedefinitionRulePath)>,
     ) -> QueryResult<Vec<MemberMatch>> {
         let mut out = self.result(vec![]);
         if name.segments.is_empty() || name.segments.iter().any(String::is_empty) {
@@ -243,6 +272,14 @@ impl KerMlQueries<'_> {
             scopes.push(root);
         }
         for namespace in scopes {
+            if let Some((_, relationship, path)) = excluded {
+                out.search_dependencies
+                    .insert(SearchDependency::RedefinitionScope {
+                        relationship,
+                        namespace,
+                        path,
+                    });
+            }
             let candidates = if namespace == root {
                 out.search_dependencies
                     .insert(SearchDependency::ProjectRoots { root });
@@ -254,7 +291,7 @@ impl KerMlQueries<'_> {
                     .unwrap_or_else(|| BTreeSet::from([root]));
                 let mut candidates = BTreeSet::new();
                 for available in roots {
-                    let lookup = self.lookup_member(
+                    let lookup = self.lookup_member_excluding(
                         available,
                         &name.segments[0],
                         if available == root {
@@ -262,13 +299,19 @@ impl KerMlQueries<'_> {
                         } else {
                             MemberAccess::Public
                         },
+                        excluded.map(|(feature, _, _)| feature),
                     );
                     candidates.extend(lookup.value.iter().copied());
                     out.merge(lookup);
                 }
                 candidates.into_iter().collect()
             } else {
-                let lookup = self.lookup_member(namespace, &name.segments[0], MemberAccess::All);
+                let lookup = self.lookup_member_excluding(
+                    namespace,
+                    &name.segments[0],
+                    MemberAccess::All,
+                    excluded.map(|(feature, _, _)| feature),
+                );
                 let candidates = lookup.value.clone();
                 out.merge(lookup);
                 candidates
@@ -287,9 +330,209 @@ impl KerMlQueries<'_> {
                 out.value.clear();
                 break;
             }
-            let lookup = self.lookup_member(namespace, segment, MemberAccess::Public);
+            let lookup = self.lookup_member_excluding(
+                namespace,
+                segment,
+                MemberAccess::Public,
+                excluded.map(|(feature, _, _)| feature),
+            );
             out.value = lookup.value.clone();
             out.merge(lookup);
+        }
+        out
+    }
+
+    fn lookup_member_excluding(
+        &self,
+        namespace: ElementId,
+        name: &str,
+        access: MemberAccess,
+        excluded: Option<ElementId>,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        if excluded.is_none() {
+            return self.lookup_member(namespace, name, access);
+        }
+        let population = self.namespace_members_excluding(namespace, access, excluded);
+        self.named_population(population, name)
+    }
+
+    fn named_population(
+        &self,
+        population: QueryResult<Vec<MemberMatch>>,
+        name: &str,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        let mut out = self.result(vec![]);
+        for member in &population.value {
+            if self
+                .names(&mut out, member.membership, Some(member.element))
+                .contains(name)
+            {
+                out.value.push(*member);
+            }
+        }
+        out.merge(population);
+        out
+    }
+
+    /// AGQ-KERML10-002 / agentique-kerml10-redefinition-target/1.
+    /// The dispatch above limits this interpretation to operational KerML 1.0/v2.
+    fn operational_redefinition_target(
+        &self,
+        relationship: ElementId,
+        feature: ElementId,
+        owning_type: ElementId,
+        name: &QualifiedName,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        let mut out = self.result(vec![]);
+        if name.segments.is_empty() || name.segments.iter().any(String::is_empty) {
+            out.problem(
+                Completeness::Invalid,
+                "KQ_REFERENCE_NAME",
+                relationship,
+                "Reference path must have nonempty segments",
+            );
+            return out;
+        }
+        if name.absolute {
+            out = self.lookup_path_excluding(
+                owning_type,
+                name,
+                Some((feature, relationship, RedefinitionRulePath::ExplicitRoot)),
+            );
+        } else {
+            let generals = self.supertypes(owning_type);
+            let mut candidates = BTreeSet::new();
+            for &namespace in &generals.value {
+                out.search_dependencies
+                    .insert(SearchDependency::RedefinitionScope {
+                        relationship,
+                        namespace,
+                        path: RedefinitionRulePath::Inherited,
+                    });
+                let lookup = self.lookup_member_excluding(
+                    namespace,
+                    &name.segments[0],
+                    MemberAccess::NonPrivate,
+                    Some(feature),
+                );
+                candidates.extend(lookup.value.iter().copied());
+                out.merge(lookup);
+            }
+            out.search_dependencies
+                .insert(SearchDependency::RedefinitionScope {
+                    relationship,
+                    namespace: owning_type,
+                    path: RedefinitionRulePath::Inherited,
+                });
+            out.merge(generals);
+            // The special search compares matching candidates from every general
+            // scope. A differently named redefinition on another branch does not
+            // hide a name that is independently available through this branch.
+            let mut suppressed = BTreeSet::new();
+            for candidate in &candidates {
+                let mut pending = vec![candidate.element];
+                let mut seen = BTreeSet::new();
+                while let Some(current) = pending.pop() {
+                    if !seen.insert(current) || !self.is(current, c::FEATURE) {
+                        continue;
+                    }
+                    let redefined = self.redefined_features(current);
+                    for target in &redefined.value {
+                        if *target != candidate.element {
+                            suppressed.insert(*target);
+                        }
+                        pending.push(*target);
+                    }
+                    out.merge(redefined);
+                }
+            }
+            if !candidates.is_empty() && candidates.iter().all(|m| suppressed.contains(&m.element))
+            {
+                out.problem(
+                    Completeness::Invalid,
+                    "KQ_REDEFINITION_CYCLE",
+                    relationship,
+                    "Mutually redefining candidates cannot establish a target",
+                );
+                out.value = candidates.into_iter().collect();
+            } else {
+                out.value = candidates
+                    .into_iter()
+                    .filter(|m| !suppressed.contains(&m.element))
+                    .collect();
+            }
+            if out.value.is_empty() && out.completeness == Completeness::Complete {
+                let parent = self.owner(owning_type);
+                let lexical = parent.value;
+                out.merge(parent);
+                if let Some(lexical) = lexical {
+                    let lookup = self.lookup_path_excluding(
+                        lexical,
+                        name,
+                        Some((
+                            feature,
+                            relationship,
+                            RedefinitionRulePath::LexicalContaining,
+                        )),
+                    );
+                    out.value = lookup.value.clone();
+                    out.merge(lookup);
+                }
+            } else {
+                // A found prefix, ambiguity or incomplete inherited search cannot
+                // trigger a lexical retry, even if a qualified suffix is absent.
+                for segment in &name.segments[1..] {
+                    if out.value.len() != 1 {
+                        break;
+                    }
+                    let namespace = out.value[0].element;
+                    if !self.is(namespace, c::NAMESPACE) {
+                        out.value.clear();
+                        break;
+                    }
+                    let lookup = self.lookup_member_excluding(
+                        namespace,
+                        segment,
+                        MemberAccess::Public,
+                        Some(feature),
+                    );
+                    out.value = lookup.value.clone();
+                    out.merge(lookup);
+                }
+            }
+        }
+        self.fact(
+            &mut out,
+            agq_kernel::provenance::FactKey::Element(relationship),
+        );
+        for member in out.value.clone() {
+            if member.element == feature || !self.is(member.element, c::FEATURE) {
+                out.problem(
+                    Completeness::Invalid,
+                    "KQ_REDEFINITION_TARGET",
+                    relationship,
+                    "Redefinition requires a distinct Feature target",
+                );
+            }
+            let premises: Vec<_> = out
+                .positive_dependencies
+                .iter()
+                .copied()
+                .map(Evidence::Fact)
+                .chain(
+                    out.search_dependencies
+                        .iter()
+                        .cloned()
+                        .map(Evidence::Search),
+                )
+                .collect();
+            out.prove(
+                QueryKind::ResolveReference,
+                relationship,
+                member.element,
+                Rule::OperationalRedefinitionTargetV1,
+                premises,
+            );
         }
         out
     }
@@ -303,6 +546,17 @@ impl KerMlQueries<'_> {
         membership_target: bool,
     ) -> QueryResult<Resolution> {
         let lookup = self.lookup_path(scope, name);
+        self.denote_lookup(scope, name, expected, membership_target, lookup)
+    }
+
+    fn denote_lookup(
+        &self,
+        scope: ElementId,
+        name: &QualifiedName,
+        expected: MetaclassId,
+        membership_target: bool,
+        lookup: QueryResult<Vec<MemberMatch>>,
+    ) -> QueryResult<Resolution> {
         let found: Vec<_> = lookup
             .value
             .iter()
@@ -370,6 +624,30 @@ impl KerMlQueries<'_> {
         }
         out
     }
+    /// Resolve an authored owned redefinition assertion before its relationship
+    /// can be published. Evidence is anchored in the existing defining Feature;
+    /// callers retain the source assertion's identity and origin separately.
+    pub fn resolve_redefinition_reference(
+        &self,
+        feature: ElementId,
+        name: &QualifiedName,
+    ) -> QueryResult<Resolution> {
+        let parent = self.owner(feature);
+        let ty = parent.value;
+        let mut lookup = if let Some(ty) = ty.filter(|t| self.is(*t, c::TYPE)) {
+            if self.context().options.baseline_profile == agq_kerml::BaselineProfile::OPERATIONAL_V2
+            {
+                self.operational_redefinition_target(feature, feature, ty, name)
+            } else {
+                self.published_redefinition_target(ty, name)
+            }
+        } else {
+            self.lookup_path(ty.unwrap_or(feature), name)
+        };
+        lookup.merge(parent);
+        self.denote_lookup(feature, name, c::FEATURE, false, lookup)
+    }
+
     /// KerML 8.2.3.5: an owned specialization starts in its specific Type's
     /// owning namespace. Names and imports are resolved exclusively by queries.
     pub fn resolve_reference(

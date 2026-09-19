@@ -1,0 +1,33 @@
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+    Checking agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+    Checking agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+    Checking agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+error: failed to create dependency graph at `\\?\C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental\library_authority_conflict-0k8czqmi6mft8\s-hmftsfq3gp-0vfu4r9-working\dep-graph.part.bin`: There is not enough space on the disk. (os error 112)
+
+error: failed to write file \\?\C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental\participant_contract-3mggivcq2l5fz\s-hmftsfp23f-00aku1x-working\dep-graph.part.bin: There is not enough space on the disk. (os error 112)"
+
+error: could not compile `agq-kerml-semantics` (test "participant_contract") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `agq-kerml-semantics` (test "library_authority_conflict") due to 1 previous error
+error: failed to write `C:\Users\phili\github\agentique-systems\agentique\target\debug\.fingerprint\agq-workspace-65ca879272c19f0c\test-integration-test-editing.json`
+
+Caused by:
+  There is not enough space on the disk. (os error 112)
+error: failed to write `C:\Users\phili\github\agentique-systems\agentique\target\debug\.fingerprint\agq-kerml-semantics-04657a520231f49f\test-integration-test-foundation.json`
+
+Caused by:
+  There is not enough space on the disk. (os error 112)
+error: failed to write query cache to `\\?\C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental\redefinition_v2-0mkwaarvfetjv\s-hmftsfsqd3-0wuqg2r-working\query-cache.bin`: There is not enough space on the disk. (os error 112)
+
+error: could not compile `agq-kerml-semantics` (test "redefinition_v2") due to 1 previous error
+error: failed to write to `C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\rmetaDgz4j5\full.rmeta`: There is not enough space on the disk. (os error 112)
+
+error: failed to write query cache to `\\?\C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental\agq_kerml_text-098ek1hrgmcop\s-hmftsfpws6-04eadsc-working\query-cache.bin`: There is not enough space on the disk. (os error 112)
+
+error: could not compile `agq-kerml-text` (lib test) due to 1 previous error
+error: could not compile `agq-kerml-text` (lib) due to 1 previous error
+error: failed to write query cache to `\\?\C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental\agq_application-1qpu3t5fpevuy\s-hmftsfvu59-1vodrhm-working\query-cache.bin`: There is not enough space on the disk. (os error 112)
+
+error: could not compile `agq-application` (lib) due to 1 previous error

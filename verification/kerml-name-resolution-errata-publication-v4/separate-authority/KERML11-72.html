@@ -1,0 +1,206 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    
+
+
+
+
+
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+<title>Kernel Modeling Language (KerML) 1.1 RTF &mdash; Open Issues - OMG Issue Tracker</title>
+<script type="text/javascript">
+    if (!window.performance) {
+        window.mpPerformance = {};
+        window.mpPerformance.responseStart = new Date().getTime();
+    }
+</script>
+<meta name="application-name" content="JIRA" data-name="jira" data-version="6.1.2"><meta name="ajs-dev-mode" content="false">
+<meta name="ajs-context-path" content="">
+<meta name="ajs-version-number" content="6.1.2">
+<meta name="ajs-build-number" content="6157">
+<meta name="ajs-is-beta" content="false">
+<meta name="ajs-is-rc" content="false">
+<meta name="ajs-is-snapshot" content="false">
+<meta name="ajs-is-milestone" content="false">
+<meta name="ajs-remote-user" content="omg-system">
+<meta name="ajs-remote-user-fullname" content="OMG System User">
+<meta name="ajs-user-locale" content="en_US">
+<meta name="ajs-user-locale-group-separator" content=",">
+<meta name="ajs-app-title" content="OMG Issue Tracker">
+<meta name="ajs-keyboard-shortcuts-enabled" content="true">
+<meta name="ajs-enabled-dark-features" content="[&quot;app-switcher.new&quot;,&quot;com.atlassian.jira.darkfeature.CommonHeader&quot;,&quot;jira.frother.reporter.field&quot;,&quot;com.atlassian.jira.config.PDL&quot;,&quot;frother.assignee.field&quot;]">
+<meta name="ajs-date-relativize" content="true">
+<meta name="ajs-date-time" content="h:mm a z">
+<meta name="ajs-date-day" content="EEEE h:mm a z">
+<meta name="ajs-date-dmy" content="d MMMM yyyy">
+<meta name="ajs-date-complete" content="dd/MMM/yy h:mm a z">
+<meta name="ajs-in-admin-mode" content="false">
+<meta name="ajs-is-sysadmin" content="true">
+<meta name="ajs-is-admin" content="true">
+<meta name="ajs-outgoing-mail-enabled" content="true">
+<meta name="ajs-admin-quicksearch-show" content="true">
+
+
+    
+<meta id="atlassian-token" name="atlassian-token" content="BH2W-WAP3-BN8J-S7H8|c9ef837db1c60eaef90e2406589914ad9cdaff37|lout">
+
+
+
+<link rel="shortcut icon" href="/s/en_US707sk0-1988229788/6157/60/_/favicon.ico">
+<link rel="search" type="application/opensearchdescription+xml" href="/osd.jsp" title="Kernel Modeling Language (KerML) 1.1 RTF &mdash; Open Issues - OMG Issue Tracker"/>
+
+    
+
+
+<!--[if IE]><![endif]-->
+<script type="text/javascript">var contextPath = '';</script>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css" media="all">
+<!--[if lte IE 8]>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css?conditionalComment=lte+IE+8" media="all">
+<![endif]-->
+<!--[if lte IE 9]>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css?conditionalComment=lte+IE+9" media="all">
+<![endif]-->
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/f7d9fa89f956d340ee4a86dc404fb0ae/_/download/contextbatch/css/atl.global/batch.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/38b67dba02dfa46ea0f936745cd2b885/_/download/contextbatch/css/jira.global/batch.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-experimental-table-sortable/com.atlassian.auiplugin:aui-experimental-table-sortable.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-date-picker/com.atlassian.auiplugin:aui-date-picker.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/1.36-SNAPSHOT/_/download/batch/org.omg.jira.task-forces:base-resources/org.omg.jira.task-forces:base-resources.css" media="all">
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/js/batch.js" ></script>
+<!--[if lte IE 8]>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/js/batch.js?conditionalComment=lte+IE+8" ></script>
+<![endif]-->
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/f7d9fa89f956d340ee4a86dc404fb0ae/_/download/contextbatch/js/atl.global/batch.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/38b67dba02dfa46ea0f936745cd2b885/_/download/contextbatch/js/jira.global/batch.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-experimental-table-sortable/com.atlassian.auiplugin:aui-experimental-table-sortable.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-date-picker/com.atlassian.auiplugin:aui-date-picker.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/1.36-SNAPSHOT/_/download/batch/org.omg.jira.task-forces:base-resources/org.omg.jira.task-forces:base-resources.js" ></script>
+
+<script type="text/javascript" src="/rest/api/1.0/shortcuts/6157/48dfafa77a0b26adf93b7dca6624ae08/shortcuts.js"></script>
+
+
+    
+    
+    <meta name="decorator" content="blank"/>
+
+</head>
+<body id="jira" class="aui-layout aui-theme-default page-type-blank " data-version="6.1.2">
+    
+<section id="content" role="main">
+    <header class="aui-page-header">
+        <div class="aui-page-header-inner">
+            <div class="aui-page-header-image">
+            <span class="aui-avatar aui-avatar-large aui-avatar-project">
+                <span class="aui-avatar-inner">
+                    <img id="project-avatar" alt="KerML 1.1b1 RTF Avatar"
+                         src="https://issues.omg.org/plugins/servlet/view-project-avatar?avatarId=10011&amp;size=large"/>
+                </span>
+            </span>
+            </div>
+            <div class="aui-page-header-main">
+                <ol class="aui-nav aui-nav-breadcrumbs">
+                    <li>OMG Issue</li>
+                </ol>
+                <h1><a href="https://issues.omg.org/issues/task-force/KERML11">KERML11</a> &mdash; Redefinition inheritance anomaly</h1>
+                <ul class="operations-list">
+                    <li><span class="list-label">Key:</span> <span id="pd-key"><a href="https://issues.omg.org/browse/KERML11-72">KERML11-72</a></span>
+                    </li>
+                    <li><span class="list-label">OMG Task Force:</span> <span><a
+                            href="https://issues.omg.org/browse/KERML11">Kernel Modeling Language (KerML) 1.1 RTF</a></span></li>
+                </ul>
+            </div>
+            <div class="aui-page-header-actions">
+                <div class="aui-buttons">
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/KERML11?view=OPEN" title="Issues not resolved">Open</a>
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/KERML11?view=CLOSED" title="Issues resolved by a task force and approved by Board">Closed</a>
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/KERML11?view=ALL" title="All Issues">All</a>
+                                    </div>
+            </div>
+        </div>
+    </header>
+    <div class="aui-page-panel">
+        <div class="aui-page-panel-inner">
+            <section class="aui-page-panel-content">
+                <article id="issue-57108" class="issue-description">
+                    <a id="id57108" href="#"></a>
+                    <ul class="property-list">
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Key:</strong>
+                                <span class="value">KERML11-72</span>
+                            </div>
+                        </li>
+                                                <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Status:</strong>
+                                <span class="value"><span
+                                        class="aui-lozenge status-public-open">open</span> &nbsp; </span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Source:</strong>
+                                <span class="value">Model Driven Solutions (        <a class="user-hover" rel="25336" id="_25336" href="/secure/ViewProfile.jspa?name=25336">Mr. Ed Seidewitz</a>)</span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Summary:</strong>
+                                <span class="value"><p>As document in 8.3.3.1.10 Type for the operation <tt>removedRedefinedFeatures</tt>, an otherwise inheritable <tt>Membership</tt> is removed from the <tt>inheritedMemberships</tt> of a <tt>Type</tt> if either of the following conditions holds:</p>
+<blockquote>
+<ol>
+	<li>The <tt>memberElement</tt> of the <tt>Membership</tt> is included in redefined <tt>Features</tt> of another <tt>Membership</tt> in [the inheritable] <tt>memberships</tt>.</li>
+	<li>One of the redefined <tt>Features</tt> of the <tt>Membership</tt> is a directly <tt>redefinedFeature</tt> of an <tt>ownedFeature</tt> of this <tt>Type</tt>.</li>
+</ol>
+</blockquote>
+<p>But consider applying this rule to the following model:</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>classifier A {
+    feature x;
+}
+classifier B :&gt; A {
+    feature :&gt;&gt; A::x;
+}
+classifier C :&gt; A, B {
+    feature :&gt;&gt; A::x;
+}
+classifier D :&gt; B, C;
+</pre>
+</div></div>
+<p>Clearly, in classifiers <tt>B</tt> and <tt>C</tt>, the feature <tt>A::X</tt> is <em>not</em> inherited, because it is directly redefined by an owned feature of the classifier. Moreover, in classifier <tt>C</tt>, <tt>B::x</tt> is also not inherited, because <tt>B::x</tt> redefines <tt>A::x</tt>, and <tt>A::x</tt> is directly redefined by an owned feature of <tt>C</tt>. In classifier <tt>D</tt> however, <em>both</em> <tt>B::x</tt> and <tt>C::x</tt> are inherited. This is because <tt>C::x</tt> does not actually have a redefinition relationship with <tt>B::x</tt>, so the first condition of the <tt>removeRedefinedFeatures</tt> rule does not apply. As a result, D will inherit two redefinitions of <tt>x</tt>, which is semantically inconsistent and will violate the constraint <tt>validateNamespaceDistinguishibility</tt>.</p>
+
+<p>This seems in itself potentially anomalous for user expectations. However, there is a more concerning impact when implied specializations are involved. For example, suppose the specialization by <tt>C</tt> of <tt>A</tt> and the specialization by <tt>D</tt> of <tt>B</tt> are both implied relationships. Since <tt>C</tt> also specializes <tt>B</tt>, and <tt>B</tt> is a supertype of <tt>A</tt>, according to 8.4.2 Semantic Constraints and Implied Relationships, the implied specialization of <tt>A</tt> can be considered redundant and not included &#8211; and similarly for the implied specialization by <tt>D</tt> of <tt>B</tt>. But it is only permitted, not required, that redundant implied relationships be removed. This means that, if a tool removes the implied specializations of <tt>A</tt> and <tt>B</tt>, then <tt>D</tt> is valid, but, if it does not remove them, then <tt>D</tt> is invalid, which is problematic.</p></span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Reported:</strong>
+                                <span class="value"><a href="https://issues.omg.org/issues/spec/KerML/1.0b2">KerML 1.0b2</a> &mdash;
+                                    Tue, 8 Jul 2025 22:14 GMT</span>
+                            </div>
+                        </li>
+                                                <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Updated:</strong>
+                                <span class="value">Wed, 9 Jul 2025 02:55 GMT</span>
+                            </div>
+                        </li>
+                                                                    </ul>
+                </article>
+                <hr class="fullcontent"/>
+            </section>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

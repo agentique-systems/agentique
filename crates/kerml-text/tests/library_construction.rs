@@ -171,6 +171,31 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
             .any(|o| o.property == p::MEMBERSHIP_IMPORT_IMPORTED_MEMBERSHIP)
     );
     assert!(first.references().iter().any(|r| r.executable_expression));
+    let mut declared_expressions = BTreeSet::new();
+    for document in sources
+        .documents()
+        .filter(|d| d.language() == agq_standard_libraries::LibraryLanguage::KerMl)
+    {
+        let parsed = agq_kerml_syntax::production::parse(
+            document.document(),
+            document.revision(),
+            document.source(),
+            Default::default(),
+        )
+        .unwrap();
+        use agq_kerml_syntax::production::Production as P;
+        declared_expressions.extend(
+            parsed
+                .nodes()
+                .filter(|n| {
+                    matches!(
+                        n.kind(),
+                        P::Expression | P::BooleanExpression | P::Invariant
+                    )
+                })
+                .map(|n| n.id()),
+        );
+    }
     for expression in model.instances(c::EXPRESSION, true).unwrap() {
         let results = queries
             .memberships(expression.id())
@@ -178,9 +203,33 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
             .into_iter()
             .filter(|m| model.element(*m).unwrap().metaclass() == c::RETURN_PARAMETER_MEMBERSHIP)
             .count();
-        assert_eq!(
-            results, 1,
-            "Every expression, including typed casts, has one canonical result"
+        if first.source_map()[&FactKey::Element(expression.id())]
+            .syntax_node
+            .is_some_and(|id| declared_expressions.contains(&id))
+        {
+            assert!(
+                results <= 1,
+                "Declared expressions may inherit their result; never copy it"
+            );
+        } else {
+            assert_eq!(
+                results, 1,
+                "Structural expression forms, including typed casts, retain their local result"
+            );
+        }
+    }
+    for role in [
+        agq_kerml_semantics::StandardRole::Evaluations,
+        agq_kerml_semantics::StandardRole::TrueEvaluations,
+        agq_kerml_semantics::StandardRole::FalseEvaluations,
+    ] {
+        assert!(
+            !queries
+                .memberships(bindings.get(role))
+                .value
+                .iter()
+                .any(|m| model.element(*m).unwrap().metaclass() == c::RETURN_PARAMETER_MEMBERSHIP),
+            "These declarations inherit their result; corroborated by the reference XMI including implied relationships"
         );
     }
 }

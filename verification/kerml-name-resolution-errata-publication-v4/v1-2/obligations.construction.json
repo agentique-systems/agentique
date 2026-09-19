@@ -1,0 +1,77 @@
+{
+  "accepted": false,
+  "baseline_profile": "agentique-kerml-1.0-operational/1",
+  "mandatory_obligations": [
+    {
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "element": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+      "metaclass": "Redefinition",
+      "property": "redefinedFeature",
+      "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+      "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+      "source": "target",
+      "source_range": [
+        29454,
+        29460
+      ],
+      "syntax_production": "OwnedRedefinition"
+    },
+    {
+      "document": "Kernel Semantic Library/Observation.kerml",
+      "element": "6f02358e-3958-5318-9cfc-f284cd5f6ceb",
+      "metaclass": "Redefinition",
+      "property": "redefinedFeature",
+      "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+      "sha256": "603aecde2ef64d519c1bfc89bfc52f5315c05a36aa0cf86174badba5b371ddbf",
+      "source": "observations",
+      "source_range": [
+        3378,
+        3390
+      ],
+      "syntax_production": "OwnedRedefinition"
+    },
+    {
+      "document": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "element": "797f4b27-d25a-55ae-b438-4ce542ab781f",
+      "metaclass": "Redefinition",
+      "property": "redefinedFeature",
+      "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "source": "monitoredFeature",
+      "source_range": [
+        3966,
+        3982
+      ],
+      "syntax_production": "OwnedRedefinition"
+    },
+    {
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "element": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+      "metaclass": "Redefinition",
+      "property": "redefinedFeature",
+      "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+      "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+      "source": "source",
+      "source_range": [
+        29336,
+        29342
+      ],
+      "syntax_production": "OwnedRedefinition"
+    },
+    {
+      "document": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "element": "fbc945bd-6d53-5b2c-8026-d00bcfcad986",
+      "metaclass": "Redefinition",
+      "property": "redefinedFeature",
+      "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "source": "monitoredFeature",
+      "source_range": [
+        4096,
+        4112
+      ],
+      "syntax_production": "OwnedRedefinition"
+    }
+  ],
+  "rule_version": "agq-kerml-query/11"
+}

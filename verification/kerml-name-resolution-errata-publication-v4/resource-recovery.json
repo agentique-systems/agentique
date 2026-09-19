@@ -1,0 +1,61 @@
+{
+  "format": "agentique-verification-resource-incident/1",
+  "scope": "Local verification infrastructure; no semantic authority decision",
+  "failures": [
+    {
+      "runs": [
+        "repair-1",
+        "obligations-6"
+      ],
+      "cause": "Disk exhausted while writing Rust dependency graphs and compiled artifacts",
+      "evidence": "Original logs contain OS error 112 and rustc LLVM no-space output"
+    },
+    {
+      "runs": [
+        "quality-2",
+        "obligations-5",
+        "repair-1"
+      ],
+      "cause": "Memory allocation failed while full library proof caches and builds ran concurrently",
+      "evidence": "Original logs explicitly report failed memory allocations; Windows exit 0xc0000409 is not treated as a semantic test finding"
+    },
+    {
+      "runs": [
+        "published-1",
+        "v1-1"
+      ],
+      "cause": "Waiting audit cargo processes stopped deliberately after resource exhaustion, before full audit completion",
+      "replacements": [
+        "published-2",
+        "v1-2"
+      ]
+    },
+    {
+      "runs": [
+        "quality-3"
+      ],
+      "cause": "Single complete quality audit retained more than 13 GB of memoized proof populations. Stopped deliberately to prevent another allocation failure.",
+      "completed_phase": "Refinement reached 4003 provisional endpoints and zero mandatory lower bounds. Semantic validation was not completed in this run.",
+      "replacement": "quality-4",
+      "mitigation": "Quality and obligation examples reset memoization every 128 inputs and assert identical SemanticContextId. All inputs and complete results remain checked; no semantic rule, threshold or acceptance condition changes."
+    }
+  ],
+  "recovery": {
+    "command": "powershell -NoProfile -File verification/kerml-name-resolution-errata-publication-v4/clear-build-cache.ps1",
+    "target": "C:/Users/phili/github/agentique-systems/agentique/target/debug/incremental",
+    "scope_check": "Resolved absolute target checked against exact workspace incremental-cache path before recursive removal",
+    "exit_code": 1,
+    "output": "Regenerable incremental entries removed; final directory removal reported directory not empty. Subsequent observed free disk space was 36989132800 bytes.",
+    "source_or_evidence_deleted": false,
+    "mitigation": "Run remaining full library audits sequentially using remaining-audits.mjs"
+  },
+  "browser": {
+    "initial_run": "final-1",
+    "initial_exit_code": 1,
+    "finding": "One Initialise-button readiness assertion timed out; three tests passed",
+    "preserved_artifacts": "final-1/browser-failure",
+    "rerun": "browser-2",
+    "rerun_exit_code": 0,
+    "test_changes": false
+  }
+}

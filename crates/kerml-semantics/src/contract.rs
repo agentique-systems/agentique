@@ -16,6 +16,12 @@ pub enum Completeness {
 /// Set reads remain dependencies even when empty. Match pre- AND post-change state.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SearchDependency {
+    /// Explicit profile-scoped redefinition search, including unsuccessful scopes.
+    RedefinitionScope {
+        relationship: ElementId,
+        namespace: ElementId,
+        path: RedefinitionRulePath,
+    },
     /// Generic overlay computation searches, including empty descriptor/navigation searches.
     Kernel(agq_kernel::derived::StructuralSearch),
     Element(ElementId),
@@ -50,6 +56,14 @@ pub enum SearchDependency {
     },
 }
 
+/// Paths in AGQ-KERML10-002, agentique-kerml10-redefinition-target/1.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RedefinitionRulePath {
+    ExplicitRoot,
+    Inherited,
+    LexicalContaining,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Diagnostic {
     pub code: &'static str,
@@ -73,6 +87,7 @@ pub enum QueryKind {
     NamespacePopulation,
     DirectFeatures,
     DirectSpecializations,
+    Supertypes,
     AllSpecializations,
     DirectFeatureTypes,
     SubsettedFeatures,
@@ -109,6 +124,8 @@ pub enum Rule {
     DeclaredMemberName,
     DeclaredReferenceResolution,
     NamespaceResolution,
+    /// Non-normative Agentique semantic erratum, only operational KerML 1.0/v2.
+    OperationalRedefinitionTargetV1,
     ParameterRedefinition,
     ResultRedefinition,
     EndRedefinition,
@@ -117,6 +134,8 @@ pub enum Rule {
     OwnedFeature,
     Specialization,
     TransitiveSpecialization,
+    ConjugatedInheritance,
+    FeatureChainInheritance,
     FeatureTyping,
     Subsetting,
     Redefinition,

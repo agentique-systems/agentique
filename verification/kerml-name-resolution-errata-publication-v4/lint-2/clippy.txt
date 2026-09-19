@@ -1,0 +1,60 @@
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+    Checking agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+    Checking agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+    Checking agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Checking agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+    Checking agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+    Checking agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+    Checking agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+error: this `if` statement can be collapsed
+   --> crates\kerml-text\examples\library_obligations.rs:288:20
+    |
+288 |               } else if model
+    |  ____________________^
+289 | |                 .registry()
+290 | |                 .is_subtype(model.element(named).unwrap().metaclass(), c::FEATURE)
+291 | |                 .unwrap()
+...   |
+308 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+291 ~                 .unwrap()
+292 ~                 && let Some(relationship) =
+293 |                     q.owned_relationships(named).value.into_iter().find(|r| {
+...
+305 |                     }
+306 ~                 }
+    |
+
+error: this `if` statement can be collapsed
+   --> crates\kerml-text\examples\library_obligations.rs:293:17
+    |
+293 | /                 if let Some(relationship) =
+294 | |                     q.owned_relationships(named).value.into_iter().find(|r| {
+295 | |                         model
+296 | |                             .registry()
+...   |
+307 | |                 }
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#collapsible_if
+help: collapse nested if block
+    |
+299 ~                     })
+300 ~                     && let Some(Value::Reference(target)) = model
+301 |                         .navigation_slot(relationship, p::REDEFINITION_REDEFINED_FEATURE)
+...
+304 |                         pending.push(*target);
+305 ~                     }
+    |
+
+error: could not compile `agq-kerml-text` (example "library_obligations") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

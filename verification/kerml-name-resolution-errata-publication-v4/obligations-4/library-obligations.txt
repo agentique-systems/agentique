@@ -1,0 +1,14 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 12.50s
+     Running `target\release\examples\library_obligations.exe --output=verification/kerml-name-resolution-errata-publication-v4/obligations-4/obligations.json`
+refinement 0: 0 provisional endpoints; 4003 obligations
+refinement 1: 2108 provisional endpoints; 1895 obligations
+refinement 2: 3661 provisional endpoints; 342 obligations
+refinement 3: 3839 provisional endpoints; 164 obligations
+refinement 4: 3920 provisional endpoints; 83 obligations
+refinement 5: 3953 provisional endpoints; 50 obligations
+refinement 6: 3974 provisional endpoints; 29 obligations
+refinement 7: 3995 provisional endpoints; 8 obligations
+refinement 8: 4001 provisional endpoints; 2 obligations
+Captured 2 reference, 2 structural, 4 query obligations

@@ -1,0 +1,12 @@
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.28s
+     Running tests\project.rs (target\debug\deps\project-56c218b3195d800c.exe)
+
+running 1 test
+omg-kerml-1.0-published/1: Unresolved
+agentique-kerml-1.0-operational/1: Unresolved
+agentique-kerml-1.0-operational/2: Resolved(ElementId(31866078748486714916095624018019010441))
+test authored_redefinition_profile_matrix ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 2.35s
+

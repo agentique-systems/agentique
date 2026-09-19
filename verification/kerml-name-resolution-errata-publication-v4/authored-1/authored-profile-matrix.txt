@@ -1,0 +1,21 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.17s
+     Running tests\project.rs (target\debug\deps\project-56c218b3195d800c.exe)
+
+running 1 test
+
+thread 'authored_redefinition_profile_matrix' (21752) panicked at crates\kerml-text\tests\project.rs:38:110:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test authored_redefinition_profile_matrix ... FAILED
+
+failures:
+
+failures:
+    authored_redefinition_profile_matrix
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.47s
+
+error: test failed, to rerun pass `-p agq-kerml-text --test project`

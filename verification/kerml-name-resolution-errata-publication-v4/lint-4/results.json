@@ -1,0 +1,18 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-19T13:40:33.773Z",
+    "durationMs": 1943,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "started": "2026-09-19T13:40:35.717Z",
+    "durationMs": 2711,
+    "exitCode": 0,
+    "signal": null,
+    "log": "clippy.txt"
+  }
+]

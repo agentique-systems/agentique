@@ -34,11 +34,22 @@ fn contexts_bind_profile_artifact_effective_graph_and_errata_content() {
         SemanticContext::for_snapshot(&operational, Default::default(), Default::default()),
         Err(ContextError::UnsupportedMetamodel)
     ));
-    // Isolate profile identity from all source/revision/library inputs. A future
-    // reviewed v2 must have a distinct cache key even if its graph is identical.
-    let mut hypothetical_v2 = effective.id().clone();
-    hypothetical_v2.baseline_profile_id = "agentique-kerml-1.0-operational/2";
-    assert_ne!(&hypothetical_v2, effective.id());
+    let v1 = SemanticContext::for_snapshot(
+        &operational,
+        SemanticOptions {
+            baseline_profile: BaselineProfile::OPERATIONAL_V1,
+            ..Default::default()
+        },
+        Default::default(),
+    )
+    .unwrap();
+    assert_eq!(v1.id().descriptor_digest, effective.id().descriptor_digest);
+    assert_eq!(v1.id().model_digest, effective.id().model_digest);
+    assert_ne!(v1.id(), effective.id());
+    assert_ne!(
+        v1.id().errata_manifest_digest,
+        effective.id().errata_manifest_digest
+    );
     let mut changed_review = effective.id().clone();
     changed_review.errata_manifest_digest = Some([0; 32]);
     assert_ne!(&changed_review, effective.id());

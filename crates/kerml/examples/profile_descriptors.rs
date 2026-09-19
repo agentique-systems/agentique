@@ -21,6 +21,7 @@ fn main() {
     println!(
         "{}",
         json!({"published":descriptors(BaselineProfile::PublishedKerMl10),
-        "operational":descriptors(BaselineProfile::OPERATIONAL)})
+        "operational":descriptors(BaselineProfile::OPERATIONAL_V1),
+        "operational_v2":descriptors(BaselineProfile::OPERATIONAL_V2)})
     );
 }

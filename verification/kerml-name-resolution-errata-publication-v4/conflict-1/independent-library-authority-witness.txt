@@ -1,0 +1,28 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+warning: unused import: `BTreeSet`
+ --> crates\kerml-semantics\tests\common/namespace_fixture.rs:5:29
+  |
+5 |     collections::{BTreeMap, BTreeSet},
+  |                             ^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `agq-kerml-semantics` (test "library_authority_conflict") generated 1 warning (run `cargo fix --test "library_authority_conflict" -p agq-kerml-semantics` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.56s
+     Running tests\library_authority_conflict.rs (target\debug\deps\library_authority_conflict-d5c75796d52e9030.exe)
+
+running 1 test
+
+thread 'two_explicit_type_paths_require_a_common_redefinition_before_publication' (24004) panicked at crates\kerml-semantics\tests\common/namespace_fixture.rs:189:40:
+called `Result::unwrap()` on an `Err` value: IllegalProperty { element: ElementId(200), class: MetaclassId(40944473902368152058858407293331823390), property: PropertyId(106003710153274658401830917618075493807) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test two_explicit_type_paths_require_a_common_redefinition_before_publication ... FAILED
+
+failures:
+
+failures:
+    two_explicit_type_paths_require_a_common_redefinition_before_publication
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p agq-kerml-semantics --test library_authority_conflict`

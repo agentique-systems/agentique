@@ -4,9 +4,9 @@ use agq_kernel::{ElementId, provenance::FactKey};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 impl KerMlQueries<'_> {
-    /// Owned and inherited FeatureMembership members for the documented acyclic,
-    /// unconjugated slice. Returns an identity set in ID order, not normative
-    /// Type::feature ordering. Imports and feature chains mark results incomplete.
+    /// Owned and inherited FeatureMembership identities on acyclic supertype
+    /// graphs, including imports through general types, chains and conjugation.
+    /// Returns an identity set in ID order, not normative Type::feature ordering.
     pub fn effective_features(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
         if self.checked::<views::Type, _>(&mut out, ty).is_none() {
@@ -16,6 +16,7 @@ impl KerMlQueries<'_> {
         let mut own = BTreeMap::<ElementId, BTreeMap<ElementId, ElementId>>::new();
         let mut queue = VecDeque::from([ty]);
         let mut seen = BTreeSet::from([ty]);
+        let mut has_external_memberships = false;
         while let Some(current) = queue.pop_front() {
             if self
                 .context()
@@ -30,54 +31,28 @@ impl KerMlQueries<'_> {
                     "Pending project declarations or specializations may affect effective features",
                 );
             }
-            self.property(&mut out, current, p::TYPE_IS_CONJUGATED);
-            if matches!(
-                self.model().property_state(current, p::TYPE_IS_CONJUGATED),
-                Ok(agq_kernel::derived::PropertyState::Computed(_)
-                    | agq_kernel::derived::PropertyState::Incomplete(_)
-                    | agq_kernel::derived::PropertyState::Invalid(_))
-            ) {
-                let view = views::Type::try_new(current, self.model()).expect("type endpoint");
-                if self.accept(&mut out, current, view.is_conjugated()) == Some(true) {
-                    out.problem(
-                        Completeness::Incomplete,
-                        "KQ_UNSUPPORTED_INHERITANCE",
-                        current,
-                        "conjugated types are outside the effective-feature slice",
-                    );
-                }
-            }
             let owned = self.owned_relationships(current);
-            let direct = self.direct_specializations(current);
+            has_external_memberships |= owned.value.iter().any(|r| self.is(*r, c::IMPORT));
+            let direct = self.supertypes(current);
             let parents: BTreeSet<_> = direct.value.iter().copied().collect();
             for &general in &parents {
                 if seen.insert(general) {
                     queue.push_back(general);
                 }
             }
-            for &id in &owned.value {
-                if [c::CONJUGATION, c::IMPORT, c::FEATURE_CHAINING]
-                    .iter()
-                    .any(|class| self.is(id, *class))
-                {
-                    out.problem(Completeness::Incomplete, "KQ_UNSUPPORTED_INHERITANCE", id, "conjugation, imports and feature chaining are outside the effective-feature slice");
-                }
-            }
             let features = self.direct_features(current);
             let memberships = self.memberships(current);
+            has_external_memberships |= memberships
+                .value
+                .iter()
+                .any(|m| !self.is(*m, c::OWNING_MEMBERSHIP));
             let mut members = BTreeMap::new();
             for &id in &memberships.value {
                 let member = self.member(id);
-                if self.is(id, c::FEATURE_MEMBERSHIP) {
-                    if let Some(feature) = member.value {
-                        members.insert(feature, id);
-                    }
-                } else if member
-                    .value
-                    .is_some_and(|target| self.is(target, c::FEATURE))
+                if self.is(id, c::FEATURE_MEMBERSHIP)
+                    && let Some(feature) = member.value
                 {
-                    out.problem(Completeness::Incomplete, "KQ_NONFEATURE_MEMBERSHIP", id,
-                        "inheritance involving feature aliases or ordinary owning memberships is outside this slice");
+                    members.insert(feature, id);
                 }
                 out.merge(member);
             }
@@ -99,6 +74,41 @@ impl KerMlQueries<'_> {
             );
             return out;
         };
+
+        // With imports or aliases, suppress the complete Membership population
+        // before selecting FeatureMemberships. Distinct aliases retain their
+        // normative effect even when they denote the same canonical feature.
+        if has_external_memberships {
+            let inherited = self.inherited_memberships(ty);
+            let mut features: BTreeSet<_> = own[&ty].keys().copied().collect();
+            for &feature in &features {
+                out.prove(
+                    QueryKind::EffectiveFeatures,
+                    ty,
+                    feature,
+                    Rule::EffectiveOwnedFeature,
+                    [claim(QueryKind::DirectFeatures, ty, feature)],
+                );
+            }
+            for member in &inherited.value {
+                if self.is(member.membership, c::FEATURE_MEMBERSHIP) {
+                    features.insert(member.element);
+                    out.prove(
+                        QueryKind::EffectiveFeatures,
+                        ty,
+                        member.element,
+                        Rule::InheritedFeature,
+                        [
+                            claim(QueryKind::NamespaceMemberships, ty, member.membership),
+                            claim(QueryKind::Member, member.membership, member.element),
+                        ],
+                    );
+                }
+            }
+            out.merge(inherited);
+            out.value = features.into_iter().collect();
+            return out;
+        }
 
         // Compute each feature's redefinition closure once within this invocation.
         // Query results/evidence are merged once, not copied into every ancestor result.
@@ -184,7 +194,7 @@ impl KerMlQueries<'_> {
                 for &parent in &paths[&feature] {
                     let mut premises = vec![
                         claim(QueryKind::EffectiveFeatures, parent, feature),
-                        claim(QueryKind::DirectSpecializations, current, parent),
+                        claim(QueryKind::Supertypes, current, parent),
                     ];
                     premises.extend(self.property(
                         &mut out,

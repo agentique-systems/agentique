@@ -1,0 +1,10 @@
+[
+  {
+    "command": "python -X utf8 verification/kerml-name-resolution-errata-publication-v4/snapshot-evidence.py",
+    "started": "2026-09-19T14:48:05.236Z",
+    "durationMs": 1873,
+    "exitCode": 0,
+    "signal": null,
+    "log": "source-and-evidence-snapshot.txt"
+  }
+]

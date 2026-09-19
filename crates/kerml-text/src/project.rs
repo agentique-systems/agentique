@@ -212,6 +212,7 @@ pub enum ProjectError {
 
 /// Source histories and semantic publications only; no persistence/application contracts.
 pub struct SourceProject {
+    profile: agq_kerml::BaselineProfile,
     id: ProjectId,
     root: ElementId,
     limits: ParseLimits,
@@ -223,6 +224,16 @@ impl SourceProject {
         Self::with_limits(ParseLimits::default())
     }
     pub fn with_limits(limits: ParseLimits) -> Result<Self, ProjectError> {
+        Self::with_limits_and_profile(limits, agq_kerml::BaselineProfile::OPERATIONAL)
+    }
+    /// Select immutable interpretation authority for this project's entire history.
+    pub fn with_profile(profile: agq_kerml::BaselineProfile) -> Result<Self, ProjectError> {
+        Self::with_limits_and_profile(ParseLimits::default(), profile)
+    }
+    pub fn with_limits_and_profile(
+        limits: ParseLimits,
+        profile: agq_kerml::BaselineProfile,
+    ) -> Result<Self, ProjectError> {
         let id = ProjectId(GeneratorId::new());
         let root = ElementId::new();
         let model = lowering::lower_project(
@@ -231,6 +242,7 @@ impl SourceProject {
             root,
             agq_kernel::provenance::DeclaredOrigin::Generated { generator: id.0 },
             false,
+            profile,
         )?;
         let current = Arc::new(ProjectRevision {
             project: id,
@@ -239,12 +251,16 @@ impl SourceProject {
             diagnostics: vec![],
         });
         Ok(Self {
+            profile,
             id,
             root,
             limits,
             history: BTreeMap::from([(current.revision(), current.clone())]),
             current,
         })
+    }
+    pub fn baseline_profile(&self) -> agq_kerml::BaselineProfile {
+        self.profile
     }
     pub fn current(&self) -> &Arc<ProjectRevision> {
         &self.current
@@ -331,6 +347,7 @@ impl SourceProject {
             documents
                 .values()
                 .any(|d| d.status() == DocumentStatus::FrontendUnavailable),
+            self.profile,
         )?;
         let diagnostics = documents
             .values()

@@ -1,0 +1,18 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-semantics --test library_authority_conflict -- --nocapture",
+    "started": "2026-09-19T13:15:13.608Z",
+    "durationMs": 7900,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-library-authority-witness.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-name-resolution-errata-publication-v4/objects-authority.py",
+    "started": "2026-09-19T13:15:21.509Z",
+    "durationMs": 640,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-reference-xmi-source-conflict.txt"
+  }
+]

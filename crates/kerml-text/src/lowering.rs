@@ -41,6 +41,7 @@ pub(crate) struct Ids {
 }
 #[derive(Debug)]
 pub(crate) struct LoweredModel {
+    profile: agq_kerml::BaselineProfile,
     incomplete_namespaces: BTreeSet<ElementId>,
     snapshot: Snapshot,
     root: ElementId,
@@ -114,6 +115,7 @@ impl LoweredModel {
                 .map(|r| r.specific)
                 .collect(),
             self.incomplete_namespaces.clone(),
+            self.profile,
         )
     }
 }
@@ -129,12 +131,12 @@ pub struct ValidationFailure {
     pub syntax_diagnostics: usize,
     pub semantic_diagnostics: usize,
 }
-fn queries(snapshot: &Snapshot) -> KerMlQueries<'_> {
+fn queries(snapshot: &Snapshot, profile: agq_kerml::BaselineProfile) -> KerMlQueries<'_> {
     KerMlQueries::new(
         SemanticContext::for_snapshot(
             snapshot,
             SemanticOptions {
-                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL,
+                baseline_profile: profile,
                 ..Default::default()
             },
             BTreeSet::new(),
@@ -160,10 +162,9 @@ struct Builder {
     links: BTreeMap<(ElementId, PropertyId), (Vec<Value>, SourceOrigin)>,
 }
 impl Builder {
-    fn new() -> Self {
+    fn new(profile: agq_kerml::BaselineProfile) -> Self {
         let base = Snapshot::new(Arc::new(
-            agq_kerml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL)
-                .expect("reviewed operational descriptors"),
+            agq_kerml::registry_for_profile(profile).expect("reviewed operational descriptors"),
         ));
         let changes = base.change_set();
         Self {
@@ -312,7 +313,14 @@ pub(crate) fn lower(
         syntax.root_id(),
         ByteRange::new(0, syntax.source().len() as u64).unwrap(),
     ));
-    let model = lower_project([&syntax], previous.map(|m| &m.model), root, origin, false)?;
+    let model = lower_project(
+        [&syntax],
+        previous.map(|m| &m.model),
+        root,
+        origin,
+        false,
+        agq_kerml::BaselineProfile::OPERATIONAL,
+    )?;
     Ok(WorkingModel { syntax, model })
 }
 
@@ -322,8 +330,9 @@ pub(crate) fn lower_project<'a>(
     root: ElementId,
     root_origin: DeclaredOrigin,
     incomplete_root: bool,
+    profile: agq_kerml::BaselineProfile,
 ) -> Result<LoweredModel, ModelError> {
-    let mut builder = Builder::new();
+    let mut builder = Builder::new(profile);
     let mut identities = BTreeMap::new();
     let mut pending = vec![];
     let mut incomplete_namespaces: BTreeSet<_> =
@@ -354,11 +363,16 @@ pub(crate) fn lower_project<'a>(
     }
     let declarations = builder.finish()?;
     let scopes = pending.iter().map(|r| r.specific).collect();
-    let initial = project_queries(&declarations, scopes, incomplete_namespaces.clone());
+    let initial = project_queries(
+        &declarations,
+        scopes,
+        incomplete_namespaces.clone(),
+        profile,
+    );
     let mut references: Vec<_> = pending
         .into_iter()
         .map(|r| {
-            let resolution = initial.resolve_reference(r.specific, &r.name, expected(r.kind));
+            let resolution = resolve_assertion(&initial, r.specific, &r.name, r.kind);
             ReferenceAssertion {
                 relationship: r.id,
                 specific: r.specific,
@@ -379,13 +393,13 @@ pub(crate) fn lower_project<'a>(
             .filter(|r| !matches!(r.resolution.value, Resolution::Resolved(_)))
             .map(|r| r.specific)
             .collect();
-        let resolver = project_queries(&desired, scopes, incomplete_namespaces.clone());
+        let resolver = project_queries(&desired, scopes, incomplete_namespaces.clone(), profile);
         let mut progress = false;
         for r in &mut references {
             if matches!(r.resolution.value, Resolution::Resolved(_)) {
                 continue;
             }
-            r.resolution = resolver.resolve_reference(r.specific, &r.name, expected(r.kind));
+            r.resolution = resolve_assertion(&resolver, r.specific, &r.name, r.kind);
             progress |= matches!(r.resolution.value, Resolution::Resolved(_));
         }
         if !progress {
@@ -405,9 +419,9 @@ pub(crate) fn lower_project<'a>(
         .filter(|r| !matches!(r.resolution.value, Resolution::Resolved(_)))
         .map(|r| r.specific)
         .collect();
-    let resolver = project_queries(&snapshot, scopes, incomplete_namespaces.clone());
+    let resolver = project_queries(&snapshot, scopes, incomplete_namespaces.clone(), profile);
     for r in &mut references {
-        r.resolution = resolver.resolve_reference(r.specific, &r.name, expected(r.kind));
+        r.resolution = resolve_assertion(&resolver, r.specific, &r.name, r.kind);
     }
     let mut diagnostics = vec![];
     for r in &references {
@@ -420,7 +434,7 @@ pub(crate) fn lower_project<'a>(
             });
         }
     }
-    let q = queries(&snapshot);
+    let q = queries(&snapshot, profile);
     for element in snapshot.model().elements() {
         if snapshot
             .model()
@@ -471,6 +485,7 @@ pub(crate) fn lower_project<'a>(
         }
     }
     Ok(LoweredModel {
+        profile,
         incomplete_namespaces,
         snapshot,
         root,
@@ -492,12 +507,13 @@ fn project_queries(
     snapshot: &Snapshot,
     scopes: BTreeSet<ElementId>,
     namespaces: BTreeSet<ElementId>,
+    profile: agq_kerml::BaselineProfile,
 ) -> KerMlQueries<'_> {
     KerMlQueries::new(
         SemanticContext::for_project_snapshot(
             snapshot,
             SemanticOptions {
-                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL,
+                baseline_profile: profile,
                 ..Default::default()
             },
             BTreeSet::new(),
@@ -506,6 +522,18 @@ fn project_queries(
         )
         .expect("lowered Types"),
     )
+}
+fn resolve_assertion(
+    queries: &KerMlQueries<'_>,
+    specific: ElementId,
+    name: &QualifiedName,
+    kind: ReferenceKind,
+) -> QueryResult<Resolution> {
+    if kind == ReferenceKind::Redefinition {
+        queries.resolve_redefinition_reference(specific, name)
+    } else {
+        queries.resolve_reference(specific, name, expected(kind))
+    }
 }
 fn expected(kind: ReferenceKind) -> MetaclassId {
     match kind {

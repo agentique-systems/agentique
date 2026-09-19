@@ -3,6 +3,7 @@ use agq_kerml::{TypedView, ViewError, classes as c, properties as p, views};
 use agq_kernel::{
     ElementId, MetaclassId, ModelView, PropertyId,
     provenance::{Dependency, FactKey, Origin},
+    value::Value,
 };
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -545,6 +546,149 @@ impl<'m> KerMlQueries<'m> {
     pub fn direct_feature_types(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
         self.targets(feature, QueryKind::DirectFeatureTypes)
     }
+
+    /// KerML Type::supertypes and Feature::supertypes: conjugation replaces the
+    /// specialization scopes; a chained feature additionally supplies its target.
+    /// This is an identity set, not the normative ordered collection projection.
+    pub fn supertypes(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        if self.context().pending_specialization_scopes.contains(&ty) {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_PENDING_SUPERTYPES",
+                ty,
+                "Pending specialization assertions affect supertype search",
+            );
+        }
+        self.property(&mut out, ty, p::TYPE_IS_CONJUGATED);
+        if matches!(
+            self.model().property_state(ty, p::TYPE_IS_CONJUGATED),
+            Ok(agq_kernel::derived::PropertyState::Computed(_)
+                | agq_kernel::derived::PropertyState::Incomplete(_)
+                | agq_kernel::derived::PropertyState::Invalid(_))
+        ) && let Ok(view) = views::Type::try_new(ty, self.model())
+        {
+            self.accept(&mut out, ty, view.is_conjugated());
+        }
+        let owned = self.owned_relationships(ty);
+        let conjugations: Vec<_> = owned
+            .value
+            .iter()
+            .copied()
+            .filter(|r| self.is(*r, c::CONJUGATION))
+            .collect();
+        let chains: Vec<_> = owned
+            .value
+            .iter()
+            .copied()
+            .filter(|r| self.is(*r, c::FEATURE_CHAINING))
+            .collect();
+        out.merge(owned);
+        if conjugations.len() > 1 {
+            out.problem(
+                Completeness::Invalid,
+                "KQ_CONJUGATOR_ARITY",
+                ty,
+                "Type has multiple owned conjugations",
+            );
+        }
+        if let Some(&conjugation) = conjugations.first() {
+            if let Some(original) =
+                self.read_reference(&mut out, conjugation, p::CONJUGATION_ORIGINAL_TYPE)
+            {
+                out.value.push(original);
+                let premises: Vec<_> = out
+                    .positive_dependencies
+                    .iter()
+                    .copied()
+                    .map(Evidence::Fact)
+                    .chain(
+                        out.search_dependencies
+                            .iter()
+                            .cloned()
+                            .map(Evidence::Search),
+                    )
+                    .collect();
+                out.prove(
+                    QueryKind::Supertypes,
+                    ty,
+                    original,
+                    Rule::ConjugatedInheritance,
+                    premises,
+                );
+            } else {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_MISSING_CONJUGATOR",
+                    ty,
+                    "Conjugation original Type is unresolved",
+                );
+            }
+        } else {
+            self.property(&mut out, ty, p::TYPE_IS_CONJUGATED);
+            if matches!(
+                self.read_value(&mut out, ty, p::TYPE_IS_CONJUGATED),
+                Some(Value::Boolean(true))
+            ) {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_MISSING_CONJUGATOR",
+                    ty,
+                    "Conjugated Type requires its original Type",
+                );
+            }
+            let direct = self.direct_specializations(ty);
+            out.value.extend(direct.value.iter().copied());
+            for &general in &direct.value {
+                out.prove(
+                    QueryKind::Supertypes,
+                    ty,
+                    general,
+                    Rule::Specialization,
+                    [claim(QueryKind::DirectSpecializations, ty, general)],
+                );
+            }
+            out.merge(direct);
+        }
+        for (index, chain) in chains.iter().enumerate() {
+            let Some(target) =
+                self.read_reference(&mut out, *chain, p::FEATURE_CHAINING_CHAINING_FEATURE)
+            else {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_CHAIN_TARGET",
+                    *chain,
+                    "Feature chain target is unresolved",
+                );
+                continue;
+            };
+            if index + 1 == chains.len() && target != ty {
+                out.value.push(target);
+                let premises: Vec<_> = out
+                    .positive_dependencies
+                    .iter()
+                    .copied()
+                    .map(Evidence::Fact)
+                    .chain(
+                        out.search_dependencies
+                            .iter()
+                            .cloned()
+                            .map(Evidence::Search),
+                    )
+                    .collect();
+                out.prove(
+                    QueryKind::Supertypes,
+                    ty,
+                    target,
+                    Rule::FeatureChainInheritance,
+                    premises,
+                );
+            }
+        }
+        out.value.sort();
+        out.value.dedup();
+        out
+    }
     pub fn subsetted_features(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
         self.targets(feature, QueryKind::SubsettedFeatures)
     }
@@ -611,23 +755,46 @@ impl<'m> KerMlQueries<'m> {
             .map(|r| r.source)
             .collect();
         let owned = self.owned_relationships(source);
-        candidates.extend(
-            owned
-                .value
-                .iter()
-                .copied()
-                .filter(|id| self.is(*id, c::REFERENCE_SUBSETTING) && self.is(*id, class)),
-        );
+        candidates.extend(owned.value.iter().copied().filter(|id| {
+            (self.is(*id, c::REFERENCE_SUBSETTING) || self.is(*id, c::CROSS_SUBSETTING))
+                && self.is(*id, class)
+        }));
         out.merge(owned);
         for id in candidates {
             let Some(view) = self.checked::<views::Specialization, _>(&mut out, id) else {
                 continue;
             };
             let mut evidence = self.property(&mut out, id, source_property);
-            let specific = if self.is(id, c::REFERENCE_SUBSETTING) {
+            let specific = if self.is(id, c::REFERENCE_SUBSETTING)
+                || self.is(id, c::CROSS_SUBSETTING)
+            {
+                let state = self.model().property_state(id, source_property);
+                if matches!(
+                    state,
+                    Ok(agq_kernel::derived::PropertyState::Incomplete(_)
+                        | agq_kernel::derived::PropertyState::Invalid(_))
+                ) {
+                    self.accept(&mut out, id, view.specific());
+                    continue;
+                }
                 let owner = self.owning_related_element(id);
                 let value = owner.value;
                 out.merge(owner);
+                if matches!(state, Ok(agq_kernel::derived::PropertyState::Computed(_))) {
+                    let computed = self.accept(&mut out, id, view.specific());
+                    if computed != value {
+                        out.problem(Completeness::Invalid,"KQ_OWNED_SPECIALIZATION_SOURCE",id,
+                            "Computed specialization source contradicts its required owning Feature");
+                    }
+                }
+                if value.is_none() {
+                    out.problem(
+                        Completeness::Invalid,
+                        "KQ_OWNED_SPECIALIZATION_SOURCE",
+                        id,
+                        "Owned specialization requires an owning Feature",
+                    );
+                }
                 value
             } else {
                 self.accept(&mut out, id, view.specific())

@@ -1,0 +1,10 @@
+[
+  {
+    "command": "target\\debug\\agentique.exe --workspace .workspaces/verified-kerml-v4-1789825266061.db demo",
+    "started": "2026-09-19T13:41:06.064Z",
+    "durationMs": 2425,
+    "exitCode": 0,
+    "signal": null,
+    "log": "headless-demo.txt"
+  }
+]

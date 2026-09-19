@@ -1,0 +1,10 @@
+[
+  {
+    "command": "python -X utf8 verification/kerml-name-resolution-errata-publication-v4/compare-reference-xmi.py --audit verification/kerml-name-resolution-errata-publication-v4/obligations-7/obligations.json --output verification/kerml-name-resolution-errata-publication-v4/obligations-7/reference-comparison.json",
+    "started": "2026-09-19T14:45:45.522Z",
+    "durationMs": 954,
+    "exitCode": 0,
+    "signal": null,
+    "log": "reference-xmi-targets.txt"
+  }
+]

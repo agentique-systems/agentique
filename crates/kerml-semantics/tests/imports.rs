@@ -1,180 +1,4 @@
-use agq_kerml::{classes as c, properties as p};
-use agq_kerml_semantics::*;
-use agq_kernel::{metamodel::ValueKind, provenance::*, value::*, *};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    sync::Arc,
-};
-
-fn id(n: u128) -> ElementId {
-    ElementId::from_u128(n)
-}
-fn origin() -> DeclaredOrigin {
-    DeclaredOrigin::Authored { source: None }
-}
-struct Fixture {
-    base: Snapshot,
-    changes: ChangeSet,
-    owned: BTreeMap<ElementId, Vec<Value>>,
-}
-impl Fixture {
-    fn construction(mut self) -> agq_kernel::ConstructionView {
-        for (owner, values) in self.owned {
-            self.changes.set(
-                owner,
-                p::ELEMENT_OWNED_RELATIONSHIP,
-                SlotValue::Ordered(values),
-                origin(),
-            );
-        }
-        self.base.preview(&self.changes).unwrap()
-    }
-    fn new() -> Self {
-        let base = Snapshot::new(Arc::new(agq_kerml::registry().unwrap()));
-        let changes = base.change_set();
-        Self {
-            base,
-            changes,
-            owned: BTreeMap::new(),
-        }
-    }
-    fn create(&mut self, n: u128, class: MetaclassId) {
-        self.changes.create(id(n), class, origin());
-        for property in self
-            .base
-            .model()
-            .registry()
-            .effective_properties(class)
-            .unwrap()
-        {
-            if property.derived || property.multiplicity.lower == 0 {
-                continue;
-            }
-            let value = match self
-                .base
-                .model()
-                .registry()
-                .storage_kind(property.value_kind)
-                .unwrap()
-            {
-                ValueKind::Boolean => Value::Boolean(false),
-                ValueKind::String => Value::String(n.to_string()),
-                ValueKind::Enumeration(domain) => Value::Enumeration(
-                    *self
-                        .base
-                        .model()
-                        .registry()
-                        .enumeration(domain)
-                        .unwrap()
-                        .literals
-                        .iter()
-                        .find(|(_, name)| name.as_str() == "public")
-                        .unwrap()
-                        .0,
-                ),
-                ValueKind::Reference(_) => continue,
-                _ => panic!("fixture domain"),
-            };
-            self.changes
-                .set(id(n), property.id, SlotValue::Scalar(value), origin());
-        }
-    }
-    fn value(&mut self, n: u128, property: PropertyId, value: Value) {
-        self.changes
-            .set(id(n), property, SlotValue::Scalar(value), origin());
-    }
-    fn own(&mut self, owner: u128, relationship: u128) {
-        self.owned
-            .entry(id(owner))
-            .or_default()
-            .push(Value::Reference(id(relationship)));
-    }
-    fn member(
-        &mut self,
-        owner: u128,
-        membership: u128,
-        target: u128,
-        class: MetaclassId,
-        name: &str,
-    ) {
-        self.create(target, class);
-        self.value(target, p::ELEMENT_DECLARED_NAME, Value::String(name.into()));
-        self.create(
-            membership,
-            if class == c::FEATURE {
-                c::FEATURE_MEMBERSHIP
-            } else {
-                c::OWNING_MEMBERSHIP
-            },
-        );
-        self.own(owner, membership);
-        self.changes.set(
-            id(membership),
-            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
-            SlotValue::Ordered(vec![Value::Reference(id(target))]),
-            origin(),
-        );
-    }
-    fn import(&mut self, owner: u128, import: u128, target: u128, membership: bool) {
-        self.create(
-            import,
-            if membership {
-                c::MEMBERSHIP_IMPORT
-            } else {
-                c::NAMESPACE_IMPORT
-            },
-        );
-        self.own(owner, import);
-        self.value(
-            import,
-            if membership {
-                p::MEMBERSHIP_IMPORT_IMPORTED_MEMBERSHIP
-            } else {
-                p::NAMESPACE_IMPORT_IMPORTED_NAMESPACE
-            },
-            Value::Reference(id(target)),
-        );
-    }
-    fn visibility(&mut self, element: u128, name: &str) {
-        let ValueKind::Enumeration(domain) = self
-            .base
-            .model()
-            .registry()
-            .property(p::MEMBERSHIP_VISIBILITY)
-            .unwrap()
-            .value_kind
-        else {
-            unreachable!()
-        };
-        let literal = *self
-            .base
-            .model()
-            .registry()
-            .enumeration(domain)
-            .unwrap()
-            .literals
-            .iter()
-            .find(|(_, n)| n.as_str() == name)
-            .unwrap()
-            .0;
-        self.value(
-            element,
-            p::MEMBERSHIP_VISIBILITY,
-            Value::Enumeration(literal),
-        );
-    }
-    fn finish(mut self) -> Snapshot {
-        for (owner, values) in self.owned {
-            self.changes.set(
-                owner,
-                p::ELEMENT_OWNED_RELATIONSHIP,
-                SlotValue::Ordered(values),
-                origin(),
-            );
-        }
-        self.base.apply(&self.changes).unwrap()
-    }
-}
+include!("common/namespace_fixture.rs");
 
 #[test]
 fn kerml11_140_nested_redefinition_cannot_search_the_specific_types_outer_scope() {
@@ -182,6 +6,7 @@ fn kerml11_140_nested_redefinition_cannot_search_the_specific_types_outer_scope(
     // the published 8.2.3.5.1 scope rule from unimplemented corpus semantics.
     for profile in [
         agq_kerml::BaselineProfile::PublishedKerMl10,
+        agq_kerml::BaselineProfile::OPERATIONAL_V1,
         agq_kerml::BaselineProfile::OPERATIONAL,
     ] {
         let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
@@ -244,7 +69,25 @@ fn kerml11_140_nested_redefinition_cannot_search_the_specific_types_outer_scope(
         let permitted =
             q.lookup_relationship_target(id(202), p::REDEFINITION_REDEFINED_FEATURE, &name);
         assert_eq!(permitted.completeness, Completeness::Complete);
-        assert!(permitted.value.is_empty());
+        if profile == agq_kerml::BaselineProfile::OPERATIONAL {
+            assert_eq!(
+                permitted
+                    .value
+                    .iter()
+                    .map(|m| m.element)
+                    .collect::<Vec<_>>(),
+                vec![id(2)]
+            );
+            assert!(
+                permitted
+                    .explanations
+                    .values()
+                    .flatten()
+                    .any(|p| p.rule == Rule::OperationalRedefinitionTargetV1)
+            );
+        } else {
+            assert!(permitted.value.is_empty());
+        }
         let lexical = q.lookup_path(id(1), &name);
         assert_eq!(lexical.completeness, Completeness::Complete);
         assert_eq!(
@@ -260,8 +103,9 @@ fn kerml11_140_nested_redefinition_cannot_search_the_specific_types_outer_scope(
             p::REDEFINITION_REDEFINED_FEATURE
         );
         println!(
-            "{}: published redefinition scope has no target; extra lexical lookup finds signal, but is not authorized by 8.2.3.5.1",
-            profile.id()
+            "{}: targets {:?}; published and v1 retain the published failure; v2 uses AGQ-KERML10-002",
+            profile.id(),
+            permitted.value
         );
     }
 }

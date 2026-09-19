@@ -15,7 +15,7 @@ fn exact_reviewed_diff_leaves_all_other_descriptors_and_provenance_unchanged() {
     let raw = published_descriptors();
     let operational = operational_descriptors(OperationalErrataProfile::ReviewedV1).unwrap();
     let manifest: serde_json::Value = serde_json::from_str(OPERATIONAL_ERRATA_MANIFEST).unwrap();
-    assert_eq!(manifest["profile_id"], BaselineProfile::OPERATIONAL.id());
+    assert_eq!(manifest["profile_id"], BaselineProfile::OPERATIONAL_V1.id());
     assert_eq!(
         manifest["published_profile_id"],
         BaselineProfile::PublishedKerMl10.id()
@@ -117,4 +117,51 @@ fn transform_rejects_any_unreviewed_source_graph_including_hashes_and_duplicates
             Err(ProfileError::UnreviewedGraph)
         ));
     }
+}
+
+#[test]
+fn semantic_v2_pins_its_authority_without_an_additional_descriptor_change() {
+    use sha2::{Digest, Sha256};
+    let v1 = operational_descriptors(OperationalErrataProfile::ReviewedV1).unwrap();
+    let v2 = operational_descriptors(OperationalErrataProfile::ReviewedV2).unwrap();
+    assert_eq!(v1.models, v2.models);
+    assert_eq!(v1.classes, v2.classes);
+    assert_eq!(v1.properties, v2.properties);
+    assert_eq!(v1.associations, v2.associations);
+    assert_eq!(v1.enumerations, v2.enumerations);
+    assert_eq!(v1.primitives, v2.primitives);
+    assert_eq!(v1.sources, v2.sources);
+    assert_eq!(v1.reviews, v2.reviews);
+    let manifest: serde_json::Value = serde_json::from_str(OPERATIONAL_ERRATA_V2_MANIFEST).unwrap();
+    assert_eq!(manifest["profile_id"], BaselineProfile::OPERATIONAL_V2.id());
+    assert_eq!(
+        manifest["extends"]["profile_id"],
+        BaselineProfile::OPERATIONAL_V1.id()
+    );
+    let entry = &manifest["entries"][0];
+    assert_eq!(entry["official_issue_key"], "KERML11-140");
+    assert_eq!(
+        entry["operation"],
+        "replace-profile-scoped-semantic-algorithm"
+    );
+    assert!(entry.get("descriptors").is_none());
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for (path, hash) in [
+        (
+            &manifest["extends"]["manifest"],
+            &manifest["extends"]["sha256"],
+        ),
+        (&entry["algorithm"], &entry["algorithm_sha256"]),
+        (&entry["evidence_packet"], &entry["evidence_packet_sha256"]),
+    ] {
+        let bytes = std::fs::read(root.join(path.as_str().unwrap())).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            hash.as_str().unwrap()
+        );
+    }
+    assert_ne!(
+        BaselineProfile::OPERATIONAL_V1.errata_manifest_sha256(),
+        BaselineProfile::OPERATIONAL_V2.errata_manifest_sha256()
+    );
 }
