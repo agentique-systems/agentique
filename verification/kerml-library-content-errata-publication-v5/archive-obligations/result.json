@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "verification/kerml-library-content-errata-publication-v5/archive-exports.py"
+  ],
+  "started_at": "2026-09-19T16:37:43.310626+00:00",
+  "duration_seconds": 10.625,
+  "exit_code": 0,
+  "output": "output.txt"
+}

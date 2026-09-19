@@ -66,3 +66,46 @@ source or normative authority.
 Publication acceptance remains subject to the full structural obligation,
 validation, binding, and authored-project gates. This profile definition alone
 does not establish accepted library publication or SysML readiness.
+
+## Operational KerML 1.0/v3 — reviewed library content
+
+The preceding v2 definition remains unchanged. Its exact historical bytes and
+SHA-256 `d25df7cca2777bc87c9c667949249f346db62192689cacfbd96e66574a7f48b5`
+are retained in the [frozen v2 document](../verification/kerml-library-content-errata-publication-v5/operational-profile-v2-frozen.md).
+This appended section does not change either historical errata manifest.
+
+`agentique-kerml-1.0-operational/3` adds the reviewed
+[library-content manifest](../standards/kerml-1.0-operational-library-errata-v3.json)
+to v2. KERML11-76 directly covers the inherited-member collisions in
+FeatureReferencingPerformances, Objects, Observation and VectorFunctions. It is
+open; the correction is authorized Agentique operational policy, not an adopted
+OMG correction. The reference implementation supplies corroboration, never
+replacement authority for the pinned source set.
+
+| Profile | Descriptor correction | Resolution correction | Library-content correction |
+| --- | --- | --- | --- |
+| Published | none | none | none |
+| Operational v1 | KERML11-81 | none | none |
+| Operational v2 | KERML11-81 | KERML11-140 | none |
+| Operational v3 | KERML11-81 | KERML11-140 | reviewed KERML11-76 entries |
+
+V3 is explicitly selected. `BaselineProfile::OPERATIONAL` remains v2 until a
+separate accepted-publication decision. Source parsing and lossless inspection
+continue to expose the exact pinned documents. The correction transform operates
+on canonical facts after parsing and before semantic refinement/publication.
+Superseded source assertions remain inspectable. Inserted and changed facts carry
+generic reviewed-correction provenance, exact profile/entry/content identities
+and deterministic output keys. The ordinary semantic rules then process those
+facts; distinguishability is not weakened.
+
+[ADR 0015](adr/0015-operational-standard-library-corrections.md) specifies the
+model boundary, provenance, deterministic ID domain and independent semantic
+diff. The [v5 authority matrix](../verification/kerml-library-content-errata-publication-v5/authority-matrix.json)
+audits every named library and classifies the fresh baseline findings
+individually. It also records unrelated reference changes that were excluded.
+
+V3 construction is not an accepted publication. The separately reproduced
+[KERML11-68 end-conformance conflict](kerml-feature-chain-end-authority-conflict.md)
+blocks strict semantic acceptance. Incomplete naming, required references,
+expression structure and formal-validation coverage remain explicit obligations;
+no candidate bindings or facade are labeled accepted.

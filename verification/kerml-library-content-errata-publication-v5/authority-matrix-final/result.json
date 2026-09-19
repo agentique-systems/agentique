@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python",
+    "-X",
+    "utf8",
+    "verification/kerml-library-content-errata-publication-v5/authority-matrix.py"
+  ],
+  "started_at": "2026-09-19T16:26:34.330090+00:00",
+  "duration_seconds": 2.609000000054948,
+  "exit_code": 0,
+  "output": "output.txt"
+}

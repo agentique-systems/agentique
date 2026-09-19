@@ -14,6 +14,10 @@ pub const OPERATIONAL_ERRATA_MANIFEST: &str =
 /// Semantic errata v2 extends, and does not replace, the frozen v1 manifest.
 pub const OPERATIONAL_ERRATA_V2_MANIFEST: &str =
     include_str!("../../../standards/kerml-1.0-operational-errata-v2.json");
+/// Reviewed library-content corrections; original library artifacts remain unchanged.
+pub const OPERATIONAL_LIBRARY_ERRATA_V3_MANIFEST: &str =
+    include_str!("../../../standards/kerml-1.0-operational-library-errata-v3.json");
+const REVIEWED_V3_SHA256: &str = "c762275c6a7c4cb310c4ba3084683d62125a9319228d8653f39956c61794ae30";
 const REVIEWED_V2_SHA256: [u8; 32] = [
     0x67, 0x44, 0xa4, 0xe5, 0x89, 0xad, 0x38, 0x78, 0xc2, 0xb7, 0x4c, 0x87, 0x60, 0xd7, 0x71, 0x45,
     0x00, 0xa1, 0x2f, 0x35, 0x84, 0xf2, 0x5c, 0xfe, 0x11, 0x75, 0xcd, 0xd5, 0x8f, 0x02, 0xa2, 0x7d,
@@ -32,6 +36,8 @@ pub enum OperationalErrataProfile {
     ReviewedV1,
     /// V1 plus AGQ-KERML10-002 / KERML11-140 semantic algorithm version 1.
     ReviewedV2,
+    /// V2 plus reviewed KERML11-76 canonical library corrections.
+    ReviewedV3,
 }
 
 /// Language interpretation authority. This is part of semantic context identity.
@@ -49,6 +55,16 @@ pub enum BaselineProfile {
 impl BaselineProfile {
     /// Default authority for usable generation-2 KerML model construction.
     pub const OPERATIONAL: Self = Self::OPERATIONAL_V2;
+
+    /// Explicit library-content correction profile, independent of publication acceptance.
+    pub const OPERATIONAL_V3: Self = Self::OperationalKerMl10 {
+        errata_profile: OperationalErrataProfile::ReviewedV3,
+    };
+
+    /// Whether the reviewed KERML11-140 resolution algorithm applies.
+    pub const fn corrects_redefinition_resolution(self) -> bool {
+        matches!(self, Self::OPERATIONAL_V2 | Self::OPERATIONAL_V3)
+    }
 
     /// Reviewed semantic errata v2; this identifier never follows a future default.
     pub const OPERATIONAL_V2: Self = Self::OperationalKerMl10 {
@@ -70,6 +86,9 @@ impl BaselineProfile {
             Self::OperationalKerMl10 {
                 errata_profile: OperationalErrataProfile::ReviewedV2,
             } => "agentique-kerml-1.0-operational/2",
+            Self::OperationalKerMl10 {
+                errata_profile: OperationalErrataProfile::ReviewedV3,
+            } => "agentique-kerml-1.0-operational/3",
         }
     }
 
@@ -83,6 +102,9 @@ impl BaselineProfile {
             Self::OperationalKerMl10 {
                 errata_profile: OperationalErrataProfile::ReviewedV2,
             } => Some(Sha256::digest(OPERATIONAL_ERRATA_V2_MANIFEST).into()),
+            Self::OperationalKerMl10 {
+                errata_profile: OperationalErrataProfile::ReviewedV3,
+            } => Some(Sha256::digest(OPERATIONAL_LIBRARY_ERRATA_V3_MANIFEST).into()),
         }
     }
 }
@@ -131,12 +153,20 @@ pub fn apply_operational_errata(
 ) -> Result<DescriptorSet, ProfileError> {
     match profile {
         OperationalErrataProfile::ReviewedV1 => {}
-        OperationalErrataProfile::ReviewedV2 => {
+        OperationalErrataProfile::ReviewedV2 | OperationalErrataProfile::ReviewedV3 => {
             let digest: [u8; 32] = Sha256::digest(OPERATIONAL_ERRATA_V2_MANIFEST).into();
             if digest != REVIEWED_V2_SHA256 {
                 return Err(ProfileError::UnreviewedManifest);
             }
         }
+    }
+    if profile == OperationalErrataProfile::ReviewedV3
+        && format!(
+            "{:x}",
+            Sha256::digest(OPERATIONAL_LIBRARY_ERRATA_V3_MANIFEST)
+        ) != REVIEWED_V3_SHA256
+    {
+        return Err(ProfileError::UnreviewedManifest);
     }
     let review_digest: [u8; 32] = Sha256::digest(OPERATIONAL_ERRATA_MANIFEST).into();
     if review_digest != REVIEWED_MANIFEST_SHA256 {

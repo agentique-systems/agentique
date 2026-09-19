@@ -1,0 +1,1 @@
+sysml-validate: 0 diagnostics written to verification/kerml-library-content-errata-publication-v5/product-1/independent-validation.json

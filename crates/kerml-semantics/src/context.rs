@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/11";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/12";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -63,6 +63,8 @@ pub struct SemanticContext<'m> {
 pub enum ContextError {
     UnsupportedMetamodel,
     InvalidPendingScope(ElementId),
+    /// A reviewed library fact belongs to a different explicit authority profile.
+    CorrectionProfileMismatch(agq_kernel::provenance::FactKey),
 }
 
 impl<'m> SemanticContext<'m> {
@@ -86,6 +88,7 @@ impl<'m> SemanticContext<'m> {
                     r.origin(),
                     agq_kernel::provenance::Origin::Declared(
                         agq_kernel::provenance::DeclaredOrigin::StandardLibrary { .. }
+                            | agq_kernel::provenance::DeclaredOrigin::ReviewedCorrection { .. }
                     )
                 )
             })
@@ -97,6 +100,7 @@ impl<'m> SemanticContext<'m> {
                         matches!(
                             r.origin(),
                             agq_kernel::provenance::DeclaredOrigin::StandardLibrary { .. }
+                                | agq_kernel::provenance::DeclaredOrigin::ReviewedCorrection { .. }
                         )
                     })
                     .map(|r| format!("{r:?}")),
@@ -225,6 +229,34 @@ impl<'m> SemanticContext<'m> {
         // Require the exact normative KerML contracts while admitting independent
         // metaclasses and subclasses from a dependency extension such as SysML.
         let profile = options.baseline_profile;
+        use agq_kernel::provenance::{DeclaredOrigin, FactKey, Origin};
+        let mismatch = |origin: &Origin| {
+            matches!(origin,
+            Origin::Declared(DeclaredOrigin::ReviewedCorrection { profile: correction, .. })
+                if correction != profile.id())
+        };
+        for record in model.elements() {
+            if mismatch(record.origin()) {
+                return Err(ContextError::CorrectionProfileMismatch(FactKey::Element(
+                    record.id(),
+                )));
+            }
+            for (property, slot) in record.slots() {
+                if mismatch(slot.origin()) {
+                    return Err(ContextError::CorrectionProfileMismatch(FactKey::Property {
+                        element: record.id(),
+                        property,
+                    }));
+                }
+            }
+        }
+        for link in model.association_occurrences() {
+            if mismatch(&Origin::Declared(link.origin().clone())) {
+                return Err(ContextError::CorrectionProfileMismatch(
+                    FactKey::AssociationOccurrence(link.id()),
+                ));
+            }
+        }
         let expected = agq_kerml::descriptors_for_profile(profile)
             .map_err(|_| ContextError::UnsupportedMetamodel)?;
         let registry = model.registry();

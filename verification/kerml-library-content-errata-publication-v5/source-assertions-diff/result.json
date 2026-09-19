@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "verification/kerml-library-content-errata-publication-v5/verify-source-assertions.py"
+  ],
+  "started_at": "2026-09-19T16:07:02.466334+00:00",
+  "duration_seconds": 0.0940000000409782,
+  "exit_code": 0,
+  "output": "output.txt"
+}

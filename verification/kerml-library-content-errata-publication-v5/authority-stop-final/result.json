@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python",
+    "-X",
+    "utf8",
+    "verification/kerml-library-content-errata-publication-v5/verify-authority-stop.py"
+  ],
+  "started_at": "2026-09-19T16:26:37.029242+00:00",
+  "duration_seconds": 0.48400000005494803,
+  "exit_code": 0,
+  "output": "output.txt"
+}

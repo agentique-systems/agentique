@@ -3,6 +3,7 @@
 //! Construction is explicitly unpublished until structural references resolve.
 //! It is not a validated standard-library binding or an alternative model store.
 mod construction;
+pub mod corrections;
 mod vocabulary;
 
 use agq_kerml_semantics::QualifiedName;
@@ -37,6 +38,7 @@ pub struct LibraryDraft {
     source_map: LibrarySourceMap,
     roots: Vec<ElementId>,
     references: Vec<PendingLibraryReference>,
+    superseded_references: Vec<PendingLibraryReference>,
 }
 impl LibraryDraft {
     /// Queries over this unpublished candidate with exact archive pins and
@@ -116,6 +118,11 @@ impl LibraryDraft {
     pub fn references(&self) -> &[PendingLibraryReference] {
         &self.references
     }
+    /// Original source assertions explicitly replaced by a reviewed correction.
+    /// These remain inspectable, but do not assert operational endpoints.
+    pub fn superseded_references(&self) -> &[PendingLibraryReference] {
+        &self.superseded_references
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -140,11 +147,27 @@ struct Input {
 /// Parse the complete verified KerML corpus and lower declarations atomically.
 /// Unresolved relationships remain explicit assertions, never fabricated endpoints.
 pub fn lower_declarations(sources: &VerifiedLibrarySet) -> Result<LibraryDraft, LibraryLoadError> {
-    construction::construct(
-        &parse_sources(sources)?,
-        &BTreeMap::new(),
-        agq_kerml::BaselineProfile::OPERATIONAL,
-    )
+    lower_declarations_with_profile(sources, agq_kerml::BaselineProfile::OPERATIONAL)
+}
+
+/// Lower immutable pinned declarations, then apply an explicitly selected model correction.
+pub fn lower_declarations_with_profile(
+    sources: &VerifiedLibrarySet,
+    profile: agq_kerml::BaselineProfile,
+) -> Result<LibraryDraft, LibraryLoadError> {
+    let draft = construction::construct(&parse_sources(sources)?, &BTreeMap::new(), profile)?;
+    apply_profile(draft, sources)
+}
+
+fn apply_profile(
+    draft: LibraryDraft,
+    sources: &VerifiedLibrarySet,
+) -> Result<LibraryDraft, LibraryLoadError> {
+    if draft.profile == agq_kerml::BaselineProfile::OPERATIONAL_V3 {
+        corrections::OperationalLibraryPatchSet::reviewed()?.apply(draft, sources)
+    } else {
+        Ok(draft)
+    }
 }
 
 fn parse_sources(sources: &VerifiedLibrarySet) -> Result<Vec<Input>, LibraryLoadError> {
@@ -197,7 +220,10 @@ pub fn refine_declarations_with_profile(
                 "Resolution refinement cycle".into(),
             ));
         }
-        let draft = construction::construct(&inputs, &resolved, profile)?;
+        let draft = apply_profile(
+            construction::construct(&inputs, &resolved, profile)?,
+            sources,
+        )?;
         progress(round, resolved.len(), draft.candidate.obligations().len());
         let queries = draft.queries(sources)?;
         let mut next = BTreeMap::new();

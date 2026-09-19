@@ -778,6 +778,7 @@ impl Builder {
             source_map,
             roots: self.roots,
             references: self.references,
+            superseded_references: vec![],
         })
     }
 }

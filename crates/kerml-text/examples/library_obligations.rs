@@ -49,6 +49,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         agq_kerml::BaselineProfile::PublishedKerMl10
     } else if std::env::args().any(|a| a == "--v1") {
         agq_kerml::BaselineProfile::OPERATIONAL_V1
+    } else if std::env::args().any(|a| a == "--v3") {
+        agq_kerml::BaselineProfile::OPERATIONAL_V3
     } else {
         agq_kerml::BaselineProfile::OPERATIONAL
     };
@@ -75,19 +77,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let location = |id: ElementId, property: Option<PropertyId>| {
         let model = draft.candidate().model();
-        let origin = &draft.source_map()[&FactKey::Element(id)];
+        let origin = draft.source_map().get(&FactKey::Element(id));
+        let record = model.element(id).unwrap();
         let document = sources
             .documents()
-            .find(|d| d.document() == origin.document)
+            .find(|d| {
+                if let Some(origin) = origin {
+                    return d.document() == origin.document;
+                }
+                matches!(record.origin(), agq_kernel::provenance::Origin::Declared(
+                    agq_kernel::provenance::DeclaredOrigin::ReviewedCorrection { source_key, .. }
+                ) if source_key == &format!("{}#sha256:{}",d.path(),d.sha256()))
+            })
             .unwrap();
-        let record = model.element(id).unwrap();
         json!({
             "element":id.to_string(),"metaclass":model.registry().class(record.metaclass()).unwrap().name,
             "property":property.map(|p|model.registry().property(p).unwrap().name.clone()),
             "property_id":property.map(|p|p.to_string()),"document":document.path(),"sha256":document.sha256(),
-            "source_range":[origin.range.start(),origin.range.end()],
-            "syntax_production":origin.syntax_node.map(|n|syntax[&n].clone()),
-            "source":&document.source()[origin.range.start() as usize..origin.range.end() as usize]
+            "source_range":origin.map(|o|[o.range.start(),o.range.end()]),
+            "syntax_production":origin.and_then(|o|o.syntax_node).map(|n|syntax[&n].clone()),
+            "source":origin.map(|o|&document.source()[o.range.start() as usize..o.range.end() as usize]),
+            "provenance":format!("{:?}",record.origin())
         })
     };
     let mut queries = draft.queries(&sources)?;

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--target-dir",
+    "target/kerml-v4",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "library_obligations"
+  ],
+  "started_at": "2026-09-19T16:07:21.967234+00:00",
+  "duration_seconds": 122.81299999996554,
+  "exit_code": 0,
+  "output": "output.txt"
+}

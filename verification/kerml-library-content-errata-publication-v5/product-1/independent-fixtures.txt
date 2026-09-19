@@ -1,0 +1,1 @@
+sysml-validate: 1 diagnostic written to verification/kerml-library-content-errata-publication-v5/product-1/independent-fixtures.json

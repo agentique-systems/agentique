@@ -302,3 +302,84 @@ Snapshot validation rejects both. Operational v2 retains 453 incomplete
 reference obligations and zero mandatory lower bounds. The complete profile
 comparison and individual disposition of all five original cases are recorded
 in the [final summary](../verification/kerml-name-resolution-errata-publication-v4/summary.json).
+
+## V5 — Reviewed operational library-content corrections
+
+The authorized KERML11-76 correction mechanism is implemented as explicit
+canonical-model changes under Operational KerML 1.0/v3. The exact pinned sources
+and all historical evidence remain unchanged. This milestone does **not** accept
+a semantic library publication. The independently reproduced
+[KLCV5-F-001 / KERML11-68](kerml-feature-chain-end-authority-conflict.md) is a
+separate authority stop: the prescribed feature-chain expansion redefines an end
+with a non-end feature, violating the pinned end-conformance constraint. Current
+reference implied XMI independently contains the same failing endpoint pair.
+
+The [authority matrix](../verification/kerml-library-content-errata-publication-v5/authority-matrix.json)
+reviews ten root collision patterns across all four KERML11-76 models, including
+four positional-end collisions masked by incomplete naming. It classifies all
+21 freshly reproduced v2 distinguishability findings individually: 18 concern
+the reviewed models and three remain ordinary semantic work outside that source
+correction. The issue is open; no adopted OMG correction is claimed.
+
+The frozen manifest contains 21 source-qualified selectors and 401 operations.
+An independent comparison of the Published parsed model and operational-v3 model
+verifies 53 new records, no removed identities and no unreviewed changes. All
+4,003 original source assertions survive unchanged: 4,000 remain active and the
+three replaced Objects typing assertions remain separately inspectable. New facts
+carry reviewed-correction provenance and deterministic private IDs. The complete
+source/XMI comparison, both common-redefinition patterns and positional-end/result
+witnesses are retained; no current KPAR or whole library file was substituted.
+
+The full v3 quality run reports 29,140 records, 36 lossless files, zero recovery,
+zero mandatory lower bounds, zero empty/ambiguous reference candidate sets and
+zero mismatched stored endpoints. It still reports **453 incomplete reference
+answers, 3,496 expression-result findings and six distinguishability findings**.
+The executable/function count is 3,901. These are measured results, not a claim
+that the required structural gate passes.
+
+The completed obligation audit groups every incomplete reference answer under
+`KQ_IMPLIED_NAMING_ORDER` and confirms ordinary kernel storage accepts all 29,140
+records with its base unchanged. The historical 124 reference-XMI assertions
+still match completely. Comparing all 36 current reference XMI documents matches
+291 assertions; one additional current target-set relationship and two removed
+named declarations are independently classified as unrelated reference changes
+and excluded from the operational correction set.
+
+Objects and VectorFunctions no longer emit distinguishability failures.
+FeatureReferencingPerformances and Observation contain the reviewed corrective
+facts but still expose ordinary inherited-result and feature-chain end-population
+inference gaps. The other three findings concern Performances and Triggers. All
+six remaining findings are category B and remain unwaived. The correction layer
+does not insert additional library-specific relationships to conceal missing
+ordinary inference. The independent KERML11-68 conflict, rather than these
+implementation gaps or the open status of KERML11-76, is the authority stop.
+
+| Required review question | V5 answer |
+| --- | --- |
+| 1. Original KPAR bytes untouched? | Yes; all 1,319 original pinned/historical artifacts pass hash preservation. |
+| 2. KERML11-76 directly covers the corrected collisions? | Yes; all four named models and the explicit issue-associated commits are recorded. It remains open. |
+| 3. Correction set explicit and versioned? | Yes; `agentique-kerml-1.0-operational/3`, four entries, frozen manifest digest and typed operations. |
+| 4. Inserted facts distinguishable from published facts? | Yes; generic `ReviewedCorrection` origins identify profile, entry, authority, library, source key and output key. |
+| 5. Objects correction minimal? | Yes; combined types, superclass/intersection relationships, common redefinitions and three typing replacements. Unrelated `that`, nested subsetting and comment changes are excluded. |
+| 6. All four KERML11-76 models audited? | Yes; ten source/XMI root witnesses, original memberships/features, common ancestors, source ranges and actual diagnostics are recorded. |
+| 7. Reference behavior matched without wholesale replacement? | Reviewed declaration/relationship facts match independently. Complete inferred behavior remains unfinished in two models. |
+| 8. Remaining distinguishability errors zero or independently justified? | No; six ordinary implementation findings remain, individually classified and unwaived. |
+| 9. Implied naming results complete? | No; the full audit retains 408 document diagnostic rows for `KQ_IMPLIED_NAMING_ORDER`. No arbitrary ordering was introduced. |
+| 10. Structurally required references complete? | No; 453 answers remain incomplete despite non-empty candidate sets. |
+| 11. Structural expression constraints complete? | No; 3,496 result-membership findings remain. None is waived as unevaluated execution. |
+| 12. Required formal coverage sufficient? | No; all 258 named constraints are inventoried, with 28 explicit checks. Unestablished structural coverage remains required. |
+| 13. Strict semantic publication passes? | No; the quality gate fails and KLCV5-F-001 independently blocks acceptance. Kernel storage acceptance is separate. |
+| 14. Accepted bindings generated? | No; the historical candidate manifest remains stale and is not relabeled accepted. |
+| 15. Authored projects consume an accepted publication? | No; no accepted publication/facade exists. Explicit authored profile selection is tested for all four profiles. |
+| 16. Operational conclusions explain their authority? | Correction facts use the existing fact-origin and proof dependency contract, exact context/profile/content identities and frozen review entries. Contexts reject facts from a mismatched correction profile. |
+| 17. Historical profile witnesses pass? | Yes; the published/v1/v2 distinctions remain, and v3 is added. The exact v2 definition is preserved with its original hash and is an unchanged prefix of the extended profile document. |
+| 18. Both complete structural runtime gates green? | Yes; fresh KerML and SysML runtime commands exit 0. Strict raw metamodel conformance remains a separate failing authoring audit. |
+| 19. Executable semantics explicitly deferred? | Yes; 3,901 elements are counted. No execution, simulation or SysML semantics was implemented. |
+
+[ADR 0015](adr/0015-operational-standard-library-corrections.md) records the
+correction boundary and identity design. The [v5 evidence index](../verification/kerml-library-content-errata-publication-v5/README.md)
+links actual command outputs, failed/superseded attempts, independent verification,
+quality classification, constraint coverage and the separate authority stop.
+Workspace/front-end/end-to-end checks and strict Rustdoc pass. The stale binding
+check and strict raw conformance failures remain explicit; generation-1 release
+obligations and the historical independent fixture diagnostic are preserved.

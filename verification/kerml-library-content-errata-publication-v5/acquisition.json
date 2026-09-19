@@ -1,0 +1,1282 @@
+[
+  {
+    "path": "KERML11-76.html",
+    "url": "https://issues.omg.org/issues/KERML11-76",
+    "resolved_url": "https://issues.omg.org/issues/KERML11-76",
+    "retrieved_at": "2026-09-19T15:04:06.180672+00:00",
+    "sha256": "83b850d4a66dc1f90fa22e9305cfef3b4524da09e50dc7e7fc40c10362de608a",
+    "bytes": 11258
+  },
+  {
+    "path": "KERML11-72.html",
+    "url": "https://issues.omg.org/issues/KERML11-72",
+    "resolved_url": "https://issues.omg.org/issues/KERML11-72",
+    "retrieved_at": "2026-09-19T15:04:06.997316+00:00",
+    "sha256": "60ff41a0aea73ed21b7eb8dd1059a88bc4d18c5305ab345b40399b0ee7f88a7c",
+    "bytes": 13518
+  },
+  {
+    "path": "release-head.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits/master",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits/master",
+    "retrieved_at": "2026-09-19T15:04:07.273686+00:00",
+    "sha256": "5e8d765bbe0172f0ce34263526069fae57db355327322319ebb4c08a5a65ee49",
+    "bytes": 34566
+  },
+  {
+    "path": "release-tree.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/fb97b754f29588b8e9c7a35f370880cd15eb29e7?recursive=1",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/fb97b754f29588b8e9c7a35f370880cd15eb29e7?recursive=1",
+    "retrieved_at": "2026-09-19T15:04:07.747244+00:00",
+    "sha256": "3c158a86c9086688226c287126f2e3d0afef269ec2141fcad445435ba3c72569",
+    "bytes": 489280
+  },
+  {
+    "path": "release/kerml/src/examples/Simple Tests/Redefinition.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/kerml/src/examples/Simple%20Tests/Redefinition.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/kerml/src/examples/Simple%20Tests/Redefinition.kerml",
+    "retrieved_at": "2026-09-19T15:04:07.992703+00:00",
+    "sha256": "a9660bd0dc11092720e7975d83b0d48929708b533cd806e5264c2d0992aa1896",
+    "bytes": 325
+  },
+  {
+    "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/VectorFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:04:08.674122+00:00",
+    "sha256": "7db2d07cd0fb54add5afcdd8d2b2185b01b4092a90de9602d9a046ee04867dc5",
+    "bytes": 3421894
+  },
+  {
+    "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:04:09.026458+00:00",
+    "sha256": "42a919d6026df3226dcd40ce168199bdc5f193b6d567e5bc18eb5cb523abc52d",
+    "bytes": 392445
+  },
+  {
+    "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Objects.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kermlx",
+    "retrieved_at": "2026-09-19T15:04:09.529977+00:00",
+    "sha256": "a8633bf4c53935eca58d951c6faed56c239fe734fe5fbf816140d077235879e0",
+    "bytes": 821549
+  },
+  {
+    "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Observation.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+    "retrieved_at": "2026-09-19T15:04:09.978009+00:00",
+    "sha256": "0dd206a202f1c0ca274c087d4f3abf5b66cf30444306f75f1f4c30a3a554c99a",
+    "bytes": 451720
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/VectorFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:04:10.439579+00:00",
+    "sha256": "1737080621c1cb3ad11a4a40f0a3395f466815468b956d863ff9d7c605e35a61",
+    "bytes": 532657
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:04:10.745288+00:00",
+    "sha256": "3edc1f3820b93cc507a2b0582fb7c7935125b204cd63c8b252cc816b60aa725b",
+    "bytes": 131951
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Objects.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kermlx",
+    "retrieved_at": "2026-09-19T15:04:11.076303+00:00",
+    "sha256": "6d4f81b7e611ac9ee05d9017ff2a8b5dccdec6f7f02b73b21c64fbc107221d42",
+    "bytes": 171679
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Observation.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+    "retrieved_at": "2026-09-19T15:04:11.332494+00:00",
+    "sha256": "045f0a449e2e8f9983986d64117866f77baae716e3e5e8a4f8deaa291a900f40",
+    "bytes": 96043
+  },
+  {
+    "path": "release/sysml.library/Kernel Libraries/Kernel Function Library/VectorFunctions.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml",
+    "retrieved_at": "2026-09-19T15:04:11.586835+00:00",
+    "sha256": "2e9fdcd13a0cdf5db5bcc2326975430ac75432dccd45893740464d9a01487661",
+    "bytes": 8060
+  },
+  {
+    "path": "release/sysml.library/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+    "retrieved_at": "2026-09-19T15:04:11.824871+00:00",
+    "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+    "bytes": 7681
+  },
+  {
+    "path": "release/sysml.library/Kernel Libraries/Kernel Semantic Library/Objects.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml",
+    "retrieved_at": "2026-09-19T15:04:12.083020+00:00",
+    "sha256": "7e6b8a0a8f16a475e6c9290926c85defe9e3e1a1bf70df8ef137f4eec08733e6",
+    "bytes": 7124
+  },
+  {
+    "path": "release/sysml.library/Kernel Libraries/Kernel Semantic Library/Observation.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+    "retrieved_at": "2026-09-19T15:04:12.314326+00:00",
+    "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+    "bytes": 4578
+  },
+  {
+    "path": "release/sysml/src/training/05. Redefinition/Redefinition Example.sysml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml/src/training/05.%20Redefinition/Redefinition%20Example.sysml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml/src/training/05.%20Redefinition/Redefinition%20Example.sysml",
+    "retrieved_at": "2026-09-19T15:04:12.562684+00:00",
+    "sha256": "2a58dadc33f5a752bd4601db23fad1c0396067dff9d0c48c69ea80e6eb8c7e8d",
+    "bytes": 431
+  },
+  {
+    "path": "release/sysml/src/validation/01-Parts Tree/1c-Parts Tree Redefinition.sysml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml/src/validation/01-Parts%20Tree/1c-Parts%20Tree%20Redefinition.sysml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml/src/validation/01-Parts%20Tree/1c-Parts%20Tree%20Redefinition.sysml",
+    "retrieved_at": "2026-09-19T15:04:12.830884+00:00",
+    "sha256": "ee3fd9b693eee0eda5543ba146b1c672dacc06ec913bd3da5da12c240ef6f13e",
+    "bytes": 2231
+  },
+  {
+    "path": "release-issue-commits.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling/SysML-v2-Release%20KERML11-76",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling/SysML-v2-Release%20KERML11-76",
+    "retrieved_at": "2026-09-19T15:04:13.113575+00:00",
+    "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+    "bytes": 55
+  },
+  {
+    "path": "release-FeatureReferencingPerformances-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:04:13.409833+00:00",
+    "sha256": "0add223af5d666048aeb3223b0bcb8a47e799e74350a7e094c9904056ce4acf8",
+    "bytes": 16967
+  },
+  {
+    "path": "release-Objects-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:04:13.708320+00:00",
+    "sha256": "c33ced408dd813febb74db311a739874a07a24313e096bb568ddd0f80169d21a",
+    "bytes": 23682
+  },
+  {
+    "path": "release-Observation-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:04:13.990701+00:00",
+    "sha256": "4a768a3a87cd92a6717d704124d28d678aaa4519b611d685379c7af049f48cb8",
+    "bytes": 23713
+  },
+  {
+    "path": "release-VectorFunctions-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:04:14.308003+00:00",
+    "sha256": "33b0e2b3fc41f4de2cbfa4f0df7bfec232d84bb52a520686316ff48cb30f6bbf",
+    "bytes": 23649
+  },
+  {
+    "path": "pilot-head.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/master",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/master",
+    "retrieved_at": "2026-09-19T15:04:14.710004+00:00",
+    "sha256": "bc99f0936aad57df0db256fa2972177de11f44348b199befe5bbcca6c97488c5",
+    "bytes": 69731
+  },
+  {
+    "path": "pilot-tree.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/git/trees/5cca16d846016e62bb1e54e0e50e675254a022ef?recursive=1",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/git/trees/5cca16d846016e62bb1e54e0e50e675254a022ef?recursive=1",
+    "retrieved_at": "2026-09-19T15:04:15.161899+00:00",
+    "sha256": "5bdf91c75d9e4fe01e90eb55027e629714efaa11e7a001d71532ec99cdb0df18",
+    "bytes": 1691723
+  },
+  {
+    "path": "pilot/kerml/src/examples/Simple Tests/Redefinition.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/kerml/src/examples/Simple%20Tests/Redefinition.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/kerml/src/examples/Simple%20Tests/Redefinition.kerml",
+    "retrieved_at": "2026-09-19T15:04:15.454827+00:00",
+    "sha256": "a9660bd0dc11092720e7975d83b0d48929708b533cd806e5264c2d0992aa1896",
+    "bytes": 325
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml",
+    "retrieved_at": "2026-09-19T15:04:15.704711+00:00",
+    "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+    "bytes": 7681
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/library/Objects.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/Objects.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/Objects.kerml",
+    "retrieved_at": "2026-09-19T15:04:15.983725+00:00",
+    "sha256": "7e6b8a0a8f16a475e6c9290926c85defe9e3e1a1bf70df8ef137f4eec08733e6",
+    "bytes": 7124
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/library/Observation.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/Observation.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/Observation.kerml",
+    "retrieved_at": "2026-09-19T15:04:16.202330+00:00",
+    "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+    "bytes": 4578
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/library/VectorFunctions.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/VectorFunctions.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/library/VectorFunctions.kerml",
+    "retrieved_at": "2026-09-19T15:04:16.475372+00:00",
+    "sha256": "2e9fdcd13a0cdf5db5bcc2326975430ac75432dccd45893740464d9a01487661",
+    "bytes": 8060
+  },
+  {
+    "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "retrieved_at": "2026-09-19T15:04:16.726681+00:00",
+    "sha256": "332080c8e258a9e27feacb71d963a7d9d51425f9802e42c9e0ade2d18d7f7780",
+    "bytes": 18545
+  },
+  {
+    "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/NamespaceUtil.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/NamespaceUtil.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/NamespaceUtil.java",
+    "retrieved_at": "2026-09-19T15:04:16.969328+00:00",
+    "sha256": "e411c4c1517fb895f99336d3714d595a94b9ef261180316f517c83014714ffce",
+    "bytes": 7686
+  },
+  {
+    "path": "pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/TypeUtil.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/TypeUtil.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/TypeUtil.java",
+    "retrieved_at": "2026-09-19T15:04:17.223217+00:00",
+    "sha256": "993ec81d1eb43e95582f3cee65708a9aee76e704a121192bee567d9ffe486d5c",
+    "bytes": 22188
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/library.kernel/FeatureReferencingPerformances.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/FeatureReferencingPerformances.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/FeatureReferencingPerformances.kerml",
+    "retrieved_at": "2026-09-19T15:04:17.448560+00:00",
+    "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+    "bytes": 7681
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/library.kernel/Objects.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/Objects.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/Objects.kerml",
+    "retrieved_at": "2026-09-19T15:04:17.675238+00:00",
+    "sha256": "7e6b8a0a8f16a475e6c9290926c85defe9e3e1a1bf70df8ef137f4eec08733e6",
+    "bytes": 7124
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/library.kernel/Observation.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/Observation.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/Observation.kerml",
+    "retrieved_at": "2026-09-19T15:04:17.913394+00:00",
+    "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+    "bytes": 4578
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/library.kernel/VectorFunctions.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/VectorFunctions.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/library.kernel/VectorFunctions.kerml",
+    "retrieved_at": "2026-09-19T15:04:18.168152+00:00",
+    "sha256": "2e9fdcd13a0cdf5db5bcc2326975430ac75432dccd45893740464d9a01487661",
+    "bytes": 8060
+  },
+  {
+    "path": "pilot/sysml.library/Kernel Libraries/Kernel Function Library/VectorFunctions.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml",
+    "retrieved_at": "2026-09-19T15:04:18.412070+00:00",
+    "sha256": "2e9fdcd13a0cdf5db5bcc2326975430ac75432dccd45893740464d9a01487661",
+    "bytes": 8060
+  },
+  {
+    "path": "pilot/sysml.library/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+    "retrieved_at": "2026-09-19T15:04:18.647014+00:00",
+    "sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+    "bytes": 7681
+  },
+  {
+    "path": "pilot/sysml.library/Kernel Libraries/Kernel Semantic Library/Objects.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml",
+    "retrieved_at": "2026-09-19T15:04:18.884699+00:00",
+    "sha256": "7e6b8a0a8f16a475e6c9290926c85defe9e3e1a1bf70df8ef137f4eec08733e6",
+    "bytes": 7124
+  },
+  {
+    "path": "pilot/sysml.library/Kernel Libraries/Kernel Semantic Library/Observation.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+    "retrieved_at": "2026-09-19T15:04:19.120701+00:00",
+    "sha256": "6bc57a73c43af6f61201b6eb659024a9f08f974643eb5a101e068e3637761ee4",
+    "bytes": 4578
+  },
+  {
+    "path": "pilot/sysml/src/training/05. Redefinition/Redefinition Example.sysml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml/src/training/05.%20Redefinition/Redefinition%20Example.sysml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml/src/training/05.%20Redefinition/Redefinition%20Example.sysml",
+    "retrieved_at": "2026-09-19T15:04:19.357318+00:00",
+    "sha256": "2a58dadc33f5a752bd4601db23fad1c0396067dff9d0c48c69ea80e6eb8c7e8d",
+    "bytes": 431
+  },
+  {
+    "path": "pilot/sysml/src/validation/01-Parts Tree/1c-Parts Tree Redefinition.sysml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml/src/validation/01-Parts%20Tree/1c-Parts%20Tree%20Redefinition.sysml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/sysml/src/validation/01-Parts%20Tree/1c-Parts%20Tree%20Redefinition.sysml",
+    "retrieved_at": "2026-09-19T15:04:19.586316+00:00",
+    "sha256": "ee3fd9b693eee0eda5543ba146b1c672dacc06ec913bd3da5da12c240ef6f13e",
+    "bytes": 2231
+  },
+  {
+    "path": "pilot-issue-commits.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling/SysML-v2-Pilot-Implementation%20KERML11-76",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling/SysML-v2-Pilot-Implementation%20KERML11-76",
+    "retrieved_at": "2026-09-19T15:04:19.911317+00:00",
+    "sha256": "9a0f089991593bafc5882590a3332445380137f31fee94bdfde7274b5d734a0d",
+    "bytes": 27267
+  },
+  {
+    "path": "pilot-commit-692849294651ad8031f25f4323d38e51acb0a1dc.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/692849294651ad8031f25f4323d38e51acb0a1dc",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/692849294651ad8031f25f4323d38e51acb0a1dc",
+    "retrieved_at": "2026-09-19T15:04:20.241673+00:00",
+    "sha256": "b094bf621856e1a3c05fb935c5010bdcd91d520d684b50d5a2969e8e8324d79d",
+    "bytes": 6964
+  },
+  {
+    "path": "pilot-commit-240fba1faea614d6aa7f905cc697b95b8bf68d04.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/240fba1faea614d6aa7f905cc697b95b8bf68d04",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/240fba1faea614d6aa7f905cc697b95b8bf68d04",
+    "retrieved_at": "2026-09-19T15:04:20.570336+00:00",
+    "sha256": "4e085552c2166a501f57093f8cc63ec9452f043306cc1767a21d3db4da923b79",
+    "bytes": 11722
+  },
+  {
+    "path": "pilot-commit-55712ce11b5980c7090dc4e909459cc686c02277.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/55712ce11b5980c7090dc4e909459cc686c02277",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/55712ce11b5980c7090dc4e909459cc686c02277",
+    "retrieved_at": "2026-09-19T15:04:21.246455+00:00",
+    "sha256": "39aefa9cc6c9fc76352891521e5828c9760d2220106e4ab9904bee76f1dd8291",
+    "bytes": 291115
+  },
+  {
+    "path": "pilot-FeatureReferencingPerformances-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:04:21.657926+00:00",
+    "sha256": "db017506602c6803fecfaeb398a596493f2cb8cb389bc631fc6f75021aa037b7",
+    "bytes": 28005
+  },
+  {
+    "path": "pilot-Objects-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=org.omg.kerml.xpect.tests/library/Objects.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=org.omg.kerml.xpect.tests/library/Objects.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:04:22.002566+00:00",
+    "sha256": "bf0a3f822f78b5219be8f2f6241d1b528616cd432fbad63b24400251604f8fcc",
+    "bytes": 60025
+  },
+  {
+    "path": "pilot-Observation-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=org.omg.kerml.xpect.tests/library/Observation.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=org.omg.kerml.xpect.tests/library/Observation.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:04:22.345567+00:00",
+    "sha256": "bd0a19e8102c4a832040d41d86602a8b60ca90c42c7453633bca0a0b11006645",
+    "bytes": 31737
+  },
+  {
+    "path": "pilot-VectorFunctions-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=org.omg.kerml.xpect.tests/library/VectorFunctions.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=org.omg.kerml.xpect.tests/library/VectorFunctions.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:04:22.681447+00:00",
+    "sha256": "7a9709264359a72f879a818f5bc074205a7f734ac691f9229b79c5ab63461245",
+    "bytes": 31579
+  },
+  {
+    "path": "historical-tree.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/e0ccd90b5567f873f99ec6afe62e3502a9f63c47?recursive=1",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/e0ccd90b5567f873f99ec6afe62e3502a9f63c47?recursive=1",
+    "retrieved_at": "2026-09-19T15:07:08.430178+00:00",
+    "sha256": "071755c91cc3d1863ff40930811ef9514948fa3b3e0166f3595d67ebfed94d9a",
+    "bytes": 191290
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Data Type Library/Collections.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/Collections.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/Collections.kermlx",
+    "retrieved_at": "2026-09-19T15:07:08.684174+00:00",
+    "sha256": "db04d24c66a0efd984941c3a4b28fe66e851078faba5bf568f5bda18868d86c6",
+    "bytes": 66677
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Data Type Library/ScalarValues.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/ScalarValues.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/ScalarValues.kermlx",
+    "retrieved_at": "2026-09-19T15:07:08.949177+00:00",
+    "sha256": "1eca354def1d3de8121c905b73065ecb043135d0fc082ec3c04e90137e624f75",
+    "bytes": 9028
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Data Type Library/VectorValues.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/VectorValues.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/VectorValues.kermlx",
+    "retrieved_at": "2026-09-19T15:07:09.190390+00:00",
+    "sha256": "391e785c2b9986cb20a09244f453a0d7fd0df2b7d5e4e4fe443dd0a3d5dd4312",
+    "bytes": 15717
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/BaseFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/BaseFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/BaseFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:09.451165+00:00",
+    "sha256": "0245e272683e065e6f5cb4ecb5fb4aaf03d8c296a877e0eb689f04fd1a2a017f",
+    "bytes": 114967
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/BooleanFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/BooleanFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/BooleanFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:09.730638+00:00",
+    "sha256": "5413f6fcdaf2dea7611796b538b297708a5fe9889a3e08378c155c7947baec16",
+    "bytes": 44264
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/CollectionFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/CollectionFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/CollectionFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:10.035966+00:00",
+    "sha256": "5b6d17d171448a8d8cb1c7a99b85356546231d98b33ec374495145db86f8bcc3",
+    "bytes": 229278
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/ComplexFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ComplexFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ComplexFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:10.361799+00:00",
+    "sha256": "88871af8ce43e158220e86a2af4cf31973d9a71e99826f81fbfa44361a3a9f4f",
+    "bytes": 160441
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/ControlFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ControlFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ControlFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:10.644884+00:00",
+    "sha256": "76656cd6fb6f17a7065c1fe769c45594d4cb523f42fac819f1043db779df4bbb",
+    "bytes": 238838
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/DataFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/DataFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/DataFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:10.935884+00:00",
+    "sha256": "dce6813e12826e757c4ec79c316989f68079969c52c6430c85bb3c8f6871ff5c",
+    "bytes": 143339
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/IntegerFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/IntegerFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/IntegerFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:11.226894+00:00",
+    "sha256": "3835b6b113061a7875e00a5a88f70d12c620eb4078847de90d5635518e7c445d",
+    "bytes": 144801
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/NaturalFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/NaturalFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/NaturalFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:11.498069+00:00",
+    "sha256": "34fd51020adc9952f14ad3636f9a04aabafb29dee69e0a4e5630a50742cfc7a8",
+    "bytes": 87762
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/NumericalFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/NumericalFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/NumericalFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:11.776067+00:00",
+    "sha256": "5904ea92caa4c1d679ea48481c0ca5d001263f46d1989eddf9bc335b3116103d",
+    "bytes": 150191
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/OccurrenceFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/OccurrenceFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/OccurrenceFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:12.069066+00:00",
+    "sha256": "c89a149aad5bde26d7bc319436210083fb8a860c71b49659b4fa0d1b07646fc9",
+    "bytes": 119104
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/RationalFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/RationalFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/RationalFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:12.353066+00:00",
+    "sha256": "1685f03ccd1cfaaf3e59edab5e7207d7c3e19b2878e08b8d1e94d6b3036645e3",
+    "bytes": 167623
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/RealFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/RealFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/RealFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:12.629216+00:00",
+    "sha256": "086dc9e5e3579ba12f6f0c89dee72881d2dd305e51a6e7ff473ba3bb28758435",
+    "bytes": 162489
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/ScalarFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ScalarFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ScalarFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:12.888424+00:00",
+    "sha256": "60b475eeaa4cefa18da4138f12973088e0bc531eef22de68d8798188609d96f0",
+    "bytes": 128998
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/SequenceFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/SequenceFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/SequenceFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:13.211834+00:00",
+    "sha256": "1dd84370a26272428cca92b526eedde09340b79fcf669e80bf3035d25a52dc0e",
+    "bytes": 435793
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/StringFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/StringFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/StringFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:13.481056+00:00",
+    "sha256": "315a501b5a7023ca09d2b8a37683b1b5a3abc3dcf7683503f4a0f761f0587df4",
+    "bytes": 62552
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/TrigFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/TrigFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/TrigFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:13.738328+00:00",
+    "sha256": "fe7531bdb90d7e408cc598ce19d354e8f6aa3ece9d69e9bdeed4544423daed16",
+    "bytes": 86135
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Function Library/VectorFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:07:14.075593+00:00",
+    "sha256": "0b3f26139e74bba3fa72f927668b251da2dd02732e53b2a94934c644358b3f44",
+    "bytes": 583161
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Base.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Base.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Base.kermlx",
+    "retrieved_at": "2026-09-19T15:07:14.320592+00:00",
+    "sha256": "671efb56da4061aae3fab94105bbaaaf07e86463ae24b9845cde390790047121",
+    "bytes": 29384
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Clocks.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Clocks.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Clocks.kermlx",
+    "retrieved_at": "2026-09-19T15:07:14.605787+00:00",
+    "sha256": "affa64f2b4b2999a8f4275f87a773818e332be4b0c56a5878142792798abe712",
+    "bytes": 126217
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/ControlPerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/ControlPerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/ControlPerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:07:14.854784+00:00",
+    "sha256": "1b3cf821006f473c46fe3181cd5e35b3f5ac8cc996f57b0e65de0e2f1dd14fb0",
+    "bytes": 124421
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:07:15.168784+00:00",
+    "sha256": "9879a6c5629c02a2e963d4af4c9f117a649bf782dcd6f0371d98c830eb38459c",
+    "bytes": 148260
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/KerML.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/KerML.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/KerML.kermlx",
+    "retrieved_at": "2026-09-19T15:07:15.504783+00:00",
+    "sha256": "2e0f6d7582430aa95bf059773dd2f9d89f9455c61978f6d2bbcb66530249af77",
+    "bytes": 734557
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Links.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Links.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Links.kermlx",
+    "retrieved_at": "2026-09-19T15:07:15.764153+00:00",
+    "sha256": "97d159018d22da1fa7141eba9a78b5fd415aec218af05c29ef31cf3d4fce1203",
+    "bytes": 32776
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Metaobjects.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Metaobjects.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Metaobjects.kermlx",
+    "retrieved_at": "2026-09-19T15:07:16.003153+00:00",
+    "sha256": "2142f662ad4eb1613d4d2dba194c8ec109d82beac97d0fd7df1df95818cf7704",
+    "bytes": 17736
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Objects.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kermlx",
+    "retrieved_at": "2026-09-19T15:07:16.273155+00:00",
+    "sha256": "002f5250be4195abb2ac728eb5b7aed1f17160d33c3603c6e70ed49468511a57",
+    "bytes": 179367
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Observation.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kermlx",
+    "retrieved_at": "2026-09-19T15:07:16.562669+00:00",
+    "sha256": "9cf8e20cbbb376fb46eaaaf1a931c42a80a6d45608ace90ddadfae52e72d119a",
+    "bytes": 105189
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Occurrences.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Occurrences.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Occurrences.kermlx",
+    "retrieved_at": "2026-09-19T15:07:16.922645+00:00",
+    "sha256": "e221353cad28c65775d925244d49364f5f542582e386b44bbad4fa40dd0b5bb6",
+    "bytes": 921068
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Performances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Performances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Performances.kermlx",
+    "retrieved_at": "2026-09-19T15:07:17.229643+00:00",
+    "sha256": "1e8d1af89d5f6fb6531778ca543ebe265e02c93653489cb2ebb953e3ee29ca65",
+    "bytes": 136240
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/SpatialFrames.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kermlx",
+    "retrieved_at": "2026-09-19T15:07:17.579655+00:00",
+    "sha256": "c29279706e71ada47b5616a90049fb02984da8f70bab911b32113f215a23f372",
+    "bytes": 241421
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/StatePerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/StatePerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/StatePerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:07:17.887334+00:00",
+    "sha256": "5294f7b1f0754892a23a5683c678ef0b8012e072e9025be0b341e7b4955d6fb3",
+    "bytes": 352123
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Transfers.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Transfers.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Transfers.kermlx",
+    "retrieved_at": "2026-09-19T15:07:18.173336+00:00",
+    "sha256": "cae36aa90b8ff54d0448da12e2165b3c82380212775699f2d94ea014e8b1f3a0",
+    "bytes": 223164
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/TransitionPerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/TransitionPerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/TransitionPerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:07:18.471333+00:00",
+    "sha256": "5bf50152e220c386db397d7f9e74ab3e78b6df15f47628dc8e7b86a155172013",
+    "bytes": 126171
+  },
+  {
+    "path": "historical/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Triggers.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Triggers.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Triggers.kermlx",
+    "retrieved_at": "2026-09-19T15:07:18.721334+00:00",
+    "sha256": "426ef7c7aaa61fa43c9ba6bdafe224fab9a322b8a8d887bef186691c346a3c0b",
+    "bytes": 90260
+  },
+  {
+    "path": "historical/sysml.library/Kernel Libraries/Kernel Function Library/VectorFunctions.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml",
+    "retrieved_at": "2026-09-19T15:07:19.043877+00:00",
+    "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+    "bytes": 7961
+  },
+  {
+    "path": "historical/sysml.library/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml",
+    "retrieved_at": "2026-09-19T15:07:19.334435+00:00",
+    "sha256": "216d0bd5ac2676565a5606c5ff219aacd84a6ad394c7f16c7d5e78d1cd54d6e6",
+    "bytes": 7433
+  },
+  {
+    "path": "historical/sysml.library/Kernel Libraries/Kernel Semantic Library/Objects.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml",
+    "retrieved_at": "2026-09-19T15:07:19.567951+00:00",
+    "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+    "bytes": 6127
+  },
+  {
+    "path": "historical/sysml.library/Kernel Libraries/Kernel Semantic Library/Observation.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/e0ccd90b5567f873f99ec6afe62e3502a9f63c47/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml",
+    "retrieved_at": "2026-09-19T15:07:19.787952+00:00",
+    "sha256": "38c17c35b78902ff8534bf1560bc426fc37cc86f7d69792c040ebb48c1b09813",
+    "bytes": 4561
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/parsing/ParsingTests_Redefinition.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/parsing/ParsingTests_Redefinition.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/parsing/ParsingTests_Redefinition.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:20.057493+00:00",
+    "sha256": "79edb3e194ccfc5b4f32d558c776539179077f66a140de0a4d69b0eb22944db5",
+    "bytes": 975
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/parsing/ParsingTests_RedefinitionScoping.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/parsing/ParsingTests_RedefinitionScoping.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/parsing/ParsingTests_RedefinitionScoping.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:20.412083+00:00",
+    "sha256": "a62b7994468446b2a6edcad15c1ae2a08cb8aa9bb0f5eab02ff71aace6587884",
+    "bytes": 894
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/testsuite/MemberNameTests_FeatureRedefinition.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/testsuite/MemberNameTests_FeatureRedefinition.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/testsuite/MemberNameTests_FeatureRedefinition.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:20.679192+00:00",
+    "sha256": "95e193172728ca63f83cafd8a0c56e6e58c421be7ee558f25babf70c1aded320",
+    "bytes": 932
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/AssociationTest_EndRedefinitionGoodCase.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/AssociationTest_EndRedefinitionGoodCase.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/AssociationTest_EndRedefinitionGoodCase.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:20.912821+00:00",
+    "sha256": "9e6df00e783a3a91534bea6ede8a73e16d523a20d37015c7dae44344b68ccca8",
+    "bytes": 834
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/MembershipTests_Distinguishability.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/MembershipTests_Distinguishability.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/MembershipTests_Distinguishability.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:21.139315+00:00",
+    "sha256": "cdf796a0c5983db89243c53e32ca146881fa5640c054eb3726189cea223b831a",
+    "bytes": 1058
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond0_valid.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond0_valid.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond0_valid.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:21.373956+00:00",
+    "sha256": "d269f5bc6e8be15c3ebd7064e97701e109968e0bce66fe9d92c5ee9a81eb79e4",
+    "bytes": 858
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond1_invalid.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond1_invalid.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond1_invalid.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:21.596749+00:00",
+    "sha256": "c4abb7a21fe4cce750ae978af93220ef6989ec0991bd5e6b9eafb0b91dfe977b",
+    "bytes": 907
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond2_valid.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond2_valid.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond2_valid.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:21.822487+00:00",
+    "sha256": "b26c14086d90212fca27785f8472bcb3b2bd91b87c64f93ff3b8978994693758",
+    "bytes": 856
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond_Invalid.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond_Invalid.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_Diamond_Invalid.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:22.056486+00:00",
+    "sha256": "e678b4d89e46cd544c51a36c2094da1c3b280c70d90be73da3d765be7e488aff",
+    "bytes": 909
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_DirectionConformance_invalid.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_DirectionConformance_invalid.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_DirectionConformance_invalid.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:22.325484+00:00",
+    "sha256": "653eab7f4ea1b058ab9f620f974d3f42e70ccd2fd3e77efc612f7060bf1d3c53",
+    "bytes": 1460
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_End_Invalid.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_End_Invalid.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_End_Invalid.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:22.555484+00:00",
+    "sha256": "7df615d8b58e358ab2c5d4ba83d3bf7084d4c158902bad6a5f6f9dc14cd9fc99",
+    "bytes": 1185
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/ShortNameTests_Distinguishibility1.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/ShortNameTests_Distinguishibility1.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/ShortNameTests_Distinguishibility1.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:22.799061+00:00",
+    "sha256": "8cd76a117e7293e685fe84d3d5b9e3ddbee996e360343bb6abe7ec1eb44e215c",
+    "bytes": 502
+  },
+  {
+    "path": "pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/ShortNameTests_Distinguishibility2.kerml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/ShortNameTests_Distinguishibility2.kerml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/ShortNameTests_Distinguishibility2.kerml.xt",
+    "retrieved_at": "2026-09-19T15:07:23.040779+00:00",
+    "sha256": "64f149039c870027f70ab75bd7365eef40b5f6180aa5ad8123f260c66d2837ec",
+    "bytes": 502
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/RedefinitionDiamond1_invalid.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/RedefinitionDiamond1_invalid.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/RedefinitionDiamond1_invalid.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:23.293780+00:00",
+    "sha256": "6b78edab84286008a4358dc96c2d85403e793f7e48181885b64575bbff4aed49",
+    "bytes": 1164
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/RedefinitionDiamond_Invalid.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/RedefinitionDiamond_Invalid.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/RedefinitionDiamond_Invalid.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:23.527778+00:00",
+    "sha256": "c8c2b09220c6e404b287e90643d545cf469063d382140687104b60766fa44ac2",
+    "bytes": 1164
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/Redefinition_MultiplicityConformance_Invalid.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/Redefinition_MultiplicityConformance_Invalid.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/Redefinition_MultiplicityConformance_Invalid.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:23.756464+00:00",
+    "sha256": "ab5abdb37d130ff31199d2ca80b749b1e208767fcaf64fd82b20dbd4596183de",
+    "bytes": 1635
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/Redefinition_OwningType_Invalid.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/Redefinition_OwningType_Invalid.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/invalid/Redefinition_OwningType_Invalid.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:23.995463+00:00",
+    "sha256": "b675a6d078f4080ac256e51a2d22013f6f21c1cc2a1404a3380b53d9279228d6",
+    "bytes": 1592
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionDiamond0.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionDiamond0.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionDiamond0.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:24.220464+00:00",
+    "sha256": "d1bdcc135e4703b8f2530f53afbb199a386ed2eb8936c0866af95e1d30b93d3a",
+    "bytes": 1113
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionDiamond2.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionDiamond2.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionDiamond2.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:24.440466+00:00",
+    "sha256": "5ce9f81e292a9162684d4820361eb6fe4e6b257b83df40af8328d887391923bd",
+    "bytes": 1111
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionHopthrough.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionHopthrough.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/RedefinitionHopthrough.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:24.678466+00:00",
+    "sha256": "4aeabd0047c63d1633f45296d84c33b443da295e842977005f1c9eaa455affed",
+    "bytes": 1149
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_MultiplicityConformance.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_MultiplicityConformance.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_MultiplicityConformance.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:24.942464+00:00",
+    "sha256": "a79ceea92f4c257acf09cb113926476a66d5a64c4eb5ebd1410b2ccd86b210ff",
+    "bytes": 1163
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_OwningType.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_OwningType.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_OwningType.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:25.170573+00:00",
+    "sha256": "46d8e34e64d1a698881e54cf047d732e98db8b4191bd33a5cef3cc2809124d2f",
+    "bytes": 1650
+  },
+  {
+    "path": "pilot/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_OwningType_Cyclic_Gen.sysml.xt",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_OwningType_Cyclic_Gen.sysml.xt",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.xpect.tests/src/org/omg/sysml/xpect/tests/validation/valid/Redefinition_OwningType_Cyclic_Gen.sysml.xt",
+    "retrieved_at": "2026-09-19T15:07:25.412570+00:00",
+    "sha256": "2679a89862319f4120c75b8db494b61be9c306476069f441ac88d7289c772a2b",
+    "bytes": 1000
+  },
+  {
+    "path": "release/sysml.library/Kernel Libraries/Kernel Semantic Library/Triggers.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Triggers.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Triggers.kerml",
+    "retrieved_at": "2026-09-19T15:10:47.275234+00:00",
+    "sha256": "124cad3625935e078d1363e6100ee12537ca9c51445a18108e056db8b4885609",
+    "bytes": 4422
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Triggers.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Triggers.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Triggers.kermlx",
+    "retrieved_at": "2026-09-19T15:10:47.547108+00:00",
+    "sha256": "7475635bc66f1ac7f686238a5e7c97f3bd0f911580570fb867c1c1cc81e7e09f",
+    "bytes": 82543
+  },
+  {
+    "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Triggers.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Triggers.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Triggers.kermlx",
+    "retrieved_at": "2026-09-19T15:10:48.023857+00:00",
+    "sha256": "d0f313a378dec9fd52ef2ed45122982431dd26e9ada3fe78714a383ec15c7bf4",
+    "bytes": 398545
+  },
+  {
+    "path": "release/sysml.library/Kernel Libraries/Kernel Semantic Library/Performances.kerml",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Performances.kerml",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Performances.kerml",
+    "retrieved_at": "2026-09-19T15:10:48.265856+00:00",
+    "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+    "bytes": 8925
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Performances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Performances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Performances.kermlx",
+    "retrieved_at": "2026-09-19T15:10:48.550859+00:00",
+    "sha256": "b246b3841e5818e450fdc74bc13f12d1d1f0e0f07d236468da270d4d97b5706b",
+    "bytes": 115847
+  },
+  {
+    "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Performances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Performances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/Performances.kermlx",
+    "retrieved_at": "2026-09-19T15:10:48.892858+00:00",
+    "sha256": "8beac837b8e8e9ec645dbbd8dc1bccf9081cdee262d5e5c99399a2fd091afa23",
+    "bytes": 256690
+  },
+  {
+    "path": "pilot-source-Objects-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Objects.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:11:33.903578+00:00",
+    "sha256": "e85046042436baae84d6b4ab17b88475977eb5580344cd9a3969e4f9771717dd",
+    "bytes": 32785
+  },
+  {
+    "path": "pilot-source-Observation-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Observation.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:11:34.246395+00:00",
+    "sha256": "723e52136e2cbf9c0d3153867888698edaa40e73ba43f1f667c4390bed1f7b24",
+    "bytes": 25165
+  },
+  {
+    "path": "pilot-source-FeatureReferencingPerformances-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/FeatureReferencingPerformances.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:11:34.560678+00:00",
+    "sha256": "00666635040b3fe328c37e6b43642080dda101b99cd15fd6dd5dec6a7786ee5f",
+    "bytes": 18047
+  },
+  {
+    "path": "pilot-source-VectorFunctions-history.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml&per_page=100",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits?path=sysml.library/Kernel%20Libraries/Kernel%20Function%20Library/VectorFunctions.kerml&per_page=100",
+    "retrieved_at": "2026-09-19T15:11:34.845682+00:00",
+    "sha256": "c4d59601ab6d418c05b142e112e6452f2353ce3dd41658b452bf303b006d5b52",
+    "bytes": 28666
+  },
+  {
+    "path": "pilot-commit-4aa78ea896dec76d62d62478534cd9cc6d8217cc.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/4aa78ea896dec76d62d62478534cd9cc6d8217cc",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/4aa78ea896dec76d62d62478534cd9cc6d8217cc",
+    "retrieved_at": "2026-09-19T15:12:53.439858+00:00",
+    "sha256": "04e8d55331e08e5badd8e8a66b568489f5140ad86a85b28d3e77c7689b58bcbd",
+    "bytes": 24015
+  },
+  {
+    "path": "KERML11-68.html",
+    "url": "https://issues.omg.org/issues/KERML11-68",
+    "resolved_url": "https://issues.omg.org/issues/KERML11-68",
+    "retrieved_at": "2026-09-19T15:17:43.009801+00:00",
+    "sha256": "dfa30a27558ce977daa8c9be033d789935cbc74ddb6099a4ed89cdd7de0d65dd",
+    "bytes": 12416
+  },
+  {
+    "path": "KERML11-6.html",
+    "url": "https://issues.omg.org/issues/KERML11-6",
+    "resolved_url": "https://issues.omg.org/issues/KERML11-6",
+    "retrieved_at": "2026-09-19T15:17:43.826265+00:00",
+    "sha256": "ca045667d7d312b60bd0d41003d9b094c656aa81ccfc291b71ec6819567875c8",
+    "bytes": 11448
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Data Type Library/Collections.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/Collections.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/Collections.kermlx",
+    "retrieved_at": "2026-09-19T15:19:16.003069+00:00",
+    "sha256": "fb7151c330737ef6a48c054415fd757097960ca58fecd7b236e306d473a16367",
+    "bytes": 92060
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Data Type Library/ScalarValues.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/ScalarValues.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/ScalarValues.kermlx",
+    "retrieved_at": "2026-09-19T15:19:16.235371+00:00",
+    "sha256": "1967f626530bae3a3fbe6548d99c53871e576ecefe511a996861649562c62a37",
+    "bytes": 9028
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Data Type Library/VectorValues.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/VectorValues.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Data%20Type%20Library/VectorValues.kermlx",
+    "retrieved_at": "2026-09-19T15:19:16.471371+00:00",
+    "sha256": "aa2b7cecc5cb330c833b14acd60a9bf5aec79053b6e717eaff8c69a2abdbee4d",
+    "bytes": 14389
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/BaseFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/BaseFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/BaseFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:16.731368+00:00",
+    "sha256": "9e8010559cff6dbdbb86360e43f35064c9e431bbcd07e2ca942ac4b6289542b8",
+    "bytes": 87627
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/BooleanFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/BooleanFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/BooleanFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:16.984590+00:00",
+    "sha256": "2cdc359501eb983ce8191e4aff9798f0897f29420dc677c153e8dbe0cac9adc1",
+    "bytes": 35304
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/CollectionFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/CollectionFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/CollectionFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:17.278587+00:00",
+    "sha256": "6f7c1251d03eef4bfcab9cb4a9f2d6e8185777b3ce992f33f904eb84b2235d70",
+    "bytes": 207686
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/ComplexFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ComplexFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ComplexFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:17.623589+00:00",
+    "sha256": "e3a81f35ab5f2f63f223b588d95b12a15f946813e8de7564c60196a933584a26",
+    "bytes": 131007
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/ControlFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ControlFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ControlFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:17.920687+00:00",
+    "sha256": "6dc5516d69ee272801e5c4db229110cff71ff9d7f2f9234770b202524515f793",
+    "bytes": 183342
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/DataFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/DataFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/DataFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:18.193685+00:00",
+    "sha256": "c6242d3a557bbc1e1e14aef8d5b2590b3d2cf8746e64705636de74df950141ab",
+    "bytes": 112875
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/IntegerFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/IntegerFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/IntegerFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:18.477852+00:00",
+    "sha256": "8adc6db1778f30d1aa572068bd453f01659e3527deac5c71cf509ec04c3800ec",
+    "bytes": 115161
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/NaturalFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/NaturalFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/NaturalFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:18.766298+00:00",
+    "sha256": "4afef89ad82a284e5f7a6740af198e78ae64974b28b6ba90556bb07f5a47a9a9",
+    "bytes": 69842
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/NumericalFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/NumericalFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/NumericalFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:19.038299+00:00",
+    "sha256": "b095a9c5e65a6407715e533be90c6400d5646bd98dba05d092f628c7df742d75",
+    "bytes": 122851
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/OccurrenceFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/OccurrenceFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/OccurrenceFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:19.296342+00:00",
+    "sha256": "5c422b6df2e553a0f1f9c5ed0e572de918aa018d99c590ac9dd961cedaa4db71",
+    "bytes": 104144
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/RationalFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/RationalFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/RationalFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:19.573578+00:00",
+    "sha256": "0110205365bb935381632ee503b5bf4ec97d4895a914ea12872e9adbb97b913f",
+    "bytes": 133699
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/RealFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/RealFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/RealFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:19.861579+00:00",
+    "sha256": "8cd178a2ae1ce7c9524e58e09d52dd09e02e0ad335b3f3981aedc879c650e33d",
+    "bytes": 129745
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/ScalarFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ScalarFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/ScalarFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:20.135581+00:00",
+    "sha256": "d31323db15542ed5c56e9f71cb3f0fd10acd8124a2d33bfd26212002436b575c",
+    "bytes": 103014
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/SequenceFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/SequenceFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/SequenceFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:20.591593+00:00",
+    "sha256": "b78df67453dfd8d58e499e511d0f7f5a909c55bf91febd65d380e2dd2e51e9ff",
+    "bytes": 374495
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/StringFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/StringFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/StringFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:21.006594+00:00",
+    "sha256": "041bee4c2135c1ae6c5fc7c570ba3753ab2facb3580333bdd3505134a4584470",
+    "bytes": 50008
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Function Library/TrigFunctions.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/TrigFunctions.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Function%20Library/TrigFunctions.kermlx",
+    "retrieved_at": "2026-09-19T15:19:21.269593+00:00",
+    "sha256": "435016f1893526877df6dbb73ab222603d072282c94b70d46a923d252d5e3315",
+    "bytes": 75963
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Base.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Base.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Base.kermlx",
+    "retrieved_at": "2026-09-19T15:19:21.621173+00:00",
+    "sha256": "74cc5a6c64aff94870139f3591a368750d453845363f7e3eb12888166a91b5bd",
+    "bytes": 22568
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Clocks.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Clocks.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Clocks.kermlx",
+    "retrieved_at": "2026-09-19T15:19:21.891172+00:00",
+    "sha256": "deb538bca39707a2dc99062446a39f9ea2251a4061e7ee3ace7af99c4a834701",
+    "bytes": 116841
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/ControlPerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/ControlPerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/ControlPerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:19:22.199174+00:00",
+    "sha256": "10b618a590513430ad32ab68bddbaf19bceff29d9decbf4f5512ba5df0231694",
+    "bytes": 105033
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/KerML.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/KerML.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/KerML.kermlx",
+    "retrieved_at": "2026-09-19T15:19:22.545602+00:00",
+    "sha256": "39d607fe9609c643e5090b7ecdcaaf2f4607e766edc61ea0c53fd4a18e514638",
+    "bytes": 531406
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Links.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Links.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Links.kermlx",
+    "retrieved_at": "2026-09-19T15:19:22.797722+00:00",
+    "sha256": "1c3c81e6fbe3c3ed01ab14a170b709ba237fbc2a55543f3931ce9e7f7d3c99e8",
+    "bytes": 27462
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Metaobjects.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Metaobjects.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Metaobjects.kermlx",
+    "retrieved_at": "2026-09-19T15:19:23.052723+00:00",
+    "sha256": "944a20db186cb9f8c0cd066382aeb879d797309758744c888f30689fb8a2eabe",
+    "bytes": 15044
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Occurrences.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Occurrences.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Occurrences.kermlx",
+    "retrieved_at": "2026-09-19T15:19:23.652721+00:00",
+    "sha256": "b9fcc7f9de6c52fc3aece0784d0903700b9397849501f0000eb9972815db0410",
+    "bytes": 817789
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/SpatialFrames.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/SpatialFrames.kermlx",
+    "retrieved_at": "2026-09-19T15:19:23.949723+00:00",
+    "sha256": "b5aa06cae3207662b7e5285d22acdff388a215b6cb1b4b69f2893ed4fee022d2",
+    "bytes": 221121
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/StatePerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/StatePerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/StatePerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:19:24.410341+00:00",
+    "sha256": "90afb1428c39cf7e5cf5016be8ba464d2e540662c9d5b1a4fa47a32361e172fb",
+    "bytes": 325206
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/Transfers.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Transfers.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/Transfers.kermlx",
+    "retrieved_at": "2026-09-19T15:19:24.687832+00:00",
+    "sha256": "d57fd3c8951751425e8668676e39205d8b56221986e41e46e5e3abd5f217c4b0",
+    "bytes": 194007
+  },
+  {
+    "path": "release/sysml.library.xmi/Kernel Libraries/Kernel Semantic Library/TransitionPerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/TransitionPerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi/Kernel%20Libraries/Kernel%20Semantic%20Library/TransitionPerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:19:24.951831+00:00",
+    "sha256": "eff08e64727e9d1a1c4877625877c9477186f64bccce240ff8868702bc46f357",
+    "bytes": 108772
+  },
+  {
+    "path": "release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/StatePerformances.kermlx",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/StatePerformances.kermlx",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/sysml.library.xmi.implied/Kernel%20Libraries/Kernel%20Semantic%20Library/StatePerformances.kermlx",
+    "retrieved_at": "2026-09-19T15:33:42.818844+00:00",
+    "sha256": "52d0960ebc6011f6f7b6e5a7c22cdf6f2f3a98aa38524171acb3b482b912e804",
+    "bytes": 1858601
+  }
+]

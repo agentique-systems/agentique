@@ -101,8 +101,11 @@ impl KerMlQueries<'_> {
                 let ty = owner.value;
                 out.merge(owner);
                 if let Some(ty) = ty.filter(|t| self.is(*t, c::TYPE)) {
-                    if self.context().options.baseline_profile
-                        == agq_kerml::BaselineProfile::OPERATIONAL_V2
+                    if self
+                        .context()
+                        .options
+                        .baseline_profile
+                        .corrects_redefinition_resolution()
                     {
                         let lookup = self.operational_redefinition_target(context, scope, ty, name);
                         out.value = lookup.value.clone();
@@ -635,7 +638,11 @@ impl KerMlQueries<'_> {
         let parent = self.owner(feature);
         let ty = parent.value;
         let mut lookup = if let Some(ty) = ty.filter(|t| self.is(*t, c::TYPE)) {
-            if self.context().options.baseline_profile == agq_kerml::BaselineProfile::OPERATIONAL_V2
+            if self
+                .context()
+                .options
+                .baseline_profile
+                .corrects_redefinition_resolution()
             {
                 self.operational_redefinition_target(feature, feature, ty, name)
             } else {

@@ -1,0 +1,4434 @@
+{
+  "format": "agentique-reviewed-operational-library-corrections/1",
+  "profile_id": "agentique-kerml-1.0-operational/3",
+  "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "extends": {
+    "profile": "agentique-kerml-1.0-operational/2",
+    "manifest": "standards/kerml-1.0-operational-errata-v2.json",
+    "sha256": "6744a4e589ad3878c2b74c8760d7714500a12f3584f25cfe1175cdd58f02a27d"
+  },
+  "official_issue": "KERML11-76",
+  "issue_status": "open",
+  "authority": "Agentique project-reviewed operational correction; not an adopted OMG correction",
+  "selectors": {
+    "Objects::StructuredSpaceObject": {
+      "id": "03a7589e-3bb2-59c2-8303-c541d5d61516",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        4184,
+        6124
+      ],
+      "metaclass": "c3a7c498-8a72-5d8b-980c-ac2cf0dc851a"
+    },
+    "Objects::StructuredSpaceObject::innerSpaceDimension": {
+      "id": "fadfd4f6-26b1-50b5-bb0c-406987627413",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        6009,
+        6119
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "Objects::Surface": {
+      "id": "d698ca52-f57c-5d2c-8b78-59d12e23b6a9",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        3536,
+        3858
+      ],
+      "metaclass": "c3a7c498-8a72-5d8b-980c-ac2cf0dc851a"
+    },
+    "Objects::Surface::innerSpaceDimension": {
+      "id": "056a9190-f8d8-55fa-a0d6-e74b3b4570b7",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        3654,
+        3696
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "Objects::StructuredSpaceObject::faces/typing": {
+      "id": "439218e6-e0cf-597f-8a1e-4195f072104b",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        5161,
+        5168
+      ],
+      "metaclass": "62dc33ff-9e92-557e-b7a9-562372f000f3"
+    },
+    "Objects::Curve": {
+      "id": "1ce324ed-58ec-5a07-b28e-e1cc21e1b0ba",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        3861,
+        4018
+      ],
+      "metaclass": "c3a7c498-8a72-5d8b-980c-ac2cf0dc851a"
+    },
+    "Objects::Curve::innerSpaceDimension": {
+      "id": "ab28cdfe-f757-5e2c-abbb-20904c82920f",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        3973,
+        4015
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "Objects::StructuredSpaceObject::edges/typing": {
+      "id": "9b28db85-76f4-57cd-af27-0ce32f059265",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        5601,
+        5606
+      ],
+      "metaclass": "62dc33ff-9e92-557e-b7a9-562372f000f3"
+    },
+    "Objects::Point": {
+      "id": "b11df504-b553-5156-9135-7e3950f83377",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        4021,
+        4181
+      ],
+      "metaclass": "c3a7c498-8a72-5d8b-980c-ac2cf0dc851a"
+    },
+    "Objects::Point::innerSpaceDimension": {
+      "id": "2b1f871b-4f04-5d9e-a613-418a204ae412",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        4136,
+        4178
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "Objects::StructuredSpaceObject::vertices/typing": {
+      "id": "da17cacf-d835-5c29-b2fa-edc4edfb810b",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "range": [
+        5948,
+        5953
+      ],
+      "metaclass": "62dc33ff-9e92-557e-b7a9-562372f000f3"
+    },
+    "EvaluationMonitor/monitoredOccurrence": {
+      "id": "c85eefa6-a152-5060-91b6-f6a543cae2ec",
+      "document": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "range": [
+        5504,
+        5645
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "EvaluationMonitor/result-membership": {
+      "id": "c5651256-8fe5-5766-a754-8975d31e7680",
+      "document": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "range": [
+        5578,
+        5638
+      ],
+      "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+    },
+    "BooleanEvaluationMonitor/monitoredOccurrence": {
+      "id": "a39fa9f8-e0e8-5964-b866-938d7cdbd4bd",
+      "document": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "range": [
+        6020,
+        6058
+      ],
+      "metaclass": "36f2e3df-fab0-5ee3-a0e9-d00d18551a23"
+    },
+    "ScalarValues::Boolean": {
+      "id": "274ab95e-c704-5625-a883-aa1e724dc7d8",
+      "document": "Kernel Data Type Library/ScalarValues.kerml",
+      "sha256": "4db25ce00dd170fd67261f6e7e21a2616bda15d233579dc5fb3193aaf61fa5a5",
+      "range": [
+        421,
+        462
+      ],
+      "metaclass": "0c822855-7af2-5b2d-9e46-427117f5b070"
+    },
+    "Monitor1/endWhen": {
+      "id": "333ba226-0b0f-5992-97a3-e42c5135efa2",
+      "document": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "range": [
+        6940,
+        6986
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "Monitor2/endWhen": {
+      "id": "6ac03b22-5656-5498-8a39-83b81e60094d",
+      "document": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "range": [
+        7081,
+        7127
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "Observation::ObserveChange::transfer": {
+      "id": "0597cd26-c12e-52b5-af35-5c3dc4332452",
+      "document": "Kernel Semantic Library/Observation.kerml",
+      "sha256": "603aecde2ef64d519c1bfc89bfc52f5315c05a36aa0cf86174badba5b371ddbf",
+      "range": [
+        2364,
+        2662
+      ],
+      "metaclass": "e697ac5a-310a-59cb-b50e-0d9b9fca56d8"
+    },
+    "VectorFunctions::CartesianThreeVectorOf/result": {
+      "id": "6239c627-2efd-50f2-bf4f-c8c6cf5233b8",
+      "document": "Kernel Function Library/VectorFunctions.kerml",
+      "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+      "range": [
+        5341,
+        5372
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "VectorDimension/constructed": {
+      "id": "1dd35c9b-e819-546c-926d-a85dfc883be2",
+      "document": "Kernel Function Library/VectorFunctions.kerml",
+      "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+      "range": [
+        5151,
+        5184
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    },
+    "VectorDimension/three": {
+      "id": "a5bfbc40-b073-5449-a8a9-b62b57ee3235",
+      "document": "Kernel Data Type Library/VectorValues.kerml",
+      "sha256": "7b22f8867e1cf46ac6a8226175db4405f6c29f047b3d6ad54a044fef3ce683dc",
+      "range": [
+        1593,
+        1619
+      ],
+      "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+    }
+  },
+  "entries": [
+    {
+      "id": "AGQ-KERML10-LIB-001",
+      "document": "Kernel Semantic Library/Objects.kerml",
+      "authority": [
+        "https://issues.omg.org/issues/KERML11-76",
+        "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/240fba1faea614d6aa7f905cc697b95b8bf68d04",
+        "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/4aa78ea896dec76d62d62478534cd9cc6d8217cc",
+        "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/692849294651ad8031f25f4323d38e51acb0a1dc"
+      ],
+      "operations": [
+        {
+          "operation": "create",
+          "key": "StructuredSurface/membership",
+          "metaclass": "b975bd0e-083a-573c-bd4c-e779ca389eae"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/membership/isImplied",
+          "element": {
+            "output": "StructuredSurface/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/membership/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/membership/membership_visibility",
+          "element": {
+            "output": "StructuredSurface/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface",
+          "metaclass": "c3a7c498-8a72-5d8b-980c-ac2cf0dc851a"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/isAbstract",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/isSufficient",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/owner",
+          "element": {
+            "pinned": "Objects::StructuredSpaceObject"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredSurface/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/member",
+          "element": {
+            "output": "StructuredSurface/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "StructuredSurface"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/element_declared_name",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "StructuredSurface"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface/structured",
+          "metaclass": "1ecd9e6b-f156-57ed-ad58-d073db4ddb1e"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/structured/isImplied",
+          "element": {
+            "output": "StructuredSurface/structured"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/structured/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/structured"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/structured/owner",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredSurface/structured"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/structured/subclassification_subclassifier",
+          "element": {
+            "output": "StructuredSurface/structured"
+          },
+          "property": "8fa4542d-1322-5300-805a-94ad4b60494c",
+          "value": {
+            "reference": {
+              "output": "StructuredSurface"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/structured/subclassification_superclassifier",
+          "element": {
+            "output": "StructuredSurface/structured"
+          },
+          "property": "9c555808-0757-5077-a7bd-6d4607a3704d",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface/intersection-structured",
+          "metaclass": "ba8c36af-85c9-5dc1-88c1-b1ed2cb51438"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/intersection-structured/isImplied",
+          "element": {
+            "output": "StructuredSurface/intersection-structured"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/intersection-structured/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/intersection-structured"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/intersection-structured/owner",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredSurface/intersection-structured"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/intersection-structured/intersecting_intersecting_type",
+          "element": {
+            "output": "StructuredSurface/intersection-structured"
+          },
+          "property": "7bcb567f-9d45-54de-b02c-7b3fe29bde86",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface/geometric",
+          "metaclass": "1ecd9e6b-f156-57ed-ad58-d073db4ddb1e"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/geometric/isImplied",
+          "element": {
+            "output": "StructuredSurface/geometric"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/geometric/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/geometric"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/geometric/owner",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredSurface/geometric"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/geometric/subclassification_subclassifier",
+          "element": {
+            "output": "StructuredSurface/geometric"
+          },
+          "property": "8fa4542d-1322-5300-805a-94ad4b60494c",
+          "value": {
+            "reference": {
+              "output": "StructuredSurface"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/geometric/subclassification_superclassifier",
+          "element": {
+            "output": "StructuredSurface/geometric"
+          },
+          "property": "9c555808-0757-5077-a7bd-6d4607a3704d",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Surface"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface/intersection-geometric",
+          "metaclass": "ba8c36af-85c9-5dc1-88c1-b1ed2cb51438"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/intersection-geometric/isImplied",
+          "element": {
+            "output": "StructuredSurface/intersection-geometric"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/intersection-geometric/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/intersection-geometric"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/intersection-geometric/owner",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredSurface/intersection-geometric"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/intersection-geometric/intersecting_intersecting_type",
+          "element": {
+            "output": "StructuredSurface/intersection-geometric"
+          },
+          "property": "7bcb567f-9d45-54de-b02c-7b3fe29bde86",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Surface"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface/innerSpaceDimension/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/membership/isImplied",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/membership/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/membership/membership_visibility",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface/innerSpaceDimension",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isEnd",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isOrdered",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isVariable",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isUnique",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isDerived",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isPortion",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isConstant",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isAbstract",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isComposite",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/innerSpaceDimension/isSufficient",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/innerSpaceDimension/owner",
+          "element": {
+            "output": "StructuredSurface"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredSurface/innerSpaceDimension/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/innerSpaceDimension/member",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface/common-redefinition",
+          "metaclass": "07e37588-467a-5a04-aa3d-8146336c5c52"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/common-redefinition/isImplied",
+          "element": {
+            "output": "StructuredSurface/common-redefinition"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/common-redefinition/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/common-redefinition"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/common-redefinition/owner",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredSurface/common-redefinition"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/common-redefinition/redefinition_redefining_feature",
+          "element": {
+            "output": "StructuredSurface/common-redefinition"
+          },
+          "property": "0e06593e-069e-5c27-af05-72fc27199090",
+          "value": {
+            "reference": {
+              "output": "StructuredSurface/innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/common-redefinition/redefinition_redefined_feature",
+          "element": {
+            "output": "StructuredSurface/common-redefinition"
+          },
+          "property": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject::innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredSurface/geometric-redefinition",
+          "metaclass": "07e37588-467a-5a04-aa3d-8146336c5c52"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/geometric-redefinition/isImplied",
+          "element": {
+            "output": "StructuredSurface/geometric-redefinition"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/geometric-redefinition/isImpliedIncluded",
+          "element": {
+            "output": "StructuredSurface/geometric-redefinition"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredSurface/geometric-redefinition/owner",
+          "element": {
+            "output": "StructuredSurface/innerSpaceDimension"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredSurface/geometric-redefinition"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/geometric-redefinition/redefinition_redefining_feature",
+          "element": {
+            "output": "StructuredSurface/geometric-redefinition"
+          },
+          "property": "0e06593e-069e-5c27-af05-72fc27199090",
+          "value": {
+            "reference": {
+              "output": "StructuredSurface/innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredSurface/geometric-redefinition/redefinition_redefined_feature",
+          "element": {
+            "output": "StructuredSurface/geometric-redefinition"
+          },
+          "property": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Surface::innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Objects::StructuredSpaceObject::faces/typing/feature_typing_type",
+          "element": {
+            "pinned": "Objects::StructuredSpaceObject::faces/typing"
+          },
+          "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+          "value": {
+            "reference": {
+              "output": "StructuredSurface"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/membership",
+          "metaclass": "b975bd0e-083a-573c-bd4c-e779ca389eae"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/membership/isImplied",
+          "element": {
+            "output": "StructuredCurve/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/membership/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/membership/membership_visibility",
+          "element": {
+            "output": "StructuredCurve/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve",
+          "metaclass": "c3a7c498-8a72-5d8b-980c-ac2cf0dc851a"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/isAbstract",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/isSufficient",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/owner",
+          "element": {
+            "pinned": "Objects::StructuredSpaceObject"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredCurve/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/member",
+          "element": {
+            "output": "StructuredCurve/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "StructuredCurve"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/element_declared_name",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "StructuredCurve"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/structured",
+          "metaclass": "1ecd9e6b-f156-57ed-ad58-d073db4ddb1e"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/structured/isImplied",
+          "element": {
+            "output": "StructuredCurve/structured"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/structured/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/structured"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/structured/owner",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredCurve/structured"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/structured/subclassification_subclassifier",
+          "element": {
+            "output": "StructuredCurve/structured"
+          },
+          "property": "8fa4542d-1322-5300-805a-94ad4b60494c",
+          "value": {
+            "reference": {
+              "output": "StructuredCurve"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/structured/subclassification_superclassifier",
+          "element": {
+            "output": "StructuredCurve/structured"
+          },
+          "property": "9c555808-0757-5077-a7bd-6d4607a3704d",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/intersection-structured",
+          "metaclass": "ba8c36af-85c9-5dc1-88c1-b1ed2cb51438"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/intersection-structured/isImplied",
+          "element": {
+            "output": "StructuredCurve/intersection-structured"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/intersection-structured/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/intersection-structured"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/intersection-structured/owner",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredCurve/intersection-structured"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/intersection-structured/intersecting_intersecting_type",
+          "element": {
+            "output": "StructuredCurve/intersection-structured"
+          },
+          "property": "7bcb567f-9d45-54de-b02c-7b3fe29bde86",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/geometric",
+          "metaclass": "1ecd9e6b-f156-57ed-ad58-d073db4ddb1e"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/geometric/isImplied",
+          "element": {
+            "output": "StructuredCurve/geometric"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/geometric/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/geometric"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/geometric/owner",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredCurve/geometric"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/geometric/subclassification_subclassifier",
+          "element": {
+            "output": "StructuredCurve/geometric"
+          },
+          "property": "8fa4542d-1322-5300-805a-94ad4b60494c",
+          "value": {
+            "reference": {
+              "output": "StructuredCurve"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/geometric/subclassification_superclassifier",
+          "element": {
+            "output": "StructuredCurve/geometric"
+          },
+          "property": "9c555808-0757-5077-a7bd-6d4607a3704d",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Curve"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/intersection-geometric",
+          "metaclass": "ba8c36af-85c9-5dc1-88c1-b1ed2cb51438"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/intersection-geometric/isImplied",
+          "element": {
+            "output": "StructuredCurve/intersection-geometric"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/intersection-geometric/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/intersection-geometric"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/intersection-geometric/owner",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredCurve/intersection-geometric"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/intersection-geometric/intersecting_intersecting_type",
+          "element": {
+            "output": "StructuredCurve/intersection-geometric"
+          },
+          "property": "7bcb567f-9d45-54de-b02c-7b3fe29bde86",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Curve"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/innerSpaceDimension/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/membership/isImplied",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/membership/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/membership/membership_visibility",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/innerSpaceDimension",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isEnd",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isOrdered",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isVariable",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isUnique",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isDerived",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isPortion",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isConstant",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isAbstract",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isComposite",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/innerSpaceDimension/isSufficient",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/innerSpaceDimension/owner",
+          "element": {
+            "output": "StructuredCurve"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredCurve/innerSpaceDimension/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/innerSpaceDimension/member",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/common-redefinition",
+          "metaclass": "07e37588-467a-5a04-aa3d-8146336c5c52"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/common-redefinition/isImplied",
+          "element": {
+            "output": "StructuredCurve/common-redefinition"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/common-redefinition/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/common-redefinition"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/common-redefinition/owner",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredCurve/common-redefinition"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/common-redefinition/redefinition_redefining_feature",
+          "element": {
+            "output": "StructuredCurve/common-redefinition"
+          },
+          "property": "0e06593e-069e-5c27-af05-72fc27199090",
+          "value": {
+            "reference": {
+              "output": "StructuredCurve/innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/common-redefinition/redefinition_redefined_feature",
+          "element": {
+            "output": "StructuredCurve/common-redefinition"
+          },
+          "property": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject::innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredCurve/geometric-redefinition",
+          "metaclass": "07e37588-467a-5a04-aa3d-8146336c5c52"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/geometric-redefinition/isImplied",
+          "element": {
+            "output": "StructuredCurve/geometric-redefinition"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/geometric-redefinition/isImpliedIncluded",
+          "element": {
+            "output": "StructuredCurve/geometric-redefinition"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredCurve/geometric-redefinition/owner",
+          "element": {
+            "output": "StructuredCurve/innerSpaceDimension"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredCurve/geometric-redefinition"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/geometric-redefinition/redefinition_redefining_feature",
+          "element": {
+            "output": "StructuredCurve/geometric-redefinition"
+          },
+          "property": "0e06593e-069e-5c27-af05-72fc27199090",
+          "value": {
+            "reference": {
+              "output": "StructuredCurve/innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredCurve/geometric-redefinition/redefinition_redefined_feature",
+          "element": {
+            "output": "StructuredCurve/geometric-redefinition"
+          },
+          "property": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Curve::innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Objects::StructuredSpaceObject::edges/typing/feature_typing_type",
+          "element": {
+            "pinned": "Objects::StructuredSpaceObject::edges/typing"
+          },
+          "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+          "value": {
+            "reference": {
+              "output": "StructuredCurve"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/membership",
+          "metaclass": "b975bd0e-083a-573c-bd4c-e779ca389eae"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/membership/isImplied",
+          "element": {
+            "output": "StructuredPoint/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/membership/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/membership/membership_visibility",
+          "element": {
+            "output": "StructuredPoint/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint",
+          "metaclass": "c3a7c498-8a72-5d8b-980c-ac2cf0dc851a"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/isAbstract",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/isSufficient",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/owner",
+          "element": {
+            "pinned": "Objects::StructuredSpaceObject"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredPoint/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/member",
+          "element": {
+            "output": "StructuredPoint/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "StructuredPoint"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/element_declared_name",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "StructuredPoint"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/structured",
+          "metaclass": "1ecd9e6b-f156-57ed-ad58-d073db4ddb1e"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/structured/isImplied",
+          "element": {
+            "output": "StructuredPoint/structured"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/structured/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/structured"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/structured/owner",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredPoint/structured"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/structured/subclassification_subclassifier",
+          "element": {
+            "output": "StructuredPoint/structured"
+          },
+          "property": "8fa4542d-1322-5300-805a-94ad4b60494c",
+          "value": {
+            "reference": {
+              "output": "StructuredPoint"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/structured/subclassification_superclassifier",
+          "element": {
+            "output": "StructuredPoint/structured"
+          },
+          "property": "9c555808-0757-5077-a7bd-6d4607a3704d",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/intersection-structured",
+          "metaclass": "ba8c36af-85c9-5dc1-88c1-b1ed2cb51438"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/intersection-structured/isImplied",
+          "element": {
+            "output": "StructuredPoint/intersection-structured"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/intersection-structured/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/intersection-structured"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/intersection-structured/owner",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredPoint/intersection-structured"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/intersection-structured/intersecting_intersecting_type",
+          "element": {
+            "output": "StructuredPoint/intersection-structured"
+          },
+          "property": "7bcb567f-9d45-54de-b02c-7b3fe29bde86",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/geometric",
+          "metaclass": "1ecd9e6b-f156-57ed-ad58-d073db4ddb1e"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/geometric/isImplied",
+          "element": {
+            "output": "StructuredPoint/geometric"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/geometric/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/geometric"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/geometric/owner",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredPoint/geometric"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/geometric/subclassification_subclassifier",
+          "element": {
+            "output": "StructuredPoint/geometric"
+          },
+          "property": "8fa4542d-1322-5300-805a-94ad4b60494c",
+          "value": {
+            "reference": {
+              "output": "StructuredPoint"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/geometric/subclassification_superclassifier",
+          "element": {
+            "output": "StructuredPoint/geometric"
+          },
+          "property": "9c555808-0757-5077-a7bd-6d4607a3704d",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Point"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/intersection-geometric",
+          "metaclass": "ba8c36af-85c9-5dc1-88c1-b1ed2cb51438"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/intersection-geometric/isImplied",
+          "element": {
+            "output": "StructuredPoint/intersection-geometric"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/intersection-geometric/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/intersection-geometric"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/intersection-geometric/owner",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredPoint/intersection-geometric"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/intersection-geometric/intersecting_intersecting_type",
+          "element": {
+            "output": "StructuredPoint/intersection-geometric"
+          },
+          "property": "7bcb567f-9d45-54de-b02c-7b3fe29bde86",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Point"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/innerSpaceDimension/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/membership/isImplied",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/membership/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/membership/membership_visibility",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/innerSpaceDimension",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isEnd",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isOrdered",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isVariable",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isUnique",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isDerived",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isPortion",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isConstant",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isAbstract",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isComposite",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/innerSpaceDimension/isSufficient",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/innerSpaceDimension/owner",
+          "element": {
+            "output": "StructuredPoint"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredPoint/innerSpaceDimension/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/innerSpaceDimension/member",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/common-redefinition",
+          "metaclass": "07e37588-467a-5a04-aa3d-8146336c5c52"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/common-redefinition/isImplied",
+          "element": {
+            "output": "StructuredPoint/common-redefinition"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/common-redefinition/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/common-redefinition"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/common-redefinition/owner",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredPoint/common-redefinition"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/common-redefinition/redefinition_redefining_feature",
+          "element": {
+            "output": "StructuredPoint/common-redefinition"
+          },
+          "property": "0e06593e-069e-5c27-af05-72fc27199090",
+          "value": {
+            "reference": {
+              "output": "StructuredPoint/innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/common-redefinition/redefinition_redefined_feature",
+          "element": {
+            "output": "StructuredPoint/common-redefinition"
+          },
+          "property": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+          "value": {
+            "reference": {
+              "pinned": "Objects::StructuredSpaceObject::innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "StructuredPoint/geometric-redefinition",
+          "metaclass": "07e37588-467a-5a04-aa3d-8146336c5c52"
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/geometric-redefinition/isImplied",
+          "element": {
+            "output": "StructuredPoint/geometric-redefinition"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/geometric-redefinition/isImpliedIncluded",
+          "element": {
+            "output": "StructuredPoint/geometric-redefinition"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "StructuredPoint/geometric-redefinition/owner",
+          "element": {
+            "output": "StructuredPoint/innerSpaceDimension"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "StructuredPoint/geometric-redefinition"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/geometric-redefinition/redefinition_redefining_feature",
+          "element": {
+            "output": "StructuredPoint/geometric-redefinition"
+          },
+          "property": "0e06593e-069e-5c27-af05-72fc27199090",
+          "value": {
+            "reference": {
+              "output": "StructuredPoint/innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "StructuredPoint/geometric-redefinition/redefinition_redefined_feature",
+          "element": {
+            "output": "StructuredPoint/geometric-redefinition"
+          },
+          "property": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+          "value": {
+            "reference": {
+              "pinned": "Objects::Point::innerSpaceDimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Objects::StructuredSpaceObject::vertices/typing/feature_typing_type",
+          "element": {
+            "pinned": "Objects::StructuredSpaceObject::vertices/typing"
+          },
+          "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+          "value": {
+            "reference": {
+              "output": "StructuredPoint"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "AGQ-KERML10-LIB-002",
+      "document": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "authority": [
+        "https://issues.omg.org/issues/KERML11-76",
+        "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/240fba1faea614d6aa7f905cc697b95b8bf68d04"
+      ],
+      "operations": [
+        {
+          "operation": "reclassify",
+          "key": "EvaluationMonitor/expression",
+          "element": {
+            "pinned": "EvaluationMonitor/monitoredOccurrence"
+          },
+          "metaclass": "a0786376-5651-53c1-8cfb-bbcffc3508cf"
+        },
+        {
+          "operation": "reclassify",
+          "key": "EvaluationMonitor/result-membership",
+          "element": {
+            "pinned": "EvaluationMonitor/result-membership"
+          },
+          "metaclass": "78a968a3-43db-5934-93de-5403b8db0e79"
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result/membership",
+          "metaclass": "78a968a3-43db-5934-93de-5403b8db0e79"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/membership/isImplied",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/membership/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/membership/membership_visibility",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isEnd",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isOrdered",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isVariable",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isUnique",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isDerived",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isPortion",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isConstant",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isAbstract",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isComposite",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/isSufficient",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/owner",
+          "element": {
+            "pinned": "BooleanEvaluationMonitor/monitoredOccurrence"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/member",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/element_declared_name",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "result"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/feature_direction",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "9cddc57a-30c2-5564-a63a-8982115d1a56",
+          "value": {
+            "enumeration": "4021521b-1cb6-5bd0-a49a-0d8367acef1c"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result/type",
+          "metaclass": "62dc33ff-9e92-557e-b7a9-562372f000f3"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/type/isImplied",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/type"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/type/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/type"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/type/owner",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result/type"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/type/feature_typing_typed_feature",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/type"
+          },
+          "property": "8677e0e5-37a9-5db8-bf0e-804cc15a45f6",
+          "value": {
+            "reference": {
+              "output": "BooleanEvaluationMonitor/result"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/type/feature_typing_type",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/type"
+          },
+          "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+          "value": {
+            "reference": {
+              "pinned": "ScalarValues::Boolean"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/membership",
+          "metaclass": "b975bd0e-083a-573c-bd4c-e779ca389eae"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/membership/isImplied",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/membership/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/membership/membership_visibility",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result/multiplicity",
+          "metaclass": "426a6ccf-74a6-5579-8a92-95244b1bb310"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isEnd",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isOrdered",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isVariable",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isUnique",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isDerived",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isPortion",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isConstant",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isAbstract",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isComposite",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/isSufficient",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/owner",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/member",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/membership",
+          "metaclass": "b975bd0e-083a-573c-bd4c-e779ca389eae"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/membership/isImplied",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/membership/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/membership/membership_visibility",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound",
+          "metaclass": "a030e0b9-6f55-5f38-b61b-18e76327fc08"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isEnd",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isOrdered",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isVariable",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isUnique",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isDerived",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isPortion",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isConstant",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isAbstract",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isComposite",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/isSufficient",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/owner",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/member",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/literal_integer_value",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "6181dc51-25be-59cb-8a04-78d75cb8c3be",
+          "value": {
+            "integer": "1"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership",
+          "metaclass": "78a968a3-43db-5934-93de-5403b8db0e79"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership/isImplied",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership/membership_visibility",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isEnd",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isOrdered",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isVariable",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isUnique",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isDerived",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isPortion",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isConstant",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isImpliedIncluded",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isAbstract",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isComposite",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/isSufficient",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/owner",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/member",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "BooleanEvaluationMonitor/result/multiplicity/bound/result/feature_direction",
+          "element": {
+            "output": "BooleanEvaluationMonitor/result/multiplicity/bound/result"
+          },
+          "property": "9cddc57a-30c2-5564-a63a-8982115d1a56",
+          "value": {
+            "enumeration": "4021521b-1cb6-5bd0-a49a-0d8367acef1c"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "Monitor1/earlierOccurrence/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/membership/isImplied",
+          "element": {
+            "output": "Monitor1/earlierOccurrence/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/membership/isImpliedIncluded",
+          "element": {
+            "output": "Monitor1/earlierOccurrence/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/membership/membership_visibility",
+          "element": {
+            "output": "Monitor1/earlierOccurrence/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "Monitor1/earlierOccurrence",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isEnd",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isOrdered",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isVariable",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isUnique",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isDerived",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isPortion",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isConstant",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isImpliedIncluded",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isAbstract",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isComposite",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/isSufficient",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "Monitor1/earlierOccurrence/owner",
+          "element": {
+            "pinned": "Monitor1/endWhen"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "Monitor1/earlierOccurrence/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "Monitor1/earlierOccurrence/member",
+          "element": {
+            "output": "Monitor1/earlierOccurrence/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "Monitor1/earlierOccurrence"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/earlierOccurrence/element_declared_name",
+          "element": {
+            "output": "Monitor1/earlierOccurrence"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "earlierOccurrence"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "Monitor1/laterOccurrence/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/membership/isImplied",
+          "element": {
+            "output": "Monitor1/laterOccurrence/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/membership/isImpliedIncluded",
+          "element": {
+            "output": "Monitor1/laterOccurrence/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/membership/membership_visibility",
+          "element": {
+            "output": "Monitor1/laterOccurrence/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "Monitor1/laterOccurrence",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isEnd",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isOrdered",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isVariable",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isUnique",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isDerived",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isPortion",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isConstant",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isImpliedIncluded",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isAbstract",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isComposite",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/isSufficient",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "Monitor1/laterOccurrence/owner",
+          "element": {
+            "pinned": "Monitor1/endWhen"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "Monitor1/laterOccurrence/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "Monitor1/laterOccurrence/member",
+          "element": {
+            "output": "Monitor1/laterOccurrence/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "Monitor1/laterOccurrence"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor1/laterOccurrence/element_declared_name",
+          "element": {
+            "output": "Monitor1/laterOccurrence"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "laterOccurrence"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "Monitor2/earlierOccurrence/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/membership/isImplied",
+          "element": {
+            "output": "Monitor2/earlierOccurrence/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/membership/isImpliedIncluded",
+          "element": {
+            "output": "Monitor2/earlierOccurrence/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/membership/membership_visibility",
+          "element": {
+            "output": "Monitor2/earlierOccurrence/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "Monitor2/earlierOccurrence",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isEnd",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isOrdered",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isVariable",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isUnique",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isDerived",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isPortion",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isConstant",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isImpliedIncluded",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isAbstract",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isComposite",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/isSufficient",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "Monitor2/earlierOccurrence/owner",
+          "element": {
+            "pinned": "Monitor2/endWhen"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "Monitor2/earlierOccurrence/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "Monitor2/earlierOccurrence/member",
+          "element": {
+            "output": "Monitor2/earlierOccurrence/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "Monitor2/earlierOccurrence"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/earlierOccurrence/element_declared_name",
+          "element": {
+            "output": "Monitor2/earlierOccurrence"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "earlierOccurrence"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "Monitor2/laterOccurrence/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/membership/isImplied",
+          "element": {
+            "output": "Monitor2/laterOccurrence/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/membership/isImpliedIncluded",
+          "element": {
+            "output": "Monitor2/laterOccurrence/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/membership/membership_visibility",
+          "element": {
+            "output": "Monitor2/laterOccurrence/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "Monitor2/laterOccurrence",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isEnd",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isOrdered",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isVariable",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isUnique",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isDerived",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isPortion",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isConstant",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isImpliedIncluded",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isAbstract",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isComposite",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/isSufficient",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "Monitor2/laterOccurrence/owner",
+          "element": {
+            "pinned": "Monitor2/endWhen"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "Monitor2/laterOccurrence/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "Monitor2/laterOccurrence/member",
+          "element": {
+            "output": "Monitor2/laterOccurrence/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "Monitor2/laterOccurrence"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "Monitor2/laterOccurrence/element_declared_name",
+          "element": {
+            "output": "Monitor2/laterOccurrence"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "laterOccurrence"
+          }
+        }
+      ]
+    },
+    {
+      "id": "AGQ-KERML10-LIB-003",
+      "document": "Kernel Semantic Library/Observation.kerml",
+      "authority": [
+        "https://issues.omg.org/issues/KERML11-76",
+        "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/240fba1faea614d6aa7f905cc697b95b8bf68d04"
+      ],
+      "operations": [
+        {
+          "operation": "create",
+          "key": "transfer/target/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/membership/isImplied",
+          "element": {
+            "output": "transfer/target/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/membership/isImpliedIncluded",
+          "element": {
+            "output": "transfer/target/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/membership/membership_visibility",
+          "element": {
+            "output": "transfer/target/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "transfer/target",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isEnd",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isOrdered",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isVariable",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isUnique",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isDerived",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isPortion",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isConstant",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isImpliedIncluded",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isAbstract",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isComposite",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/isSufficient",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "transfer/target/owner",
+          "element": {
+            "pinned": "Observation::ObserveChange::transfer"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "transfer/target/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "transfer/target/member",
+          "element": {
+            "output": "transfer/target/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "transfer/target"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "transfer/target/element_declared_name",
+          "element": {
+            "output": "transfer/target"
+          },
+          "property": "cb8a4158-5bc4-5dce-a208-36825c32b290",
+          "value": {
+            "string": "target"
+          }
+        }
+      ]
+    },
+    {
+      "id": "AGQ-KERML10-LIB-004",
+      "document": "Kernel Function Library/VectorFunctions.kerml",
+      "authority": [
+        "https://issues.omg.org/issues/KERML11-76",
+        "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/240fba1faea614d6aa7f905cc697b95b8bf68d04"
+      ],
+      "operations": [
+        {
+          "operation": "create",
+          "key": "CartesianThreeVectorOf/result/dimension/membership",
+          "metaclass": "ba6b135b-94d4-5ce2-9c91-f19f8a82e270"
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/membership/isImplied",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/membership"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/membership/isImpliedIncluded",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/membership"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/membership/membership_visibility",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/membership"
+          },
+          "property": "002548b0-653b-546a-abb6-5b5c21359a5e",
+          "value": {
+            "enumeration": "088b5410-10fb-5f3e-8a87-ec3c092d6bfb"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "CartesianThreeVectorOf/result/dimension",
+          "metaclass": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed"
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isEnd",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "007092e9-5bfe-5b87-95b1-09d80e23148e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isOrdered",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isVariable",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "1b641cd3-a32a-5c70-99df-1343eee052fb",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isUnique",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "3aef3903-cb90-5765-b4f9-4874cc06531e",
+          "value": {
+            "boolean": true
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isDerived",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "474b15e6-7d99-5bb9-a938-9953d72ccb8a",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isPortion",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isConstant",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "7949c655-75d7-5595-8325-8fd01bd475e1",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isImpliedIncluded",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isAbstract",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "becaa806-24f9-5950-828b-8057f04f8d42",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isComposite",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "e982a995-8928-5bcd-a401-b676b4e2228b",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/isSufficient",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "f5f2b420-5465-54b5-b7b7-8ee89f76265e",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "CartesianThreeVectorOf/result/dimension/owner",
+          "element": {
+            "pinned": "VectorFunctions::CartesianThreeVectorOf/result"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "CartesianThreeVectorOf/result/dimension/membership"
+          }
+        },
+        {
+          "operation": "append",
+          "key": "CartesianThreeVectorOf/result/dimension/member",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/membership"
+          },
+          "property": "7d4b3879-0f73-512e-976d-67141ffcadba",
+          "target": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          }
+        },
+        {
+          "operation": "create",
+          "key": "CartesianThreeVectorOf/result/dimension/constructed",
+          "metaclass": "07e37588-467a-5a04-aa3d-8146336c5c52"
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/constructed/isImplied",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/constructed"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/constructed/isImpliedIncluded",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/constructed"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "CartesianThreeVectorOf/result/dimension/constructed/owner",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "CartesianThreeVectorOf/result/dimension/constructed"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/constructed/redefinition_redefining_feature",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/constructed"
+          },
+          "property": "0e06593e-069e-5c27-af05-72fc27199090",
+          "value": {
+            "reference": {
+              "output": "CartesianThreeVectorOf/result/dimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/constructed/redefinition_redefined_feature",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/constructed"
+          },
+          "property": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+          "value": {
+            "reference": {
+              "pinned": "VectorDimension/constructed"
+            }
+          }
+        },
+        {
+          "operation": "create",
+          "key": "CartesianThreeVectorOf/result/dimension/three",
+          "metaclass": "07e37588-467a-5a04-aa3d-8146336c5c52"
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/three/isImplied",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/three"
+          },
+          "property": "3297ccb3-8629-5962-aaab-2b7d6ea829d7",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/three/isImpliedIncluded",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/three"
+          },
+          "property": "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417",
+          "value": {
+            "boolean": false
+          }
+        },
+        {
+          "operation": "append",
+          "key": "CartesianThreeVectorOf/result/dimension/three/owner",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension"
+          },
+          "property": "7ded3a2a-c727-5656-99a8-b0af6d076ae1",
+          "target": {
+            "output": "CartesianThreeVectorOf/result/dimension/three"
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/three/redefinition_redefining_feature",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/three"
+          },
+          "property": "0e06593e-069e-5c27-af05-72fc27199090",
+          "value": {
+            "reference": {
+              "output": "CartesianThreeVectorOf/result/dimension"
+            }
+          }
+        },
+        {
+          "operation": "set",
+          "key": "CartesianThreeVectorOf/result/dimension/three/redefinition_redefined_feature",
+          "element": {
+            "output": "CartesianThreeVectorOf/result/dimension/three"
+          },
+          "property": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+          "value": {
+            "reference": {
+              "pinned": "VectorDimension/three"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

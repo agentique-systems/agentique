@@ -1,0 +1,5 @@
+{
+  "disposition": "Compilation cancelled before the second full corpus audit started. Re-run sequentially after operational-quality to bound memory on the 16 GiB host.",
+  "terminated_process": 13920,
+  "phase": "rustc child of this audit cargo process"
+}

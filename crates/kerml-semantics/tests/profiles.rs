@@ -53,6 +53,22 @@ fn contexts_bind_profile_artifact_effective_graph_and_errata_content() {
     let mut changed_review = effective.id().clone();
     changed_review.errata_manifest_digest = Some([0; 32]);
     assert_ne!(&changed_review, effective.id());
+    let v3 = SemanticContext::for_snapshot(
+        &operational,
+        SemanticOptions {
+            baseline_profile: BaselineProfile::OPERATIONAL_V3,
+            ..Default::default()
+        },
+        Default::default(),
+    )
+    .unwrap();
+    assert_eq!(v3.id().descriptor_digest, effective.id().descriptor_digest);
+    assert_ne!(
+        v3.id().errata_manifest_digest,
+        effective.id().errata_manifest_digest
+    );
+    assert_ne!(v3.id(), v1.id());
+    assert_ne!(v3.id(), raw.id());
 }
 
 #[test]

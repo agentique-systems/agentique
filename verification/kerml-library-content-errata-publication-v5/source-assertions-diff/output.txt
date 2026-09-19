@@ -1,0 +1,1 @@
+{"original_assertions": 4003, "active_assertions": 4000, "superseded_assertions": 3, "unreviewed_removals": 0, "unreviewed_rewrites": 0, "all_original_assertions_preserved": true, "scope": "Source assertions remain distinct from operational fixed relationship facts and resolution completeness."}

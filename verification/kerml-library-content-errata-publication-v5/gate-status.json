@@ -1,0 +1,634 @@
+{
+  "format": "agentique-kerml-v5-gate-status/1",
+  "completion": "INCOMPLETE",
+  "accepted_semantic_publication": false,
+  "stop": {
+    "id": "KLCV5-F-001",
+    "issue": "KERML11-68",
+    "evidence": "authority-stop.json",
+    "independently_reproduced": true,
+    "isolated_from_agentique_construction_defects": true,
+    "outside_existing_81_140_76_authorities": true,
+    "materially_different_semantic_or_source_correction_required": true,
+    "ordinary_implementation_findings_waived": false
+  },
+  "git": {
+    "base_commit": "33b10f8fe45c2fba55dde0acfa92d44d274e64ab",
+    "branch": "semantics/kerml-library-content-errata-publication-v5",
+    "initial_worktree": "clean, verified before branch creation",
+    "fetch": {
+      "command": "git fetch origin main",
+      "exit_code": 0
+    },
+    "head_matched_origin_main": true
+  },
+  "correction": {
+    "profile": "agentique-kerml-1.0-operational/3",
+    "entries": 4,
+    "selectors": 21,
+    "operations": 401,
+    "manifest_sha256": "c762275c6a7c4cb310c4ba3084683d62125a9319228d8653f39956c61794ae30",
+    "introduced_records": 53,
+    "removed_records": 0,
+    "unreviewed_changes": 0,
+    "all_four_libraries_audited": true,
+    "independent_root_witnesses": 10,
+    "issue_open": true,
+    "adopted_omg_correction": false
+  },
+  "profiles": {
+    "v2": {
+      "canonical_element_count": 29087,
+      "reference_count": 4003,
+      "unresolved_count": 0,
+      "ambiguous_count": 0,
+      "incomplete_reference_count": 453,
+      "mismatched_endpoint_count": 0,
+      "unevaluated_expression_count": 3899,
+      "recovery_count": 0,
+      "profile": "agentique-kerml-1.0-operational/2",
+      "rule_version": "agq-kerml-query/11",
+      "documents": 36,
+      "mandatory_lower_bounds": 0,
+      "diagnostic_rows_by_code": {
+        "KQ_IMPLIED_NAMING_ORDER": 408,
+        "validateExpressionResultParameterMembership": 3494,
+        "validateNamespaceDistinguishibility": 21
+      },
+      "unique_diagnostics_by_code": {
+        "validateExpressionResultParameterMembership": 3494,
+        "KQ_IMPLIED_NAMING_ORDER": 143,
+        "validateNamespaceDistinguishibility": 21
+      },
+      "semantic_quality_gate_passed": false,
+      "publication_accepted": false
+    },
+    "v3": {
+      "canonical_element_count": 29140,
+      "reference_count": 4000,
+      "unresolved_count": 0,
+      "ambiguous_count": 0,
+      "incomplete_reference_count": 453,
+      "mismatched_endpoint_count": 0,
+      "unevaluated_expression_count": 3901,
+      "recovery_count": 0,
+      "profile": "agentique-kerml-1.0-operational/3",
+      "rule_version": "agq-kerml-query/12",
+      "documents": 36,
+      "mandatory_lower_bounds": 0,
+      "diagnostic_rows_by_code": {
+        "KQ_IMPLIED_NAMING_ORDER": 408,
+        "validateExpressionResultParameterMembership": 3496,
+        "validateNamespaceDistinguishibility": 6
+      },
+      "unique_diagnostics_by_code": {
+        "validateExpressionResultParameterMembership": 3496,
+        "KQ_IMPLIED_NAMING_ORDER": 143,
+        "validateNamespaceDistinguishibility": 6
+      },
+      "semantic_quality_gate_passed": false,
+      "publication_accepted": false
+    }
+  },
+  "source_assertions": {
+    "original_assertions": 4003,
+    "active_assertions": 4000,
+    "superseded_assertions": 3,
+    "unreviewed_removals": 0,
+    "unreviewed_rewrites": 0,
+    "all_original_assertions_preserved": true,
+    "superseded": [
+      {
+        "absolute": false,
+        "expected": "15066a0c-7221-5fd2-a941-648d0876392f",
+        "expression_context": false,
+        "membership_target": false,
+        "name": [
+          "Surface"
+        ],
+        "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+        "relationship": "439218e6-e0cf-597f-8a1e-4195f072104b",
+        "source_origin": "SourceOrigin { document: DocumentId(247241271040760380873886172722090511826), revision: SourceRevisionId(94013285949147005277674388557161085554), range: ByteRange { start: 5161, end: 5168 }, syntax_node: Some(SyntaxNodeId(313995215660854095237807120778739761409)) }"
+      },
+      {
+        "absolute": false,
+        "expected": "15066a0c-7221-5fd2-a941-648d0876392f",
+        "expression_context": false,
+        "membership_target": false,
+        "name": [
+          "Curve"
+        ],
+        "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+        "relationship": "9b28db85-76f4-57cd-af27-0ce32f059265",
+        "source_origin": "SourceOrigin { document: DocumentId(247241271040760380873886172722090511826), revision: SourceRevisionId(94013285949147005277674388557161085554), range: ByteRange { start: 5601, end: 5606 }, syntax_node: Some(SyntaxNodeId(180812067239591313737307323287882850681)) }"
+      },
+      {
+        "absolute": false,
+        "expected": "15066a0c-7221-5fd2-a941-648d0876392f",
+        "expression_context": false,
+        "membership_target": false,
+        "name": [
+          "Point"
+        ],
+        "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+        "relationship": "da17cacf-d835-5c29-b2fa-edc4edfb810b",
+        "source_origin": "SourceOrigin { document: DocumentId(247241271040760380873886172722090511826), revision: SourceRevisionId(94013285949147005277674388557161085554), range: ByteRange { start: 5948, end: 5953 }, syntax_node: Some(SyntaxNodeId(297334024511214511820240599023090794835)) }"
+      }
+    ],
+    "scope": "Source assertions remain distinct from operational fixed relationship facts and resolution completeness."
+  },
+  "incomplete_references": {
+    "count": 453,
+    "by_cause": {
+      "KQ_IMPLIED_NAMING_ORDER": 453
+    },
+    "evidence": "obligation-causes.json"
+  },
+  "validation": {
+    "named_constraints": 258,
+    "explicit_checks": 28,
+    "required_scope_complete": false
+  },
+  "ordinary_kernel_storage": {
+    "accepted": true,
+    "base_unchanged": true,
+    "elements": 29140
+  },
+  "runtime": {
+    "kerml-1.0": {
+      "errors": [],
+      "audit": "standards\\generated\\kerml-1.0\\full-audit.json",
+      "sha256": "55b4b66fea23f92aab0bf0500b4b65f093f9bb49a88dec00e664197ae1259aed"
+    },
+    "sysml-2.0": {
+      "errors": [],
+      "audit": "standards\\generated\\sysml-2.0\\full-audit.json",
+      "sha256": "b859d84a83a0cce54e78f54c5b220deac3bcff5291fea1c2dae0d23592cc7d10"
+    }
+  },
+  "raw_metamodel_conformance_separate": true,
+  "accepted_bindings": false,
+  "accepted_facade": false,
+  "accepted_authored_library_integration": false,
+  "gates": [
+    {
+      "gate": 0,
+      "status": "complete",
+      "reason": "Four named libraries and all 21 fresh baseline diagnostics individually inventoried; ten root patterns, including latent collisions."
+    },
+    {
+      "gate": 1,
+      "status": "complete",
+      "reason": "Typed canonical transform; no pinned text, syntax or archive replacement."
+    },
+    {
+      "gate": 2,
+      "status": "complete",
+      "reason": "Generic ReviewedCorrection provenance on introduced/replaced facts; original parsed model and source assertions preserved."
+    },
+    {
+      "gate": 3,
+      "status": "complete",
+      "reason": "Private content/profile/entry/path-qualified deterministic UUID domain; independently regenerated IDs agree."
+    },
+    {
+      "gate": 4,
+      "status": "complete",
+      "reason": "Explicit operational v3; published, v1 and v2 identities preserved. Default remains v2."
+    },
+    {
+      "gate": 5,
+      "status": "complete",
+      "reason": "Minimal reviewed Objects combined types/common redefinitions/typings; all three corpus conflicts eliminated."
+    },
+    {
+      "gate": 6,
+      "status": "partial",
+      "reason": "All four correction sets implemented and independently verified as source/model facts. Inference remains incomplete in FeatureReferencingPerformances and Observation."
+    },
+    {
+      "gate": 7,
+      "status": "complete",
+      "reason": "Independent published-to-v3 diff: 53 new records, zero removed IDs, zero unreviewed changes, all seven required dimensions."
+    },
+    {
+      "gate": 8,
+      "status": "failed",
+      "reason": "Six category-B distinguishability findings remain unwaived."
+    },
+    {
+      "gate": 9,
+      "status": "incomplete",
+      "reason": "Implied naming ordering remains incomplete; no invented precedence."
+    },
+    {
+      "gate": 10,
+      "status": "incomplete",
+      "reason": "All 453 incomplete reference answers classified individually: KQ_IMPLIED_NAMING_ORDER."
+    },
+    {
+      "gate": 11,
+      "status": "incomplete",
+      "reason": "All 3496 expression-result findings have one owned result; inherited-result inference/validation remains required."
+    },
+    {
+      "gate": 12,
+      "status": "incomplete",
+      "reason": "All 258 constraints inventoried conservatively; 28 explicit checks, required coverage not established."
+    },
+    {
+      "gate": 13,
+      "status": "failed",
+      "reason": "Strict semantic quality gate rejects the candidate. Ordinary kernel storage acceptance is separately demonstrated."
+    },
+    {
+      "gate": 14,
+      "status": "not_issued",
+      "reason": "Acceptance prerequisite unmet; historical candidate bindings remain stale and are not relabeled accepted."
+    },
+    {
+      "gate": 15,
+      "status": "not_issued",
+      "reason": "Acceptance prerequisite unmet; no LoadedKermlStandardLibraries accepted facade."
+    },
+    {
+      "gate": 16,
+      "status": "partial",
+      "reason": "Authored profile selection tested across all four profiles; accepted library dependency integration cannot be issued."
+    },
+    {
+      "gate": 17,
+      "status": "partial",
+      "reason": "Correction facts carry profile/content/entry/output authority through existing proof contracts; profile mismatch is rejected. Complete publication-wide conclusions remain unavailable."
+    },
+    {
+      "gate": 18,
+      "status": "failed",
+      "reason": "Structural-semantic quality remains incomplete; no accepted bindings or publication."
+    },
+    {
+      "gate": 19,
+      "status": "complete",
+      "reason": "Historical descriptor/redefinition/collision witnesses pass, with explicit v3 cases and frozen v2 authority bytes."
+    },
+    {
+      "gate": 20,
+      "status": "complete",
+      "reason": "V5 review, living profile extension, ADR 0015 and separate authority-conflict document published locally."
+    }
+  ],
+  "required_command_results": [
+    {
+      "evidence": "final-rust-3/results.json",
+      "command": "cargo fmt --all -- --check",
+      "started": "2026-09-19T16:06:18.641Z",
+      "durationMs": 1353,
+      "exitCode": 0,
+      "signal": null,
+      "log": "format.txt"
+    },
+    {
+      "evidence": "final-rust-3/results.json",
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "started": "2026-09-19T16:06:19.994Z",
+      "durationMs": 2190,
+      "exitCode": 0,
+      "signal": null,
+      "log": "clippy.txt"
+    },
+    {
+      "evidence": "final-rust-3/results.json",
+      "command": "cargo test --workspace",
+      "started": "2026-09-19T16:06:22.185Z",
+      "durationMs": 160702,
+      "exitCode": 0,
+      "signal": null,
+      "log": "rust-tests.txt"
+    },
+    {
+      "evidence": "docs-final/results.json",
+      "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-standard-libraries -p agq-metamodel-gen",
+      "started": "2026-09-19T16:18:42.033Z",
+      "durationMs": 10791,
+      "exitCode": 0,
+      "signal": null,
+      "log": "rustdoc.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo fmt --all -- --check",
+      "started": "2026-09-19T15:39:27.198Z",
+      "durationMs": 1672,
+      "exitCode": 0,
+      "signal": null,
+      "log": "format.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "started": "2026-09-19T15:39:28.871Z",
+      "durationMs": 18191,
+      "exitCode": 0,
+      "signal": null,
+      "log": "clippy.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo test --workspace",
+      "started": "2026-09-19T15:39:47.062Z",
+      "durationMs": 240563,
+      "exitCode": 0,
+      "signal": null,
+      "log": "rust-tests.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+      "started": "2026-09-19T15:43:47.625Z",
+      "durationMs": 14280,
+      "exitCode": 0,
+      "signal": null,
+      "log": "generated.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+      "started": "2026-09-19T15:44:01.906Z",
+      "durationMs": 2193,
+      "exitCode": 0,
+      "signal": null,
+      "log": "kerml-readiness.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+      "started": "2026-09-19T15:44:04.100Z",
+      "durationMs": 4692,
+      "exitCode": 0,
+      "signal": null,
+      "log": "sysml-readiness.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-standard-libraries -p agq-metamodel-gen",
+      "started": "2026-09-19T15:44:08.793Z",
+      "durationMs": 29969,
+      "exitCode": 0,
+      "signal": null,
+      "log": "rustdoc.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "npm run standards:check",
+      "started": "2026-09-19T15:44:38.770Z",
+      "durationMs": 751,
+      "exitCode": 0,
+      "signal": null,
+      "log": "standards.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "npm run check",
+      "started": "2026-09-19T15:44:39.522Z",
+      "durationMs": 2345,
+      "exitCode": 0,
+      "signal": null,
+      "log": "frontend-check.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "npm run build",
+      "started": "2026-09-19T15:44:41.868Z",
+      "durationMs": 2697,
+      "exitCode": 0,
+      "signal": null,
+      "log": "frontend-build.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "npm test",
+      "started": "2026-09-19T15:44:44.566Z",
+      "durationMs": 691,
+      "exitCode": 0,
+      "signal": null,
+      "log": "node-tests.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "npm run test:e2e",
+      "started": "2026-09-19T15:44:45.259Z",
+      "durationMs": 69344,
+      "exitCode": 0,
+      "signal": null,
+      "log": "browser-tests.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "python -X utf8 tools/kerml-grammar/inventory.py",
+      "started": "2026-09-19T15:45:54.603Z",
+      "durationMs": 6933,
+      "exitCode": 0,
+      "signal": null,
+      "log": "grammar-inventory.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "python -X utf8 tools/kerml-grammar/generate.py",
+      "started": "2026-09-19T15:46:01.537Z",
+      "durationMs": 367,
+      "exitCode": 0,
+      "signal": null,
+      "log": "grammar-tables.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "python -X utf8 tools/kerml-grammar/test_inventory.py",
+      "started": "2026-09-19T15:46:01.905Z",
+      "durationMs": 432,
+      "exitCode": 0,
+      "signal": null,
+      "log": "grammar-tests.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo run --locked --offline -p agq-kerml-text --example binding_manifest",
+      "started": "2026-09-19T15:46:02.338Z",
+      "durationMs": 30112,
+      "exitCode": 1,
+      "signal": null,
+      "log": "bindings.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check",
+      "started": "2026-09-19T15:46:32.450Z",
+      "durationMs": 2759,
+      "exitCode": 0,
+      "signal": null,
+      "log": "historical-lexical-corpus.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check",
+      "started": "2026-09-19T15:46:35.210Z",
+      "durationMs": 569,
+      "exitCode": 0,
+      "signal": null,
+      "log": "independent-runtime.txt"
+    },
+    {
+      "evidence": "final-1/results.json",
+      "command": "python -X utf8 verification/kerml-name-resolution-errata-publication-v4/preservation.py",
+      "started": "2026-09-19T15:46:35.779Z",
+      "durationMs": 561,
+      "exitCode": 0,
+      "signal": null,
+      "log": "preservation.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "node tools/registers.mjs",
+      "started": "2026-09-19T15:47:58.717Z",
+      "durationMs": 199,
+      "exitCode": 0,
+      "signal": null,
+      "log": "registers.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "node tools/extract.mjs --check",
+      "started": "2026-09-19T15:47:58.917Z",
+      "durationMs": 97,
+      "exitCode": 0,
+      "signal": null,
+      "log": "extraction.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "cargo build --workspace --locked",
+      "started": "2026-09-19T15:47:59.015Z",
+      "durationMs": 4848,
+      "exitCode": 0,
+      "signal": null,
+      "log": "workspace-build.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "npm run format:check",
+      "started": "2026-09-19T15:48:03.864Z",
+      "durationMs": 1831,
+      "exitCode": 0,
+      "signal": null,
+      "log": "frontend-format.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "node node_modules/sysml-validate/out/main.js models/ --library standards/libraries-2026-04 --no-config --format json --out verification/kerml-library-content-errata-publication-v5/product-1/independent-validation.json",
+      "started": "2026-09-19T15:48:05.696Z",
+      "durationMs": 8816,
+      "exitCode": 0,
+      "signal": null,
+      "log": "independent-starter.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "node node_modules/sysml-validate/out/main.js tests/fixtures/ --library standards/libraries-2026-04 --no-config --format json --out verification/kerml-library-content-errata-publication-v5/product-1/independent-fixtures.json",
+      "started": "2026-09-19T15:48:14.513Z",
+      "durationMs": 7049,
+      "exitCode": 1,
+      "signal": null,
+      "log": "independent-fixtures.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "node tools/pilot-validate.mjs",
+      "started": "2026-09-19T15:48:21.563Z",
+      "durationMs": 10138,
+      "exitCode": 0,
+      "signal": null,
+      "log": "official-pilot.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "node tools/process-test.mjs",
+      "started": "2026-09-19T15:48:31.702Z",
+      "durationMs": 3472,
+      "exitCode": 0,
+      "signal": null,
+      "log": "process-recovery.txt"
+    },
+    {
+      "evidence": "product-1/results.json",
+      "command": "target\\debug\\agentique.exe --workspace .workspaces/verified-kerml-v4-1789832878713.db demo",
+      "started": "2026-09-19T15:48:35.175Z",
+      "durationMs": 2568,
+      "exitCode": 0,
+      "signal": null,
+      "log": "headless-demo.txt"
+    },
+    {
+      "evidence": "strict-1/results.json",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-conformance --check",
+      "started": "2026-09-19T15:47:31.047Z",
+      "durationMs": 1041,
+      "exitCode": 1,
+      "signal": null,
+      "log": "kerml-conformance.txt"
+    },
+    {
+      "evidence": "strict-1/results.json",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-conformance --check",
+      "started": "2026-09-19T15:47:32.089Z",
+      "durationMs": 1500,
+      "exitCode": 1,
+      "signal": null,
+      "log": "sysml-conformance.txt"
+    },
+    {
+      "evidence": "authority-final/results.json",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-four-models.py",
+      "started": "2026-09-19T16:18:29.108Z",
+      "durationMs": 2664,
+      "exitCode": 0,
+      "signal": null,
+      "log": "four-models.txt"
+    },
+    {
+      "evidence": "authority-final/results.json",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-authority-stop.py",
+      "started": "2026-09-19T16:18:31.772Z",
+      "durationMs": 525,
+      "exitCode": 0,
+      "signal": null,
+      "log": "authority-stop.txt"
+    },
+    {
+      "evidence": "authority-final/results.json",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-patch.py",
+      "started": "2026-09-19T16:18:32.298Z",
+      "durationMs": 6769,
+      "exitCode": 0,
+      "signal": null,
+      "log": "patch-diff.txt"
+    },
+    {
+      "evidence": "authority-final/results.json",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-source-assertions.py",
+      "started": "2026-09-19T16:18:39.067Z",
+      "durationMs": 135,
+      "exitCode": 0,
+      "signal": null,
+      "log": "source-assertions.txt"
+    },
+    {
+      "evidence": "authority-final/results.json",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/preservation.py",
+      "started": "2026-09-19T16:18:39.203Z",
+      "durationMs": 2776,
+      "exitCode": 0,
+      "signal": null,
+      "log": "preservation.txt"
+    }
+  ],
+  "nonzero_results": "README.md distinguishes actual failed quality gates, known negative checks, unrelated reference drift, and superseded attempts."
+}

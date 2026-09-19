@@ -1,0 +1,412 @@
+{
+  "branch": "semantics/kerml-library-content-errata-publication-v5",
+  "base_commit": "33b10f8fe45c2fba55dde0acfa92d44d274e64ab",
+  "preservation": {
+    "preserved_original_artifacts": 1319,
+    "unchanged": true,
+    "acquired_artifacts_verified": 160,
+    "v2_algorithm_bytes_unchanged": true,
+    "v3_definition_is_append_only": true,
+    "original_kpar_bytes_unchanged": true,
+    "historical_verification_bytes_unchanged": true,
+    "lossless_generated_exports_verified": 4
+  },
+  "git_diff_check_exit_code": 0,
+  "checked_review_links": [
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "gate-status.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "../../docs/kerml-feature-chain-end-authority-conflict.md"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "authority-stop.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "quality-comparison.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "obligation-causes.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "validation-coverage.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "operational-obligations-2/obligations.json.gz"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "../../standards/kerml-1.0-operational-library-errata-v3.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "authority-matrix.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "four-model-witnesses.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "operational-patch-diff.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "source-assertion-diff.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "reference-comparison.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "current-reference-comparison.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "reference-drift-review.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "acquisition.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "../../docs/adr/0015-operational-standard-library-corrections.md"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "command-index.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "final-rust-3/results.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "docs-final/results.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "final-1/results.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "product-1/results.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "authority-final/results.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "operational-obligations-2/result.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "operational-quality/result.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "strict-1/results.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "operational-profile-v2-frozen.md"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "historical-authority/result.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "archived-exports.json"
+    },
+    {
+      "source": "verification\\kerml-library-content-errata-publication-v5\\README.md",
+      "target": "../../docs/kerml-standard-library-foundation-review.md"
+    },
+    {
+      "source": "docs\\adr\\0015-operational-standard-library-corrections.md",
+      "target": "../../standards/kerml-1.0-operational-library-errata-v3.json"
+    },
+    {
+      "source": "docs\\adr\\0015-operational-standard-library-corrections.md",
+      "target": "../../verification/kerml-library-content-errata-publication-v5/authority-matrix.json"
+    },
+    {
+      "source": "docs\\adr\\0015-operational-standard-library-corrections.md",
+      "target": "../../verification/kerml-library-content-errata-publication-v5/four-model-witnesses.json"
+    },
+    {
+      "source": "docs\\adr\\0015-operational-standard-library-corrections.md",
+      "target": "../kerml-feature-chain-end-authority-conflict.md"
+    },
+    {
+      "source": "docs\\kerml-feature-chain-end-authority-conflict.md",
+      "target": "../verification/kerml-library-content-errata-publication-v5/authority-stop.json"
+    },
+    {
+      "source": "docs\\kerml-standard-library-foundation-review.md",
+      "target": "kerml-feature-chain-end-authority-conflict.md"
+    },
+    {
+      "source": "docs\\kerml-standard-library-foundation-review.md",
+      "target": "../verification/kerml-library-content-errata-publication-v5/authority-matrix.json"
+    },
+    {
+      "source": "docs\\kerml-standard-library-foundation-review.md",
+      "target": "adr/0015-operational-standard-library-corrections.md"
+    },
+    {
+      "source": "docs\\kerml-standard-library-foundation-review.md",
+      "target": "../verification/kerml-library-content-errata-publication-v5/README.md"
+    }
+  ],
+  "implementation_and_review_files": [
+    {
+      "path": "Cargo.lock",
+      "sha256": "1774adee3f738fe822fc9c48d5d854dea49e943716dc1a8276389313874ab7d1",
+      "bytes": 54674
+    },
+    {
+      "path": "crates/kerml-semantics/src/context.rs",
+      "sha256": "e8b82f7148e91497c44aba04539336ef534a90fd2424adfd3c8f7558ef99f3d4",
+      "bytes": 15294
+    },
+    {
+      "path": "crates/kerml-semantics/src/contract.rs",
+      "sha256": "0b2e2841a3a3f3c840feaba8545c312abbfb6807920a3669ac0ff04332bb06bb",
+      "bytes": 6970
+    },
+    {
+      "path": "crates/kerml-semantics/src/resolution.rs",
+      "sha256": "c5fb95ad2eb183a9b11e67e4ed12ac5685968b02096349e970039a1dcb6fe9c1",
+      "bytes": 25259
+    },
+    {
+      "path": "crates/kerml-semantics/src/validation.rs",
+      "sha256": "bd6d234c623377661da5eff37ca4329be0be7f0c0d4138f4aad45e5aab3f45e6",
+      "bytes": 14644
+    },
+    {
+      "path": "crates/kerml-semantics/tests/library_authority_conflict.rs",
+      "sha256": "2b88fc8d474e827b17bdd873bed54fb1eb7701571f9e99ab92265a897bff58d1",
+      "bytes": 10873
+    },
+    {
+      "path": "crates/kerml-semantics/tests/profiles.rs",
+      "sha256": "560709759f046b126854e8b2e590726fee82aeda03528b6c9d00b671d6c63fad",
+      "bytes": 3882
+    },
+    {
+      "path": "crates/kerml-semantics/tests/structural_validation.rs",
+      "sha256": "6dd7277f52ac67c44d2f4592ed91606864d2a9b4fc6a042de6dbc87b9ca1e120",
+      "bytes": 5437
+    },
+    {
+      "path": "crates/kerml-text/Cargo.toml",
+      "sha256": "98c54e913bb96e8e7c28b875f1d94155da0baf40a7832268aa0964dedff251e2",
+      "bytes": 532
+    },
+    {
+      "path": "crates/kerml-text/examples/library_model_audit.rs",
+      "sha256": "1553b82711e1923bd61e5b0d97b1fb9a70749ebeebc1d42fd2d6397e903bc4cf",
+      "bytes": 5339
+    },
+    {
+      "path": "crates/kerml-text/examples/library_obligations.rs",
+      "sha256": "3369a367798cddcd65e2cecb43fd057513c4ab40b7c77f4601b233416b0d0edc",
+      "bytes": 14531
+    },
+    {
+      "path": "crates/kerml-text/examples/library_quality.rs",
+      "sha256": "40892b68e765f5a18d17838548c7e4b19da74999bd862cf12aef403cbf719018",
+      "bytes": 14789
+    },
+    {
+      "path": "crates/kerml-text/src/library/construction.rs",
+      "sha256": "965edba4a7648fdbc1439855b83b3fc131472e1caa0ac06bdd9d4dc2a09f92f3",
+      "bytes": 33115
+    },
+    {
+      "path": "crates/kerml-text/src/library/corrections.rs",
+      "sha256": "703a9d87cd93e090c7ab7a87ef573c127fcbfe6d90fdfa92161e0c85e1b0f75b",
+      "bytes": 14285
+    },
+    {
+      "path": "crates/kerml-text/src/library/mod.rs",
+      "sha256": "4412673e1b48cfc29caed15a46bd19f363484a1a4e2034556e01838771911b7f",
+      "bytes": 9803
+    },
+    {
+      "path": "crates/kerml-text/tests/library_corrections.rs",
+      "sha256": "f350af99d7f9876be4e02e373b4f42a8baa65d37d5de87821568b015b9229dd9",
+      "bytes": 1202
+    },
+    {
+      "path": "crates/kerml-text/tests/project.rs",
+      "sha256": "95567d2ea7ec97b6899738fcf0dded5df1755ba7ecb65500f272be96cb18f9b6",
+      "bytes": 16126
+    },
+    {
+      "path": "crates/kerml/src/profiles.rs",
+      "sha256": "a0f8b43c06d1d9ceddfa12f2bac6eff73fb03f5fb4e488b8d98546ca7cc9ec6d",
+      "bytes": 12315
+    },
+    {
+      "path": "crates/kerml/tests/profiles.rs",
+      "sha256": "3cab64faa427a2748c1163bd03b443acfc36c062ad6ea697d11bda0bd171c5e0",
+      "bytes": 7714
+    },
+    {
+      "path": "crates/kernel/src/provenance.rs",
+      "sha256": "8154a4f020eaa027c0393d81e75df46bf15b49bef9f943653c11b1266dc5faba",
+      "bytes": 4510
+    },
+    {
+      "path": "docs/adr/0015-operational-standard-library-corrections.md",
+      "sha256": "34e81a052246317d2347977cf24537f569a09627837b100aa44d218c7e81a950",
+      "bytes": 5329
+    },
+    {
+      "path": "docs/kerml-feature-chain-end-authority-conflict.md",
+      "sha256": "db93f14550b54291bacc8560a3174df594b08c78ea1d1e981a6f9259e62c78e1",
+      "bytes": 3013
+    },
+    {
+      "path": "docs/kerml-standard-library-foundation-review.md",
+      "sha256": "c01c2d05e43a25c0ab3d94c5e793cc84c7daefa8ecb49e2adbfc21e9b9693510",
+      "bytes": 33883
+    },
+    {
+      "path": "docs/operational-kerml-profile.md",
+      "sha256": "769332d2e764cbea7fc84f4a699c8c3854320faf1d9eb0a7b5e0ff277a6af680",
+      "bytes": 6999
+    },
+    {
+      "path": "standards/kerml-1.0-operational-library-errata-v3.json",
+      "sha256": "c762275c6a7c4cb310c4ba3084683d62125a9319228d8653f39956c61794ae30",
+      "bytes": 142414
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/README.md",
+      "sha256": "9f0a7f6cb50b6088b1e24a35e189a72c54554f7f8b4a800649bccbf6f4952a02",
+      "bytes": 9892
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/acquire.py",
+      "sha256": "e6628108ebb4039ed943f11cc07751a3e50003267894776608c3f71e0d07fcac",
+      "bytes": 4057
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/archive-exports.py",
+      "sha256": "eca09c88ba3f4962e4d5825b3797be4701cdb8f46254dcd2b91ea5931583aad8",
+      "bytes": 1601
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/authority-matrix.py",
+      "sha256": "2f7a49f34c15345cc50b8f124ec662d14e5023dfe10ffdd0a3fb4c07bbaf5e83",
+      "bytes": 10936
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/close-verification.py",
+      "sha256": "f61f5ce356390fb9c39e5a84ce47f3848989c556d653298a490a401bc594df5f",
+      "bytes": 2951
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/compare-current-xmi.py",
+      "sha256": "249057eb27cc42fa5ba1a01bb97f7171a2d362c508e58ef8d428ebf0d02f0e5a",
+      "bytes": 3822
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/evidence_io.py",
+      "sha256": "47761f7a75711b1974e62abbe0272a1ef0a5e59aa3db061b6aaedee117f62edc",
+      "bytes": 314
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/finalize-report.py",
+      "sha256": "c7308f5d81150dab2bbade101752ce139b98ad7ce962e634fb83a1ba3e702980",
+      "bytes": 7028
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/inspect-history.py",
+      "sha256": "6df498e11bf39fc33a06be46cb648b46094e91da0bfbcd3ddc5aead4a742da62",
+      "bytes": 1788
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/preservation.py",
+      "sha256": "3295df02eb23aaf5e8a71f2f831e2e48af56624fba87e60d4b33fcc5412a1e9c",
+      "bytes": 1670
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/review-reference-drift.py",
+      "sha256": "58df43d51d6bbd1a970b9d6791abc7e03e097964c778bcd8d0ebdc66ba1f4bab",
+      "bytes": 3819
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/reviewed-patch.py",
+      "sha256": "7bec297391c08d5e0cc4ade02326852f2d9518edd4b98a000daaf47ad238f628",
+      "bytes": 10457
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/run.py",
+      "sha256": "0e30011d5e9b72cf565fe74e1e1c905a3f2df9b44ca4476824af226d729f624c",
+      "bytes": 871
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/summarize-obligations.py",
+      "sha256": "3691a43158dc2b5fddc307b2d1470114f10f345f576e942b991f86adabe7ae90",
+      "bytes": 3118
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/summarize-quality.py",
+      "sha256": "ecccb808efefbdb897d7b44ac3ee73bc64ee5dc37f4848f8195616c4648067d2",
+      "bytes": 4928
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/validation-coverage.py",
+      "sha256": "f7772b203f9e5c0b813b32a886bd84b9963d228442ac4460064cd54ec356dc3b",
+      "bytes": 3649
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/verify-authority-stop.py",
+      "sha256": "71c1edf794e93df1c82ec30bc633bd1752ae5bf94fb818ddf4f5bee1c806ab95",
+      "bytes": 4470
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/verify-four-models.py",
+      "sha256": "040e6e273d9aabedc7bb1df3aeff06ed061022d6b2489a6ba2542b7b6df680aa",
+      "bytes": 7050
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/verify-historical-authority.py",
+      "sha256": "8b00171630110c089d7724b314d43ed59574c09e76dc17e0c868606ddcd43a4c",
+      "bytes": 2324
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/verify-patch.py",
+      "sha256": "dfc61ee6d133415dc32e42513bcdc76c26044497c4a479e68fa76212ee02f08f",
+      "bytes": 6803
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/verify-source-assertions.py",
+      "sha256": "2016164664779a5732d3313b8c83d08ea88696a1d681d1777f8561e897df5e9e",
+      "bytes": 1861
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/xmi.py",
+      "sha256": "bbc91b38869b7a7be4c45ba3793f36326c4342a4f214fae4c0effa0725f01361",
+      "bytes": 2485
+    }
+  ],
+  "accepted_semantic_publication": false,
+  "stop": "KLCV5-F-001 / KERML11-68"
+}

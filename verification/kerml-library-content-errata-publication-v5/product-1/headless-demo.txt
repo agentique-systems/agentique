@@ -1,0 +1,879 @@
+{
+  "continuous": {
+    "active": "9ae0db9e-30ff-4544-9307-f53a23eb841f",
+    "active_name": "accepted",
+    "checks": [
+      {
+        "details": "SysML verification declarations have no executable procedure",
+        "name": "documentary_requirements",
+        "status": "not_run"
+      },
+      {
+        "details": "Observed stop reason: condition_met",
+        "name": "scenario_expectations",
+        "status": "pass"
+      }
+    ],
+    "control_version": 2,
+    "diagnostics": [],
+    "id": "488a9998-9ad8-4872-9ad3-79b87279bcd3",
+    "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+    "next_input": 2,
+    "next_sequence": 5,
+    "occurrence_id": "b0cdd7cc-9474-5aed-96f6-feed48e12c65",
+    "plan": {
+      "bindings": {},
+      "contract": "AGQ-SEQ-01",
+      "definition": "b205394b-a300-4ee2-a72d-5ba40aad0a3b",
+      "engine_build": "0.1.0/1476329bf486fda16f8f44e37e545716d5997355bdcd44624c25bb127939972d",
+      "excluded_interactions": [
+        "Only the selected state occurrence receives ordered scenario inputs; structural connections and other contained behaviours do not execute."
+      ],
+      "expected": {
+        "active_states": [
+          "idle",
+          "checking",
+          "accepted"
+        ],
+        "stop_reason": "condition_met",
+        "transition_names": [
+          "beginCheck",
+          "acceptCheck"
+        ]
+      },
+      "initial": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+      "initial_source": "036832d2-a8b4-4a93-a1a4-39a06d2c80eb",
+      "input_digest": "2258abe87bebf0a65118f7979aa4184a43b25b6e98f15ae8cd4556fbbc6088ea",
+      "inputs": [
+        {
+          "occurrence_chain": [
+            "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+            "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+            "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+            "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+            "74094f9e-cbdd-4852-b926-b2a6c91fb4f3",
+            "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+          ],
+          "ordinal": 1,
+          "payload_type": "02373398-4f8b-4dd1-9c35-a69d605fa5fc",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "values": {}
+        },
+        {
+          "occurrence_chain": [
+            "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+            "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+            "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+            "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+            "74094f9e-cbdd-4852-b926-b2a6c91fb4f3",
+            "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+          ],
+          "ordinal": 2,
+          "payload_type": "8af14413-6e33-41c2-aa2a-17a11b1e0fc4",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "values": {}
+        }
+      ],
+      "library_digest": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+      "limits": {
+        "max_input_deliveries": 100,
+        "max_memory_bytes": 67108864,
+        "max_semantic_steps": 1000,
+        "max_trace_records": 5000
+      },
+      "memory_base_bytes": 44184,
+      "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+      "plan_digest": "7c4fd42a371384f52da7a92e8ed761403345a17e19210ffc1f94c1a1d18ae01c",
+      "scenario_revision_id": "29719311-8d24-48d0-8865-be26e4887e36",
+      "selected": [
+        "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+        "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+        "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+        "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+        "74094f9e-cbdd-4852-b926-b2a6c91fb4f3"
+      ],
+      "states": {
+        "047d140e-1ba9-4314-bb96-08bff833151e": "checking",
+        "88900c86-5d56-4a96-a9ac-1268117f6ca4": "idle",
+        "9ae0db9e-30ff-4544-9307-f53a23eb841f": "accepted",
+        "c854ecaf-9e90-4ecd-9cde-e03e88790301": "rejected"
+      },
+      "stop_state": "9ae0db9e-30ff-4544-9307-f53a23eb841f",
+      "transitions": [
+        {
+          "guard": null,
+          "id": "0a35ca63-1872-4e57-99b7-b73e7ca1877d",
+          "name": "beginCheck",
+          "payload_name": null,
+          "payload_type": "02373398-4f8b-4dd1-9c35-a69d605fa5fc",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+          "span": {
+            "column": 9,
+            "end": 836,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 23,
+            "start": 721
+          },
+          "target": "047d140e-1ba9-4314-bb96-08bff833151e"
+        },
+        {
+          "guard": null,
+          "id": "30397c36-4618-4b97-8def-c563127d5303",
+          "name": "acceptCheck",
+          "payload_name": null,
+          "payload_type": "8af14413-6e33-41c2-aa2a-17a11b1e0fc4",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "047d140e-1ba9-4314-bb96-08bff833151e",
+          "span": {
+            "column": 9,
+            "end": 968,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 28,
+            "start": 846
+          },
+          "target": "9ae0db9e-30ff-4544-9307-f53a23eb841f"
+        },
+        {
+          "guard": null,
+          "id": "25db5be4-b0b4-4aeb-bc45-485b7a412e85",
+          "name": "rejectCheck",
+          "payload_name": null,
+          "payload_type": "14319db7-8c90-441a-9681-897866d1852f",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "047d140e-1ba9-4314-bb96-08bff833151e",
+          "span": {
+            "column": 9,
+            "end": 1100,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 33,
+            "start": 978
+          },
+          "target": "c854ecaf-9e90-4ecd-9cde-e03e88790301"
+        }
+      ]
+    },
+    "provenance": "run",
+    "scenario_revision_id": "29719311-8d24-48d0-8865-be26e4887e36",
+    "semantic_steps": 3,
+    "status": "completed",
+    "stop_reason": "condition_met",
+    "trace_count": 5,
+    "trace_digest": "14113fa9de633ba4a7fca26291c67b34620bce34681b9f5119787e995713e61e",
+    "trace_page": [
+      {
+        "after": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "before": null,
+        "input_ordinal": null,
+        "kind": "initial",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "b417919d-0aac-570c-9095-5a5d2018a518",
+        "outcome": "entered",
+        "run_id": "488a9998-9ad8-4872-9ad3-79b87279bcd3",
+        "semantic_step": 1,
+        "sequence": 0,
+        "source_element_id": "036832d2-a8b4-4a93-a1a4-39a06d2c80eb"
+      },
+      {
+        "after": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "before": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "input_ordinal": 1,
+        "kind": "input",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "b417919d-0aac-570c-9095-5a5d2018a518",
+        "outcome": "delivered",
+        "run_id": "488a9998-9ad8-4872-9ad3-79b87279bcd3",
+        "semantic_step": 2,
+        "sequence": 1,
+        "source_element_id": "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+      },
+      {
+        "after": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "before": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "input_ordinal": 1,
+        "kind": "transition",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "aea287c2-1acb-579f-aaa7-81125d4dabea",
+        "outcome": "taken",
+        "run_id": "488a9998-9ad8-4872-9ad3-79b87279bcd3",
+        "semantic_step": 2,
+        "sequence": 2,
+        "source_element_id": "0a35ca63-1872-4e57-99b7-b73e7ca1877d"
+      },
+      {
+        "after": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "before": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "input_ordinal": 2,
+        "kind": "input",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "aea287c2-1acb-579f-aaa7-81125d4dabea",
+        "outcome": "delivered",
+        "run_id": "488a9998-9ad8-4872-9ad3-79b87279bcd3",
+        "semantic_step": 3,
+        "sequence": 3,
+        "source_element_id": "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+      },
+      {
+        "after": "9ae0db9e-30ff-4544-9307-f53a23eb841f",
+        "before": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "input_ordinal": 2,
+        "kind": "transition",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "b0cdd7cc-9474-5aed-96f6-feed48e12c65",
+        "outcome": "taken",
+        "run_id": "488a9998-9ad8-4872-9ad3-79b87279bcd3",
+        "semantic_step": 3,
+        "sequence": 4,
+        "source_element_id": "30397c36-4618-4b97-8def-c563127d5303"
+      }
+    ]
+  },
+  "exhausted": {
+    "active": "047d140e-1ba9-4314-bb96-08bff833151e",
+    "active_name": "checking",
+    "checks": [
+      {
+        "details": "SysML verification declarations have no executable procedure",
+        "name": "documentary_requirements",
+        "status": "not_run"
+      },
+      {
+        "details": "Observed stop reason: input_exhausted",
+        "name": "scenario_expectations",
+        "status": "fail"
+      }
+    ],
+    "control_version": 2,
+    "diagnostics": [],
+    "id": "58f01d71-3cea-40b6-8c78-26e683786736",
+    "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+    "next_input": 1,
+    "next_sequence": 3,
+    "occurrence_id": "b18df782-068f-5a4e-bc5b-77716c226407",
+    "plan": {
+      "bindings": {},
+      "contract": "AGQ-SEQ-01",
+      "definition": "b205394b-a300-4ee2-a72d-5ba40aad0a3b",
+      "engine_build": "0.1.0/1476329bf486fda16f8f44e37e545716d5997355bdcd44624c25bb127939972d",
+      "excluded_interactions": [
+        "Only the selected state occurrence receives ordered scenario inputs; structural connections and other contained behaviours do not execute."
+      ],
+      "expected": {
+        "active_states": [
+          "idle",
+          "checking",
+          "accepted"
+        ],
+        "stop_reason": "condition_met",
+        "transition_names": [
+          "beginCheck",
+          "acceptCheck"
+        ]
+      },
+      "initial": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+      "initial_source": "036832d2-a8b4-4a93-a1a4-39a06d2c80eb",
+      "input_digest": "bf4fbb183ea7bb849cce9dadc4098b909d4b4701b6f423695611f8f29ddba766",
+      "inputs": [
+        {
+          "occurrence_chain": [
+            "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+            "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+            "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+            "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+            "74094f9e-cbdd-4852-b926-b2a6c91fb4f3",
+            "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+          ],
+          "ordinal": 1,
+          "payload_type": "02373398-4f8b-4dd1-9c35-a69d605fa5fc",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "values": {}
+        }
+      ],
+      "library_digest": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+      "limits": {
+        "max_input_deliveries": 100,
+        "max_memory_bytes": 67108864,
+        "max_semantic_steps": 1000,
+        "max_trace_records": 5000
+      },
+      "memory_base_bytes": 41104,
+      "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+      "plan_digest": "a9baf7112122175e3e7df97a361189508671b46b07aec4a4862951a076f30373",
+      "scenario_revision_id": "f57372f7-077c-417c-b110-1ee1f3927766",
+      "selected": [
+        "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+        "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+        "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+        "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+        "74094f9e-cbdd-4852-b926-b2a6c91fb4f3"
+      ],
+      "states": {
+        "047d140e-1ba9-4314-bb96-08bff833151e": "checking",
+        "88900c86-5d56-4a96-a9ac-1268117f6ca4": "idle",
+        "9ae0db9e-30ff-4544-9307-f53a23eb841f": "accepted",
+        "c854ecaf-9e90-4ecd-9cde-e03e88790301": "rejected"
+      },
+      "stop_state": "9ae0db9e-30ff-4544-9307-f53a23eb841f",
+      "transitions": [
+        {
+          "guard": null,
+          "id": "0a35ca63-1872-4e57-99b7-b73e7ca1877d",
+          "name": "beginCheck",
+          "payload_name": null,
+          "payload_type": "02373398-4f8b-4dd1-9c35-a69d605fa5fc",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+          "span": {
+            "column": 9,
+            "end": 836,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 23,
+            "start": 721
+          },
+          "target": "047d140e-1ba9-4314-bb96-08bff833151e"
+        },
+        {
+          "guard": null,
+          "id": "30397c36-4618-4b97-8def-c563127d5303",
+          "name": "acceptCheck",
+          "payload_name": null,
+          "payload_type": "8af14413-6e33-41c2-aa2a-17a11b1e0fc4",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "047d140e-1ba9-4314-bb96-08bff833151e",
+          "span": {
+            "column": 9,
+            "end": 968,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 28,
+            "start": 846
+          },
+          "target": "9ae0db9e-30ff-4544-9307-f53a23eb841f"
+        },
+        {
+          "guard": null,
+          "id": "25db5be4-b0b4-4aeb-bc45-485b7a412e85",
+          "name": "rejectCheck",
+          "payload_name": null,
+          "payload_type": "14319db7-8c90-441a-9681-897866d1852f",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "047d140e-1ba9-4314-bb96-08bff833151e",
+          "span": {
+            "column": 9,
+            "end": 1100,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 33,
+            "start": 978
+          },
+          "target": "c854ecaf-9e90-4ecd-9cde-e03e88790301"
+        }
+      ]
+    },
+    "provenance": "run",
+    "scenario_revision_id": "f57372f7-077c-417c-b110-1ee1f3927766",
+    "semantic_steps": 2,
+    "status": "completed",
+    "stop_reason": "input_exhausted",
+    "trace_count": 3,
+    "trace_digest": "3657dceb6efdd50ef31053b6fb25489c6278194c41a910356c771c19d627f2ec",
+    "trace_page": [
+      {
+        "after": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "before": null,
+        "input_ordinal": null,
+        "kind": "initial",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "f8372d56-9b27-5637-a77e-f4cc2ebdabee",
+        "outcome": "entered",
+        "run_id": "58f01d71-3cea-40b6-8c78-26e683786736",
+        "semantic_step": 1,
+        "sequence": 0,
+        "source_element_id": "036832d2-a8b4-4a93-a1a4-39a06d2c80eb"
+      },
+      {
+        "after": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "before": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "input_ordinal": 1,
+        "kind": "input",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "f8372d56-9b27-5637-a77e-f4cc2ebdabee",
+        "outcome": "delivered",
+        "run_id": "58f01d71-3cea-40b6-8c78-26e683786736",
+        "semantic_step": 2,
+        "sequence": 1,
+        "source_element_id": "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+      },
+      {
+        "after": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "before": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "input_ordinal": 1,
+        "kind": "transition",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "b18df782-068f-5a4e-bc5b-77716c226407",
+        "outcome": "taken",
+        "run_id": "58f01d71-3cea-40b6-8c78-26e683786736",
+        "semantic_step": 2,
+        "sequence": 2,
+        "source_element_id": "0a35ca63-1872-4e57-99b7-b73e7ca1877d"
+      }
+    ]
+  },
+  "manual": {
+    "active": "9ae0db9e-30ff-4544-9307-f53a23eb841f",
+    "active_name": "accepted",
+    "checks": [
+      {
+        "details": "SysML verification declarations have no executable procedure",
+        "name": "documentary_requirements",
+        "status": "not_run"
+      },
+      {
+        "details": "Observed stop reason: condition_met",
+        "name": "scenario_expectations",
+        "status": "pass"
+      }
+    ],
+    "control_version": 3,
+    "diagnostics": [],
+    "id": "61c1bc6a-580d-46f0-ae63-8045d054fc3b",
+    "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+    "next_input": 2,
+    "next_sequence": 5,
+    "occurrence_id": "05f49604-0ee4-5e2c-ad21-bbfe9f3ca275",
+    "plan": {
+      "bindings": {},
+      "contract": "AGQ-SEQ-01",
+      "definition": "b205394b-a300-4ee2-a72d-5ba40aad0a3b",
+      "engine_build": "0.1.0/1476329bf486fda16f8f44e37e545716d5997355bdcd44624c25bb127939972d",
+      "excluded_interactions": [
+        "Only the selected state occurrence receives ordered scenario inputs; structural connections and other contained behaviours do not execute."
+      ],
+      "expected": {
+        "active_states": [
+          "idle",
+          "checking",
+          "accepted"
+        ],
+        "stop_reason": "condition_met",
+        "transition_names": [
+          "beginCheck",
+          "acceptCheck"
+        ]
+      },
+      "initial": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+      "initial_source": "036832d2-a8b4-4a93-a1a4-39a06d2c80eb",
+      "input_digest": "2258abe87bebf0a65118f7979aa4184a43b25b6e98f15ae8cd4556fbbc6088ea",
+      "inputs": [
+        {
+          "occurrence_chain": [
+            "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+            "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+            "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+            "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+            "74094f9e-cbdd-4852-b926-b2a6c91fb4f3",
+            "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+          ],
+          "ordinal": 1,
+          "payload_type": "02373398-4f8b-4dd1-9c35-a69d605fa5fc",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "values": {}
+        },
+        {
+          "occurrence_chain": [
+            "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+            "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+            "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+            "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+            "74094f9e-cbdd-4852-b926-b2a6c91fb4f3",
+            "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+          ],
+          "ordinal": 2,
+          "payload_type": "8af14413-6e33-41c2-aa2a-17a11b1e0fc4",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "values": {}
+        }
+      ],
+      "library_digest": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+      "limits": {
+        "max_input_deliveries": 100,
+        "max_memory_bytes": 67108864,
+        "max_semantic_steps": 1000,
+        "max_trace_records": 5000
+      },
+      "memory_base_bytes": 44184,
+      "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+      "plan_digest": "8406fbc7bbdc5ed3f8045820c0db521d33d2238b8485ccc9e1bf7b908a66e79a",
+      "scenario_revision_id": "22dfbc3b-7a69-4099-b680-4e4b8a155d5f",
+      "selected": [
+        "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+        "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+        "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+        "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+        "74094f9e-cbdd-4852-b926-b2a6c91fb4f3"
+      ],
+      "states": {
+        "047d140e-1ba9-4314-bb96-08bff833151e": "checking",
+        "88900c86-5d56-4a96-a9ac-1268117f6ca4": "idle",
+        "9ae0db9e-30ff-4544-9307-f53a23eb841f": "accepted",
+        "c854ecaf-9e90-4ecd-9cde-e03e88790301": "rejected"
+      },
+      "stop_state": "9ae0db9e-30ff-4544-9307-f53a23eb841f",
+      "transitions": [
+        {
+          "guard": null,
+          "id": "0a35ca63-1872-4e57-99b7-b73e7ca1877d",
+          "name": "beginCheck",
+          "payload_name": null,
+          "payload_type": "02373398-4f8b-4dd1-9c35-a69d605fa5fc",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+          "span": {
+            "column": 9,
+            "end": 836,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 23,
+            "start": 721
+          },
+          "target": "047d140e-1ba9-4314-bb96-08bff833151e"
+        },
+        {
+          "guard": null,
+          "id": "30397c36-4618-4b97-8def-c563127d5303",
+          "name": "acceptCheck",
+          "payload_name": null,
+          "payload_type": "8af14413-6e33-41c2-aa2a-17a11b1e0fc4",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "047d140e-1ba9-4314-bb96-08bff833151e",
+          "span": {
+            "column": 9,
+            "end": 968,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 28,
+            "start": 846
+          },
+          "target": "9ae0db9e-30ff-4544-9307-f53a23eb841f"
+        },
+        {
+          "guard": null,
+          "id": "25db5be4-b0b4-4aeb-bc45-485b7a412e85",
+          "name": "rejectCheck",
+          "payload_name": null,
+          "payload_type": "14319db7-8c90-441a-9681-897866d1852f",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "047d140e-1ba9-4314-bb96-08bff833151e",
+          "span": {
+            "column": 9,
+            "end": 1100,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 33,
+            "start": 978
+          },
+          "target": "c854ecaf-9e90-4ecd-9cde-e03e88790301"
+        }
+      ]
+    },
+    "provenance": "run",
+    "scenario_revision_id": "22dfbc3b-7a69-4099-b680-4e4b8a155d5f",
+    "semantic_steps": 3,
+    "status": "completed",
+    "stop_reason": "condition_met",
+    "trace_count": 5,
+    "trace_digest": "14113fa9de633ba4a7fca26291c67b34620bce34681b9f5119787e995713e61e",
+    "trace_page": [
+      {
+        "after": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "before": null,
+        "input_ordinal": null,
+        "kind": "initial",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "9e4e66c1-8538-5705-963f-ac7e98967480",
+        "outcome": "entered",
+        "run_id": "61c1bc6a-580d-46f0-ae63-8045d054fc3b",
+        "semantic_step": 1,
+        "sequence": 0,
+        "source_element_id": "036832d2-a8b4-4a93-a1a4-39a06d2c80eb"
+      },
+      {
+        "after": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "before": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "input_ordinal": 1,
+        "kind": "input",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "9e4e66c1-8538-5705-963f-ac7e98967480",
+        "outcome": "delivered",
+        "run_id": "61c1bc6a-580d-46f0-ae63-8045d054fc3b",
+        "semantic_step": 2,
+        "sequence": 1,
+        "source_element_id": "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+      },
+      {
+        "after": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "before": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "input_ordinal": 1,
+        "kind": "transition",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "09f1e0bb-6128-542b-88e5-024ff2359af0",
+        "outcome": "taken",
+        "run_id": "61c1bc6a-580d-46f0-ae63-8045d054fc3b",
+        "semantic_step": 2,
+        "sequence": 2,
+        "source_element_id": "0a35ca63-1872-4e57-99b7-b73e7ca1877d"
+      },
+      {
+        "after": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "before": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "input_ordinal": 2,
+        "kind": "input",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "09f1e0bb-6128-542b-88e5-024ff2359af0",
+        "outcome": "delivered",
+        "run_id": "61c1bc6a-580d-46f0-ae63-8045d054fc3b",
+        "semantic_step": 3,
+        "sequence": 3,
+        "source_element_id": "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+      },
+      {
+        "after": "9ae0db9e-30ff-4544-9307-f53a23eb841f",
+        "before": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "input_ordinal": 2,
+        "kind": "transition",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "05f49604-0ee4-5e2c-ad21-bbfe9f3ca275",
+        "outcome": "taken",
+        "run_id": "61c1bc6a-580d-46f0-ae63-8045d054fc3b",
+        "semantic_step": 3,
+        "sequence": 4,
+        "source_element_id": "30397c36-4618-4b97-8def-c563127d5303"
+      }
+    ]
+  },
+  "normalized_traces_equal": true,
+  "rejected": {
+    "active": "c854ecaf-9e90-4ecd-9cde-e03e88790301",
+    "active_name": "rejected",
+    "checks": [
+      {
+        "details": "SysML verification declarations have no executable procedure",
+        "name": "documentary_requirements",
+        "status": "not_run"
+      },
+      {
+        "details": "Observed stop reason: condition_met",
+        "name": "scenario_expectations",
+        "status": "pass"
+      }
+    ],
+    "control_version": 2,
+    "diagnostics": [],
+    "id": "850bf55d-be6e-42a1-945a-3a428b3fae87",
+    "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+    "next_input": 2,
+    "next_sequence": 5,
+    "occurrence_id": "0e3c334e-564d-5f2b-9fc6-7aa79af01cb2",
+    "plan": {
+      "bindings": {},
+      "contract": "AGQ-SEQ-01",
+      "definition": "b205394b-a300-4ee2-a72d-5ba40aad0a3b",
+      "engine_build": "0.1.0/1476329bf486fda16f8f44e37e545716d5997355bdcd44624c25bb127939972d",
+      "excluded_interactions": [
+        "Only the selected state occurrence receives ordered scenario inputs; structural connections and other contained behaviours do not execute."
+      ],
+      "expected": {
+        "active_states": [
+          "idle",
+          "checking",
+          "rejected"
+        ],
+        "stop_reason": "condition_met",
+        "transition_names": [
+          "beginCheck",
+          "rejectCheck"
+        ]
+      },
+      "initial": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+      "initial_source": "036832d2-a8b4-4a93-a1a4-39a06d2c80eb",
+      "input_digest": "4258922863d0c81f9cdc13f8527980875d9f1021aef01f103fa297a03e97c236",
+      "inputs": [
+        {
+          "occurrence_chain": [
+            "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+            "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+            "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+            "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+            "74094f9e-cbdd-4852-b926-b2a6c91fb4f3",
+            "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+          ],
+          "ordinal": 1,
+          "payload_type": "02373398-4f8b-4dd1-9c35-a69d605fa5fc",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "values": {}
+        },
+        {
+          "occurrence_chain": [
+            "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+            "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+            "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+            "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+            "74094f9e-cbdd-4852-b926-b2a6c91fb4f3",
+            "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+          ],
+          "ordinal": 2,
+          "payload_type": "14319db7-8c90-441a-9681-897866d1852f",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "values": {}
+        }
+      ],
+      "library_digest": "abd18ac7b4517babcfd37d30ec8e98cdf935f805ca8e866fd35b17f4dfad2f04",
+      "limits": {
+        "max_input_deliveries": 100,
+        "max_memory_bytes": 67108864,
+        "max_semantic_steps": 1000,
+        "max_trace_records": 5000
+      },
+      "memory_base_bytes": 44184,
+      "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+      "plan_digest": "e999d39e215c6add212794fc573d1934bea97117ef8868f99965c469c69d9d36",
+      "scenario_revision_id": "6fe226fe-6400-4772-a4b5-b42e94ba7696",
+      "selected": [
+        "b1e3cfc2-b6dd-47c0-8e54-6fb77cc89cd7",
+        "1736c532-44a9-41a7-98c4-c8530ae22cb2",
+        "af8711fd-7a15-4e8d-9e34-163c79f14a95",
+        "e6c742e5-1c4c-4139-8278-4e93b3419eb0",
+        "74094f9e-cbdd-4852-b926-b2a6c91fb4f3"
+      ],
+      "states": {
+        "047d140e-1ba9-4314-bb96-08bff833151e": "checking",
+        "88900c86-5d56-4a96-a9ac-1268117f6ca4": "idle",
+        "9ae0db9e-30ff-4544-9307-f53a23eb841f": "accepted",
+        "c854ecaf-9e90-4ecd-9cde-e03e88790301": "rejected"
+      },
+      "stop_state": "c854ecaf-9e90-4ecd-9cde-e03e88790301",
+      "transitions": [
+        {
+          "guard": null,
+          "id": "0a35ca63-1872-4e57-99b7-b73e7ca1877d",
+          "name": "beginCheck",
+          "payload_name": null,
+          "payload_type": "02373398-4f8b-4dd1-9c35-a69d605fa5fc",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+          "span": {
+            "column": 9,
+            "end": 836,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 23,
+            "start": 721
+          },
+          "target": "047d140e-1ba9-4314-bb96-08bff833151e"
+        },
+        {
+          "guard": null,
+          "id": "30397c36-4618-4b97-8def-c563127d5303",
+          "name": "acceptCheck",
+          "payload_name": null,
+          "payload_type": "8af14413-6e33-41c2-aa2a-17a11b1e0fc4",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "047d140e-1ba9-4314-bb96-08bff833151e",
+          "span": {
+            "column": 9,
+            "end": 968,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 28,
+            "start": 846
+          },
+          "target": "9ae0db9e-30ff-4544-9307-f53a23eb841f"
+        },
+        {
+          "guard": null,
+          "id": "25db5be4-b0b4-4aeb-bc45-485b7a412e85",
+          "name": "rejectCheck",
+          "payload_name": null,
+          "payload_type": "14319db7-8c90-441a-9681-897866d1852f",
+          "receiver": "3b909bad-6093-4dbc-ab0a-413634c5ec73",
+          "source": "047d140e-1ba9-4314-bb96-08bff833151e",
+          "span": {
+            "column": 9,
+            "end": 1100,
+            "file": "models/AgentiqueBehaviour.sysml",
+            "line": 33,
+            "start": 978
+          },
+          "target": "c854ecaf-9e90-4ecd-9cde-e03e88790301"
+        }
+      ]
+    },
+    "provenance": "run",
+    "scenario_revision_id": "6fe226fe-6400-4772-a4b5-b42e94ba7696",
+    "semantic_steps": 3,
+    "status": "completed",
+    "stop_reason": "condition_met",
+    "trace_count": 5,
+    "trace_digest": "2421f97ecefa5178c00ed7906486829c787b9786e50027f2259d70f479b20c5e",
+    "trace_page": [
+      {
+        "after": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "before": null,
+        "input_ordinal": null,
+        "kind": "initial",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "a07b1e71-2162-5b13-8326-59f73bdd771e",
+        "outcome": "entered",
+        "run_id": "850bf55d-be6e-42a1-945a-3a428b3fae87",
+        "semantic_step": 1,
+        "sequence": 0,
+        "source_element_id": "036832d2-a8b4-4a93-a1a4-39a06d2c80eb"
+      },
+      {
+        "after": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "before": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "input_ordinal": 1,
+        "kind": "input",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "a07b1e71-2162-5b13-8326-59f73bdd771e",
+        "outcome": "delivered",
+        "run_id": "850bf55d-be6e-42a1-945a-3a428b3fae87",
+        "semantic_step": 2,
+        "sequence": 1,
+        "source_element_id": "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+      },
+      {
+        "after": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "before": "88900c86-5d56-4a96-a9ac-1268117f6ca4",
+        "input_ordinal": 1,
+        "kind": "transition",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "deaa49e8-7548-5a1c-8f04-56a163c4b66d",
+        "outcome": "taken",
+        "run_id": "850bf55d-be6e-42a1-945a-3a428b3fae87",
+        "semantic_step": 2,
+        "sequence": 2,
+        "source_element_id": "0a35ca63-1872-4e57-99b7-b73e7ca1877d"
+      },
+      {
+        "after": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "before": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "input_ordinal": 2,
+        "kind": "input",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "deaa49e8-7548-5a1c-8f04-56a163c4b66d",
+        "outcome": "delivered",
+        "run_id": "850bf55d-be6e-42a1-945a-3a428b3fae87",
+        "semantic_step": 3,
+        "sequence": 3,
+        "source_element_id": "3b909bad-6093-4dbc-ab0a-413634c5ec73"
+      },
+      {
+        "after": "c854ecaf-9e90-4ecd-9cde-e03e88790301",
+        "before": "047d140e-1ba9-4314-bb96-08bff833151e",
+        "input_ordinal": 2,
+        "kind": "transition",
+        "model_revision_id": "5973d671-e3ee-46a5-8903-94f981c0d32d",
+        "occurrence_id": "0e3c334e-564d-5f2b-9fc6-7aa79af01cb2",
+        "outcome": "taken",
+        "run_id": "850bf55d-be6e-42a1-945a-3a428b3fae87",
+        "semantic_step": 3,
+        "sequence": 4,
+        "source_element_id": "25db5be4-b0b4-4aeb-bc45-485b7a412e85"
+      }
+    ]
+  }
+}

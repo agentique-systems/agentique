@@ -1,0 +1,5 @@
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.22s
+     Running `target\debug\examples\binding_manifest.exe`
+Error: "KerML binding manifest is stale"
+error: process didn't exit successfully: `target\debug\examples\binding_manifest.exe` (exit code: 1)

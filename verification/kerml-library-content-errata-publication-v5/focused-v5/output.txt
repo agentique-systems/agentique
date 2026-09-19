@@ -1,0 +1,56 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.21s
+     Running tests\library_authority_conflict.rs (target\debug\deps\library_authority_conflict-8296627a59792564.exe)
+
+running 3 tests
+test correction_fact_evidence_retains_entry_library_profile_and_output_identity ... ok
+test positional_common_ends_and_results_suppress_both_inherited_memberships ... ok
+test two_explicit_type_paths_require_a_common_redefinition_before_publication ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.16s
+
+     Running tests\profiles.rs (target\debug\deps\profiles-27370f3a945e6f96.exe)
+
+running 2 tests
+test operational_context_cannot_smuggle_deleted_descriptors_back_as_an_extension ... ok
+test contexts_bind_profile_artifact_effective_graph_and_errata_content ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s
+
+     Running tests\structural_validation.rs (target\debug\deps\structural_validation-6ec076def998e0a8.exe)
+
+running 4 tests
+test structural_end_checks_reject_directions_and_nonconstant_variable_ends ... ok
+test one_step_feature_chain_is_a_structural_failure_even_with_a_resolved_target ... ok
+test duplicate_feature_names_are_invalid_but_distinct_kinds_remain_distinguishable ... ok
+test redefinition_end_conformance_checks_both_flags_with_exact_evidence ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+     Running tests\library_corrections.rs (target\debug\deps\library_corrections-969596c502cb1007.exe)
+
+running 1 test
+test reviewed_output_identity_is_deterministic_and_content_qualified ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests\project.rs (target\debug\deps\project-58e7d667f93ae3b3.exe)
+
+running 11 tests
+test mixed_project_retains_sysml_and_marks_missing_frontend_evidence_incomplete ... ok
+test recovered_namespaces_block_guessed_denotation_without_poisoning_unrelated_scopes ... ok
+test recovered_type_body_keeps_effective_feature_answers_incomplete ... ok
+test failed_batch_publishes_no_document_or_semantic_revision ... ok
+test adding_a_document_invalidates_an_earlier_namespace_miss ... ok
+test two_documents_share_one_root_and_resolve_in_both_directions ... ok
+test unchanged_document_origin_and_identity_survive_format_and_path_edits ... ok
+test edit_preserves_other_document_and_old_revision_and_rebuilds_dependents ... ok
+test deletion_recreation_and_cross_document_move_allocate_new_ids ... ok
+test many_documents_and_specialization_chain_preserve_one_inherited_feature ... ok
+test authored_redefinition_profile_matrix ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.84s
+

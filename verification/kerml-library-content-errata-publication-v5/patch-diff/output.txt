@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-library-content-errata-publication-v5\verify-patch.py", line 92, in <module>
+    assert a['value']==w['value'],(identifier,prop,a['value'],w['value'])
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('441d6b17-d2d3-57ca-8d96-4a3a9ce0f254', '6181dc51-25be-59cb-8a04-78d75cb8c3be', 'Scalar(Integer(Integer(1)))', 'Scalar(Integer(1))')

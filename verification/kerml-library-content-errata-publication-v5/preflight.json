@@ -1,0 +1,10 @@
+{
+  "base_commit": "33b10f8fe45c2fba55dde0acfa92d44d274e64ab",
+  "branch": "semantics/kerml-library-content-errata-publication-v5",
+  "initial_worktree": "clean, verified before branch creation",
+  "fetch": {
+    "command": "git fetch origin main",
+    "exit_code": 0
+  },
+  "head_matched_origin_main": true
+}

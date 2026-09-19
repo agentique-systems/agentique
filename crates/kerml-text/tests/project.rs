@@ -29,7 +29,12 @@ fn authored_redefinition_profile_matrix() {
     use agq_kerml::BaselineProfile as P;
     let source = "feature Quartz { feature segments; } feature Cobalt { feature signal; feature interval : Quartz :> Quartz::segments { feature capture redefines signal; } }";
     let mut contexts = std::collections::BTreeSet::new();
-    for profile in [P::PublishedKerMl10, P::OPERATIONAL_V1, P::OPERATIONAL_V2] {
+    for profile in [
+        P::PublishedKerMl10,
+        P::OPERATIONAL_V1,
+        P::OPERATIONAL_V2,
+        P::OPERATIONAL_V3,
+    ] {
         let mut project = SourceProject::with_profile(profile).unwrap();
         let m = project
             .apply(project.current().revision(), [add("witness.kerml", source)])
@@ -45,7 +50,7 @@ fn authored_redefinition_profile_matrix() {
             .iter()
             .find(|r| r.kind == agq_kerml_text::syntax::ReferenceKind::Redefinition)
             .unwrap();
-        if profile == P::OPERATIONAL_V2 {
+        if profile.corrects_redefinition_resolution() {
             assert!(
                 matches!(r.resolution.value, Resolution::Resolved(_)),
                 "{:?}",
@@ -63,7 +68,7 @@ fn authored_redefinition_profile_matrix() {
         }
         println!("{}: {:?}", profile.id(), r.resolution.value);
     }
-    assert_eq!(contexts.len(), 3);
+    assert_eq!(contexts.len(), 4);
 }
 
 #[test]

@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-standard-libraries -p agq-metamodel-gen",
+    "started": "2026-09-19T16:18:42.033Z",
+    "durationMs": 10791,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rustdoc.txt"
+  }
+]

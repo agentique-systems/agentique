@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--test",
+    "library_authority_conflict",
+    "--test",
+    "profiles"
+  ],
+  "started_at": "2026-09-19T15:56:58.936095+00:00",
+  "duration_seconds": 8.265999999945052,
+  "exit_code": 0,
+  "output": "output.txt"
+}

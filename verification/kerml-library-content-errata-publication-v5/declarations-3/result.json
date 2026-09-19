@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "library_model_audit",
+    "--",
+    "--declarations-only",
+    "--output=verification/kerml-library-content-errata-publication-v5/declarations-3/model.json"
+  ],
+  "started_at": "2026-09-19T15:17:32.007480+00:00",
+  "duration_seconds": 91.625,
+  "exit_code": 0,
+  "output": "output.txt"
+}
