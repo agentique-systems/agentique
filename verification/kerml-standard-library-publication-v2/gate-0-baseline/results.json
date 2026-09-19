@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo run --release --config profile.release.lto=false --locked --offline -p agq-kerml-text --example library_quality -- --output=verification/kerml-standard-library-publication-v2/gate-0-baseline/library-quality.json",
+    "started": "2026-09-19T09:46:38.301Z",
+    "durationMs": 601201,
+    "exitCode": 1,
+    "signal": null,
+    "log": "library-quality.txt"
+  }
+]

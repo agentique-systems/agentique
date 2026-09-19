@@ -150,3 +150,48 @@ shared through aggregate claims instead of repeated per-member proof expansion.
 Fixed-point propagation can require many rounds; dense redefinition filtering and
 library refinement are not claimed linear. There are no timing-based correctness
 thresholds or claimed production-performance guarantees.
+
+## Publication v2 review, 2026-09-19
+
+Result: **KERML STANDARD LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**.
+
+The historical review above is unchanged. Fresh Gate 0 reproduction on fetched
+main `ad6203b` identifies authority conflict **KLPV2-F-001**. The exact pinned XMI
+participant associations are the subject of open OMG issue KERML11-81. They lack
+a normative derivation from effective ends, and their inverse `1..1` bound rejects
+sharing an inherited Feature between Interactions. A synthetic witness preserves
+original feature identities and confirms ordinary kernel rejection. See the
+[authority analysis](kerml-standard-library-publication-authority-conflict.md)
+and [v2 evidence](../verification/kerml-standard-library-publication-v2/README.md).
+
+This corrects the earlier assumption that every participant blocker necessarily
+has a missing implementation rule. It does not reclassify ordinary unresolved
+references as authority conflicts. No production semantics or validation
+invariants have been changed, and no library publication is accepted.
+
+| V2 acceptance question | Result |
+| --- | --- |
+| 1. All 36 sources parse losslessly? | Yes; baseline reproduced with zero recovery. |
+| 2. Ordinary strict Snapshot publication? | No; strict apply still rejects the candidate. |
+| 3. Required structural references resolved? | No; five unresolved names and 57 incomplete reference answers. |
+| 4. Interaction participants computed correctly? | Blocked by KLPV2-F-001; the required mapping is not normatively defined and conflicts with pinned bounds. |
+| 5. Implicit redefinitions complete? | No new completeness claim; existing obligations remain. |
+| 6. Structural expression/result construction valid? | `incomingTransitionTrigger` is complete in the fresh baseline; broader structural validation remains unaccepted. |
+| 7. Imports/aliases/visibility complete for the corpus? | Substantial existing support; corpus acceptance remains incomplete. |
+| 8. Effective features complete for required semantics? | No; existing query incompleteness is preserved. |
+| 9. Inherited features never copied? | Yes; the new witness explicitly retains the original IDs. |
+| 10. StandardLibrary origins exact? | Existing deterministic source construction retained; no new authored library facts. |
+| 11. Accepted bindings are canonical IDs? | No accepted bindings; 22 candidate bindings remain. |
+| 12. Authored projects resolve accepted libraries? | Not available without accepted publication. |
+| 13. SemanticContext identifies accepted publication? | No; candidate semantics remain unchanged. |
+| 14. Required structural KerML validations implemented? | Not complete; Gate 7 not entered. |
+| 15. Unevaluated executable bodies separated? | Yes; 3,899 remain separately reported. |
+| 16. Semantic quality gate green? | No; fresh command exits 1. |
+| 17. Both structural runtime gates green? | Yes; both fresh commands exit 0. |
+| 18. Strict metamodel diagnostics separately preserved? | Yes; both separate strict conformance commands exit 1. |
+
+The stop follows the explicit authority-conflict policy. Resumption requires an
+adopted correction or an explicit project authority decision about the spurious
+association contract and the milestone's participant requirement. Neither an
+open issue nor a computed effective-end set authorizes a silent exception to
+Snapshot validation.

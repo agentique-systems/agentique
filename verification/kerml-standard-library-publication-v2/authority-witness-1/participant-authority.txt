@@ -1,0 +1,21 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+error[E0609]: no field `source` on type `&&PropertyDescriptor`
+  --> crates\kerml-semantics\tests\participant_contract.rs:50:22
+   |
+50 |             property.source.external_id
+   |                      ^^^^^^ unknown field
+   |
+   = note: available fields are: `id`, `name`, `owner`, `value_kind`, `multiplicity` ... and 9 others
+
+error[E0608]: cannot index into a value of type `BTreeSet<PropertyId>`
+  --> crates\kerml-semantics\tests\participant_contract.rs:54:62
+   |
+54 |     let inverse = registry.property(participant.opposite_ends[0]).unwrap();
+   |                                                              ^^^
+
+Some errors have detailed explanations: E0608, E0609.
+For more information about an error, try `rustc --explain E0608`.
+error: could not compile `agq-kerml-semantics` (test "participant_contract") due to 2 previous errors

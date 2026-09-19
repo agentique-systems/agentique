@@ -1,0 +1,10 @@
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 3.99s
+     Running `target\release\examples\library_obligations.exe --output=verification/kerml-standard-library-publication-v2/gate-0-obligations/obligations.json`
+refinement 0: 0 provisional endpoints; 4008 obligations
+refinement 1: 2121 provisional endpoints; 1887 obligations
+refinement 2: 3777 provisional endpoints; 231 obligations
+refinement 3: 3974 provisional endpoints; 34 obligations
+refinement 4: 3991 provisional endpoints; 17 obligations
+refinement 5: 3998 provisional endpoints; 10 obligations
+Captured 62 reference, 10 structural, 530 query obligations

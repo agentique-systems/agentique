@@ -1,0 +1,95 @@
+{
+  "format": "agentique-authority-conflict/1",
+  "id": "KLPV2-F-001",
+  "category": "F",
+  "status": "unresolved-authority-conflict",
+  "blocks_gates": [
+    0,
+    3,
+    8
+  ],
+  "pinned_authorities": [
+    {
+      "path": "KerML.pdf",
+      "sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697",
+      "clauses": [
+        "7.4.5",
+        "8.3.3.1.10 Type",
+        "8.3.4.4.2 Association",
+        "8.3.4.9.4 Interaction"
+      ],
+      "finding": "Association has derived associationEnd redefining endFeature. Interaction adds no attributes, operations or constraints. participantFeature is absent."
+    },
+    {
+      "path": "standards/normative/kerml-1.0/KerML.xmi",
+      "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+      "finding": "Two association-owned participantFeature navigations exist. Interaction end is non-derived, unordered, 2..*; opposite is 1..1. Association end is derived, ordered, 2..*, subsetting ownedFeature.",
+      "properties": {
+        "Kernel-Connectors-A_participantFeature_Association-participantFeature": [
+          303187,
+          303938
+        ],
+        "Kernel-Connectors-A_participantFeature_Association-": [
+          302897,
+          303176
+        ],
+        "Kernel-Interactions-A_participantFeature_Interaction-participantFeature": [
+          230326,
+          231197
+        ],
+        "Kernel-Interactions-A_participantFeature_Interaction-": [
+          230032,
+          230315
+        ],
+        "Core-Types-Type-ownedFeature": [
+          401236,
+          402228
+        ],
+        "Core-Types-Type-endFeature": [
+          406277,
+          407224
+        ],
+        "Kernel-Associations-Association-associationEnd": [
+          370384,
+          371708
+        ]
+      }
+    }
+  ],
+  "issue": {
+    "url": "https://issues.omg.org/issues/KERML11-81",
+    "status_at_inspection": "open",
+    "inspected": "2026-09-19",
+    "reported_baseline": "KerML 1.0b4",
+    "capture": "KERML11-81.html",
+    "capture_sha256": "b1c8f94e0b684c4a50c91d5053fe93688c46b3cce85970b1df21bdbec143aa6f",
+    "finding": "Reported as obsolete XMI associations absent from the specification document; deletion proposed, with no adopted resolution listed.",
+    "authority_limit": "An open issue is corroborating evidence, not an adopted amendment or authorization to implement KerML 1.1."
+  },
+  "competing_interpretations": [
+    {
+      "interpretation": "Populate participantFeature with effective association ends",
+      "problem": "No retained derivation equates these properties. Reusing one inherited Feature in two Interactions violates the pinned inverse upper bound 1. Subsetting ownedFeature also conflicts with inherited-only features."
+    },
+    {
+      "interpretation": "Retire the two spurious associations from required runtime validation",
+      "problem": "Changes the pinned runtime contract and requested strict Snapshot acceptance. Open issue provides no adopted normative resolution; forbidden without an explicit authority decision."
+    },
+    {
+      "interpretation": "Copy inherited ends or add fresh participants",
+      "problem": "Violates semantic identity and has no normative rule justifying new features."
+    },
+    {
+      "interpretation": "Treat Interaction participantFeature as an overlay-derived associationEnd alias",
+      "problem": "Changes non-derived metadata, ignores inverse bounds, and invents a mapping not supplied by KerML 1.0."
+    }
+  ],
+  "witness": {
+    "test": "crates/kerml-semantics/tests/participant_contract.rs",
+    "result": "authority-witness-3/results.json",
+    "finding": "Two arbitrary Interactions with ordinary specialization share the two original inherited ends. Missing participant links fail strict apply; adding links for both types fails even preview at the inverse 1..1 bound."
+  },
+  "resolution_required": "An adopted normative correction, or an explicit project authority decision changing the metamodel interpretation and this milestone's participant acceptance requirement.",
+  "kernel_or_pins_modified": false,
+  "publication_accepted": false
+}

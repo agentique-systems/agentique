@@ -1,0 +1,10 @@
+[
+  {
+    "command": "python -X utf8 verification/kerml-standard-library-publication-v2/authority-evidence.py",
+    "started": "2026-09-19T10:01:47.358Z",
+    "durationMs": 437,
+    "exitCode": 0,
+    "signal": null,
+    "log": "authority-evidence.txt"
+  }
+]

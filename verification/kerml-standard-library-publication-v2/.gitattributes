@@ -1,0 +1,6 @@
+# Keep literal research captures and command output bytes, including whitespace.
+*.txt -text -whitespace
+*.html -text -whitespace
+*.json -text
+# The full dependency report is machine-readable evidence, not a source diff.
+gate-0-obligations/obligations.json -diff

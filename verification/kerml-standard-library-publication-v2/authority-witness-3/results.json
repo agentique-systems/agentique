@@ -1,0 +1,10 @@
+[
+  {
+    "command": "cargo test --locked --offline -p agq-kerml-semantics --test participant_contract -- --nocapture",
+    "started": "2026-09-19T09:53:51.677Z",
+    "durationMs": 1152,
+    "exitCode": 0,
+    "signal": null,
+    "log": "participant-authority.txt"
+  }
+]
