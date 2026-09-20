@@ -1,0 +1,26 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.66s
+     Running tests\reference_binding_v9.rs (target\debug\deps\reference_binding_v9-cdce8bd83d184ba6.exe)
+
+running 4 tests
+test incomplete_referent_never_becomes_a_complete_endpoint ... ok
+test authored_and_unclassified_implied_bindings_keep_strict_domains_and_binary_shape ... ok
+test seven_profiles_separate_inner_raw_identity_from_outer_contextual_identity ... ok
+test reference_role_adversarial_domains_and_ownership has been running for over 60 seconds
+test reference_role_adversarial_domains_and_ownership ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 77.74s
+
+     Running tests\result_domains_v9.rs (target\debug\deps\result_domains_v9-0e43cc5e478c7bda.exe)
+
+running 2 tests
+test five_rules_and_seven_profiles_have_independent_graphs_and_domains has been running for over 60 seconds
+test valuation_antecedent_and_array_guard_are_not_copied_from_other_rules has been running for over 60 seconds
+test five_rules_and_seven_profiles_have_independent_graphs_and_domains ... ok
+test valuation_antecedent_and_array_guard_are_not_copied_from_other_rules ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 107.53s
+

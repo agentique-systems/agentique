@@ -1,0 +1,31 @@
+{
+  "format": "agentique-reviewed-reference-binding-errata/1",
+  "profile_id": "agentique-kerml-1.0-operational/6",
+  "issue": "KERML11-8",
+  "issue_status": "open",
+  "reviewed_at": "2026-09-20",
+  "authority": "Explicit Agentique project authorization; not an adopted OMG correction",
+  "rule": "checkFeatureReferenceExpressionBindingConnector",
+  "semantic_role": "FeatureReferenceResult",
+  "required_endpoints": [
+    "canonical referent",
+    "canonical raw result"
+  ],
+  "membership": "OwningMembership of the containing FeatureReferenceExpression",
+  "qualifying_endpoint": "Only the raw result owned via ReturnParameterMembership by that same expression",
+  "context": "Use an ordinary unique nearest common featuring context when one exists. Otherwise select the unique nearest direct or indirect featuring context of the expression that features the referent. Never select by traversal order; no unique context is Incomplete.",
+  "validation": "The qualifying result can satisfy featuring conformance through the containing expression context. The referent must satisfy ordinary conformance in that context. Binary binding, binding type conformance and unrelated endpoints remain strictly checked.",
+  "feature_chain_expression_included": false,
+  "feature_chain_scope_reason": "Separately reviewed FeatureChainExpression constraints require a contextual chain and redefinitions, not a direct raw reference-result binding. The pilot conditional alone does not justify extension.",
+  "nested_feature_reference_expression_included": true,
+  "authority_record": "verification/kerml-semantic-closure-v9/reference-binding-authority.json",
+  "authority_sha256": "a01d2e79bd30c4ca86f91219c1b0e6f601ef008a45fa1cde408fcacbf7770bdb",
+  "prohibitions": [
+    "No global connector exception",
+    "No all-implied exemption",
+    "No authored exemption",
+    "No raw-result identity or variable-flag change",
+    "No invented supertype",
+    "No source changes"
+  ]
+}

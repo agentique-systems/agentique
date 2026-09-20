@@ -1,0 +1,151 @@
+{
+  "format": "agentique-v9-gates/1",
+  "authority_stop": "KLCV9-F-001",
+  "gates": [
+    {
+      "gate": 0,
+      "status": "Verified",
+      "evidence": "reference-binding-authority.json"
+    },
+    {
+      "gate": 1,
+      "status": "VerifiedExcludedDirectFeatureChainExpression",
+      "evidence": "reference-binding-authority.json#/feature_chain_scope"
+    },
+    {
+      "gate": 2,
+      "status": "Registered",
+      "evidence": "../../standards/kerml-1.0-operational-profile-v6.json"
+    },
+    {
+      "gate": 3,
+      "status": "ImplementedFixtureVerified",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 4,
+      "status": "ImplementedFixtureVerified",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 5,
+      "status": "ImplementedFixtureVerified",
+      "evidence": "reference-binding-authority.json#/default_featuring_type"
+    },
+    {
+      "gate": 6,
+      "status": "FixtureMatrixPassed",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 7,
+      "status": "ImplementedFixtureVerified",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 8,
+      "status": "ImplementedFixtureVerified",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 9,
+      "status": "ImplementedFixtureVerified",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 10,
+      "status": "ImplementedFixtureVerified",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 11,
+      "status": "ImplementedFixtureVerifiedPublishedArrayGuardRetained",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 12,
+      "status": "ImplementedFixtureVerifiedNoExecution",
+      "evidence": "reference-result-matrices-final/result.json"
+    },
+    {
+      "gate": 13,
+      "status": "FixtureMatrixPassed",
+      "evidence": "seven-profile-lineage/result.json"
+    },
+    {
+      "gate": 14,
+      "status": "IndependentAuthorityConflict",
+      "evidence": "cross-feature-authority-conflict.json"
+    },
+    {
+      "gate": 15,
+      "status": "OrdinaryWorkOutstandingAtAuthorityStop",
+      "evidence": "baseline-quality.json"
+    },
+    {
+      "gate": 16,
+      "status": "OrdinaryWorkOutstandingAtAuthorityStop",
+      "evidence": "baseline-quality.json"
+    },
+    {
+      "gate": 17,
+      "status": "OrdinaryWorkOutstandingAtAuthorityStop",
+      "evidence": "baseline-quality.json"
+    },
+    {
+      "gate": 18,
+      "status": "CorpusClosureOutstandingAtAuthorityStop",
+      "evidence": "feature-chain-structural-audit.json"
+    },
+    {
+      "gate": 19,
+      "status": "CorpusClosureOutstandingAtAuthorityStop",
+      "evidence": "positional-redefinition-audit.json"
+    },
+    {
+      "gate": 20,
+      "status": "NotClosed",
+      "evidence": "authority-applicability.json"
+    },
+    {
+      "gate": 21,
+      "status": "NoStructuralExecutionDeferrals",
+      "evidence": "authority-applicability.json"
+    },
+    {
+      "gate": 22,
+      "status": "AcceptanceOperationNotFinalized",
+      "evidence": "strict-publication-status.json"
+    },
+    {
+      "gate": 23,
+      "status": "NotAccepted",
+      "evidence": "strict-publication-status.json"
+    },
+    {
+      "gate": 24,
+      "status": "NotRegeneratedWithoutAcceptance",
+      "evidence": "strict-publication-status.json"
+    },
+    {
+      "gate": 25,
+      "status": "NotIssuedWithoutAcceptance",
+      "evidence": "strict-publication-status.json"
+    },
+    {
+      "gate": 26,
+      "status": "NotClaimedWithoutAcceptedLibraries",
+      "evidence": "strict-publication-status.json"
+    },
+    {
+      "gate": 27,
+      "status": "FullAcceptanceStressNotClaimed",
+      "evidence": "strict-publication-status.json"
+    },
+    {
+      "gate": 28,
+      "status": "Documented",
+      "evidence": "../../docs/adr/0019-operational-reference-binding-correction.md"
+    }
+  ]
+}

@@ -581,3 +581,71 @@ force, and ordinary structural implementation remains required after this new
 authority conflict is resolved.
 
 **KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**
+
+## V9 — narrow reference-binding correction and independent cross-feature stop
+
+Operational v6 is registered with separately pinned result-domain and
+reference-binding manifests. Its typed implied-binding role retains the raw
+referent/result identities, and only the expression-owned result endpoint can
+qualify for the reviewed featuring exception. Ordinary connector featuring
+validation remains strict. Direct FeatureChainExpression bindings were reviewed
+separately and excluded. The five KERML11-145 structural producers and ordered
+contextual-result primitive are implemented and tested under all seven profiles.
+This is not a completed corpus publication.
+
+The applicability review independently establishes **KLCV9-F-001 / KERML11-1**
+in the unchanged incoming/outgoing self-transfer end values in Occurrences.
+The literal published cross-feature selector selects the value Expression. Even
+if its misplaced FeatureValue exclusion is interpreted as a membership exclusion,
+it selects the required value BindingConnector instead. Both require the exact
+containing-feature domain while cross-feature semantics require a different
+domain. The literal Cartesian branch also fails. Complete local source/reference
+facts and an arbitrary-name canonical seven-profile reproduction are retained in
+the [authority report](kerml-cross-feature-authority-conflict.md).
+
+The current pilot excludes these members, but that changes cross-feature
+selection and is outside v1–v6. The issue remains open. No correction is adopted.
+This new independently proven contradiction is the stop reason. The ordinary
+reference, Triggers, chain, positional, validation and publication work remains
+required; none is treated as a new authority conflict or runtime evaluation.
+
+The fresh unchanged-v5 audit measures 29,140 canonical records, 4,000 references,
+4 unresolved references, 64 incomplete reference answers, no ambiguous candidate
+sets or stored endpoint mismatches, no EndFeatureMembership or result-cardinality
+findings, 2 distinguishability findings, and 3,901 unevaluated executable elements.
+The inventory still contains 258 named constraints and 410 retained tracker
+issues. These are fresh measurements, not asserted historical expectations, and
+are explicitly not represented as measurements of a completed v6 expansion.
+
+| Required review question | V9 answer |
+| --- | --- |
+| 1. All pinned bytes unchanged? | Yes; preservation verifies all 2,848 starting standards/evidence files and 18 new acquisitions. No source/spec/library bytes are patched. |
+| 2. KERML11-8 accurately open? | Yes; current issue status, update date, pilot, reference XMI and preliminary evidence are retained separately. |
+| 3. V6 keeps raw referent/result identities? | Yes; the reference binding retains both. Contextual results belong to the separately reviewed result-domain rules. |
+| 4. Featuring exception limited to the reviewed role? | Yes; typed rule provenance, exact endpoints, membership ownership, binary shape and selected context are checked. |
+| 5. Ordinary bindings still strictly checked? | Yes for featuring conformance; authored, unclassified implied and other-role connectors receive no exception. Full corpus constraint acceptance is not claimed. |
+| 6. FeatureChainExpression independently justified? | Its direct case is excluded; nested FeatureReferenceExpressions qualify only through their own role. |
+| 7. All five KERML11-145 rules implemented? | Five distinct producers and the seven-profile fixture matrix pass. Full corpus structural expansion/validation remains unclosed at the new conflict. |
+| 8. ControlFunctions::'.' passes inner and outer rules? | The exact authority graph and independent canonical inner/outer tests establish the two corrections separately; no full accepted-corpus pass is claimed. |
+| 9. Unresolved references zero? | No; the fresh unchanged-v5 baseline has 4. Renamed-member lookup remains ordinary work. |
+| 10. Incomplete required references zero? | No; the fresh unchanged-v5 baseline has 64. A unique incomplete answer remains Incomplete. |
+| 11. Distinguishability findings zero? | No; the two Triggers findings remain ordinary inference work. |
+| 12. Feature-chain expansion complete? | The reusable contextual-result chain is implemented; complete corpus chain closure is outstanding. |
+| 13. Positional semantics complete? | Existing positional behavior is regression-tested; full corpus differential closure is outstanding. |
+| 14. All 258 statuses closed? | No; the gate remains failed at KLCV9-F-001. Missing structural implementation is explicit. |
+| 15. Exercised open-issue risks disposed? | KERML11-8/145 are covered by the authorized profile; KERML11-1 has a complete positive conflict proof. The remaining applicability review is not claimed complete. |
+| 16. Strict semantic publication passes? | No accepted publication is issued. |
+| 17. Accepted bindings current? | No; accepted regeneration requires publication first. Historical bindings remain preserved. |
+| 18. LoadedKermlStandardLibraries available? | No accepted facade is issued. |
+| 19. Authored projects consume it? | No accepted-library consumption is claimed. |
+| 20. Historical profiles reproducible? | Frozen manifests/identities are preserved; seven-profile boundaries and existing historical regressions are tested. |
+| 21. Executable semantics separate? | Yes; no values execute and no structural constraint is reclassified as DeferredExecution. |
+| 22. Both structural runtime gates green? | Yes; both complete runtime commands exit zero. Strict Rustdoc also exits zero. These remain separate from library acceptance and raw metamodel conformance. |
+
+[ADR 0019](adr/0019-operational-reference-binding-correction.md) records the
+operational decision. [V9 verification](../verification/kerml-semantic-closure-v9/README.md)
+records actual commands, exit codes, failures, repairs and the precise uncompleted
+gates. Systems Library publication, SysML semantics/frontends, persistence/APIs,
+execution and application migration remain outside this change.
+
+**KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**

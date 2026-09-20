@@ -1,0 +1,19 @@
+{
+  "measured_at": "2026-09-20T09:57:32.505Z",
+  "command": "node tools/process-test.mjs",
+  "result": "pass",
+  "workspace": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\.workspaces\\restart-d28b99d7-4495-4265-984b-0f1058d40d14.db",
+  "model_revision_id": "8c624469-6c44-4c9f-afdd-06b476c18a61",
+  "run_id": "e7b325fb-d8e2-4374-83e7-89d817c06b9f",
+  "acknowledged_checkpoint": "e7b325fb-d8e2-4374-83e7-89d817c06b9f:2:2:paused",
+  "recovered_status": "interrupted",
+  "trace_records": 3,
+  "assertions": [
+    "forced process termination",
+    "durable checkpoint and trace preserved",
+    "unfinished run interrupted",
+    "invalid draft recovered",
+    "provider unavailable does not prevent manual operations",
+    "reset creates new run"
+  ]
+}

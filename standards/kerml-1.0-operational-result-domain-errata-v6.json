@@ -1,0 +1,47 @@
+{
+  "format": "agentique-reviewed-result-domain-errata/1",
+  "profile_id": "agentique-kerml-1.0-operational/6",
+  "extends": {
+    "profile_id": "agentique-kerml-1.0-operational/5",
+    "manifest": "standards/kerml-1.0-operational-formal-target-errata-v5.json",
+    "sha256": "f9f95648d6f300dc60126f48196eadd295f7c12351804d18c9d718c1c1b08a97"
+  },
+  "issue": "KERML11-145",
+  "issue_status": "open",
+  "reviewed_at": "2026-09-20",
+  "authority": "Explicit Agentique project authorization; not an adopted OMG correction",
+  "entries": [
+    {
+      "rule": "checkFeatureValuationSpecialization",
+      "external_rule_id": "Core-Features-Feature-checkFeatureValuationSpecialization",
+      "published_body": "direction = null and ownedSpecializations->forAll(isImplied) implies     ownedMembership->         selectByKind(FeatureValue)->         forAll(fv | specializes(fv.value.result))",
+      "operational_interpretation": "Keep the published direction and all-implied-specialization antecedent; imply Subsetting to a distinct contextual Feature with chainingFeature=[value,value.result]. Reuse that structural chain concept with checkFeatureValueBindingConnector, preserving its separate non-default and initial-value conditions."
+    },
+    {
+      "rule": "checkExpressionResultBindingConnector",
+      "external_rule_id": "Kernel-Functions-Expression-checkExpressionResultBindingConnector",
+      "published_body": "ownedMembership.selectByKind(ResultExpressionMembership)->     forAll(mem | ownedFeature.selectByKind(BindingConnector)->         exists(binding |             binding.relatedFeature->includes(result) and             binding.relatedFeature->includes(mem.ownedResultExpression.result)))",
+      "operational_interpretation": "Relate the outer raw result to contextual_result(nestedExpression); own the BindingConnector through FeatureMembership of the outer Expression. Its required featuring domain follows that ownership. Prove both endpoints are featured within that domain; no arbitrary added domain or raw-result substitution is permitted."
+    },
+    {
+      "rule": "checkFunctionResultBindingConnector",
+      "external_rule_id": "Kernel-Functions-Function-checkFunctionResultBindingConnector",
+      "published_body": "ownedMembership.selectByKind(ResultExpressionMembership)->     forAll(mem | ownedFeature.selectByKind(BindingConnector)->         exists(binding |             binding.relatedFeature->includes(result) and             binding.relatedFeature->includes(mem.ownedResultExpression.result)))",
+      "operational_interpretation": "Relate the canonical Function result (including an inherited result) to contextual_result(resultExpression), owned via Function FeatureMembership and featured by the Function. Retain the inherited result identity and prove compatibility through existing specialization."
+    },
+    {
+      "rule": "checkIndexExpressionResultSpecialization",
+      "external_rule_id": "Kernel-Expressions-IndexExpression-checkIndexExpressionResultSpecialization",
+      "published_body": "arguments->notEmpty() and  not arguments->first().result.specializesFromLibrary('Collections::Array') implies     result.specializes(arguments->first().result)",
+      "operational_interpretation": "Preserve the published Array conditional pending independent review of KERML11-69; within the applicable branch, subset the distinct [firstArgument,firstArgument.result] chain. Complete argument featuring evidence rather than changing index collection semantics."
+    },
+    {
+      "rule": "checkSelectExpressionResultSpecialization",
+      "external_rule_id": "Kernel-Expressions-SelectExpression-checkSelectExpressionResultSpecialization",
+      "published_body": "arguments->notEmpty() implies result.specializes(arguments->first().result)",
+      "operational_interpretation": "Preserve the argument-existence antecedent and result meaning; subset the [firstArgument,firstArgument.result] contextual chain with complete featuring evidence. No filtering or runtime evaluation is introduced."
+    }
+  ],
+  "index_guard": "Collections::Array; KERML11-69 is not adopted",
+  "identity": "Distinct implied Feature with ordered chain [expression, canonical raw result]; profile, rule, subject and output identities; original source unchanged"
+}

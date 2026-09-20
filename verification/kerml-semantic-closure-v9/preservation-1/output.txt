@@ -1,0 +1,2 @@
+{"format": "agentique-v9-preservation/1", "base_commit": "62652e2841e4480d8067ebcc55b5a77a512f476a", "original_files": 2848, "unchanged": true, "verified_new_acquisitions": 18, "historical_manifests_and_evidence_modified": false, "discrepancies_already_present_on_clean_main": true}
+Inherited acquisition-index discrepancies: 9

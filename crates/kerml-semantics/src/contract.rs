@@ -16,6 +16,8 @@ pub enum Completeness {
 /// Set reads remain dependencies even when empty. Match pre- AND post-change state.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SearchDependency {
+    /// The semantic producer role, including the absence of such provenance.
+    ImpliedBindingRole(Option<crate::ImpliedBindingRole>),
     /// Explicit profile-scoped redefinition search, including unsuccessful scopes.
     RedefinitionScope {
         relationship: ElementId,
@@ -105,6 +107,7 @@ pub enum QueryKind {
     NamingSource,
     RedefinitionEndConformance,
     FormalConstraintTarget,
+    ConnectorFeaturing,
 }
 
 /// Subject is part of every conclusion; a target ID alone cannot identify a proof.
@@ -125,6 +128,8 @@ pub enum Evidence {
 /// Stable within RULE_SET_VERSION. Exact normative anchors are in ADR 0005.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
+    ImpliedBinding(crate::ImpliedBindingRole),
+    ConnectorFeaturing,
     StoredRelationship,
     InverseAssociation,
     ElementOwner,

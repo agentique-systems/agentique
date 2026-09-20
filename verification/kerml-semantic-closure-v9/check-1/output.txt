@@ -1,0 +1,111 @@
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+error[E0599]: no method named `all_redefined_features` found for reference `&queries::KerMlQueries<'_>` in the current scope
+   --> crates\kerml-semantics\src\featuring.rs:100:25
+    |
+100 |         let left = self.all_redefined_features(ty);
+    |                         ^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: there is a method `redefined_features` with a similar name
+    |
+100 -         let left = self.all_redefined_features(ty);
+100 +         let left = self.redefined_features(ty);
+    |
+
+error[E0599]: no method named `all_redefined_features` found for reference `&queries::KerMlQueries<'_>` in the current scope
+   --> crates\kerml-semantics\src\featuring.rs:101:26
+    |
+101 |         let right = self.all_redefined_features(other);
+    |                          ^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: there is a method `redefined_features` with a similar name
+    |
+101 -         let right = self.all_redefined_features(other);
+101 +         let right = self.redefined_features(other);
+    |
+
+error[E0624]: method `structural_end_features` is private
+   --> crates\kerml-semantics\src\featuring.rs:190:23
+    |
+190 |         let ends=self.structural_end_features(connector);
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^ private method
+    |
+   ::: crates\kerml-semantics\src\implicit.rs:429:5
+    |
+429 |     fn structural_end_features(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
+    |     ------------------------------------------------------------------------------- private method defined here
+
+error[E0308]: mismatched types
+   --> crates\kerml-semantics\src\featuring.rs:253:102
+    |
+253 |         out.value.valid=out.value.ordinary_valid.iter().zip(&out.value.exception_applied).all(|(a,b)|a||b)
+    |                                                                                                      ^ expected `bool`, found `&bool`
+    |
+help: consider dereferencing the borrow
+    |
+253 |         out.value.valid=out.value.ordinary_valid.iter().zip(&out.value.exception_applied).all(|(a,b)|*a||b)
+    |                                                                                                      +
+
+error[E0308]: mismatched types
+   --> crates\kerml-semantics\src\featuring.rs:253:105
+    |
+253 |         out.value.valid=out.value.ordinary_valid.iter().zip(&out.value.exception_applied).all(|(a,b)|a||b)
+    |                                                                                                         ^ expected `bool`, found `&bool`
+    |
+help: consider dereferencing the borrow
+    |
+253 |         out.value.valid=out.value.ordinary_valid.iter().zip(&out.value.exception_applied).all(|(a,b)|a||*b)
+    |                                                                                                         +
+
+error[E0599]: no function or associated item named `parse` found for struct `resolution::QualifiedName` in the current scope
+   --> crates\kerml-semantics\src\result_structure.rs:242:91
+    |
+242 | ...                   let resolution=self.resolve_reference(subject,&QualifiedName::parse("Collections::Array").expect("fixed path"));
+    |                                                                                     ^^^^^ function or associated item not found in `resolution::QualifiedName`
+    |
+   ::: crates\kerml-semantics\src\resolution.rs:8:1
+    |
+  8 | pub struct QualifiedName {
+    | ------------------------ function or associated item `parse` not found for this struct
+
+error[E0061]: this method takes 3 arguments but 2 arguments were supplied
+   --> crates\kerml-semantics\src\result_structure.rs:242:49
+    |
+242 | ...                   let resolution=self.resolve_reference(subject,&QualifiedName::parse("Collections::Array").expect("fixed path"));
+    |                                           ^^^^^^^^^^^^^^^^^-------------------------------------------------------------------------- argument #3 of type `MetaclassId` is missing
+    |
+note: method defined here
+   --> crates\kerml-semantics\src\resolution.rs:660:12
+    |
+660 |     pub fn resolve_reference(
+    |            ^^^^^^^^^^^^^^^^^
+...
+664 |         expected: MetaclassId,
+    |         ---------------------
+help: provide the argument
+    |
+242 -                             let resolution=self.resolve_reference(subject,&QualifiedName::parse("Collections::Array").expect("fixed path"));
+242 +                             let resolution=self.resolve_reference(subject, &QualifiedName::parse("Collections::Array").expect("fixed path"), /* MetaclassId */);
+    |
+
+error[E0599]: no method named `as_slice` found for enum `Resolution` in the current scope
+    --> crates\kerml-semantics\src\result_structure.rs:244:65
+     |
+ 244 | ...   if let [candidate]=resolution.value.as_slice(){let supers=self.all_specializations(raw);applies=raw!=candidate.element&&!supers.val...
+     |                                           ^^^^^^^^ method not found in `Resolution`
+     |
+    ::: crates\kerml-semantics\src\resolution.rs:13:1
+     |
+  13 | pub enum Resolution {
+     | ------------------- method `as_slice` not found for this enum
+     |
+note: the method `as_slice` exists on the type `Vec<ElementId>`
+    --> C:\Users\phili\.rustup\toolchains\1.92.0-x86_64-pc-windows-msvc\lib/rustlib/src/rust\library\alloc\src\vec\mod.rs:1623:5
+     |
+1623 |     pub const fn as_slice(&self) -> &[T] {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some errors have detailed explanations: E0061, E0308, E0599, E0624.
+For more information about an error, try `rustc --explain E0061`.
+error: could not compile `agq-kerml-semantics` (lib) due to 8 previous errors

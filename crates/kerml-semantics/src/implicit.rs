@@ -426,7 +426,7 @@ impl KerMlQueries<'_> {
     /// Structural end ordering used by checkFeatureEndRedefinition and binary
     /// association specialization. Compute before library implications to avoid
     /// circularly assuming the very binary base whose obligation is being tested.
-    fn structural_end_features(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
+    pub(crate) fn structural_end_features(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
         use std::collections::{BTreeMap, BTreeSet, VecDeque};
         let mut out = self.result(vec![]);
         let mut graph = BTreeMap::new();

@@ -61,6 +61,7 @@ pub struct DerivationBuilder {
     declared: Snapshot,
     elements: Vec<ElementInput>,
     properties: Vec<(ElementId, PropertyId, SlotValue, Explanation)>,
+    extensions: Vec<(ElementId, PropertyId, Vec<ElementId>, Explanation)>,
     failures: BTreeMap<(ElementId, PropertyId), ComputationFailure>,
     searches: BTreeMap<FactKey, BTreeSet<StructuralSearch>>,
 }
@@ -71,6 +72,7 @@ impl DerivationBuilder {
             declared,
             elements: Vec::new(),
             properties: Vec::new(),
+            extensions: Vec::new(),
             failures: BTreeMap::new(),
             searches: BTreeMap::new(),
         }
@@ -105,6 +107,21 @@ impl DerivationBuilder {
     ) -> &mut Self {
         self.properties
             .push((element, property, value, explanation));
+        self
+    }
+    /// Append inferred references to a stored ordered collection in the overlay.
+    /// The declared slot remains unchanged and is automatically retained as
+    /// evidence. This cannot replace, remove, reorder, or duplicate a declared
+    /// value. The final merged model still passes every ordinary storage check.
+    pub fn extend_ordered_references(
+        &mut self,
+        element: ElementId,
+        property: PropertyId,
+        additions: Vec<ElementId>,
+        explanation: Explanation,
+    ) -> &mut Self {
+        self.extensions
+            .push((element, property, additions, explanation));
         self
     }
     /// Supply search evidence for a computed or unsuccessful result. Absence in a
@@ -186,6 +203,59 @@ impl DerivationBuilder {
                 explanations.insert(key, evidence);
             }
             records.insert(id, Arc::new(record));
+        }
+        for (element, property, additions, mut explanation) in self.extensions {
+            let descriptor = registry.property(property).map_err(ModelError::from)?;
+            if descriptor.derived
+                || !descriptor.ordered
+                || !matches!(
+                    registry
+                        .storage_kind(descriptor.value_kind)
+                        .map_err(ModelError::from)?,
+                    crate::metamodel::ValueKind::Reference(_)
+                )
+                || !registry
+                    .supports_slot_storage(property)
+                    .map_err(ModelError::from)?
+            {
+                return Err(DerivationError::InvalidCollectionExtension { element, property });
+            }
+            let key = FactKey::Property { element, property };
+            if explanations.contains_key(&key) {
+                return Err(DerivationError::DuplicateFact(key));
+            }
+            let record = records
+                .get_mut(&element)
+                .ok_or(ModelError::UnknownElement(element))?;
+            let mut values = match record.slot(property).map(|slot| slot.value()) {
+                Some(SlotValue::Ordered(values)) => {
+                    explanation.dependencies.insert(Dependency::Declared(key));
+                    values.clone()
+                }
+                None => Vec::new(),
+                _ => return Err(DerivationError::InvalidCollectionExtension { element, property }),
+            };
+            for addition in additions {
+                let value = crate::value::Value::Reference(addition);
+                if values.contains(&value) {
+                    return Err(DerivationError::InvalidCollectionExtension { element, property });
+                }
+                values.push(value);
+                explanation
+                    .dependencies
+                    .insert(Dependency::Derived(FactKey::Element(addition)));
+            }
+            explanation
+                .dependencies
+                .insert(Dependency::Declared(FactKey::Element(element)));
+            Arc::make_mut(record).slots.insert(
+                property,
+                Slot {
+                    value: SlotValue::Ordered(values),
+                    origin: Origin::Derived(explanation.clone()),
+                },
+            );
+            explanations.insert(key, explanation);
         }
         let mut derived_navigation = BTreeMap::new();
         for (element, property, mut value, mut explanation) in self.properties {
@@ -340,6 +410,13 @@ impl DerivationBuilder {
 /// Invalid inference results, distinct from the truth or validity of a semantic rule.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum DerivationError {
+    #[error("derivation input does not match the bound immutable semantic view")]
+    InputContextMismatch,
+    #[error("invalid monotone ordered-reference extension {element}/{property}")]
+    InvalidCollectionExtension {
+        element: ElementId,
+        property: PropertyId,
+    },
     #[error("search evidence has no computation subject {0:?}")]
     MissingSearchSubject(FactKey),
     #[error("computed fact depends on incomplete or invalid result {0:?}")]

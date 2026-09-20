@@ -1,0 +1,23 @@
+{
+  "format": "agentique-v9-publication-status/1",
+  "profile": "agentique-kerml-1.0-operational/6",
+  "profile_registered": true,
+  "producer_fixtures_verified": true,
+  "authority_conflict": "KLCV9-F-001 / KERML11-1",
+  "current_counts_scope": "Fresh unchanged v5 production audit, launched before v9 semantics edits. Not a completed v6 corpus expansion.",
+  "required_references_complete": false,
+  "structural_coverage_closed": false,
+  "authority_applicability_closed": false,
+  "complete_corpus_v6_expansion_verified": false,
+  "acceptance_operation_finalized": false,
+  "semantic_publication_accepted": false,
+  "accepted_snapshot_ids": [],
+  "accepted_bindings_regenerated": false,
+  "loaded_kerml_standard_libraries_available": false,
+  "authored_accepted_library_consumption": false,
+  "full_resource_acceptance": false,
+  "executable_semantics_implemented": false,
+  "structural_rules_deferred_as_execution": 0,
+  "kernel_snapshot_validity_is_semantic_acceptance": false,
+  "completion": "KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED"
+}

@@ -1,0 +1,6 @@
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+       Fixed crates\kerml-semantics\src\featuring.rs (1 fix)
+       Fixed crates\kerml-semantics\src\result_structure.rs (3 fixes)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.34s
