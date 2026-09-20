@@ -1,0 +1,13 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.09s
+     Running tests\result_domains_v9.rs (target\debug\deps\result_domains_v9-0e43cc5e478c7bda.exe)
+
+running 2 tests
+test valuation_antecedent_and_array_guard_are_not_copied_from_other_rules ... ok
+test five_rules_and_seven_profiles_have_independent_graphs_and_domains ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.19s
+

@@ -1,0 +1,9 @@
+{
+  "format": "agentique-v9-chain-audit/1",
+  "contextual_result_primitive_implemented": true,
+  "ordered_chain_preserved": true,
+  "raw_identity_retained": true,
+  "fixture_matrix": "reference-result-matrices-final/result.json",
+  "full_corpus_complete": false,
+  "reason": "Complete corpus expansion remains required after the independently proven cross-feature authority decision."
+}

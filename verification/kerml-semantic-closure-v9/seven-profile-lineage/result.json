@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml",
+    "--test",
+    "profile_lineage_v9"
+  ],
+  "started": "2026-09-20T09:55:16.715975+00:00",
+  "duration_seconds": 1.452999999979511,
+  "exit_code": 0,
+  "output": "output.txt"
+}

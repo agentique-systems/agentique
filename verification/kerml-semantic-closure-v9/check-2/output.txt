@@ -1,0 +1,2 @@
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.89s

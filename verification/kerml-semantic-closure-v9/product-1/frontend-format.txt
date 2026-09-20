@@ -1,0 +1,6 @@
+
+> agentique@0.1.0 format:check
+> prettier --check console/src console/*.ts tests/browser tools/*.mjs playwright.config.ts
+
+Checking formatting...
+All matched files use Prettier code style!

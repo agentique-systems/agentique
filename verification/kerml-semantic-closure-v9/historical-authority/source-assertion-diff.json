@@ -1,0 +1,47 @@
+{
+  "original_assertions": 4003,
+  "active_assertions": 4000,
+  "superseded_assertions": 3,
+  "unreviewed_removals": 0,
+  "unreviewed_rewrites": 0,
+  "all_original_assertions_preserved": true,
+  "superseded": [
+    {
+      "absolute": false,
+      "expected": "15066a0c-7221-5fd2-a941-648d0876392f",
+      "expression_context": false,
+      "membership_target": false,
+      "name": [
+        "Surface"
+      ],
+      "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+      "relationship": "439218e6-e0cf-597f-8a1e-4195f072104b",
+      "source_origin": "SourceOrigin { document: DocumentId(247241271040760380873886172722090511826), revision: SourceRevisionId(94013285949147005277674388557161085554), range: ByteRange { start: 5161, end: 5168 }, syntax_node: Some(SyntaxNodeId(313995215660854095237807120778739761409)) }"
+    },
+    {
+      "absolute": false,
+      "expected": "15066a0c-7221-5fd2-a941-648d0876392f",
+      "expression_context": false,
+      "membership_target": false,
+      "name": [
+        "Curve"
+      ],
+      "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+      "relationship": "9b28db85-76f4-57cd-af27-0ce32f059265",
+      "source_origin": "SourceOrigin { document: DocumentId(247241271040760380873886172722090511826), revision: SourceRevisionId(94013285949147005277674388557161085554), range: ByteRange { start: 5601, end: 5606 }, syntax_node: Some(SyntaxNodeId(180812067239591313737307323287882850681)) }"
+    },
+    {
+      "absolute": false,
+      "expected": "15066a0c-7221-5fd2-a941-648d0876392f",
+      "expression_context": false,
+      "membership_target": false,
+      "name": [
+        "Point"
+      ],
+      "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+      "relationship": "da17cacf-d835-5c29-b2fa-edc4edfb810b",
+      "source_origin": "SourceOrigin { document: DocumentId(247241271040760380873886172722090511826), revision: SourceRevisionId(94013285949147005277674388557161085554), range: ByteRange { start: 5948, end: 5953 }, syntax_node: Some(SyntaxNodeId(297334024511214511820240599023090794835)) }"
+    }
+  ],
+  "scope": "Source assertions remain distinct from operational fixed relationship facts and resolution completeness."
+}

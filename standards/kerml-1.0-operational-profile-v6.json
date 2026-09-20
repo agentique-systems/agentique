@@ -1,0 +1,19 @@
+{
+  "format": "agentique-operational-semantic-profile/1",
+  "profile_id": "agentique-kerml-1.0-operational/6",
+  "extends": {
+    "profile_id": "agentique-kerml-1.0-operational/5",
+    "manifest": "standards/kerml-1.0-operational-formal-target-errata-v5.json",
+    "sha256": "f9f95648d6f300dc60126f48196eadd295f7c12351804d18c9d718c1c1b08a97"
+  },
+  "manifests": [
+    {
+      "path": "standards/kerml-1.0-operational-result-domain-errata-v6.json",
+      "sha256": "e901987dce4e2b05de3ecd09a2644128343d47d2e84a147f022b6d326898d5fc"
+    },
+    {
+      "path": "standards/kerml-1.0-operational-reference-binding-errata-v6.json",
+      "sha256": "5cdf9c17b4a3efdb84ec9c19d371a669a768fd8f00adb171379b2d73ea7bee20"
+    }
+  ]
+}

@@ -207,3 +207,40 @@ dependency is exposed. The
 [258-rule authority map](../standards/kerml-1.0-constraint-authority-map.json)
 records the early conflict and other unapproved risk metadata. It is a preflight
 inventory, not a closed validation or publication gate.
+
+## V9: registered v6 result-domain and reference-binding interpretation
+
+The v9 authorization supersedes the v8 stop on KERML11-8. The new immutable
+`agentique-kerml-1.0-operational/6` identity extends v5 with the five KERML11-145
+result-domain producers and the narrow KERML11-8 reference-result validation
+rule. [ADR 0019](adr/0019-operational-reference-binding-correction.md) and the
+[v6 aggregate manifest](../standards/kerml-1.0-operational-profile-v6.json) specify
+the independent correction digests and scope. V1–v5, their IDs and frozen
+manifests remain unchanged; the default stays v2.
+
+`ImpliedBindingRole::FeatureReferenceResult` is recorded through deterministic
+rule provenance. It retains the referent and raw result. Only the raw result
+owned by the containing FeatureReferenceExpression can receive the domain
+exception; the referent remains subject to ordinary domain conformance.
+Authored bindings, other implied roles, extra ends and reversed endpoint roles
+do not qualify. Context selection requires a unique nearest valid domain.
+The separately reviewed FeatureChainExpression case is excluded; nested
+FeatureReferenceExpressions keep their own role.
+
+The five KERML11-145 producers use distinct antecedents and ordered contextual
+result chains. The published IndexExpression Array guard remains intact.
+Seven-profile tests establish the v6 boundary independently for the inner
+reference binding and outer Function binding. Snapshot overlays preserve the
+declared input and carry profile-qualified provenance. Cross-profile overlay
+reuse is rejected.
+
+This registration does **not** establish complete library semantic acceptance.
+The subsequent review independently proves
+[KLCV9-F-001 / KERML11-1](kerml-cross-feature-authority-conflict.md) in two pinned
+Occurrences end-value declarations. Cross-feature selection imposes a domain
+incompatible with the Expression/FeatureValue binding requirements. V6 does not
+adopt the pilot's extra cross-feature exclusions. The corpus closure, acceptance,
+accepted binding and facade stages remain blocked at that new authority decision.
+The [v9 record](../verification/kerml-semantic-closure-v9/README.md) separates the
+implemented producer tests, fresh unchanged-v5 measurements, and uncompleted
+publication gates. No structural obligation is deferred as executable semantics.

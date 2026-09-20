@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/15";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/16";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -32,6 +32,10 @@ pub struct SemanticContextId {
     pub metamodel_version: &'static str,
     /// Reviewed errata content identity; None is the exact published profile.
     pub errata_manifest_digest: Option<[u8; 32]>,
+    /// Independent reviewed KERML11-145 manifest identity.
+    pub result_domain_manifest_digest: Option<[u8; 32]>,
+    /// Independent reviewed KERML11-8 manifest identity.
+    pub reference_binding_manifest_digest: Option<[u8; 32]>,
     pub descriptor_digest: [u8; 32],
     pub rule_set_version: &'static str,
     pub pinned_libraries: BTreeSet<LibraryPin>,
@@ -236,6 +240,9 @@ impl<'m> SemanticContext<'m> {
             matches!(origin,
             Origin::Declared(DeclaredOrigin::ReviewedCorrection { profile: correction, .. })
                 if !profile.accepts_correction_profile(correction))
+                || matches!(origin, Origin::Derived(explanation)
+                    if crate::result_structure::structural_rule_profile(explanation.rule)
+                        .is_some_and(|producer| producer != profile))
         };
         for record in model.elements() {
             if mismatch(record.origin()) {
@@ -342,6 +349,8 @@ impl<'m> SemanticContext<'m> {
                 baseline_profile_id: profile.id(),
                 metamodel_version: METAMODEL_VERSION,
                 errata_manifest_digest: profile.errata_manifest_sha256(),
+                result_domain_manifest_digest: profile.result_domain_manifest_sha256(),
+                reference_binding_manifest_digest: profile.reference_binding_manifest_sha256(),
                 descriptor_digest: Sha256::digest(descriptors.as_bytes()).into(),
                 rule_set_version: RULE_SET_VERSION,
                 pinned_libraries,

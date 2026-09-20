@@ -1,0 +1,12 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.75s
+     Running tests\reference_binding_v9.rs (target\debug\deps\reference_binding_v9-cdce8bd83d184ba6.exe)
+
+running 4 tests
+test incomplete_referent_never_becomes_a_complete_endpoint ... ok
+test authored_and_unclassified_implied_bindings_keep_strict_domains_and_binary_shape ... ok
+test seven_profiles_separate_inner_raw_identity_from_outer_contextual_identity ... ok
+test reference_role_adversarial_domains_and_ownership ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.45s
+

@@ -1,0 +1,2375 @@
+{
+  "format": "agentique-v9-authority-applicability/1",
+  "complete": false,
+  "authority_stop": "KLCV9-F-001",
+  "scope": "All inherited formal-rule/issue associations recounted. Positive authority dispositions are distinct from full implementation/acceptance.",
+  "constraints": [
+    {
+      "rule": "checkAssociationBinarySpecialization",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkAssociationSpecialization",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkAssociationStructureBinarySpecialization",
+      "owning_metaclass": "AssociationStructure",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkAssociationStructureSpecialization",
+      "owning_metaclass": "AssociationStructure",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkBehaviorSpecialization",
+      "owning_metaclass": "Behavior",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkBindingConnectorSpecialization",
+      "owning_metaclass": "BindingConnector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkBooleanExpressionSpecialization",
+      "owning_metaclass": "BooleanExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkClassSpecialization",
+      "owning_metaclass": "Class",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkConnectorBinaryObjectSpecialization",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkConnectorBinarySpecialization",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkConnectorObjectSpecialization",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkConnectorSpecialization",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkConnectorTypeFeaturing",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-210",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-145",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "../kerml-semantic-closure-v8/authority-matrix.json"
+        },
+        {
+          "issue": "KERML11-96",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-8",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "reference-binding-authority.json"
+        }
+      ]
+    },
+    {
+      "rule": "checkConstructorExpressionResultDefaultValueBindingConnector",
+      "owning_metaclass": "ConstructorExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-90",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkConstructorExpressionResultFeatureRedefinition",
+      "owning_metaclass": "ConstructorExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkConstructorExpressionResultSpecialization",
+      "owning_metaclass": "ConstructorExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkConstructorExpressionSpecialization",
+      "owning_metaclass": "ConstructorExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkDataTypeSpecialization",
+      "owning_metaclass": "DataType",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkExpressionResultBindingConnector",
+      "owning_metaclass": "Expression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-145",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "../kerml-semantic-closure-v8/authority-matrix.json"
+        },
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkExpressionSpecialization",
+      "owning_metaclass": "Expression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-31",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkExpressionTypeFeaturing",
+      "owning_metaclass": "Expression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureChainExpressionResultSpecialization",
+      "owning_metaclass": "FeatureChainExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureChainExpressionSourceTargetRedefinition",
+      "owning_metaclass": "FeatureChainExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-70",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureChainExpressionTargetRedefinition",
+      "owning_metaclass": "FeatureChainExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-70",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureCrossingSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureDataValueSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureEndRedefinition",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureEndSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureFeatureMembershipTypeFeaturing",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureFlowFeatureRedefinition",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-197",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-82",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureObjectSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-74",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureOccurrenceSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureOwnedCrossFeatureRedefinitionSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureOwnedCrossFeatureSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-1",
+          "classification": "IndependentAuthorityConflict",
+          "evidence": "cross-feature-authority-conflict.json"
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureOwnedCrossFeatureTypeFeaturing",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-3",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureParameterRedefinition",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-6",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkFeaturePortionSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ReviewedOperationalErratum",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-206",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureReferenceExpressionBindingConnector",
+      "owning_metaclass": "FeatureReferenceExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NewAuthorityConflict: KLCV8-F-001",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-210",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-8",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "reference-binding-authority.json"
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureReferenceExpressionResultSpecialization",
+      "owning_metaclass": "FeatureReferenceExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-8",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "reference-binding-authority.json"
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureResultRedefinition",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFeatureSubobjectSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ReviewedOperationalErratum",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-205",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureSuboccurrenceSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ReviewedOperationalErratum",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-206",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureValuationSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-145",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "../kerml-semantic-closure-v8/authority-matrix.json"
+        }
+      ]
+    },
+    {
+      "rule": "checkFeatureValueBindingConnector",
+      "owning_metaclass": "FeatureValue",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-145",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "../kerml-semantic-closure-v8/authority-matrix.json"
+        }
+      ]
+    },
+    {
+      "rule": "checkFlowSpecialization",
+      "owning_metaclass": "Flow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkFlowWithEndsSpecialization",
+      "owning_metaclass": "Flow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-78",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkFunctionResultBindingConnector",
+      "owning_metaclass": "Function",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented: v6 correction authorized; no longer an unauthorized authority conflict",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-145",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "../kerml-semantic-closure-v8/authority-matrix.json"
+        },
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkFunctionSpecialization",
+      "owning_metaclass": "Function",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkIndexExpressionResultSpecialization",
+      "owning_metaclass": "IndexExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-145",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "../kerml-semantic-closure-v8/authority-matrix.json"
+        },
+        {
+          "issue": "KERML11-69",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkInvariantSpecialization",
+      "owning_metaclass": "Invariant",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-31",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkInvocationExpressionBehaviorBindingConnector",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkInvocationExpressionBehaviorResultSpecialization",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkInvocationExpressionDefaultValueBindingConnector",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkInvocationExpressionSpecialization",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkLiteralBooleanSpecialization",
+      "owning_metaclass": "LiteralBoolean",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkLiteralExpressionSpecialization",
+      "owning_metaclass": "LiteralExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkLiteralInfinitySpecialization",
+      "owning_metaclass": "LiteralInfinity",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkLiteralIntegerSpecialization",
+      "owning_metaclass": "LiteralInteger",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkLiteralRationalSpecialization",
+      "owning_metaclass": "LiteralRational",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkLiteralStringSpecialization",
+      "owning_metaclass": "LiteralString",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkMetaclassSpecialization",
+      "owning_metaclass": "Metaclass",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkMetadataAccessExpressionSpecialization",
+      "owning_metaclass": "MetadataAccessExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkMetadataFeatureSemanticSpecialization",
+      "owning_metaclass": "MetadataFeature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkMetadataFeatureSpecialization",
+      "owning_metaclass": "MetadataFeature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkMultiplicityRangeExpressionTypeFeaturing",
+      "owning_metaclass": "MultiplicityRange",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkMultiplicitySpecialization",
+      "owning_metaclass": "Multiplicity",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkMultiplicityTypeFeaturing",
+      "owning_metaclass": "Multiplicity",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-3",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-4",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-15",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkNullExpressionSpecialization",
+      "owning_metaclass": "NullExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkPayloadFeatureRedefinition",
+      "owning_metaclass": "PayloadFeature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-197",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkPredicateSpecialization",
+      "owning_metaclass": "Predicate",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkSelectExpressionResultSpecialization",
+      "owning_metaclass": "SelectExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-145",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "../kerml-semantic-closure-v8/authority-matrix.json"
+        }
+      ]
+    },
+    {
+      "rule": "checkStepEnclosedPerformanceSpecialization",
+      "owning_metaclass": "Step",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ReviewedOperationalErratum",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-207",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        },
+        {
+          "issue": "KERML11-21",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkStepOwnedPerformanceSpecialization",
+      "owning_metaclass": "Step",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ReviewedOperationalErratum",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-207",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        },
+        {
+          "issue": "KERML11-21",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkStepSpecialization",
+      "owning_metaclass": "Step",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-21",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkStepSubperformanceSpecialization",
+      "owning_metaclass": "Step",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ReviewedOperationalErratum",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-205",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        },
+        {
+          "issue": "KERML11-21",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "checkStructureSpecialization",
+      "owning_metaclass": "Structure",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkSuccessionFlowSpecialization",
+      "owning_metaclass": "SuccessionFlow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkSuccessionSpecialization",
+      "owning_metaclass": "Succession",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "checkTypeSpecialization",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveAnnotatingElementAnnotatedElement",
+      "owning_metaclass": "AnnotatingElement",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveAnnotatingElementAnnotation",
+      "owning_metaclass": "AnnotatingElement",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveAnnotatingElementOwnedAnnotatingRelationship",
+      "owning_metaclass": "AnnotatingElement",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveAnnotationAnnotatingElement",
+      "owning_metaclass": "Annotation",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveAnnotationOwnedAnnotatingElement",
+      "owning_metaclass": "Annotation",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveAssociationRelatedType",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveAssociationSourceType",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveAssociationTargetType",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveBehaviorStep",
+      "owning_metaclass": "Behavior",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveClassifierOwnedSubclassification",
+      "owning_metaclass": "Classifier",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveConnectorDefaultFeaturingType",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-8",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "reference-binding-authority.json"
+        }
+      ]
+    },
+    {
+      "rule": "deriveConnectorRelatedFeature",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveConnectorSourceFeature",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveConnectorTargetFeature",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveConstructorExpressionArgument",
+      "owning_metaclass": "ConstructorExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementDocumentation",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementIsLibraryElement",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementName",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementOwnedAnnotation",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementOwnedElement",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementOwner",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementQualifiedName",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementShortName",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveElementTextualRepresentation",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveExpressionIsModelLevelEvaluable",
+      "owning_metaclass": "Expression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveExpressionResult",
+      "owning_metaclass": "Expression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureChainExpressionTargetFeature",
+      "owning_metaclass": "FeatureChainExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureChainingFeature",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureCrossFeature",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-1",
+          "classification": "IndependentAuthorityConflict",
+          "evidence": "cross-feature-authority-conflict.json"
+        }
+      ]
+    },
+    {
+      "rule": "deriveFeatureFeatureTarget",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureFeaturingType",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-7",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-8",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "reference-binding-authority.json"
+        }
+      ]
+    },
+    {
+      "rule": "deriveFeatureOwnedCrossSubsetting",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-1",
+          "classification": "IndependentAuthorityConflict",
+          "evidence": "cross-feature-authority-conflict.json"
+        }
+      ]
+    },
+    {
+      "rule": "deriveFeatureOwnedFeatureChaining",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureOwnedFeatureInverting",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureOwnedRedefinition",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureOwnedReferenceSubsetting",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureOwnedSubsetting",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureOwnedTypeFeaturing",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureOwnedTyping",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFeatureReferenceExpressionReferent",
+      "owning_metaclass": "FeatureReferenceExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-182",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveFeatureType",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-35",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveFlowFlowEnd",
+      "owning_metaclass": "Flow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-197",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveFlowPayloadFeature",
+      "owning_metaclass": "Flow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-197",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveFlowPayloadType",
+      "owning_metaclass": "Flow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-197",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveFlowSourceOutputFeature",
+      "owning_metaclass": "Flow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFlowTargetInputFeature",
+      "owning_metaclass": "Flow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveFunctionResult",
+      "owning_metaclass": "Function",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveInstantiationExpressionInstantiatedType",
+      "owning_metaclass": "InstantiationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveInvocationExpressionArgument",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveLiteralExpressionIsModelLevelEvaluable",
+      "owning_metaclass": "LiteralExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveMembershipImportImportedElement",
+      "owning_metaclass": "MembershipImport",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-75",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveMembershipMemberElementId",
+      "owning_metaclass": "Membership",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveMetadataAccessExpressionReferencdElement",
+      "owning_metaclass": "MetadataAccessExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-91",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveMetadataFeatureMetaclass",
+      "owning_metaclass": "MetadataFeature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveMultiplicityRangeBound",
+      "owning_metaclass": "MultiplicityRange",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveMultiplicityRangeLowerBound",
+      "owning_metaclass": "MultiplicityRange",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveMultiplicityRangeUpperBound",
+      "owning_metaclass": "MultiplicityRange",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveNamespaceImportImportedElement",
+      "owning_metaclass": "NamespaceImport",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-75",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveNamespaceImportedMembership",
+      "owning_metaclass": "Namespace",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-75",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-12",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveNamespaceMembers",
+      "owning_metaclass": "Namespace",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-75",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveNamespaceOwnedImport",
+      "owning_metaclass": "Namespace",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveNamespaceOwnedMember",
+      "owning_metaclass": "Namespace",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveNamespaceOwnedMembership",
+      "owning_metaclass": "Namespace",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveOwningMembershipOwnedMemberName",
+      "owning_metaclass": "OwningMembership",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveOwningMembershipOwnedMemberShortName",
+      "owning_metaclass": "OwningMembership",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveOwningNamespace",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "derivePackageFilterCondition",
+      "owning_metaclass": "Package",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-12",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveRelationshipRelatedElement",
+      "owning_metaclass": "Relationship",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveStepBehavior",
+      "owning_metaclass": "Step",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeDifferencingType",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeDirectedFeature",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-37",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveTypeEndFeature",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeFeature",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-191",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveTypeFeatureMembership",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-191",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-72",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveTypeInheritedFeature",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-191",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-72",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveTypeInheritedMembership",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-191",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-72",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveTypeInput",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeIntersectingType",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeMultiplicity",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-34",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveTypeOutput",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeOwnedConjugator",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveTypeOwnedDifferencing",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeOwnedDisjoining",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeOwnedEndFeature",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-50",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "deriveTypeOwnedFeature",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeOwnedFeatureMembership",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeOwnedIntersecting",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeOwnedSpecialization",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeOwnedUnioning",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "deriveTypeUnioningType",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateAnnotationAnnotatedElementOwnership",
+      "owning_metaclass": "Annotation",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateAnnotationAnnotatingElement",
+      "owning_metaclass": "Annotation",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateAssociationBinarySpecialization",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateAssociationEndTypes",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateAssociationRelatedTypes",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateAssociationStructureIntersection",
+      "owning_metaclass": "Association",
+      "fresh_baseline_check_count": 34,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-33",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateBehaviorSpecialization",
+      "owning_metaclass": "Behavior",
+      "fresh_baseline_check_count": 342,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateBindingConnectorIsBinary",
+      "owning_metaclass": "BindingConnector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateClassSpecialization",
+      "owning_metaclass": "Class",
+      "fresh_baseline_check_count": 450,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateClassifierMultiplicityDomain",
+      "owning_metaclass": "Classifier",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-14",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateCollectExpressionOperator",
+      "owning_metaclass": "CollectExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateConnectorBinarySpecialization",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateConnectorRelatedFeatures",
+      "owning_metaclass": "Connector",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateConstructorExpressionNoDuplicateFeatureRedefinition",
+      "owning_metaclass": "ConstructorExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateConstructorExpressionOwnedFeatures",
+      "owning_metaclass": "ConstructorExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateCrossSubsettingCrossedFeature",
+      "owning_metaclass": "CrossSubsetting",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateCrossSubsettingCrossingFeature",
+      "owning_metaclass": "CrossSubsetting",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateDataTypeSpecialization",
+      "owning_metaclass": "DataType",
+      "fresh_baseline_check_count": 31,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateElementFilterMembershipConditionIsBoolean",
+      "owning_metaclass": "ElementFilterMembership",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateElementFilterMembershipConditionIsModelLevelEvaluable",
+      "owning_metaclass": "ElementFilterMembership",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateElementIsImpliedIncluded",
+      "owning_metaclass": "Element",
+      "fresh_baseline_check_count": 29140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateEndFeatureMembershipIsEnd",
+      "owning_metaclass": "EndFeatureMembership",
+      "fresh_baseline_check_count": 180,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-50",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateExpressionResultExpressionMembership",
+      "owning_metaclass": "Expression",
+      "fresh_baseline_check_count": 3593,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateExpressionResultParameterMembership",
+      "owning_metaclass": "Expression",
+      "fresh_baseline_check_count": 3593,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureChainExpressionConformance",
+      "owning_metaclass": "FeatureChainExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureChainExpressionOperator",
+      "owning_metaclass": "FeatureChainExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureChainingFeatureConformance",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureChainingFeatureNotOne",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureChainingFeaturesNotSelf",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureConstantIsVariable",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureCrossFeatureSpecialization",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureCrossFeatureType",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureEndIsConstant",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureEndMultiplicity",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureEndNoDirection",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureEndNotDerivedAbstractCompositeOrPortion",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureIsVariable",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureMultiplicityDomain",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-3",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-15",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateFeatureOwnedCrossSubsetting",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureOwnedReferenceSubsetting",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeaturePortionNotVariable",
+      "owning_metaclass": "Feature",
+      "fresh_baseline_check_count": 11632,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureReferenceExpressionReferentIsFeature",
+      "owning_metaclass": "FeatureReferenceExpression",
+      "fresh_baseline_check_count": 657,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-182",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateFeatureReferenceExpressionResult",
+      "owning_metaclass": "FeatureReferenceExpression",
+      "fresh_baseline_check_count": 657,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureValueIsInitial",
+      "owning_metaclass": "FeatureValue",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFeatureValueOverriding",
+      "owning_metaclass": "FeatureValue",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFlowEndIsEnd",
+      "owning_metaclass": "FlowEnd",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFlowEndNestedFeature",
+      "owning_metaclass": "FlowEnd",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFlowEndOwningType",
+      "owning_metaclass": "FlowEnd",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFlowPayloadFeature",
+      "owning_metaclass": "Flow",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFunctionResultExpressionMembership",
+      "owning_metaclass": "Function",
+      "fresh_baseline_check_count": 308,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateFunctionResultParameterMembership",
+      "owning_metaclass": "Function",
+      "fresh_baseline_check_count": 308,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateImportTopLevelVisibility",
+      "owning_metaclass": "Import",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateIndexExpressionOperator",
+      "owning_metaclass": "IndexExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateInstantiationExpressionInstantiatedType",
+      "owning_metaclass": "InstantiationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateInstantiationExpressionResult",
+      "owning_metaclass": "InstantiationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateInvocationExpressionInstantiatedType",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateInvocationExpressionNoDuplicateParameterRedefinition",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateInvocationExpressionOwnedFeatures",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateInvocationExpressionParameterRedefinition",
+      "owning_metaclass": "InvocationExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateMetadataAccessExpressionReferencedElement",
+      "owning_metaclass": "MetadataAccessExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateMetadataFeatureAnnotatedElement",
+      "owning_metaclass": "MetadataFeature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateMetadataFeatureBody",
+      "owning_metaclass": "MetadataFeature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateMetadataFeatureMetaclass",
+      "owning_metaclass": "MetadataFeature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateMetadataFeatureMetaclassNotAbstract",
+      "owning_metaclass": "MetadataFeature",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateMultiplicityRangeBoundResultTypes",
+      "owning_metaclass": "MultiplicityRange",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateMultiplicityRangeBounds",
+      "owning_metaclass": "MultiplicityRange",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateNamespaceDistinguishibility",
+      "owning_metaclass": "Namespace",
+      "fresh_baseline_check_count": 12215,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-76",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        },
+        {
+          "issue": "KERML11-72",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateParameterMembershipOwningType",
+      "owning_metaclass": "ParameterMembership",
+      "fresh_baseline_check_count": 4687,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-50",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateParameterMembershipParameterDirection",
+      "owning_metaclass": "ParameterMembership",
+      "fresh_baseline_check_count": 4687,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-37",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateRedefinitionDirectionConformance",
+      "owning_metaclass": "Redefinition",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-38",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateRedefinitionEndConformance",
+      "owning_metaclass": "Redefinition",
+      "fresh_baseline_check_count": 301,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-68",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        },
+        {
+          "issue": "KERML11-38",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateRedefinitionFeaturingTypes",
+      "owning_metaclass": "Redefinition",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-140",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "Historical immutable operational manifests v1-v5"
+        },
+        {
+          "issue": "KERML11-38",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateResultExpressionMembershipOwningType",
+      "owning_metaclass": "ResultExpressionMembership",
+      "fresh_baseline_check_count": 103,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateReturnParameterMembershipOwningType",
+      "owning_metaclass": "ReturnParameterMembership",
+      "fresh_baseline_check_count": 3811,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateSelectExpressionOperator",
+      "owning_metaclass": "SelectExpression",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateSpecificationSpecificNotConjugated",
+      "owning_metaclass": "Specialization",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-198",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateStructureSpecialization",
+      "owning_metaclass": "Structure",
+      "fresh_baseline_check_count": 106,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateSubsettingConstantConformance",
+      "owning_metaclass": "Subsetting",
+      "fresh_baseline_check_count": 802,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateSubsettingFeaturingTypes",
+      "owning_metaclass": "Subsetting",
+      "fresh_baseline_check_count": 0,
+      "historical_status": "NotYetImplemented",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-210",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-145",
+          "classification": "CoveredByOperationalProfile",
+          "evidence": "../kerml-semantic-closure-v8/authority-matrix.json"
+        },
+        {
+          "issue": "KERML11-35",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        },
+        {
+          "issue": "KERML11-183",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateSubsettingUniquenessConformance",
+      "owning_metaclass": "Subsetting",
+      "fresh_baseline_check_count": 802,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateTypeAtMostOneConjugator",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 12140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateTypeDifferencingTypesNotSelf",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 12140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateTypeIntersectingTypesNotSelf",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 12140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateTypeOwnedDifferencingNotOne",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 12140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateTypeOwnedIntersectingNotOne",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 12140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateTypeOwnedMultiplicity",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 12140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": [
+        {
+          "issue": "KERML11-34",
+          "classification": null,
+          "evidence": "Applicability review stopped at independently reproduced KLCV9-F-001; no negative applicability or implementation claim."
+        }
+      ]
+    },
+    {
+      "rule": "validateTypeOwnedUnioningNotOne",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 12140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    },
+    {
+      "rule": "validateTypeUnioningTypesNotSelf",
+      "owning_metaclass": "Type",
+      "fresh_baseline_check_count": 12140,
+      "historical_status": "ImplementedAndChecked",
+      "issue_applicability": []
+    }
+  ],
+  "classification_counts": {
+    "UnreviewedAtAuthorityStop": 72,
+    "CoveredByOperationalProfile": 22,
+    "IndependentAuthorityConflict": 3
+  },
+  "independent_conflict": "cross-feature-authority-conflict.json",
+  "deferred_execution_structural_rules": 0,
+  "strict_structural_coverage_gate_passed": false,
+  "publication_gate_passed": false
+}

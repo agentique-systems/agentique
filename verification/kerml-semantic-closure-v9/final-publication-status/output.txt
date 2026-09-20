@@ -1,0 +1,1 @@
+V6 producer fixtures verified; KLCV9-F-001 independently reproduced; corpus closure and semantic publication are not accepted.

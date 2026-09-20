@@ -1,0 +1,20 @@
+{
+  "format": "agentique-v9-closing-verification/1",
+  "successful_final_repository_checks": true,
+  "structural_runtime_gates": {
+    "kerml": 0,
+    "sysml": 0
+  },
+  "strict_rustdoc_exit": 0,
+  "profile": "agentique-kerml-1.0-operational/6",
+  "focused_producer_matrices_passed": true,
+  "authority_stop": "KLCV9-F-001 / KERML11-1",
+  "preserved_starting_files": 2848,
+  "verified_acquisitions": 18,
+  "development_failures_retained": true,
+  "old_raw_conformance_failures_separate": true,
+  "semantic_publication_accepted": false,
+  "full_corpus_v6_expansion_complete": false,
+  "command_count": 77,
+  "completion": "KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED"
+}

@@ -1,0 +1,7 @@
+{
+  "format": "agentique-v9-distinguishability/1",
+  "findings": 2,
+  "source": "baseline-quality.json",
+  "zero_gate_passed": false,
+  "disposition": "Ordinary Triggers inference work; no additional library erratum adopted."
+}

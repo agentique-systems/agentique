@@ -5,6 +5,7 @@
 mod bindings;
 mod context;
 mod contract;
+mod featuring;
 mod formal_targets;
 mod implicit;
 mod inheritance;
@@ -13,14 +14,17 @@ mod naming;
 mod ordering;
 mod queries;
 mod resolution;
+mod result_structure;
 mod validation;
 
 pub use bindings::*;
 pub use context::*;
 pub use contract::*;
+pub use featuring::ConnectorFeaturing;
 pub use formal_targets::*;
 pub use namespaces::{MemberAccess, MemberMatch};
 pub use naming::EffectiveNames;
 pub use queries::KerMlQueries;
 pub use resolution::*;
+pub use result_structure::*;
 pub use validation::RedefinitionEndConformance;

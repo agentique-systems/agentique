@@ -25,6 +25,79 @@ fn key(subject: ElementId) -> DerivationKey {
 }
 
 #[test]
+fn monotone_reference_extension_preserves_declared_order_and_evidence() {
+    let base = vertical();
+    let mut changes = base.change_set();
+    changes.set(
+        OWNS,
+        SOURCES,
+        SlotValue::Ordered(vec![Value::Reference(VEHICLE), Value::Reference(ENGINE)]),
+        authored(),
+    );
+    let snapshot = base.apply(&changes).unwrap();
+    let implied = key(OWNS);
+    let build = |additions: Vec<ElementId>| {
+        let mut b = DerivationBuilder::new(snapshot.clone());
+        b.element(
+            implied,
+            PART_DEF,
+            [(NAME, text("implied"))],
+            BTreeSet::new(),
+        );
+        b.extend_ordered_references(OWNS, SOURCES, additions, evidence(&[]));
+        b.build()
+    };
+    let result = build(vec![implied.element_id()]).unwrap();
+    let values = |model: &ModelView| {
+        model
+            .element(OWNS)
+            .unwrap()
+            .slot(SOURCES)
+            .unwrap()
+            .value()
+            .clone()
+    };
+    assert_eq!(
+        values(snapshot.model()),
+        SlotValue::Ordered(vec![Value::Reference(VEHICLE), Value::Reference(ENGINE)])
+    );
+    assert_eq!(
+        values(result.model()),
+        SlotValue::Ordered(vec![
+            Value::Reference(VEHICLE),
+            Value::Reference(ENGINE),
+            Value::Reference(implied.element_id())
+        ])
+    );
+    let proof = result.explain(prop(OWNS, SOURCES)).unwrap();
+    assert!(
+        proof
+            .dependencies
+            .contains(&Dependency::Declared(prop(OWNS, SOURCES)))
+    );
+    assert!(
+        proof
+            .dependencies
+            .contains(&Dependency::Derived(FactKey::Element(implied.element_id())))
+    );
+    for additions in [
+        vec![VEHICLE],
+        vec![implied.element_id(), implied.element_id()],
+    ] {
+        assert!(matches!(
+            build(additions),
+            Err(DerivationError::InvalidCollectionExtension { .. })
+        ));
+    }
+    let mut invalid = DerivationBuilder::new(snapshot);
+    invalid.extend_ordered_references(VEHICLE, NAME, vec![ENGINE], evidence(&[]));
+    assert!(matches!(
+        invalid.build(),
+        Err(DerivationError::InvalidCollectionExtension { .. })
+    ));
+}
+
+#[test]
 fn inherited_member_explanation_chain_keeps_declared_facts_separate() {
     let snapshot = vertical();
     let mut builder = DerivationBuilder::new(snapshot.clone());

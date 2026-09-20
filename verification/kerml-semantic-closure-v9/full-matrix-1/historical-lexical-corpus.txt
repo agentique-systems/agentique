@@ -1,0 +1,4 @@
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.07s
+     Running `target\debug\examples\audit.exe --check`
+Verified 57 lossless source partitions and reproducible lexical inventory; semantic quality gate INCOMPLETE

@@ -1,0 +1,7 @@
+{
+  "format": "agentique-v9-positional-audit/1",
+  "existing_tests": "full-matrix-1/rust-tests.txt",
+  "full_corpus_differential_audit_complete": false,
+  "reference_local_typing_complete": true,
+  "authority_proof": "cross-feature-authority-conflict.json"
+}

@@ -1,0 +1,1128 @@
+{
+  "format": "agentique-v9-command-index/1",
+  "commands": [
+    {
+      "result": "baseline-quality/result.json",
+      "result_sha256": "bd87d8d8db53dcaa4fc6fcc4a2ff29409b72510d4859a8231244f1dd72bdacab",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "library_quality",
+        "--",
+        "--v5",
+        "--output=verification/kerml-semantic-closure-v9/baseline-quality.json"
+      ],
+      "started": "2026-09-20T09:07:41.520765+00:00",
+      "exit_code": 1,
+      "output": "baseline-quality/output.txt",
+      "output_sha256": "fc848592aa38d2fc928f3b7b5756b82f2e7f4f47143dd59bee14d907af16894c",
+      "duration_seconds": 2097.6879999999655
+    },
+    {
+      "result": "acquisition/result.json",
+      "result_sha256": "b9ff5ed968b7c0ba90d1c599cda3fac0fe638f080c7e07d9404a0b020e50b4e9",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/acquire.py"
+      ],
+      "started": "2026-09-20T09:08:39.374082+00:00",
+      "exit_code": 0,
+      "output": "acquisition/output.txt",
+      "output_sha256": "31d7135944079c6e7dfeac4b7bef891c529bdf242ba8901e9a15e255c1176c38",
+      "duration_seconds": 30.15700000000652
+    },
+    {
+      "result": "acquisition-2/result.json",
+      "result_sha256": "4933df1dc8886efb4803c377f587f569addc25146d6568471a2078ebe36e513d",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/acquire.py"
+      ],
+      "started": "2026-09-20T09:10:20.142203+00:00",
+      "exit_code": 0,
+      "output": "acquisition-2/output.txt",
+      "output_sha256": "093866b9ef434b95c6eec54da2b912c2387d5b598a4e0bf5727c9263ca00ac83",
+      "duration_seconds": 1.625
+    },
+    {
+      "result": "acquisition-3/result.json",
+      "result_sha256": "f16dd25591c7256ab15ac844d78a75320cbbd58f1271ef1e83c345125ba7b1da",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/acquire.py"
+      ],
+      "started": "2026-09-20T09:11:44.388926+00:00",
+      "exit_code": 0,
+      "output": "acquisition-3/output.txt",
+      "output_sha256": "6ca8565b46204cbbb77276414b32d6cecb81f8e70c48b6293cb8afa3c894b203",
+      "duration_seconds": 0.5939999999245629
+    },
+    {
+      "result": "reference-authority/result.json",
+      "result_sha256": "15ba321ee0d05ee5fdec91e9a04c4d73cc38b46ca4c87dcefacd3b87316bcf76",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/authority.py"
+      ],
+      "started": "2026-09-20T09:13:07.685708+00:00",
+      "exit_code": 0,
+      "output": "reference-authority/output.txt",
+      "output_sha256": "f397f49e24cd6e44b8a0d9c24022fd9289b7e21756822819310055f3b5dc1158",
+      "duration_seconds": 8.827999999979511
+    },
+    {
+      "result": "check-1/result.json",
+      "result_sha256": "bdadab3213c3544c94c100ceecc612d1e2edf92c063fa4e305edd3739c8ce6c0",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "started": "2026-09-20T09:22:14.884932+00:00",
+      "exit_code": 101,
+      "output": "check-1/output.txt",
+      "output_sha256": "3938fa23032819e1a3badcdc901e12c325417b20bb20c4ae82c7149695375875",
+      "duration_seconds": 5.233999999938533
+    },
+    {
+      "result": "check-2/result.json",
+      "result_sha256": "5a0c593376daf17fcd6d81a9a9f1c66132acb826e311e963266c592d73d8f576",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "started": "2026-09-20T09:22:51.986098+00:00",
+      "exit_code": 0,
+      "output": "check-2/output.txt",
+      "output_sha256": "17267c7e179321fd9d6adec234b1cb1415a835476c131f477cf06d1ab3531af6",
+      "duration_seconds": 1.0
+    },
+    {
+      "result": "reference-matrix-1/result.json",
+      "result_sha256": "50c522249fb4cfac70b002724f154f17535150a86f1b33e549cadc58f282cbdc",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "reference_binding_v9",
+        "--",
+        "--nocapture"
+      ],
+      "started": "2026-09-20T09:23:43.043164+00:00",
+      "exit_code": 101,
+      "output": "reference-matrix-1/output.txt",
+      "output_sha256": "4da1004a65f05339db1c2abfeceb7e8eb2896f72f5776556016db743cb360e5b",
+      "duration_seconds": 14.641000000061467
+    },
+    {
+      "result": "reference-matrix-2/result.json",
+      "result_sha256": "734e46186e09218ddbb9081774683a621e29639a9201fd1df2e102cf7222526c",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "reference_binding_v9",
+        "--",
+        "--nocapture"
+      ],
+      "started": "2026-09-20T09:24:42.609763+00:00",
+      "exit_code": 0,
+      "output": "reference-matrix-2/output.txt",
+      "output_sha256": "8b44a163b18e7bd398d02c13900ffb1524b72edab1607c6a414f21eae3c5b0a6",
+      "duration_seconds": 4.187000000034459
+    },
+    {
+      "result": "reference-matrix-3/result.json",
+      "result_sha256": "4f55166ecf6a1633b7cd4023eb007f34f63e42dff159c6a7c374f866fe69e501",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "reference_binding_v9",
+        "--",
+        "--nocapture"
+      ],
+      "started": "2026-09-20T09:28:24.949385+00:00",
+      "exit_code": 0,
+      "output": "reference-matrix-3/output.txt",
+      "output_sha256": "3e6977a29d97c1cc3af4f516aece67265802f86f388935e71a3abe35e6712ad6",
+      "duration_seconds": 5.562000000034459
+    },
+    {
+      "result": "result-matrix-1/result.json",
+      "result_sha256": "e61509d5b9b05fee06732aa1df4327b5f8355a23f28ca6734aa0478f312668b3",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "result_domains_v9",
+        "--",
+        "--nocapture"
+      ],
+      "started": "2026-09-20T09:30:20.758276+00:00",
+      "exit_code": 0,
+      "output": "result-matrix-1/output.txt",
+      "output_sha256": "920039baf7181a201fb474b0eb8b437cc74ace62b332b29346c27ebd7228c34f",
+      "duration_seconds": 8.608999999938533
+    },
+    {
+      "result": "acquisition-4/result.json",
+      "result_sha256": "271b5a411dc8fe7e6ae9157b4aaa4385f6b896195ae1c2723258682bca00a826",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/acquire.py"
+      ],
+      "started": "2026-09-20T09:39:17.115075+00:00",
+      "exit_code": 0,
+      "output": "acquisition-4/output.txt",
+      "output_sha256": "218f22aab9f6c624eb0177a154511e277d0e7e0d48157710b2745bf4da9f451b",
+      "duration_seconds": 1.0150000000139698
+    },
+    {
+      "result": "cross-authority-1/result.json",
+      "result_sha256": "fc494fe016aa69b16b97959b6b9b91ae4800faca5e998202507c4c2731a4baf0",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/cross-feature-authority.py"
+      ],
+      "started": "2026-09-20T09:41:27.398286+00:00",
+      "exit_code": 1,
+      "output": "cross-authority-1/output.txt",
+      "output_sha256": "091a9510bb4e87a8d10e1b9b47f6d4e9a154dc751e33007d716ccf623091e317",
+      "duration_seconds": 1.6560000000754371
+    },
+    {
+      "result": "reference-result-matrices-4/result.json",
+      "result_sha256": "020b12404d5b4d5bf780383fe3af661bf0c7327ff07a1fc349d8cd908d67b2f0",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "reference_binding_v9",
+        "--test",
+        "result_domains_v9"
+      ],
+      "started": "2026-09-20T09:41:37.592051+00:00",
+      "exit_code": 0,
+      "output": "reference-result-matrices-4/output.txt",
+      "output_sha256": "2189cd3428a0105107cbb4c40c97ee64f08ccb9e14deb4f50cbf64b70975cad7",
+      "duration_seconds": 198.5779999999795
+    },
+    {
+      "result": "cross-authority-2/result.json",
+      "result_sha256": "3e632b335461bdef31e92d858203ba1869260a0f3d587285650bce487aa6e343",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/cross-feature-authority.py"
+      ],
+      "started": "2026-09-20T09:42:16.782403+00:00",
+      "exit_code": 1,
+      "output": "cross-authority-2/output.txt",
+      "output_sha256": "f291d6a540a455137332be55cae8254197eb1a1ebe7bcaa77638a237f642f42a",
+      "duration_seconds": 2.0929999999934807
+    },
+    {
+      "result": "cross-authority-3/result.json",
+      "result_sha256": "b27d4edef387d0d730d5a539dfb28d4ebfab09270d183e7d4b47b468ac01bec5",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/cross-feature-authority.py"
+      ],
+      "started": "2026-09-20T09:43:01.000305+00:00",
+      "exit_code": 0,
+      "output": "cross-authority-3/output.txt",
+      "output_sha256": "901d08e1043530eb051ce2396dd9f841db73d3d6bc90069206c0aeabc52d9e4b",
+      "duration_seconds": 8.5
+    },
+    {
+      "result": "cross-canonical-1/result.json",
+      "result_sha256": "69743e7a5bbfe8e08574c3735e042082a0a8b9eb703a99b53b3f9065dbee1fac",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "cross_feature_authority_v9"
+      ],
+      "started": "2026-09-20T09:44:40.074166+00:00",
+      "exit_code": 0,
+      "output": "cross-canonical-1/output.txt",
+      "output_sha256": "a0729a17439b23e31de89cd8af86455c52a1fdb9d764d66f90c10a1473c7687b",
+      "duration_seconds": 2.375
+    },
+    {
+      "result": "cross-canonical-2/result.json",
+      "result_sha256": "558da57c197aeec75f244eb2220e3cf0de8c38528d81f22852b27b3feaca2caa",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "cross_feature_authority_v9"
+      ],
+      "started": "2026-09-20T09:45:06.494501+00:00",
+      "exit_code": 0,
+      "output": "cross-canonical-2/output.txt",
+      "output_sha256": "3ac0cb0ec375883977568419c91772f9e7058dfc5f5bc3d94d35acad9b52924d",
+      "duration_seconds": 2.0630000000819564
+    },
+    {
+      "result": "kernel-extensions-1/result.json",
+      "result_sha256": "abc4ba36df2841aa464acded0b6e2fdad118c6c51ea7f12717c3f5bb497e9500",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "derivations"
+      ],
+      "started": "2026-09-20T09:46:42.737253+00:00",
+      "exit_code": 0,
+      "output": "kernel-extensions-1/output.txt",
+      "output_sha256": "63ef13877d8cac948e51ecf37dbb69b26edb8c156e9e14cb3049380171298184",
+      "duration_seconds": 7.719000000040978
+    },
+    {
+      "result": "reference-result-matrices-5/result.json",
+      "result_sha256": "0599c1bbc2bd902a35065ad785ded4fe3f8ea8174bd2156cb2223654eb3afe56",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "reference_binding_v9",
+        "--test",
+        "result_domains_v9",
+        "--test",
+        "cross_feature_authority_v9"
+      ],
+      "started": "2026-09-20T09:47:58.589985+00:00",
+      "exit_code": 101,
+      "output": "reference-result-matrices-5/output.txt",
+      "output_sha256": "06a3c2bf0b4a870ee9a793614e7d5f190cfad286f9c994a40e93b8b0a54d5b62",
+      "duration_seconds": 9.969000000040978
+    },
+    {
+      "result": "clippy-1/result.json",
+      "result_sha256": "a12b52e508fb4ed39fc89e57c82ea41060a1868f1d519a027d4c998f8323752e",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-20T09:48:37.453258+00:00",
+      "exit_code": 101,
+      "output": "clippy-1/output.txt",
+      "output_sha256": "c2a7ccbf43143f180e8195ad061462725439fa883da4d4048f20810c4a33f447",
+      "duration_seconds": 13.59299999999348
+    },
+    {
+      "result": "reference-result-matrices-6/result.json",
+      "result_sha256": "742e11b2327038f48ee6f45f5c54ee8c9daca5c43de40f38a5f812dde112e781",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "reference_binding_v9",
+        "--test",
+        "result_domains_v9",
+        "--test",
+        "cross_feature_authority_v9"
+      ],
+      "started": "2026-09-20T09:48:57.976769+00:00",
+      "exit_code": 0,
+      "output": "reference-result-matrices-6/output.txt",
+      "output_sha256": "be84c678d51118373fcdb0da549f926e1d222f5dc4a861a771c1a4828797dd23",
+      "duration_seconds": 8.75
+    },
+    {
+      "result": "clippy-fix/result.json",
+      "result_sha256": "1ddd99fe2dcc033a43ee532e54a7a87c1ebbd1fc5406f0041101624379a47768",
+      "command": [
+        "cargo",
+        "clippy",
+        "--fix",
+        "--allow-dirty",
+        "--allow-staged",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-20T09:49:19.671944+00:00",
+      "exit_code": 0,
+      "output": "clippy-fix/output.txt",
+      "output_sha256": "7cd3ba921417ad21b5152a4d8dcf1d631f2a28a7beaa66ba71d45c952b4ebef8",
+      "duration_seconds": 5.547000000020489
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "cargo fmt --all -- --check",
+      "started": "2026-09-20T09:49:41.369Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/format.txt",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.521
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "started": "2026-09-20T09:49:42.891Z",
+      "exit_code": 101,
+      "output": "full-matrix-1/clippy.txt",
+      "output_sha256": "8cf7ad594562ea5bbd665c55aaa91818d703a0169b5571c7bf8b69e92f23b260",
+      "duration_seconds": 3.5
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "cargo test --workspace",
+      "started": "2026-09-20T09:49:46.392Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/rust-tests.txt",
+      "output_sha256": "1e82c9233e0ec752012eade8e7c0c32f358e78a9bea90f511c88d707e09f3039",
+      "duration_seconds": 322.0
+    },
+    {
+      "result": "measurements/result.json",
+      "result_sha256": "545f92401cc2ba908ffe9fadf684640fd88f27e4a19e35888619cfe538eef83b",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/measure.py"
+      ],
+      "started": "2026-09-20T09:51:51.606091+00:00",
+      "exit_code": 0,
+      "output": "measurements/output.txt",
+      "output_sha256": "0e5cb05c7dfebb6cc8dbdb5dde013fc0856f48cc5aed5cd6d87b109309f75aab",
+      "duration_seconds": 1.359000000054948
+    },
+    {
+      "result": "raw-conformance/results.json",
+      "result_sha256": "aa73c641fa48c41a2b8c6e6e607aee4f4a44e5c104cd160c90c065b82c5ea157",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-conformance --check",
+      "started": "2026-09-20T09:52:35.720Z",
+      "exit_code": 1,
+      "output": "raw-conformance/kerml-conformance.txt",
+      "output_sha256": "24ba527c0de68108ca15234c639d0b53e3cc6b533c9e065cab47e3ebada2e39a",
+      "duration_seconds": 7.243
+    },
+    {
+      "result": "cross-authority-check/result.json",
+      "result_sha256": "530aaefaa9fd94b6c315649de2d9c93ee2682d41afe94db949f7aef23dc94a77",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/cross-feature-authority.py",
+        "--check"
+      ],
+      "started": "2026-09-20T09:52:35.984954+00:00",
+      "exit_code": 0,
+      "output": "cross-authority-check/output.txt",
+      "output_sha256": "901d08e1043530eb051ce2396dd9f841db73d3d6bc90069206c0aeabc52d9e4b",
+      "duration_seconds": 10.062000000034459
+    },
+    {
+      "result": "reference-authority-check/result.json",
+      "result_sha256": "306fef90f2a0df18f30c463c18b5ce8852bac46e007728bc622033de0de25b94",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/authority.py",
+        "--check"
+      ],
+      "started": "2026-09-20T09:52:35.984954+00:00",
+      "exit_code": 0,
+      "output": "reference-authority-check/output.txt",
+      "output_sha256": "f397f49e24cd6e44b8a0d9c24022fd9289b7e21756822819310055f3b5dc1158",
+      "duration_seconds": 10.172000000020489
+    },
+    {
+      "result": "raw-conformance/results.json",
+      "result_sha256": "aa73c641fa48c41a2b8c6e6e607aee4f4a44e5c104cd160c90c065b82c5ea157",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-conformance --check",
+      "started": "2026-09-20T09:52:42.964Z",
+      "exit_code": 1,
+      "output": "raw-conformance/sysml-conformance.txt",
+      "output_sha256": "ed1e9d485c3b497f16450b51efecdac6e9016c5ffaea9ec51a197f770f96673d",
+      "duration_seconds": 1.532
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+      "started": "2026-09-20T09:55:08.393Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/generated.txt",
+      "output_sha256": "2205e9fb4d980880006a0de8440c158f0e4b8891abfbf6af400102fb3c15ee17",
+      "duration_seconds": 5.347
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+      "started": "2026-09-20T09:55:13.741Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/kerml-readiness.txt",
+      "output_sha256": "54a82a132cf690ab2faf27ab733a7b711b0a2c6087b1d69abf7f032569996c62",
+      "duration_seconds": 1.803
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+      "started": "2026-09-20T09:55:15.545Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/sysml-readiness.txt",
+      "output_sha256": "96b087b62e25bb9e77b589ecaf0d3405f6e6f838d6b41d65abe0be73247a44b4",
+      "duration_seconds": 3.864
+    },
+    {
+      "result": "seven-profile-lineage/result.json",
+      "result_sha256": "87135b28a42e9fab29eb8697dcd62efc6b593f0110c4f2b75c1521962fe965ea",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml",
+        "--test",
+        "profile_lineage_v9"
+      ],
+      "started": "2026-09-20T09:55:16.715975+00:00",
+      "exit_code": 0,
+      "output": "seven-profile-lineage/output.txt",
+      "output_sha256": "40bc70d4d506d593093203cdcd7f0c7c20e975c7fa3f791ee6bc3e82db1dd0b3",
+      "duration_seconds": 1.452999999979511
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-standard-libraries -p agq-metamodel-gen",
+      "started": "2026-09-20T09:55:19.410Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/rustdoc.txt",
+      "output_sha256": "a5a19cc4aa926224a99d31f3420035819c5335068fd0ae571187b5a64ea532fb",
+      "duration_seconds": 29.746
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "npm run standards:check",
+      "started": "2026-09-20T09:55:49.158Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/standards.txt",
+      "output_sha256": "8faf5605b91c86f1a81758c0ec54ed924a01a768a46a897fc3d8f9f76c8d42a6",
+      "duration_seconds": 2.118
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "npm run check",
+      "started": "2026-09-20T09:55:51.277Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/frontend-check.txt",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 1.902
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "npm run build",
+      "started": "2026-09-20T09:55:53.179Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/frontend-build.txt",
+      "output_sha256": "3c6f6c5c5d4e5865995cf5b1ae56479077b3cbc99db66a59af56ac558c538a31",
+      "duration_seconds": 2.24
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "npm test",
+      "started": "2026-09-20T09:55:55.420Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/node-tests.txt",
+      "output_sha256": "89226338d1301391683bc1bb410777d0e21b36a8eac86b66971c32941fe7f941",
+      "duration_seconds": 0.624
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "npm run test:e2e",
+      "started": "2026-09-20T09:55:56.046Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/browser-tests.txt",
+      "output_sha256": "5e7bb48ec4635c2d8c96eea5dba2e70b70b6e517550064213e504fd7605a2b98",
+      "duration_seconds": 57.144
+    },
+    {
+      "result": "clippy-final/result.json",
+      "result_sha256": "0b1c062770fbe9a7f01d21c87884ebb8ce0f32683f45029fd3d720c02e0bd488",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-20T09:56:50.494733+00:00",
+      "exit_code": 0,
+      "output": "clippy-final/output.txt",
+      "output_sha256": "fdf6c0909c3adc2f7501dd2ace9686d1f49103d2c0458f5cffc23c5770b71c58",
+      "duration_seconds": 2.48499999998603
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "python -X utf8 tools/kerml-grammar/inventory.py",
+      "started": "2026-09-20T09:56:53.190Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/grammar-inventory.txt",
+      "output_sha256": "992476f8371bf244d2d1fbdb90161fc28ad50648a0fabb13f86a48d8958091e6",
+      "duration_seconds": 6.792
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "python -X utf8 tools/kerml-grammar/generate.py",
+      "started": "2026-09-20T09:56:59.983Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/grammar-tables.txt",
+      "output_sha256": "727d9387cb2bcb40b0c9fb23a35a15f1116ee20d63ed38294cdaf3136e2a4d92",
+      "duration_seconds": 0.313
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "python -X utf8 tools/kerml-grammar/test_inventory.py",
+      "started": "2026-09-20T09:57:00.296Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/grammar-tests.txt",
+      "output_sha256": "fbf955bf76f0ea574dca90aea0b50df41bb3c191e6e1fd9595994650d63e302e",
+      "duration_seconds": 0.353
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check",
+      "started": "2026-09-20T09:57:00.649Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/historical-lexical-corpus.txt",
+      "output_sha256": "e05800d6ccbb9428282d39e5dced54c7e3de74f2be1682aa3e394f9d9232a586",
+      "duration_seconds": 2.151
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check",
+      "started": "2026-09-20T09:57:02.801Z",
+      "exit_code": 0,
+      "output": "full-matrix-1/independent-runtime.txt",
+      "output_sha256": "4c6149fb44de89070e586ca91de86684336fec8a661f773edc30b43d18989fc7",
+      "duration_seconds": 0.534
+    },
+    {
+      "result": "full-matrix-1/results.json",
+      "result_sha256": "b434f735a894c97f08fdb1473d81d5c6c7c8bb3a3c4bbe3d825a857680309d72",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/preservation.py",
+      "started": "2026-09-20T09:57:03.335Z",
+      "exit_code": 1,
+      "output": "full-matrix-1/preservation.txt",
+      "output_sha256": "93e20be864b553a3ec65cde10e37811b0dae012b026d7d1590f0e1bab68967da",
+      "duration_seconds": 1.405
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "node tools/registers.mjs",
+      "started": "2026-09-20T09:57:06.156Z",
+      "exit_code": 0,
+      "output": "product-1/registers.txt",
+      "output_sha256": "049e70b30dae5510b2035096263d78b266920d1cc6b49da9f84a0e9d69663520",
+      "duration_seconds": 0.145
+    },
+    {
+      "result": "historical-authority/results.json",
+      "result_sha256": "5942b462e1099f6bc81d4382e136fe52bedd4a2244ca046921c9e01a27526756",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-four-models.py",
+      "started": "2026-09-20T09:57:06.157Z",
+      "exit_code": 0,
+      "output": "historical-authority/four-models.txt",
+      "output_sha256": "2c11d92789d5bef3ccdb96c7c59532e396eaf388260951fd985d14e050571866",
+      "duration_seconds": 3.449
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "node tools/extract.mjs --check",
+      "started": "2026-09-20T09:57:06.302Z",
+      "exit_code": 0,
+      "output": "product-1/extraction.txt",
+      "output_sha256": "9f92e09d0a8e4f1e5b5769adb83d81f1615f2ab17e9df81a3365ae73dff9f399",
+      "duration_seconds": 0.079
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "cargo build --workspace --locked",
+      "started": "2026-09-20T09:57:06.381Z",
+      "exit_code": 0,
+      "output": "product-1/workspace-build.txt",
+      "output_sha256": "4b58e4cac67dfbeac45b529945464978285b68188506edc563390f836a778e84",
+      "duration_seconds": 4.158
+    },
+    {
+      "result": "format-final/result.json",
+      "result_sha256": "6caf502f07f026c1771c3d55e095a64c7a3d4465f0b48eddc97f643bedc31cad",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-20T09:57:06.391557+00:00",
+      "exit_code": 0,
+      "output": "format-final/output.txt",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.765999999945052
+    },
+    {
+      "result": "historical-authority/results.json",
+      "result_sha256": "5942b462e1099f6bc81d4382e136fe52bedd4a2244ca046921c9e01a27526756",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-authority-stop.py",
+      "started": "2026-09-20T09:57:09.607Z",
+      "exit_code": 0,
+      "output": "historical-authority/authority-stop.txt",
+      "output_sha256": "acd59b563da6821ca67caa4b59662b1ea7b351e07010dfb300b8d4a360682218",
+      "duration_seconds": 0.702
+    },
+    {
+      "result": "historical-authority/results.json",
+      "result_sha256": "5942b462e1099f6bc81d4382e136fe52bedd4a2244ca046921c9e01a27526756",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-patch.py",
+      "started": "2026-09-20T09:57:10.311Z",
+      "exit_code": 0,
+      "output": "historical-authority/patch-diff.txt",
+      "output_sha256": "3c48672e5123122a79e4f71fa7c80466d0bced69004af17e682ea87e5e11bd8c",
+      "duration_seconds": 7.581
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "npm run format:check",
+      "started": "2026-09-20T09:57:10.539Z",
+      "exit_code": 0,
+      "output": "product-1/frontend-format.txt",
+      "output_sha256": "64dda5783057daee882ca09b252d354ff6be9a936c7c582fe96059c857d202ce",
+      "duration_seconds": 1.185
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "node node_modules/sysml-validate/out/main.js models/ --library standards/libraries-2026-04 --no-config --format json --out verification/kerml-semantic-closure-v9/product-1/independent-validation.json",
+      "started": "2026-09-20T09:57:11.725Z",
+      "exit_code": 0,
+      "output": "product-1/independent-starter.txt",
+      "output_sha256": "22b5287999a8aaeb354749448b6a269218177d549fa7b89103b5c4c9f4795657",
+      "duration_seconds": 6.016
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "node node_modules/sysml-validate/out/main.js tests/fixtures/ --library standards/libraries-2026-04 --no-config --format json --out verification/kerml-semantic-closure-v9/product-1/independent-fixtures.json",
+      "started": "2026-09-20T09:57:17.742Z",
+      "exit_code": 1,
+      "output": "product-1/independent-fixtures.txt",
+      "output_sha256": "a3e9a62d0e55dcc8fd4d8d54891598f4379db26fb68ffcaad4e6ffb4e08da743",
+      "duration_seconds": 4.864
+    },
+    {
+      "result": "historical-authority/results.json",
+      "result_sha256": "5942b462e1099f6bc81d4382e136fe52bedd4a2244ca046921c9e01a27526756",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-source-assertions.py",
+      "started": "2026-09-20T09:57:17.893Z",
+      "exit_code": 0,
+      "output": "historical-authority/source-assertions.txt",
+      "output_sha256": "e84d7e54d1897373e6edb0b47869c7e447f0f74909564e08e64df1db63ed64bc",
+      "duration_seconds": 0.216
+    },
+    {
+      "result": "historical-authority/results.json",
+      "result_sha256": "5942b462e1099f6bc81d4382e136fe52bedd4a2244ca046921c9e01a27526756",
+      "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/preservation.py",
+      "started": "2026-09-20T09:57:18.110Z",
+      "exit_code": 1,
+      "output": "historical-authority/preservation.txt",
+      "output_sha256": "93e20be864b553a3ec65cde10e37811b0dae012b026d7d1590f0e1bab68967da",
+      "duration_seconds": 0.926
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "node tools/pilot-validate.mjs",
+      "started": "2026-09-20T09:57:22.607Z",
+      "exit_code": 0,
+      "output": "product-1/official-pilot.txt",
+      "output_sha256": "079ab96ddb0eb348beff7d1d284bd05dfc00a919fca0fce849d6f1aabc904969",
+      "duration_seconds": 7.406
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "node tools/process-test.mjs",
+      "started": "2026-09-20T09:57:30.014Z",
+      "exit_code": 0,
+      "output": "product-1/process-recovery.txt",
+      "output_sha256": "aa931053166f29844b3b6b54dd3bfc2b4fa494200c38e59838aa9e724fafdeff",
+      "duration_seconds": 2.503
+    },
+    {
+      "result": "product-1/results.json",
+      "result_sha256": "65a66765ef2a4bf379fe12143ddf2eb26a40993c075c989a01d1c775953711af",
+      "command": "target\\debug\\agentique.exe --workspace .workspaces/verified-kerml-v9-1789898226154.db demo",
+      "started": "2026-09-20T09:57:32.518Z",
+      "exit_code": 0,
+      "output": "product-1/headless-demo.txt",
+      "output_sha256": "09b348d3b90c7157a9c4bb71079df6c1195fd9ede96ed2d8fca57fa996ec8713",
+      "duration_seconds": 1.93
+    },
+    {
+      "result": "preservation-1/result.json",
+      "result_sha256": "a686f2ab6fc2d563e49959ef9959f243976e69af49cdc598829d60d79c7b6a86",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/preservation.py"
+      ],
+      "started": "2026-09-20T09:57:55.644314+00:00",
+      "exit_code": 0,
+      "output": "preservation-1/output.txt",
+      "output_sha256": "686d4f71565677d213bb9b66b240b6bec233b6de431ff33a4157e78674d472f9",
+      "duration_seconds": 2.687999999965541
+    },
+    {
+      "result": "audits/result.json",
+      "result_sha256": "87deb5acf2264bd0c52bb12c91b8ec7a76becb9d9c38d69bac83cef9f0fb71f5",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/audits.py"
+      ],
+      "started": "2026-09-20T10:00:25.824637+00:00",
+      "exit_code": 0,
+      "output": "audits/output.txt",
+      "output_sha256": "716d407a05f872c52b09a4af4e80825a8961874f4ad21a2fa1480ea8f60e0dea",
+      "duration_seconds": 0.0779999999795109
+    },
+    {
+      "result": "candidate-bindings/result.json",
+      "result_sha256": "d5f0ef25d4f05c96f56c6d243da1788eeb6fab46f280d7200777278e12221823",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "binding_manifest",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-20T10:01:24.697642+00:00",
+      "exit_code": 1,
+      "output": "candidate-bindings/output.txt",
+      "output_sha256": "75f9daa1cdb42e2e552c4e1cb993f763b04bef5a2596dda946cf79eb2f46a82e",
+      "duration_seconds": 26.21799999999348
+    },
+    {
+      "result": "measurements-check/result.json",
+      "result_sha256": "6d4c800d7a2371e1c32176bd11e0961a4229044a0d90bb131421631839147d8c",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/measure.py",
+        "--check"
+      ],
+      "started": "2026-09-20T10:01:24.697642+00:00",
+      "exit_code": 0,
+      "output": "measurements-check/output.txt",
+      "output_sha256": "0e5cb05c7dfebb6cc8dbdb5dde013fc0856f48cc5aed5cd6d87b109309f75aab",
+      "duration_seconds": 1.1559999999590218
+    },
+    {
+      "result": "structural-coverage-publication-status/result.json",
+      "result_sha256": "1009309bbd21b62c6c540c26daa547510a67e6c80325de4fd91c63f38a52a8ae",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/audits.py",
+        "--check",
+        "--gate"
+      ],
+      "started": "2026-09-20T10:01:24.697642+00:00",
+      "exit_code": 1,
+      "output": "structural-coverage-publication-status/output.txt",
+      "output_sha256": "716d407a05f872c52b09a4af4e80825a8961874f4ad21a2fa1480ea8f60e0dea",
+      "duration_seconds": 0.09299999999348074
+    },
+    {
+      "result": "reference-result-matrices-final/result.json",
+      "result_sha256": "9adff766a71b57f61621d06e4fc5dc02d0ea28c50d6c4879a126c69872dff885",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "reference_binding_v9",
+        "--test",
+        "result_domains_v9",
+        "--test",
+        "cross_feature_authority_v9"
+      ],
+      "started": "2026-09-20T10:04:00.796278+00:00",
+      "exit_code": 0,
+      "output": "reference-result-matrices-final/output.txt",
+      "output_sha256": "26924d2789a784715778da8729bd67e442d74dd1e60628f536c4716a8b14f737",
+      "duration_seconds": 7.844000000040978
+    },
+    {
+      "result": "clippy-final-2/result.json",
+      "result_sha256": "3f229d9351d51c91f14a033acca8ddcc20fdf92fc382c97913e4a3cf6c05c848",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-20T10:04:37.458468+00:00",
+      "exit_code": 0,
+      "output": "clippy-final-2/output.txt",
+      "output_sha256": "a33c5ce7dc14c65db705794bb65ae8b34940a95536a9a37d8f757916c9c351f4",
+      "duration_seconds": 1.9059999999590218
+    },
+    {
+      "result": "format-final-2/result.json",
+      "result_sha256": "113c806e9ae5d2dae4214c98c3a558780dcee95aac3203dbe8b104a3f7840417",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-20T10:04:37.458468+00:00",
+      "exit_code": 0,
+      "output": "format-final-2/output.txt",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.687000000034459
+    },
+    {
+      "result": "preservation-final/result.json",
+      "result_sha256": "b5472061b328aa2b142936cb80e99c2a3e56507956bf89b68d16b87f207cc0e3",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/preservation.py",
+        "--check"
+      ],
+      "started": "2026-09-20T10:04:37.458468+00:00",
+      "exit_code": 0,
+      "output": "preservation-final/output.txt",
+      "output_sha256": "686d4f71565677d213bb9b66b240b6bec233b6de431ff33a4157e78674d472f9",
+      "duration_seconds": 1.5929999999934807
+    },
+    {
+      "result": "cross-authority-final/result.json",
+      "result_sha256": "0b98598cd467e24d25301252de32d765e15ef40eb262a0b5f1118f4cacb44745",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/cross-feature-authority.py"
+      ],
+      "started": "2026-09-20T10:05:50.343103+00:00",
+      "exit_code": 0,
+      "output": "cross-authority-final/output.txt",
+      "output_sha256": "901d08e1043530eb051ce2396dd9f841db73d3d6bc90069206c0aeabc52d9e4b",
+      "duration_seconds": 6.594000000040978
+    },
+    {
+      "result": "audits-final/result.json",
+      "result_sha256": "7fc0fd5b7186b2b6b3b5cf5f6c58f5c81baa03b8264f85989c795d8603ac1247",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/audits.py"
+      ],
+      "started": "2026-09-20T10:05:57.682118+00:00",
+      "exit_code": 0,
+      "output": "audits-final/output.txt",
+      "output_sha256": "716d407a05f872c52b09a4af4e80825a8961874f4ad21a2fa1480ea8f60e0dea",
+      "duration_seconds": 0.09399999992456287
+    },
+    {
+      "result": "cross-authority-final-check/result.json",
+      "result_sha256": "107923a63b0a81d5d412e7f3ef611af37902fa809d3f05a1ed53f9cfdbab6abd",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/cross-feature-authority.py",
+        "--check"
+      ],
+      "started": "2026-09-20T10:06:25.977080+00:00",
+      "exit_code": 0,
+      "output": "cross-authority-final-check/output.txt",
+      "output_sha256": "901d08e1043530eb051ce2396dd9f841db73d3d6bc90069206c0aeabc52d9e4b",
+      "duration_seconds": 6.609000000054948
+    },
+    {
+      "result": "final-diff-check/result.json",
+      "result_sha256": "283eb7f42fcc98486b6c237408020f7fa57c1bd08608ef7a956decf76ffd7870",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "started": "2026-09-20T10:06:25.977080+00:00",
+      "exit_code": 0,
+      "output": "final-diff-check/output.txt",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.062000000034458935
+    },
+    {
+      "result": "final-publication-status/result.json",
+      "result_sha256": "8350c6c0212aad27c841533f028eac090a0456988f3f06a9d0f740578b632316",
+      "command": [
+        "python",
+        "-B",
+        "-X",
+        "utf8",
+        "verification/kerml-semantic-closure-v9/audits.py",
+        "--check",
+        "--gate"
+      ],
+      "started": "2026-09-20T10:06:25.978080+00:00",
+      "exit_code": 1,
+      "output": "final-publication-status/output.txt",
+      "output_sha256": "716d407a05f872c52b09a4af4e80825a8961874f4ad21a2fa1480ea8f60e0dea",
+      "duration_seconds": 0.10900000005494803
+    }
+  ]
+}
