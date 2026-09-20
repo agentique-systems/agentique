@@ -35,6 +35,7 @@ fn authored_redefinition_profile_matrix() {
         P::OPERATIONAL_V2,
         P::OPERATIONAL_V3,
         P::OPERATIONAL_V4,
+        P::OPERATIONAL_V5,
     ] {
         let mut project = SourceProject::with_profile(profile).unwrap();
         let m = project
@@ -69,7 +70,7 @@ fn authored_redefinition_profile_matrix() {
         }
         println!("{}: {:?}", profile.id(), r.resolution.value);
     }
-    assert_eq!(contexts.len(), 5);
+    assert_eq!(contexts.len(), 6);
 }
 
 #[test]

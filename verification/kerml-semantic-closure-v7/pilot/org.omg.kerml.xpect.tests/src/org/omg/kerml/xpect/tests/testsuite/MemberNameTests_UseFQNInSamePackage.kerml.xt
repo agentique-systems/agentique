@@ -1,0 +1,27 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.parsing.KerMLParsingTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/library/Base.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+//XPECT noErrors ---> ""
+package test{
+	classifier <'A_Id'> A {}
+	//XPECT linkedName at A --> test.A
+	//* XPECT scope at test::A ---
+	   	A, B, C, test.A, test.B, test.C, A_Id, test.A_Id
+	   	--- */
+	classifier B specializes test::A{}
+	classifier C specializes test::A_Id{}
+}

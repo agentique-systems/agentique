@@ -1,0 +1,11 @@
+[
+  {
+    "source": "declarations-v5.json",
+    "archive": "declarations-v5.json.gz",
+    "bytes": 101722073,
+    "sha256": "9f3a9021913a7a05798f19e363d32658a9bc19d4317a373c6d3d5b7c3583dd7a",
+    "archive_bytes": 8325539,
+    "archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2",
+    "lossless": true
+  }
+]

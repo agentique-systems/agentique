@@ -121,6 +121,17 @@ pub(super) fn construct(
                         p::ELEMENT_OWNED_RELATIONSHIP
                     };
                     builder.link(owner, property, id);
+                    // 8.2 ConnectorEndMember/FlowEndMember establish an end
+                    // even when no explicit "end" token occurs. This applies
+                    // only to the newly constructed owned Feature. Reference
+                    // memberships and inherited projections never mutate their
+                    // existing member's end state.
+                    if property == p::RELATIONSHIP_OWNED_RELATED_ELEMENT
+                        && builder.is_class(owner_class, c::END_FEATURE_MEMBERSHIP)
+                        && builder.is_class(class, c::FEATURE)
+                    {
+                        builder.set(id, p::FEATURE_IS_END, Value::Boolean(true))?;
+                    }
                     if builder.is_class(owner_class, c::PARAMETER_MEMBERSHIP)
                         && builder.is_class(class, c::FEATURE)
                     {

@@ -1,0 +1,22 @@
+{
+  "base_commit": "13a69e381e22e2883cd16fdd921db56840c020ae",
+  "source_inputs_match_clean_main": true,
+  "rows": [
+    {
+      "path": "crates/kerml/src/profiles.rs",
+      "base_and_captured_sha256": "81b93445161bd582711b92e95fb88f7c8d2a93e6e1fb67795c8a143e066b739c"
+    },
+    {
+      "path": "crates/kerml-semantics/src/implicit.rs",
+      "base_and_captured_sha256": "5a16e349290f76acc761fc10762c4f8241dc13e923e37fac0a339038a7269743"
+    },
+    {
+      "path": "crates/kerml-text/src/library/construction.rs",
+      "base_and_captured_sha256": "965edba4a7648fdbc1439855b83b3fc131472e1caa0ac06bdd9d4dc2a09f92f3"
+    },
+    {
+      "path": "crates/kerml-text/examples/library_quality.rs",
+      "base_and_captured_sha256": "44590e38bbd936d730c66021c79e4d4f90d063129eb750228d6bd548b4f9c208"
+    }
+  ]
+}

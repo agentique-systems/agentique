@@ -51,6 +51,8 @@ pub enum SearchDependency {
         root: ElementId,
     },
     StandardLibraries,
+    /// Reviewed exact target and the context's profile/manifest/library identities.
+    FormalConstraintTarget(crate::FormalConstraintId),
     /// The selected validation algorithm and its reviewed profile/manifest context.
     ValidationRule(&'static str),
     Instances {
@@ -102,6 +104,7 @@ pub enum QueryKind {
     ExpressionResults,
     NamingSource,
     RedefinitionEndConformance,
+    FormalConstraintTarget,
 }
 
 /// Subject is part of every conclusion; a target ID alone cannot identify a proof.
@@ -153,8 +156,10 @@ pub enum Rule {
     OrderedNamingFeature,
     ImpliedNamingAgreement,
     PublishedRedefinitionEndConformance,
-    /// AGQ-KERML10-004 / KERML11-68; operational v4 only.
+    /// AGQ-KERML10-004 / KERML11-68; operational v4 and successors.
     OperationalRedefinitionEndConformanceV1,
+    PublishedFormalConstraintTarget,
+    OperationalFormalConstraintTargetV1,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]

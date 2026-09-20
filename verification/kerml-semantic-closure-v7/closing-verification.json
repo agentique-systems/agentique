@@ -1,0 +1,60 @@
+{
+  "format": "agentique-v7-closing-verification/1",
+  "branch": "semantics/kerml-formal-constraint-errata-closure-v7",
+  "result": "KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE \u2014 DO NOT PROCEED",
+  "authority_stop": "KLCV7-F-001 / KERML11-145",
+  "operational_v5": true,
+  "authorized_formal_corrections": [
+    "KERML11-205",
+    "KERML11-206",
+    "KERML11-207"
+  ],
+  "pinned_starting_bytes_unchanged": true,
+  "new_unauthorized_correction_applied": false,
+  "structural_runtime_gates": {
+    "kerml-readiness.txt": 0,
+    "sysml-readiness.txt": 0
+  },
+  "audited_crate_and_standard_inputs_unchanged_since_capture": true,
+  "historical_review_and_profile_doc_prefixes_unchanged": true,
+  "v2_frozen_algorithm_bytes_unchanged": true,
+  "quality": {
+    "canonical_element_count": 29140,
+    "canonical_relationship_count": 16695,
+    "reference_count": 4000,
+    "unresolved_count": 4,
+    "ambiguous_count": 0,
+    "incomplete_reference_count": 64,
+    "mismatched_endpoint_count": 0,
+    "unevaluated_expression_count": 3901,
+    "query_count": 113179,
+    "incomplete_query_count": 118,
+    "invalid_query_count": 2,
+    "end_membership_findings": 0,
+    "distinguishability_findings": 2,
+    "expression_result_cardinality_findings": 0
+  },
+  "formal_coverage": {
+    "A": 38,
+    "B": 213,
+    "E": 6,
+    "F": 1
+  },
+  "observed_os_peak_working_set_bytes": 883003392,
+  "strict_semantic_publication": false,
+  "accepted_snapshot": false,
+  "accepted_bindings": false,
+  "loaded_kerml_standard_libraries": false,
+  "accepted_authored_project_consumption": false,
+  "execution_deferred": true,
+  "sysml_work_started": false,
+  "known_nonzero_reports": [
+    "Full semantic quality and formal coverage: acceptance withheld.",
+    "Historical candidate binding manifest stale; no accepted regeneration.",
+    "Strict raw metamodel conformance: separate published authoring anomalies.",
+    "Existing external Controller fixture RES001.",
+    "Historical v5 acquisition-index discrepancies already present on clean main."
+  ],
+  "command_count": 92,
+  "command_index_scope": "All captured command directories except closing index/self-check runs, which retain their own separate logs."
+}

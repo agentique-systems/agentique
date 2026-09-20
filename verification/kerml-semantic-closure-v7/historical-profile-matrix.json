@@ -1,0 +1,92 @@
+{
+  "format": "agentique-v7-six-profile-review/1",
+  "profiles": [
+    {
+      "profile": "omg-kerml-1.0-published/1",
+      "new_corrections": [],
+      "effective_corrections": [],
+      "formal_targets": "published"
+    },
+    {
+      "profile": "agentique-kerml-1.0-operational/1",
+      "manifest": "standards/kerml-1.0-operational-errata.json",
+      "sha256": "7614fec2b75e14e7181d7e8a0d474cbd3000f53ca3470d8d9814f4b40fd82994",
+      "new_corrections": [
+        "KERML11-81"
+      ],
+      "effective_corrections": [
+        "KERML11-81"
+      ],
+      "formal_targets": "published"
+    },
+    {
+      "profile": "agentique-kerml-1.0-operational/2",
+      "manifest": "standards/kerml-1.0-operational-errata-v2.json",
+      "sha256": "6744a4e589ad3878c2b74c8760d7714500a12f3584f25cfe1175cdd58f02a27d",
+      "new_corrections": [
+        "KERML11-140"
+      ],
+      "effective_corrections": [
+        "KERML11-81",
+        "KERML11-140"
+      ],
+      "formal_targets": "published"
+    },
+    {
+      "profile": "agentique-kerml-1.0-operational/3",
+      "manifest": "standards/kerml-1.0-operational-library-errata-v3.json",
+      "sha256": "c762275c6a7c4cb310c4ba3084683d62125a9319228d8653f39956c61794ae30",
+      "new_corrections": [
+        "KERML11-76"
+      ],
+      "effective_corrections": [
+        "KERML11-81",
+        "KERML11-140",
+        "KERML11-76"
+      ],
+      "formal_targets": "published"
+    },
+    {
+      "profile": "agentique-kerml-1.0-operational/4",
+      "manifest": "standards/kerml-1.0-operational-validation-errata-v4.json",
+      "sha256": "525bae8868e6f1ce2705eb707560ef5597dc50ca3a810070e08717b368605953",
+      "new_corrections": [
+        "KERML11-68"
+      ],
+      "effective_corrections": [
+        "KERML11-81",
+        "KERML11-140",
+        "KERML11-76",
+        "KERML11-68"
+      ],
+      "formal_targets": "published"
+    },
+    {
+      "profile": "agentique-kerml-1.0-operational/5",
+      "manifest": "standards/kerml-1.0-operational-formal-target-errata-v5.json",
+      "sha256": "f9f95648d6f300dc60126f48196eadd295f7c12351804d18c9d718c1c1b08a97",
+      "new_corrections": [
+        "KERML11-205",
+        "KERML11-206",
+        "KERML11-207"
+      ],
+      "effective_corrections": [
+        "KERML11-81",
+        "KERML11-140",
+        "KERML11-76",
+        "KERML11-68",
+        "KERML11-205",
+        "KERML11-206",
+        "KERML11-207"
+      ],
+      "formal_targets": "reviewed six exact targets"
+    }
+  ],
+  "evidence": "historical-profile-matrix-final/result.json",
+  "default_operational": "agentique-kerml-1.0-operational/2",
+  "v5_inherited_end_rule_evidence": "v5-inherited-end-rule/result.json",
+  "end_flag_owner_profile_cases": 264,
+  "v5_authority_matrix_sha256": "835ba7d81543224f39868b5a39916bf860e684e7dc7b74e2e4d486039318ff4b",
+  "historical_manifests_unchanged": true,
+  "accepted_publication": false
+}

@@ -128,9 +128,15 @@ impl KerMlQueries<'_> {
         cache.insert(source, result.clone());
         result
     }
-    fn compute_library_specializations(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
+    // Required library bases before 8.4.2 redundancy suppression. Keeping this
+    // separate lets redundancy traverse implied parent bases without recursive
+    // cache calls or assuming the source's proposed edge.
+    fn required_library_bases(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
         use StandardRole as R;
         let mut out = self.result(vec![]);
+        let formal = self.formal_constraint_specializations(source);
+        out.value.extend(formal.value.iter().copied());
+        out.merge(formal);
         let Some(bindings) = self.context().standard_bindings.as_ref() else {
             return out;
         };
@@ -195,11 +201,24 @@ impl KerMlQueries<'_> {
             }
             out.merge(typing);
         }
-        let candidates: std::collections::BTreeSet<_> = roles
-            .iter()
-            .map(|&role| bindings.get(role))
-            .filter(|&target| target != source)
-            .collect();
+        out.value.extend(
+            roles
+                .into_iter()
+                .map(|role| bindings.get(role))
+                .filter(|&target| target != source),
+        );
+        out.value.sort();
+        out.value.dedup();
+        out
+    }
+    fn compute_library_specializations(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
+        let required = self.required_library_bases(source);
+        let candidates: std::collections::BTreeSet<_> = required.value.iter().copied().collect();
+        let mut out = self.result(vec![]);
+        out.merge(required);
+        if candidates.is_empty() {
+            return out;
+        }
         let explicit = self.targets(source, QueryKind::DirectSpecializations);
         let mut roots = explicit.value.clone();
         roots.extend(candidates.iter().copied());
@@ -213,14 +232,16 @@ impl KerMlQueries<'_> {
                 if current == source || !visited.insert(current) {
                     continue;
                 }
-                let generals = self.targets(current, QueryKind::DirectSpecializations);
+                let mut generals = self.targets(current, QueryKind::DirectSpecializations);
+                let implied = self.required_library_bases(current);
+                generals.value.extend(implied.value.iter().copied());
+                generals.merge(implied);
                 pending.extend(generals.value.iter().copied());
                 out.merge(generals);
             }
             reachable.insert(root, visited);
         }
-        for role in roles {
-            let target = bindings.get(role);
+        for &target in &candidates {
             if target == source
                 || explicit
                     .value

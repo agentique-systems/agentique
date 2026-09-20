@@ -1,0 +1,415 @@
+﻿[
+    {
+        "timestamp":  "2026-09-19T20:59:28.3985754Z",
+        "process_id":  25420,
+        "working_set_bytes":  545538048,
+        "peak_working_set_bytes":  725143552,
+        "cpu_seconds":  58.65625
+    },
+    {
+        "timestamp":  "2026-09-19T20:59:58.4998000Z",
+        "process_id":  25420,
+        "working_set_bytes":  622755840,
+        "peak_working_set_bytes":  792961024,
+        "cpu_seconds":  88.75
+    },
+    {
+        "timestamp":  "2026-09-19T21:00:28.5156558Z",
+        "process_id":  25420,
+        "working_set_bytes":  513810432,
+        "peak_working_set_bytes":  792961024,
+        "cpu_seconds":  118.765625
+    },
+    {
+        "timestamp":  "2026-09-19T21:00:58.5320436Z",
+        "process_id":  25420,
+        "working_set_bytes":  608722944,
+        "peak_working_set_bytes":  792961024,
+        "cpu_seconds":  148.78125
+    },
+    {
+        "timestamp":  "2026-09-19T21:01:28.5422109Z",
+        "process_id":  25420,
+        "working_set_bytes":  561168384,
+        "peak_working_set_bytes":  868687872,
+        "cpu_seconds":  178.75
+    },
+    {
+        "timestamp":  "2026-09-19T21:01:58.5581832Z",
+        "process_id":  25420,
+        "working_set_bytes":  628289536,
+        "peak_working_set_bytes":  868687872,
+        "cpu_seconds":  208.734375
+    },
+    {
+        "timestamp":  "2026-09-19T21:02:28.5633925Z",
+        "process_id":  25420,
+        "working_set_bytes":  699244544,
+        "peak_working_set_bytes":  868687872,
+        "cpu_seconds":  238.734375
+    },
+    {
+        "timestamp":  "2026-09-19T21:02:58.5792786Z",
+        "process_id":  25420,
+        "working_set_bytes":  633102336,
+        "peak_working_set_bytes":  868687872,
+        "cpu_seconds":  268.75
+    },
+    {
+        "timestamp":  "2026-09-19T21:03:28.5853198Z",
+        "process_id":  25420,
+        "working_set_bytes":  609206272,
+        "peak_working_set_bytes":  873578496,
+        "cpu_seconds":  298.765625
+    },
+    {
+        "timestamp":  "2026-09-19T21:03:58.6029812Z",
+        "process_id":  25420,
+        "working_set_bytes":  604385280,
+        "peak_working_set_bytes":  873578496,
+        "cpu_seconds":  328.78125
+    },
+    {
+        "timestamp":  "2026-09-19T21:04:28.6076377Z",
+        "process_id":  25420,
+        "working_set_bytes":  646729728,
+        "peak_working_set_bytes":  873578496,
+        "cpu_seconds":  358.78125
+    },
+    {
+        "timestamp":  "2026-09-19T21:04:58.6208483Z",
+        "process_id":  25420,
+        "working_set_bytes":  655876096,
+        "peak_working_set_bytes":  873578496,
+        "cpu_seconds":  388.796875
+    },
+    {
+        "timestamp":  "2026-09-19T21:05:28.6371176Z",
+        "process_id":  25420,
+        "working_set_bytes":  668270592,
+        "peak_working_set_bytes":  873578496,
+        "cpu_seconds":  418.8125
+    },
+    {
+        "timestamp":  "2026-09-19T21:05:58.6487919Z",
+        "process_id":  25420,
+        "working_set_bytes":  608260096,
+        "peak_working_set_bytes":  873578496,
+        "cpu_seconds":  448.828125
+    },
+    {
+        "timestamp":  "2026-09-19T21:06:28.6693934Z",
+        "process_id":  25420,
+        "working_set_bytes":  632012800,
+        "peak_working_set_bytes":  873578496,
+        "cpu_seconds":  478.84375
+    },
+    {
+        "timestamp":  "2026-09-19T21:06:58.6891013Z",
+        "process_id":  25420,
+        "working_set_bytes":  812564480,
+        "peak_working_set_bytes":  874291200,
+        "cpu_seconds":  508.859375
+    },
+    {
+        "timestamp":  "2026-09-19T21:07:28.7013017Z",
+        "process_id":  25420,
+        "working_set_bytes":  647626752,
+        "peak_working_set_bytes":  874291200,
+        "cpu_seconds":  538.875
+    },
+    {
+        "timestamp":  "2026-09-19T21:07:58.7127648Z",
+        "process_id":  25420,
+        "working_set_bytes":  534593536,
+        "peak_working_set_bytes":  874291200,
+        "cpu_seconds":  568.890625
+    },
+    {
+        "timestamp":  "2026-09-19T21:08:28.7232109Z",
+        "process_id":  25420,
+        "working_set_bytes":  635621376,
+        "peak_working_set_bytes":  874291200,
+        "cpu_seconds":  598.90625
+    },
+    {
+        "timestamp":  "2026-09-19T21:08:58.7318600Z",
+        "process_id":  25420,
+        "working_set_bytes":  649531392,
+        "peak_working_set_bytes":  880939008,
+        "cpu_seconds":  628.90625
+    },
+    {
+        "timestamp":  "2026-09-19T21:09:28.7477656Z",
+        "process_id":  25420,
+        "working_set_bytes":  641290240,
+        "peak_working_set_bytes":  880939008,
+        "cpu_seconds":  658.921875
+    },
+    {
+        "timestamp":  "2026-09-19T21:09:58.7656471Z",
+        "process_id":  25420,
+        "working_set_bytes":  645627904,
+        "peak_working_set_bytes":  880939008,
+        "cpu_seconds":  688.9375
+    },
+    {
+        "timestamp":  "2026-09-19T21:10:28.7800559Z",
+        "process_id":  25420,
+        "working_set_bytes":  672088064,
+        "peak_working_set_bytes":  880939008,
+        "cpu_seconds":  718.953125
+    },
+    {
+        "timestamp":  "2026-09-19T21:10:58.7892991Z",
+        "process_id":  25420,
+        "working_set_bytes":  660623360,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  748.96875
+    },
+    {
+        "timestamp":  "2026-09-19T21:11:28.7975391Z",
+        "process_id":  25420,
+        "working_set_bytes":  662654976,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  778.96875
+    },
+    {
+        "timestamp":  "2026-09-19T21:11:58.8097553Z",
+        "process_id":  25420,
+        "working_set_bytes":  699461632,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  808.984375
+    },
+    {
+        "timestamp":  "2026-09-19T21:12:28.8268928Z",
+        "process_id":  25420,
+        "working_set_bytes":  878014464,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  839
+    },
+    {
+        "timestamp":  "2026-09-19T21:12:58.8452790Z",
+        "process_id":  25420,
+        "working_set_bytes":  683352064,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  869.015625
+    },
+    {
+        "timestamp":  "2026-09-19T21:13:28.8610366Z",
+        "process_id":  25420,
+        "working_set_bytes":  667058176,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  899.03125
+    },
+    {
+        "timestamp":  "2026-09-19T21:13:58.8720877Z",
+        "process_id":  25420,
+        "working_set_bytes":  450482176,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  929.046875
+    },
+    {
+        "timestamp":  "2026-09-19T21:14:28.8779061Z",
+        "process_id":  25420,
+        "working_set_bytes":  656470016,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  959.046875
+    },
+    {
+        "timestamp":  "2026-09-19T21:14:58.8880640Z",
+        "process_id":  25420,
+        "working_set_bytes":  661929984,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  989.0625
+    },
+    {
+        "timestamp":  "2026-09-19T21:15:28.9063535Z",
+        "process_id":  25420,
+        "working_set_bytes":  640913408,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1019.078125
+    },
+    {
+        "timestamp":  "2026-09-19T21:15:58.9159704Z",
+        "process_id":  25420,
+        "working_set_bytes":  632651776,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1049.09375
+    },
+    {
+        "timestamp":  "2026-09-19T21:16:28.9238869Z",
+        "process_id":  25420,
+        "working_set_bytes":  655687680,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1079.09375
+    },
+    {
+        "timestamp":  "2026-09-19T21:16:58.9383313Z",
+        "process_id":  25420,
+        "working_set_bytes":  642060288,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1109.109375
+    },
+    {
+        "timestamp":  "2026-09-19T21:17:28.9501022Z",
+        "process_id":  25420,
+        "working_set_bytes":  641863680,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1139.125
+    },
+    {
+        "timestamp":  "2026-09-19T21:17:58.9680095Z",
+        "process_id":  25420,
+        "working_set_bytes":  652054528,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1169.140625
+    },
+    {
+        "timestamp":  "2026-09-19T21:18:28.9832181Z",
+        "process_id":  25420,
+        "working_set_bytes":  656506880,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1199.15625
+    },
+    {
+        "timestamp":  "2026-09-19T21:18:58.9958552Z",
+        "process_id":  25420,
+        "working_set_bytes":  668864512,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1229.15625
+    },
+    {
+        "timestamp":  "2026-09-19T21:19:29.0111923Z",
+        "process_id":  25420,
+        "working_set_bytes":  660717568,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1259.171875
+    },
+    {
+        "timestamp":  "2026-09-19T21:19:59.0307755Z",
+        "process_id":  25420,
+        "working_set_bytes":  657182720,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1289.1875
+    },
+    {
+        "timestamp":  "2026-09-19T21:20:29.0436832Z",
+        "process_id":  25420,
+        "working_set_bytes":  649547776,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1319.203125
+    },
+    {
+        "timestamp":  "2026-09-19T21:20:59.0515872Z",
+        "process_id":  25420,
+        "working_set_bytes":  642433024,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1349.21875
+    },
+    {
+        "timestamp":  "2026-09-19T21:21:29.0604802Z",
+        "process_id":  25420,
+        "working_set_bytes":  649252864,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1379.21875
+    },
+    {
+        "timestamp":  "2026-09-19T21:21:59.0663363Z",
+        "process_id":  25420,
+        "working_set_bytes":  665423872,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1409.21875
+    },
+    {
+        "timestamp":  "2026-09-19T21:22:29.0823059Z",
+        "process_id":  25420,
+        "working_set_bytes":  666828800,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1439.234375
+    },
+    {
+        "timestamp":  "2026-09-19T21:22:59.0919552Z",
+        "process_id":  25420,
+        "working_set_bytes":  669122560,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1469.234375
+    },
+    {
+        "timestamp":  "2026-09-19T21:23:29.1003312Z",
+        "process_id":  25420,
+        "working_set_bytes":  679337984,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1499.25
+    },
+    {
+        "timestamp":  "2026-09-19T21:23:59.1191091Z",
+        "process_id":  25420,
+        "working_set_bytes":  672264192,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1529.25
+    },
+    {
+        "timestamp":  "2026-09-19T21:24:29.1279182Z",
+        "process_id":  25420,
+        "working_set_bytes":  672342016,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1559.25
+    },
+    {
+        "timestamp":  "2026-09-19T21:24:59.1385992Z",
+        "process_id":  25420,
+        "working_set_bytes":  639868928,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1589.265625
+    },
+    {
+        "timestamp":  "2026-09-19T21:25:29.1560911Z",
+        "process_id":  25420,
+        "working_set_bytes":  663474176,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1619.28125
+    },
+    {
+        "timestamp":  "2026-09-19T21:25:59.1708543Z",
+        "process_id":  25420,
+        "working_set_bytes":  481615872,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1649.296875
+    },
+    {
+        "timestamp":  "2026-09-19T21:26:29.1856506Z",
+        "process_id":  25420,
+        "working_set_bytes":  663171072,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1679.3125
+    },
+    {
+        "timestamp":  "2026-09-19T21:26:59.1978759Z",
+        "process_id":  25420,
+        "working_set_bytes":  664358912,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1709.328125
+    },
+    {
+        "timestamp":  "2026-09-19T21:27:29.2183644Z",
+        "process_id":  25420,
+        "working_set_bytes":  699625472,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1739.34375
+    },
+    {
+        "timestamp":  "2026-09-19T21:27:59.2326301Z",
+        "process_id":  25420,
+        "working_set_bytes":  639332352,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1769.359375
+    },
+    {
+        "timestamp":  "2026-09-19T21:28:29.2413241Z",
+        "process_id":  25420,
+        "working_set_bytes":  723714048,
+        "peak_working_set_bytes":  883003392,
+        "cpu_seconds":  1799.375
+    }
+]

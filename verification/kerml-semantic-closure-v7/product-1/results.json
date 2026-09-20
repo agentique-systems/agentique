@@ -1,0 +1,74 @@
+[
+  {
+    "command": "node tools/registers.mjs",
+    "started": "2026-09-19T20:29:55.257Z",
+    "durationMs": 442,
+    "exitCode": 0,
+    "signal": null,
+    "log": "registers.txt"
+  },
+  {
+    "command": "node tools/extract.mjs --check",
+    "started": "2026-09-19T20:29:55.700Z",
+    "durationMs": 328,
+    "exitCode": 0,
+    "signal": null,
+    "log": "extraction.txt"
+  },
+  {
+    "command": "cargo build --workspace --locked",
+    "started": "2026-09-19T20:29:56.035Z",
+    "durationMs": 8583,
+    "exitCode": 0,
+    "signal": null,
+    "log": "workspace-build.txt"
+  },
+  {
+    "command": "npm run format:check",
+    "started": "2026-09-19T20:30:04.619Z",
+    "durationMs": 1462,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-format.txt"
+  },
+  {
+    "command": "node node_modules/sysml-validate/out/main.js models/ --library standards/libraries-2026-04 --no-config --format json --out verification/kerml-semantic-closure-v7/product-1/independent-validation.json",
+    "started": "2026-09-19T20:30:06.082Z",
+    "durationMs": 6572,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-starter.txt"
+  },
+  {
+    "command": "node node_modules/sysml-validate/out/main.js tests/fixtures/ --library standards/libraries-2026-04 --no-config --format json --out verification/kerml-semantic-closure-v7/product-1/independent-fixtures.json",
+    "started": "2026-09-19T20:30:12.654Z",
+    "durationMs": 5937,
+    "exitCode": 1,
+    "signal": null,
+    "log": "independent-fixtures.txt"
+  },
+  {
+    "command": "node tools/pilot-validate.mjs",
+    "started": "2026-09-19T20:30:18.593Z",
+    "durationMs": 8941,
+    "exitCode": 0,
+    "signal": null,
+    "log": "official-pilot.txt"
+  },
+  {
+    "command": "node tools/process-test.mjs",
+    "started": "2026-09-19T20:30:27.535Z",
+    "durationMs": 2769,
+    "exitCode": 0,
+    "signal": null,
+    "log": "process-recovery.txt"
+  },
+  {
+    "command": "target\\debug\\agentique.exe --workspace .workspaces/verified-kerml-v7-1789849795251.db demo",
+    "started": "2026-09-19T20:30:30.304Z",
+    "durationMs": 2044,
+    "exitCode": 0,
+    "signal": null,
+    "log": "headless-demo.txt"
+  }
+]

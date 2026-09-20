@@ -20,6 +20,7 @@ fn all_profiles_end_owner_matrix_preserves_flags_and_explains_disposition() {
         P::OPERATIONAL_V2,
         P::OPERATIONAL_V3,
         P::OPERATIONAL_V4,
+        P::OPERATIONAL_V5,
     ] {
         for (case, class, restricted) in [
             ("classifier", c::CLASS, false),
@@ -122,8 +123,10 @@ fn all_profiles_end_owner_matrix_preserves_flags_and_explains_disposition() {
                         .unwrap(),
                     );
                     let answer = q.validate_redefinition_end_conformance(id(200));
-                    let expected =
-                        !target_end || source_end || (profile == P::OPERATIONAL_V4 && !restricted);
+                    let expected = !target_end
+                        || source_end
+                        || (matches!(profile, P::OPERATIONAL_V4 | P::OPERATIONAL_V5)
+                            && !restricted);
                     assert_eq!(
                         answer.completeness,
                         if expected {
@@ -148,7 +151,7 @@ fn all_profiles_end_owner_matrix_preserves_flags_and_explains_disposition() {
                     );
                     assert_eq!(
                         disposition.rule,
-                        if profile == P::OPERATIONAL_V4 {
+                        if matches!(profile, P::OPERATIONAL_V4 | P::OPERATIONAL_V5) {
                             Rule::OperationalRedefinitionEndConformanceV1
                         } else {
                             Rule::PublishedRedefinitionEndConformance
@@ -188,7 +191,7 @@ fn all_profiles_end_owner_matrix_preserves_flags_and_explains_disposition() {
             }
         }
     }
-    assert_eq!(identities.len(), 5);
+    assert_eq!(identities.len(), 6);
 }
 
 #[test]

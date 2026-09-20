@@ -1,0 +1,32 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.visibility.KerMLVisibilityTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+		File {from ="/src/DependencyVisibilityPackage.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/library/Base.kerml"}
+				File {from ="/src/DependencyVisibilityPackage.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+// XPECT noErrors ---> ""
+package Test3{
+	public import VisibilityPackage::*;
+	classifier A specializes c_clazz{
+		// This does not resolve because qualified names currently require public visbility.
+		// XPECT errors --> "Couldn't resolve reference to Classifier 'A::c_Protect'." at "A::c_Protect"
+  		classifier EE specializes A::c_Protect{}
+	}
+	
+ 	//special case when full qualifiedname within the specialization.
+		
+}
+	

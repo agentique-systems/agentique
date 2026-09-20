@@ -1,0 +1,1 @@
+Six independent formal-target authority rows verified; pinned declarations and reference map agree.

@@ -1,0 +1,856 @@
+{
+  "format": "agentique-independent-result-binding-conflict/1",
+  "id": "KLCV7-F-001",
+  "issue": {
+    "key": "KERML11-145",
+    "status": "open",
+    "url": "https://issues.omg.org/issues/KERML11-145",
+    "sha256": "d7bc2fc68064b7ca52126d25c21f0c5e1feef6359a9224e0d8ec9a06129f2a9b"
+  },
+  "affected_rule": {
+    "kind": "ownedRule",
+    "owner": "Function",
+    "name": "checkFunctionResultBindingConnector",
+    "attributes": {
+      "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector",
+      "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+      "name": "checkFunctionResultBindingConnector"
+    },
+    "bodies": [
+      {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector-_comment.0",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+        "body": "<p>If a <code>Function</code> has an <code>Expression</code> owned via a <code>ResultExpressionMembership</code>, then the owning <code>Function</code> must also own a <code>BindingConnector</code> between its <code>result</code> <code>parameter</code> and the <code>result</code> <code>parameter</code> of the result <code>Expression</code>.</p>"
+      },
+      {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector-specification0",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+        "body": "ownedMembership.selectByKind(ResultExpressionMembership)->     forAll(mem | ownedFeature.selectByKind(BindingConnector)->         exists(binding |             binding.relatedFeature->includes(result) and             binding.relatedFeature->includes(mem.ownedResultExpression.result)))",
+        "language": "OCL2.0",
+        "name": ""
+      }
+    ],
+    "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector\" ns0:type=\"uml:Constraint\" name=\"checkFunctionResultBindingConnector\">\n            <constrainedElement ns0:idref=\"Kernel-Functions-Function\" />\n            <ownedComment ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Function&lt;/code&gt; has an &lt;code&gt;Expression&lt;/code&gt; owned via a &lt;code&gt;ResultExpressionMembership&lt;/code&gt;, then the owning &lt;code&gt;Function&lt;/code&gt; must also own a &lt;code&gt;BindingConnector&lt;/code&gt; between its &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt; and the &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt; of the result &lt;code&gt;Expression&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Functions-Function-checkFunctionResultBindingConnector\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedMembership.selectByKind(ResultExpressionMembership)-&gt;     forAll(mem | ownedFeature.selectByKind(BindingConnector)-&gt;         exists(binding |             binding.relatedFeature-&gt;includes(result) and             binding.relatedFeature-&gt;includes(mem.ownedResultExpression.result)))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+  },
+  "required_graph_predicates": [
+    {
+      "kind": "ownedRule",
+      "owner": "Function",
+      "name": "checkFunctionResultBindingConnector",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFunctionResultBindingConnector"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Function</code> has an <code>Expression</code> owned via a <code>ResultExpressionMembership</code>, then the owning <code>Function</code> must also own a <code>BindingConnector</code> between its <code>result</code> <code>parameter</code> and the <code>result</code> <code>parameter</code> of the result <code>Expression</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "ownedMembership.selectByKind(ResultExpressionMembership)->     forAll(mem | ownedFeature.selectByKind(BindingConnector)->         exists(binding |             binding.relatedFeature->includes(result) and             binding.relatedFeature->includes(mem.ownedResultExpression.result)))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector\" ns0:type=\"uml:Constraint\" name=\"checkFunctionResultBindingConnector\">\n            <constrainedElement ns0:idref=\"Kernel-Functions-Function\" />\n            <ownedComment ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Function&lt;/code&gt; has an &lt;code&gt;Expression&lt;/code&gt; owned via a &lt;code&gt;ResultExpressionMembership&lt;/code&gt;, then the owning &lt;code&gt;Function&lt;/code&gt; must also own a &lt;code&gt;BindingConnector&lt;/code&gt; between its &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt; and the &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt; of the result &lt;code&gt;Expression&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Functions-Function-checkFunctionResultBindingConnector\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedMembership.selectByKind(ResultExpressionMembership)-&gt;     forAll(mem | ownedFeature.selectByKind(BindingConnector)-&gt;         exists(binding |             binding.relatedFeature-&gt;includes(result) and             binding.relatedFeature-&gt;includes(mem.ownedResultExpression.result)))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Connector",
+      "name": "checkConnectorTypeFeaturing",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-checkConnectorTypeFeaturing",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkConnectorTypeFeaturing"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-checkConnectorTypeFeaturing-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Each <code>relatedFeature</code> of a <code>Connector</code> must have each <code>featuringType</code> of the <code>Connector</code> as a direct or indirect <code>featuringType</code> (where a <code>Feature</code> with no <code>featuringType</code> is treated as if the <code>Classifier</code> <code><em>Base::Anything</em></code> was its <code>featuringType</code>).</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-checkConnectorTypeFeaturing-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "relatedFeature->forAll(f |      if featuringType->isEmpty() then f.isFeaturedWithin(null)     else featuringType->forAll(t | f.isFeaturedWithin(t))     endif)",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Connectors-Connector-checkConnectorTypeFeaturing\" ns0:type=\"uml:Constraint\" name=\"checkConnectorTypeFeaturing\">\n            <constrainedElement ns0:idref=\"Kernel-Connectors-Connector\" />\n            <ownedComment ns0:id=\"Kernel-Connectors-Connector-checkConnectorTypeFeaturing-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Each &lt;code&gt;relatedFeature&lt;/code&gt; of a &lt;code&gt;Connector&lt;/code&gt; must have each &lt;code&gt;featuringType&lt;/code&gt; of the &lt;code&gt;Connector&lt;/code&gt; as a direct or indirect &lt;code&gt;featuringType&lt;/code&gt; (where a &lt;code&gt;Feature&lt;/code&gt; with no &lt;code&gt;featuringType&lt;/code&gt; is treated as if the &lt;code&gt;Classifier&lt;/code&gt; &lt;code&gt;&lt;em&gt;Base::Anything&lt;/em&gt;&lt;/code&gt; was its &lt;code&gt;featuringType&lt;/code&gt;).&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Connectors-Connector-checkConnectorTypeFeaturing\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Connectors-Connector-checkConnectorTypeFeaturing-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"relatedFeature-&gt;forAll(f |      if featuringType-&gt;isEmpty() then f.isFeaturedWithin(null)     else featuringType-&gt;forAll(t | f.isFeaturedWithin(t))     endif)\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Type",
+      "name": "supertypes",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-supertypes_Boolean",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "supertypes"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-supertypes_Boolean-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "if isConjugated then Sequence{conjugator.originalType} else if not excludeImplied then ownedSpecialization.general else ownedSpecialization->reject(isImplied).general endif endif",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-supertypes_Boolean-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If this <code>Type</code> is conjugated, then return just the <code>originalType</code> of the <code>Conjugation</code>. Otherwise, return the <code>general</code> <code>Types</code> from all <code>ownedSpecializations</code> of this type, if <code>excludeImplied = false</code>, or all non-implied <code>ownedSpecializations</code>, if <code>excludeImplied = true</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Type-supertypes_Boolean\" ns0:type=\"uml:Operation\" name=\"supertypes\">\n            <bodyCondition ns0:id=\"Core-Types-Type-supertypes_Boolean-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Types-Type-supertypes_Boolean-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if isConjugated then Sequence{conjugator.originalType} else if not excludeImplied then ownedSpecialization.general else ownedSpecialization-&gt;reject(isImplied).general endif endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Types-Type-supertypes_Boolean-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If this &lt;code&gt;Type&lt;/code&gt; is conjugated, then return just the &lt;code&gt;originalType&lt;/code&gt; of the &lt;code&gt;Conjugation&lt;/code&gt;. Otherwise, return the &lt;code&gt;general&lt;/code&gt; &lt;code&gt;Types&lt;/code&gt; from all &lt;code&gt;ownedSpecializations&lt;/code&gt; of this type, if &lt;code&gt;excludeImplied = false&lt;/code&gt;, or all non-implied &lt;code&gt;ownedSpecializations&lt;/code&gt;, if &lt;code&gt;excludeImplied = true&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Types-Type-supertypes_Boolean\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Types-Type-supertypes_Boolean-excludeImplied\" ns0:type=\"uml:Parameter\" name=\"excludeImplied\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Types-Type-supertypes_Boolean-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Core-Types-Type-supertypes_Boolean--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Types-Type\" />\n              <upperValue ns0:id=\"Core-Types-Type-supertypes_Boolean--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Types-Type-supertypes_Boolean-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Type",
+      "name": "allSupertypes",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-allSupertypes_",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "allSupertypes"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-allSupertypes_-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "OrderedSet{self}->closure(supertypes(false))",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-allSupertypes_-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Return this <code>Type</code> and all <code>Types</code> that are directly or transitively supertypes of this <code>Type</code> (as determined by the <code>supertypes</code> operation with <code>excludeImplied = false</code>).</p> "
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Type-allSupertypes_\" ns0:type=\"uml:Operation\" name=\"allSupertypes\">\n            <bodyCondition ns0:id=\"Core-Types-Type-allSupertypes_-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Types-Type-allSupertypes_-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"OrderedSet{self}-&gt;closure(supertypes(false))\" language=\"OCL2.0\" name=\"\" />\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Types-Type-allSupertypes_-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Return this &lt;code&gt;Type&lt;/code&gt; and all &lt;code&gt;Types&lt;/code&gt; that are directly or transitively supertypes of this &lt;code&gt;Type&lt;/code&gt; (as determined by the &lt;code&gt;supertypes&lt;/code&gt; operation with &lt;code&gt;excludeImplied = false&lt;/code&gt;).&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Core-Types-Type-allSupertypes_\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Types-Type-allSupertypes_-result\" ns0:type=\"uml:Parameter\" name=\"result\">\n              <lowerValue ns0:id=\"Core-Types-Type-allSupertypes_-result-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Types-Type\" />\n              <upperValue ns0:id=\"Core-Types-Type-allSupertypes_-result-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Types-Type-allSupertypes_-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Type",
+      "name": "isCompatibleWith",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-isCompatibleWith_Type",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isCompatibleWith"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-isCompatibleWith_Type-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "specializes(otherType)",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-isCompatibleWith_Type-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>By default, this <code>Type</code> is compatible with an <code>otherType</code> if it directly or indirectly specializes the <code>otherType</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Type-isCompatibleWith_Type\" ns0:type=\"uml:Operation\" name=\"isCompatibleWith\">\n            <bodyCondition ns0:id=\"Core-Types-Type-isCompatibleWith_Type-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Types-Type-isCompatibleWith_Type-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"specializes(otherType)\" language=\"OCL2.0\" name=\"\" />\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Types-Type-isCompatibleWith_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;By default, this &lt;code&gt;Type&lt;/code&gt; is compatible with an &lt;code&gt;otherType&lt;/code&gt; if it directly or indirectly specializes the &lt;code&gt;otherType&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Types-Type-isCompatibleWith_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Types-Type-isCompatibleWith_Type-otherType\" ns0:type=\"uml:Parameter\" name=\"otherType\">\n              <type ns0:idref=\"Core-Types-Type\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Types-Type-isCompatibleWith_Type-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Type",
+      "name": "deriveTypeOwnedFeatureMembership",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-deriveTypeOwnedFeatureMembership",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "deriveTypeOwnedFeatureMembership"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-deriveTypeOwnedFeatureMembership-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>The <code>ownedFeatureMemberships</code> of a <code>Type</code> are its <code>ownedMemberships</code> that are <code>FeatureMemberships</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-deriveTypeOwnedFeatureMembership-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "ownedFeatureMembership = ownedRelationship->selectByKind(FeatureMembership)",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Type-deriveTypeOwnedFeatureMembership\" ns0:type=\"uml:Constraint\" name=\"deriveTypeOwnedFeatureMembership\">\n            <constrainedElement ns0:idref=\"Core-Types-Type\" />\n            <ownedComment ns0:id=\"Core-Types-Type-deriveTypeOwnedFeatureMembership-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;ownedFeatureMemberships&lt;/code&gt; of a &lt;code&gt;Type&lt;/code&gt; are its &lt;code&gt;ownedMemberships&lt;/code&gt; that are &lt;code&gt;FeatureMemberships&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Types-Type-deriveTypeOwnedFeatureMembership\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Types-Type-deriveTypeOwnedFeatureMembership-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedFeatureMembership = ownedRelationship-&gt;selectByKind(FeatureMembership)\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Type",
+      "name": "deriveTypeOwnedFeature",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-deriveTypeOwnedFeature",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "deriveTypeOwnedFeature"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-deriveTypeOwnedFeature-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>The <code>ownedFeatures</code> of a <code>Type</code> are the <code>ownedMemberFeatures</code> of its <code>ownedFeatureMemberships</code>."
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-deriveTypeOwnedFeature-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "ownedFeature = ownedFeatureMembership.ownedMemberFeature",
+          "language": "English",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Type-deriveTypeOwnedFeature\" ns0:type=\"uml:Constraint\" name=\"deriveTypeOwnedFeature\">\n            <constrainedElement ns0:idref=\"Core-Types-Type\" />\n            <ownedComment ns0:id=\"Core-Types-Type-deriveTypeOwnedFeature-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;ownedFeatures&lt;/code&gt; of a &lt;code&gt;Type&lt;/code&gt; are the &lt;code&gt;ownedMemberFeatures&lt;/code&gt; of its &lt;code&gt;ownedFeatureMemberships&lt;/code&gt;.\">\n              <annotatedElement ns0:idref=\"Core-Types-Type-deriveTypeOwnedFeature\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Types-Type-deriveTypeOwnedFeature-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedFeature = ownedFeatureMembership.ownedMemberFeature\" language=\"English\" name=\"\" />\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "supertypes",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-supertypes_Boolean",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "supertypes"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-supertypes_Boolean-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "let supertypes : OrderedSet(Type) =      self.oclAsType(Type).supertypes(excludeImplied) in if featureTarget = self then supertypes else supertypes->append(featureTarget) endif",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-supertypes_Boolean\" ns0:type=\"uml:Operation\" name=\"supertypes\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-supertypes_Boolean-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-supertypes_Boolean-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"let supertypes : OrderedSet(Type) =      self.oclAsType(Type).supertypes(excludeImplied) in if featureTarget = self then supertypes else supertypes-&gt;append(featureTarget) endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedParameter ns0:id=\"Core-Features-Feature-supertypes_Boolean-excludeImplied\" ns0:type=\"uml:Parameter\" name=\"excludeImplied\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Features-Feature-supertypes_Boolean-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <lowerValue ns0:id=\"Core-Features-Feature-supertypes_Boolean--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Types-Type\" />\n              <upperValue ns0:id=\"Core-Features-Feature-supertypes_Boolean--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-supertypes_Boolean-unnamed1\" />\n            <redefinedOperation ns0:idref=\"Core-Types-Type-supertypes_Boolean\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "isCompatibleWith",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCompatibleWith_Type",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isCompatibleWith"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCompatibleWith_Type-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "specializes(otherType) or     supertype.oclIsKindOf(Feature) and     ownedFeature->isEmpty() and     otherType.ownedFeature->isEmpty() and     ownedRedefinitions.allRedefinedFeatures()->exists(f |           otherType.oclAsType(Feature).allRedefinedFeatures()->includes(f)) and     canAccess(otherType.oclAsType(Feature))",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCompatibleWith_Type-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>A <code>Feature</code> is compatible with an <code>otherType</code> if it either directly or indirectly specializes the <code>otherType</code> or if the <code>otherType</code> is also a <code>Feature</code> and all of the following are true.</p> <ol>  <li>Neither this <code>Feature</code> or the <code>otherType</code> have any <code>ownedFeatures</code>.</li>  <li>This <code>Feature</code> directly or indirectly redefines a <code>Feature</code> that is also directly or indirectly redefined by the <code>otherType</code>.</li>  <li>This <code>Feature</code> can access the <code>otherType</code>. </li></ol>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isCompatibleWith_Type\" ns0:type=\"uml:Operation\" name=\"isCompatibleWith\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isCompatibleWith_Type-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-isCompatibleWith_Type-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"specializes(otherType) or     supertype.oclIsKindOf(Feature) and     ownedFeature-&gt;isEmpty() and     otherType.ownedFeature-&gt;isEmpty() and     ownedRedefinitions.allRedefinedFeatures()-&gt;exists(f |           otherType.oclAsType(Feature).allRedefinedFeatures()-&gt;includes(f)) and     canAccess(otherType.oclAsType(Feature))\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isCompatibleWith_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A &lt;code&gt;Feature&lt;/code&gt; is compatible with an &lt;code&gt;otherType&lt;/code&gt; if it either directly or indirectly specializes the &lt;code&gt;otherType&lt;/code&gt; or if the &lt;code&gt;otherType&lt;/code&gt; is also a &lt;code&gt;Feature&lt;/code&gt; and all of the following are true.&lt;/p&gt; &lt;ol&gt;  &lt;li&gt;Neither this &lt;code&gt;Feature&lt;/code&gt; or the &lt;code&gt;otherType&lt;/code&gt; have any &lt;code&gt;ownedFeatures&lt;/code&gt;.&lt;/li&gt;  &lt;li&gt;This &lt;code&gt;Feature&lt;/code&gt; directly or indirectly redefines a &lt;code&gt;Feature&lt;/code&gt; that is also directly or indirectly redefined by the &lt;code&gt;otherType&lt;/code&gt;.&lt;/li&gt;  &lt;li&gt;This &lt;code&gt;Feature&lt;/code&gt; can access the &lt;code&gt;otherType&lt;/code&gt;. &lt;/li&gt;&lt;/ol&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isCompatibleWith_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isCompatibleWith_Type-otherType\" ns0:type=\"uml:Parameter\" name=\"otherType\">\n              <type ns0:idref=\"Core-Types-Type\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isCompatibleWith_Type-unnamed1\" />\n            <redefinedOperation ns0:idref=\"Core-Types-Type-isCompatibleWith_Type\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "isFeaturedWithin",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturedWithin_Type",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isFeaturedWithin"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturedWithin_Type-isFeaturedWithIn_Body-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "if type = null then     featuringType->forAll(f | f = resolveGlobal('Base::Anything').memberElement) else     featuringType->forAll(f | type.isCompatibleWith(f)) or     isVariable and type.specializes(owningType) or     chainingFeature->notEmpty() and chainingFeature->first().isVariable and         type.specializes(chainingFeature->first().owningType) endif",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturedWithin_Type-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Return if the <code>featuringTypes</code> of this <code>Feature</code> are compatible with the given <code>type</code>. If <code>type</code> is null, then check if this <code>Feature</code> is explicitly or implicitly featured by <em><code>Base::Anything</code></em>. If this <code>Feature</code> has <code>isVariable = true</code>, then also consider it to be featured within its <code>owningType</code>. If this <code>Feature</code> is a feature chain whose first <code>chainingFeature</code> has <code>isVariable = true</code>, then also consider it to be featured within the <code>owningType</code> of its first <code>chainingFeature</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type\" ns0:type=\"uml:Operation\" name=\"isFeaturedWithin\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-isFeaturedWithIn_Body\" ns0:type=\"uml:Constraint\" name=\"isFeaturedWithIn_Body\">\n              <specification ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-isFeaturedWithIn_Body-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if type = null then     featuringType-&gt;forAll(f | f = resolveGlobal('Base::Anything').memberElement) else     featuringType-&gt;forAll(f | type.isCompatibleWith(f)) or     isVariable and type.specializes(owningType) or     chainingFeature-&gt;notEmpty() and chainingFeature-&gt;first().isVariable and         type.specializes(chainingFeature-&gt;first().owningType) endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Return if the &lt;code&gt;featuringTypes&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt; are compatible with the given &lt;code&gt;type&lt;/code&gt;. If &lt;code&gt;type&lt;/code&gt; is null, then check if this &lt;code&gt;Feature&lt;/code&gt; is explicitly or implicitly featured by &lt;em&gt;&lt;code&gt;Base::Anything&lt;/code&gt;&lt;/em&gt;. If this &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;isVariable = true&lt;/code&gt;, then also consider it to be featured within its &lt;code&gt;owningType&lt;/code&gt;. If this &lt;code&gt;Feature&lt;/code&gt; is a feature chain whose first &lt;code&gt;chainingFeature&lt;/code&gt; has &lt;code&gt;isVariable = true&lt;/code&gt;, then also consider it to be featured within the &lt;code&gt;owningType&lt;/code&gt; of its first &lt;code&gt;chainingFeature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isFeaturedWithin_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-type\" ns0:type=\"uml:Parameter\" name=\"type\">\n              <lowerValue ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-type-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Types-Type\" />\n              <upperValue ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-type-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isFeaturedWithin_Type-isFeaturedWithIn_Body\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "isFeaturingType",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isFeaturingType"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "owningType <> null and if not isVariable then type = owningType else if owningType = resolveGlobal('Occurrences::Occurrence').memberElement then     type = resolveGlobal('Occurrences::Occurrence::snapshots').memberElement  else      type.oclIsKindOf(Feature) and     let feature : Feature = type.oclAsType(Feature) in     feature.featuringType->includes(owningType) and     feature.redefinesFromLibrary('Occurrences::Occurrence::snapshots') endif ",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Return whether the given <code>type</code> must be a <code>featuringType</code> of this <code>Feature</code>. If this <code>Feature</code> has <code>isVariable = false</code>, then return true if the <code>type</code> is the <code>owningType</code> of the <code>Feature</code>. If <code>isVariable = true</code>, then return true if the <code>type</code> is a <code>Feature</code> representing the <em><code>snapshots</code></em> of the <code>owningType</code> of this <code>Feature</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isFeaturingType_Type\" ns0:type=\"uml:Operation\" name=\"isFeaturingType\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isFeaturingType_Type-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-isFeaturingType_Type-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningType &lt;&gt; null and if not isVariable then type = owningType else if owningType = resolveGlobal('Occurrences::Occurrence').memberElement then     type = resolveGlobal('Occurrences::Occurrence::snapshots').memberElement  else      type.oclIsKindOf(Feature) and     let feature : Feature = type.oclAsType(Feature) in     feature.featuringType-&gt;includes(owningType) and     feature.redefinesFromLibrary('Occurrences::Occurrence::snapshots') endif \" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isFeaturingType_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Return whether the given &lt;code&gt;type&lt;/code&gt; must be a &lt;code&gt;featuringType&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt;. If this &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;isVariable = false&lt;/code&gt;, then return true if the &lt;code&gt;type&lt;/code&gt; is the &lt;code&gt;owningType&lt;/code&gt; of the &lt;code&gt;Feature&lt;/code&gt;. If &lt;code&gt;isVariable = true&lt;/code&gt;, then return true if the &lt;code&gt;type&lt;/code&gt; is a &lt;code&gt;Feature&lt;/code&gt; representing the &lt;em&gt;&lt;code&gt;snapshots&lt;/code&gt;&lt;/em&gt; of the &lt;code&gt;owningType&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isFeaturingType_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturingType_Type-type\" ns0:type=\"uml:Parameter\" name=\"type\">\n              <type ns0:idref=\"Core-Types-Type\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturingType_Type-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isFeaturingType_Type-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "deriveFeatureFeaturingType",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeaturingType",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "deriveFeatureFeaturingType"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeaturingType-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "The <code>featuringTypes</code> of a <code>Feature</code> include the <code>featuringTypes</code> of all the <code>typeFeaturings</code> of the <code>Feature</code>. If the <code>Feature</code> has <code>chainingFeatures</code>, then its <code>featuringTypes</code> also include the <code>featuringTypes</code> of the first <code>chainingFeature</code>."
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeaturingType-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "featuringType =     let featuringTypes : OrderedSet(Type) =          featuring.type->asOrderedSet() in     if chainingFeature->isEmpty() then featuringTypes     else         featuringTypes->             union(chainingFeature->first().featuringType)->             asOrderedSet()     endif",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-deriveFeatureFeaturingType\" ns0:type=\"uml:Constraint\" name=\"deriveFeatureFeaturingType\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-deriveFeatureFeaturingType-_comment.0\" ns0:type=\"uml:Comment\" body=\"The &lt;code&gt;featuringTypes&lt;/code&gt; of a &lt;code&gt;Feature&lt;/code&gt; include the &lt;code&gt;featuringTypes&lt;/code&gt; of all the &lt;code&gt;typeFeaturings&lt;/code&gt; of the &lt;code&gt;Feature&lt;/code&gt;. If the &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;chainingFeatures&lt;/code&gt;, then its &lt;code&gt;featuringTypes&lt;/code&gt; also include the &lt;code&gt;featuringTypes&lt;/code&gt; of the first &lt;code&gt;chainingFeature&lt;/code&gt;.\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-deriveFeatureFeaturingType\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-deriveFeatureFeaturingType-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"featuringType =     let featuringTypes : OrderedSet(Type) =          featuring.type-&gt;asOrderedSet() in     if chainingFeature-&gt;isEmpty() then featuringTypes     else         featuringTypes-&gt;             union(chainingFeature-&gt;first().featuringType)-&gt;             asOrderedSet()     endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "checkFeatureFeatureMembershipTypeFeaturing",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFeatureFeatureMembershipTypeFeaturing"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Feature</code> is owned via a <code>FeatureMembership</code>, then it must have a <code>featuringType</code> for which the operation <code>isFeaturingType</code> returns true.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "owningFeatureMembership <> null implies featuringTypes->exists(t | isFeaturingType(t))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing\" ns0:type=\"uml:Constraint\" name=\"checkFeatureFeatureMembershipTypeFeaturing\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; is owned via a &lt;code&gt;FeatureMembership&lt;/code&gt;, then it must have a &lt;code&gt;featuringType&lt;/code&gt; for which the operation &lt;code&gt;isFeaturingType&lt;/code&gt; returns true.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningFeatureMembership &lt;&gt; null implies featuringTypes-&gt;exists(t | isFeaturingType(t))\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    }
+  ],
+  "pinned_xmi": {
+    "path": "standards\\normative\\kerml-1.0\\KerML.xmi",
+    "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466"
+  },
+  "pinned_pdf": {
+    "path": "KerML.pdf",
+    "sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697",
+    "pages": [
+      {
+        "page": 160,
+        "matches": [
+          "isCompatibleWith"
+        ],
+        "text": "8.3.3 Core Abstract Syntax\n8.3.3.1 Types Abstract Syntax\n8.3.3.1.1 Overview\n+multiplicities() : Multiplicity [0..*]\n+isCompatibleWith( otherType : Type )\n+specializesFromLibrary( libraryTypeName : String ) : Boolean\n+specializes( supertype : Type ) : Boolean\n+allSupertypes() : Type [0..*]\n+supertypes( excludeImplied : Boolean ) : Type [0..*]\n+directionOfExcluding( feature : Feature, excluded : Type [0..*] ) : FeatureDirectionKind [0..1]\n+directionOf( feature : Feature ) : FeatureDirectionKind [0..1]\n+allRedefinedFeaturesOf( membership : Membership ) : Feature [0..*]\n+removeRedefinedFeatures( memberships : Membership [0..*] ) : Membership [0..*]\n+nonPrivateMemberships( excludedNamespaces : Namespace [0..*], excludedTypes : Type [0..*], excludeImplied : Boolean ) : Membership [0..*]\n+inheritableMemberships( excludedNamespaces : Namespace [0..*], excludedTypes : Type [0..*], excludeImplied : Boolean ) : Membership [0..*]\n+inheritedMemberships( excludedNamespaces : Namespace [0..*], excludedTypes : Type [0..*], excludeImplied : Boolean ) : Membership [0..*]\n+visibleMemberships( excluded : Namespace [0..*], isRecursive : Boolean, includeAll : Boolean ) : Membership [0..*]{redefines visibleMemberships}\n+/isConjugated : Boolean\n+isSufficient : Boolean = false\n+isAbstract : Boolean = false\nType\nFeature\nFeatureMembership\nNamespace OwningMembership\nMultiplicity\nMembership\n{subsets membership, \nordered}\n+/inheritedMembership\n0..*\n{subsets membershipNamespace}\n+/inheritingType 0..*\n{subsets namespace}\n+/typeWithMultiplicity\n0..1\n{subsets ownedMember}\n+/multiplicity\n0..1\n+/featureMembership\n{ordered}\n0..*\n+/type\n1..*\n{subsets feature, ordered}\n+/directedFeature\n0..*\n+/typeWithDirectedFeature\n{subsets typeWithFeature}\n0..*\n{subsets feature, \nordered}\n+/inheritedFeature\n0..*\n{subsets typeWithFeature}\n+/inheritingType\n0..*\n{subsets endFeature, \nsubsets ownedFeature, \nordered}\n+/ownedEndFeature\n0..*\n{subsets owningType, \nsubsets typeWithEndFeature}\n+/endOwningType\n0..1\n{subsets feature, \nordered}\n+/endFeature\n0..*\n{subsets typeWithFeature}\n+/typeWithEndFeature\n0..*\n{subsets type, redefines \nmembershipOwningNamespace}\n+/owningType\n1\n{subsets featureMembership, \nsubsets ownedMembership, \nordered}\n+/ownedFeatureMembership\n0..*\n{subsets member, ordered}\n+/feature\n0..*\n{subsets namespace}\n+/typeWithFeature\n0..*\n{subsets typeWithFeature}\n+/typeWithInput\n0..*\n{subsets directedFeature, \nordered}\n+/input\n0..*\n{subsets typeWithFeature}\n+/typeWithOutput\n0..*\n{subsets directedFeature, \nordered}\n+/output\n0..*\n{subsets featuringType, \nsubsets owningNamespace, \nsubsets typeWithFeature}\n+/owningType\n0..1\n{subsets ownedMember, \nordered}\n+/ownedFeature\n0..*\n+/owningFeatureMembership\n{subsets \nowningMembership}\n0..1\n{redefines \nownedMemberElement}\n+/ownedMemberFeature 1\nFigure 9. Types\n134 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 171,
+        "matches": [
+          "isCompatibleWith"
+        ],
+        "text": "body: OrderedSet{self}->closure(supertypes(false))\ndirectionOf(feature : Feature) : FeatureDirectionKind [0..1]\nIf the givenfeatureis afeatureof thisType, then return its direction relative to thisType, taking conjugation\ninto account.\nbody: directionOfExcluding(f, Set{})\ndirectionOfExcluding(feature : Feature, excluded : Type [0..*]) : FeatureDirectionKind [0..1]\nReturn the direction of the givenfeaturerelative to thisType, excluding a given set ofTypesfrom the search of\nsupertypes of thisType.\nbody: let excludedSelf : Set(Type) = excluded->including(self) in\nif feature.owningType = self then feature.direction\nelse\nlet directions : Sequence(FeatureDirectionKind) =\nsupertypes(false)->excluding(excludedSelf).\ndirectionOfExcluding(feature, excludedSelf)->\nselect(d | d <> null) in\nif directions->isEmpty() then null\nelse\nlet direction : FeatureDirectionKind = directions->first() in\nif not isConjugated then direction\nelse if direction = FeatureDirectionKind::_'in' then FeatureDirectionKind::out\nelse if direction = FeatureDirectionKind::out then FeatureDirectionKind::_'in'\nelse direction\nendif endif endif   endif\nendif\ninheritableMemberships(excludedNamespaces : Namespace [0..*], excludedTypes : Type [0..*], excludeImplied :\nBoolean) : Membership [0..*]\nReturn all the non-privateMembershipsof all the supertypes of thisType, excluding any supertypes that are this\nTypeor are in the given set ofexcludedTypes. IfexcludeImplied = true, then also transitively exclude any\nsupertypes from impliedSpecializations.\nbody: let excludingSelf : Set(Type) = excludedType->including(self) in\nsupertypes(excludeImplied)->reject(t | excludingSelf->includes(t)).\nnonPrivateMemberships(excludedNamespaces, excludingSelf, excludeImplied)\ninheritedMemberships(excludedNamespaces : Namespace [0..*], excludedTypes : Type [0..*], excludeImplied :\nBoolean) : Membership [0..*]\nReturn theMembershipsinheritable from supertypes of thisTypewith redefinedFeaturesremoved. When\ncomputing inheritableMemberships, excludeImportsofexcludedNamespaces,Specializationsof\nexcludedTypes, and, ifexcludeImplied = true, all impliedSpecializations.\nbody: removeRedefinedFeatures(\ninheritableMemberships(excludedNamespaces, excludedTypes, excludeImplied))\nisCompatibleWith(otherType : Type)\nBy default, thisTypeis compatible with anotherTypeif it directly or indirectly specializes theotherType.\nbody: specializes(otherType)\nmultiplicities() : Multiplicity [0..*]\nKernel Modeling Language v1.0 145"
+      },
+      {
+        "page": 180,
+        "matches": [
+          "isFeaturingType",
+          "isFeaturedWithin",
+          "isCompatibleWith"
+        ],
+        "text": "8.3.3.3 Features Abstract Syntax\n8.3.3.3.1 Overview\n+isFeaturingType( type : Type ) : Boolean\n+canAccess( feature : Feature ) : Boolean\n+isFeaturedWithin( type : Type [0..1] ) : Boolean\n+allRedefinedFeatures() : Feature [0..*]\n+ownedCrossFeature() : Feature [0..1]\n+isOwnedCrossFeature() : Boolean\n+isCartesianProduct() : Boolean\n+asCartesianProduct() : Type [0..*]\n+typingFeatures() : Feature [0..*]\n+isCompatibleWith( otherType : Type ){redefines isCompatibleWith}\n+subsetsChain( first : Feature, second : Feature ) : Boolean\n+redefinesFromLibrary( libraryFeatureName : String ) : Boolean\n+redefines( redefinedFeature : Feature ) : Boolean\n+supertypes( excludeImplied : Boolean ) : Type [0..*]{redefines supertypes}\n+namingFeature() : Feature [0..1]\n+effectiveName() : String [0..1]{redefines effectiveName}\n+effectiveShortName() : String [0..1]{redefines effectiveShortName}\n+directionFor( type : Type ) : FeatureDirectionKind [0..1]\n+direction : FeatureDirectionKind [0..1]\n+isConstant : Boolean = false\n+isVariable : Boolean = false\n+isPortion : Boolean = false\n+isDerived : Boolean = false\n+isEnd : Boolean = false\n+isComposite : Boolean = false\n+isOrdered : Boolean = false\n+isUnique : Boolean = true\nFeature\nType\nTypeFeaturing FeatureTyping\nout\ninout\nin\nFeatureDirectionKind\n\u00abenumeration\u00bb\nRelationship Specialization\n{subsets targetRelationship}\n+typeFeaturingOfType\n0..*\n{redefines target}\n+featuringType\n1\n{subsets generalization}\n+typingByType\n0..*\n{redefines general}\n+type\n1\n{subsets sourceRelationship}\n+typeFeaturing\n0..*\n{redefines source}\n+featureOfType\n1\n{subsets ownedRelationship, \nsubsets typeFeaturing, \nordered}\n+/ownedTypeFeaturing\n0..*\n{subsets featureOfType, \nsubsets owningRelatedElement}\n+/owningFeatureOfType\n0..1\n{subsets ownedSpecialization, \nsubsets typing, ordered}\n+/ownedTyping\n0..*\n{subsets typedFeature, \nredefines owningType}\n+/owningFeature\n0..1\n{subsets specialization}\n typing\n0..*\n{redefines specific}\n+typedFeature\n1\n+/featuringType\n{ordered}\n0..*\n+/featureOfType 0..*\n{ordered}\n+/type0..*\n+/typedFeature0..*\nFigure 17. Features\n154 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 188,
+        "matches": [
+          "isFeaturedWithin",
+          "isCompatibleWith"
+        ],
+        "text": "else featuringTypes\nendif\nendif) in\nallFeaturingTypes->exists(t | feature.isFeaturedWithin(t))\ndirectionFor(type : Type) : FeatureDirectionKind [0..1]\nReturn thedirectionOfthisFeaturerelative to the giventype.\nbody: type.directionOf(self)\neffectiveName() : String [0..1] {redefines effectiveName}\nIf aFeaturehas nodeclaredNameordeclaredShortName, then its effectivenameis given by the effective\nnameof theFeaturereturned by thenamingFeature()operation, if any.\nbody: if declaredShortName <> null or declaredName <> null then\ndeclaredName\nelse\nlet namingFeature : Feature = namingFeature() in\nif namingFeature = null then\nnull\nelse\nnamingFeature.effectiveName()\nendif\nendif\neffectiveShortName() : String [0..1] {redefines effectiveShortName}\nIf aFeaturehas nodeclaredShortNameordeclaredName, then its effectiveshortNameis given by the\neffectiveshortNameof theFeaturereturned by thenamingFeature()operation, if any.\nbody: if declaredShortName <> null or declaredName <> null then\ndeclaredShortName\nelse\nlet namingFeature : Feature = namingFeature() in\nif namingFeature = null then\nnull\nelse\nnamingFeature.effectiveShortName()\nendif\nendif\nisCartesianProduct() : Boolean\nCheck whether thisFeaturecan be used to represent a Cartesian product ofTypes.\nbody: type->size() = 1 and\nfeaturingType.size() = 1 and\n(featuringType.first().owner = self implies\nfeaturingType.first().oclIsKindOf(Feature) and\nfeaturingType.first().oclAsType(Feature).isCartesianProduct())\nisCompatibleWith(otherType : Type) {redefines isCompatibleWith}\nAFeatureis compatible with anotherTypeif it either directly or indirectly specializes theotherTypeor if the\notherTypeis also aFeatureand all of the following are true.\n1. Neither thisFeatureor theotherTypehave anyownedFeatures.\n162 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 189,
+        "matches": [
+          "isFeaturingType",
+          "isFeaturedWithin",
+          "isCompatibleWith"
+        ],
+        "text": "2. ThisFeaturedirectly or indirectly redefines aFeaturethat is also directly or indirectly redefined by the\notherType.\n3. ThisFeaturecan access theotherType.\nbody: specializes(otherType) or\nsupertype.oclIsKindOf(Feature) and\nownedFeature->isEmpty() and\notherType.ownedFeature->isEmpty() and\nownedRedefinitions.allRedefinedFeatures()->exists(f |\notherType.oclAsType(Feature).allRedefinedFeatures()->includes(f)) and\ncanAccess(otherType.oclAsType(Feature))\nisFeaturedWithin(type : Type [0..1]) : Boolean\nReturn if thefeaturingTypesof thisFeatureare compatible with the giventype. Iftypeis null, then check if\nthisFeatureis explicitly or implicitly featured byBase::Anything. If thisFeaturehasisVariable = true,\nthen also consider it to be featured within itsowningType. If thisFeatureis a feature chain whose first\nchainingFeaturehasisVariable = true, then also consider it to be featured within theowningTypeof its\nfirstchainingFeature.\nbody: if type = null then\nfeaturingType->forAll(f | f = resolveGlobal('Base::Anything').memberElement)\nelse\nfeaturingType->forAll(f | type.isCompatibleWith(f)) or\nisVariable and type.specializes(owningType) or\nchainingFeature->notEmpty() and chainingFeature->first().isVariable and\ntype.specializes(chainingFeature->first().owningType)\nendif\nisFeaturingType(type : Type) : Boolean\nReturn whether the giventypemust be afeaturingTypeof thisFeature. If thisFeaturehasisVariable =\nfalse, then return true if thetypeis theowningTypeof theFeature. IfisVariable = true, then return true\nif thetypeis aFeaturerepresenting thesnapshotsof theowningTypeof thisFeature.\nbody: owningType <> null and\nif not isVariable then type = owningType\nelse if owningType = resolveGlobal('Occurrences::Occurrence').memberElement then\ntype = resolveGlobal('Occurrences::Occurrence::snapshots').memberElement\nelse\ntype.oclIsKindOf(Feature) and\nlet feature : Feature = type.oclAsType(Feature) in\nfeature.featuringType->includes(owningType) and\nfeature.redefinesFromLibrary('Occurrences::Occurrence::snapshots')\nendif\nisOwnedCrossFeature() : Boolean\nReturn whether thisFeatureis an owned crossFeatureof an endFeature.\nbody: owningNamespace <> null and\nowningNamespace.oclIsKindOf(Feature) and\nowningNamespace.oclAsType(Feature).ownedCrossFeature() = self\nnamingFeature() : Feature [0..1]\nBy default, the namingFeatureof aFeatureis given by its firstredefinedFeatureof its first\nownedRedefinition, if any.\nKernel Modeling Language v1.0 163"
+      },
+      {
+        "page": 192,
+        "matches": [
+          "checkFeatureFeatureMembershipTypeFeaturing",
+          "isFeaturingType"
+        ],
+        "text": "If aFeaturehasisEnd = trueand anowningTypethat is anAssociationor aConnector, then it must\ndirectly or indirectly specializeLinks::Link::participantfrom the Kernel Semantic Library.\nisEnd and owningType <> null and\n(owningType.oclIsKindOf(Association) or\nowningType.oclIsKindOf(Connector)) implies\nspecializesFromLibrary('Links::Link::participant')\ncheckFeatureFeatureMembershipTypeFeaturing\nIf aFeatureis owned via aFeatureMembership, then it must have afeaturingTypefor which the operation\nisFeaturingTypereturns true.\nowningFeatureMembership <> null implies\nfeaturingTypes->exists(t | isFeaturingType(t))\ncheckFeatureFlowFeatureRedefinition\nIf aFeatureis the firstownedFeatureof a first or secondFlowEnd, then it must directly or indirectly specialize\neitherTransfers::Transfer::source::sourceOutputor\nTransfers::Transfer::target::targetInput, respectively, from the Kernel Semantic Library.\nowningType <> null and\nowningType.oclIsKindOf(FlowEnd) and\nowningType.ownedFeature->at(1) = self implies\nlet flowType : Type = owningType.owningType in\nflowType <> null implies\nlet i : Integer =\nflowType.ownedFeature.indexOf(owningType) in\n(i = 1 implies\nredefinesFromLibrary('Transfers::Transfer::source::sourceOutput')) and\n(i = 2 implies\nredefinesFromLibrary('Transfers::Transfer::source::targetInput'))\ncheckFeatureObjectSpecialization\nIf aFeaturehas anownedTypingrelationship to aStructure, then it must directly or indirectly specialize\nObjects::objectsfrom the Kernel Semantics Library.\nownedTyping.type->exists(selectByKind(Structure)) implies\nspecializesFromLibary('Objects::objects')\ncheckFeatureOccurrenceSpecialization\nIf aFeaturehas anownedTypingrelationship to aClass, then it must directly or indirectly specialize\nOccurrences::occurrencesfrom the Kernel Semantic Library.\nownedTyping.type->exists(selectByKind(Class)) implies\nspecializesFromLibrary('Occurrences::occurrences')\ncheckFeatureOwnedCrossFeatureRedefinitionSpecialization\nIf thisFeatureis theownedCrossFeatureof an endFeature, then, for any endFeaturethat is redefined by\nthe owning endFeatureof thisFeature, thisFeaturemust subset thecrossFeatureof the redefined end\nFeature, if this exists.\nisOwnedCrossFeature() implies\nownedSubsetting.subsettedFeature->includesAll(\n166 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 194,
+        "matches": [
+          "checkFeatureSubobjectSpecialization",
+          "checkFeaturePortionSpecialization",
+          "checkFeatureSuboccurrenceSpecialization"
+        ],
+        "text": "ownedParameters->size() >= i implies\nredefines(ownedParameters->at(i))\ncheckFeaturePortionSpecialization\nIf aFeaturehasisPortion = true, anownedTyping relationship to aClass, and anowningTypethat is a\nClassor anotherFeaturetyped by aClass, then it must directly or indirectly specialize\nOccurrences::Occurrence::portionsfrom the Kernel Semantic Library.\nisPortion and\nownedTyping.type->includes(oclIsKindOf(Class)) and\nowningType <> null and\n(owningType.oclIsKindOf(Class) or\nowningType.oclIsKindOf(Feature) and\nowningType.oclAsType(Feature).type->\nexists(oclIsKindOf(Class))) implies\nspecializesFromLibrary('Occurrence::Occurrence::portions')\ncheckFeatureResultRedefinition\nIf aFeatureis aresultparameterof anowningTypethat is aFunctionorExpression, then, for each direct\nsupertype of itsowningTypethat is also aFunctionorExpression, it must redefine theresultparameter.\nowningType <> null and\n(owningType.oclIsKindOf(Function) and\nself = owningType.oclAsType(Function).result or\nowningType.oclIsKindOf(Expression) and\nself = owningType.oclAsType(Expression).result) implies\nowningType.ownedSpecialization.general->\nselect(oclIsKindOf(Function) or oclIsKindOf(Expression))->\nforAll(supertype |\nredefines(\nif superType.oclIsKindOf(Function) then\nsuperType.oclAsType(Function).result\nelse\nsuperType.oclAsType(Expression).result\nendif)\ncheckFeatureSpecialization\nAFeaturemust directly or indirectly specializeBase::thingsfrom the Kernel Semantic Library.\nspecializesFromLibrary('Base::things')\ncheckFeatureSubobjectSpecialization\nA compositeFeaturetyped by aStructure, and whoseownedTypeis aStructureor anotherFeaturetyped\nby aStructuremust directly or indirectly specializeObjects::Object::subobjects\nisComposite and\nownedTyping.type->includes(oclIsKindOf(Structure)) and\nowningType <> null and\n(owningType.oclIsKindOf(Structure) or\nowningType.type->includes(oclIsKindOf(Structure))) implies\nspecializesFromLibrary('Occurrence::Occurrence::suboccurrences')\ncheckFeatureSuboccurrenceSpecialization\n168 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 197,
+        "matches": [
+          "isFeaturedWithin"
+        ],
+        "text": "ownedTypeFeaturing = ownedRelationship->selectByKind(TypeFeaturing)->\nselect(tf | tf.featureOfType = self)\nderiveFeatureOwnedTyping\nTheownedTypingsof aFeatureare itsownedSpecializationsthat areFeatureTypings.\nownedTyping = ownedGeneralization->selectByKind(FeatureTyping)\nderiveFeatureType\nThetypesof aFeatureare the union of thetypesof itstypingsand thetypesof theFeaturesit subsets,\nwith all redundant supertypes removed. If theFeaturehaschainingFeatures, then the union also includes the\ntypes of the lastchainingFeature.\ntype =\nlet types : OrderedSet(Types) = OrderedSet{self}->\n-- Note: The closure operation automatically handles circular relationships.\nclosure(typingFeatures()).typing.type->asOrderedSet() in\ntypes->reject(t1 | types->exist(t2 | t2 <> t1 and t2.specializes(t1)))\nvalidateFeatureChainingFeatureConformance\nEachchainingFeature(other than the first) must be featured within the previouschainingFeature.\nSequence{2..chainingFeature->size()}->forAll(i |\nchainingFeature->at(i).isFeaturedWithin(chainingFeature->at(i-1)))\nvalidateFeatureChainingFeatureNotOne\nAFeaturemust have either nochainingFeaturesor more than one.\nchainingFeature->size() <> 1\nvalidateFeatureChainingFeaturesNotSelf\nAFeaturecannot be one of its ownchainingFeatures.\nchainingFeature->excludes(self)\nvalidateFeatureConstantIsVariable\nAFeaturewithisConstant = truemust haveisVariable = true\nisConstant implies isVariable\nvalidateFeatureCrossFeatureSpecialization\nIf thisFeaturehas acrossFeature, then, for anyFeaturethat is redefined by thisFeature, the\ncrossFeaturemust specialize thecrossFeatureof the redefined endFeature, if this exists.\ncrossFeature <> null implies\nownedRedefinition.redefinedFeature.crossFeature->\nforAll(f | f <> null implies crossFeature.specializes(f))\nvalidateFeatureCrossFeatureType\nThecrossFeatureof aFeaturemust have the sametypesas theFeature.\nKernel Modeling Language v1.0 171"
+      },
+      {
+        "page": 212,
+        "matches": [
+          "checkConnectorTypeFeaturing"
+        ],
+        "text": "Attributes\nNone.\nOperations\nNone.\nConstraints\ncheckBindingConnectorSpecialization\nABindingConnectormust directly or indirectly specialize the baseBindingConnectorLinks::selfLinks\nfrom the Kernel Semantic Library.\nspecializesFromLibrary('Links::selfLinks')\nvalidateBindingConnectorIsBinary\nABindingConnectormust be binary.\nrelatedFeature->size() = 2\n8.3.4.5.3 Connector\nDescription\nAConnectoris a usage ofAssociations, with links restricted according to instances of theTypein which they\nare used (domain of theConnector). Theassociationsof theConnectorrestrict what kinds of things might be\nlinked. TheConnectorfurther restricts these links to be between values ofFeatureson instances of its domain.\nGeneral Classes\nRelationship\nFeature\nAttributes\n/association : Association [0..*] {redefines type, ordered}\nTheAssociationsthat type theConnector.\n/connectorEnd : Feature [0..*] {redefines endFeature, ordered}\nTheendFeaturesof aConnector, which redefine theendFeaturesof theassociationsof theConnector.\nTheconnectorEndsdetermine viaReferenceSubsettingRelationshipswhichFeaturesare related by the\nConnector.\n/defaultFeaturingType : Type [0..1]\nThe innermostTypethat is a common direct or indirectfeaturingTypeof therelatedFeatures, such that, if it\nexists and was thefeaturingTypeof thisConnector, theConnectorwould satisfy the\ncheckConnectorTypeFeaturingconstraint.\n/relatedFeature : Feature [0..*] {redefines relatedElement, ordered, nonunique}\n186 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 213,
+        "matches": [
+          "checkConnectorTypeFeaturing"
+        ],
+        "text": "TheFeaturesthat are related by thisConnectorconsidered as aRelationshipand that restrict the links it\nidentifies, given by the referencedFeaturesof theconnectorEndsof theConnector.\n/sourceFeature : Feature [0..1] {subsets relatedFeature, redefines source, ordered}\nThe sourcerelatedFeaturefor thisConnector. It is the firstrelatedFeature.\n/targetFeature : Feature [0..*] {subsets relatedFeature, redefines target, ordered}\nThe targetrelatedFeaturesfor thisConnector. This includes all therelatedFeaturesother than the\nsourceFeature.\nOperations\nNone.\nConstraints\ncheckConnectorBinaryObjectSpecialization\nA binaryConnectorfor anAssociationStructuremust directly or indirectly specialize the baseConnector\nObjects::binaryLinkObjectsfrom the Kernel Semantic Library.\nconnectorEnds->size() = 2 and\nassociation->exists(oclIsKindOf(AssociationStructure)) implies\nspecializesFromLibrary('Objects::binaryLinkObjects')\ncheckConnectorBinarySpecialization\nA binaryConnectormust directly or indirectly specialize the baseConnectorLinks::binaryLinksfrom the\nKernel Semantic Library.\nconnectorEnd->size() = 2 implies\nspecializesFromLibrary('Links::binaryLinks')\ncheckConnectorObjectSpecialization\nAConnectorfor anAssociationStructuremust directly or indirectly specialize the baseConnector\nObjects::linkObjectsfrom the Kernel Semantic Library.\nassociation->exists(oclIsKindOf(AssociationStructure)) implies\nspecializesFromLibrary('Objects::linkObjects')\ncheckConnectorSpecialization\nAConnectormust directly or indirectly specialize the baseConnectorLinks::linksfrom the Kernel Semantic\nLibrary.\nspecializesFromLibrary('Links::links')\ncheckConnectorTypeFeaturing\nEachrelatedFeatureof aConnectormust have eachfeaturingTypeof theConnectoras a direct or indirect\nfeaturingType(where aFeaturewith nofeaturingTypeis treated as if theClassifierBase::Anything\nwas itsfeaturingType).\nKernel Modeling Language v1.0 187"
+      },
+      {
+        "page": 214,
+        "matches": [
+          "isFeaturedWithin"
+        ],
+        "text": "relatedFeature->forAll(f |\nif featuringType->isEmpty() then f.isFeaturedWithin(null)\nelse featuringType->forAll(t | f.isFeaturedWithin(t))\nendif)\nderiveConnectorDefaultFeaturingType\nThedefaultFeaturingTypeof aConnectoris the innermost common direct or indirectfeaturingTypeof the\nrelatedFeaturesof theConnector, so that eachrelatedElementis featured within the\ndefaultFeaturingType, if such exists.\nlet commonFeaturingTypes : OrderedSet(Type) =\nrelatedFeature->closure(featuringType)->select(t |\nrelatedFeature->forAll(f | f.isFeaturedWithin(t))\n) in\nlet nearestCommonFeaturingTypes : OrderedSet(Type) =\ncommonFeaturingTypes->reject(t1 |\ncommonFeaturingTypes->exists(t2 |\nt2 <> t1 and t2->closure(featuringType)->contains(t1)\n)) in\nif nearestCommonFeaturingTypes->isEmpty() then null\nelse nearestCommonFeaturingTypes->first()\nendif\nderiveConnectorRelatedFeature\nTherelatedFeaturesof aConnectorare the referencedFeaturesof itsconnectorEnds.\nrelatedFeature = connectorEnd.ownedReferenceSubsetting->\nselect(s | s <> null).subsettedFeature\nderiveConnectorSourceFeature\nThesourceFeatureof aConnectoris its firstrelatedFeature(if any).\nsourceFeature =\nif relatedFeature->isEmpty() then null\nelse relatedFeature->first()\nendif\nderiveConnectorTargetFeature\nThetargetFeaturesof aConnectorare therelatedFeaturesother than thesourceFeature.\ntargetFeature =\nif relatedFeature->size() < 2 then OrderedSet{}\nelse\nrelatedFeature->\nsubSequence(2, relatedFeature->size())->\nasOrderedSet()\nendif\nvalidateConnectorBinarySpecialization\nIf aConnectorhas more than twoconnectorEnds, then it mustnotspecialize, directly or indirectly, the\nAssociationBinaryLinkfrom the Kernel Semantic Library.\nconnectorEnds->size() > 2 implies\nnot specializesFromLibrary('Links::BinaryLink')\n188 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 218,
+        "matches": [
+          "checkStepSubperformanceSpecialization",
+          "checkStepOwnedPerformanceSpecialization",
+          "checkStepEnclosedPerformanceSpecialization"
+        ],
+        "text": "General Classes\nFeature\nAttributes\n/behavior : Behavior [0..*] {subsets type, ordered}\nTheBehaviorsthat type thisStep.\n/parameter : Feature [0..*] {redefines directedFeature, ordered}\nTheparametersof thisStep, which are defined as itsdirectedFeatures, whose values are passed into and/or\nout of a performance of theStep.\nOperations\nNone.\nConstraints\ncheckStepEnclosedPerformanceSpecialization\nAStepwhoseowningTypeis aBehavioror anotherStepmust directly or indirectly specialize theStep\nPerformances::Performance::enclosedPerformance.\nowningType <> null and\n(owningType.oclIsKindOf(Behavior) or\nowningType.oclIsKindOf(Step)) implies\nspecializesFromLibrary('Performances::Performance::enclosedPerformance')\ncheckStepOwnedPerformanceSpecialization\nA compositeStepwhoseowningTypeis aStructureor aFeaturetyped by aStructuremust directly or\nindirectly specialize theStepObjects::Object::ownedPerformance.\nisComposite and owningType <> null and\n(owningType.oclIsKindOf(Structure) or\nowningType.oclIsKindOf(Feature) and\nowningType.oclAsType(Feature).type->\nexists(oclIsKindOf(Structure)) implies\nspecializesFromLibrary('Objects::Object::ownedPerformance')\ncheckStepSpecialization\nAStepmust directly or indirectly specialize the baseStepPerformances::performancesfrom the Kernel\nSemantic Library.\nspecializesFromLibrary('Performances::performances')\ncheckStepSubperformanceSpecialization\nAStepwhoseowningTypeis aBehavioror anotherStep, and which is composite, must directly or indirectly\nspecialize theStepPerformances::Performance::subperformance.\nowningType <> null and\n(owningType.oclIsKindOf(Behavior) or\nowningType.oclIsKindOf(Step)) and\n192 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 224,
+        "matches": [
+          "checkFunctionResultBindingConnector"
+        ],
+        "text": "validateExpressionResultParameterMembership\nAnExpressionmust have exactly onefeatureMembership(owned or inherited) that is a\nResultParameterMembership.\nfeatureMembership->\nselectByKind(ReturnParameterMembership)->\nsize() = 1\n8.3.4.7.4 Function\nDescription\nAFunctionis aBehaviorthat has anoutparameterthat is identified as itsresult. AFunctionrepresents\nthe performance of a calculation that produces the values of itsresultparameter. This calculation may be\ndecomposed intoExpressionsthat arestepsof theFunction.\nGeneral Classes\nBehavior\nAttributes\n/expression : Expression [0..*] {subsets step}\nThe set of expressions that represent computational steps or parts of a system of equations within the Function.\nTheExpressionsthat arestepsin the calculation of theresultof thisFunction.\n/isModelLevelEvaluable : Boolean\nWhether thisFunctioncan be used as thefunctionof a model-level evaluableInvocationExpression.\nCertainFunctionsfrom the Kernel Functions Library are considered to haveisModelLevelEvaluable =\ntrue. For all otherFunctionsit isfalse.\nNote: See the specification of the KerML concrete syntax notation forExpressionsfor an identification of which\nlibraryFunctionsare model-level evaluable.\n/result : Feature {subsets parameter, output}\nThe object or value that is the result of evaluating the Function.\nTheresultparameterof theFunction, which is owned by theFunctionvia a\nReturnParameterMembership.\nOperations\nNone.\nConstraints\ncheckFunctionResultBindingConnector\nIf aFunctionhas anExpressionowned via aResultExpressionMembership, then the owningFunction\nmust also own aBindingConnectorbetween itsresultparameterand theresultparameterof the result\nExpression.\n198 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 232,
+        "matches": [
+          "isFeaturedWithin"
+        ],
+        "text": "let sourceParameter : Feature = sourceTargetFeature() in\nsourceTargetFeature <> null and\nsourceTargetFeature.redefinesFromLibrary('ControlFunctions::\\'.\\'::source::target')\nderiveFeatureChainExpressionTargetFeature\nThetargetFeatureof aFeatureChainExpressionis thememberElementof its firstownedMembershipthat\nis not aParameterMembership.\ntargetFeature =\nlet nonParameterMemberships : Sequence(Membership) = ownedMembership->\nreject(oclIsKindOf(ParameterMembership)) in\nif nonParameterMemberships->isEmpty() or\nnot nonParameterMemberships->first().memberElement.oclIsKindOf(Feature)\nthen null\nelse nonParameterMemberships->first().memberElement.oclAsType(Feature)\nendif\nvalidateFeatureChainExpressionConformance\nThetargetFeatureof aFeatureChainExpressionmust be featured within theresultparameter of the\nargumentExpressionof theFeatureChainExpression.\nargument->notEmpty() implies\ntargetFeature.isFeaturedWithin(argument->first().result)\nvalidateFeatureChainExpressionOperator\nTheoperatorof aFeatureChainExpressionmust be\".\".\noperator = '.'\n8.3.4.8.5 FeatureReferenceExpression\nDescription\nAFeatureReferenceExpressionis anExpressionwhoseresultis bound to areferentFeature.\nGeneral Classes\nExpression\nAttributes\n/referent : Feature {subsets member}\nTheFeaturethat is referenced by thisFeatureReferenceExpression, which is its first non-parameter\nmember.\nOperations\nevaluate(target : Element) : Element [0..*] {redefines evaluate}\nFirst, determine avalueExpressionfor thereferent:\n\u2022 If thetargetElementis a Type that has afeaturethat is thereferentor (directly or indirectly)\nredefines it, then thevalueExpressionof theFeatureValuefor thatfeature(if any).\n206 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 265,
+        "matches": [
+          "isFeaturingType"
+        ],
+        "text": "8.4.3 Core Semantics\n8.4.3.1 Core Semantics Overview\n8.4.3.1.1 Core Semantic Constraints\nThe Core semantics are primarily specified mathematically, but the Core metaclassesType,Classifier, and\nFeaturealso have certain semantic constraints (see 8.4.2). Subclause8.4.3.1.2describes the general mathematical\nframework for Core semantics, with specific rules forTypes,ClassifiersandFeaturesgiven in8.4.3.2,\n8.4.3.3, and8.4.3.4, respectively. The following summarizes the corresponding semantic constraints.\nThecheckTypeSpecializationandcheckFeatureSpecializationconstraints are actually already implied\nby the mathematical semantics forTypesandFeatures, but they are included in the abstract syntax so that they\ncan also be reflected syntactically in models by the impliedRelationshipsshown inTable 8. In addition,Table\n9lists the impliedRelationshipsfor semantic constraints on the Core metaclassFeaturethat actually support\nthe semantics of various Kernel-layer constructs, as further described in the Kernel Semantics (8.4.4) subclauses\nreferenced in the table entries for those constraints. In all cases, thesourceandowningRelatedElementof the\nRelationshipis theElementbeing constrained, with thetargetbeing as given in the last column of the table.\nTable 8. Core Semantics Implied Relationships\nSemantic Constraint Implied Relationship Target\ncheckTypeSpecialization Subclassification Base::Anything(see9.2.2.2.1)\ncheckFeatureSpecialization Subsetting Base::things(see9.2.2.2.7)\nNotes\n1. ThecheckTypeSpecializationconstraint applies to allTypes, but theSubclassification\nRelationshipis only implied forClassifiers(see8.4.3.3).\n2. Satisfaction of thecheckFeatureSpecializationconstraint implies satisfaction of the\ncheckTypeSpecializationconstraint (see8.4.3.4).\nTable 9. Core Semantics Implied Relationships Supporting Kernel Semantics\nSemantic Constraint Implied Relationship Target\ncheckFeatureDataValue\nSpecialization Subsetting\nBase::dataValues(see9.2.2.2.3)\nSupports Data Types Semantics (see\n8.4.4.2)\ncheckFeatureOccurrence\nSpecialization Subsetting\nOccurrences::occurrences(see\n9.2.4.2.14)\nSupports Classes Semantics (see\n8.4.4.3)\ncheckFeatureSuboccurrence\nSpecialization Subsetting\nOccurrences::Occurrence::\nsuboccurrences(see9.2.4.2.13)\nSupports Classes Semantics (see\n8.4.4.3)\ncheckFeatureFeatureMembership\nTypeFeaturing TypeFeaturing\nA Type for which\nisFeaturingType\nis true on theFeature\nSupports Classes Semantics (see\n8.4.4.3)\n(See Note 1)\nKernel Modeling Language v1.0 239"
+      },
+      {
+        "page": 267,
+        "matches": [
+          "checkFeatureFeatureMembershipTypeFeaturing"
+        ],
+        "text": "Semantic Constraint Implied Relationship Target\ncheckFeatureFlowFeature\nRedefinition Redefinition\nTransfer::source::\nsourceOutputor\nTransfer::target::\ntargetInput(see9.2.7.2.9)\nSupports Flows Semantics (see\n8.4.4.10.2)\ncheckFeatureValuation\nSpecialization Subsetting\nTheresultof thevalue\nExpressionof anowned\nFeatureValueof aFeature\nSupports Feature Values Semantics\n(see8.4.4.11)\nNotes\n1. For thecheckFeatureFeatureMembershipTypeFeaturingconstraint, if theFeaturehas\nisVariable = false, then the targetTypeis theowningTypeof theFeature. If theFeaturehas\nisVariable = trueand theowningTypeis the baseClassOccurrences::Occurrence, then the\ntarget isOccurrences::Occurrence::snapshots(see9.2.4.2.13). Otherwise, the targetTypeshall\nbe constructed so as to satisfy the constraint and shall be owned as anownedRelatedElementof the\nimpliedTypeFeaturingrelationship. For further details, see8.4.4.3.\n2. For thecheckFeatureCrossingSpecializationconstraint on an endFeature, the target feature\nchain shall consist of twoFeatures. The firstFeatureis owned by the chain, is typed by the\nfeaturingTypeof theownedCrossFeatureof the endFeature, and is featured by theowningType\nof the endFeature. The secondFeatureis theownedCrossFeatureof the endFeature. For further\ndetails, see8.4.4.5.1.\n3. For thecheckFeatureOwnedCrossFeatureTypeFeaturingconstraint, if theowningTypeof the\nowning endFeaturehas exactly twoendFeatures, then anownedCrossFeatureshall be featured by\nthetypesof the other end than its owning endFeature. If theowningTypehas more than two\nendFeatures, then theownedCrossFeatureshall be featured by aFeaturerepresenting a Cartesian\nproduct of thetypesof the other endFeaturesof theowningTypethan the owning endFeatureof\ntheownedCrossFeature. For further details, see8.4.4.5.1.\n8.4.3.1.2 Core Semantics Mathematical Preliminaries\nThe mathematical specification of Core semantics uses a model-theoretic approach. Core mathematical semantics\nare expressed in first order logic notation, extended as follows:\n1. A conjunction specifying that multiple variables are members of the same set can be shortened to a\ncomma-delimited series of variables followed by a single membership symbol (s1,s2\u2208 Sis short for\ns1\u2208 S \u2227 s2\u2208 S). Quantifiers can use this in variable declarations, rather than leaving it to the body of\nthe statement before an implication (\u2200tg, ts\u2208 VT ...is short for\u2200tg, ts tg\u2208 VT \u2227 ts\u2208 VT \u21d2 ...).\n2. Dots (.) appearing between metaproperty names have the same meaning as in OCL, including implicit\ncollections [OCL].\n3. Sets are identified in the usual set-builder notation, which specifies members of a set between curly braces\n(\"{}\"). The notation is extended with \"#\" before an opening brace to refer to the cardinality of a set.\nElementnames appearing in the mathematical semantics refer to theElementitself, rather than its instances, using\nthe same font conventions as given in8.1.\nThe mathematical semantics use the following model-theoretic terms, explained in terms of this specification:\nKernel Modeling Language v1.0 241"
+      },
+      {
+        "page": 277,
+        "matches": [
+          "checkConnectorTypeFeaturing"
+        ],
+        "text": "Semantic Constraint Implied Relationship Target\ncheckMetadataFeatureSemantic\nSpecialization\nSpecialization\nSubclassification\nFeatureTyping\nSubsetting\n(see Note 2)\n(See Note 2 and8.4.4.13)\nNotes.\n1. For all constraintsotherthancheckMetadataFeatureSemanticSpecializationand the other\nconstraints listed below, thesourceof any impliedRelationshipis the annotated element of the\nconstraint, with thetargetas given in the table. For\ncheckMetadataFeatureSemanticSpecialization, see Note 2. For the following constraints, the\nsourceis theresultparameter of theExpressionthat is the annotated element of the constraint.\n\u25e6 checkFeatureReferenceExpressionResultSpecialization\n\u25e6 checkConstructorExpressionResultSpecialization\n\u25e6 checkInvocationExpressionResultSpecialization\n\u25e6 checkFeatureChainExpressionResultSpecialization\n\u25e6 checkSelectExpressionResultSpecialization\n\u25e6 checkIndexExpressionResultSpecialization\n2. ThecheckMetadataFeatureSemanticSpecializationconstraint only applies to a\nMetadataFeaturethat has ametaclassthat is a kind ofSemanticMetadata(see9.2.16.2.3). The\nsource of the impliedRelationshipfor this constraint isnottheMetadataFeaturebut, rather, the\nTypeannotated by theMetadataFeature, and a conforming tool need only insert theRelationshipif\ntheMetadataFeatureis anownedMemberof theType. The kind ofRelationshipthat is implied and\nitstargetare determined as follows:\n\u25e6 If the annotatedTypeand thebaseTypeare bothClassifiers, thenSubclassification\ntargeting thebaseType.\n\u25e6 If the annotatedTypeis aFeatureand thebaseTypeis aClassifier, then\nFeatureTypingtargeting thebaseType.\n\u25e6 If the annotatedTypeand thebaseTypeare bothFeatures, thenSubsettingtargeting the\nbaseType.\n\u25e6 If the annotatedTypeis aClassifierand thebaseTypeis aFeature, then\nSubclassificationstargeting each of the types of theFeature.\n3. For thecheckConstructorExpressionResultSpecializationand\ncheckInvocationExpressionSpecializationconstraints, the impliedRelationshipis a\nSubclassificationif theinstantiatedTypeis aClassifier, aSubsettingif the\ninstantiatedTypeis aFeature, and aSpecializationotherwise.\nTable 11. Kernel Semantics Other Implied Relationships\nSemantic Constraint Implied Relationship Target\n(or source and target for binding)\ncheckPayloadFeature\nRedefinition Redefinition Transfers::Transfer::payload\n(see9.2.7.2.9)\ncheckConnectorTypeFeaturing\n(see Note 2) TypeFeaturing ThedefaultFeaturingTypeof\ntheConnector\nKernel Modeling Language v1.0 251"
+      },
+      {
+        "page": 279,
+        "matches": [
+          "checkFeatureSuboccurrenceSpecialization",
+          "checkConnectorTypeFeaturing"
+        ],
+        "text": "constraint is thesourceandowningRelatedElementof the impliedRelationship, with thetarget\nas given in the last column table. For the\ncheckConstructorExpressionResultFeatureRedefnitionconstraint, thesourceis an\nownedFeatureof theresultparameterof theConstructorExpression. For binding connector\nconstraints, the annotated element of the constraint is theowningNamespaceof the implied\nRelationship, with thesourceandtargetof theRelationshipas given in the last column of the\ntable.\n2. For thecheckConnectorTypeFeaturingconstraint, an impliedTypeFeaturingshall only be\nincluded to satisfy the constraint if theConnectorhas noowningType, no non-implied\nownedTypeFeaturings, and a non-nulldefaultFeaturingType.\n3. ThecheckInvocationExpressionBehaviorBindingConnectorconstraint only applies if the\ninstantiatedTypeis not aFunctionor aFeaturetyped by aFunction.\n4. ThecheckConstructorExpressionResultDefaultValueBindingConnectorand\ncheckInvocationExpressionDefaultValueBindingConnectorconstraints apply to each\nownedFeaturethat redefines aFeaturefor which there is aneffective default value(see8.4.4.11).\n5. For thecheckFeatureChainExpressionTargetRedefinitionand\ncheckFeatureChainExpressionSourceTargetRedefinitionconstraints, the\nredefiningFeatureof the impliedRedefinitionis a nestedFeatureof the first owned input\nparameterof theFeatureChainExpression(corresponding to thesourceparameter of the'.'\nFunction).\n6. For thecheckConstructorExpressionResultFeatureRedefinitionconstraint, the target of the\nRedefinitionshall be thefeatureof theinstantiatedTypeat the same position in order in the\ninstantiatingTypethat as the position of the redefiningownedFeaturein the\nConstructorExpressionresultparameter.\n8.4.4.2 Data Types Semantics\nAbstract syntax reference:8.3.4.1\nThecheckDataTypeSpecializationconstraint requires thatDataTypesspecialize the baseDataType\nBase::DataValue(see9.2.2.2.2). ThecheckFeatureDataValueSpecializationconstraint requires that\nFeaturestyped by aDataTypespecialize theFeatureBase::dataValues(see9.2.2.2.3), which is typed by\nBase::DataValue.\ndatatype D specializes Base::DataValue {\nfeature a : ScalarValue::String subsets Base::dataValues;\nfeature b : D subsets Base::dataValues;\n}\nTheTypeBase::DataValueis disjoint withOccurrences::OccurrenceandLinks::Link, the baseTypes\nforClassesandAssociations(see8.4.4.3and8.4.4.5, respectively). This means that aDataTypecannot\nspecialize aClassorAssociationand that aFeaturetyped by aDataTypecannot also be typed by aClassor\nAssociation.\n8.4.4.3 Classes Semantics\nAbstract syntax reference:8.3.4.2\nThecheckClassSpecializationconstraint requires thatClassesspecialize the baseClass\nOccurrences::Occurrence(see9.2.4.2.13). ThecheckFeatureOccurrenceSpecializationconstraint\nrequires thatFeaturestyped by aClassspecialize theFeatureOccurrences::occurrences(see9.2.4.2.14),\nwhich is typed byOccurrences::Occurrence.Further, thecheckFeatureSuboccurrenceSpecialization\nconstraint requires that compositeFeaturestyped by aClass, and whoseownedTypeis aClassor another\nFeaturetyped by aClass, specialize theFeatureOccurrences::Occurrence::suboccurrences(see\n9.2.4.2.13), which subsetsOccurrences::occurrences.\nKernel Modeling Language v1.0 253"
+      },
+      {
+        "page": 280,
+        "matches": [
+          "checkFeatureFeatureMembershipTypeFeaturing"
+        ],
+        "text": "class C specializes Occurrences::Occurrence {\nfeature a : C subsets Occurrences::occurrences;\ncomposite feature b : C subsets Occurrences::Occurrence::suboccurrences;\n}\nTheClassOccurrences::Occurrenceis disjoint withBase::DataValues, the baseTypeforDataTypes\n(see 8.4.4.2). This means that aClasscannot specialize aDataTypeand that aFeaturetyped by aClasscannot\nalso be typed by aDataType. Note thatOccurrences::Occurrenceisnotdisjoint withLink::Links,because\nanAssociationStructureis both anAssociationand aStructure(which is a kind ofClass), so the base\nAssociationStructureObjects::LinkObjectspecializes bothLink::Linksand (indirectly)\nOccurrences::Occurrence.\nUnlikeDataValues,Occurrencesare modeled as occurring in three-dimensional space and persisting over time.\nTheOccurrenceslibrary model includes an extensive set ofAssociationsbetweenOccurrencesthat model\nvarious spatial and temporal relations, such asInsideOf,OutsideOf,HappensBefore,HappensDuring,etc. In\nparticular, theAssociationHappensBeforeis the baseTypeforSuccessions, the basic modeling construct\nfor time-orderingOccurrences(see8.4.4.6on the semantics ofSuccessions). For further detail on the\nOccurrencesmodel, see9.2.4.1.\nAClass(or anyTypethat directly or indirectly specializesOccurrence) may haveownedFeatureswith\nisVariable = true. ThecheckFeatureFeatureMembershipTypeFeaturingconstraint requires that such\nvariableFeaturesare featured by thesnapshotsof theirowningType. Asnapshotcovers the entire spatial\nextent of anOccurrenceat a specific point in time. Therefore, an instance of theowningTypecan potentially have\na different value for the variableFeatureat each point in time during itsLife. (See9.2.4.1for more on\nsnapshotsandLives.)\nFor example, a variableFeaturedeclared as in the following is required to have as itsfeaturingTypeaFeature\nthat redefinesOccurrence::snapshotsand is itself featured by theowningTypeof the variableFeature.\nclass C1 {\nvar feature v1;\n}\nThus, the above variableFeaturedeclaration is semantically equivalent to (with impliedSpecializationsalso\nshown):\nclass C1 specializes Occurrences::Occurrence{\nvar feature v1 subsets Base::things featured by C1_snapshots {\nmember feature C1_snapshots\nredefines Occurrences::Occurrence::snapshots\nfeatured by C1;\n}\n}\nTheFeatureC1_snapshotsis shown above as nested in the corresponding variableFeaturev1for purposes of\npresentation in the textual notation. However, when an impliedTypeFeaturingrelationship is added to satisfy the\ncheckFeatureFeatureMembershipTypeFeaturingconstraint, the \"snapshots\"featuringTypeis included as\nanownedRelatedFeatureof the impliedTypeFeaturing. That is, the implied abstract syntax ownership\nstructure for, e.g., the variableFeatureC1::v1above is:\nFeature v1\n[Subsetting (IMPLIED)] Feature Base::things\n[TypeFeaturing (IMPLIED)] Feature C1_snapshots (OWNED)\n[Redefinition] Occurrences::snapshots\n[TypeFeaturing] C1\n254 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 281,
+        "matches": [
+          "checkFeatureSubobjectSpecialization"
+        ],
+        "text": "(The nameC1_snapshotsis used here for correspondence to the earlier textual notation presentation. This\nFeaturewould not be expected to be named in an actual implementation.)\n8.4.4.4 Structures Semantics\nAbstract syntax reference:8.3.4.3\nThecheckStructureSpecializationconstraint requires thatStructuresspecialize the baseStructure\nObjects::Object(see9.2.5.2.7). ThecheckFeatureObjectSpecializationconstraint requires that\nFeaturestyped by aStructurespecialize theFeatureObjects::objects (see9.2.5.2.8), which is typed by\nObjects::Object.Further, thecheckFeatureSubobjectSpecializationconstraint requires that composite\nFeaturestyped by aStructure, and whoseownedTypeis aStructureor anotherFeaturetyped by a\nStructure, specialize theFeatureObjects::Object::subobjects(see9.2.5.2.7), which subsets\nObject::objects.\nstruct S specializes Objects::Object {\nfeature a : S subsets Object::objects;\ncomposite feature b : S subsets Objects::Object::subobjects;\n}\nObjectsareOccurrencesrepresenting physical or virtual structures that occur over time. For physical structures,\ntheObjectslibrary model also provides a the specializationStructuredSpaceObject,which modelsObjects\nthat can be spatial decomposed into cells of the same or lower dimension. TheTypeObjectis disjoint with the\nTypePerformance,another specialization ofOccurrence,which is the baseTypeforBehaviors(see8.4.4.7on\nthe semantics ofBehaviors). For further detail on theObjectsmodel, see9.2.5.1.\n8.4.4.5 Associations Semantics\nAbstract Syntax Reference:8.3.4.4\n8.4.4.5.1 Associations\nThecheckAssociationSpecializationandcheckFeatureEndSpecializationconstraints require that an\nAssociationspecialize the baseAssociationLinks::Link(see9.2.3.2.3) and that itsassociationEnds\nsubsetLinks::Link::participant. In addition, thevalidateFeatureEndMultiplicityconstraint requires\nthat theassociationEndsmust have multiplicity1..1. These constraints essentially require an N-ary\nAssociationto have the form (with implied relationships included):\nassoc A specializes Links::Link {\nend feature e1[1..1] subsets Links::Link::participant;\nend feature e2[1..1] subsets Links::Link::participant;\n...\nend feature eN[1..1] subsets Links::Link::participant;\n}\nTheLinkinstance for anAssociationis thus a tuple ofparticipants, where eachparticipantis asingle\nvalue of anassociationEndof theAssociation. Note also that theFeatureLink::participantis declared\nreadonly, meaning that theparticipantsin a link cannot change once the link is created.\nThecheckFeatureEndRedefinitionconstraint requires that, if anAssociationhas an\nownedSubclassificationto anotherAssociation, then itsassociationEndsredefine the\nassociationEndsof thesuperclassifierAssociation. In this case, thesubclassifierAssociation\nwill indirectly specializeLinkthrough a chain ofSubclassifications, and each of itsassociationEndswill\nindirectly subsetLinks::participantthrough a chain ofRedefinitionandSubsetting.\nKernel Modeling Language v1.0 255"
+      },
+      {
+        "page": 287,
+        "matches": [
+          "checkConnectorTypeFeaturing",
+          "isFeaturedWithin"
+        ],
+        "text": "is parsed (with implied relationships included) as:\nconnector b2 : B2 subsets Links::binaryLinks {\nend feature e1a redefines B2::e1 references f1\ncrosses e2a.e1a_cross {\nmember feature e1a_cross[0..2] nonunique ordered : T1\nsubsets B2::e1::e1_cross featured by T2;\n}\nend feature e2 redefines B2::e2 references f2\ncrosses e1.e2_cross {\nmember feature e2a_cross[1..1] : T2\nsubsets B2::e2::e2_cross featured by T1;\n}\n}\nAConnectorspecifies a subset of theLinksof its typingAssociationsfor which theparticipantsare\nvalues of therelatedFeaturesof theConnector. In addition, thecheckConnectorTypeFeaturingconstraint\nrequires that thefeaturingTypesof aConnectorbe consistent with those of itsrelatedFeatures. Typically,\naConnectorwill have anowningTypethat is itsfeaturingType, in which case all of itsrelatedFeatures\nmust also be featured in the context of thisType.\n// This is the simplest case of a Connector satisfying checkConnectorTypeFeaturing,\n// in which the Connector and its relatedFeatures all have the same owningType.\nclassifier C1 {\nfeature f1;\nfeature f2;\nconnector cc1 {\nend feature references f1;\nend feature references f2;\n}\n}\nAn impliedTypeFeaturingmay be included to satisfy thecheckConnectorTypeFeaturingconstraint, butonly\nif theConnectorhas no explicitowningTypeorownedTypeFeaturings, and thedefaultFeaturingTypeof\ntheConnectoris not null. The target of the impliedTypeFeaturingis then given by the\ndefaultFeaturingType. ThederiveConnectorDefaultFeaturingTypeconstraint ensures that, if\ndefaultFeaturingTypeis non null, then it is the innermostTypesuch that, if it is thefeaturingTypeof a\nConnector, thecheckConnectorTypeFeaturingconstraint will be met.\nclassifier C2 {\nfeature f1;\nfeature f2 {\n// The defaultFeaturingType for Connector cc2 is Classifier C2, which is the\n// common featuringType of the relatedFeatures of cc2.\nmember connector cc2 featured by C2 {\nend feature references f1;\nend feature references f2;\n}\n}\n}\nThe primary case in which an implicitTypeFeaturingis necessary is for aBindingConnectorthat is itself\nadded implicitly for aFeatureValue(see8.4.4.11).\nThecheckConnectorTypeFeaturingandderiveConnectorDefaultFeaturingTypeconstraint uses the\nFeature::isFeaturedWithinoperation (see8.3.3.3.4), which specially handles variable features. The\nsemantics of variableFeaturesrequires them to havefeaturingTypesthat represent thesnapshotsof their\nowningTypes. For example, consider the following:\nKernel Modeling Language v1.0 261"
+      },
+      {
+        "page": 288,
+        "matches": [
+          "checkConnectorTypeFeaturing",
+          "isFeaturedWithin",
+          "isCompatibleWith"
+        ],
+        "text": "class CL1 {\nvar feature v1 featured by CL1_snapshots {\nmember feature CL1_snapshots featured by CL1;\n}\n}\nclass CL2 specializes CL1 {\nvar feature v2 featured by CL2_snapshots {\nmember feature CL2_snapshots featured by CL2;\n}\nmember connector ccv featured by CL2_snapshots {\nend feature references v1;\nend feature references v2;\n}\n}\nWhile the classCL2specializesCL1, there is no explicitSpecializationrelationship betweenCL1_snapshots\nandCL2_snapshots. However, any instance ofCL2is an instance ofCL1, andCL1_snapshotsand\nCL2_snapshotsare both redefinitions of the same baseFeatureOccurrences::Occurrence::snapshots,\nso, semantically,C2_snapshotscan be considered to be a redefinition ofCL1_snapshots. The\nisFeaturedWithinoperation takes this into account by using theType::isCompatibleWithoperation. By\ndefault,isCompatibleWithis just the same asspecializes, but it is overriden inFeatureto also treat\nFeaturessuch asCL1_snapshotsandCL2_snapshotsas being compatible (see9.2.5.2.7). This is why, in the\nexample above, thedefaultFeaturingTypeforccvisCL2_snapshots, which satisfies the\ncheckConnectorTypeFeaturingconstraint forccv.\nIn addition, theisFeaturedWithinoperation specially considers a variableFeatureto be featured within its\nowningType, even though it is not directly featured by theowningType. This allows variable and non-variable\nFeaturesto be connected within a common featuring context.\nclass CL3 {\nfeature f;\nvar feature v;\nconnector cfv featured by CL3 {\nend feature references f;\nend feature references v;\n}\n}\nSemantically, this means that, within an instance ofCL3each value ofcfvlinks a valuefand a value ofvfor some\nspecific snapshot ofCL3. However, which snapshot this is for each value ofcfvis not determined in this\nspecification, unless additional temporal constraints are explicitly included in the model.\n8.4.4.6.2 Binding Connectors\nThecheckBindingConnectorSpecializationconstraint requires thatBindingConnectorsspecialize the\nFeatureLinks::selfLinks(see9.2.3.2.6), which is typed by theAssociationSelfLink(see9.2.3.2.5).\nSelfLinkhas twoassociationEndsthat subset each other, meaning they identify the same things (have the\nsame values), which then also applies toBindingConnectorconnectorEndsthat redefine the\nassociationEndsofSelfLink. The general semantic constraints forConnectorsalso apply to\nBindingConnectors.\nThus, aBindingConnectordeclaration of the form\nbinding f1 = f2;\nis, with impliedRelationshipsincluded, semantically equivalent to\n262 Kernel Modeling Language v1.0"
+      },
+      {
+        "page": 290,
+        "matches": [
+          "checkStepSubperformanceSpecialization",
+          "checkStepOwnedPerformanceSpecialization",
+          "checkStepEnclosedPerformanceSpecialization",
+          "checkFunctionResultBindingConnector"
+        ],
+        "text": "step b : B subsets Performances::performances {\nin feature x redefines B::x = x1;\nout feature y redefines B::y;\ninout feature z redefines B::z := z1 ;\n}\nstep b1 : B1 subsets b {\nin feature x redefines B1::x, b::x;\nout feature y redefines B2::y, b::y;\n}\nFurther, thecheckStepEnclosedPerformanceSpecialization\nandcheckStepSubperformanceSpecializationconstraints require that aStepwhoseowningTypeis a\nBehavioror anotherStepspecializePerformances::Performance::enclosedPerformanceor, if it is\ncomposite,Performances::Performance::subperformance(see9.2.6.2.14).Finally, the\ncheckStepOwnedPerformanceSpecializationconstraint requires that a compositeStepwhoseowningType\nis aStructureor aFeaturetyped by aStructurespecializeObjects::Object::ownedPerformance(see\n9.2.5.2.7).\nstep s subsets Performances::performances {\nstep s1 subsets Performances::Performance::enclosedPerformance;\ncomposite step s2 subsets Performances::Performance::subperformance;\n}\nstruct S specializes Objects::Object {\ncomposite step ss subsets Objects::Object::ownedPerformance;\n}\n8.4.4.8 Functions Semantics\nAbstract syntax reference:8.3.4.7\n8.4.4.8.1 Functions and Predicates\nFunctionsare kinds ofBehaviors. ThecheckFunctionSpecializationconstraint requires thatFunctions\nspecialize the baseFunctionPerformances::Evaluation(see9.2.6.2.4), which is a specialization of\nPerformances::Performance. All other semantic constraints onBehaviors(see8.4.4.7) also apply to\nFunctions. In addition, thecheckFeatureResultRedefinitionconstraint requires that theresult\nparameterof aFunctionalways redefine theresultof any its supertypes that are alsoFunctions, regardless\nof their parameter position.\nfunction F specializes Performances::Evaluation {\nin a;\nin b;\nreturn result redefines Performances::Evaluation::result;\n}\nfunction G specializes F {\nin a redefines F::a;\nreturn result redefines F::result;\nin b redefines F::b;\n}\nFurther, if aFunctionowns anExpressionvia aResultExpressionMembership, then the\ncheckFunctionResultBindingConnectorconstraint requires that theFunctionhave, as anownedFeature, a\nBindingConnectorbetween theresultparameterof theExpressionand theresultparameterof the\nFunction.\nfunction H specializes Performances::Evaluation {\nreturn redefines Performances::Evaluation::result;\nbinding result = resultExpr.result; // Implied\n264 Kernel Modeling Language v1.0"
+      }
+    ]
+  },
+  "pinned_source": {
+    "archive": "standards/artifacts/Function-Library.kpar",
+    "archive_sha256": "a8319da3ab1d8ffc0f390ea1aef29d85a00451655c41a9267ce396845c2b1c8d",
+    "entry": "Kernel Function Library/ControlFunctions.kerml",
+    "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+    "range": [
+      452,
+      657
+    ],
+    "text": "abstract function '.' {\n\t\tin feature source : Anything[0..*] nonunique {\n\t  \t\tabstract feature target : Anything[0..*] nonunique;\n\t  \t}\t  \t\n\t  \tprivate feature chain chains source.target;\n\t    chain\n\t}\n\t\n\t"
+  },
+  "reference": {
+    "release": "fb97b754f29588b8e9c7a35f370880cd15eb29e7",
+    "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/ControlFunctions.kermlx",
+    "sha256": "581d1ff1cdf1234bcd8279691e6430d011c28bc6c6a34c1e1a52c59e3956bb2c",
+    "function": {
+      "file": "ControlFunctions.kermlx",
+      "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+      "metaclass": "Function",
+      "path": "ControlFunctions::."
+    },
+    "result_membership": {
+      "file": "ControlFunctions.kermlx",
+      "id": "38997379-60c4-5ba0-bbe8-15ceed5d3847",
+      "metaclass": "ResultExpressionMembership",
+      "path": "ControlFunctions::."
+    },
+    "closure_inputs": [
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Data Type Library/Collections.kermlx",
+        "sha256": "9a7b342251c27a4697d414518c44de193e4b43fcde53d6295d871c8b3729a017"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Data Type Library/ScalarValues.kermlx",
+        "sha256": "dbe77d2f74678007addbe8cb41b398aa1192dcc99d55a44849f45f02cbb1141e"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Data Type Library/VectorValues.kermlx",
+        "sha256": "1113e77783eafc1fda738b5b77138b27134fa3147ce31117477057581fcff9e3"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/BaseFunctions.kermlx",
+        "sha256": "5926aecbf8862aca8cee3b82c63307814c3263726f6f12a5adbfa04f089767c0"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/BooleanFunctions.kermlx",
+        "sha256": "68ffbea71669e59ddccfb3ce47adc0112140d062b7f6c04bf6d2e7b702611525"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/CollectionFunctions.kermlx",
+        "sha256": "e15a0612067ec9476ce39cde81902eed7e2a2a8a48533d19744c4593891f24b1"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/ComplexFunctions.kermlx",
+        "sha256": "e8116991a3820653988a8ec6ea1e67b982988b611506b4b8db69efb2946c1dc4"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/ControlFunctions.kermlx",
+        "sha256": "581d1ff1cdf1234bcd8279691e6430d011c28bc6c6a34c1e1a52c59e3956bb2c"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/DataFunctions.kermlx",
+        "sha256": "0313d733a8b2077e4615e5e10f42c490b734d00185cd78bf0bfff048e69b9323"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/IntegerFunctions.kermlx",
+        "sha256": "0eb8b798cdffcd99786cac8dff23e2cda517a6ccceaf7b2921ecdec0cf19bb05"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/NaturalFunctions.kermlx",
+        "sha256": "79cbe79e03cbe215540524ac1c9f2eafe835ee52a7dc596cda2936ff2ad5cbbf"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/NumericalFunctions.kermlx",
+        "sha256": "64e6f6470b0bde0c4419bb14e69db6a829877c957a49c62046d04612be7d1d44"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/OccurrenceFunctions.kermlx",
+        "sha256": "7edefa4af3a643bdad681ef30894ad59ad98e5563e0ad46e90c6557046a5ce55"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/RationalFunctions.kermlx",
+        "sha256": "37814a76880e4dde0ce30856840df0fe007284d4df43639993f7194e5c86fb3e"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/RealFunctions.kermlx",
+        "sha256": "db6e7e8a985574785669736ded575682e97a00a8f21c31f10ef9175eccf90fd4"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/ScalarFunctions.kermlx",
+        "sha256": "601279ed46ef1978f0cba2e5e8849bc3eddf917efc8751d876abf356109bfa6e"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/SequenceFunctions.kermlx",
+        "sha256": "0ac9fd113f42bc67bc4d966d47e6efbe2d28dc5e5a88fd1bbee8fa4b9bf04fc4"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/StringFunctions.kermlx",
+        "sha256": "4ccaf6a5920108a8164ace3e5e7bab1e869615b5a307a2b0cfad48bde3ca73d2"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/TrigFunctions.kermlx",
+        "sha256": "caeb6299ec22164c210e62df683dd7fb787e0aa93d6fdcb1b24a7e3f1f921f13"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/VectorFunctions.kermlx",
+        "sha256": "7db2d07cd0fb54add5afcdd8d2b2185b01b4092a90de9602d9a046ee04867dc5"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Base.kermlx",
+        "sha256": "984234a4bbf7dcbde1f86066f3f7da6b93a1b228b10b93d90727532766952699"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Clocks.kermlx",
+        "sha256": "390d292cd3863b4d994550b71b9e5ace81f0aafe5890b089e2255462ff1a4803"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/ControlPerformances.kermlx",
+        "sha256": "8d0f19838a2402f2c4fbf50d619579072d8e5bfb14797d0f56316f4074a11a09"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+        "sha256": "42a919d6026df3226dcd40ce168199bdc5f193b6d567e5bc18eb5cb523abc52d"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/KerML.kermlx",
+        "sha256": "3a7974a511c59e5b4d45161e8058acb8df0cf07fb0fb0347119edd40f616177d"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Links.kermlx",
+        "sha256": "5a5a7e8b1d61b424d95661e730c88510024faf320e345b4038d4981b4659f7da"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Metaobjects.kermlx",
+        "sha256": "44a05881bee2633c5e5611738a60f5077933f9c50866c5c24d01617ff9364672"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Objects.kermlx",
+        "sha256": "a8633bf4c53935eca58d951c6faed56c239fe734fe5fbf816140d077235879e0"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Observation.kermlx",
+        "sha256": "0dd206a202f1c0ca274c087d4f3abf5b66cf30444306f75f1f4c30a3a554c99a"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Occurrences.kermlx",
+        "sha256": "c484f735e0e2412299b53e2bf3b451b938791340f669577fa754004c71850098"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Performances.kermlx",
+        "sha256": "8beac837b8e8e9ec645dbbd8dc1bccf9081cdee262d5e5c99399a2fd091afa23"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/SpatialFrames.kermlx",
+        "sha256": "29941c306261e7c9d1f8718e242751fd3671185c237e6a5052897a9566126fda"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/StatePerformances.kermlx",
+        "sha256": "52d0960ebc6011f6f7b6e5a7c22cdf6f2f3a98aa38524171acb3b482b912e804"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Transfers.kermlx",
+        "sha256": "18ff675088ef268dd55a92bd8dc8d2070d449eb8957c77093cddef0e5b04f306"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/TransitionPerformances.kermlx",
+        "sha256": "ffb80d16c8785732401d24f46ecf73ef81e6984d90a10b4ea535b9f8f9eb6533"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Triggers.kermlx",
+        "sha256": "d0f313a378dec9fd52ef2ed45122982431dd26e9ada3fe78714a383ec15c7bf4"
+      }
+    ],
+    "implementation": {
+      "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+      "path": "verification/kerml-semantic-closure-v7/pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/TypeAdapter.java",
+      "sha256": "bbf1fb1376477df59297dfc1a3696362bd468229e6ec0c5fe9bac76a6817b500",
+      "behavior": "TypeAdapter.addResultBinding passes raw results. addBindingConnector selects feature ownership only when contextType equals the owner; otherwise plain member ownership and the context featuring type."
+    },
+    "expression": {
+      "file": "ControlFunctions.kermlx",
+      "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+      "metaclass": "FeatureReferenceExpression",
+      "path": "ControlFunctions::."
+    },
+    "raw_result": {
+      "file": "ControlFunctions.kermlx",
+      "id": "d3f706b6-c10e-5a2f-ace7-a6ee92f57563",
+      "metaclass": "Feature",
+      "path": "ControlFunctions::.::result"
+    },
+    "binding": {
+      "file": "ControlFunctions.kermlx",
+      "id": "0aaa4bf5-a8ea-57d6-b5c2-f4bab40a47b2",
+      "metaclass": "BindingConnector",
+      "path": "ControlFunctions::."
+    },
+    "related_features": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "d3f706b6-c10e-5a2f-ace7-a6ee92f57563",
+        "metaclass": "Feature",
+        "path": "ControlFunctions::.::result"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "d4c65e7a-f5cd-5e32-bb56-93a0cfa01d23",
+        "metaclass": "Feature",
+        "path": "Performances::Evaluation::result"
+      }
+    ],
+    "function_all_supertypes": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+        "metaclass": "Function",
+        "path": "ControlFunctions::."
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "1b7f00e7-24fb-5ebc-8773-89ba88bc3d5d",
+        "metaclass": "Behavior",
+        "path": "Performances::Performance"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "65787029-c7c2-5cb6-9baa-d428f18e225f",
+        "metaclass": "Function",
+        "path": "Performances::Evaluation"
+      },
+      {
+        "file": "Occurrences.kermlx",
+        "id": "80f4284e-73b1-589c-ad80-e25f33022e4f",
+        "metaclass": "Class",
+        "path": "Occurrences::Occurrence"
+      },
+      {
+        "file": "Base.kermlx",
+        "id": "d5b4e7df-e644-5f2f-b95e-cf6f1f6c076d",
+        "metaclass": "Classifier",
+        "path": "Base::Anything"
+      }
+    ],
+    "binding_featuring_types": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+        "metaclass": "FeatureReferenceExpression",
+        "path": "ControlFunctions::."
+      }
+    ],
+    "result_featuring_types": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+        "metaclass": "FeatureReferenceExpression",
+        "path": "ControlFunctions::."
+      }
+    ],
+    "binding_membership_kind": "OwningMembership",
+    "literal_owned_feature_requirement_satisfied": false
+  },
+  "independently_evaluated": {
+    "scope": "Published required ownedFeature interpretation, not the reference plain OwningMembership interpretation.",
+    "result_binding_antecedent": true,
+    "raw_result_related": true,
+    "result_is_variable": false,
+    "result_has_chain": false,
+    "function_specializes_expression": false,
+    "raw_result_featured_within_function": false,
+    "raw_result_featured_within_null": false,
+    "required_owned_feature_connector_type_featuring": false
+  },
+  "alternatives": [
+    {
+      "choice": "Published raw result identity",
+      "result": "Required by checkFunctionResultBindingConnector; violates checkConnectorTypeFeaturing under the required function featuring type."
+    },
+    {
+      "choice": "Reference plain OwningMembership and nested-expression featuring type",
+      "result": "Keeps raw result identities and avoids the Function domain, but violates the literal ownedFeature selection. Not authorized by the six v5 target replacements."
+    },
+    {
+      "choice": "Chain of result expression and its result",
+      "result": "Changes relatedFeature identity. Repairs domain but does not satisfy the literal includes(rawResult) constraint."
+    },
+    {
+      "choice": "Additional function-to-expression specialization or altered ownership/flags",
+      "result": "Changes canonical semantic meaning; not an implication prescribed by these rules or an authorized erratum."
+    }
+  ],
+  "implementation_independence": [
+    "Pinned tail-expression grammar establishes ResultExpressionMembership.",
+    "An ordinary owned BindingConnector feature must be featured by its Function.",
+    "The nested nonvariable result must be featured by its expression.",
+    "Complete independently read reference supertype closure excludes the nested expression.",
+    "The reference keeps both raw results but uses plain OwningMembership and the nested expression domain; it does not satisfy the formal ownedFeature requirement.",
+    "Adding missing Agentique bindings, positional redefinitions or inference does not equate these distinct canonical identities."
+  ],
+  "scope": "Structural abstract syntax only. No runtime value or execution is evaluated.",
+  "excluded_corrections": [
+    "81",
+    "140",
+    "76",
+    "68",
+    "205",
+    "206",
+    "207"
+  ],
+  "correction_applied": false,
+  "accepted_publication": false
+}

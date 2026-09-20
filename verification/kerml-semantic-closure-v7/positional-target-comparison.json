@@ -1,0 +1,6 @@
+{
+  "complete": false,
+  "existing_reference_oracle": "verification/kerml-semantic-closure-v6/reference-positional-oracle.json",
+  "sha256": "c18c184f4cfcf58259ffebd32a6cdd87af7148a49dc849b198cfe2c411dcd476",
+  "disposition": "Retained prior reference inventory. Full canonical target differential remains required after independent authority resolution; no ID/insertion order is promoted to normative order."
+}

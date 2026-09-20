@@ -1,0 +1,44 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.imports.recursive.KerMLImportRecursiveTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/library/Base.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+// XPECT noErrors --> ""
+package RecursiveImport {
+  
+  package P {
+    classifier C {
+    	classifier C1 {
+    		classifier C2;
+    	}
+    }
+	package P3 {
+		package P4 {
+			classifier C5;
+		}
+	}
+  }
+  
+  public import P::C::**;
+  x1: C1;
+  x2: C1::C2;
+  x3: C2;
+  x4: C;
+  
+  public import P::P3::**;
+  x5: C5;
+  x6: P3::P4::C5;
+	
+}

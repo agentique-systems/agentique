@@ -142,3 +142,42 @@ The expanded inventory independently exposes
 [KLCV6-F-001 / KERML11-205](kerml-subobject-specialization-authority-conflict.md).
 V4 does not choose that rule's conflicting required specialization target, and
 strict semantic publication remains unaccepted.
+
+## Operational KerML 1.0/v5 — exact formal-constraint targets
+
+`agentique-kerml-1.0-operational/5` extends v4 with exactly six reviewed target
+replacements from KERML11-205, KERML11-206 and KERML11-207. All three issues remain
+open; this is explicit project policy. [ADR 0017](adr/0017-operational-formal-constraint-target-corrections.md)
+contains the exact six-row table and the typed binding/proof contract. The
+[manifest](../standards/kerml-1.0-operational-formal-target-errata-v5.json) and
+[independent matrix](../verification/kerml-semantic-closure-v7/authority-matrix.json)
+freeze the formal/prose, issue, declaration, reference-map and available test evidence.
+
+| Profile | Earliest newly effective correction |
+| --- | --- |
+| Published | None |
+| v1 | KERML11-81 descriptor |
+| v2 | KERML11-140 redefinition search |
+| v3 | Reviewed KERML11-76 library facts |
+| v4 | KERML11-68 end-conformance validation |
+| v5 | Exact KERML11-205/206/207 formal targets |
+
+Published through v4 use the published formal targets. V5 uses
+`Objects::Object::subobjects`, `Performances::Performance::subperformances`,
+`Occurrences::Occurrence::portions`, `Occurrences::Occurrence::suboccurrences`,
+`Objects::Object::ownedPerformances`, and
+`Performances::Performance::enclosedPerformances`, each only for its typed rule.
+Paths are bound once through owned canonical memberships with metaclass,
+uniqueness, library and visibility checks; there is no fallback target search.
+
+The profile and target bindings participate in SemanticContext and proof
+dependencies. Missing targets and unestablished effective owner typing remain
+explicit failures/incompleteness. Canonical declarations, pinned bytes and prior
+profile manifests remain unchanged. V3 correction origins/IDs survive under v5.
+The default operational profile remains v2.
+
+V5 resolves the previous subobject target stop, but does not grant authority for
+KERML11-145, 182, 210 or other open issues. The new independent
+[result-binding conflict](kerml-result-binding-authority-conflict.md), exercised by
+the pinned ControlFunctions library, prevents strict publication. Profile
+availability and passing runtime gates do not constitute accepted libraries.

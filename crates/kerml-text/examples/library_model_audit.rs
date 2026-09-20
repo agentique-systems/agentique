@@ -9,7 +9,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sources = VerifiedLibrarySet::load_from_directory(
         &Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."),
     )?;
-    let profile = if std::env::args().any(|a| a == "--published") {
+    let profile = if std::env::args().any(|a| a == "--v5") {
+        BaselineProfile::OPERATIONAL_V5
+    } else if std::env::args().any(|a| a == "--v4") {
+        BaselineProfile::OPERATIONAL_V4
+    } else if std::env::args().any(|a| a == "--published") {
         BaselineProfile::PublishedKerMl10
     } else if std::env::args().any(|a| a == "--v1") {
         BaselineProfile::OPERATIONAL_V1

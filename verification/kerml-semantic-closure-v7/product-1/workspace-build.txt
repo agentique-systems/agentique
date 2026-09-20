@@ -1,0 +1,4 @@
+    Blocking waiting for file lock on build directory
+   Compiling agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+   Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.10s

@@ -22,6 +22,8 @@ verification/kerml-operational-errata-publication-v3/** -text
 verification/kerml-name-resolution-errata-publication-v4/** -text
 verification/kerml-library-content-errata-publication-v5/** -text
 verification/kerml-semantic-closure-v6/** -text
+verification/kerml-semantic-closure-v7/** -text
+standards/kerml-1.0-operational-formal-target-errata-v5.json -text
 # Manifest hashes identify reviewed bytes, including line endings.
 standards/kerml-1.0-operational-errata*.json -text
 standards/kerml-1.0-operational-library-errata-v3.json -text

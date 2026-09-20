@@ -1,0 +1,64 @@
+{
+  "format": "agentique-v7-dependency-review/1",
+  "complete_publication_dependency_audit": false,
+  "review": [
+    {
+      "dependency": "profile and formal errata",
+      "implementation": "SemanticContext profile ID, frozen manifest digest, typed FormalConstraintTarget search, exact bound IDs, facts and model digest."
+    },
+    {
+      "dependency": "library corrections",
+      "implementation": "Original v3 reviewed origins/IDs accepted only along explicit v3/v4/v5 lineage."
+    },
+    {
+      "dependency": "namespace population",
+      "implementation": "Existing ownership, membership, incoming/property and root population search dependencies remain required."
+    },
+    {
+      "dependency": "positional ordering",
+      "implementation": "Owned relationship/membership ordering retained. Full independent target comparison remains unfinished."
+    },
+    {
+      "dependency": "feature-chain expansion",
+      "implementation": "Existing terminal-chain query dependencies retained. Full structural expansion and dependency closure remain unfinished."
+    },
+    {
+      "dependency": "standard bindings",
+      "implementation": "Candidate anchor identity/version and graph digest remain explicit. Accepted bindings/facade are not issued."
+    }
+  ],
+  "sources": [
+    {
+      "path": "crates/kerml/src/profiles.rs",
+      "sha256": "05e450ed81790c220e352f190046086cae54f085688eb9921e89417ce472bd65"
+    },
+    {
+      "path": "crates/kerml-semantics/src/context.rs",
+      "sha256": "f39373e3bbf92a6669e3b6a3479d4559e66d8c7fc89ad26ee3a661001f257397"
+    },
+    {
+      "path": "crates/kerml-semantics/src/contract.rs",
+      "sha256": "6f91d43842d25c65ea4adfde62c293647508f47a9c988fbdb118d1215821d68b"
+    },
+    {
+      "path": "crates/kerml-semantics/src/formal_targets.rs",
+      "sha256": "ab4323a6c90d1c60ef7faf0504c0bc4f8a874f2d08d75a862b445433af6ec00d"
+    },
+    {
+      "path": "crates/kerml-semantics/src/implicit.rs",
+      "sha256": "3a861d8175f46c1a9f913116742d60766d7820a43e29c495f7f10a2edf21bdb0"
+    },
+    {
+      "path": "crates/kerml-text/src/library/construction.rs",
+      "sha256": "e64447b5d9b6bdba6230f410dda7d489a1d7878d8f1265b16fcc3a86320c110a"
+    }
+  ],
+  "stress": {
+    "existing_workspace_suite": "final-rust-3/results.json",
+    "full_library_audit": "v5-quality-final-2/result.json",
+    "memory": "memory-final.json",
+    "batch_size": 128,
+    "identical_context_asserted_at_each_batch": true,
+    "accepted_publication_concurrent_reader_and_authored_integration": false
+  }
+}

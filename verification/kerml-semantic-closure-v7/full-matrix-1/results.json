@@ -1,0 +1,146 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "started": "2026-09-19T20:20:15.049Z",
+    "durationMs": 1393,
+    "exitCode": 0,
+    "signal": null,
+    "log": "format.txt"
+  },
+  {
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "started": "2026-09-19T20:20:16.443Z",
+    "durationMs": 20742,
+    "exitCode": 101,
+    "signal": null,
+    "log": "clippy.txt"
+  },
+  {
+    "command": "cargo test --workspace",
+    "started": "2026-09-19T20:20:37.185Z",
+    "durationMs": 292477,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rust-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
+    "started": "2026-09-19T20:25:29.662Z",
+    "durationMs": 6550,
+    "exitCode": 0,
+    "signal": null,
+    "log": "generated.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline kerml-1.0 --require-runtime --check",
+    "started": "2026-09-19T20:25:36.213Z",
+    "durationMs": 1752,
+    "exitCode": 0,
+    "signal": null,
+    "log": "kerml-readiness.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-metamodel-gen -- --baseline sysml-2.0 --require-runtime --check",
+    "started": "2026-09-19T20:25:37.966Z",
+    "durationMs": 3700,
+    "exitCode": 0,
+    "signal": null,
+    "log": "sysml-readiness.txt"
+  },
+  {
+    "command": "cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml -p agq-sysml -p agq-kerml-semantics -p agq-kerml-syntax -p agq-kerml-text -p agq-standard-libraries -p agq-metamodel-gen",
+    "started": "2026-09-19T20:25:41.667Z",
+    "durationMs": 14346,
+    "exitCode": 0,
+    "signal": null,
+    "log": "rustdoc.txt"
+  },
+  {
+    "command": "npm run standards:check",
+    "started": "2026-09-19T20:25:56.014Z",
+    "durationMs": 1717,
+    "exitCode": 0,
+    "signal": null,
+    "log": "standards.txt"
+  },
+  {
+    "command": "npm run check",
+    "started": "2026-09-19T20:25:57.731Z",
+    "durationMs": 1946,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-check.txt"
+  },
+  {
+    "command": "npm run build",
+    "started": "2026-09-19T20:25:59.677Z",
+    "durationMs": 2282,
+    "exitCode": 0,
+    "signal": null,
+    "log": "frontend-build.txt"
+  },
+  {
+    "command": "npm test",
+    "started": "2026-09-19T20:26:01.960Z",
+    "durationMs": 581,
+    "exitCode": 0,
+    "signal": null,
+    "log": "node-tests.txt"
+  },
+  {
+    "command": "npm run test:e2e",
+    "started": "2026-09-19T20:26:02.543Z",
+    "durationMs": 58323,
+    "exitCode": 0,
+    "signal": null,
+    "log": "browser-tests.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/inventory.py",
+    "started": "2026-09-19T20:27:00.866Z",
+    "durationMs": 5353,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-inventory.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/generate.py",
+    "started": "2026-09-19T20:27:06.219Z",
+    "durationMs": 277,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-tables.txt"
+  },
+  {
+    "command": "python -X utf8 tools/kerml-grammar/test_inventory.py",
+    "started": "2026-09-19T20:27:06.496Z",
+    "durationMs": 301,
+    "exitCode": 0,
+    "signal": null,
+    "log": "grammar-tests.txt"
+  },
+  {
+    "command": "cargo run --locked --offline -p agq-standard-libraries --example audit -- --check",
+    "started": "2026-09-19T20:27:06.798Z",
+    "durationMs": 2045,
+    "exitCode": 0,
+    "signal": null,
+    "log": "historical-lexical-corpus.txt"
+  },
+  {
+    "command": "python -X utf8 verification/language-core-completion-v3/independent_xmi.py --check",
+    "started": "2026-09-19T20:27:08.844Z",
+    "durationMs": 490,
+    "exitCode": 0,
+    "signal": null,
+    "log": "independent-runtime.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/preservation.py",
+    "started": "2026-09-19T20:27:09.334Z",
+    "durationMs": 1233,
+    "exitCode": 1,
+    "signal": null,
+    "log": "preservation.txt"
+  }
+]

@@ -1,0 +1,2 @@
+All 258 named constraints inventoried: {'A': 38, 'B': 213, 'E': 6, 'F': 1}
+Formal coverage publication gate: FAIL; KLCV7-F-001 and structural obligations remain explicit.

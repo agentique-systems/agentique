@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v7/pdf-clauses.py",
+    "--check"
+  ],
+  "started": "2026-09-19T20:48:40.573753+00:00",
+  "duration_seconds": 4.467999999993481,
+  "exit_code": 0,
+  "output": "output.txt"
+}

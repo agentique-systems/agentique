@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-semantic-closure-v7\result-binding-authority.py", line 45, in <module>
+    assert result in related and binding_types == [function]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

@@ -5,6 +5,7 @@
 mod bindings;
 mod context;
 mod contract;
+mod formal_targets;
 mod implicit;
 mod inheritance;
 mod namespaces;
@@ -17,6 +18,7 @@ mod validation;
 pub use bindings::*;
 pub use context::*;
 pub use contract::*;
+pub use formal_targets::*;
 pub use namespaces::{MemberAccess, MemberMatch};
 pub use naming::EffectiveNames;
 pub use queries::KerMlQueries;

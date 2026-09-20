@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "--release",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "library_quality",
+    "--",
+    "--v4"
+  ],
+  "started": "2026-09-19T19:57:33.826552+00:00",
+  "duration_seconds": 2027.734000000055,
+  "exit_code": 1,
+  "output": "output.txt"
+}

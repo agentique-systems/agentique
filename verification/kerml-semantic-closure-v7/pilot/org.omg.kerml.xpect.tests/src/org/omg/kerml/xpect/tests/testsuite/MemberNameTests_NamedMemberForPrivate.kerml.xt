@@ -1,0 +1,32 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.parsing.KerMLParsingTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/library/Base.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+//XPECT noErrors ---> ""
+package test {
+	private classifier <'s_Id'> something{}
+	private alias k for something;
+	private alias kk for s_Id;
+	classifier hello {
+		//* XPECT scope at k ---
+		   		hello, hello.test, k, something, 
+		   		test, s_Id, kk, hello.test1, test1
+		--- */
+		//XPECT linkedName at k --> test.something
+		classifier test specializes k{}
+		//XPECT linkedName at kk --> test.something
+		classifier test1 specializes kk;
+	}
+}
