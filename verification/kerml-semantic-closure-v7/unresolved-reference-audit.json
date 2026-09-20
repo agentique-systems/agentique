@@ -1,0 +1,42 @@
+{
+  "count": 4,
+  "rows": [
+    {
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "family": "resolution",
+      "code": "KLS_UNRESOLVED",
+      "message": "target at bytes 29454..29460; expression context: false",
+      "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+      "classification": "B",
+      "disposition": "Ordinary structural inference/validation obligation. Not execution or authority conflict."
+    },
+    {
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "family": "resolution",
+      "code": "KLS_UNRESOLVED",
+      "message": "HappensWhile::thatOccurrence at bytes 30717..30745; expression context: false",
+      "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0",
+      "classification": "B",
+      "disposition": "Ordinary structural inference/validation obligation. Not execution or authority conflict."
+    },
+    {
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "family": "resolution",
+      "code": "KLS_UNRESOLVED",
+      "message": "source at bytes 29336..29342; expression context: false",
+      "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+      "classification": "B",
+      "disposition": "Ordinary structural inference/validation obligation. Not execution or authority conflict."
+    },
+    {
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "family": "resolution",
+      "code": "KLS_UNRESOLVED",
+      "message": "HappensWhile::thisOccurrence at bytes 30520..30548; expression context: false",
+      "subject": "c97c4841-b8ab-510f-b968-fc1423d577da",
+      "classification": "B",
+      "disposition": "Ordinary structural inference/validation obligation. Not execution or authority conflict."
+    }
+  ],
+  "closed": false
+}

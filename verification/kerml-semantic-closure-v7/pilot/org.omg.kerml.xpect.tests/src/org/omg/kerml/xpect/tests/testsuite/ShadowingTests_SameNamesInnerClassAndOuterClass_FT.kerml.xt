@@ -1,0 +1,33 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.parsing.KerMLParsingTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/library/Base.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+// XPECT noErrors --> ""
+package test{
+	feature A{
+		feature A {
+			//XPECT linkedName at A --> test.A.A
+			//* XPECT scope at A ---
+			A, A.B, A.B.B, A.B.self, A.B.that, A.B.that.self, A.self, A.that, A.that.self,
+			B, B.B, B.self, B.that, B.that.self, self, test.A, test.A.A, test.A.A.B,
+			test.A.A.B.B, test.A.A.B.self, test.A.A.B.that, test.A.A.B.that.self, test.A.A.self,
+			test.A.A.that, test.A.A.that.self, test.A.self, test.A.that, test.A.that.self, that,
+			that.self
+			--- */
+			feature B : A{}
+		}
+	}
+}

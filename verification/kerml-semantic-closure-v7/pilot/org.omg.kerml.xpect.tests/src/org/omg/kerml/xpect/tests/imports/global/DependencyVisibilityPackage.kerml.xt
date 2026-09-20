@@ -1,0 +1,34 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.imports.global.KerMLImportGlobalTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/src/DependencyVisibilityPackage.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/src/DependencyVisibilityPackage.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+// XPECT noErrors ---> ""
+package Test3{
+	//* XPECT scope at VisibilityPackage::c_Public ---
+	    c_Public, c_Public.c_public,
+	    Test3, Test3.c_Public, Test3.c_Public.c_public,
+	    VisibilityPackage, 
+	    VisibilityPackage.c_Public,
+	    VisibilityPackage.c_Public.c_public, 
+	    VisibilityPackage.c_Public_alias,
+	    VisibilityPackage.c_Public_alias.alias_public, 
+	    VisibilityPackage.c_Public_alias.c_public, 
+	    VisibilityPackage.c_clazz,
+	    VisibilityPackage.c_clazz.c_Public,
+	    VisibilityPackage.c_clazz.c_Public.c_publicc
+	--- */
+	public import VisibilityPackage::c_Public;
+}

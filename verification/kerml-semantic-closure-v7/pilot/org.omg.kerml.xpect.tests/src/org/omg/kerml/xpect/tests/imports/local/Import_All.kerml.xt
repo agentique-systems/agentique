@@ -1,0 +1,61 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.imports.local.KerMLImportLocalTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/library/Base.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+ 
+package Import_All {
+	package A {
+		private classifier X;
+	}
+	
+	package B {
+		public import A::*;
+		private classifier Y1;
+		public classifier Y2;
+	}
+	
+	package C {
+		private import B::*;
+		private classifier Z;
+		private package C1 {
+			public classifier U;
+		}
+	}
+	
+	package D {
+		public import all C::*;
+
+	    // XPECT errors --> "Couldn't resolve reference to Type 'X'." at "X"		
+		x : X;
+
+	    // XPECT errors --> "Couldn't resolve reference to Type 'Y1'." at "Y1"		
+		y1 : Y1;
+		
+		// XPECT linkedName at Y2 --> Import_All.B.Y2
+		y2 : Y2;
+		
+		// XPECT linkedName at Z --> Import_All.C.Z
+		z : Z;		
+	}
+	
+	package E {
+		public import all C::**;
+		public import all B::Y1;
+		
+		u : C1::U;
+		y1 : Y1;
+	}
+}

@@ -1,0 +1,42 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.parsing.KerMLParsingTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+		File {from ="/src/DependencyOuterPackage.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/src/DependencyOuterPackage.kerml"}
+				File {from ="/library/Base.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+// XPECT noErrors ---> ""
+package test{
+	public import OuterPackage::*;
+	classifier A{
+		classifier a2{}
+	}
+	//XPECT linkedName at A --> test.A
+	//* XPECT scope at A ---
+		    A, A.a2, B, B.a2, B.b, 
+		    test.A, test.A.a2, test.B, test.B.a2, test.B.b,
+		    OuterPackage.A.a1, OuterPackage.B, OuterPackage.A, OuterPackage.B.b.a1,
+		--- */
+	classifier B specializes A {
+		//XPECT linkedName at a2 --> test.A.a2
+		//* XPECT scope at a2 ---
+		    a2, b, 
+		    A, A.a2, B, B.a2, B.b,
+		    test.A, test.A.a2, test.B, test.B.a2, test.B.b, 
+		    OuterPackage.A, OuterPackage.A.a1, OuterPackage.B, OuterPackage.B.b.a1,
+		--- */
+		classifier b specializes a2 {}
+	}
+}

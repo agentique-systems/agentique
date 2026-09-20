@@ -450,3 +450,66 @@ v4 authority boundary. No Systems Library publication, SysML semantics/frontend,
 repository/API, transforms, simulation or application migration is introduced.
 
 **KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**
+
+## V7 — exact formal targets and independently isolated result-binding conflict
+
+Operational v5 implements the six explicitly authorized target replacements in
+KERML11-205/206/207. The typed contracts, profile-scoped canonical bindings,
+manifest, arbitrary-name and six-profile tests are described in
+[ADR 0017](adr/0017-operational-formal-constraint-target-corrections.md).
+Published/v1–v4 retain their formal targets. Pinned source declarations and all
+prior correction manifests remain unchanged.
+
+The generic EndFeatureMembership constructor now sets `isEnd` on the Feature it
+newly constructs and owns. The complete lower-corpus audit checks all 180 such
+memberships with zero end-flag findings. It never changes a referenced or inherited
+Feature. Implied library-base redundancy also follows required bases of general
+types, with bounded memoization. This does not establish full positional or
+feature-chain closure. Unestablished effective owner typing is explicitly incomplete.
+
+The independent inventory exposes **KLCV7-F-001 / KERML11-145** on the exact
+pinned `ControlFunctions::'.'` result expression. The formal result binding must
+be an owned Feature relating raw result identities. Its required Function domain
+is incompatible with the nested result's expression domain. The reference instead
+uses plain OwningMembership and the nested-expression domain, which does not
+satisfy the literal ownedFeature selection. A chain also changes the required
+related Feature identity. [The full proof](kerml-result-binding-authority-conflict.md)
+distinguishes these alternatives and supplies independent pinned source/XMI and
+arbitrary-name canonical witnesses. This is not an implementation workload stop.
+No KERML11-145 correction is applied.
+
+Fresh measurements, rule coverage, command results and every failed/superseded
+attempt are retained under [v7 verification](../verification/kerml-semantic-closure-v7/README.md).
+The inventory conservatively retains structural obligations rather than asserting
+non-applicability from an unfinished construction. No structural graph rule is
+hidden under execution deferral or accepted merely because a candidate exists.
+
+| Required review question | V7 answer |
+| --- | --- |
+| 1. Pinned standards/library bytes unchanged? | Yes. The preservation audit checks all starting bytes and new captures. The inherited v5 acquisition-index discrepancies already present on main are reported separately, without rewriting history. |
+| 2. Does v5 correct only 205/206/207? | Yes: six exact typed rule-target substitutions, in addition to the inherited v1–v4 lineage. |
+| 3. Subobject target is Objects::Object::subobjects? | Yes, including reflexive canonical witnesses and the independently verified exact pinned declaration. Published through v4 retain the wrong formal target. |
+| 4. Subperformance/owned/enclosed targets correct? | Yes: subperformances, ownedPerformances and enclosedPerformances under their exact owning paths. |
+| 5. Portion/suboccurrence targets correct? | Yes: Occurrences::Occurrence::portions and Occurrences::Occurrence::suboccurrences. The issue's own spelling error is retained as evidence, not copied into the implementation. |
+| 6. All EndFeatureMembership lowering findings gone? | Yes for the complete 180-membership pinned construction audit. Full accepted-publication construction remains withheld. |
+| 7. Unresolved required references zero? | No: four remain in the fresh v5 audit. Renamed inherited-member closure is still required. |
+| 8. Incomplete required answers zero? | No: 64. Six Clocks answers become complete, while ten Observation answers expose missing effective owner typing under the additional formal implications. Supporting incompleteness is retained. |
+| 9. Implied positional semantics complete? | No. The inherited-parameter experiment was removed because the formal rule requires the general type's owned-parameter projection. Full independent target comparison remains required. |
+| 10. Triggers distinguishability findings gone? | No: two remain. They are ordinary inference work, not a new erratum. |
+| 11. Feature-chain structural expansion complete? | No; all required canonical relationships and their evidence are not yet established. |
+| 12. Expression structural coverage complete? | No. The fresh audit preserves zero result-cardinality findings, but binding/domain and all-family structural validity are not established. The new conflict is exercised by a result expression. |
+| 13. All 258 constraints classified with no unknown structural coverage? | Every rule is inventoried: A=38, B=213, E=6, F=1. B obligations remain explicit and the publication coverage gate fails. This is not a closed final acceptance classification. |
+| 14. Strict semantic publication passes? | No. No accepted Snapshot is issued; kernel construction and runtime coverage are separate. |
+| 15. Accepted bindings current? | No. The historical candidate manifest remains unchanged; accepted regeneration is withheld. |
+| 16. LoadedKermlStandardLibraries available? | No accepted facade is exposed. |
+| 17. Authored projects consume accepted libraries? | No. Six-profile SourceProject selection is tested, but is not accepted-library consumption. |
+| 18. Operational conclusions explainable? | Implemented corrections carry typed rule, exact target, profile/manifest, canonical facts and search dependencies. Full publication dependency closure remains required. |
+| 19. Historical profiles reproducible? | Yes for frozen identities/manifests and permanent historical plus six-profile tests. Ordinary query implementation has a separately versioned rule identity. |
+| 20. Executable semantics explicitly deferred? | Yes. No runtime values are evaluated and no structural incompleteness is moved into that category. |
+| 21. Both structural runtime gates green? | Yes; both complete commands exit zero. Strict raw authoring conformance remains a separate nonzero report. |
+
+The scope prohibitions remain in force. No Systems Library semantic publication,
+SysML semantic crate/frontend, repository/API, diagrams, transformations, execution,
+simulation or application migration is introduced.
+
+**KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**

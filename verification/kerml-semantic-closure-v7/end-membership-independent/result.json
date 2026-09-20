@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v7/construction-audit.py"
+  ],
+  "started": "2026-09-19T20:41:07.481958+00:00",
+  "duration_seconds": 0.9060000000754371,
+  "exit_code": 0,
+  "output": "output.txt"
+}

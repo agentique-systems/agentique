@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/14";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/15";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -47,6 +47,8 @@ pub struct SemanticContextId {
     pub available_roots: Arc<BTreeMap<ElementId, BTreeSet<ElementId>>>,
     /// Validated target IDs, independently versioned from semantic rules.
     pub standard_bindings: Option<Arc<crate::StandardKermlBindings>>,
+    /// Rule-qualified, exact formal library targets under this profile and model.
+    pub formal_constraint_targets: Option<Arc<crate::FormalConstraintTargets>>,
     pub binding_version: &'static str,
     /// Exact canonical StandardLibrary records/occurrences, independent of authored
     /// revision changes. None means no validated canonical binding input was attached.
@@ -349,6 +351,7 @@ impl<'m> SemanticContext<'m> {
                 construction_obligations: Arc::default(),
                 available_roots: Arc::default(),
                 standard_bindings: None,
+                formal_constraint_targets: None,
                 binding_version: crate::BINDING_VERSION,
                 library_graph_digest: None,
             },

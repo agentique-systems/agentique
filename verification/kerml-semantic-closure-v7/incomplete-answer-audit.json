@@ -1,0 +1,21 @@
+{
+  "count": 64,
+  "closed": false,
+  "documents": [
+    {
+      "file": "Kernel Semantic Library/Observation.kerml",
+      "incomplete": 10
+    },
+    {
+      "file": "Kernel Semantic Library/Occurrences.kerml",
+      "incomplete": 54
+    }
+  ],
+  "diagnostic_causes": {
+    "KLS_UNRESOLVED": 4,
+    "KQ_CONSTRUCTION_OBLIGATION": 4,
+    "KQ_EVIDENCE": 4,
+    "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 2
+  },
+  "caveat": "Diagnostic causes and answer counts are distinct populations. Per-answer supporting inference closure is not established. A unique candidate never counts as Complete."
+}

@@ -1,0 +1,90 @@
+{
+  "format": "agentique-reviewed-formal-target-errata/1",
+  "profile_id": "agentique-kerml-1.0-operational/5",
+  "published_profile_id": "omg-kerml-1.0-published/1",
+  "extends": {
+    "profile_id": "agentique-kerml-1.0-operational/4",
+    "manifest": "standards/kerml-1.0-operational-validation-errata-v4.json",
+    "sha256": "525bae8868e6f1ce2705eb707560ef5597dc50ca3a810070e08717b368605953"
+  },
+  "entries": [
+    {
+      "rule_id": "Core-Features-Feature-checkFeatureSubobjectSpecialization",
+      "rule": "checkFeatureSubobjectSpecialization",
+      "published_body": "isComposite and ownedTyping.type->includes(oclIsKindOf(Structure)) and owningType <> null and (owningType.oclIsKindOf(Structure) or  owningType.type->includes(oclIsKindOf(Structure))) implies     specializesFromLibrary('Occurrence::Occurrence::suboccurrences')",
+      "prose_requirement": "<p>A composite <code>Feature</code> typed by a <code>Structure</code>, and whose <code>ownedType</code> is a <code>Structure</code> or another <code>Feature</code> typed by a <code>Structure</code> must directly or indirectly specialize <em><code>Objects::Object::subobjects</code></em>.",
+      "published_target": "Occurrence::Occurrence::suboccurrences",
+      "operational_target": "Objects::Object::subobjects",
+      "issue": "KERML11-205",
+      "issue_status": "open",
+      "operation": "replace-exact-formal-constraint-library-target",
+      "authority": "verification/kerml-semantic-closure-v7/authority-matrix.json",
+      "reviewed_disposition": "Explicit Agentique project authorization. Not an adopted OMG erratum. Only this literal target is corrected; antecedents, generic lookup, kernel and library declarations are unchanged."
+    },
+    {
+      "rule_id": "Kernel-Behaviors-Step-checkStepSubperformanceSpecialization",
+      "rule": "checkStepSubperformanceSpecialization",
+      "published_body": "owningType <> null and     (owningType.oclIsKindOf(Behavior) or      owningType.oclIsKindOf(Step)) and     self.isComposite implies     specializesFromLibrary('Performances::Performance::subperformance')",
+      "prose_requirement": "<p>A<code>Step</code> whose <code>owningType</code> is a <code>Behavior</code> or another <code>Step</code>, and which is composite, must directly or indirectly specialize the <code>Step</code> <code><em>Performances::Performance::subperformance</em></code>.</p>",
+      "published_target": "Performances::Performance::subperformance",
+      "operational_target": "Performances::Performance::subperformances",
+      "issue": "KERML11-205",
+      "issue_status": "open",
+      "operation": "replace-exact-formal-constraint-library-target",
+      "authority": "verification/kerml-semantic-closure-v7/authority-matrix.json",
+      "reviewed_disposition": "Explicit Agentique project authorization. Not an adopted OMG erratum. Only this literal target is corrected; antecedents, generic lookup, kernel and library declarations are unchanged."
+    },
+    {
+      "rule_id": "Core-Features-Feature-checkFeaturePortionSpecialization",
+      "rule": "checkFeaturePortionSpecialization",
+      "published_body": "isPortion and ownedTyping.type->includes(oclIsKindOf(Class)) and owningType <> null and (owningType.oclIsKindOf(Class) or  owningType.oclIsKindOf(Feature) and     owningType.oclAsType(Feature).type->         exists(oclIsKindOf(Class))) implies     specializesFromLibrary('Occurrence::Occurrence::portions')",
+      "prose_requirement": "<p>If a <code>Feature</code> has <code>isPortion = true</code>, an <code>ownedTyping </code> relationship to a <code>Class</code>, and an <code>owningType</code> that is a <code>Class</code> or another <code>Feature</code> typed by a <code>Class</code>, then it must directly or indirectly specialize <em><code>Occurrences::Occurrence::portions</code></em> from the Kernel Semantic Library.</p>",
+      "published_target": "Occurrence::Occurrence::portions",
+      "operational_target": "Occurrences::Occurrence::portions",
+      "issue": "KERML11-206",
+      "issue_status": "open",
+      "operation": "replace-exact-formal-constraint-library-target",
+      "authority": "verification/kerml-semantic-closure-v7/authority-matrix.json",
+      "reviewed_disposition": "Explicit Agentique project authorization. Not an adopted OMG erratum. Only this literal target is corrected; antecedents, generic lookup, kernel and library declarations are unchanged."
+    },
+    {
+      "rule_id": "Core-Features-Feature-checkFeatureSuboccurrenceSpecialization",
+      "rule": "checkFeatureSuboccurrenceSpecialization",
+      "published_body": "isComposite and ownedTyping.type->includes(oclIsKindOf(Class)) and owningType <> null and (owningType.oclIsKindOf(Class) or  owningType.oclIsKindOf(Feature) and     owningType.oclAsType(Feature).type->         exists(oclIsKindOf(Class))) implies     specializesFromLibrary('Occurrence::Occurrence::suboccurrences')",
+      "prose_requirement": "<p>A composite <code>Feature</code> that has an <code>ownedTyping</code> relationship to a <code>Class</code>, and whose <code>ownedType</code> is a <code>Class</code> or another <code>Feature</code> typed by a <code>Class</code>, must directly or indirectly specialize <em><code>Occurrences::Occurrence::suboccurrences</code></em>.",
+      "published_target": "Occurrence::Occurrence::suboccurrences",
+      "operational_target": "Occurrences::Occurrence::suboccurrences",
+      "issue": "KERML11-206",
+      "issue_status": "open",
+      "operation": "replace-exact-formal-constraint-library-target",
+      "authority": "verification/kerml-semantic-closure-v7/authority-matrix.json",
+      "reviewed_disposition": "Explicit Agentique project authorization. Not an adopted OMG erratum. Only this literal target is corrected; antecedents, generic lookup, kernel and library declarations are unchanged."
+    },
+    {
+      "rule_id": "Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization",
+      "rule": "checkStepOwnedPerformanceSpecialization",
+      "published_body": "isComposite and owningType <> null and (owningType.oclIsKindOf(Structure) or  owningType.oclIsKindOf(Feature) and  owningType.oclAsType(Feature).type->     exists(oclIsKindOf(Structure)) implies     specializesFromLibrary('Objects::Object::ownedPerformance')",
+      "prose_requirement": "<p>A composite <code>Step</code> whose <code>owningType</code> is a <code>Structure</code> or a <code>Feature</code> typed by a <code>Structure</code> must directly or indirectly specialize the <code>Step</code> <code><em>Objects::Object::ownedPerformance</em></code>.</p>",
+      "published_target": "Objects::Object::ownedPerformance",
+      "operational_target": "Objects::Object::ownedPerformances",
+      "issue": "KERML11-207",
+      "issue_status": "open",
+      "operation": "replace-exact-formal-constraint-library-target",
+      "authority": "verification/kerml-semantic-closure-v7/authority-matrix.json",
+      "reviewed_disposition": "Explicit Agentique project authorization. Not an adopted OMG erratum. Only this literal target is corrected; antecedents, generic lookup, kernel and library declarations are unchanged."
+    },
+    {
+      "rule_id": "Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization",
+      "rule": "checkStepEnclosedPerformanceSpecialization",
+      "published_body": "owningType <> null and     (owningType.oclIsKindOf(Behavior) or      owningType.oclIsKindOf(Step)) implies     specializesFromLibrary('Performances::Performance::enclosedPerformance')",
+      "prose_requirement": "<p>A<code>Step</code> whose <code>owningType</code> is a <code>Behavior</code> or another <code>Step</code> must directly or indirectly specialize the <code>Step</code> <code><em>Performances::Performance::enclosedPerformance</em></code>.</p>",
+      "published_target": "Performances::Performance::enclosedPerformance",
+      "operational_target": "Performances::Performance::enclosedPerformances",
+      "issue": "KERML11-207",
+      "issue_status": "open",
+      "operation": "replace-exact-formal-constraint-library-target",
+      "authority": "verification/kerml-semantic-closure-v7/authority-matrix.json",
+      "reviewed_disposition": "Explicit Agentique project authorization. Not an adopted OMG erratum. Only this literal target is corrected; antecedents, generic lookup, kernel and library declarations are unchanged."
+    }
+  ]
+}

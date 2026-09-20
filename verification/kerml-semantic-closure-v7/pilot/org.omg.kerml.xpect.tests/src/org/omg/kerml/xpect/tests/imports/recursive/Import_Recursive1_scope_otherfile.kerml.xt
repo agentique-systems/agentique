@@ -1,0 +1,53 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.imports.recursive.KerMLImportRecursiveTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+		File "Import_Recursive1.kerml" {}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/library/Base.kerml"}
+				File {from ="Import_Recursive1.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+package RecursiveImport {
+  
+  	public import P::**; 
+  	
+  	// NOTE: There is some duplication due to the implicit public import of "P" itself
+  	// as part of the recursive public import.
+	//* XPECT scope at X ---
+	P.X, RecursiveImport.P.X, 
+	P.Q.Y, RecursiveImport.P.Q.Y,
+	P.Q.R.Z, RecursiveImport.P.Q.R.Z,
+	
+	P.X,
+	P.Q.Y,
+	P.Q.R.Z,
+	
+	X, RecursiveImport.X,
+	Q.Y, RecursiveImport.Q.Y,
+	Q.R.Z,  RecursiveImport.Q.R.Z,	  
+	
+	Y, RecursiveImport.Y,
+	R.Z, RecursiveImport.R.Z,
+	
+	Z, RecursiveImport.Z,
+	
+	x, RecursiveImport.x,
+	y, RecursiveImport.y,
+	z, RecursiveImport.z,
+	--- */
+	
+	x: X;	
+	y: Y;
+	z: Z;
+	 
+}

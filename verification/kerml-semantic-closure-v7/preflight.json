@@ -1,0 +1,23 @@
+{
+  "base_commit": "13a69e381e22e2883cd16fdd921db56840c020ae",
+  "branch": "semantics/kerml-formal-constraint-errata-closure-v7",
+  "initial_worktree": "clean; verified before branch creation",
+  "fetch": {
+    "command": [
+      "git",
+      "fetch",
+      "origin",
+      "main"
+    ],
+    "exit_code": 0
+  },
+  "fast_forward": {
+    "command": [
+      "git",
+      "merge",
+      "--ff-only",
+      "origin/main"
+    ],
+    "exit_code": 0
+  }
+}

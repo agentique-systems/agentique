@@ -1,0 +1,48 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.88s
+     Running tests\formal_targets_v5.rs (target\debug\deps\formal_targets_v5-575a30504afd32d2.exe)
+
+running 2 tests
+omg-kerml-1.0-published/1 FeatureSubobjectSpecialization: exact target contract checked
+omg-kerml-1.0-published/1 StepSubperformanceSpecialization: exact target contract checked
+omg-kerml-1.0-published/1 FeaturePortionSpecialization: exact target contract checked
+omg-kerml-1.0-published/1 FeatureSuboccurrenceSpecialization: exact target contract checked
+omg-kerml-1.0-published/1 StepOwnedPerformanceSpecialization: exact target contract checked
+omg-kerml-1.0-published/1 StepEnclosedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/1 FeatureSubobjectSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/1 StepSubperformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/1 FeaturePortionSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/1 FeatureSuboccurrenceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/1 StepOwnedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/1 StepEnclosedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/2 FeatureSubobjectSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/2 StepSubperformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/2 FeaturePortionSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/2 FeatureSuboccurrenceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/2 StepOwnedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/2 StepEnclosedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/3 FeatureSubobjectSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/3 StepSubperformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/3 FeaturePortionSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/3 FeatureSuboccurrenceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/3 StepOwnedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/3 StepEnclosedPerformanceSpecialization: exact target contract checked
+test every_rule_rejects_corrupt_bindings_without_fallback ... ok
+agentique-kerml-1.0-operational/4 FeatureSubobjectSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/4 StepSubperformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/4 FeaturePortionSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/4 FeatureSuboccurrenceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/4 StepOwnedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/4 StepEnclosedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/5 FeatureSubobjectSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/5 StepSubperformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/5 FeaturePortionSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/5 FeatureSuboccurrenceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/5 StepOwnedPerformanceSpecialization: exact target contract checked
+agentique-kerml-1.0-operational/5 StepEnclosedPerformanceSpecialization: exact target contract checked
+test six_rules_six_profiles_exact_targets_and_arbitrary_names ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.38s
+

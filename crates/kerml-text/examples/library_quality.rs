@@ -55,7 +55,9 @@ fn serialized_diagnostics(values: &BTreeMap<(&'static str, ElementId), String>) 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
-    let profile = if std::env::args().any(|a| a == "--v4") {
+    let profile = if std::env::args().any(|a| a == "--v5") {
+        agq_kerml::BaselineProfile::OPERATIONAL_V5
+    } else if std::env::args().any(|a| a == "--v4") {
         agq_kerml::BaselineProfile::OPERATIONAL_V4
     } else if std::env::args().any(|a| a == "--published") {
         agq_kerml::BaselineProfile::PublishedKerMl10
@@ -115,6 +117,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             *row.validation_checks.entry(rule).or_default() += 1;
         }
         row.query(local);
+        if is(c::FEATURE) {
+            let targets = queries.validate_formal_target_constraints(record.id());
+            for rule in &targets.value {
+                *row.validation_checks.entry(rule).or_default() += 1;
+            }
+            row.query(targets);
+        }
         if is(c::NAMESPACE) {
             let names = queries.validate_namespace_distinguishability(record.id());
             for rule in &names.value {

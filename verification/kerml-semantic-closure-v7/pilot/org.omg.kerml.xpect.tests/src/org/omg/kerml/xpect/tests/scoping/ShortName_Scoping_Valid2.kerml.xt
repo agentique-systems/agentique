@@ -1,0 +1,27 @@
+//* 
+XPECT_SETUP org.omg.kerml.xpect.tests.scoping.KerMLScopingTest
+	ResourceSet {
+		ThisFile {}
+		File {from ="/library/Base.kerml"}
+	}
+	Workspace {
+		JavaProject {
+			SrcFolder {
+				ThisFile {}
+				File {from ="/library/Base.kerml"}
+			}
+		}
+	}
+END_SETUP 
+*/
+
+// XPECT noErrors --> ""
+package Test {
+	classifier A {
+		// Non-member owned element
+		doc <B> /* */
+	}
+	 
+	comment C about A::B /* */
+}
+

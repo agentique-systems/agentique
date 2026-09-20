@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v7/result-binding-authority.py",
+    "--check"
+  ],
+  "started": "2026-09-19T20:48:39.080148+00:00",
+  "duration_seconds": 1.2809999999590218,
+  "exit_code": 0,
+  "output": "output.txt"
+}

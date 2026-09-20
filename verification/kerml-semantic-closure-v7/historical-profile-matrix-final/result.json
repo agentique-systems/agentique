@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--test",
+    "redefinition_end_v4",
+    "--test",
+    "redefinition_v2",
+    "--test",
+    "profiles",
+    "--test",
+    "subobject_authority",
+    "--test",
+    "formal_targets_v5",
+    "--test",
+    "result_binding_authority_v7",
+    "--",
+    "--nocapture"
+  ],
+  "started": "2026-09-19T20:39:59.131768+00:00",
+  "duration_seconds": 38.57799999997951,
+  "exit_code": 0,
+  "output": "output.txt"
+}

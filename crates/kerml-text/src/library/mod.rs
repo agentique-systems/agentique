@@ -100,7 +100,8 @@ impl LibraryDraft {
         .and_then(|c| c.with_available_roots(availability))
         .map_err(|e| LibraryLoadError::Interpretation(format!("{e:?}")))?
         .with_standard_bindings(&self.roots, semantic)
-        .map_err(|e| LibraryLoadError::Interpretation(format!("Binding validation: {e:?}")))?;
+        .map_err(|e| LibraryLoadError::Interpretation(format!("Binding validation: {e:?}")))?
+        .with_formal_constraint_targets(&self.roots, semantic);
         Ok(KerMlQueries::new(context))
     }
     pub fn baseline_profile(&self) -> agq_kerml::BaselineProfile {

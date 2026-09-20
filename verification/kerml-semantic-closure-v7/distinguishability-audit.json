@@ -1,0 +1,23 @@
+{
+  "count": 2,
+  "findings": [
+    {
+      "document": "Kernel Semantic Library/Triggers.kerml",
+      "family": "semantic",
+      "code": "validateNamespaceDistinguishibility",
+      "message": "Name \"signal\" identifies comparable members 28971587-d46f-5a87-989a-e83ee4f87fa9 and bd7f230d-14ac-52e2-9342-c94a13c80fc1 through memberships 148b03fa-d657-5895-9a98-58d7d72385be and 5296c57a-0be4-59b6-be1f-665fe74029a6",
+      "subject": "4a74747a-c385-5a89-89c8-be2fadaa9ecb",
+      "classification": "B",
+      "disposition": "Ordinary structural inference/validation obligation. Not execution or authority conflict."
+    },
+    {
+      "document": "Kernel Semantic Library/Triggers.kerml",
+      "family": "semantic",
+      "code": "validateNamespaceDistinguishibility",
+      "message": "Name \"signal\" identifies comparable members bd7f230d-14ac-52e2-9342-c94a13c80fc1 and 56339403-976c-5381-8f78-18e15777f41b through memberships 5296c57a-0be4-59b6-be1f-665fe74029a6 and 778b6d60-cb70-51cb-b052-8a548caefa7d",
+      "subject": "518b9181-2fd8-5bfa-953c-3292058bc119",
+      "classification": "B",
+      "disposition": "Ordinary structural inference/validation obligation. Not execution or authority conflict."
+    }
+  ]
+}

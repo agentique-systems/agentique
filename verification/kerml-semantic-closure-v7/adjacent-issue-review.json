@@ -1,0 +1,27 @@
+{
+  "format": "agentique-v7-adjacent-authority-review/1",
+  "corrections_applied": [],
+  "issues": [
+    {
+      "issue": "KERML11-145",
+      "sha256": "d7bc2fc68064b7ca52126d25c21f0c5e1feef6359a9224e0d8ec9a06129f2a9b",
+      "status": "open",
+      "disposition": "Exact pinned checkFunctionResultBindingConnector conflict independently reproduced as KLCV7-F-001. Other associated constraints are metadata, not independently claimed additional conflicts.",
+      "authorized": false
+    },
+    {
+      "issue": "KERML11-182",
+      "sha256": "953d0a19301189db17a307dfc62053a24504ef284f9357925fa059610acfc603",
+      "status": "open",
+      "disposition": "Future authority metadata. No independently reproduced corpus conflict or operational correction asserted in this stop packet.",
+      "authorized": false
+    },
+    {
+      "issue": "KERML11-210",
+      "sha256": "ed06ce07415768b73e9268e1ac4f5f760dcbc0bfa396266586d12b072725264e",
+      "status": "open",
+      "disposition": "Future authority metadata. No independently reproduced corpus conflict or operational correction asserted in this stop packet.",
+      "authorized": false
+    }
+  ]
+}

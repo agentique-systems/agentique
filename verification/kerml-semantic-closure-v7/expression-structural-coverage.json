@@ -1,0 +1,18 @@
+{
+  "result_cardinality_findings": 0,
+  "separately_unevaluated": 3901,
+  "structural_coverage_complete": false,
+  "required_families": [
+    "FeatureReferenceExpression",
+    "InvocationExpression",
+    "OperatorExpression",
+    "classification",
+    "cast",
+    "index",
+    "select",
+    "conditional",
+    "feature-chain"
+  ],
+  "authority_conflict": "KLCV7-F-001",
+  "remaining": "Full family structural expansion and rule coverage remain mandatory; zero result-cardinality findings is insufficient."
+}

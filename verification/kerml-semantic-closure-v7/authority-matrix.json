@@ -1,0 +1,289 @@
+{
+  "format": "agentique-formal-target-authority/1",
+  "profile": "agentique-kerml-1.0-operational/5",
+  "reference_test_inventory": {
+    "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+    "complete_tree_sha": "36498b3b33919f85fe27582ec25899332c86f3ea",
+    "ker_ml_xpect_fixtures": 303,
+    "fixture_and_map_git_blob_hashes_verified": true,
+    "executed": false
+  },
+  "constraints": [
+    {
+      "rule_id": "Core-Features-Feature-checkFeatureSubobjectSpecialization",
+      "rule": "checkFeatureSubobjectSpecialization",
+      "published_body": "isComposite and ownedTyping.type->includes(oclIsKindOf(Structure)) and owningType <> null and (owningType.oclIsKindOf(Structure) or  owningType.type->includes(oclIsKindOf(Structure))) implies     specializesFromLibrary('Occurrence::Occurrence::suboccurrences')",
+      "prose_requirement": "<p>A composite <code>Feature</code> typed by a <code>Structure</code>, and whose <code>ownedType</code> is a <code>Structure</code> or another <code>Feature</code> typed by a <code>Structure</code> must directly or indirectly specialize <em><code>Objects::Object::subobjects</code></em>.",
+      "published_target": "Occurrence::Occurrence::suboccurrences",
+      "operational_target": "Objects::Object::subobjects",
+      "issue": "KERML11-205",
+      "issue_status": "open",
+      "issue_evidence": {
+        "path": "verification/kerml-semantic-closure-v7/issues/KERML11-205.html",
+        "sha256": "301c2039695beefbab218719593994a8a34f79eb93d8d24b90c134e1ddf38d8f",
+        "summary": "Summary: The checkFeatureSubobjectSpecialization (Feature) OCL says Occurrence::Occurrence::suboccurrences but should be Objects::Object::subobjects - As per the documentation body of the constraint. The checkStepSubperformanceSpecialization (Step) OCL says Performances::Performance::subperformance should be Performances::Performance::subperformances - The subperformance attribute does not exist in Performance, subperformances does.",
+        "spelling_note": null
+      },
+      "authority": {
+        "artifact": "standards\\normative\\kerml-1.0\\KerML.xmi",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureSubobjectSpecialization\" ns0:type=\"uml:Constraint\" name=\"checkFeatureSubobjectSpecialization\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureSubobjectSpecialization-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A composite &lt;code&gt;Feature&lt;/code&gt; typed by a &lt;code&gt;Structure&lt;/code&gt;, and whose &lt;code&gt;ownedType&lt;/code&gt; is a &lt;code&gt;Structure&lt;/code&gt; or another &lt;code&gt;Feature&lt;/code&gt; typed by a &lt;code&gt;Structure&lt;/code&gt; must directly or indirectly specialize &lt;em&gt;&lt;code&gt;Objects::Object::subobjects&lt;/code&gt;&lt;/em&gt;.\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureSubobjectSpecialization\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureSubobjectSpecialization-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"isComposite and ownedTyping.type-&gt;includes(oclIsKindOf(Structure)) and owningType &lt;&gt; null and (owningType.oclIsKindOf(Structure) or  owningType.type-&gt;includes(oclIsKindOf(Structure))) implies     specializesFromLibrary('Occurrence::Occurrence::suboccurrences')\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+      },
+      "pinned_declaration": {
+        "archive": "standards/artifacts/Semantic-Library.kpar",
+        "archive_sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+        "entry": "Kernel Semantic Library/Objects.kerml",
+        "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+        "package": "standard library package Objects",
+        "owner": "abstract struct Object specializes Occurrence {",
+        "text": "composite feature subobjects: Object[0..*] subsets objects, suboccurrences",
+        "range": [
+          1030,
+          1109
+        ]
+      },
+      "reference": {
+        "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+        "file": "verification/kerml-semantic-closure-v7/pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ImplicitGeneralizationMap.java",
+        "sha256": "71008c5448cb20b26b8dd96b74fe8d6c573cdc1ec2abda82c56534d2167436ce",
+        "mapping": "put(FeatureImpl.class, \"subobject\", \"Objects::Object::subobjects\")"
+      },
+      "reference_tests": [],
+      "reference_contextual_tests": [
+        {
+          "path": "verification/kerml-semantic-closure-v7/pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/parsing/ParsingTests_Scoping.kerml.xt",
+          "sha256": "2b4de692a2bf5756a5bacb92c4a9908256123099f95f186f554a07eb28a9e7fe",
+          "matches": [
+            {
+              "line": 61,
+              "text": "                feature :>> subobjects;"
+            }
+          ],
+          "scope": "Contextual spelling/scoping fixture only; not an assertion of this formal constraint target. Source inspected, not executed."
+        }
+      ],
+      "reference_test_scope": "All 303 KerML Xpect .kerml.xt files in the frozen recursive tree, captured in acquisition.json. No direct fully qualified target/rule assertion found when reference_tests is empty. Sources inspected, not executed.",
+      "authority_scope": "Project-authorized exact formal library target replacement only; retained OCL is not executed as OCL. No changes to antecedent, source declarations, or generic resolution."
+    },
+    {
+      "rule_id": "Kernel-Behaviors-Step-checkStepSubperformanceSpecialization",
+      "rule": "checkStepSubperformanceSpecialization",
+      "published_body": "owningType <> null and     (owningType.oclIsKindOf(Behavior) or      owningType.oclIsKindOf(Step)) and     self.isComposite implies     specializesFromLibrary('Performances::Performance::subperformance')",
+      "prose_requirement": "<p>A<code>Step</code> whose <code>owningType</code> is a <code>Behavior</code> or another <code>Step</code>, and which is composite, must directly or indirectly specialize the <code>Step</code> <code><em>Performances::Performance::subperformance</em></code>.</p>",
+      "published_target": "Performances::Performance::subperformance",
+      "operational_target": "Performances::Performance::subperformances",
+      "issue": "KERML11-205",
+      "issue_status": "open",
+      "issue_evidence": {
+        "path": "verification/kerml-semantic-closure-v7/issues/KERML11-205.html",
+        "sha256": "301c2039695beefbab218719593994a8a34f79eb93d8d24b90c134e1ddf38d8f",
+        "summary": "Summary: The checkFeatureSubobjectSpecialization (Feature) OCL says Occurrence::Occurrence::suboccurrences but should be Objects::Object::subobjects - As per the documentation body of the constraint. The checkStepSubperformanceSpecialization (Step) OCL says Performances::Performance::subperformance should be Performances::Performance::subperformances - The subperformance attribute does not exist in Performance, subperformances does.",
+        "spelling_note": null
+      },
+      "authority": {
+        "artifact": "standards\\normative\\kerml-1.0\\KerML.xmi",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Behaviors-Step-checkStepSubperformanceSpecialization\" ns0:type=\"uml:Constraint\" name=\"checkStepSubperformanceSpecialization\">\n            <constrainedElement ns0:idref=\"Kernel-Behaviors-Step\" />\n            <ownedComment ns0:id=\"Kernel-Behaviors-Step-checkStepSubperformanceSpecialization-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A&lt;code&gt;Step&lt;/code&gt; whose &lt;code&gt;owningType&lt;/code&gt; is a &lt;code&gt;Behavior&lt;/code&gt; or another &lt;code&gt;Step&lt;/code&gt;, and which is composite, must directly or indirectly specialize the &lt;code&gt;Step&lt;/code&gt; &lt;code&gt;&lt;em&gt;Performances::Performance::subperformance&lt;/em&gt;&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Behaviors-Step-checkStepSubperformanceSpecialization\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Behaviors-Step-checkStepSubperformanceSpecialization-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningType &lt;&gt; null and     (owningType.oclIsKindOf(Behavior) or      owningType.oclIsKindOf(Step)) and     self.isComposite implies     specializesFromLibrary('Performances::Performance::subperformance')\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+      },
+      "pinned_declaration": {
+        "archive": "standards/artifacts/Semantic-Library.kpar",
+        "archive_sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+        "entry": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "package": "standard library package Performances",
+        "owner": "abstract behavior Performance specializes Occurrence disjoint from Object {",
+        "text": "composite step subperformances: Performance[0..*] subsets enclosedPerformances, suboccurrences",
+        "range": [
+          1792,
+          1891
+        ]
+      },
+      "reference": {
+        "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+        "file": "verification/kerml-semantic-closure-v7/pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ImplicitGeneralizationMap.java",
+        "sha256": "71008c5448cb20b26b8dd96b74fe8d6c573cdc1ec2abda82c56534d2167436ce",
+        "mapping": "put(StepImpl.class, \"subperformance\", \"Performances::Performance::subperformances\")"
+      },
+      "reference_tests": [],
+      "reference_contextual_tests": [],
+      "reference_test_scope": "All 303 KerML Xpect .kerml.xt files in the frozen recursive tree, captured in acquisition.json. No direct fully qualified target/rule assertion found when reference_tests is empty. Sources inspected, not executed.",
+      "authority_scope": "Project-authorized exact formal library target replacement only; retained OCL is not executed as OCL. No changes to antecedent, source declarations, or generic resolution."
+    },
+    {
+      "rule_id": "Core-Features-Feature-checkFeaturePortionSpecialization",
+      "rule": "checkFeaturePortionSpecialization",
+      "published_body": "isPortion and ownedTyping.type->includes(oclIsKindOf(Class)) and owningType <> null and (owningType.oclIsKindOf(Class) or  owningType.oclIsKindOf(Feature) and     owningType.oclAsType(Feature).type->         exists(oclIsKindOf(Class))) implies     specializesFromLibrary('Occurrence::Occurrence::portions')",
+      "prose_requirement": "<p>If a <code>Feature</code> has <code>isPortion = true</code>, an <code>ownedTyping </code> relationship to a <code>Class</code>, and an <code>owningType</code> that is a <code>Class</code> or another <code>Feature</code> typed by a <code>Class</code>, then it must directly or indirectly specialize <em><code>Occurrences::Occurrence::portions</code></em> from the Kernel Semantic Library.</p>",
+      "published_target": "Occurrence::Occurrence::portions",
+      "operational_target": "Occurrences::Occurrence::portions",
+      "issue": "KERML11-206",
+      "issue_status": "open",
+      "issue_evidence": {
+        "path": "verification/kerml-semantic-closure-v7/issues/KERML11-206.html",
+        "sha256": "88e45460f8f8850b9416b6315f3aec3d474ce1c3504a60b4377496d5f73b3214",
+        "summary": "Summary: checkFeaturePortionSpecialization and checkFeatureSuboccurrenceSpecialization OCL targets the \"Occurence\" package segment but shall target \"Occurences\" package",
+        "spelling_note": "The issue itself writes Occurence/Occurences. The exact Occurrences spelling is independently established by pinned declaration, normative prose and reference map."
+      },
+      "authority": {
+        "artifact": "standards\\normative\\kerml-1.0\\KerML.xmi",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeaturePortionSpecialization\" ns0:type=\"uml:Constraint\" name=\"checkFeaturePortionSpecialization\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeaturePortionSpecialization-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;isPortion = true&lt;/code&gt;, an &lt;code&gt;ownedTyping &lt;/code&gt; relationship to a &lt;code&gt;Class&lt;/code&gt;, and an &lt;code&gt;owningType&lt;/code&gt; that is a &lt;code&gt;Class&lt;/code&gt; or another &lt;code&gt;Feature&lt;/code&gt; typed by a &lt;code&gt;Class&lt;/code&gt;, then it must directly or indirectly specialize &lt;em&gt;&lt;code&gt;Occurrences::Occurrence::portions&lt;/code&gt;&lt;/em&gt; from the Kernel Semantic Library.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeaturePortionSpecialization\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeaturePortionSpecialization-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"isPortion and ownedTyping.type-&gt;includes(oclIsKindOf(Class)) and owningType &lt;&gt; null and (owningType.oclIsKindOf(Class) or  owningType.oclIsKindOf(Feature) and     owningType.oclAsType(Feature).type-&gt;         exists(oclIsKindOf(Class))) implies     specializesFromLibrary('Occurrence::Occurrence::portions')\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+      },
+      "pinned_declaration": {
+        "archive": "standards/artifacts/Semantic-Library.kpar",
+        "archive_sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+        "entry": "Kernel Semantic Library/Occurrences.kerml",
+        "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+        "package": "standard library package Occurrences",
+        "owner": "abstract class Occurrence specializes Anything disjoint from DataValue {",
+        "text": "portion feature all portions: Occurrence[1..*] subsets spaceTimeEnclosedOccurrences {",
+        "range": [
+          11006,
+          11096
+        ]
+      },
+      "reference": {
+        "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+        "file": "verification/kerml-semantic-closure-v7/pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ImplicitGeneralizationMap.java",
+        "sha256": "71008c5448cb20b26b8dd96b74fe8d6c573cdc1ec2abda82c56534d2167436ce",
+        "mapping": "put(FeatureImpl.class, \"portion\", \"Occurrences::Occurrence::portions\")"
+      },
+      "reference_tests": [],
+      "reference_contextual_tests": [],
+      "reference_test_scope": "All 303 KerML Xpect .kerml.xt files in the frozen recursive tree, captured in acquisition.json. No direct fully qualified target/rule assertion found when reference_tests is empty. Sources inspected, not executed.",
+      "authority_scope": "Project-authorized exact formal library target replacement only; retained OCL is not executed as OCL. No changes to antecedent, source declarations, or generic resolution."
+    },
+    {
+      "rule_id": "Core-Features-Feature-checkFeatureSuboccurrenceSpecialization",
+      "rule": "checkFeatureSuboccurrenceSpecialization",
+      "published_body": "isComposite and ownedTyping.type->includes(oclIsKindOf(Class)) and owningType <> null and (owningType.oclIsKindOf(Class) or  owningType.oclIsKindOf(Feature) and     owningType.oclAsType(Feature).type->         exists(oclIsKindOf(Class))) implies     specializesFromLibrary('Occurrence::Occurrence::suboccurrences')",
+      "prose_requirement": "<p>A composite <code>Feature</code> that has an <code>ownedTyping</code> relationship to a <code>Class</code>, and whose <code>ownedType</code> is a <code>Class</code> or another <code>Feature</code> typed by a <code>Class</code>, must directly or indirectly specialize <em><code>Occurrences::Occurrence::suboccurrences</code></em>.",
+      "published_target": "Occurrence::Occurrence::suboccurrences",
+      "operational_target": "Occurrences::Occurrence::suboccurrences",
+      "issue": "KERML11-206",
+      "issue_status": "open",
+      "issue_evidence": {
+        "path": "verification/kerml-semantic-closure-v7/issues/KERML11-206.html",
+        "sha256": "88e45460f8f8850b9416b6315f3aec3d474ce1c3504a60b4377496d5f73b3214",
+        "summary": "Summary: checkFeaturePortionSpecialization and checkFeatureSuboccurrenceSpecialization OCL targets the \"Occurence\" package segment but shall target \"Occurences\" package",
+        "spelling_note": "The issue itself writes Occurence/Occurences. The exact Occurrences spelling is independently established by pinned declaration, normative prose and reference map."
+      },
+      "authority": {
+        "artifact": "standards\\normative\\kerml-1.0\\KerML.xmi",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureSuboccurrenceSpecialization\" ns0:type=\"uml:Constraint\" name=\"checkFeatureSuboccurrenceSpecialization\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureSuboccurrenceSpecialization-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A composite &lt;code&gt;Feature&lt;/code&gt; that has an &lt;code&gt;ownedTyping&lt;/code&gt; relationship to a &lt;code&gt;Class&lt;/code&gt;, and whose &lt;code&gt;ownedType&lt;/code&gt; is a &lt;code&gt;Class&lt;/code&gt; or another &lt;code&gt;Feature&lt;/code&gt; typed by a &lt;code&gt;Class&lt;/code&gt;, must directly or indirectly specialize &lt;em&gt;&lt;code&gt;Occurrences::Occurrence::suboccurrences&lt;/code&gt;&lt;/em&gt;.\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureSuboccurrenceSpecialization\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureSuboccurrenceSpecialization-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"isComposite and ownedTyping.type-&gt;includes(oclIsKindOf(Class)) and owningType &lt;&gt; null and (owningType.oclIsKindOf(Class) or  owningType.oclIsKindOf(Feature) and     owningType.oclAsType(Feature).type-&gt;         exists(oclIsKindOf(Class))) implies     specializesFromLibrary('Occurrence::Occurrence::suboccurrences')\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+      },
+      "pinned_declaration": {
+        "archive": "standards/artifacts/Semantic-Library.kpar",
+        "archive_sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+        "entry": "Kernel Semantic Library/Occurrences.kerml",
+        "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+        "package": "standard library package Occurrences",
+        "owner": "abstract class Occurrence specializes Anything disjoint from DataValue {",
+        "text": "composite feature suboccurrences: Occurrence[0..*] subsets occurrences {",
+        "range": [
+          2327,
+          2406
+        ]
+      },
+      "reference": {
+        "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+        "file": "verification/kerml-semantic-closure-v7/pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ImplicitGeneralizationMap.java",
+        "sha256": "71008c5448cb20b26b8dd96b74fe8d6c573cdc1ec2abda82c56534d2167436ce",
+        "mapping": "put(FeatureImpl.class, \"suboccurrence\", \"Occurrences::Occurrence::suboccurrences\")"
+      },
+      "reference_tests": [],
+      "reference_contextual_tests": [],
+      "reference_test_scope": "All 303 KerML Xpect .kerml.xt files in the frozen recursive tree, captured in acquisition.json. No direct fully qualified target/rule assertion found when reference_tests is empty. Sources inspected, not executed.",
+      "authority_scope": "Project-authorized exact formal library target replacement only; retained OCL is not executed as OCL. No changes to antecedent, source declarations, or generic resolution."
+    },
+    {
+      "rule_id": "Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization",
+      "rule": "checkStepOwnedPerformanceSpecialization",
+      "published_body": "isComposite and owningType <> null and (owningType.oclIsKindOf(Structure) or  owningType.oclIsKindOf(Feature) and  owningType.oclAsType(Feature).type->     exists(oclIsKindOf(Structure)) implies     specializesFromLibrary('Objects::Object::ownedPerformance')",
+      "prose_requirement": "<p>A composite <code>Step</code> whose <code>owningType</code> is a <code>Structure</code> or a <code>Feature</code> typed by a <code>Structure</code> must directly or indirectly specialize the <code>Step</code> <code><em>Objects::Object::ownedPerformance</em></code>.</p>",
+      "published_target": "Objects::Object::ownedPerformance",
+      "operational_target": "Objects::Object::ownedPerformances",
+      "issue": "KERML11-207",
+      "issue_status": "open",
+      "issue_evidence": {
+        "path": "verification/kerml-semantic-closure-v7/issues/KERML11-207.html",
+        "sha256": "fbab71f50e3cb606271d457fe644ed3b1663500030d4b5898c376f9412349fff",
+        "summary": "Summary: checkStepOwnedPerformanceSpecialization OCL targets Objects::Object::ownedPerformance but shall be Objects::Object::ownedPerformances checkStepEnclosedPerformanceSpecialization OCL targets Performances::Performance::enclosedPerformance but shall be Performances::Performance::enclosedPerformances",
+        "spelling_note": null
+      },
+      "authority": {
+        "artifact": "standards\\normative\\kerml-1.0\\KerML.xmi",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization\" ns0:type=\"uml:Constraint\" name=\"checkStepOwnedPerformanceSpecialization\">\n            <constrainedElement ns0:idref=\"Kernel-Behaviors-Step\" />\n            <ownedComment ns0:id=\"Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A composite &lt;code&gt;Step&lt;/code&gt; whose &lt;code&gt;owningType&lt;/code&gt; is a &lt;code&gt;Structure&lt;/code&gt; or a &lt;code&gt;Feature&lt;/code&gt; typed by a &lt;code&gt;Structure&lt;/code&gt; must directly or indirectly specialize the &lt;code&gt;Step&lt;/code&gt; &lt;code&gt;&lt;em&gt;Objects::Object::ownedPerformance&lt;/em&gt;&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"isComposite and owningType &lt;&gt; null and (owningType.oclIsKindOf(Structure) or  owningType.oclIsKindOf(Feature) and  owningType.oclAsType(Feature).type-&gt;     exists(oclIsKindOf(Structure)) implies     specializesFromLibrary('Objects::Object::ownedPerformance')\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n        "
+      },
+      "pinned_declaration": {
+        "archive": "standards/artifacts/Semantic-Library.kpar",
+        "archive_sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+        "entry": "Kernel Semantic Library/Objects.kerml",
+        "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+        "package": "standard library package Objects",
+        "owner": "abstract struct Object specializes Occurrence {",
+        "text": "composite step ownedPerformances: Performance[0..*] subsets involvingPerformances, timeEnclosedOccurrences, suboccurrences",
+        "range": [
+          1643,
+          1770
+        ]
+      },
+      "reference": {
+        "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+        "file": "verification/kerml-semantic-closure-v7/pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ImplicitGeneralizationMap.java",
+        "sha256": "71008c5448cb20b26b8dd96b74fe8d6c573cdc1ec2abda82c56534d2167436ce",
+        "mapping": "put(StepImpl.class, \"ownedPerformance\", \"Objects::Object::ownedPerformances\")"
+      },
+      "reference_tests": [],
+      "reference_contextual_tests": [],
+      "reference_test_scope": "All 303 KerML Xpect .kerml.xt files in the frozen recursive tree, captured in acquisition.json. No direct fully qualified target/rule assertion found when reference_tests is empty. Sources inspected, not executed.",
+      "authority_scope": "Project-authorized exact formal library target replacement only; retained OCL is not executed as OCL. No changes to antecedent, source declarations, or generic resolution."
+    },
+    {
+      "rule_id": "Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization",
+      "rule": "checkStepEnclosedPerformanceSpecialization",
+      "published_body": "owningType <> null and     (owningType.oclIsKindOf(Behavior) or      owningType.oclIsKindOf(Step)) implies     specializesFromLibrary('Performances::Performance::enclosedPerformance')",
+      "prose_requirement": "<p>A<code>Step</code> whose <code>owningType</code> is a <code>Behavior</code> or another <code>Step</code> must directly or indirectly specialize the <code>Step</code> <code><em>Performances::Performance::enclosedPerformance</em></code>.</p>",
+      "published_target": "Performances::Performance::enclosedPerformance",
+      "operational_target": "Performances::Performance::enclosedPerformances",
+      "issue": "KERML11-207",
+      "issue_status": "open",
+      "issue_evidence": {
+        "path": "verification/kerml-semantic-closure-v7/issues/KERML11-207.html",
+        "sha256": "fbab71f50e3cb606271d457fe644ed3b1663500030d4b5898c376f9412349fff",
+        "summary": "Summary: checkStepOwnedPerformanceSpecialization OCL targets Objects::Object::ownedPerformance but shall be Objects::Object::ownedPerformances checkStepEnclosedPerformanceSpecialization OCL targets Performances::Performance::enclosedPerformance but shall be Performances::Performance::enclosedPerformances",
+        "spelling_note": null
+      },
+      "authority": {
+        "artifact": "standards\\normative\\kerml-1.0\\KerML.xmi",
+        "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+        "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization\" ns0:type=\"uml:Constraint\" name=\"checkStepEnclosedPerformanceSpecialization\">\n            <constrainedElement ns0:idref=\"Kernel-Behaviors-Step\" />\n            <ownedComment ns0:id=\"Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A&lt;code&gt;Step&lt;/code&gt; whose &lt;code&gt;owningType&lt;/code&gt; is a &lt;code&gt;Behavior&lt;/code&gt; or another &lt;code&gt;Step&lt;/code&gt; must directly or indirectly specialize the &lt;code&gt;Step&lt;/code&gt; &lt;code&gt;&lt;em&gt;Performances::Performance::enclosedPerformance&lt;/em&gt;&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningType &lt;&gt; null and     (owningType.oclIsKindOf(Behavior) or      owningType.oclIsKindOf(Step)) implies     specializesFromLibrary('Performances::Performance::enclosedPerformance')\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+      },
+      "pinned_declaration": {
+        "archive": "standards/artifacts/Semantic-Library.kpar",
+        "archive_sha256": "6d9e311646a557cb08b64313cab6a7931109751b2ac7fbfcefad5c2216a6167b",
+        "entry": "Kernel Semantic Library/Performances.kerml",
+        "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+        "package": "standard library package Performances",
+        "owner": "abstract behavior Performance specializes Occurrence disjoint from Object {",
+        "text": "step enclosedPerformances: Performance[0..*] subsets performances, timeEnclosedOccurrences",
+        "range": [
+          1320,
+          1417
+        ]
+      },
+      "reference": {
+        "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+        "file": "verification/kerml-semantic-closure-v7/pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/ImplicitGeneralizationMap.java",
+        "sha256": "71008c5448cb20b26b8dd96b74fe8d6c573cdc1ec2abda82c56534d2167436ce",
+        "mapping": "put(StepImpl.class, \"enclosedPerformance\", \"Performances::Performance::enclosedPerformances\")"
+      },
+      "reference_tests": [],
+      "reference_contextual_tests": [],
+      "reference_test_scope": "All 303 KerML Xpect .kerml.xt files in the frozen recursive tree, captured in acquisition.json. No direct fully qualified target/rule assertion found when reference_tests is empty. Sources inspected, not executed.",
+      "authority_scope": "Project-authorized exact formal library target replacement only; retained OCL is not executed as OCL. No changes to antecedent, source declarations, or generic resolution."
+    }
+  ]
+}

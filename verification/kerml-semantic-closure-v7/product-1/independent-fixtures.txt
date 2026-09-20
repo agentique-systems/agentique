@@ -1,0 +1,1 @@
+sysml-validate: 1 diagnostic written to verification/kerml-semantic-closure-v7/product-1/independent-fixtures.json
