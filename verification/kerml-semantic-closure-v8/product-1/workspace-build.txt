@@ -1,0 +1,7 @@
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+   Compiling agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+   Compiling agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+   Compiling agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+   Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.54s

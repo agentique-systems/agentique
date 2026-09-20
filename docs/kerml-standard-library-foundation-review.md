@@ -513,3 +513,71 @@ SysML semantic crate/frontend, repository/API, diagrams, transformations, execut
 simulation or application migration is introduced.
 
 **KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**
+
+## V8 — authority preflight isolates a separate inner reference-binding conflict
+
+The v8 task authorizes all five KERML11-145 rule families. Their exact published
+authority, proposed contextual-result interpretation, pinned witnesses and
+nonuniform reference behavior are frozen in the
+[five-rule matrix](../verification/kerml-semantic-closure-v8/authority-matrix.json).
+KERML11-145 is no longer an unauthorized stop. It remains an open OMG issue.
+
+The mandatory up-front sweep cross-references all 258 formal constraints against
+410 retained official issue records and exposes **KLCV8-F-001 / KERML11-8** early.
+This is the inner FeatureReferenceExpression binding in the exact pinned
+ControlFunctions declaration, not the outer Function binding from v7. The
+[independent proof](kerml-feature-reference-binding-authority-conflict.md)
+includes result subsetting, result/end positional redefinitions, base
+specializations, ordered chain structure and complete local domain closures.
+It also constructs the authorized outer contextual-result direction separately:
+the outer domain becomes valid while the inner connector still fails.
+
+An arbitrary-name canonical fixture checks complete supporting queries under
+Published and v1–v5. No Function-to-Expression specialization, result identity
+change, invented domain or weakened connector check is used. Correcting the
+inner connector requires an additional rule-family decision, outside the exact
+five-rule authorization. The stop occurs during Gate 1, before v6 registration.
+No unimplemented profile is presented as a usable successor.
+
+The [authority map](../standards/kerml-1.0-constraint-authority-map.json) also
+exposes other known issues as unapproved risk metadata. Null applicability means
+unproven at this stop, not non-applicability or execution deferral. The remaining
+renamed-member, incomplete-answer, Triggers, feature-chain, positional and
+validation work remains ordinary implementation work.
+
+Fresh corpus measurements and the complete verification command results are
+recorded in [v8 verification](../verification/kerml-semantic-closure-v8/README.md).
+Historical measurements are comparisons, not expected counts. The semantic
+coverage and publication gates remain explicitly failed.
+
+| Required review question | V8 answer |
+| --- | --- |
+| 1. All source/spec/KPAR bytes unchanged? | Yes. The v8 preservation audit checks 2,610 starting standards/evidence files and all new acquisitions. Historical acquisition-index discrepancies already present on clean main are separately retained. |
+| 2. Does v6 correct exactly the five KERML11-145 families? | No implemented v6 exists at this Gate 1 stop. Exactly those five families are authorized and individually documented; no sixth correction is adopted. |
+| 3. Raw result identity distinct from contextual result identity? | Yes in the authority design and independent/canonical witnesses. No production contextual-result API is claimed. |
+| 4. Feature valuation uses the correct contextual result? | Not implemented in Agentique v6. The matrix records the required Subsetting and the narrower pilot antecedent. |
+| 5. Expression result binding satisfies domain/ownership semantics? | The correction direction is documented; production implementation and its full profile matrix remain outstanding. |
+| 6. Function result binding satisfies domain/ownership semantics? | The independent contextual outer graph satisfies the domain proof. Production v6 implementation remains outstanding. |
+| 7. ControlFunctions::'.' passes without source rewriting? | No. Its separate inner reference binding independently fails under KERML11-8 even after the outer correction is represented. The source remains unchanged. |
+| 8. Index/Select use correct result semantics? | Their distinct authorities and required chain direction are retained; implementation is outstanding. The pilot's KERML11-69 Collection guard is not silently adopted. |
+| 9. Unresolved references zero? | No; the fresh reference-obligation audit retains ordinary unresolved structural obligations. |
+| 10. Incomplete required references zero? | No; incomplete support remains incomplete even with a unique candidate. |
+| 11. Distinguishability findings zero? | No; Triggers inference remains ordinary work, not a new source erratum. |
+| 12. Feature-chain structural expansion complete? | Complete for the independently evaluated local authority chain; full corpus expansion remains outstanding. |
+| 13. Implied positional rules complete? | Result/end redefinitions are included in the local proof; full corpus closure remains outstanding. |
+| 14. All 258 finally classified without unimplemented structural categories? | No. Every rule is inventoried, but the final coverage gate is open. The authorized KERML11-145 Function rule moves from the old conflict to pending implementation; KERML11-8 is the new independent conflict. |
+| 15. Strict semantic publication passes? | No accepted semantic publication is issued. |
+| 16. Accepted bindings current? | No. The stale candidate manifest is checked and preserved; accepted regeneration requires acceptance first. |
+| 17. LoadedKermlStandardLibraries available? | No accepted facade is exposed. |
+| 18. Authored projects consume it? | No accepted-library integration is claimed. Existing profile/project regression checks remain separate. |
+| 19. All operational rules explainable? | Existing implemented corrections retain their provenance. The proposed five-rule authority is explicit; complete v6 production explanations are not implemented. |
+| 20. Historical profiles reproducible? | Frozen identities/manifests and prior evidence are preserved; six-profile historical regressions and the new canonical witness are rerun. |
+| 21. Execution semantics explicitly separate? | Yes. No structural rule is moved into DeferredExecution and no runtime evaluation is introduced. |
+| 22. Both structural runtime gates green? | Yes. Both full `--require-runtime --check` commands exit zero. Raw `--require-conformance` exits remain separately nonzero. |
+
+[ADR 0018](adr/0018-operational-result-domain-corrections.md) records the
+authorization and the precise stop boundary. The scope prohibitions remain in
+force, and ordinary structural implementation remains required after this new
+authority conflict is resolved.
+
+**KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**

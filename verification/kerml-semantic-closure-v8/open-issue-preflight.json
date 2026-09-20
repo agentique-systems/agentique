@@ -1,0 +1,1096 @@
+{
+  "format": "agentique-kerml-open-issue-preflight/1",
+  "authority_stop": "KLCV8-F-001",
+  "publication_gate_closed": false,
+  "issues": [
+    {
+      "key": "KERML11-210",
+      "title": "Lexical scoping, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-210",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Connectors-Connector-checkConnectorTypeFeaturing",
+        "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector",
+        "Core-Features-Subsetting-validateSubsettingFeaturingTypes"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-207",
+      "title": "Step OCL Issues",
+      "url": "https://issues.omg.org/issues/KERML11-207",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization",
+        "Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-206",
+      "title": "Feature OCL Constraint typo",
+      "url": "https://issues.omg.org/issues/KERML11-206",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-checkFeaturePortionSpecialization",
+        "Core-Features-Feature-checkFeatureSuboccurrenceSpecialization"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-182",
+      "title": "FeatureReferenceExpression without a referent",
+      "url": "https://issues.omg.org/issues/KERML11-182",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Expressions-FeatureReferenceExpression-deriveFeatureReferenceExpressionReferent",
+        "Kernel-Expressions-FeatureReferenceExpression-validateFeatureReferenceExpressionReferentIsFeature"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-145",
+      "title": "Error in constraint checkFeatureValuationSpecialization",
+      "url": "https://issues.omg.org/issues/KERML11-145",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Connectors-Connector-checkConnectorTypeFeaturing",
+        "Kernel-Functions-Expression-checkExpressionResultBindingConnector",
+        "Core-Features-Feature-checkFeatureValuationSpecialization",
+        "Kernel-FeatureValues-FeatureValue-checkFeatureValueBindingConnector",
+        "Kernel-Functions-Function-checkFunctionResultBindingConnector",
+        "Kernel-Expressions-IndexExpression-checkIndexExpressionResultSpecialization",
+        "Kernel-Expressions-SelectExpression-checkSelectExpressionResultSpecialization",
+        "Core-Features-Subsetting-validateSubsettingFeaturingTypes"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-35",
+      "title": "Add validateSubsettingTypeConformance constraint",
+      "url": "https://issues.omg.org/issues/KERML11-35",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-deriveFeatureType",
+        "Core-Features-Subsetting-validateSubsettingFeaturingTypes"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-209",
+      "title": "User-readable definitions of KerML functions (KerML 9.4)",
+      "url": "https://issues.omg.org/issues/KERML11-209",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-205",
+      "title": "OCL Constraint Issue",
+      "url": "https://issues.omg.org/issues/KERML11-205",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-checkFeatureSubobjectSpecialization",
+        "Kernel-Behaviors-Step-checkStepSubperformanceSpecialization"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-200",
+      "title": "\"New\" is not identified as a reserved keyword",
+      "url": "https://issues.omg.org/issues/KERML11-200",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-201",
+      "title": "Textual notation does not expose inherited members",
+      "url": "https://issues.omg.org/issues/KERML11-201",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-203",
+      "title": "Replace restricted name by unrestricted name",
+      "url": "https://issues.omg.org/issues/KERML11-203",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-204",
+      "title": "Text on optional lower bound is not consistant with Clause 8.2.5.11 of same document",
+      "url": "https://issues.omg.org/issues/KERML11-204",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-31",
+      "title": "Invariants only hold when evaluated",
+      "url": "https://issues.omg.org/issues/KERML11-31",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Functions-Expression-checkExpressionSpecialization",
+        "Kernel-Functions-Invariant-checkInvariantSpecialization"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-30",
+      "title": "Feature values do not specify when their expressions are evaluated",
+      "url": "https://issues.omg.org/issues/KERML11-30",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-39",
+      "title": "Serious limitation of textual concrete syntax as model interchange format for representing UUIDs",
+      "url": "https://issues.omg.org/issues/KERML11-39",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-78",
+      "title": "Transfers::transfers and Transfers::flowTransfers subset each other",
+      "url": "https://issues.omg.org/issues/KERML11-78",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Interactions-Flow-checkFlowWithEndsSpecialization"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-69",
+      "title": "Indexing Collection types",
+      "url": "https://issues.omg.org/issues/KERML11-69",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Expressions-IndexExpression-checkIndexExpressionResultSpecialization"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-3",
+      "title": "Featuring type of the multiplicity of a cross feature",
+      "url": "https://issues.omg.org/issues/KERML11-3",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing",
+        "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing",
+        "Core-Features-Feature-validateFeatureMultiplicityDomain"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-191",
+      "title": "Problem with deriveTypeFeatureMembership",
+      "url": "https://issues.omg.org/issues/KERML11-191",
+      "status": "open",
+      "linked_rules": [
+        "Core-Types-Type-deriveTypeFeature",
+        "Core-Types-Type-deriveTypeFeatureMembership",
+        "Core-Types-Type-deriveTypeInheritedFeature",
+        "Core-Types-Type-deriveTypeInheritedMembership"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-202",
+      "title": "Functions missing (for SysPhSv2)",
+      "url": "https://issues.omg.org/issues/KERML11-202",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-144",
+      "title": "Discrepancy between documentation of Collections library in spec and textual notation file",
+      "url": "https://issues.omg.org/issues/KERML11-144",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-197",
+      "title": "Special metaclasses supporting Flow shorthand",
+      "url": "https://issues.omg.org/issues/KERML11-197",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-checkFeatureFlowFeatureRedefinition",
+        "Kernel-Interactions-PayloadFeature-checkPayloadFeatureRedefinition",
+        "Kernel-Interactions-Flow-deriveFlowFlowEnd",
+        "Kernel-Interactions-Flow-deriveFlowPayloadFeature",
+        "Kernel-Interactions-Flow-deriveFlowPayloadType"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-50",
+      "title": "Eliminate EndFeatureMembership and ParameterMembership from abstract syntax",
+      "url": "https://issues.omg.org/issues/KERML11-50",
+      "status": "open",
+      "linked_rules": [
+        "Core-Types-Type-deriveTypeOwnedEndFeature",
+        "Core-Features-EndFeatureMembership-validateEndFeatureMembershipIsEnd",
+        "Kernel-Behaviors-ParameterMembership-validateParameterMembershipOwningType"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-138",
+      "title": "Occurrence isDispatch English misleading",
+      "url": "https://issues.omg.org/issues/KERML11-138",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-198",
+      "title": "Typos in several KerML OCL constraint bodies",
+      "url": "https://issues.omg.org/issues/KERML11-198",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Functions-Expression-checkExpressionResultBindingConnector",
+        "Kernel-Expressions-FeatureChainExpression-checkFeatureChainExpressionSourceTargetRedefinition",
+        "Kernel-Expressions-FeatureChainExpression-checkFeatureChainExpressionTargetRedefinition",
+        "Core-Features-Feature-checkFeatureObjectSpecialization",
+        "Kernel-Functions-Function-checkFunctionResultBindingConnector",
+        "Core-Features-Feature-deriveFeatureType",
+        "Kernel-Metadata-MetadataFeature-deriveMetadataFeatureMetaclass",
+        "Core-Types-Type-deriveTypeOwnedConjugator",
+        "Root-Namespaces-Namespace-validateNamespaceDistinguishibility",
+        "Core-Types-Specialization-validateSpecificationSpecificNotConjugated"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-199",
+      "title": "Occurrence::superoccurrence is in the library, but not in the specification",
+      "url": "https://issues.omg.org/issues/KERML11-199",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-77",
+      "title": "The term \"connector end multiplicities\" not updated to \"connector cross multiplicities\"",
+      "url": "https://issues.omg.org/issues/KERML11-77",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-194",
+      "title": "Typo in text \"...see CollectionFunctions.\"",
+      "url": "https://issues.omg.org/issues/KERML11-194",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-196",
+      "title": "Mistake in rule for includesImplied in Model Interchange",
+      "url": "https://issues.omg.org/issues/KERML11-196",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-109",
+      "title": "Typos: Relationsip, Relatioship, Instatiated, Namspace",
+      "url": "https://issues.omg.org/issues/KERML11-109",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-89",
+      "title": "Typo in feature myStats : States",
+      "url": "https://issues.omg.org/issues/KERML11-89",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-11",
+      "title": "isCompatibleWith operation needs a return type",
+      "url": "https://issues.omg.org/issues/KERML11-11",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-2",
+      "title": "Occurrence::surroundedByOccurrences::surroundingSpace should not be an end feature",
+      "url": "https://issues.omg.org/issues/KERML11-2",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-79",
+      "title": "TransitionPerformance::accept is incorrect",
+      "url": "https://issues.omg.org/issues/KERML11-79",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-76",
+      "title": "Library models have inherited member name collisions",
+      "url": "https://issues.omg.org/issues/KERML11-76",
+      "status": "open",
+      "linked_rules": [
+        "Root-Namespaces-Namespace-validateNamespaceDistinguishibility"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-68",
+      "title": "End feature cannot be used in a feature chain expression",
+      "url": "https://issues.omg.org/issues/KERML11-68",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Redefinition-validateRedefinitionEndConformance"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-1",
+      "title": "Binding connectors should not be considered owned cross features",
+      "url": "https://issues.omg.org/issues/KERML11-1",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-checkFeatureOwnedCrossFeatureSpecialization",
+        "Core-Features-Feature-deriveFeatureCrossFeature",
+        "Core-Features-Feature-deriveFeatureOwnedCrossSubsetting"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-195",
+      "title": "\"alias of\" should be \"alias for\"",
+      "url": "https://issues.omg.org/issues/KERML11-195",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-178",
+      "title": "Model-level evaluability of body expressions",
+      "url": "https://issues.omg.org/issues/KERML11-178",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-183",
+      "title": "Filter expression examples are not valid",
+      "url": "https://issues.omg.org/issues/KERML11-183",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Subsetting-validateSubsettingFeaturingTypes"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-181",
+      "title": "FeatureDefinition should not be mandatory in Expression productions",
+      "url": "https://issues.omg.org/issues/KERML11-181",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-73",
+      "title": "State::entryAction HappensJustBefore State::doAction",
+      "url": "https://issues.omg.org/issues/KERML11-73",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-180",
+      "title": "Misnaming of class reference in AnnotatingElement",
+      "url": "https://issues.omg.org/issues/KERML11-180",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-88",
+      "title": "Dynamic Metadata Retrieval",
+      "url": "https://issues.omg.org/issues/KERML11-88",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-115",
+      "title": "PayloadFeature grammar rule has mismatched parentheses",
+      "url": "https://issues.omg.org/issues/KERML11-115",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-114",
+      "title": "Flow and SuccessionFlow reference missing ItemFlowDeclaration",
+      "url": "https://issues.omg.org/issues/KERML11-114",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-113",
+      "title": "FunctionOperationExpression references missing InvocationTypeMember rule",
+      "url": "https://issues.omg.org/issues/KERML11-113",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-83",
+      "title": "Missing Metamodel Definition / Misprint",
+      "url": "https://issues.omg.org/issues/KERML11-83",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-112",
+      "title": "\"C\" in \"MetaClassificationTestOperator\" should be lowercase",
+      "url": "https://issues.omg.org/issues/KERML11-112",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-111",
+      "title": "Incorrect prefix in \"s.isSufficient\" and \"e.ownedRelationship\"",
+      "url": "https://issues.omg.org/issues/KERML11-111",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-110",
+      "title": "Feature grammar rule has extra close parenthesis",
+      "url": "https://issues.omg.org/issues/KERML11-110",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-108",
+      "title": "Grammar rules missing \"=\" or incorrectly using \":\"",
+      "url": "https://issues.omg.org/issues/KERML11-108",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-107",
+      "title": "Description Text in Occurrences Library Crossed",
+      "url": "https://issues.omg.org/issues/KERML11-107",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-95",
+      "title": "Weak reference for Association Structure",
+      "url": "https://issues.omg.org/issues/KERML11-95",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-94",
+      "title": "Wrong reference for Association Structure",
+      "url": "https://issues.omg.org/issues/KERML11-94",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-93",
+      "title": "Suspicious use of the term 'front' instead of \"font\"",
+      "url": "https://issues.omg.org/issues/KERML11-93",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-92",
+      "title": "Typo",
+      "url": "https://issues.omg.org/issues/KERML11-92",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-91",
+      "title": "deriveMetadataAccessExpressionReferencdElement misspelled",
+      "url": "https://issues.omg.org/issues/KERML11-91",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Expressions-MetadataAccessExpression-deriveMetadataAccessExpressionReferencdElement"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-85",
+      "title": "Redundant paragraph",
+      "url": "https://issues.omg.org/issues/KERML11-85",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-82",
+      "title": "Error in constraint checkFeatureFlowFeatureRedefinition",
+      "url": "https://issues.omg.org/issues/KERML11-82",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-checkFeatureFlowFeatureRedefinition"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-81",
+      "title": "Abstract syntax XMI contains spurious associations",
+      "url": "https://issues.omg.org/issues/KERML11-81",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-74",
+      "title": "Typo in OCL constraint",
+      "url": "https://issues.omg.org/issues/KERML11-74",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-checkFeatureObjectSpecialization"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-70",
+      "title": "FeatureChainExpression semantic constraint OCL is wrong",
+      "url": "https://issues.omg.org/issues/KERML11-70",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Expressions-FeatureChainExpression-checkFeatureChainExpressionSourceTargetRedefinition",
+        "Kernel-Expressions-FeatureChainExpression-checkFeatureChainExpressionTargetRedefinition"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-13",
+      "title": "Editorial mistake in explanation of composite or portion feature",
+      "url": "https://issues.omg.org/issues/KERML11-13",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-10",
+      "title": "keywords 'standard' and 'library' are missing in list of keywords",
+      "url": "https://issues.omg.org/issues/KERML11-10",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-9",
+      "title": "Typo in documentation of Transfer::isInstant",
+      "url": "https://issues.omg.org/issues/KERML11-9",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-7",
+      "title": "Error in constraint deriveFeatureFeaturingType",
+      "url": "https://issues.omg.org/issues/KERML11-7",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-deriveFeatureFeaturingType"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-6",
+      "title": "Error in constraint checkFeatureParameterRedefinition",
+      "url": "https://issues.omg.org/issues/KERML11-6",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Feature-checkFeatureParameterRedefinition"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-4",
+      "title": "Error in constraint checkMultiplicityTypeFeaturing",
+      "url": "https://issues.omg.org/issues/KERML11-4",
+      "status": "open",
+      "linked_rules": [
+        "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-179",
+      "title": "Undefined rules in the text notation grammar.",
+      "url": "https://issues.omg.org/issues/KERML11-179",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-146",
+      "title": "Incorrect Behavior Declaration description",
+      "url": "https://issues.omg.org/issues/KERML11-146",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-23",
+      "title": "Succession cross multiplicities too loose",
+      "url": "https://issues.omg.org/issues/KERML11-23",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-140",
+      "title": "Name resolution for the target of a redefinition",
+      "url": "https://issues.omg.org/issues/KERML11-140",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Redefinition-validateRedefinitionFeaturingTypes"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-105",
+      "title": "MULTILINE_NOTE Element Ambiguous Syntax",
+      "url": "https://issues.omg.org/issues/KERML11-105",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-106",
+      "title": "SINGLE_LINE_NOTE and MULTILINE_NOTE Unclear Semantics or Intended Use",
+      "url": "https://issues.omg.org/issues/KERML11-106",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-90",
+      "title": "checkConstructorExpressionResultDefaultValueBindingConnector not specified",
+      "url": "https://issues.omg.org/issues/KERML11-90",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Expressions-ConstructorExpression-checkConstructorExpressionResultDefaultValueBindingConnector"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-87",
+      "title": "ForAll and Exists Should be Model-Level Evaluable",
+      "url": "https://issues.omg.org/issues/KERML11-87",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-86",
+      "title": "Type::specializes() Operation shall be Model-Level Evaluable and Accessible from Expressions",
+      "url": "https://issues.omg.org/issues/KERML11-86",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-96",
+      "title": "Check checkConnectorTypeFeaturing does not work for variable features",
+      "url": "https://issues.omg.org/issues/KERML11-96",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Connectors-Connector-checkConnectorTypeFeaturing"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-47",
+      "title": "Impossible to specialize (redefine, subset) unnamed features in textual syntax",
+      "url": "https://issues.omg.org/issues/KERML11-47",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-8",
+      "title": "checkConnectorTypeFeaturing fails on implied BindingConnector of a FeatureReferenceExpression",
+      "url": "https://issues.omg.org/issues/KERML11-8",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Connectors-Connector-checkConnectorTypeFeaturing",
+        "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector",
+        "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization",
+        "Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType",
+        "Core-Features-Feature-deriveFeatureFeaturingType"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-52",
+      "title": "Incorrect succession in state and transition library",
+      "url": "https://issues.omg.org/issues/KERML11-52",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-18",
+      "title": "isAbstract, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-18",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-75",
+      "title": "OCL for importedMemberships is incorrect",
+      "url": "https://issues.omg.org/issues/KERML11-75",
+      "status": "open",
+      "linked_rules": [
+        "Root-Namespaces-MembershipImport-deriveMembershipImportImportedElement",
+        "Root-Namespaces-NamespaceImport-deriveNamespaceImportImportedElement",
+        "Root-Namespaces-Namespace-deriveNamespaceImportedMembership",
+        "Root-Namespaces-Namespace-deriveNamespaceMembers"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-72",
+      "title": "Redefinition inheritance anomaly",
+      "url": "https://issues.omg.org/issues/KERML11-72",
+      "status": "open",
+      "linked_rules": [
+        "Core-Types-Type-deriveTypeFeatureMembership",
+        "Core-Types-Type-deriveTypeInheritedFeature",
+        "Core-Types-Type-deriveTypeInheritedMembership",
+        "Root-Namespaces-Namespace-validateNamespaceDistinguishibility"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-71",
+      "title": "TriggerAfter uses a binding to var 'currentTime'",
+      "url": "https://issues.omg.org/issues/KERML11-71",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-5",
+      "title": "Description and semantics of model-level evaluable constructor expressions",
+      "url": "https://issues.omg.org/issues/KERML11-5",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-42",
+      "title": "TimeOf::timeContinuityConstraint might be too restrictive",
+      "url": "https://issues.omg.org/issues/KERML11-42",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-40",
+      "title": "Annex A coverage",
+      "url": "https://issues.omg.org/issues/KERML11-40",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-44",
+      "title": "isDerived, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-44",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "SYSML21-274",
+      "title": "ShapeItems can't be SpatialItems",
+      "url": "https://issues.omg.org/issues/SYSML21-274",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "SYSML21-245",
+      "title": "Message Connector Ends are Absent by Default; If Ends are Specified, Message is Indistinguishable from Flow",
+      "url": "https://issues.omg.org/issues/SYSML21-245",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-49",
+      "title": "HappensLink disjointness documentation inconsistent",
+      "url": "https://issues.omg.org/issues/KERML11-49",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-51",
+      "title": "Problem with nested feature semantics",
+      "url": "https://issues.omg.org/issues/KERML11-51",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-48",
+      "title": "TransferBefore is unsatisfiable",
+      "url": "https://issues.omg.org/issues/KERML11-48",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-46",
+      "title": "Space triggers missings",
+      "url": "https://issues.omg.org/issues/KERML11-46",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-41",
+      "title": "Some syntax in Core has time-dependent semantics",
+      "url": "https://issues.omg.org/issues/KERML11-41",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-38",
+      "title": "Redefining features sometimes must respecify metaproperties even when they are the same as those of the redefined feature",
+      "url": "https://issues.omg.org/issues/KERML11-38",
+      "status": "open",
+      "linked_rules": [
+        "Core-Features-Redefinition-validateRedefinitionDirectionConformance",
+        "Core-Features-Redefinition-validateRedefinitionEndConformance",
+        "Core-Features-Redefinition-validateRedefinitionFeaturingTypes"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-37",
+      "title": "Ambiguity In Directionality InOut semantics",
+      "url": "https://issues.omg.org/issues/KERML11-37",
+      "status": "open",
+      "linked_rules": [
+        "Core-Types-Type-deriveTypeDirectedFeature",
+        "Kernel-Behaviors-ParameterMembership-validateParameterMembershipParameterDirection"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-36",
+      "title": "Root namespaces restricted to one single file",
+      "url": "https://issues.omg.org/issues/KERML11-36",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-34",
+      "title": "Inherited multiplicities, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-34",
+      "status": "open",
+      "linked_rules": [
+        "Core-Types-Type-deriveTypeMultiplicity",
+        "Core-Types-Type-validateTypeOwnedMultiplicity"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-33",
+      "title": "validateAssociationStructureIntersection seems vacuous",
+      "url": "https://issues.omg.org/issues/KERML11-33",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Associations-Association-validateAssociationStructureIntersection"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-32",
+      "title": "Default for the first operand of a classification expression",
+      "url": "https://issues.omg.org/issues/KERML11-32",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-29",
+      "title": "Some package-level features are mandatory",
+      "url": "https://issues.omg.org/issues/KERML11-29",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-28",
+      "title": "Machine readable project interchange file(s) for language description examples",
+      "url": "https://issues.omg.org/issues/KERML11-28",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-25",
+      "title": "Conditions missing for some sufficient library types",
+      "url": "https://issues.omg.org/issues/KERML11-25",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-27",
+      "title": "Some types not given any semantics",
+      "url": "https://issues.omg.org/issues/KERML11-27",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-26",
+      "title": "XMI and JSON for model libraries",
+      "url": "https://issues.omg.org/issues/KERML11-26",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-22",
+      "title": "Decision/MergePerformance element descriptions give incorrect modeling pattern",
+      "url": "https://issues.omg.org/issues/KERML11-22",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-24",
+      "title": "Sufficiency missing for some library types",
+      "url": "https://issues.omg.org/issues/KERML11-24",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-21",
+      "title": "Steps are not always time enclosed",
+      "url": "https://issues.omg.org/issues/KERML11-21",
+      "status": "open",
+      "linked_rules": [
+        "Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization",
+        "Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization",
+        "Kernel-Behaviors-Step-checkStepSpecialization",
+        "Kernel-Behaviors-Step-checkStepSubperformanceSpecialization"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-19",
+      "title": "isSufficient, semantics, expressiveness",
+      "url": "https://issues.omg.org/issues/KERML11-19",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-20",
+      "title": "direction, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-20",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-16",
+      "title": "isReadOnly, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-16",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-15",
+      "title": "Dynamic multiplicity, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-15",
+      "status": "open",
+      "linked_rules": [
+        "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing",
+        "Core-Features-Feature-validateFeatureMultiplicityDomain"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-14",
+      "title": "Classifier multiplicity, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-14",
+      "status": "open",
+      "linked_rules": [
+        "Core-Classifiers-Classifier-validateClassifierMultiplicityDomain"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    },
+    {
+      "key": "KERML11-17",
+      "title": "isPortion, semantics",
+      "url": "https://issues.omg.org/issues/KERML11-17",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "SYSML21-7",
+      "title": "Missing descriptions of specialized effective naming",
+      "url": "https://issues.omg.org/issues/SYSML21-7",
+      "status": "open",
+      "linked_rules": [],
+      "review": "No rule-name or recorded related-rule match in this inventory; retained as additional syntax/library/mathematical authority risk, not a non-applicability proof."
+    },
+    {
+      "key": "KERML11-12",
+      "title": "Filtering is not applied on imported packages",
+      "url": "https://issues.omg.org/issues/KERML11-12",
+      "status": "open",
+      "linked_rules": [
+        "Root-Namespaces-Namespace-deriveNamespaceImportedMembership",
+        "Kernel-Packages-Package-derivePackageFilterCondition"
+      ],
+      "review": "Named or related structural-rule cross-reference; details in constraint authority map."
+    }
+  ]
+}

@@ -1,0 +1,183 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    
+
+
+
+
+
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+<title>Kernel Modeling Language (KerML) 1.1 RTF &mdash; Open Issues - OMG Issue Tracker</title>
+<script type="text/javascript">
+    if (!window.performance) {
+        window.mpPerformance = {};
+        window.mpPerformance.responseStart = new Date().getTime();
+    }
+</script>
+<meta name="application-name" content="JIRA" data-name="jira" data-version="6.1.2"><meta name="ajs-dev-mode" content="false">
+<meta name="ajs-context-path" content="">
+<meta name="ajs-version-number" content="6.1.2">
+<meta name="ajs-build-number" content="6157">
+<meta name="ajs-is-beta" content="false">
+<meta name="ajs-is-rc" content="false">
+<meta name="ajs-is-snapshot" content="false">
+<meta name="ajs-is-milestone" content="false">
+<meta name="ajs-remote-user" content="omg-system">
+<meta name="ajs-remote-user-fullname" content="OMG System User">
+<meta name="ajs-user-locale" content="en_US">
+<meta name="ajs-user-locale-group-separator" content=",">
+<meta name="ajs-app-title" content="OMG Issue Tracker">
+<meta name="ajs-keyboard-shortcuts-enabled" content="true">
+<meta name="ajs-enabled-dark-features" content="[&quot;app-switcher.new&quot;,&quot;com.atlassian.jira.darkfeature.CommonHeader&quot;,&quot;jira.frother.reporter.field&quot;,&quot;com.atlassian.jira.config.PDL&quot;,&quot;frother.assignee.field&quot;]">
+<meta name="ajs-date-relativize" content="true">
+<meta name="ajs-date-time" content="h:mm a z">
+<meta name="ajs-date-day" content="EEEE h:mm a z">
+<meta name="ajs-date-dmy" content="d MMMM yyyy">
+<meta name="ajs-date-complete" content="dd/MMM/yy h:mm a z">
+<meta name="ajs-in-admin-mode" content="false">
+<meta name="ajs-is-sysadmin" content="true">
+<meta name="ajs-is-admin" content="true">
+<meta name="ajs-outgoing-mail-enabled" content="true">
+<meta name="ajs-admin-quicksearch-show" content="true">
+
+
+    
+<meta id="atlassian-token" name="atlassian-token" content="BH2W-WAP3-BN8J-S7H8|196649ab2e6c914ef7e393317b63077009e3e520|lout">
+
+
+
+<link rel="shortcut icon" href="/s/en_US707sk0-1988229788/6157/60/_/favicon.ico">
+<link rel="search" type="application/opensearchdescription+xml" href="/osd.jsp" title="Kernel Modeling Language (KerML) 1.1 RTF &mdash; Open Issues - OMG Issue Tracker"/>
+
+    
+
+
+<!--[if IE]><![endif]-->
+<script type="text/javascript">var contextPath = '';</script>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css" media="all">
+<!--[if lte IE 8]>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css?conditionalComment=lte+IE+8" media="all">
+<![endif]-->
+<!--[if lte IE 9]>
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/css/batch.css?conditionalComment=lte+IE+9" media="all">
+<![endif]-->
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/f7d9fa89f956d340ee4a86dc404fb0ae/_/download/contextbatch/css/atl.global/batch.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/38b67dba02dfa46ea0f936745cd2b885/_/download/contextbatch/css/jira.global/batch.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-experimental-table-sortable/com.atlassian.auiplugin:aui-experimental-table-sortable.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-date-picker/com.atlassian.auiplugin:aui-date-picker.css" media="all">
+<link type="text/css" rel="stylesheet" href="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/1.36-SNAPSHOT/_/download/batch/org.omg.jira.task-forces:base-resources/org.omg.jira.task-forces:base-resources.css" media="all">
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/js/batch.js" ></script>
+<!--[if lte IE 8]>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/67/_/download/superbatch/js/batch.js?conditionalComment=lte+IE+8" ></script>
+<![endif]-->
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/f7d9fa89f956d340ee4a86dc404fb0ae/_/download/contextbatch/js/atl.global/batch.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/38b67dba02dfa46ea0f936745cd2b885/_/download/contextbatch/js/jira.global/batch.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-experimental-table-sortable/com.atlassian.auiplugin:aui-experimental-table-sortable.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/5.1.6/_/download/batch/com.atlassian.auiplugin:aui-date-picker/com.atlassian.auiplugin:aui-date-picker.js" ></script>
+<script type="text/javascript" src="/s/d41d8cd98f00b204e9800998ecf8427e/en_US707sk0-1988229788/6157/60/1.36-SNAPSHOT/_/download/batch/org.omg.jira.task-forces:base-resources/org.omg.jira.task-forces:base-resources.js" ></script>
+
+<script type="text/javascript" src="/rest/api/1.0/shortcuts/6157/48dfafa77a0b26adf93b7dca6624ae08/shortcuts.js"></script>
+
+
+    
+    
+    <meta name="decorator" content="blank"/>
+
+</head>
+<body id="jira" class="aui-layout aui-theme-default page-type-blank " data-version="6.1.2">
+    
+<section id="content" role="main">
+    <header class="aui-page-header">
+        <div class="aui-page-header-inner">
+            <div class="aui-page-header-image">
+            <span class="aui-avatar aui-avatar-large aui-avatar-project">
+                <span class="aui-avatar-inner">
+                    <img id="project-avatar" alt="KerML 1.1b1 RTF Avatar"
+                         src="https://issues.omg.org/plugins/servlet/view-project-avatar?avatarId=10011&amp;size=large"/>
+                </span>
+            </span>
+            </div>
+            <div class="aui-page-header-main">
+                <ol class="aui-nav aui-nav-breadcrumbs">
+                    <li>OMG Issue</li>
+                </ol>
+                <h1><a href="https://issues.omg.org/issues/task-force/KERML11">KERML11</a> &mdash; checkConnectorTypeFeaturing fails on implied BindingConnector of a FeatureReferenceExpression</h1>
+                <ul class="operations-list">
+                    <li><span class="list-label">Key:</span> <span id="pd-key"><a href="https://issues.omg.org/browse/KERML11-8">KERML11-8</a></span>
+                    </li>
+                    <li><span class="list-label">OMG Task Force:</span> <span><a
+                            href="https://issues.omg.org/browse/KERML11">Kernel Modeling Language (KerML) 1.1 RTF</a></span></li>
+                </ul>
+            </div>
+            <div class="aui-page-header-actions">
+                <div class="aui-buttons">
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/KERML11?view=OPEN" title="Issues not resolved">Open</a>
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/KERML11?view=CLOSED" title="Issues resolved by a task force and approved by Board">Closed</a>
+                                        <a class="aui-button" href="https://issues.omg.org/issues/task-force/KERML11?view=ALL" title="All Issues">All</a>
+                                    </div>
+            </div>
+        </div>
+    </header>
+    <div class="aui-page-panel">
+        <div class="aui-page-panel-inner">
+            <section class="aui-page-panel-content">
+                <article id="issue-56492" class="issue-description">
+                    <a id="id56492" href="#"></a>
+                    <ul class="property-list">
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Key:</strong>
+                                <span class="value">KERML11-8</span>
+                            </div>
+                        </li>
+                                                <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Status:</strong>
+                                <span class="value"><span
+                                        class="aui-lozenge status-public-open">open</span> &nbsp; </span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Source:</strong>
+                                <span class="value">Model Driven Solutions (        <a class="user-hover" rel="25336" id="_25336" href="/secure/ViewProfile.jspa?name=25336">Mr. Ed Seidewitz</a>)</span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Summary:</strong>
+                                <span class="value"><p>The semantic constraint <tt>checkFeatureReferenceExpressionBindingConnector</tt> requires that a <tt>FeatureReferenceExpression</tt> have an implied <tt>BindingConnector</tt> between its <tt>referent</tt> and its <tt>result</tt>. However, since the <tt>FeatureReferenceExpression</tt> owns its <tt>result</tt> parameter, but the <tt>referent</tt> will be outside the expression, the <tt>defaultFeaturingType</tt> of the implied <tt>BindingConnector</tt> will be null. This means that the <tt>checkConnectorTypeFeaturing</tt> constraint cannot be satisfied for the <tt>BindingConnector</tt> as specified.</p></span>
+                            </div>
+                        </li>
+                        <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Reported:</strong>
+                                <span class="value"><a href="https://issues.omg.org/issues/spec/KerML/1.0b2">KerML 1.0b2</a> &mdash;
+                                    Wed, 7 May 2025 22:46 GMT</span>
+                            </div>
+                        </li>
+                                                <li class="item">
+                            <div class="wrap">
+                                <strong class="name">Updated:</strong>
+                                <span class="value">Thu, 11 Sep 2025 20:31 GMT</span>
+                            </div>
+                        </li>
+                                                                    </ul>
+                </article>
+                <hr class="fullcontent"/>
+            </section>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

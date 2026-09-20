@@ -1,0 +1,8 @@
+{
+  "complete": false,
+  "local_authority_witness": "feature-reference-authority-conflict.json",
+  "proven_scope": "ControlFunctions dot source.target chain, its first-feature domain and terminal specialization are included in the independent conflict proof.",
+  "remaining": "Full corpus feature-chain expansion, relationships and proof dependencies are still mandatory after authority resolution.",
+  "execution_deferred_instead": false,
+  "authority_stop": "KLCV8-F-001"
+}

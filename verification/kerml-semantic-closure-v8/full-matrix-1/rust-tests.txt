@@ -1,0 +1,782 @@
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+   Compiling agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+   Compiling agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+   Compiling agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+   Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.72s
+     Running unittests src\main.rs (target\debug\deps\agentique-e27eaf8606dbd6e8.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_application-a01da8f2e747acf5.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\cancellation.rs (target\debug\deps\cancellation-9ca0e2fc8adaad71.exe)
+
+running 3 tests
+test cancellation_commit_boundary_is_unambiguous ... ok
+test parser_memory_reservations_reject_oversized_work ... ok
+test cancel_during_parsing_preserves_accepted_revision_and_receipts ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.79s
+
+     Running tests\traceability.rs (target\debug\deps\traceability-1b1e7ab9b1ac9cb1.exe)
+
+running 1 test
+test at_self01_trace01_registered_declarations ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.82s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_assistant-939f479ec88994b7.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\provider.rs (target\debug\deps\provider-47aaf32c89dae27b.exe)
+
+running 1 test
+test live_transport_uses_typed_real_tools_and_rejects_forgery ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml-f3e4195c1843f06a.exe)
+
+running 2 tests
+test generated_views::tests::all_named_ids_match_descriptor_inventory ... ok
+test view::tests::projection_rejects_malformed_shapes_and_values_without_filtering ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\descriptors.rs (target\debug\deps\descriptors-d56ad5d735b53fd0.exe)
+
+running 6 tests
+test normative_subsets_opposites_and_unions_remain_distinct_metadata ... ok
+test both_nonderived_ownership_ends_are_preserved_without_inventing_composition ... ok
+test association_storage_and_derived_writes_fail_atomically ... ok
+test normative_redefinitions_resolve_inherited_names_and_replaced_slots ... ok
+test normative_enum_literals_are_checked_against_the_property_domain ... ok
+test corrupt_normative_metadata_is_rejected ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\profiles.rs (target\debug\deps\profiles-65b165331466f822.exe)
+
+running 4 tests
+test transform_rejects_any_unreviewed_source_graph_including_hashes_and_duplicates ... ok
+test semantic_v2_pins_its_authority_without_an_additional_descriptor_change ... ok
+test library_v3_has_distinct_authority_and_the_same_reviewed_descriptor_graph ... ok
+test exact_reviewed_diff_leaves_all_other_descriptors_and_provenance_unchanged ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests\typed_views.rs (target\debug\deps\typed_views-8d0c5b1315ca5d27.exe)
+
+running 6 tests
+test checked_upcasts_downcasts_unknowns_and_cross_snapshot_identity ... ok
+test relationships_are_first_class_records_and_views_share_canonical_data ... ok
+test malformed_writes_and_replaced_slots_cannot_be_hidden_by_typed_access ... ok
+test property_reads_use_identity_even_when_display_names_change ... ok
+test casts_use_the_live_registry_and_incompatible_domains_are_explicit ... ok
+test optional_ordered_unordered_nonunique_and_uncomputed_values_stay_distinct ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_semantics-8d08f84cb5e09a7e.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\feature_reference_authority_v8.rs (target\debug\deps\feature_reference_authority_v8-ac09fb238ea262d3.exe)
+
+running 1 test
+test contextual_outer_binding_does_not_repair_the_separate_raw_reference_binding ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+
+     Running tests\formal_targets_v5.rs (target\debug\deps\formal_targets_v5-fb90864fd0aa0cf5.exe)
+
+running 4 tests
+test typed_contracts_equal_every_frozen_manifest_row ... ok
+test incomplete_owner_typing_cannot_make_an_antecedent_vacuously_complete ... ok
+test every_rule_rejects_corrupt_bindings_without_fallback ... ok
+test six_rules_six_profiles_exact_targets_and_arbitrary_names ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.95s
+
+     Running tests\foundation.rs (target\debug\deps\foundation-0365818d00c82cdf.exe)
+
+running 27 tests
+test feature_aliases_do_not_silently_bypass_inheritance_filtering ... ok
+test conjugation_without_original_type_is_not_a_complete_empty_result ... ok
+test chains_diamonds_alternative_proofs_and_determinism ... ok
+test implied_specializations_are_an_answer_affecting_option ... ok
+test creation_order_does_not_change_content_identity_or_proofs ... ok
+test explicit_computation_failures_propagate_completeness_and_search_evidence ... ok
+test metamodel_mutation_is_rejected_even_with_same_release_id ... ok
+test malformed_memberships_and_bad_query_subjects_are_not_empty_successes ... ok
+test association_inverse_is_unique_atomic_and_rebuilt_after_edits ... ok
+test empty_lookup_depends_on_namespace_and_nonmatching_names ... ok
+test nonowning_memberships_and_empty_namespace_lookup ... ok
+test adding_redefinition_invalidates_effective_feature_evidence ... ok
+test overlay_proofs_retain_recursive_kernel_evidence ... ok
+test ownership_cycles_are_invalid_even_beyond_the_query_root ... ok
+test ownership_membership_order_and_no_copying ... ok
+test private_membership_is_direct_but_not_inherited ... ok
+test redefinitions_on_intermediate_types_and_diamonds_suppress_transitively ... ok
+test qualified_resolution_filters_private_members_and_retains_proofs ... ok
+test sibling_redefinitions_of_a_common_base_follow_second_removal_condition ... ok
+test specialization_cycles_are_finite_but_cyclic_inheritance_is_explicitly_incomplete ... ok
+test subsetting_does_not_remove_an_inherited_feature ... ok
+test typed_upcasts_include_typing_subsetting_and_redefinition ... ok
+test context_binds_options_library_content_and_overlay_content ... ok
+test negative_incoming_dependency_catches_creation_and_retargeting ... ok
+test working_reference_scopes_are_semantic_inputs_and_block_lexical_guesses ... ok
+test full_sysml_and_unrelated_extensions_preserve_kerml_answers_and_change_context_identity ... ok
+test large_sparse_graph_keeps_linear_proof_size_and_does_not_recurse ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s
+
+     Running tests\imports.rs (target\debug\deps\imports-c9804c1df05e34e2.exe)
+
+running 8 tests
+test relationship_context_uses_redefinition_supertype_and_previous_chain_link ... ok
+test renamed_inherited_redefinition_removes_a_diamond_peer_before_name_selection ... ok
+test insertion_and_alias_change_have_answer_affecting_search_evidence ... ok
+test inherited_protected_members_and_explicit_project_boundaries ... ok
+test cycles_recursive_imports_and_visibility_preserve_negative_dependencies ... ok
+test kerml11_140_nested_redefinition_cannot_search_the_specific_types_outer_scope ... ok
+test membership_namespace_imports_aliases_shadowing_and_ambiguity ... ok
+test deep_inheritance_cyclic_imports_and_simultaneous_queries_are_finite ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.96s
+
+     Running tests\library_authority_conflict.rs (target\debug\deps\library_authority_conflict-acda274d10368006.exe)
+
+running 3 tests
+test correction_fact_evidence_retains_entry_library_profile_and_output_identity ... ok
+test positional_common_ends_and_results_suppress_both_inherited_memberships ... ok
+test two_explicit_type_paths_require_a_common_redefinition_before_publication ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+
+     Running tests\ordered_results.rs (target\debug\deps\ordered_results-8449b66c8a545dda.exe)
+
+running 6 tests
+test ordered_specializations_follow_ownership_not_creation_or_id_order ... ok
+test feature_chain_terminal_type_supplies_positional_end_population ... ok
+test parameter_projection_uses_owned_directed_features_of_every_general_type ... ok
+test local_result_redefines_canonical_inherited_result_without_copying ... ok
+test implied_naming_requires_agreement_and_retains_typed_ambiguity ... ok
+test multiple_inheritance_preserves_distinct_results_until_local_redefinition ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+     Running tests\ordinary_validation_v6.rs (target\debug\deps\ordinary_validation_v6-9e1085654477a008.exe)
+
+running 3 tests
+test constructor_result_parameter_ownership_exception_is_preserved ... ok
+test subsetting_reports_independent_uniqueness_and_constant_violations ... ok
+test classifier_specialization_checks_semantic_kinds ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running tests\participant_contract.rs (target\debug\deps\participant_contract-f48acb796b2a120e.exe)
+
+running 2 tests
+test inherited_end_identity_cannot_satisfy_the_pinned_participant_opposite_bound ... ok
+test operational_profile_publishes_shared_inherited_ends_without_participant_facts ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests\profiles.rs (target\debug\deps\profiles-4ab769f6dd4db5a6.exe)
+
+running 2 tests
+test operational_context_cannot_smuggle_deleted_descriptors_back_as_an_extension ... ok
+test contexts_bind_profile_artifact_effective_graph_and_errata_content ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests\redefinition_end_v4.rs (target\debug\deps\redefinition_end_v4-d83a0a06629b57d1.exe)
+
+running 2 tests
+test unresolved_endpoint_does_not_pass_end_conformance ... ok
+test all_profiles_end_owner_matrix_preserves_flags_and_explains_disposition ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 23.45s
+
+     Running tests\redefinition_v2.rs (target\debug\deps\redefinition_v2-31adaafcf4a5f762.exe)
+
+running 10 tests
+test cross_subsetting_derives_the_source_from_ownership_and_does_not_make_the_target_a_source ... ok
+test ordinary_lookup_still_includes_declared_feature ... ok
+test effective_imported_memberships_keep_identity_and_do_not_become_owned_features ... ok
+test singleton_implied_result_redefinition_supplies_the_inherited_result_name ... ok
+test ordinary_inheritance_retains_the_published_membership_based_suppression ... ok
+test positional_end_redefinition_uses_inherited_end_order_and_keeps_the_other_end ... ok
+test conjugation_and_feature_chain_supply_original_member_identities ... ok
+test unnamed_feature_uses_only_the_first_owned_redefinition_for_its_name ... ok
+test incomplete_general_search_and_wrong_kind_prefix_never_trigger_lexical_redefinition_search ... ok
+test adversarial_redefinition_matrix ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.29s
+
+     Running tests\result_binding_authority_v7.rs (target\debug\deps\result_binding_authority_v7-7b0cf1af5f5f3ba6.exe)
+
+running 1 test
+test raw_result_binding_requires_a_separate_authority_choice_in_all_six_profiles ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+
+     Running tests\structural_validation.rs (target\debug\deps\structural_validation-3959d5ebc70c0d13.exe)
+
+running 4 tests
+test one_step_feature_chain_is_a_structural_failure_even_with_a_resolved_target ... ok
+test structural_end_checks_reject_directions_and_nonconstant_variable_ends ... ok
+test duplicate_feature_names_are_invalid_but_distinct_kinds_remain_distinguishable ... ok
+test redefinition_end_conformance_checks_both_flags_with_exact_evidence ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+     Running tests\subobject_authority.rs (target\debug\deps\subobject_authority-27b9d9c02b3fa484.exe)
+
+running 1 test
+test published_subobject_target_and_prose_target_have_different_denotations ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_syntax-df3247a9fa3f61f9.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\numeric_tokens.rs (target\debug\deps\numeric_tokens-3a4909ad24a5ba87.exe)
+
+running 1 test
+test normative_unsigned_numeric_tokens_preserve_literal_and_range_punctuation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\productions.rs (target\debug\deps\productions-3f640333441395f5.exe)
+
+running 5 tests
+test grammar_discrepancies_do_not_become_unknown_syntax_or_fabricated_names ... ok
+test parse_identity_is_deterministic_within_an_exact_source_revision_and_work_is_bounded ... ok
+test incomplete_authored_input_recovers_without_hoisting_or_source_loss ... ok
+test expression_precedence_and_associativity_are_structural ... ok
+test contextual_production_families_are_lossless_and_inspectable ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_text-019b699d05cbeeb9.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\end_membership_v7.rs (target\debug\deps\end_membership_v7-bb40a7ecf750f02d.exe)
+
+running 1 test
+test every_pinned_end_membership_constructs_an_end_without_retyping_referents ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 21.52s
+
+     Running tests\equivalence.rs (target\debug\deps\equivalence-a79c2cd10f2b0eca.exe)
+
+running 1 test
+test programmatic_and_textual_models_have_equivalent_canonical_records ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s
+
+     Running tests\frontend.rs (target\debug\deps\frontend-fa79421987869205.exe)
+
+running 12 tests
+test regular_comments_are_preserved_but_not_mistaken_for_notes ... ok
+test unresolved_ambiguous_wrong_kind_are_explicit_and_never_kernel_targets ... ok
+test unresolved_specialization_obligations_block_inherited_name_lookup ... ok
+test limits_invalid_utf8_edits_and_atomic_history ... ok
+test source_tokens_trivia_utf8_and_old_revisions_are_lossless ... ok
+test vertical_slice_uses_normative_relationships_and_queries ... ok
+test resolution_has_lexical_shadowing_and_inherited_lookup ... ok
+test structural_replacements_and_ambiguous_duplicates_are_not_reconciled ... ok
+test membership_and_relationship_identity_survive_rename_and_formatting ... ok
+test opaque_unsupported_constructs_cannot_inject_declarations_during_recovery ... ok
+test rename_and_formatting_preserve_ids_but_replacement_and_recreation_do_not ... ok
+test malformed_and_incomplete_text_never_invents_semantics ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.18s
+
+     Running tests\library_construction.rs (target\debug\deps\library_construction-3dccf32bc76905c7.exe)
+
+running 1 test
+test exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_evidence has been running for over 60 seconds
+test exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_evidence ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 64.83s
+
+     Running tests\library_corrections.rs (target\debug\deps\library_corrections-5802b85cf3e5e67c.exe)
+
+running 2 tests
+test reviewed_output_identity_is_deterministic_and_content_qualified ... ok
+test validation_v4_preserves_every_v3_canonical_record_and_correction_identity ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 42.91s
+
+     Running tests\project.rs (target\debug\deps\project-5e90c2dbbe2fb24d.exe)
+
+running 11 tests
+test mixed_project_retains_sysml_and_marks_missing_frontend_evidence_incomplete ... ok
+test recovered_namespaces_block_guessed_denotation_without_poisoning_unrelated_scopes ... ok
+test recovered_type_body_keeps_effective_feature_answers_incomplete ... ok
+test failed_batch_publishes_no_document_or_semantic_revision ... ok
+test unchanged_document_origin_and_identity_survive_format_and_path_edits ... ok
+test two_documents_share_one_root_and_resolve_in_both_directions ... ok
+test adding_a_document_invalidates_an_earlier_namespace_miss ... ok
+test edit_preserves_other_document_and_old_revision_and_rebuilds_dependents ... ok
+test deletion_recreation_and_cross_document_move_allocate_new_ids ... ok
+test many_documents_and_specialization_chain_preserve_one_inherited_feature ... ok
+test authored_redefinition_profile_matrix ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.88s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_kernel-bb6fa98353ed8fa9.exe)
+
+running 8 tests
+test model::tests::acyclic_chain_has_no_cycle_members ... ok
+test model::tests::converging_acyclic_paths_have_no_cycle_members ... ok
+test model::tests::cycle_members_exclude_downstream_vertices ... ok
+test model::tests::cycle_members_exclude_upstream_downstream_and_isolated_vertices ... ok
+test model::tests::connected_cycles_report_members_in_sorted_order ... ok
+test model::tests::three_vertex_cycle_reports_every_member ... ok
+test model::tests::self_loop_is_a_cycle ... ok
+test model::tests::deep_containment_and_evidence_graphs_do_not_require_recursion ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running tests\association_slots.rs (target\debug\deps\association_slots-b521529290e571d8.exe)
+
+running 2 tests
+test a_single_navigation_slot_is_canonical_and_atomic ... ok
+test inverse_order_bounds_navigation_and_two_class_ends_require_link_storage ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\construction.rs (target\debug\deps\construction-5061684a5d7521c5.exe)
+
+running 2 tests
+test preview_rejects_dangling_references_bad_types_and_upper_bounds ... ok
+test incomplete_candidate_is_inspectable_but_publication_remains_strict ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\derivations.rs (target\debug\deps\derivations-930a658f9705cdbe.exe)
+
+running 10 tests
+test derived_ids_distinguish_rule_subject_and_output_not_support_order ... ok
+test overlays_cannot_overwrite_declared_or_conflicting_facts ... ok
+test derived_records_and_slots_receive_the_same_structural_validation ... ok
+test explanation_cycles_exclude_acyclic_evidence_and_dependents ... ok
+test implied_identity_cannot_collide_with_declared_or_retired_identity ... ok
+test cyclic_explanations_and_self_support_are_rejected ... ok
+test inherited_member_explanation_chain_keeps_declared_facts_separate ... ok
+test forward_derived_dependencies_and_iteration_are_deterministic ... ok
+test transitive_specialization_is_an_ordinary_but_derived_relationship ... ok
+test derived_evidence_must_exist_in_the_correct_layer ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\foundation_v3.rs (target\debug\deps\foundation_v3-b4251a0f8033af72.exe)
+
+running 9 tests
+test primitive_descriptor_identity_and_numeric_carrier_are_both_checked ... ok
+test derived_association_results_have_states_and_evidence_without_class_slots ... ok
+test derived_states_and_cyclic_union_frontiers_remain_distinct ... ok
+test ownership_combinations_keep_raw_edges_separate_from_class_replacement ... ok
+test occurrence_inverse_bounds_duplicates_and_bad_positions_roll_back ... ok
+test occurrences_have_one_fact_two_navigations_order_provenance_and_atomic_deletion ... ok
+test association_ancestry_and_end_redefinition_are_generic_and_deterministic ... ok
+test numeric_values_are_exact_canonical_and_totally_ordered ... ok
+test descriptor_traversals_terminate_on_deep_graphs_on_a_small_stack ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests\metamodel.rs (target\debug\deps\metamodel-e2363d72000af23c.exe)
+
+running 14 tests
+test package_names_do_not_replace_descriptor_identity ... ok
+test cycles_and_unknown_parents_are_rejected ... ok
+test future_union_metadata_frontier_is_finite_and_deduplicates_diamonds_and_cycles ... ok
+test multiple_inheritance_diamond_preserves_both_branches_and_shared_properties_once ... ok
+test incompatible_definitions_and_ambiguous_names_are_rejected ... ok
+test registry_versions_and_unknown_queries_are_explicit ... ok
+test locally_valid_subset_graphs_are_representable_not_uml_certified ... ok
+test redefining_collection_flags_are_preserved_and_effective_shape_is_validated ... ok
+test invalid_redefinition_scope_domain_bounds_and_cycles_fail ... ok
+test redefinition_cycles_and_composition_weakening_remain_rejected ... ok
+test invalid_properties_and_duplicate_descriptors_are_rejected ... ok
+test same_name_redefinition_and_diamond_join_require_explicit_identity_links ... ok
+test subset_local_context_domain_and_upper_bound_validation_remains_enabled ... ok
+test registration_order_does_not_change_effective_properties ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\snapshots.rs (target\debug\deps\snapshots-f92ee2512d4d07ff.exe)
+
+running 14 tests
+test public_iteration_and_indexes_do_not_depend_on_creation_order ... ok
+test failed_changes_are_atomic_and_illegal_slots_rejected ... ok
+test deletion_rebuilds_all_indexes_and_ids_cannot_be_reused ... ok
+test snapshot_supports_concurrent_readers ... ok
+test names_are_not_identity_and_source_origin_is_not_identity ... ok
+test dangling_and_wrongly_typed_references_are_rejected ... ok
+test renaming_preserves_semantic_identity_and_previous_snapshot ... ok
+test abstract_instances_unknown_classes_and_derived_writes_are_rejected ... ok
+test ordered_nonbinary_relationships_and_duplicate_reference_positions_are_preserved ... ok
+test lower_upper_multiplicity_and_scalar_shape_are_enforced ... ok
+test changeset_base_and_revision_identity_are_not_ambiguous ... ok
+test composites_reject_multiple_owners_and_cycles_without_cascading ... ok
+test vehicle_engine_sports_car_without_source_text ... ok
+test unordered_values_are_canonical_and_absent_differs_from_empty ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_metamodel_gen-a9de33a15813ff27.exe)
+
+running 1 test
+test typed_views::tests::names_are_readable_and_collisions_fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (target\debug\deps\metamodel_gen-a5575ff31aee56b3.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\descriptors.rs (target\debug\deps\descriptors-db3af06e93257f0c.exe)
+
+running 5 tests
+test source_golden_matches_raw_xmi_flags_bounds_and_references ... ok
+test identity_is_source_qualified_and_independent_of_display_names ... ok
+test generation_is_deterministic_dependency_closed_and_current ... ok
+test every_compiled_descriptor_matches_fresh_authoritative_import ... ok
+test cli_check_detects_each_stale_generated_file_without_writing ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.22s
+
+     Running tests\full_audit.rs (target\debug\deps\full_audit-8b18d4619ec0e052.exe)
+
+running 4 tests
+test full_manifest_preserves_all_existing_runtime_identities_and_cross_model_owners ... ok
+test complete_inventory_separates_runtime_readiness_from_conformance ... ok
+Current: C:\Users\phili\AppData\Local\Temp\.tmphtj70n\standards/generated/kerml-1.0/full-audit.json (438064 bytes).
+Current: C:\Users\phili\AppData\Local\Temp\.tmphtj70n\standards/generated/kerml-1.0/full.golden.json (2320099 bytes).
+Current: C:\Users\phili\AppData\Local\Temp\.tmphtj70n\standards/generated/sysml-2.0/full-audit.json (1022899 bytes).
+Current: C:\Users\phili\AppData\Local\Temp\.tmphtj70n\standards/generated/sysml-2.0/full.golden.json (5886927 bytes).
+test readiness_check_requires_all_generated_outputs_and_never_writes_missing_files ... ok
+test full_audit_mode_is_separate_from_runtime_emission_and_check_is_read_only ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.68s
+
+     Running tests\importer.rs (target\debug\deps\importer-feac9cffd2b34437.exe)
+
+running 8 tests
+test descriptor_key_v1_golden_encoding ... ok
+test documentary_body_keeps_text_on_both_sides_of_xml_comments ... ok
+test independent_json_cross_check_detects_intentional_mismatch_fixture ... ok
+test duplicate_external_identifiers_fail_even_in_retained_content ... ok
+test inheritance_multiplicity_containment_and_uninterpreted_semantics_survive ... ok
+test unresolved_metaclass_and_wrong_kind_references_fail ... ok
+test same_artifact_produces_identical_ir_and_keys ... ok
+test malformed_unknown_and_invalid_structural_input_is_explicit ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\multiple_metamodels.rs (target\debug\deps\multiple_metamodels-e52bc0c77855e3c4.exe)
+
+running 3 tests
+test source_qualified_external_inheritance_never_joins_display_names ... ok
+test sysml_import_is_current_deterministic_and_preserves_kerml_identity ... ok
+test sysml_cli_staleness_and_wrong_baselines_fail_without_writes ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.89s
+
+     Running tests\normative.rs (target\debug\deps\normative-71cdbdd670cac637.exe)
+
+running 2 tests
+test pinned_normative_artifacts_import_cross_check_and_match_committed_ir ... ok
+test cli_check_is_read_only_and_detects_stale_output_and_tampered_inputs ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.42s
+
+     Running tests\sysml_closure.rs (target\debug\deps\sysml_closure-169ef7fa362d1e30.exe)
+
+running 6 tests
+test kerml_association_closure_registers_with_its_exact_published_self_subset ... ok
+test reviewed_dispositions_require_the_exact_source_hash_version_and_descriptor ... ok
+test exact_published_self_edges_survive_descriptor_translation_without_normalization ... ok
+test minimum_sysml_closure_retains_and_diagnoses_published_self_subsets ... ok
+test explicit_sysml_check_checks_the_audit_and_rejects_stale_audit_without_writing ... ok
+test runtime_readiness_gate_succeeds_without_changing_outputs ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.82s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_model-898c528d508236b4.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_semantics-14e97f1a3168fd6f.exe)
+
+running 4 tests
+test tests::published_library_index_retains_declarations_after_unknown_bodies ... ok
+test tests::invalid_type_and_resolution ... ok
+test tests::required_implicit_relationships_have_real_targets ... ok
+test tests::self_model_resolves ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.73s
+
+     Running unittests src\main.rs (target\debug\deps\agq_server-ae4b45457913bd72.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_simulation-16cca388733d4e62.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\contract.rs (target\debug\deps\contract-19bae49d8bdf700b.exe)
+
+running 17 tests
+test at_std02_parallel_preserved ... ok
+test independent_model_exact_payload_guard ... ok
+test occurrence_receiver_cannot_alias ... ok
+test input_order_and_receiver_identity ... ok
+test at_sim06_source_trace ... ok
+test at_sim05_completion_is_not_verdict ... ok
+test at_sim01_resolved_manifest ... ok
+test at_sim02_isolation ... ok
+test control_state_machine ... ok
+test at_sim03_sim04_manual_continuous_repeat ... ok
+test ambiguous_step_does_not_consume ... ok
+test at_sec01_live_action_rejected ... ok
+test unhandled_input_is_atomic ... ok
+test missing_and_mismatched_bindings ... ok
+test unsupported_guard_refused ... ok
+test resource_limits_explicit ... ok
+test shorthand_succession_after_state_is_not_an_initial_transition ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.99s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_standard_libraries-a9930ea80e7e756d.exe)
+
+running 5 tests
+test tests::unsafe_archive_locators_are_rejected_without_extraction ... ok
+test tests::immutable_content_change_changes_private_identity ... ok
+test tests::entry_hash_is_checked_independently_of_outer_hash ... ok
+test tests::dependency_must_exist_in_exact_content_set ... ok
+test tests::source_and_metadata_pins_cannot_disagree ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\corpus.rs (target\debug\deps\corpus-7fa6ae0ea745012e.exe)
+
+running 1 test
+test all_pinned_kerml_documents_parse_losslessly_and_repeatably ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.19s
+
+     Running tests\pinned.rs (target\debug\deps\pinned-42586648adc34a8b.exe)
+
+running 4 tests
+test private_library_identity_encoding_has_an_independent_uuid_v5_golden ... ok
+test published_metadata_error_and_junk_are_retained_without_rewriting_sources ... ok
+test changed_archive_and_missing_dependency_fail_without_partial_publication ... ok
+test exact_pinned_closure_terminates_cycles_and_is_repeatable ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_storage-77291deb47a80541.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\reliability.rs (target\debug\deps\reliability-4daa96fdccdd8ca3.exe)
+
+running 11 tests
+test newer_storage_schema_is_not_overwritten ... ok
+test approval_expiry_and_single_use ... ok
+test failed_durable_commit_not_acknowledged ... ok
+test idempotency_and_command_payload_conflict ... ok
+test corruption_detected ... ok
+test conflicting_control_version_and_reset ... ok
+test single_workspace_writer ... ok
+test at_nfr01_durable_restart_interrupt ... ok
+test invalid_draft_recoverable ... ok
+test completed_runs_survive_restart_and_rename ... ok
+test at_ai01_approval_actor_payload_expiry_stale ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.91s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_syntax-85d1fe08b977b619.exe)
+
+running 3 tests
+test tests::exact_expression ... ok
+test tests::malformed_is_not_accepted ... ok
+test tests::grammar_and_recovery ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_sysml-ade8cf30194d9227.exe)
+
+running 1 test
+test generated_views::tests::all_named_ids_match_descriptor_inventory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\foundation.rs (target\debug\deps\foundation-197e6e8a72f6aad5.exe)
+
+running 3 tests
+test sysml_views_borrow_one_kernel_record_and_upcast_across_language_boundary ... ok
+test exact_defined_flow_metadata_registers_but_never_replaces_a_class_slot ... ok
+test complete_graph_preserves_every_identity_and_shuffled_registration ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.72s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_workspace-5aa490f93e35538f.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\editing.rs (target\debug\deps\editing-367bf5db5baa8e90.exe)
+
+running 8 tests
+test ambiguous_external_edit_needs_reconciliation ... ok
+test cycle_and_traversal_rejected ... ok
+test kerml_text_roundtrip ... ok
+test no_lossy_unsupported_overwrite ... ok
+test at_mod02_atomic_candidate_and_conflict ... ok
+test at_mod01_rename_move_identity ... ok
+test standard_text_identity_sidecar_and_implicit_ids_roundtrip ... ok
+test at_mod03_text_and_kpar ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.81s
+
+   Doc-tests agq_application
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_assistant
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_kerml
+
+running 1 test
+test crates\kerml\src\lib.rs - (line 5) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+all doctests ran in 1.05s; merged doctests compilation took 0.89s
+   Doc-tests agq_kerml_semantics
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_kerml_syntax
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_kerml_text
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_kernel
+
+running 1 test
+test crates\kernel\src\lib.rs - (line 7) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 0.65s; merged doctests compilation took 0.53s
+   Doc-tests agq_metamodel_gen
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_model
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_semantics
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_simulation
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_standard_libraries
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_storage
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_syntax
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_sysml
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests agq_workspace
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,7 @@
+ M docs/kerml-standard-library-foundation-review.md
+ M docs/operational-kerml-profile.md
+?? crates/kerml-semantics/tests/feature_reference_authority_v8.rs
+?? docs/adr/0018-operational-result-domain-corrections.md
+?? docs/kerml-feature-reference-binding-authority-conflict.md
+?? standards/kerml-1.0-constraint-authority-map.json
+?? verification/kerml-semantic-closure-v8/

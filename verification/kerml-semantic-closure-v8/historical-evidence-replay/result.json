@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v7/profile-review.py",
+    "--check"
+  ],
+  "started": "2026-09-20T03:43:36.648531+00:00",
+  "duration_seconds": 0.062000000034458935,
+  "exit_code": 0,
+  "output": "output.txt"
+}

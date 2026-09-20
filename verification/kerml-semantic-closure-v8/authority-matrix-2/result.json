@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v8/authority-matrix.py"
+  ],
+  "started": "2026-09-20T03:42:54.886076+00:00",
+  "duration_seconds": 7.452999999979511,
+  "exit_code": 0,
+  "output": "output.txt"
+}

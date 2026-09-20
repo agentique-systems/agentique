@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v8/acquire.py"
+  ],
+  "started": "2026-09-20T03:10:19.274214+00:00",
+  "duration_seconds": 13.297000000020489,
+  "exit_code": 1,
+  "output": "output.txt"
+}

@@ -1,0 +1,102 @@
+{
+  "format": "agentique-v8-closing-verification/1",
+  "base_commit": "ed05cc1e30f955ed73af3689e9b98b20f192d63f",
+  "branch": "semantics/kerml-result-domain-errata-closure-v8",
+  "authority_stop": "KLCV8-F-001",
+  "operational_v6_implemented": false,
+  "semantic_publication_accepted": false,
+  "both_complete_structural_runtime_gates_green": true,
+  "strict_raw_conformance_exits": [
+    1,
+    1
+  ],
+  "fresh_quality": {
+    "profile": "agentique-kerml-1.0-operational/5",
+    "totals": {
+      "canonical_element_count": 29140,
+      "canonical_relationship_count": 16695,
+      "reference_count": 4000,
+      "unresolved_count": 4,
+      "ambiguous_count": 0,
+      "incomplete_reference_count": 64,
+      "mismatched_endpoint_count": 0,
+      "unevaluated_expression_count": 3901,
+      "query_count": 113179,
+      "incomplete_query_count": 118,
+      "invalid_query_count": 2,
+      "end_membership_findings": 0,
+      "distinguishability_findings": 2,
+      "expression_result_cardinality_findings": 0
+    },
+    "quality_sha256": "228036a44f475fd3ec5758a11ee56eab6b0ca4d90fcf030599222c8c7dd9ad66",
+    "query_cache_batch_size": 128,
+    "library_graph_digest": [
+      128,
+      180,
+      133,
+      130,
+      137,
+      134,
+      100,
+      33,
+      171,
+      161,
+      174,
+      136,
+      3,
+      225,
+      237,
+      240,
+      55,
+      87,
+      219,
+      225,
+      188,
+      195,
+      39,
+      233,
+      45,
+      112,
+      12,
+      76,
+      73,
+      49,
+      10,
+      57
+    ]
+  },
+  "formal_coverage": {
+    "category_counts": {
+      "A": 38,
+      "B": 208,
+      "E": 11,
+      "F": 1
+    },
+    "pending_errata_implementation": 5,
+    "structural_implementation_obligations": 213,
+    "closed": false
+  },
+  "memory": {
+    "samples": 86,
+    "maximum_observed_peak_working_set_since_start": 876982272,
+    "sampling_scope": "Late-start sampling of the existing deterministic 128-element-batch full corpus audit; not full authored/deep/parallel stress acceptance."
+  },
+  "not_claimed": [
+    "production contextual-result API",
+    "v6 profile/manifests",
+    "five-family production corrections",
+    "seven-profile correction matrix",
+    "full reference completeness",
+    "full chain/position closure",
+    "all structural validation implemented",
+    "new strict acceptance operation",
+    "accepted library Snapshot",
+    "accepted bindings",
+    "LoadedKermlStandardLibraries",
+    "authored accepted-library integration"
+  ],
+  "historical_bytes_preserved": true,
+  "default_profile_changed": false,
+  "no_execution_deferral_for_missing_structure": true,
+  "completion_phrase": "KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE \u2014 DO NOT PROCEED"
+}

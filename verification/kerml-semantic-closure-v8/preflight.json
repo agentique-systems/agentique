@@ -1,0 +1,13 @@
+{
+  "format": "agentique-v8-preflight/1",
+  "base_commit": "ed05cc1e30f955ed73af3689e9b98b20f192d63f",
+  "repository": "https://github.com/agentique-systems/agentique",
+  "branch": "semantics/kerml-result-domain-errata-closure-v8",
+  "fetched_main_commit": "ed05cc1e30f955ed73af3689e9b98b20f192d63f",
+  "initial_worktree_clean_observed": true,
+  "initial_branch": "main",
+  "initial_observation_scope": "Observed by git inspection before branch creation and file modification; this record describes that observation, not current worktree cleanliness.",
+  "historical_profiles_modified": false,
+  "authority_stop": "KLCV8-F-001",
+  "default_profile_changed": false
+}

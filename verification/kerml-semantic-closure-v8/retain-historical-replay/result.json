@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v8/retain-historical-replay.py"
+  ],
+  "started": "2026-09-20T03:46:48.867070+00:00",
+  "duration_seconds": 1.3440000000409782,
+  "exit_code": 0,
+  "output": "output.txt"
+}

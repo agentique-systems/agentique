@@ -1,0 +1,1 @@
+Both runtime gates green; final workspace/authority checks recorded; KLCV8-F-001 remains unauthorized; publication withheld.

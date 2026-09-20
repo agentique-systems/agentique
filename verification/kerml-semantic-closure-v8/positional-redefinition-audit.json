@@ -1,0 +1,8 @@
+{
+  "complete": false,
+  "local_authority_witness": "feature-reference-authority-conflict.json",
+  "proven_scope": "Reference result and both inner connector end positional redefinitions are present in the independent proof.",
+  "remaining": "Full corpus positional closure and independent canonical target comparison remain mandatory.",
+  "identity_order_used": false,
+  "execution_deferred_instead": false
+}

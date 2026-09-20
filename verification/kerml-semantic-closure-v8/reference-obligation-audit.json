@@ -1,0 +1,192 @@
+{
+  "reference_count": 4000,
+  "unresolved": 4,
+  "incomplete": 64,
+  "ambiguous": 0,
+  "stored_endpoint_mismatches": 0,
+  "all_required_references_complete": false,
+  "documents": [
+    {
+      "file": "Kernel Data Type Library/Collections.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Data Type Library/ScalarValues.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Data Type Library/VectorValues.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/BaseFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/BooleanFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/CollectionFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/ComplexFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/ControlFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/DataFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/IntegerFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/NaturalFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/NumericalFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/OccurrenceFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/RationalFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/RealFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/ScalarFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/SequenceFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/StringFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/TrigFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Function Library/VectorFunctions.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/Base.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/Clocks.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/ControlPerformances.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/KerML.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/Links.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/Metaobjects.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/Objects.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/Observation.kerml",
+      "unresolved": 0,
+      "incomplete": 10
+    },
+    {
+      "file": "Kernel Semantic Library/Occurrences.kerml",
+      "unresolved": 4,
+      "incomplete": 54
+    },
+    {
+      "file": "Kernel Semantic Library/Performances.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/SpatialFrames.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/StatePerformances.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/Transfers.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/TransitionPerformances.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    },
+    {
+      "file": "Kernel Semantic Library/Triggers.kerml",
+      "unresolved": 0,
+      "incomplete": 0
+    }
+  ],
+  "unique_target_does_not_establish_complete_support": true,
+  "diagnostics": "grouped-diagnostics.json"
+}

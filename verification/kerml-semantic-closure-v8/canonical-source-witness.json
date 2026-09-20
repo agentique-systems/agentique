@@ -1,0 +1,464 @@
+{
+  "format": "agentique-v8-canonical-source-witness/1",
+  "construction_sha256": "9f3a9021913a7a05798f19e363d32658a9bc19d4317a373c6d3d5b7c3583dd7a",
+  "profile": "agentique-kerml-1.0-operational/5",
+  "record_count": 29140,
+  "fresh_command": "declarations-v5/result.json",
+  "source_range": [
+    645,
+    650
+  ],
+  "canonical_roles": {
+    "function": {
+      "id": "60ff7d28-55d6-5339-a759-31c08773bd01",
+      "record": {
+        "metaclass": "Function",
+        "metaclass_id": "96e1cdee-d62d-587e-861e-fe25512dede8",
+        "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+        "slots": {
+          "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417": {
+            "name": "isImpliedIncluded",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7ded3a2a-c727-5656-99a8-b0af6d076ae1": {
+            "name": "ownedRelationship",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [
+              "35e92df3-e020-5485-be56-9a99767999fc",
+              "79595a46-e9a6-5e5f-b044-95a4310b86e1",
+              "b9cc094a-3e7b-547a-9455-bf4cd8b6b5e6"
+            ],
+            "value": "Ordered([Reference(ElementId(71659820974878538364878298777675995644)), Reference(ElementId(161300532945531259571162602854368904929)), Reference(ElementId(246966596203258167668731316170135090662))])"
+          },
+          "becaa806-24f9-5950-828b-8057f04f8d42": {
+            "name": "isAbstract",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(true))"
+          },
+          "cb8a4158-5bc4-5dce-a208-36825c32b290": {
+            "name": "declaredName",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(String(\".\"))"
+          },
+          "f5f2b420-5465-54b5-b7b7-8ee89f76265e": {
+            "name": "isSufficient",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "f7791531-eb7e-5db9-80b7-a525d4c75ab2": {
+            "name": "elementId",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(String(\"60ff7d28-55d6-5339-a759-31c08773bd01\"))"
+          }
+        },
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 452, end: 653 }, syntax_node: Some(SyntaxNodeId(177240912194964726018877122240513618875)) }",
+          "range": [
+            452,
+            653
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": "abstract function '.' {\n\t\tin feature source : Anything[0..*] nonunique {\n\t  \t\tabstract feature target : Anything[0..*] nonunique;\n\t  \t}\t  \t\n\t  \tprivate feature chain chains source.target;\n\t    chain\n\t}"
+        }
+      }
+    },
+    "result_expression_membership": {
+      "id": "b9cc094a-3e7b-547a-9455-bf4cd8b6b5e6",
+      "record": {
+        "metaclass": "ResultExpressionMembership",
+        "metaclass_id": "6949d437-130a-5801-8c5a-4431414f868a",
+        "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+        "slots": {
+          "002548b0-653b-546a-abb6-5b5c21359a5e": {
+            "name": "visibility",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Enumeration(EnumerationLiteralId(11357258224928625308502213588236987387)))"
+          },
+          "3297ccb3-8629-5962-aaab-2b7d6ea829d7": {
+            "name": "isImplied",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417": {
+            "name": "isImpliedIncluded",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7d4b3879-0f73-512e-976d-67141ffcadba": {
+            "name": "ownedRelatedElement",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [
+              "1ba4be8f-924f-5bc3-a129-deefde7abe38"
+            ],
+            "value": "Ordered([Reference(ElementId(36744557603725123574406647365750144568))])"
+          },
+          "f7791531-eb7e-5db9-80b7-a525d4c75ab2": {
+            "name": "elementId",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(String(\"b9cc094a-3e7b-547a-9455-bf4cd8b6b5e6\"))"
+          }
+        },
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 645, end: 650 }, syntax_node: Some(SyntaxNodeId(119500017607798448979168839971092515560)) }",
+          "range": [
+            645,
+            650
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": "chain"
+        }
+      }
+    },
+    "expression": {
+      "id": "1ba4be8f-924f-5bc3-a129-deefde7abe38",
+      "record": {
+        "metaclass": "FeatureReferenceExpression",
+        "metaclass_id": "bde7fb3a-a09c-5c5a-91f2-3be026cd5a99",
+        "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+        "slots": {
+          "007092e9-5bfe-5b87-95b1-09d80e23148e": {
+            "name": "isEnd",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7": {
+            "name": "isOrdered",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "1b641cd3-a32a-5c70-99df-1343eee052fb": {
+            "name": "isVariable",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "3aef3903-cb90-5765-b4f9-4874cc06531e": {
+            "name": "isUnique",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(true))"
+          },
+          "474b15e6-7d99-5bb9-a938-9953d72ccb8a": {
+            "name": "isDerived",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7": {
+            "name": "isPortion",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7949c655-75d7-5595-8325-8fd01bd475e1": {
+            "name": "isConstant",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417": {
+            "name": "isImpliedIncluded",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7ded3a2a-c727-5656-99a8-b0af6d076ae1": {
+            "name": "ownedRelationship",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [
+              "827e3d47-9068-5be6-996e-54882cc632dc",
+              "1995b369-0f4a-5de8-9dc7-861c65d36784"
+            ],
+            "value": "Ordered([Reference(ElementId(173455111753091816712024146798409298652)), Reference(ElementId(34007991001552882915075948148423878532))])"
+          },
+          "becaa806-24f9-5950-828b-8057f04f8d42": {
+            "name": "isAbstract",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "e982a995-8928-5bcd-a401-b676b4e2228b": {
+            "name": "isComposite",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "f5f2b420-5465-54b5-b7b7-8ee89f76265e": {
+            "name": "isSufficient",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "f7791531-eb7e-5db9-80b7-a525d4c75ab2": {
+            "name": "elementId",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(String(\"1ba4be8f-924f-5bc3-a129-deefde7abe38\"))"
+          }
+        },
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 645, end: 650 }, syntax_node: Some(SyntaxNodeId(245776522022114474880003144043737464691)) }",
+          "range": [
+            645,
+            650
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": "chain"
+        }
+      }
+    },
+    "result_membership": {
+      "id": "1995b369-0f4a-5de8-9dc7-861c65d36784",
+      "record": {
+        "metaclass": "ReturnParameterMembership",
+        "metaclass_id": "78a968a3-43db-5934-93de-5403b8db0e79",
+        "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+        "slots": {
+          "002548b0-653b-546a-abb6-5b5c21359a5e": {
+            "name": "visibility",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Enumeration(EnumerationLiteralId(11357258224928625308502213588236987387)))"
+          },
+          "3297ccb3-8629-5962-aaab-2b7d6ea829d7": {
+            "name": "isImplied",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417": {
+            "name": "isImpliedIncluded",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7d4b3879-0f73-512e-976d-67141ffcadba": {
+            "name": "ownedRelatedElement",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [
+              "f8b3c56c-7222-52bf-a78d-6434178c5f15"
+            ],
+            "value": "Ordered([Reference(ElementId(330581968318993126912226452470649085717))])"
+          },
+          "f7791531-eb7e-5db9-80b7-a525d4c75ab2": {
+            "name": "elementId",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(String(\"1995b369-0f4a-5de8-9dc7-861c65d36784\"))"
+          }
+        },
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 652, end: 652 }, syntax_node: Some(SyntaxNodeId(1265244459677482140795040643110710205)) }",
+          "range": [
+            652,
+            652
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": ""
+        }
+      }
+    },
+    "raw_result": {
+      "id": "f8b3c56c-7222-52bf-a78d-6434178c5f15",
+      "record": {
+        "metaclass": "Feature",
+        "metaclass_id": "fc178fd9-9abc-598f-a3bb-fcefa8f9a0ed",
+        "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+        "slots": {
+          "007092e9-5bfe-5b87-95b1-09d80e23148e": {
+            "name": "isEnd",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "0147a6e7-bbc7-5323-ac9c-df87cba0fcd7": {
+            "name": "isOrdered",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "1b641cd3-a32a-5c70-99df-1343eee052fb": {
+            "name": "isVariable",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "3aef3903-cb90-5765-b4f9-4874cc06531e": {
+            "name": "isUnique",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(true))"
+          },
+          "474b15e6-7d99-5bb9-a938-9953d72ccb8a": {
+            "name": "isDerived",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "5ea55dd8-5fd1-574a-b286-3fdd5a863fe7": {
+            "name": "isPortion",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7949c655-75d7-5595-8325-8fd01bd475e1": {
+            "name": "isConstant",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417": {
+            "name": "isImpliedIncluded",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "9cddc57a-30c2-5564-a63a-8982115d1a56": {
+            "name": "direction",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Enumeration(EnumerationLiteralId(85243602832200190857998077267154890524)))"
+          },
+          "becaa806-24f9-5950-828b-8057f04f8d42": {
+            "name": "isAbstract",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "e982a995-8928-5bcd-a401-b676b4e2228b": {
+            "name": "isComposite",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "f5f2b420-5465-54b5-b7b7-8ee89f76265e": {
+            "name": "isSufficient",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "f7791531-eb7e-5db9-80b7-a525d4c75ab2": {
+            "name": "elementId",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(String(\"f8b3c56c-7222-52bf-a78d-6434178c5f15\"))"
+          }
+        },
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 652, end: 652 }, syntax_node: Some(SyntaxNodeId(113962079231604577247332934385846451880)) }",
+          "range": [
+            652,
+            652
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": ""
+        }
+      }
+    },
+    "reference_membership": {
+      "id": "827e3d47-9068-5be6-996e-54882cc632dc",
+      "record": {
+        "metaclass": "Membership",
+        "metaclass_id": "f1d3ce0b-9834-5526-9185-b2abc548b909",
+        "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+        "slots": {
+          "002548b0-653b-546a-abb6-5b5c21359a5e": {
+            "name": "visibility",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Enumeration(EnumerationLiteralId(11357258224928625308502213588236987387)))"
+          },
+          "3297ccb3-8629-5962-aaab-2b7d6ea829d7": {
+            "name": "isImplied",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "7ce0f2ea-7d4b-5956-a5f6-e1d15175d417": {
+            "name": "isImpliedIncluded",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(Boolean(false))"
+          },
+          "f7791531-eb7e-5db9-80b7-a525d4c75ab2": {
+            "name": "elementId",
+            "origin": "Declared(StandardLibrary { library: LibraryId(14472823235592763006945343308400951299) })",
+            "references": [],
+            "value": "Scalar(String(\"827e3d47-9068-5be6-996e-54882cc632dc\"))"
+          }
+        },
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 645, end: 650 }, syntax_node: Some(SyntaxNodeId(312124425707396650989856000864409104293)) }",
+          "range": [
+            645,
+            650
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": "chain"
+        }
+      }
+    }
+  },
+  "reference_xmi_roles": {
+    "function": {
+      "file": "ControlFunctions.kermlx",
+      "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+      "metaclass": "Function",
+      "path": "ControlFunctions::."
+    },
+    "expression": {
+      "file": "ControlFunctions.kermlx",
+      "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+      "metaclass": "FeatureReferenceExpression",
+      "path": "ControlFunctions::."
+    },
+    "raw_result": {
+      "file": "ControlFunctions.kermlx",
+      "id": "d3f706b6-c10e-5a2f-ace7-a6ee92f57563",
+      "metaclass": "Feature",
+      "path": "ControlFunctions::.::result"
+    },
+    "referent": {
+      "file": "ControlFunctions.kermlx",
+      "id": "96af035d-1383-5477-8e9a-61f586d7eddc",
+      "metaclass": "Feature",
+      "path": "ControlFunctions::.::chain"
+    },
+    "reference_binding": {
+      "file": "ControlFunctions.kermlx",
+      "id": "1437b712-3673-507e-a849-18dd2445987b",
+      "metaclass": "BindingConnector",
+      "path": "ControlFunctions::."
+    },
+    "result_binding": {
+      "file": "ControlFunctions.kermlx",
+      "id": "0aaa4bf5-a8ea-57d6-b5c2-f4bab40a47b2",
+      "metaclass": "BindingConnector",
+      "path": "ControlFunctions::."
+    }
+  },
+  "identity_namespaces_are_distinct": true,
+  "scope": "Fresh declaration ownership/result identity comparison. This export retains unresolved construction obligations and is not the complete semantic graph or an accepted publication.",
+  "complete_local_domain_proof": "feature-reference-authority-conflict.json",
+  "production_contextual_result": null,
+  "production_v6_binding_graph": null,
+  "accepted": false
+}

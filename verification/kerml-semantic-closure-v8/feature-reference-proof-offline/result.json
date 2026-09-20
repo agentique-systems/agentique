@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v8/feature-reference-authority.py",
+    "--check"
+  ],
+  "started": "2026-09-20T03:47:51.684895+00:00",
+  "duration_seconds": 1.515999999945052,
+  "exit_code": 0,
+  "output": "output.txt"
+}

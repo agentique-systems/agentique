@@ -1,0 +1,1 @@
+Fresh canonical source/result ownership matches the exact pinned authority witness; reference IDs are compared separately; no complete production binding graph is claimed.

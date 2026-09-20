@@ -1,0 +1,992 @@
+{
+  "format": "agentique-independent-feature-reference-conflict/1",
+  "id": "KLCV8-F-001",
+  "issue": {
+    "key": "KERML11-8",
+    "status": "open",
+    "url": "https://issues.omg.org/issues/KERML11-8",
+    "sha256": "66275fee977a9f3e1648a4fdd0c3a01cedc690f89eb692b0022c848f0b3b452c"
+  },
+  "affected_rule": {
+    "kind": "ownedRule",
+    "owner": "FeatureReferenceExpression",
+    "name": "checkFeatureReferenceExpressionBindingConnector",
+    "attributes": {
+      "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector",
+      "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+      "name": "checkFeatureReferenceExpressionBindingConnector"
+    },
+    "bodies": [
+      {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector-_comment.0",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+        "body": "<p>A <code>FeatureReferenceExpression</code> must have an <code>ownedMember</code> that is a <code>BindingConnector</code> between the <code>referent</code> and <code>result</code> of the <code>FeatureReferenceExpression</code>.</p>"
+      },
+      {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector-specification0",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+        "body": "ownedMember->selectByKind(BindingConnector)->exists(b |     b.relatedFeatures->includes(targetFeature) and     b.relatedFeatures->includes(result))",
+        "language": "OCL2.0",
+        "name": ""
+      }
+    ],
+    "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector\" ns0:type=\"uml:Constraint\" name=\"checkFeatureReferenceExpressionBindingConnector\">\n            <constrainedElement ns0:idref=\"Kernel-Expressions-FeatureReferenceExpression\" />\n            <ownedComment ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A &lt;code&gt;FeatureReferenceExpression&lt;/code&gt; must have an &lt;code&gt;ownedMember&lt;/code&gt; that is a &lt;code&gt;BindingConnector&lt;/code&gt; between the &lt;code&gt;referent&lt;/code&gt; and &lt;code&gt;result&lt;/code&gt; of the &lt;code&gt;FeatureReferenceExpression&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedMember-&gt;selectByKind(BindingConnector)-&gt;exists(b |     b.relatedFeatures-&gt;includes(targetFeature) and     b.relatedFeatures-&gt;includes(result))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+  },
+  "required_graph_predicates": [
+    {
+      "kind": "ownedRule",
+      "owner": "FeatureReferenceExpression",
+      "name": "checkFeatureReferenceExpressionBindingConnector",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFeatureReferenceExpressionBindingConnector"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>A <code>FeatureReferenceExpression</code> must have an <code>ownedMember</code> that is a <code>BindingConnector</code> between the <code>referent</code> and <code>result</code> of the <code>FeatureReferenceExpression</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "ownedMember->selectByKind(BindingConnector)->exists(b |     b.relatedFeatures->includes(targetFeature) and     b.relatedFeatures->includes(result))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector\" ns0:type=\"uml:Constraint\" name=\"checkFeatureReferenceExpressionBindingConnector\">\n            <constrainedElement ns0:idref=\"Kernel-Expressions-FeatureReferenceExpression\" />\n            <ownedComment ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A &lt;code&gt;FeatureReferenceExpression&lt;/code&gt; must have an &lt;code&gt;ownedMember&lt;/code&gt; that is a &lt;code&gt;BindingConnector&lt;/code&gt; between the &lt;code&gt;referent&lt;/code&gt; and &lt;code&gt;result&lt;/code&gt; of the &lt;code&gt;FeatureReferenceExpression&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedMember-&gt;selectByKind(BindingConnector)-&gt;exists(b |     b.relatedFeatures-&gt;includes(targetFeature) and     b.relatedFeatures-&gt;includes(result))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "FeatureReferenceExpression",
+      "name": "checkFeatureReferenceExpressionResultSpecialization",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFeatureReferenceExpressionResultSpecialization"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>The <code>result</code> parameter of a <code>FeatureReferenceExpression</code> must specialize the <code>referent</code> of the <code>FeatureReferenceExpression</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "result.owningType() = self and result.specializes(referent)",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization\" ns0:type=\"uml:Constraint\" name=\"checkFeatureReferenceExpressionResultSpecialization\">\n            <ownedComment ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;result&lt;/code&gt; parameter of a &lt;code&gt;FeatureReferenceExpression&lt;/code&gt; must specialize the &lt;code&gt;referent&lt;/code&gt; of the &lt;code&gt;FeatureReferenceExpression&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"result.owningType() = self and result.specializes(referent)\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Function",
+      "name": "checkFunctionResultBindingConnector",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFunctionResultBindingConnector"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Function</code> has an <code>Expression</code> owned via a <code>ResultExpressionMembership</code>, then the owning <code>Function</code> must also own a <code>BindingConnector</code> between its <code>result</code> <code>parameter</code> and the <code>result</code> <code>parameter</code> of the result <code>Expression</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Functions-Function-checkFunctionResultBindingConnector-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "ownedMembership.selectByKind(ResultExpressionMembership)->     forAll(mem | ownedFeature.selectByKind(BindingConnector)->         exists(binding |             binding.relatedFeature->includes(result) and             binding.relatedFeature->includes(mem.ownedResultExpression.result)))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector\" ns0:type=\"uml:Constraint\" name=\"checkFunctionResultBindingConnector\">\n            <constrainedElement ns0:idref=\"Kernel-Functions-Function\" />\n            <ownedComment ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Function&lt;/code&gt; has an &lt;code&gt;Expression&lt;/code&gt; owned via a &lt;code&gt;ResultExpressionMembership&lt;/code&gt;, then the owning &lt;code&gt;Function&lt;/code&gt; must also own a &lt;code&gt;BindingConnector&lt;/code&gt; between its &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt; and the &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt; of the result &lt;code&gt;Expression&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Functions-Function-checkFunctionResultBindingConnector\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Functions-Function-checkFunctionResultBindingConnector-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedMembership.selectByKind(ResultExpressionMembership)-&gt;     forAll(mem | ownedFeature.selectByKind(BindingConnector)-&gt;         exists(binding |             binding.relatedFeature-&gt;includes(result) and             binding.relatedFeature-&gt;includes(mem.ownedResultExpression.result)))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Connector",
+      "name": "checkConnectorTypeFeaturing",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-checkConnectorTypeFeaturing",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkConnectorTypeFeaturing"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-checkConnectorTypeFeaturing-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Each <code>relatedFeature</code> of a <code>Connector</code> must have each <code>featuringType</code> of the <code>Connector</code> as a direct or indirect <code>featuringType</code> (where a <code>Feature</code> with no <code>featuringType</code> is treated as if the <code>Classifier</code> <code><em>Base::Anything</em></code> was its <code>featuringType</code>).</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-checkConnectorTypeFeaturing-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "relatedFeature->forAll(f |      if featuringType->isEmpty() then f.isFeaturedWithin(null)     else featuringType->forAll(t | f.isFeaturedWithin(t))     endif)",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Connectors-Connector-checkConnectorTypeFeaturing\" ns0:type=\"uml:Constraint\" name=\"checkConnectorTypeFeaturing\">\n            <constrainedElement ns0:idref=\"Kernel-Connectors-Connector\" />\n            <ownedComment ns0:id=\"Kernel-Connectors-Connector-checkConnectorTypeFeaturing-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Each &lt;code&gt;relatedFeature&lt;/code&gt; of a &lt;code&gt;Connector&lt;/code&gt; must have each &lt;code&gt;featuringType&lt;/code&gt; of the &lt;code&gt;Connector&lt;/code&gt; as a direct or indirect &lt;code&gt;featuringType&lt;/code&gt; (where a &lt;code&gt;Feature&lt;/code&gt; with no &lt;code&gt;featuringType&lt;/code&gt; is treated as if the &lt;code&gt;Classifier&lt;/code&gt; &lt;code&gt;&lt;em&gt;Base::Anything&lt;/em&gt;&lt;/code&gt; was its &lt;code&gt;featuringType&lt;/code&gt;).&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Connectors-Connector-checkConnectorTypeFeaturing\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Connectors-Connector-checkConnectorTypeFeaturing-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"relatedFeature-&gt;forAll(f |      if featuringType-&gt;isEmpty() then f.isFeaturedWithin(null)     else featuringType-&gt;forAll(t | f.isFeaturedWithin(t))     endif)\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Connector",
+      "name": "deriveConnectorDefaultFeaturingType",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "deriveConnectorDefaultFeaturingType"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>The <code>defaultFeaturingType</code> of a <code>Connector</code> is the innermost common direct or indirect <code>featuringType</code> of the <code>relatedFeatures</code> of the <code>Connector</code>, so that each <code>relatedElement</code> is featured within the <code>defaultFeaturingType</code>, if such exists.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "let commonFeaturingTypes : OrderedSet(Type) =      relatedFeature->closure(featuringType)->select(t |          relatedFeature->forAll(f | f.isFeaturedWithin(t))     ) in let nearestCommonFeaturingTypes : OrderedSet(Type) =     commonFeaturingTypes->reject(t1 |          commonFeaturingTypes->exists(t2 |              t2 <> t1 and t2->closure(featuringType)->contains(t1)     )) in if nearestCommonFeaturingTypes->isEmpty() then null else nearestCommonFeaturingTypes->first() endif",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType\" ns0:type=\"uml:Constraint\" name=\"deriveConnectorDefaultFeaturingType\">\n            <constrainedElement ns0:idref=\"Kernel-Connectors-Connector\" />\n            <ownedComment ns0:id=\"Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;defaultFeaturingType&lt;/code&gt; of a &lt;code&gt;Connector&lt;/code&gt; is the innermost common direct or indirect &lt;code&gt;featuringType&lt;/code&gt; of the &lt;code&gt;relatedFeatures&lt;/code&gt; of the &lt;code&gt;Connector&lt;/code&gt;, so that each &lt;code&gt;relatedElement&lt;/code&gt; is featured within the &lt;code&gt;defaultFeaturingType&lt;/code&gt;, if such exists.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType\" />\n</ownedComment>\n            <specification ns0:id=\"Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"let commonFeaturingTypes : OrderedSet(Type) =      relatedFeature-&gt;closure(featuringType)-&gt;select(t |          relatedFeature-&gt;forAll(f | f.isFeaturedWithin(t))     ) in let nearestCommonFeaturingTypes : OrderedSet(Type) =     commonFeaturingTypes-&gt;reject(t1 |          commonFeaturingTypes-&gt;exists(t2 |              t2 &lt;&gt; t1 and t2-&gt;closure(featuringType)-&gt;contains(t1)     )) in if nearestCommonFeaturingTypes-&gt;isEmpty() then null else nearestCommonFeaturingTypes-&gt;first() endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Type",
+      "name": "supertypes",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-supertypes_Boolean",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "supertypes"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-supertypes_Boolean-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "if isConjugated then Sequence{conjugator.originalType} else if not excludeImplied then ownedSpecialization.general else ownedSpecialization->reject(isImplied).general endif endif",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-supertypes_Boolean-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If this <code>Type</code> is conjugated, then return just the <code>originalType</code> of the <code>Conjugation</code>. Otherwise, return the <code>general</code> <code>Types</code> from all <code>ownedSpecializations</code> of this type, if <code>excludeImplied = false</code>, or all non-implied <code>ownedSpecializations</code>, if <code>excludeImplied = true</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Type-supertypes_Boolean\" ns0:type=\"uml:Operation\" name=\"supertypes\">\n            <bodyCondition ns0:id=\"Core-Types-Type-supertypes_Boolean-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Types-Type-supertypes_Boolean-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if isConjugated then Sequence{conjugator.originalType} else if not excludeImplied then ownedSpecialization.general else ownedSpecialization-&gt;reject(isImplied).general endif endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Types-Type-supertypes_Boolean-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If this &lt;code&gt;Type&lt;/code&gt; is conjugated, then return just the &lt;code&gt;originalType&lt;/code&gt; of the &lt;code&gt;Conjugation&lt;/code&gt;. Otherwise, return the &lt;code&gt;general&lt;/code&gt; &lt;code&gt;Types&lt;/code&gt; from all &lt;code&gt;ownedSpecializations&lt;/code&gt; of this type, if &lt;code&gt;excludeImplied = false&lt;/code&gt;, or all non-implied &lt;code&gt;ownedSpecializations&lt;/code&gt;, if &lt;code&gt;excludeImplied = true&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Types-Type-supertypes_Boolean\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Types-Type-supertypes_Boolean-excludeImplied\" ns0:type=\"uml:Parameter\" name=\"excludeImplied\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Types-Type-supertypes_Boolean-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Core-Types-Type-supertypes_Boolean--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Types-Type\" />\n              <upperValue ns0:id=\"Core-Types-Type-supertypes_Boolean--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Types-Type-supertypes_Boolean-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Type",
+      "name": "allSupertypes",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-allSupertypes_",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "allSupertypes"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-allSupertypes_-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "OrderedSet{self}->closure(supertypes(false))",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-allSupertypes_-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Return this <code>Type</code> and all <code>Types</code> that are directly or transitively supertypes of this <code>Type</code> (as determined by the <code>supertypes</code> operation with <code>excludeImplied = false</code>).</p> "
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Type-allSupertypes_\" ns0:type=\"uml:Operation\" name=\"allSupertypes\">\n            <bodyCondition ns0:id=\"Core-Types-Type-allSupertypes_-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Types-Type-allSupertypes_-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"OrderedSet{self}-&gt;closure(supertypes(false))\" language=\"OCL2.0\" name=\"\" />\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Types-Type-allSupertypes_-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Return this &lt;code&gt;Type&lt;/code&gt; and all &lt;code&gt;Types&lt;/code&gt; that are directly or transitively supertypes of this &lt;code&gt;Type&lt;/code&gt; (as determined by the &lt;code&gt;supertypes&lt;/code&gt; operation with &lt;code&gt;excludeImplied = false&lt;/code&gt;).&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Core-Types-Type-allSupertypes_\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Types-Type-allSupertypes_-result\" ns0:type=\"uml:Parameter\" name=\"result\">\n              <lowerValue ns0:id=\"Core-Types-Type-allSupertypes_-result-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Types-Type\" />\n              <upperValue ns0:id=\"Core-Types-Type-allSupertypes_-result-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Types-Type-allSupertypes_-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Type",
+      "name": "isCompatibleWith",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-isCompatibleWith_Type",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isCompatibleWith"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-isCompatibleWith_Type-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "specializes(otherType)",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Type-isCompatibleWith_Type-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>By default, this <code>Type</code> is compatible with an <code>otherType</code> if it directly or indirectly specializes the <code>otherType</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Type-isCompatibleWith_Type\" ns0:type=\"uml:Operation\" name=\"isCompatibleWith\">\n            <bodyCondition ns0:id=\"Core-Types-Type-isCompatibleWith_Type-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Types-Type-isCompatibleWith_Type-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"specializes(otherType)\" language=\"OCL2.0\" name=\"\" />\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Types-Type-isCompatibleWith_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;By default, this &lt;code&gt;Type&lt;/code&gt; is compatible with an &lt;code&gt;otherType&lt;/code&gt; if it directly or indirectly specializes the &lt;code&gt;otherType&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Types-Type-isCompatibleWith_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Types-Type-isCompatibleWith_Type-otherType\" ns0:type=\"uml:Parameter\" name=\"otherType\">\n              <type ns0:idref=\"Core-Types-Type\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Types-Type-isCompatibleWith_Type-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "supertypes",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-supertypes_Boolean",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "supertypes"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-supertypes_Boolean-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "let supertypes : OrderedSet(Type) =      self.oclAsType(Type).supertypes(excludeImplied) in if featureTarget = self then supertypes else supertypes->append(featureTarget) endif",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-supertypes_Boolean\" ns0:type=\"uml:Operation\" name=\"supertypes\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-supertypes_Boolean-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-supertypes_Boolean-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"let supertypes : OrderedSet(Type) =      self.oclAsType(Type).supertypes(excludeImplied) in if featureTarget = self then supertypes else supertypes-&gt;append(featureTarget) endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedParameter ns0:id=\"Core-Features-Feature-supertypes_Boolean-excludeImplied\" ns0:type=\"uml:Parameter\" name=\"excludeImplied\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Features-Feature-supertypes_Boolean-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <lowerValue ns0:id=\"Core-Features-Feature-supertypes_Boolean--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Types-Type\" />\n              <upperValue ns0:id=\"Core-Features-Feature-supertypes_Boolean--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-supertypes_Boolean-unnamed1\" />\n            <redefinedOperation ns0:idref=\"Core-Types-Type-supertypes_Boolean\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "isCompatibleWith",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCompatibleWith_Type",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isCompatibleWith"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCompatibleWith_Type-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "specializes(otherType) or     supertype.oclIsKindOf(Feature) and     ownedFeature->isEmpty() and     otherType.ownedFeature->isEmpty() and     ownedRedefinitions.allRedefinedFeatures()->exists(f |           otherType.oclAsType(Feature).allRedefinedFeatures()->includes(f)) and     canAccess(otherType.oclAsType(Feature))",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCompatibleWith_Type-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>A <code>Feature</code> is compatible with an <code>otherType</code> if it either directly or indirectly specializes the <code>otherType</code> or if the <code>otherType</code> is also a <code>Feature</code> and all of the following are true.</p> <ol>  <li>Neither this <code>Feature</code> or the <code>otherType</code> have any <code>ownedFeatures</code>.</li>  <li>This <code>Feature</code> directly or indirectly redefines a <code>Feature</code> that is also directly or indirectly redefined by the <code>otherType</code>.</li>  <li>This <code>Feature</code> can access the <code>otherType</code>. </li></ol>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isCompatibleWith_Type\" ns0:type=\"uml:Operation\" name=\"isCompatibleWith\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isCompatibleWith_Type-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-isCompatibleWith_Type-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"specializes(otherType) or     supertype.oclIsKindOf(Feature) and     ownedFeature-&gt;isEmpty() and     otherType.ownedFeature-&gt;isEmpty() and     ownedRedefinitions.allRedefinedFeatures()-&gt;exists(f |           otherType.oclAsType(Feature).allRedefinedFeatures()-&gt;includes(f)) and     canAccess(otherType.oclAsType(Feature))\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isCompatibleWith_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A &lt;code&gt;Feature&lt;/code&gt; is compatible with an &lt;code&gt;otherType&lt;/code&gt; if it either directly or indirectly specializes the &lt;code&gt;otherType&lt;/code&gt; or if the &lt;code&gt;otherType&lt;/code&gt; is also a &lt;code&gt;Feature&lt;/code&gt; and all of the following are true.&lt;/p&gt; &lt;ol&gt;  &lt;li&gt;Neither this &lt;code&gt;Feature&lt;/code&gt; or the &lt;code&gt;otherType&lt;/code&gt; have any &lt;code&gt;ownedFeatures&lt;/code&gt;.&lt;/li&gt;  &lt;li&gt;This &lt;code&gt;Feature&lt;/code&gt; directly or indirectly redefines a &lt;code&gt;Feature&lt;/code&gt; that is also directly or indirectly redefined by the &lt;code&gt;otherType&lt;/code&gt;.&lt;/li&gt;  &lt;li&gt;This &lt;code&gt;Feature&lt;/code&gt; can access the &lt;code&gt;otherType&lt;/code&gt;. &lt;/li&gt;&lt;/ol&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isCompatibleWith_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isCompatibleWith_Type-otherType\" ns0:type=\"uml:Parameter\" name=\"otherType\">\n              <type ns0:idref=\"Core-Types-Type\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isCompatibleWith_Type-unnamed1\" />\n            <redefinedOperation ns0:idref=\"Core-Types-Type-isCompatibleWith_Type\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "isFeaturedWithin",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturedWithin_Type",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isFeaturedWithin"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturedWithin_Type-isFeaturedWithIn_Body-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "if type = null then     featuringType->forAll(f | f = resolveGlobal('Base::Anything').memberElement) else     featuringType->forAll(f | type.isCompatibleWith(f)) or     isVariable and type.specializes(owningType) or     chainingFeature->notEmpty() and chainingFeature->first().isVariable and         type.specializes(chainingFeature->first().owningType) endif",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturedWithin_Type-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Return if the <code>featuringTypes</code> of this <code>Feature</code> are compatible with the given <code>type</code>. If <code>type</code> is null, then check if this <code>Feature</code> is explicitly or implicitly featured by <em><code>Base::Anything</code></em>. If this <code>Feature</code> has <code>isVariable = true</code>, then also consider it to be featured within its <code>owningType</code>. If this <code>Feature</code> is a feature chain whose first <code>chainingFeature</code> has <code>isVariable = true</code>, then also consider it to be featured within the <code>owningType</code> of its first <code>chainingFeature</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type\" ns0:type=\"uml:Operation\" name=\"isFeaturedWithin\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-isFeaturedWithIn_Body\" ns0:type=\"uml:Constraint\" name=\"isFeaturedWithIn_Body\">\n              <specification ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-isFeaturedWithIn_Body-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if type = null then     featuringType-&gt;forAll(f | f = resolveGlobal('Base::Anything').memberElement) else     featuringType-&gt;forAll(f | type.isCompatibleWith(f)) or     isVariable and type.specializes(owningType) or     chainingFeature-&gt;notEmpty() and chainingFeature-&gt;first().isVariable and         type.specializes(chainingFeature-&gt;first().owningType) endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Return if the &lt;code&gt;featuringTypes&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt; are compatible with the given &lt;code&gt;type&lt;/code&gt;. If &lt;code&gt;type&lt;/code&gt; is null, then check if this &lt;code&gt;Feature&lt;/code&gt; is explicitly or implicitly featured by &lt;em&gt;&lt;code&gt;Base::Anything&lt;/code&gt;&lt;/em&gt;. If this &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;isVariable = true&lt;/code&gt;, then also consider it to be featured within its &lt;code&gt;owningType&lt;/code&gt;. If this &lt;code&gt;Feature&lt;/code&gt; is a feature chain whose first &lt;code&gt;chainingFeature&lt;/code&gt; has &lt;code&gt;isVariable = true&lt;/code&gt;, then also consider it to be featured within the &lt;code&gt;owningType&lt;/code&gt; of its first &lt;code&gt;chainingFeature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isFeaturedWithin_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-type\" ns0:type=\"uml:Parameter\" name=\"type\">\n              <lowerValue ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-type-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Types-Type\" />\n              <upperValue ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-type-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturedWithin_Type-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isFeaturedWithin_Type-isFeaturedWithIn_Body\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "canAccess",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-canAccess_Feature",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "canAccess"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-canAccess_Feature-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "let anythingType: Element =     subsettingFeature.resolveGlobal('Base::Anything').memberElement in let allFeaturingTypes : Sequence(Type) =     featuringTypes->closure(t |         if not t.oclIsKindOf(Feature) then Sequence{}         else             let featuringTypes : OrderedSet(Type) = t.oclAsType(Feature).featuringType in             if featuringTypes->isEmpty() then Sequence{anythingType}             else featuringTypes             endif          endif) in allFeaturingTypes->exists(t | feature.isFeaturedWithin(t))",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-canAccess_Feature-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>A <code>Feature</code> can access another <code>feature</code> if the other <code>feature</code> is featured within one of the direct or indirect <code>featuringTypes</code> of this <code>Feature</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-canAccess_Feature\" ns0:type=\"uml:Operation\" name=\"canAccess\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-canAccess_Feature-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-canAccess_Feature-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"let anythingType: Element =     subsettingFeature.resolveGlobal('Base::Anything').memberElement in let allFeaturingTypes : Sequence(Type) =     featuringTypes-&gt;closure(t |         if not t.oclIsKindOf(Feature) then Sequence{}         else             let featuringTypes : OrderedSet(Type) = t.oclAsType(Feature).featuringType in             if featuringTypes-&gt;isEmpty() then Sequence{anythingType}             else featuringTypes             endif          endif) in allFeaturingTypes-&gt;exists(t | feature.isFeaturedWithin(t))\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-canAccess_Feature-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;A &lt;code&gt;Feature&lt;/code&gt; can access another &lt;code&gt;feature&lt;/code&gt; if the other &lt;code&gt;feature&lt;/code&gt; is featured within one of the direct or indirect &lt;code&gt;featuringTypes&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-canAccess_Feature\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-canAccess_Feature-feature\" ns0:type=\"uml:Parameter\" name=\"feature\">\n              <type ns0:idref=\"Core-Features-Feature\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Features-Feature-canAccess_Feature-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-canAccess_Feature-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Feature",
+      "name": "isFeaturingType",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isFeaturingType"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "owningType <> null and if not isVariable then type = owningType else if owningType = resolveGlobal('Occurrences::Occurrence').memberElement then     type = resolveGlobal('Occurrences::Occurrence::snapshots').memberElement  else      type.oclIsKindOf(Feature) and     let feature : Feature = type.oclAsType(Feature) in     feature.featuringType->includes(owningType) and     feature.redefinesFromLibrary('Occurrences::Occurrence::snapshots') endif ",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Return whether the given <code>type</code> must be a <code>featuringType</code> of this <code>Feature</code>. If this <code>Feature</code> has <code>isVariable = false</code>, then return true if the <code>type</code> is the <code>owningType</code> of the <code>Feature</code>. If <code>isVariable = true</code>, then return true if the <code>type</code> is a <code>Feature</code> representing the <em><code>snapshots</code></em> of the <code>owningType</code> of this <code>Feature</code>.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isFeaturingType_Type\" ns0:type=\"uml:Operation\" name=\"isFeaturingType\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isFeaturingType_Type-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-isFeaturingType_Type-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningType &lt;&gt; null and if not isVariable then type = owningType else if owningType = resolveGlobal('Occurrences::Occurrence').memberElement then     type = resolveGlobal('Occurrences::Occurrence::snapshots').memberElement  else      type.oclIsKindOf(Feature) and     let feature : Feature = type.oclAsType(Feature) in     feature.featuringType-&gt;includes(owningType) and     feature.redefinesFromLibrary('Occurrences::Occurrence::snapshots') endif \" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isFeaturingType_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Return whether the given &lt;code&gt;type&lt;/code&gt; must be a &lt;code&gt;featuringType&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt;. If this &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;isVariable = false&lt;/code&gt;, then return true if the &lt;code&gt;type&lt;/code&gt; is the &lt;code&gt;owningType&lt;/code&gt; of the &lt;code&gt;Feature&lt;/code&gt;. If &lt;code&gt;isVariable = true&lt;/code&gt;, then return true if the &lt;code&gt;type&lt;/code&gt; is a &lt;code&gt;Feature&lt;/code&gt; representing the &lt;em&gt;&lt;code&gt;snapshots&lt;/code&gt;&lt;/em&gt; of the &lt;code&gt;owningType&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isFeaturingType_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturingType_Type-type\" ns0:type=\"uml:Parameter\" name=\"type\">\n              <type ns0:idref=\"Core-Types-Type\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturingType_Type-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isFeaturingType_Type-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "deriveFeatureChainingFeature",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureChainingFeature",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "deriveFeatureChainingFeature"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureChainingFeature-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>The <code>chainingFeatures</code> of a <code>Feature</code> are the <code>chainingFeatures</code> of its <code>ownedFeatureChainings</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureChainingFeature-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "chainingFeature = ownedFeatureChaining.chainingFeature",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-deriveFeatureChainingFeature\" ns0:type=\"uml:Constraint\" name=\"deriveFeatureChainingFeature\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-deriveFeatureChainingFeature-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;chainingFeatures&lt;/code&gt; of a &lt;code&gt;Feature&lt;/code&gt; are the &lt;code&gt;chainingFeatures&lt;/code&gt; of its &lt;code&gt;ownedFeatureChainings&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-deriveFeatureChainingFeature\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-deriveFeatureChainingFeature-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"chainingFeature = ownedFeatureChaining.chainingFeature\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "validateFeatureChainingFeatureConformance",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureChainingFeatureConformance",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "validateFeatureChainingFeatureConformance"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureChainingFeatureConformance-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Each <code>chainingFeature</code> (other than the first) must be featured within the previous <code>chainingFeature</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureChainingFeatureConformance-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "Sequence{2..chainingFeature->size()}->forAll(i | chainingFeature->at(i).isFeaturedWithin(chainingFeature->at(i-1))) ",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-validateFeatureChainingFeatureConformance\" ns0:type=\"uml:Constraint\" name=\"validateFeatureChainingFeatureConformance\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-validateFeatureChainingFeatureConformance-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Each &lt;code&gt;chainingFeature&lt;/code&gt; (other than the first) must be featured within the previous &lt;code&gt;chainingFeature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-validateFeatureChainingFeatureConformance\" />\n            </ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-validateFeatureChainingFeatureConformance-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"Sequence{2..chainingFeature-&gt;size()}-&gt;forAll(i | chainingFeature-&gt;at(i).isFeaturedWithin(chainingFeature-&gt;at(i-1))) \" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "deriveFeatureFeaturingType",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeaturingType",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "deriveFeatureFeaturingType"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeaturingType-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "The <code>featuringTypes</code> of a <code>Feature</code> include the <code>featuringTypes</code> of all the <code>typeFeaturings</code> of the <code>Feature</code>. If the <code>Feature</code> has <code>chainingFeatures</code>, then its <code>featuringTypes</code> also include the <code>featuringTypes</code> of the first <code>chainingFeature</code>."
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeaturingType-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "featuringType =     let featuringTypes : OrderedSet(Type) =          featuring.type->asOrderedSet() in     if chainingFeature->isEmpty() then featuringTypes     else         featuringTypes->             union(chainingFeature->first().featuringType)->             asOrderedSet()     endif",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-deriveFeatureFeaturingType\" ns0:type=\"uml:Constraint\" name=\"deriveFeatureFeaturingType\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-deriveFeatureFeaturingType-_comment.0\" ns0:type=\"uml:Comment\" body=\"The &lt;code&gt;featuringTypes&lt;/code&gt; of a &lt;code&gt;Feature&lt;/code&gt; include the &lt;code&gt;featuringTypes&lt;/code&gt; of all the &lt;code&gt;typeFeaturings&lt;/code&gt; of the &lt;code&gt;Feature&lt;/code&gt;. If the &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;chainingFeatures&lt;/code&gt;, then its &lt;code&gt;featuringTypes&lt;/code&gt; also include the &lt;code&gt;featuringTypes&lt;/code&gt; of the first &lt;code&gt;chainingFeature&lt;/code&gt;.\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-deriveFeatureFeaturingType\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-deriveFeatureFeaturingType-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"featuringType =     let featuringTypes : OrderedSet(Type) =          featuring.type-&gt;asOrderedSet() in     if chainingFeature-&gt;isEmpty() then featuringTypes     else         featuringTypes-&gt;             union(chainingFeature-&gt;first().featuringType)-&gt;             asOrderedSet()     endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "deriveFeatureFeatureTarget",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeatureTarget",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "deriveFeatureFeatureTarget"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeatureTarget-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Feature</code> has no <code>chainingFeatures</code>, then its <code>featureTarget</code> is the <code>Feature</code> itself, otherwise the <code>featureTarget</code> is the last of the <code>chainingFeatures</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-deriveFeatureFeatureTarget-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "featureTarget = if chainingFeature->isEmpty() then self else chainingFeature->last() endif",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-deriveFeatureFeatureTarget\" ns0:type=\"uml:Constraint\" name=\"deriveFeatureFeatureTarget\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-deriveFeatureFeatureTarget-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; has no &lt;code&gt;chainingFeatures&lt;/code&gt;, then its &lt;code&gt;featureTarget&lt;/code&gt; is the &lt;code&gt;Feature&lt;/code&gt; itself, otherwise the &lt;code&gt;featureTarget&lt;/code&gt; is the last of the &lt;code&gt;chainingFeatures&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-deriveFeatureFeatureTarget\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-deriveFeatureFeatureTarget-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"featureTarget = if chainingFeature-&gt;isEmpty() then self else chainingFeature-&gt;last() endif\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "checkFeatureFeatureMembershipTypeFeaturing",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFeatureFeatureMembershipTypeFeaturing"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Feature</code> is owned via a <code>FeatureMembership</code>, then it must have a <code>featuringType</code> for which the operation <code>isFeaturingType</code> returns true.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "owningFeatureMembership <> null implies featuringTypes->exists(t | isFeaturingType(t))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing\" ns0:type=\"uml:Constraint\" name=\"checkFeatureFeatureMembershipTypeFeaturing\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; is owned via a &lt;code&gt;FeatureMembership&lt;/code&gt;, then it must have a &lt;code&gt;featuringType&lt;/code&gt; for which the operation &lt;code&gt;isFeaturingType&lt;/code&gt; returns true.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningFeatureMembership &lt;&gt; null implies featuringTypes-&gt;exists(t | isFeaturingType(t))\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    }
+  ],
+  "normative_xmi": {
+    "path": "standards\\normative\\kerml-1.0\\KerML.xmi",
+    "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466"
+  },
+  "pinned_source": {
+    "archive": "standards/artifacts/Function-Library.kpar",
+    "archive_sha256": "a8319da3ab1d8ffc0f390ea1aef29d85a00451655c41a9267ce396845c2b1c8d",
+    "entry": "Kernel Function Library/ControlFunctions.kerml",
+    "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+    "range": [
+      452,
+      657
+    ],
+    "text": "abstract function '.' {\n\t\tin feature source : Anything[0..*] nonunique {\n\t  \t\tabstract feature target : Anything[0..*] nonunique;\n\t  \t}\t  \t\n\t  \tprivate feature chain chains source.target;\n\t    chain\n\t}\n\t\n\t"
+  },
+  "reference": {
+    "release": "fb97b754f29588b8e9c7a35f370880cd15eb29e7",
+    "current_head_matches_retained_xmi": true,
+    "inputs": [
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Data Type Library/Collections.kermlx",
+        "sha256": "9a7b342251c27a4697d414518c44de193e4b43fcde53d6295d871c8b3729a017"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Data Type Library/ScalarValues.kermlx",
+        "sha256": "dbe77d2f74678007addbe8cb41b398aa1192dcc99d55a44849f45f02cbb1141e"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Data Type Library/VectorValues.kermlx",
+        "sha256": "1113e77783eafc1fda738b5b77138b27134fa3147ce31117477057581fcff9e3"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/BaseFunctions.kermlx",
+        "sha256": "5926aecbf8862aca8cee3b82c63307814c3263726f6f12a5adbfa04f089767c0"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/BooleanFunctions.kermlx",
+        "sha256": "68ffbea71669e59ddccfb3ce47adc0112140d062b7f6c04bf6d2e7b702611525"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/CollectionFunctions.kermlx",
+        "sha256": "e15a0612067ec9476ce39cde81902eed7e2a2a8a48533d19744c4593891f24b1"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/ComplexFunctions.kermlx",
+        "sha256": "e8116991a3820653988a8ec6ea1e67b982988b611506b4b8db69efb2946c1dc4"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/ControlFunctions.kermlx",
+        "sha256": "581d1ff1cdf1234bcd8279691e6430d011c28bc6c6a34c1e1a52c59e3956bb2c"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/DataFunctions.kermlx",
+        "sha256": "0313d733a8b2077e4615e5e10f42c490b734d00185cd78bf0bfff048e69b9323"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/IntegerFunctions.kermlx",
+        "sha256": "0eb8b798cdffcd99786cac8dff23e2cda517a6ccceaf7b2921ecdec0cf19bb05"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/NaturalFunctions.kermlx",
+        "sha256": "79cbe79e03cbe215540524ac1c9f2eafe835ee52a7dc596cda2936ff2ad5cbbf"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/NumericalFunctions.kermlx",
+        "sha256": "64e6f6470b0bde0c4419bb14e69db6a829877c957a49c62046d04612be7d1d44"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/OccurrenceFunctions.kermlx",
+        "sha256": "7edefa4af3a643bdad681ef30894ad59ad98e5563e0ad46e90c6557046a5ce55"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/RationalFunctions.kermlx",
+        "sha256": "37814a76880e4dde0ce30856840df0fe007284d4df43639993f7194e5c86fb3e"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/RealFunctions.kermlx",
+        "sha256": "db6e7e8a985574785669736ded575682e97a00a8f21c31f10ef9175eccf90fd4"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/ScalarFunctions.kermlx",
+        "sha256": "601279ed46ef1978f0cba2e5e8849bc3eddf917efc8751d876abf356109bfa6e"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/SequenceFunctions.kermlx",
+        "sha256": "0ac9fd113f42bc67bc4d966d47e6efbe2d28dc5e5a88fd1bbee8fa4b9bf04fc4"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/StringFunctions.kermlx",
+        "sha256": "4ccaf6a5920108a8164ace3e5e7bab1e869615b5a307a2b0cfad48bde3ca73d2"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/TrigFunctions.kermlx",
+        "sha256": "caeb6299ec22164c210e62df683dd7fb787e0aa93d6fdcb1b24a7e3f1f921f13"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Function Library/VectorFunctions.kermlx",
+        "sha256": "7db2d07cd0fb54add5afcdd8d2b2185b01b4092a90de9602d9a046ee04867dc5"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Base.kermlx",
+        "sha256": "984234a4bbf7dcbde1f86066f3f7da6b93a1b228b10b93d90727532766952699"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Clocks.kermlx",
+        "sha256": "390d292cd3863b4d994550b71b9e5ace81f0aafe5890b089e2255462ff1a4803"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/ControlPerformances.kermlx",
+        "sha256": "8d0f19838a2402f2c4fbf50d619579072d8e5bfb14797d0f56316f4074a11a09"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kermlx",
+        "sha256": "42a919d6026df3226dcd40ce168199bdc5f193b6d567e5bc18eb5cb523abc52d"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/KerML.kermlx",
+        "sha256": "3a7974a511c59e5b4d45161e8058acb8df0cf07fb0fb0347119edd40f616177d"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Links.kermlx",
+        "sha256": "5a5a7e8b1d61b424d95661e730c88510024faf320e345b4038d4981b4659f7da"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Metaobjects.kermlx",
+        "sha256": "44a05881bee2633c5e5611738a60f5077933f9c50866c5c24d01617ff9364672"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Objects.kermlx",
+        "sha256": "a8633bf4c53935eca58d951c6faed56c239fe734fe5fbf816140d077235879e0"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Observation.kermlx",
+        "sha256": "0dd206a202f1c0ca274c087d4f3abf5b66cf30444306f75f1f4c30a3a554c99a"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Occurrences.kermlx",
+        "sha256": "c484f735e0e2412299b53e2bf3b451b938791340f669577fa754004c71850098"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Performances.kermlx",
+        "sha256": "8beac837b8e8e9ec645dbbd8dc1bccf9081cdee262d5e5c99399a2fd091afa23"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/SpatialFrames.kermlx",
+        "sha256": "29941c306261e7c9d1f8718e242751fd3671185c237e6a5052897a9566126fda"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/StatePerformances.kermlx",
+        "sha256": "52d0960ebc6011f6f7b6e5a7c22cdf6f2f3a98aa38524171acb3b482b912e804"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Transfers.kermlx",
+        "sha256": "18ff675088ef268dd55a92bd8dc8d2070d449eb8957c77093cddef0e5b04f306"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/TransitionPerformances.kermlx",
+        "sha256": "ffb80d16c8785732401d24f46ecf73ef81e6984d90a10b4ea535b9f8f9eb6533"
+      },
+      {
+        "path": "verification/kerml-semantic-closure-v6/release/sysml.library.xmi.implied/Kernel Libraries/Kernel Semantic Library/Triggers.kermlx",
+        "sha256": "d0f313a378dec9fd52ef2ed45122982431dd26e9ada3fe78714a383ec15c7bf4"
+      }
+    ],
+    "implementation": {
+      "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+      "path": "verification/kerml-semantic-closure-v8/pilot/FeatureReferenceExpressionAdapter.java",
+      "sha256": "d9562ad218b83ed6897fdb5cdc2a967224ec7236fabf6b18bd41bde00d51a885"
+    },
+    "function": {
+      "file": "ControlFunctions.kermlx",
+      "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+      "metaclass": "Function",
+      "path": "ControlFunctions::."
+    },
+    "expression": {
+      "file": "ControlFunctions.kermlx",
+      "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+      "metaclass": "FeatureReferenceExpression",
+      "path": "ControlFunctions::."
+    },
+    "referent": {
+      "file": "ControlFunctions.kermlx",
+      "id": "96af035d-1383-5477-8e9a-61f586d7eddc",
+      "metaclass": "Feature",
+      "path": "ControlFunctions::.::chain"
+    },
+    "raw_result": {
+      "file": "ControlFunctions.kermlx",
+      "id": "d3f706b6-c10e-5a2f-ace7-a6ee92f57563",
+      "metaclass": "Feature",
+      "path": "ControlFunctions::.::result"
+    },
+    "reference_binding": {
+      "file": "ControlFunctions.kermlx",
+      "id": "1437b712-3673-507e-a849-18dd2445987b",
+      "metaclass": "BindingConnector",
+      "path": "ControlFunctions::."
+    },
+    "result_binding": {
+      "file": "ControlFunctions.kermlx",
+      "id": "0aaa4bf5-a8ea-57d6-b5c2-f4bab40a47b2",
+      "metaclass": "BindingConnector",
+      "path": "ControlFunctions::."
+    },
+    "reference_binding_membership": "OwningMembership",
+    "reference_binding_endpoints": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "96af035d-1383-5477-8e9a-61f586d7eddc",
+        "metaclass": "Feature",
+        "path": "ControlFunctions::.::chain"
+      },
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "d3f706b6-c10e-5a2f-ace7-a6ee92f57563",
+        "metaclass": "Feature",
+        "path": "ControlFunctions::.::result"
+      }
+    ],
+    "reference_binding_featuring_types": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+        "metaclass": "Function",
+        "path": "ControlFunctions::."
+      }
+    ],
+    "raw_result_featuring_types": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+        "metaclass": "FeatureReferenceExpression",
+        "path": "ControlFunctions::."
+      }
+    ],
+    "referent_chain": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "166a3b8c-1fca-5c0d-994f-8fff486cb9f2",
+        "metaclass": "Feature",
+        "path": "ControlFunctions::.::source"
+      },
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "964f21f5-b2d8-5b9f-bb25-b07cecd4c1e8",
+        "metaclass": "Feature",
+        "path": "ControlFunctions::.::source::target"
+      }
+    ],
+    "function_all_supertypes": [
+      {
+        "file": "Base.kermlx",
+        "id": "d5b4e7df-e644-5f2f-b95e-cf6f1f6c076d",
+        "metaclass": "Classifier",
+        "path": "Base::Anything"
+      },
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+        "metaclass": "Function",
+        "path": "ControlFunctions::."
+      },
+      {
+        "file": "Occurrences.kermlx",
+        "id": "80f4284e-73b1-589c-ad80-e25f33022e4f",
+        "metaclass": "Class",
+        "path": "Occurrences::Occurrence"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "1b7f00e7-24fb-5ebc-8773-89ba88bc3d5d",
+        "metaclass": "Behavior",
+        "path": "Performances::Performance"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "65787029-c7c2-5cb6-9baa-d428f18e225f",
+        "metaclass": "Function",
+        "path": "Performances::Evaluation"
+      }
+    ],
+    "expression_all_supertypes": [
+      {
+        "file": "Base.kermlx",
+        "id": "3176ab6a-8d7b-5e14-b263-57bd30f77f78",
+        "metaclass": "Feature",
+        "path": "Base::things"
+      },
+      {
+        "file": "Base.kermlx",
+        "id": "d5b4e7df-e644-5f2f-b95e-cf6f1f6c076d",
+        "metaclass": "Classifier",
+        "path": "Base::Anything"
+      },
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+        "metaclass": "FeatureReferenceExpression",
+        "path": "ControlFunctions::."
+      },
+      {
+        "file": "Occurrences.kermlx",
+        "id": "1751daae-ec84-5a00-980e-e09247703500",
+        "metaclass": "Feature",
+        "path": "Occurrences::occurrences"
+      },
+      {
+        "file": "Occurrences.kermlx",
+        "id": "27cd823b-91df-5d0b-967d-25f6c022c384",
+        "metaclass": "Feature",
+        "path": "Occurrences::Occurrence::timeEnclosedOccurrences"
+      },
+      {
+        "file": "Occurrences.kermlx",
+        "id": "80f4284e-73b1-589c-ad80-e25f33022e4f",
+        "metaclass": "Class",
+        "path": "Occurrences::Occurrence"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "1b7f00e7-24fb-5ebc-8773-89ba88bc3d5d",
+        "metaclass": "Behavior",
+        "path": "Performances::Performance"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "65787029-c7c2-5cb6-9baa-d428f18e225f",
+        "metaclass": "Function",
+        "path": "Performances::Evaluation"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "a9e80a7b-7d7e-509a-9920-e70629df06ad",
+        "metaclass": "Step",
+        "path": "Performances::performances"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "c590aa58-6c78-5aeb-b1c9-a784abcb2e29",
+        "metaclass": "Expression",
+        "path": "Performances::evaluations"
+      },
+      {
+        "file": "Performances.kermlx",
+        "id": "d2f2efc4-b3fe-5807-85bc-416fbebb05f0",
+        "metaclass": "Step",
+        "path": "Performances::Performance::enclosedPerformances"
+      }
+    ],
+    "required_inference": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "d3f706b6-c10e-5a2f-ace7-a6ee92f57563",
+        "kind": "Feature",
+        "path": "ControlFunctions::.::result",
+        "xml": "<ownedRelatedElement xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:Feature\" ns1:id=\"d3f706b6-c10e-5a2f-ace7-a6ee92f57563\" elementId=\"d3f706b6-c10e-5a2f-ace7-a6ee92f57563\" isImpliedIncluded=\"true\" direction=\"out\">\n                  <ownedRelationship xsi:type=\"sysml:Redefinition\" ns1:id=\"7f6cef54-a2eb-5d54-929e-8eb4b928d4e4\" elementId=\"7f6cef54-a2eb-5d54-929e-8eb4b928d4e4\" isImplied=\"true\" redefiningFeature=\"d3f706b6-c10e-5a2f-ace7-a6ee92f57563\">\n                    <redefinedFeature href=\"../Kernel%20Semantic%20Library/Performances.kermlx#d4c65e7a-f5cd-5e32-bb56-93a0cfa01d23\" />\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"98570231-e831-5f59-b6e4-784cc70ee847\" elementId=\"98570231-e831-5f59-b6e4-784cc70ee847\" isImplied=\"true\" subsettedFeature=\"96af035d-1383-5477-8e9a-61f586d7eddc\" subsettingFeature=\"d3f706b6-c10e-5a2f-ace7-a6ee92f57563\" />\n                  <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"543e82bc-3557-5b7a-8f9d-58d5db3477d3\" elementId=\"543e82bc-3557-5b7a-8f9d-58d5db3477d3\" isImplied=\"true\" featureOfType=\"d3f706b6-c10e-5a2f-ace7-a6ee92f57563\" featuringType=\"bae21159-312d-5633-85d4-4d1a2507bdd5\" />\n                </ownedRelatedElement>\n              "
+      },
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "96af035d-1383-5477-8e9a-61f586d7eddc",
+        "kind": "Feature",
+        "path": "ControlFunctions::.::chain",
+        "xml": "<ownedRelatedElement xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:Feature\" ns1:id=\"96af035d-1383-5477-8e9a-61f586d7eddc\" declaredName=\"chain\" elementId=\"96af035d-1383-5477-8e9a-61f586d7eddc\" isImpliedIncluded=\"true\">\n              <ownedRelationship xsi:type=\"sysml:FeatureChaining\" ns1:id=\"fa922b16-0a52-5259-bd0f-66f4b1ac0ce9\" elementId=\"fa922b16-0a52-5259-bd0f-66f4b1ac0ce9\" chainingFeature=\"166a3b8c-1fca-5c0d-994f-8fff486cb9f2\" />\n              <ownedRelationship xsi:type=\"sysml:FeatureChaining\" ns1:id=\"8ad59ea4-1628-5627-893a-82028dd41834\" elementId=\"8ad59ea4-1628-5627-893a-82028dd41834\" chainingFeature=\"964f21f5-b2d8-5b9f-bb25-b07cecd4c1e8\" />\n              <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"f23a7ce3-4449-543c-b661-95fa148a735e\" elementId=\"f23a7ce3-4449-543c-b661-95fa148a735e\" isImplied=\"true\" subsettingFeature=\"96af035d-1383-5477-8e9a-61f586d7eddc\">\n                <subsettedFeature href=\"../Kernel%20Semantic%20Library/Base.kermlx#3176ab6a-8d7b-5e14-b263-57bd30f77f78\" />\n              </ownedRelationship>\n              <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"3d2c7a5f-11d3-5155-a2aa-bd2a9ca194ce\" elementId=\"3d2c7a5f-11d3-5155-a2aa-bd2a9ca194ce\" isImplied=\"true\" featureOfType=\"96af035d-1383-5477-8e9a-61f586d7eddc\" featuringType=\"0faf5d9e-a55e-54b4-9e94-c39e9ecf560a\" />\n            </ownedRelatedElement>\n          "
+      },
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "1437b712-3673-507e-a849-18dd2445987b",
+        "kind": "BindingConnector",
+        "path": "ControlFunctions::.",
+        "xml": "<ownedRelatedElement xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:BindingConnector\" ns1:id=\"1437b712-3673-507e-a849-18dd2445987b\" elementId=\"1437b712-3673-507e-a849-18dd2445987b\" isImpliedIncluded=\"true\" isImplied=\"true\">\n                  <ownedRelationship xsi:type=\"sysml:FeatureMembership\" ns1:id=\"f3366963-daac-5dad-b735-9316cdcc09de\" elementId=\"f3366963-daac-5dad-b735-9316cdcc09de\">\n                    <ownedRelatedElement xsi:type=\"sysml:Feature\" ns1:id=\"40e32426-6891-5440-82c4-7b65d2b9d4f6\" elementId=\"40e32426-6891-5440-82c4-7b65d2b9d4f6\" isImpliedIncluded=\"true\" isEnd=\"true\">\n                      <ownedRelationship xsi:type=\"sysml:ReferenceSubsetting\" ns1:id=\"e06c68a8-7bb0-57e0-8675-68fcf39c0e9c\" elementId=\"e06c68a8-7bb0-57e0-8675-68fcf39c0e9c\" referencedFeature=\"96af035d-1383-5477-8e9a-61f586d7eddc\" />\n                      <ownedRelationship xsi:type=\"sysml:Redefinition\" ns1:id=\"93c78eab-637d-5511-957b-035337717018\" elementId=\"93c78eab-637d-5511-957b-035337717018\" isImplied=\"true\" redefiningFeature=\"40e32426-6891-5440-82c4-7b65d2b9d4f6\">\n                        <redefinedFeature href=\"../Kernel%20Semantic%20Library/Links.kermlx#62a34d15-e2ee-5001-8412-61fe7ff53890\" />\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"62ed716b-793a-5d1b-95c4-99f149696788\" elementId=\"62ed716b-793a-5d1b-95c4-99f149696788\" isImplied=\"true\" featureOfType=\"40e32426-6891-5440-82c4-7b65d2b9d4f6\" featuringType=\"1437b712-3673-507e-a849-18dd2445987b\" />\n                    </ownedRelatedElement>\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:FeatureMembership\" ns1:id=\"167abce4-6b78-51ee-bc66-841251be2154\" elementId=\"167abce4-6b78-51ee-bc66-841251be2154\">\n                    <ownedRelatedElement xsi:type=\"sysml:Feature\" ns1:id=\"399f094d-3e86-558f-b948-74d75ce9e76d\" elementId=\"399f094d-3e86-558f-b948-74d75ce9e76d\" isImpliedIncluded=\"true\" isEnd=\"true\">\n                      <ownedRelationship xsi:type=\"sysml:ReferenceSubsetting\" ns1:id=\"01588e7a-123e-5148-a282-7b36cde880af\" elementId=\"01588e7a-123e-5148-a282-7b36cde880af\" referencedFeature=\"d3f706b6-c10e-5a2f-ace7-a6ee92f57563\" />\n                      <ownedRelationship xsi:type=\"sysml:Redefinition\" ns1:id=\"6631fdfb-f5d3-53c6-9534-ecdfcaf0d8fd\" elementId=\"6631fdfb-f5d3-53c6-9534-ecdfcaf0d8fd\" isImplied=\"true\" redefiningFeature=\"399f094d-3e86-558f-b948-74d75ce9e76d\">\n                        <redefinedFeature href=\"../Kernel%20Semantic%20Library/Links.kermlx#a18980e2-a22e-53a9-8947-c358715d3c0b\" />\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"a9a85c94-8193-5edc-b011-407a32df4ec1\" elementId=\"a9a85c94-8193-5edc-b011-407a32df4ec1\" isImplied=\"true\" featureOfType=\"399f094d-3e86-558f-b948-74d75ce9e76d\" featuringType=\"1437b712-3673-507e-a849-18dd2445987b\" />\n                    </ownedRelatedElement>\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"26bf118d-c4a9-5015-adbc-2ac763c96612\" elementId=\"26bf118d-c4a9-5015-adbc-2ac763c96612\" isImplied=\"true\" subsettingFeature=\"1437b712-3673-507e-a849-18dd2445987b\">\n                    <subsettedFeature href=\"../Kernel%20Semantic%20Library/Links.kermlx#5c75806f-0abf-51c3-a80d-bbf5346a0f36\" />\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"1be95014-6ae1-512d-8d9d-a91745fdedc4\" elementId=\"1be95014-6ae1-512d-8d9d-a91745fdedc4\" isImplied=\"true\" featureOfType=\"1437b712-3673-507e-a849-18dd2445987b\" featuringType=\"0faf5d9e-a55e-54b4-9e94-c39e9ecf560a\" />\n                </ownedRelatedElement>\n              "
+      }
+    ]
+  },
+  "independently_evaluated": {
+    "required_raw_endpoints": true,
+    "result_subsets_referent": true,
+    "positional_result_redefinition": true,
+    "positional_end_redefinitions": true,
+    "chain_terminal_in_supertype_closure": true,
+    "existing_source_chain_conformance": true,
+    "contextual_result_chain_conformance": true,
+    "base_specializations_included": true,
+    "raw_result_is_variable": false,
+    "function_specializes_expression": false,
+    "expression_specializes_function": false,
+    "common_default_featuring_candidates": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+        "metaclass": "Function",
+        "path": "ControlFunctions::."
+      },
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+        "metaclass": "FeatureReferenceExpression",
+        "path": "ControlFunctions::."
+      }
+    ],
+    "valid_default_featuring_types": [],
+    "domain_truth_table": [
+      {
+        "domain": {
+          "file": "ControlFunctions.kermlx",
+          "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+          "metaclass": "Function",
+          "path": "ControlFunctions::."
+        },
+        "referent": true,
+        "raw_result": false
+      },
+      {
+        "domain": {
+          "file": "ControlFunctions.kermlx",
+          "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+          "metaclass": "FeatureReferenceExpression",
+          "path": "ControlFunctions::."
+        },
+        "referent": false,
+        "raw_result": true
+      }
+    ],
+    "empty_featuring_set_passes": false,
+    "reference_connector_type_featuring_passes": false
+  },
+  "counterfactual_authorized_145": {
+    "status": "independent proof object; no v6 implementation or accepted profile claimed",
+    "outer_connector_owner": {
+      "file": "ControlFunctions.kermlx",
+      "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+      "metaclass": "Function",
+      "path": "ControlFunctions::."
+    },
+    "outer_membership": "FeatureMembership",
+    "outer_featuring_types": [
+      {
+        "file": "ControlFunctions.kermlx",
+        "id": "0faf5d9e-a55e-54b4-9e94-c39e9ecf560a",
+        "metaclass": "Function",
+        "path": "ControlFunctions::."
+      }
+    ],
+    "outer_endpoints": [
+      {
+        "file": "Performances.kermlx",
+        "id": "d4c65e7a-f5cd-5e32-bb56-93a0cfa01d23",
+        "metaclass": "Feature",
+        "path": "Performances::Evaluation::result"
+      },
+      {
+        "role": "contextual-result",
+        "distinct_from_raw": true,
+        "chaining_features": [
+          {
+            "file": "ControlFunctions.kermlx",
+            "id": "bae21159-312d-5633-85d4-4d1a2507bdd5",
+            "metaclass": "FeatureReferenceExpression",
+            "path": "ControlFunctions::."
+          },
+          {
+            "file": "ControlFunctions.kermlx",
+            "id": "d3f706b6-c10e-5a2f-ace7-a6ee92f57563",
+            "metaclass": "Feature",
+            "path": "ControlFunctions::.::result"
+          }
+        ]
+      }
+    ],
+    "outer_connector_domain_passes": true,
+    "inner_connector_unchanged": true,
+    "inner_connector_domain_passes": false
+  },
+  "alternatives": [
+    {
+      "choice": "Contextualize the inner connector raw-result endpoint",
+      "effect": "Different canonical endpoint; violates the uncorrected includes(result) requirement and requires a sixth rule-family correction."
+    },
+    {
+      "choice": "Plain OwningMembership",
+      "effect": "Already used in reference XMI; removes forced expression ownership domain but does not create any common featuring type for these endpoints."
+    },
+    {
+      "choice": "Empty featuring types",
+      "effect": "Fails isFeaturedWithin(null) for the raw result and referent."
+    },
+    {
+      "choice": "Add Function-to-Expression specialization or an invented common subtype",
+      "effect": "Adds materially different semantics not implied by the source, positional rules, chain rules or any authorized correction."
+    },
+    {
+      "choice": "Change result ownership, identity, variable flag or weaken connector conformance",
+      "effect": "Contradicts other required structural semantics; not an inference completion."
+    }
+  ],
+  "editorial_note": "Published OCL uses targetFeature/relatedFeatures; the contradiction persists under the normative prose referent/relatedFeature interpretation.",
+  "excluded_corrections": [
+    "KERML11-81",
+    "KERML11-140",
+    "KERML11-76",
+    "KERML11-68",
+    "KERML11-205",
+    "KERML11-206",
+    "KERML11-207",
+    "five KERML11-145 rules"
+  ],
+  "no_execution_required": true,
+  "correction_authorized": false,
+  "correction_applied": false,
+  "accepted_publication": false
+}

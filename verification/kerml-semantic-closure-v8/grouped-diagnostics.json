@@ -1,0 +1,324 @@
+{
+  "format": "agentique-v8-grouped-diagnostics/1",
+  "groups": [
+    {
+      "family": "resolution",
+      "code": "KLS_UNRESOLVED",
+      "count": 4,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KLS_UNRESOLVED",
+          "message": "target at bytes 29454..29460; expression context: false",
+          "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KLS_UNRESOLVED",
+          "message": "HappensWhile::thatOccurrence at bytes 30717..30745; expression context: false",
+          "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KLS_UNRESOLVED",
+          "message": "source at bytes 29336..29342; expression context: false",
+          "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KLS_UNRESOLVED",
+          "message": "HappensWhile::thisOccurrence at bytes 30520..30548; expression context: false",
+          "subject": "c97c4841-b8ab-510f-b968-fc1423d577da",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "resolution",
+      "code": "KQ_CONSTRUCTION_OBLIGATION",
+      "count": 4,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KQ_CONSTRUCTION_OBLIGATION",
+          "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+          "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KQ_CONSTRUCTION_OBLIGATION",
+          "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+          "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KQ_CONSTRUCTION_OBLIGATION",
+          "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+          "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KQ_CONSTRUCTION_OBLIGATION",
+          "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+          "subject": "c97c4841-b8ab-510f-b968-fc1423d577da",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "resolution",
+      "code": "KQ_EVIDENCE",
+      "count": 4,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KQ_EVIDENCE",
+          "message": "MissingRequired { element: ElementId(118303703782503689993501325105459409336), property: PropertyId(265518105109923055411423219294112123986) }",
+          "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KQ_EVIDENCE",
+          "message": "MissingRequired { element: ElementId(136612936141172075344667242495288826864), property: PropertyId(265518105109923055411423219294112123986) }",
+          "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KQ_EVIDENCE",
+          "message": "MissingRequired { element: ElementId(225646662370126335970712112687688131790), property: PropertyId(265518105109923055411423219294112123986) }",
+          "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "resolution",
+          "code": "KQ_EVIDENCE",
+          "message": "MissingRequired { element: ElementId(267820137503700786351083541682787284954), property: PropertyId(265518105109923055411423219294112123986) }",
+          "subject": "c97c4841-b8ab-510f-b968-fc1423d577da",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "resolution",
+      "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+      "count": 2,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Observation.kerml",
+          "family": "resolution",
+          "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+          "message": "Effective owner typing is required to establish this antecedent",
+          "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Observation.kerml",
+          "family": "resolution",
+          "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+          "message": "Effective owner typing is required to establish this antecedent",
+          "subject": "7916664e-cad0-5522-91de-764b9b87abea",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "semantic",
+      "code": "KQ_AMBIGUOUS_IMPLIED_NAME",
+      "count": 1,
+      "findings": [
+        {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "family": "semantic",
+          "code": "KQ_AMBIGUOUS_IMPLIED_NAME",
+          "message": "Required implied redefinitions admit distinct effective names: {{\"result\"}, {\"u\"}}; KerML 1.0 8.4.2 and namingFeature do not prescribe their mutual insertion order",
+          "subject": "2e381a08-3ad4-530e-b59f-e1b349515814",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "semantic",
+      "code": "KQ_CONSTRUCTION_OBLIGATION",
+      "count": 4,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_CONSTRUCTION_OBLIGATION",
+          "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+          "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_CONSTRUCTION_OBLIGATION",
+          "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+          "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_CONSTRUCTION_OBLIGATION",
+          "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+          "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_CONSTRUCTION_OBLIGATION",
+          "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+          "subject": "c97c4841-b8ab-510f-b968-fc1423d577da",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "semantic",
+      "code": "KQ_EVIDENCE",
+      "count": 4,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_EVIDENCE",
+          "message": "MissingRequired { element: ElementId(118303703782503689993501325105459409336), property: PropertyId(265518105109923055411423219294112123986) }",
+          "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_EVIDENCE",
+          "message": "MissingRequired { element: ElementId(136612936141172075344667242495288826864), property: PropertyId(265518105109923055411423219294112123986) }",
+          "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_EVIDENCE",
+          "message": "MissingRequired { element: ElementId(225646662370126335970712112687688131790), property: PropertyId(265518105109923055411423219294112123986) }",
+          "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_EVIDENCE",
+          "message": "MissingRequired { element: ElementId(267820137503700786351083541682787284954), property: PropertyId(265518105109923055411423219294112123986) }",
+          "subject": "c97c4841-b8ab-510f-b968-fc1423d577da",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "semantic",
+      "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+      "count": 2,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Observation.kerml",
+          "family": "semantic",
+          "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+          "message": "Effective owner typing is required to establish this antecedent",
+          "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Observation.kerml",
+          "family": "semantic",
+          "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+          "message": "Effective owner typing is required to establish this antecedent",
+          "subject": "7916664e-cad0-5522-91de-764b9b87abea",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "semantic",
+      "code": "KQ_REDEFINITION_ENDPOINT",
+      "count": 4,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_REDEFINITION_ENDPOINT",
+          "message": "End conformance requires both canonical endpoints",
+          "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_REDEFINITION_ENDPOINT",
+          "message": "End conformance requires both canonical endpoints",
+          "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_REDEFINITION_ENDPOINT",
+          "message": "End conformance requires both canonical endpoints",
+          "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Occurrences.kerml",
+          "family": "semantic",
+          "code": "KQ_REDEFINITION_ENDPOINT",
+          "message": "End conformance requires both canonical endpoints",
+          "subject": "c97c4841-b8ab-510f-b968-fc1423d577da",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    },
+    {
+      "family": "semantic",
+      "code": "validateNamespaceDistinguishibility",
+      "count": 2,
+      "findings": [
+        {
+          "document": "Kernel Semantic Library/Triggers.kerml",
+          "family": "semantic",
+          "code": "validateNamespaceDistinguishibility",
+          "message": "Name \"signal\" identifies comparable members 28971587-d46f-5a87-989a-e83ee4f87fa9 and bd7f230d-14ac-52e2-9342-c94a13c80fc1 through memberships 148b03fa-d657-5895-9a98-58d7d72385be and 5296c57a-0be4-59b6-be1f-665fe74029a6",
+          "subject": "4a74747a-c385-5a89-89c8-be2fadaa9ecb",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        },
+        {
+          "document": "Kernel Semantic Library/Triggers.kerml",
+          "family": "semantic",
+          "code": "validateNamespaceDistinguishibility",
+          "message": "Name \"signal\" identifies comparable members bd7f230d-14ac-52e2-9342-c94a13c80fc1 and 56339403-976c-5381-8f78-18e15777f41b through memberships 5296c57a-0be4-59b6-be1f-665fe74029a6 and 778b6d60-cb70-51cb-b052-8a548caefa7d",
+          "subject": "518b9181-2fd8-5bfa-953c-3292058bc119",
+          "disposition": "Ordinary structural implementation obligation; no execution deferral or additional authority conflict is inferred."
+        }
+      ]
+    }
+  ],
+  "independently_reproduced_authority_conflict": "feature-reference-authority-conflict.json"
+}

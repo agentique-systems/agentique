@@ -1,0 +1,23 @@
+{
+  "format": "agentique-v8-publication-status/1",
+  "accepted": false,
+  "authority_stop": "KLCV8-F-001",
+  "v6_implemented": false,
+  "accepted_snapshot": null,
+  "accepted_bindings": null,
+  "loaded_kerml_standard_libraries": null,
+  "authored_accepted_library_consumption": false,
+  "blocked_gates": [
+    "v6 canonical result corrections",
+    "all complete references",
+    "full structural validation",
+    "feature-chain and positional closure",
+    "formal coverage",
+    "strict language-semantic acceptance",
+    "accepted binding generation",
+    "accepted immutable facade",
+    "authored accepted-library integration"
+  ],
+  "construction_is_not_acceptance": true,
+  "runtime_evaluation_required": false
+}

@@ -1,0 +1,1 @@
+{"format": "agentique-v8-lossless-export/1", "path": "declarations-v5.json.gz", "archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2", "archive_bytes": 8325539, "sha256": "9f3a9021913a7a05798f19e363d32658a9bc19d4317a373c6d3d5b7c3583dd7a", "bytes": 101722073, "fresh_command": "declarations-v5/result.json", "byte_equal_to_historical_v7": true}

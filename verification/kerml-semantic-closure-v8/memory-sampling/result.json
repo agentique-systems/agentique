@@ -1,0 +1,14 @@
+{
+  "command": [
+    "powershell",
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "verification/kerml-semantic-closure-v8/memory.ps1"
+  ],
+  "started": "2026-09-20T03:36:50.652998+00:00",
+  "duration_seconds": 862.265000000014,
+  "exit_code": 0,
+  "output": "output.txt"
+}

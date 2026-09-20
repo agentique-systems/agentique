@@ -1,0 +1,33 @@
+{
+  "restored": [
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/authority-stop.json",
+      "preserved_sha256": "f7323df3feaf2047ab5f4fdce116ea49ef712c1e24db32c28eb525f914745e17",
+      "replay_output": "historical-replay-outputs/authority-stop.json",
+      "replay_sha256": "26447a03af40585c4ea4c22f4271985327d5867c4daadf78d54fdd05ddf57366",
+      "json_value_equal": true
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/four-model-witnesses.json",
+      "preserved_sha256": "ea899ccff4aed266cdd537ac132b1f62aa55ef5358919286f4744fc83f6eabc8",
+      "replay_output": "historical-replay-outputs/four-model-witnesses.json",
+      "replay_sha256": "55d374060977f14c777da63fc72ed3ab8517468b1bcbbb46ad1e7d21314b1213",
+      "json_value_equal": true
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/operational-patch-diff.json",
+      "preserved_sha256": "19ae6385da74f8be265f5e5cdd3d45a772da9ad6a9135f009a7bacf47e0d7148",
+      "replay_output": "historical-replay-outputs/operational-patch-diff.json",
+      "replay_sha256": "542310792b694119967a5cdae8e5447d161ff1c18b1bab5b899cafe62e961344",
+      "json_value_equal": true
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/source-assertion-diff.json",
+      "preserved_sha256": "f62931dbb3df21f21099dd2065cf8f2802a681c6766b45a2f5f094a973c31956",
+      "replay_output": "historical-replay-outputs/source-assertion-diff.json",
+      "replay_sha256": "122d913f2d90ac709044209ba82576b776d0d10a6ca76450a866e0081ca9773f",
+      "json_value_equal": true
+    }
+  ],
+  "historical_bytes_unchanged_after_replay": true
+}

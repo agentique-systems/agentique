@@ -181,3 +181,29 @@ KERML11-145, 182, 210 or other open issues. The new independent
 [result-binding conflict](kerml-result-binding-authority-conflict.md), exercised by
 the pinned ControlFunctions library, prevents strict publication. Profile
 availability and passing runtime gates do not constitute accepted libraries.
+
+## V8 preflight: authorized v6 result-domain design, separate authority stop
+
+The subsequent v8 task explicitly authorizes the five rule families in open
+KERML11-145. This supersedes the v7 authorization boundary for those five rules;
+it does not rewrite any historical profile or verification record. The
+[five-rule matrix](../verification/kerml-semantic-closure-v8/authority-matrix.json)
+and [ADR 0018](adr/0018-operational-result-domain-corrections.md) record the exact
+published authority, contextual-result direction, ownership/domain obligations
+and differences from the current reference implementation.
+
+The mandatory early authority sweep independently reproduces
+[KLCV8-F-001 / KERML11-8](kerml-feature-reference-binding-authority-conflict.md)
+on the inner FeatureReferenceExpression connector of the same pinned
+ControlFunctions declaration. It persists with complete local result, chain,
+positional and base inference, including after the separately authorized outer
+Function contextual-result correction is represented in the independent proof.
+Changing this inner connector requires a sixth rule-family correction.
+
+There is therefore **no registered operational v6 profile or immutable v6
+manifest yet**. Published and v1–v5 remain the implemented profiles; the default
+remains v2. No accepted bindings, library facade or authored accepted-library
+dependency is exposed. The
+[258-rule authority map](../standards/kerml-1.0-constraint-authority-map.json)
+records the early conflict and other unapproved risk metadata. It is a preflight
+inventory, not a closed validation or publication gate.

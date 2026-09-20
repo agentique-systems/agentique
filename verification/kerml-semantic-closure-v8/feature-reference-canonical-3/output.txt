@@ -1,0 +1,19 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.47s
+     Running tests\feature_reference_authority_v8.rs (target\debug\deps\feature_reference_authority_v8-a9ede79d73c50983.exe)
+
+running 1 test
+
+thread 'contextual_outer_binding_does_not_repair_the_separate_raw_reference_binding' (23944) panicked at crates\kerml-semantics\tests\common/namespace_fixture.rs:194:40:
+called `Result::unwrap()` on an `Err` value: Multiplicity { element: ElementId(133), property: PropertyId(190932847375638412068673614431704336716), required: Multiplicity { lower: 1, upper: Some(1) }, actual: 0 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test contextual_outer_binding_does_not_repair_the_separate_raw_reference_binding ... FAILED
+
+failures:
+
+failures:
+    contextual_outer_binding_does_not_repair_the_separate_raw_reference_binding
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p agq-kerml-semantics --test feature_reference_authority_v8`

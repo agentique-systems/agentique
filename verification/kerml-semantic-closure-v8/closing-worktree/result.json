@@ -1,0 +1,11 @@
+{
+  "command": [
+    "git",
+    "status",
+    "--short"
+  ],
+  "started": "2026-09-20T03:54:57.292656+00:00",
+  "duration_seconds": 0.03200000000651926,
+  "exit_code": 0,
+  "output": "output.txt"
+}

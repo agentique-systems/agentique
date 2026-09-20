@@ -1,0 +1,604 @@
+﻿[
+    {
+        "sampled_at":  "2026-09-20T03:36:50.9849977Z",
+        "process_id":  10232,
+        "working_set":  634884096,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  656142336
+    },
+    {
+        "sampled_at":  "2026-09-20T03:37:01.0684741Z",
+        "process_id":  10232,
+        "working_set":  648044544,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  668987392
+    },
+    {
+        "sampled_at":  "2026-09-20T03:37:11.0872090Z",
+        "process_id":  10232,
+        "working_set":  640507904,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  673411072
+    },
+    {
+        "sampled_at":  "2026-09-20T03:37:21.1103365Z",
+        "process_id":  10232,
+        "working_set":  638558208,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  669757440
+    },
+    {
+        "sampled_at":  "2026-09-20T03:37:31.1346482Z",
+        "process_id":  10232,
+        "working_set":  629207040,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  656920576
+    },
+    {
+        "sampled_at":  "2026-09-20T03:37:41.1508329Z",
+        "process_id":  10232,
+        "working_set":  632537088,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  658124800
+    },
+    {
+        "sampled_at":  "2026-09-20T03:37:51.1669273Z",
+        "process_id":  10232,
+        "working_set":  630915072,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  655171584
+    },
+    {
+        "sampled_at":  "2026-09-20T03:38:01.1791111Z",
+        "process_id":  10232,
+        "working_set":  632061952,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  654987264
+    },
+    {
+        "sampled_at":  "2026-09-20T03:38:11.2053703Z",
+        "process_id":  10232,
+        "working_set":  646733824,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  669560832
+    },
+    {
+        "sampled_at":  "2026-09-20T03:38:21.2166939Z",
+        "process_id":  10232,
+        "working_set":  622739456,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  660770816
+    },
+    {
+        "sampled_at":  "2026-09-20T03:38:31.2369671Z",
+        "process_id":  10232,
+        "working_set":  650297344,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  681553920
+    },
+    {
+        "sampled_at":  "2026-09-20T03:38:41.2580360Z",
+        "process_id":  10232,
+        "working_set":  631947264,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  658452480
+    },
+    {
+        "sampled_at":  "2026-09-20T03:38:51.2743719Z",
+        "process_id":  10232,
+        "working_set":  646877184,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  672829440
+    },
+    {
+        "sampled_at":  "2026-09-20T03:39:01.2947213Z",
+        "process_id":  10232,
+        "working_set":  657530880,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  681799680
+    },
+    {
+        "sampled_at":  "2026-09-20T03:39:11.3149690Z",
+        "process_id":  10232,
+        "working_set":  650248192,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  673628160
+    },
+    {
+        "sampled_at":  "2026-09-20T03:39:21.3296724Z",
+        "process_id":  10232,
+        "working_set":  640299008,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  662605824
+    },
+    {
+        "sampled_at":  "2026-09-20T03:39:31.3491278Z",
+        "process_id":  10232,
+        "working_set":  577765376,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  604966912
+    },
+    {
+        "sampled_at":  "2026-09-20T03:39:41.3678243Z",
+        "process_id":  10232,
+        "working_set":  671817728,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  703221760
+    },
+    {
+        "sampled_at":  "2026-09-20T03:39:51.3925202Z",
+        "process_id":  10232,
+        "working_set":  642883584,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  669839360
+    },
+    {
+        "sampled_at":  "2026-09-20T03:40:01.4079053Z",
+        "process_id":  10232,
+        "working_set":  648302592,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  674168832
+    },
+    {
+        "sampled_at":  "2026-09-20T03:40:11.4278052Z",
+        "process_id":  10232,
+        "working_set":  651984896,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  677679104
+    },
+    {
+        "sampled_at":  "2026-09-20T03:40:21.4479445Z",
+        "process_id":  10232,
+        "working_set":  662446080,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  687312896
+    },
+    {
+        "sampled_at":  "2026-09-20T03:40:31.4725952Z",
+        "process_id":  10232,
+        "working_set":  686809088,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  711802880
+    },
+    {
+        "sampled_at":  "2026-09-20T03:40:41.5009607Z",
+        "process_id":  10232,
+        "working_set":  557928448,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  587603968
+    },
+    {
+        "sampled_at":  "2026-09-20T03:40:51.5251613Z",
+        "process_id":  10232,
+        "working_set":  640135168,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  671154176
+    },
+    {
+        "sampled_at":  "2026-09-20T03:41:01.5382454Z",
+        "process_id":  10232,
+        "working_set":  643207168,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  672354304
+    },
+    {
+        "sampled_at":  "2026-09-20T03:41:11.5521517Z",
+        "process_id":  10232,
+        "working_set":  659398656,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  686395392
+    },
+    {
+        "sampled_at":  "2026-09-20T03:41:21.5675203Z",
+        "process_id":  10232,
+        "working_set":  647852032,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  672587776
+    },
+    {
+        "sampled_at":  "2026-09-20T03:41:31.5932357Z",
+        "process_id":  10232,
+        "working_set":  654999552,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  679186432
+    },
+    {
+        "sampled_at":  "2026-09-20T03:41:41.6094166Z",
+        "process_id":  10232,
+        "working_set":  656797696,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  680296448
+    },
+    {
+        "sampled_at":  "2026-09-20T03:41:51.6282968Z",
+        "process_id":  10232,
+        "working_set":  620699648,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  655478784
+    },
+    {
+        "sampled_at":  "2026-09-20T03:42:01.6496500Z",
+        "process_id":  10232,
+        "working_set":  629252096,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  660586496
+    },
+    {
+        "sampled_at":  "2026-09-20T03:42:11.6733079Z",
+        "process_id":  10232,
+        "working_set":  647286784,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  675565568
+    },
+    {
+        "sampled_at":  "2026-09-20T03:42:21.6883260Z",
+        "process_id":  10232,
+        "working_set":  641159168,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  667623424
+    },
+    {
+        "sampled_at":  "2026-09-20T03:42:31.7137416Z",
+        "process_id":  10232,
+        "working_set":  653971456,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  679104512
+    },
+    {
+        "sampled_at":  "2026-09-20T03:42:41.7274170Z",
+        "process_id":  10232,
+        "working_set":  658509824,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  683368448
+    },
+    {
+        "sampled_at":  "2026-09-20T03:42:51.7479896Z",
+        "process_id":  10232,
+        "working_set":  656896000,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  681537536
+    },
+    {
+        "sampled_at":  "2026-09-20T03:43:01.7760845Z",
+        "process_id":  10232,
+        "working_set":  645603328,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  678936576
+    },
+    {
+        "sampled_at":  "2026-09-20T03:43:11.8031153Z",
+        "process_id":  10232,
+        "working_set":  656945152,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  686768128
+    },
+    {
+        "sampled_at":  "2026-09-20T03:43:21.8266313Z",
+        "process_id":  10232,
+        "working_set":  683356160,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  712646656
+    },
+    {
+        "sampled_at":  "2026-09-20T03:43:31.8703557Z",
+        "process_id":  10232,
+        "working_set":  652681216,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  679870464
+    },
+    {
+        "sampled_at":  "2026-09-20T03:43:41.8913768Z",
+        "process_id":  10232,
+        "working_set":  658169856,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  684822528
+    },
+    {
+        "sampled_at":  "2026-09-20T03:43:51.9131977Z",
+        "process_id":  10232,
+        "working_set":  655454208,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  680550400
+    },
+    {
+        "sampled_at":  "2026-09-20T03:44:01.9278832Z",
+        "process_id":  10232,
+        "working_set":  651997184,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  676229120
+    },
+    {
+        "sampled_at":  "2026-09-20T03:44:11.9548388Z",
+        "process_id":  10232,
+        "working_set":  645267456,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  682049536
+    },
+    {
+        "sampled_at":  "2026-09-20T03:44:21.9725556Z",
+        "process_id":  10232,
+        "working_set":  680308736,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  712396800
+    },
+    {
+        "sampled_at":  "2026-09-20T03:44:31.9946286Z",
+        "process_id":  10232,
+        "working_set":  668016640,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  698441728
+    },
+    {
+        "sampled_at":  "2026-09-20T03:44:42.0162183Z",
+        "process_id":  10232,
+        "working_set":  661278720,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  689901568
+    },
+    {
+        "sampled_at":  "2026-09-20T03:44:52.0322503Z",
+        "process_id":  10232,
+        "working_set":  660434944,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  687706112
+    },
+    {
+        "sampled_at":  "2026-09-20T03:45:02.0505038Z",
+        "process_id":  10232,
+        "working_set":  664780800,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  691027968
+    },
+    {
+        "sampled_at":  "2026-09-20T03:45:12.0753212Z",
+        "process_id":  10232,
+        "working_set":  674062336,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  699899904
+    },
+    {
+        "sampled_at":  "2026-09-20T03:45:22.0992986Z",
+        "process_id":  10232,
+        "working_set":  403693568,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  419217408
+    },
+    {
+        "sampled_at":  "2026-09-20T03:45:32.1262792Z",
+        "process_id":  10232,
+        "working_set":  614346752,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  643137536
+    },
+    {
+        "sampled_at":  "2026-09-20T03:45:42.1410921Z",
+        "process_id":  10232,
+        "working_set":  675434496,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  707284992
+    },
+    {
+        "sampled_at":  "2026-09-20T03:45:52.1641949Z",
+        "process_id":  10232,
+        "working_set":  662937600,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  691343360
+    },
+    {
+        "sampled_at":  "2026-09-20T03:46:02.1912853Z",
+        "process_id":  10232,
+        "working_set":  660328448,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  687198208
+    },
+    {
+        "sampled_at":  "2026-09-20T03:46:12.2138999Z",
+        "process_id":  10232,
+        "working_set":  672931840,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  699359232
+    },
+    {
+        "sampled_at":  "2026-09-20T03:46:22.2426796Z",
+        "process_id":  10232,
+        "working_set":  666824704,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  691867648
+    },
+    {
+        "sampled_at":  "2026-09-20T03:46:32.2854061Z",
+        "process_id":  10232,
+        "working_set":  664072192,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  688898048
+    },
+    {
+        "sampled_at":  "2026-09-20T03:46:42.3092915Z",
+        "process_id":  10232,
+        "working_set":  647385088,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  680144896
+    },
+    {
+        "sampled_at":  "2026-09-20T03:46:52.3341506Z",
+        "process_id":  10232,
+        "working_set":  658329600,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  688717824
+    },
+    {
+        "sampled_at":  "2026-09-20T03:47:02.3511159Z",
+        "process_id":  10232,
+        "working_set":  660353024,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  689225728
+    },
+    {
+        "sampled_at":  "2026-09-20T03:47:12.3783204Z",
+        "process_id":  10232,
+        "working_set":  672583680,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  700502016
+    },
+    {
+        "sampled_at":  "2026-09-20T03:47:22.4029455Z",
+        "process_id":  10232,
+        "working_set":  667676672,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  694165504
+    },
+    {
+        "sampled_at":  "2026-09-20T03:47:32.4164152Z",
+        "process_id":  10232,
+        "working_set":  669384704,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  694546432
+    },
+    {
+        "sampled_at":  "2026-09-20T03:47:42.4433021Z",
+        "process_id":  10232,
+        "working_set":  669102080,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  693559296
+    },
+    {
+        "sampled_at":  "2026-09-20T03:47:52.4668957Z",
+        "process_id":  10232,
+        "working_set":  650911744,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  682496000
+    },
+    {
+        "sampled_at":  "2026-09-20T03:48:02.4863353Z",
+        "process_id":  10232,
+        "working_set":  664600576,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  696401920
+    },
+    {
+        "sampled_at":  "2026-09-20T03:48:12.5061058Z",
+        "process_id":  10232,
+        "working_set":  674643968,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  705224704
+    },
+    {
+        "sampled_at":  "2026-09-20T03:48:22.5330135Z",
+        "process_id":  10232,
+        "working_set":  667271168,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  696066048
+    },
+    {
+        "sampled_at":  "2026-09-20T03:48:32.5463685Z",
+        "process_id":  10232,
+        "working_set":  674697216,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  702156800
+    },
+    {
+        "sampled_at":  "2026-09-20T03:48:42.5710502Z",
+        "process_id":  10232,
+        "working_set":  671563776,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  698224640
+    },
+    {
+        "sampled_at":  "2026-09-20T03:48:52.5929310Z",
+        "process_id":  10232,
+        "working_set":  669360128,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  694931456
+    },
+    {
+        "sampled_at":  "2026-09-20T03:49:02.6140965Z",
+        "process_id":  10232,
+        "working_set":  600178688,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  635891712
+    },
+    {
+        "sampled_at":  "2026-09-20T03:49:12.6396067Z",
+        "process_id":  10232,
+        "working_set":  650379264,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  684167168
+    },
+    {
+        "sampled_at":  "2026-09-20T03:49:22.6679945Z",
+        "process_id":  10232,
+        "working_set":  658087936,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  689086464
+    },
+    {
+        "sampled_at":  "2026-09-20T03:49:32.6957428Z",
+        "process_id":  10232,
+        "working_set":  765120512,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  796561408
+    },
+    {
+        "sampled_at":  "2026-09-20T03:49:42.7123960Z",
+        "process_id":  10232,
+        "working_set":  710074368,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  739835904
+    },
+    {
+        "sampled_at":  "2026-09-20T03:49:52.7357565Z",
+        "process_id":  10232,
+        "working_set":  587116544,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  626061312
+    },
+    {
+        "sampled_at":  "2026-09-20T03:50:02.7611385Z",
+        "process_id":  10232,
+        "working_set":  585695232,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  615763968
+    },
+    {
+        "sampled_at":  "2026-09-20T03:50:12.7764289Z",
+        "process_id":  10232,
+        "working_set":  714080256,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  745086976
+    },
+    {
+        "sampled_at":  "2026-09-20T03:50:22.7997080Z",
+        "process_id":  10232,
+        "working_set":  711884800,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  741031936
+    },
+    {
+        "sampled_at":  "2026-09-20T03:50:32.8189185Z",
+        "process_id":  10232,
+        "working_set":  700764160,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  727023616
+    },
+    {
+        "sampled_at":  "2026-09-20T03:50:42.8443075Z",
+        "process_id":  10232,
+        "working_set":  697233408,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  722481152
+    },
+    {
+        "sampled_at":  "2026-09-20T03:50:52.8690320Z",
+        "process_id":  10232,
+        "working_set":  697962496,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  721674240
+    },
+    {
+        "sampled_at":  "2026-09-20T03:51:02.8863667Z",
+        "process_id":  10232,
+        "working_set":  713560064,
+        "peak_working_set_since_process_start":  876982272,
+        "private_bytes":  735887360
+    }
+]

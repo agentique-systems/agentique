@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--test",
+    "feature_reference_authority_v8",
+    "--",
+    "--nocapture"
+  ],
+  "started": "2026-09-20T03:32:09.299733+00:00",
+  "duration_seconds": 1.7349999999860302,
+  "exit_code": 0,
+  "output": "output.txt"
+}

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v8/canonical-source-witness.py"
+  ],
+  "started": "2026-09-20T03:40:02.197201+00:00",
+  "duration_seconds": 1.2959999999729916,
+  "exit_code": 0,
+  "output": "output.txt"
+}

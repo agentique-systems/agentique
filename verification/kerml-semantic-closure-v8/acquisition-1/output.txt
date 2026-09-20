@@ -1,0 +1,35 @@
+issues/KerML-all.html 1966571
+issues/KERML11-145.html 12403
+issues/KERML11-8.html 11422
+pilot-head.json 69731
+pilot/FeatureAdapter.java 32558
+pilot/ExpressionAdapter.java 4666
+pilot/FunctionAdapter.java 1379
+pilot/TypeAdapter.java 22075
+pilot/IndexExpressionAdapter.java 2329
+pilot/SelectExpressionAdapter.java 1965
+pilot/FeatureReferenceExpressionAdapter.java 3293
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-semantic-closure-v8\acquire.py", line 49, in <module>
+    acquire(f'pilot/{name}.java', f'https://raw.githubusercontent.com/{repo}/{head}/{path}')
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-semantic-closure-v8\acquire.py", line 23, in acquire
+    with urllib.request.urlopen(request, timeout=45) as response:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\urllib\request.py", line 215, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\urllib\request.py", line 521, in open
+    response = meth(req, response)
+               ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\urllib\request.py", line 630, in http_response
+    response = self.parent.error(
+               ^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\urllib\request.py", line 559, in error
+    return self._call_chain(*args)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\urllib\request.py", line 492, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\urllib\request.py", line 639, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
