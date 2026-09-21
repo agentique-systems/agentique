@@ -268,7 +268,9 @@ fn strict_publication(draft: &LibraryDraft) -> Value {
             link.association(),
             link.ends().clone(),
             link.positions().clone(),
-            link.origin().clone(),
+            link.declared_origin()
+                .expect("declared library construction")
+                .clone(),
         );
     }
     let attempt = empty.apply(&changes);

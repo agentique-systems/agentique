@@ -13,6 +13,23 @@ use std::{collections::BTreeSet, path::Path, sync::Arc};
 fn id(text: &str) -> ElementId {
     ElementId::from_u128(u128::from_str_radix(&text.replace('-', ""), 16).unwrap())
 }
+// This example reports producer status, never aggregate query answers. Canonical
+// per-fact explanations remain in the plan; release redundant diagnostic-query
+// proof populations before merging the next bounded batch.
+fn status_plan<'m>(
+    q: &KerMlQueries<'m>,
+    batch: &[ElementId],
+) -> agq_kerml_semantics::ResultStructurePlan<'m> {
+    let mut plan = q.plan_result_structure(batch.iter().copied());
+    plan.production.explanations.clear();
+    plan.production.fact_origins.clear();
+    plan.production.declared_fact_origins.clear();
+    plan.production.canonical_dependencies.clear();
+    plan.production.positive_dependencies.clear();
+    plan.production.search_dependencies.clear();
+    plan.contextual_results.clear();
+    plan
+}
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
@@ -45,7 +62,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             link.association(),
             link.ends().clone(),
             link.positions().clone(),
-            link.origin().clone(),
+            link.declared_origin()
+                .expect("declared library construction")
+                .clone(),
         );
     }
     let snapshot = empty.apply(&changes)?;
@@ -106,7 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut plan = q.plan_result_structure([]);
     for batch in subjects.chunks(64) {
         let q = KerMlQueries::new(context.fork());
-        plan.merge(q.plan_result_structure(batch.iter().copied()))?;
+        plan.merge(status_plan(&q, batch))?;
     }
     println!(
         "Focused document plan: {} derived records; {:?}; {:?}",
@@ -114,7 +133,77 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         plan.production.completeness,
         plan.production.diagnostics
     );
-    let derived = plan.materialize(&snapshot)?;
+    let mut derived = plan.materialize(&snapshot)?;
+    let staged = std::env::args().any(|arg| arg == "--staged");
+    let mut stages = vec![];
+    let mut closed = false;
+    if staged {
+        for stage in 1..=8 {
+            let input_count = derived.overlay.model().len();
+            let next = SemanticContext::for_overlay(
+                &derived.overlay,
+                context.id().options.clone(),
+                context.id().pinned_libraries.clone(),
+            )
+            .and_then(|c| c.with_available_roots((*context.id().available_roots).clone()))
+            .map_err(|e| format!("{e:?}"))?
+            .with_standard_bindings(
+                draft.roots(),
+                original.standard_bindings.as_ref().unwrap().library_set(),
+            )
+            .map_err(|e| format!("{e:?}"))?
+            .with_formal_constraint_targets(
+                draft.roots(),
+                original.standard_bindings.as_ref().unwrap().library(),
+            );
+            let q = KerMlQueries::new(next.fork());
+            let mut plan = q.plan_result_structure([]);
+            let stage_subjects: Vec<_> = subjects
+                .iter()
+                .copied()
+                .chain(
+                    derived
+                        .overlay
+                        .model()
+                        .elements()
+                        .filter(|r| matches!(r.origin(), Origin::Derived(_)))
+                        .map(|r| r.id()),
+                )
+                .collect();
+            for batch in stage_subjects.chunks(32) {
+                let q = KerMlQueries::new(next.fork());
+                plan.merge(status_plan(&q, batch))?;
+            }
+            let result = plan.materialize_on_overlay(&derived.overlay)?;
+            let output_count = result.overlay.model().len();
+            let stable = result.overlay.facts().eq(derived.overlay.facts())
+                && result
+                    .overlay
+                    .model()
+                    .elements()
+                    .eq(derived.overlay.model().elements())
+                && result
+                    .overlay
+                    .model()
+                    .association_occurrences()
+                    .eq(derived.overlay.model().association_occurrences());
+            println!(
+                "Focused stage {stage}: {} new elements; {:?}; {:?}",
+                output_count - input_count,
+                result.production.completeness,
+                result.production.diagnostics
+            );
+            stages.push(
+                json!({"stage":stage,"added_elements":output_count-input_count,
+                "complete":result.production.completeness == Completeness::Complete}),
+            );
+            derived = result;
+            if stable {
+                closed = derived.production.completeness == Completeness::Complete;
+                break;
+            }
+        }
+    }
     let expanded = SemanticContext::for_overlay(
         &derived.overlay,
         context.id().options.clone(),
@@ -132,7 +221,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         original.standard_bindings.as_ref().unwrap().library(),
     );
     let mut rows = vec![];
-    let mut failures = 0;
+    let mut failures = usize::from(staged && !closed);
+    let mut capability_failures = vec![];
+    if staged {
+        let all_subjects: Vec<_> = subjects
+            .iter()
+            .copied()
+            .chain(
+                derived
+                    .overlay
+                    .model()
+                    .elements()
+                    .filter(|r| matches!(r.origin(), Origin::Derived(_)))
+                    .map(|r| r.id()),
+            )
+            .collect();
+        for (index, batch) in all_subjects.chunks(32).enumerate() {
+            let q = KerMlQueries::new(expanded.fork());
+            let audit = q.audit_publication_capabilities(batch.iter().copied());
+            for (family, diagnostics) in audit.failures {
+                for diagnostic in diagnostics {
+                    capability_failures.push(json!({"family":format!("{family:?}"),"code":diagnostic.code,"subject":diagnostic.subject.to_string(),"message":diagnostic.message}));
+                }
+            }
+            if index % 8 == 0 || (index + 1) * 32 >= all_subjects.len() {
+                println!(
+                    "Focused capability audit: {}/{} subjects; {} findings",
+                    ((index + 1) * 32).min(all_subjects.len()),
+                    all_subjects.len(),
+                    capability_failures.len()
+                );
+            }
+        }
+        failures += capability_failures.len();
+    }
     let mut namespace_rows = vec![];
     for r in draft
         .references()
@@ -296,7 +418,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             })
             .collect(),
     };
-    for batch in subjects.chunks(16) {
+    let conformance_requested = std::env::args().any(|a| a == "--conformance");
+    for batch in subjects.chunks(16).filter(|_| conformance_requested) {
         let q = KerMlQueries::new(expanded.fork());
         for &subject in batch {
             let record = derived.overlay.model().element(subject).unwrap();
@@ -324,7 +447,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    let conformance = json!({"format":"agentique-kerml-conformance-report/1", "scope":"FocusedDocumentPartialOverlay",
+    let conformance = json!({"format":"agentique-kerml-conformance-report/1", "scope":"FocusedDocumentPartialOverlay", "executed":conformance_requested,
         "profile":report.context.baseline_profile_id, "coverage":format!("{:?}",report.coverage.status()),
         "checked":report.coverage.checked, "deferred_by_phase":report.coverage.deferred_by_phase,
         "authority_conflicts":report.authority_conflicts.keys().map(|issue|json!({"issue":issue,"impact":"ValidationOnlyAuthorityConflict"})).collect::<Vec<_>>(),
@@ -348,11 +471,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "profile":BaselineProfile::OPERATIONAL_V8.id(), "verified_input_set":sources.content_set_id(),
             "library_set":original.standard_bindings.as_ref().unwrap().library_set().artifacts.iter().map(|(artifact, library)|
                 json!({"artifact":artifact.resource(), "library":library.to_string()})).collect::<Vec<_>>(),
-            "scope":"FocusedDocumentPartialOverlay", "full_expansion":false,
+            "scope":"FocusedDocumentPartialOverlay", "full_expansion":false, "stages":stages,"focused_producer_closure":closed,
             "source_records":snapshot.model().elements().count(),
             "derived_records":derived.overlay.model().elements().count()-snapshot.model().elements().count(),
             "total_mandatory_references":draft.references().len(),"reference_findings":rows,
-            "effective_namespaces":namespace_rows,"focused_failures":failures,
+            "effective_namespaces":namespace_rows,"focused_failures":failures,"capability_failures":capability_failures,
             "self_link_domain_passed":true,"import_collision_witnesses_passed":witnesses["collisions"].as_array().unwrap().len(),
             "validated_binding_roles":original.standard_bindings.as_ref().unwrap().iter().count(),
             "producer_complete":derived.production.completeness == Completeness::Complete, "producer_diagnostics":diagnostics,

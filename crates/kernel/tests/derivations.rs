@@ -7,6 +7,168 @@ use common::*;
 use std::collections::BTreeSet;
 
 const RULE: RuleId = RuleId::from_u128(1);
+
+#[test]
+fn shared_input_preserves_identity_evidence_and_caller_allocation() {
+    use std::sync::Arc;
+    let snapshot = vertical();
+    let output = key(VEHICLE);
+    let proof = Arc::new(evidence(&[]));
+    let mut shared = DerivationBuilder::new(snapshot.clone());
+    shared.element_with_explanation(output, PART_DEF, [(NAME, text("derived"))], proof.clone());
+    let shared = shared.build().unwrap();
+    assert!(
+        proof.dependencies.is_empty(),
+        "automatic evidence must not mutate caller input"
+    );
+    let mut owned = DerivationBuilder::new(snapshot.clone());
+    owned.element(output, PART_DEF, [(NAME, text("derived"))], BTreeSet::new());
+    let owned = owned.build().unwrap();
+    assert!(shared.model().elements().eq(owned.model().elements()));
+    assert!(shared.facts().eq(owned.facts()));
+
+    let complete = Arc::new(evidence(&[Dependency::Declared(FactKey::Element(VEHICLE))]));
+    let mut direct = DerivationBuilder::new(snapshot.clone());
+    direct.element_with_explanation(
+        output,
+        PART_DEF,
+        [(NAME, text("derived"))],
+        complete.clone(),
+    );
+    let direct = direct.build().unwrap();
+    let Origin::Derived(stored) = direct
+        .model()
+        .element(output.element_id())
+        .unwrap()
+        .origin()
+    else {
+        panic!()
+    };
+    assert!(Arc::ptr_eq(&complete, stored));
+
+    let mut invalid = DerivationBuilder::new(snapshot.clone());
+    invalid.element_with_explanation(
+        output,
+        PART_DEF,
+        [(NAME, text("derived"))],
+        Arc::new(Explanation {
+            rule: RuleId::from_u128(999),
+            dependencies: BTreeSet::new(),
+        }),
+    );
+    assert!(matches!(
+        invalid.build(),
+        Err(DerivationError::ExplanationRuleMismatch { .. })
+    ));
+    assert!(snapshot.model().element(output.element_id()).is_none());
+}
+
+#[test]
+fn equal_immutable_explanations_share_storage_and_preserve_source_evidence() {
+    use std::sync::Arc;
+    let snapshot = vertical();
+    let mut changes = snapshot.change_set();
+    changes.set(
+        OWNS,
+        SOURCES,
+        SlotValue::Ordered(vec![Value::Reference(VEHICLE)]),
+        authored(),
+    );
+    let snapshot = snapshot.apply(&changes).unwrap();
+    let a = key(OWNS);
+    let b = DerivationKey {
+        output: OutputKey::from_u128(2),
+        ..a
+    };
+    let mut builder = DerivationBuilder::new(snapshot.clone());
+    for output in [a, b] {
+        builder.element(output, PART_DEF, [(NAME, text("derived"))], BTreeSet::new());
+    }
+    builder.extend_ordered_references(OWNS, SOURCES, vec![a.element_id()], evidence(&[]));
+    let overlay = builder.build().unwrap();
+    let Origin::Derived(a_proof) = overlay.model().element(a.element_id()).unwrap().origin() else {
+        panic!()
+    };
+    let Origin::Derived(b_proof) = overlay.model().element(b.element_id()).unwrap().origin() else {
+        panic!()
+    };
+    assert!(Arc::ptr_eq(a_proof, b_proof));
+    assert!(std::ptr::eq(
+        a_proof.as_ref(),
+        overlay.explain(FactKey::Element(a.element_id())).unwrap()
+    ));
+    assert_eq!(format!("{a_proof:?}"), format!("{:?}", a_proof.as_ref()));
+    assert_eq!(
+        overlay.model().declared_fact_origin(prop(OWNS, SOURCES)),
+        snapshot.model().declared_fact_origin(prop(OWNS, SOURCES))
+    );
+    assert_eq!(
+        overlay
+            .model()
+            .declared_fact_origin(FactKey::Element(a.element_id())),
+        None
+    );
+    let dependent = Snapshot::with_immutable_dependency(Arc::new(overlay));
+    let dependent = dependent.apply(&dependent.change_set()).unwrap();
+    assert_eq!(
+        dependent.model().declared_fact_origin(prop(OWNS, SOURCES)),
+        snapshot.model().declared_fact_origin(prop(OWNS, SOURCES))
+    );
+}
+
+#[test]
+fn staged_collection_extensions_preserve_the_declared_prefix_and_all_contributors() {
+    let snapshot = vertical();
+    let mut changes = snapshot.change_set();
+    changes.set(
+        OWNS,
+        SOURCES,
+        SlotValue::Ordered(vec![Value::Reference(VEHICLE)]),
+        authored(),
+    );
+    let snapshot = snapshot.apply(&changes).unwrap();
+    let a = key(OWNS);
+    let b = DerivationKey {
+        output: OutputKey::from_u128(2),
+        ..a
+    };
+    let mut first = DerivationBuilder::new(snapshot.clone());
+    first.element(a, PART_DEF, [(NAME, text("first"))], BTreeSet::new());
+    first.extend_ordered_references(OWNS, SOURCES, vec![a.element_id()], evidence(&[]));
+    let first = first.build().unwrap();
+    let mut second = DerivationBuilder::from_overlay(first.clone());
+    second.element(b, PART_DEF, [(NAME, text("second"))], BTreeSet::new());
+    second.extend_ordered_references(OWNS, SOURCES, vec![b.element_id()], evidence(&[]));
+    let second = second.build().unwrap();
+    let values = |m: &ModelView| {
+        m.element(OWNS)
+            .unwrap()
+            .slot(SOURCES)
+            .unwrap()
+            .value()
+            .clone()
+    };
+    let mut expected: Vec<_> = values(snapshot.model()).values().cloned().collect();
+    expected.extend([
+        Value::Reference(a.element_id()),
+        Value::Reference(b.element_id()),
+    ]);
+    assert_eq!(values(second.model()), SlotValue::Ordered(expected));
+    assert_ne!(values(first.model()), values(second.model()));
+    let proof = second.explain(prop(OWNS, SOURCES)).unwrap();
+    for contribution in [
+        Dependency::Declared(prop(OWNS, SOURCES)),
+        Dependency::Derived(FactKey::Element(a.element_id())),
+        Dependency::Derived(FactKey::Element(b.element_id())),
+    ] {
+        assert!(proof.dependencies.contains(&contribution));
+    }
+    assert!(
+        !proof
+            .dependencies
+            .contains(&Dependency::Derived(prop(OWNS, SOURCES)))
+    );
+}
 fn evidence(dependencies: &[Dependency]) -> Explanation {
     Explanation {
         rule: RULE,

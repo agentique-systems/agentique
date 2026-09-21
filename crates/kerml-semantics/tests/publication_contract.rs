@@ -1,5 +1,63 @@
 include!("common/result_fixture.rs");
 
+fn libraries() -> LibrarySetIdentity {
+    LibrarySetIdentity {
+        artifacts: StandardLibraryArtifact::ALL
+            .into_iter()
+            .map(|artifact| (artifact, LibraryId::from_u128(1)))
+            .collect(),
+        pins: BTreeSet::new(),
+    }
+}
+
+#[test]
+fn a_stage_limit_never_promotes_an_unexecuted_overlay() {
+    let snapshot = Snapshot::new(Arc::new(
+        agq_kerml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8).unwrap(),
+    ));
+    let libraries = libraries();
+    assert!(
+        matches!(CanonicalPublicationBuilder::new(&snapshot, &[], &libraries).build(0, |_| panic!("no stages allowed")), Err(PublicationOverlayError::IncompleteProducers(stages)) if stages.is_empty())
+    );
+    assert!(matches!(
+        CanonicalPublicationBuilder::new(&snapshot, &[], &libraries)
+            .build(1, |_| panic!("missing bindings must fail first")),
+        Err(PublicationOverlayError::Bindings(_))
+    ));
+}
+
+#[test]
+fn authored_facts_cannot_be_presented_as_standard_publication_inputs() {
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    let snapshot = f.finish();
+    let libraries = libraries();
+    assert!(
+        matches!(CanonicalPublicationBuilder::new(&snapshot, &[], &libraries).build(1, |_| panic!("foreign source must fail first")), Err(PublicationOverlayError::ForeignDeclaredFact(FactKey::Element(element))) if element == id(1))
+    );
+}
+
+#[test]
+fn a_partial_overlay_context_remains_partial_after_scoped_capability_checks() {
+    let snapshot = Fixture::new().finish();
+    let overlay = agq_kernel::derived::DerivationBuilder::new(snapshot)
+        .build()
+        .unwrap();
+    let context =
+        SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap();
+    let q = KerMlQueries::new(context);
+    let audit = q.audit_publication_capabilities([]);
+    assert!(audit.failures.is_empty());
+    assert_eq!(
+        audit.context.derivation_phase,
+        DerivationPhase::PartialDerivationOverlay
+    );
+    assert_eq!(
+        q.context().derivation_phase,
+        DerivationPhase::PartialDerivationOverlay
+    );
+}
+
 #[test]
 fn partial_overlay_defers_completeness_assertion_without_changing_source_flags() {
     let mut f = Fixture::new();

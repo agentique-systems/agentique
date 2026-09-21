@@ -1,0 +1,72 @@
+{
+  "format": "agentique-publication-capabilities/2",
+  "profile": "agentique-kerml-1.0-operational/8",
+  "validator_coverage_is_publication_gate": false,
+  "capabilities": [
+    {
+      "family": "Namespace/import semantics",
+      "status": "Complete",
+      "evidence": "retained prior acceptance"
+    },
+    {
+      "family": "Inheritance/effective membership",
+      "status": "Complete",
+      "evidence": "retained prior acceptance"
+    },
+    {
+      "family": "Specialization/subsetting/redefinition",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    },
+    {
+      "family": "Typing",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    },
+    {
+      "family": "Featuring/domain",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    },
+    {
+      "family": "Feature chains",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    },
+    {
+      "family": "Cross features",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    },
+    {
+      "family": "Connector/association structure",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    },
+    {
+      "family": "Expression/function result structure",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    },
+    {
+      "family": "FeatureValue/reference bindings",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    },
+    {
+      "family": "Multiplicity structural representation",
+      "status": "Complete",
+      "evidence": "retained prior acceptance"
+    },
+    {
+      "family": "Standard bindings",
+      "status": "Complete",
+      "evidence": "retained prior acceptance"
+    },
+    {
+      "family": "Identity/provenance",
+      "status": "Incomplete",
+      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+    }
+  ]
+}

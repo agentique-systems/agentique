@@ -1,7 +1,7 @@
 use crate::SemanticContextId;
 use agq_kernel::{
     ElementId, MetaclassId, PropertyId,
-    provenance::{FactKey, Origin},
+    provenance::{DeclaredOrigin, Dependency, FactKey, Origin},
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -212,6 +212,12 @@ pub struct QueryResult<T> {
     /// Immutable origins are shared when answers are cloned; their content, not
     /// allocation identity, participates in answer equality and debugging output.
     pub fact_origins: BTreeMap<FactKey, Arc<Origin>>,
+    /// Submitted source evidence beneath any extended collection with the same key.
+    pub declared_fact_origins: BTreeMap<FactKey, Arc<DeclaredOrigin>>,
+    /// Immediate canonical facts actually read by the query. Derived dependencies
+    /// retain their kernel DAG instead of flattening its transitive closure into
+    /// every newly produced relationship. Projections resolve to occurrences.
+    pub canonical_dependencies: BTreeSet<Dependency>,
 }
 
 impl<T> QueryResult<T> {
@@ -225,6 +231,8 @@ impl<T> QueryResult<T> {
             search_dependencies: BTreeSet::new(),
             explanations: BTreeMap::new(),
             fact_origins: BTreeMap::new(),
+            declared_fact_origins: BTreeMap::new(),
+            canonical_dependencies: BTreeSet::new(),
         }
     }
     pub(crate) fn merge<U>(&mut self, other: QueryResult<U>) {
@@ -237,7 +245,19 @@ impl<T> QueryResult<T> {
         for (claim, proofs) in other.explanations {
             self.explanations.entry(claim).or_default().extend(proofs);
         }
-        self.fact_origins.extend(other.fact_origins);
+        for (key, origin) in other.fact_origins {
+            // A declared leaf from one answer must not hide an actual read of
+            // the extended derived fact in another answer.
+            if !matches!(origin.as_ref(), Origin::Declared(_)) {
+                self.fact_origins.insert(key, origin);
+            } else {
+                self.fact_origins.entry(key).or_insert(origin);
+            }
+        }
+        self.declared_fact_origins
+            .extend(other.declared_fact_origins);
+        self.canonical_dependencies
+            .extend(other.canonical_dependencies);
     }
     pub(crate) fn problem(
         &mut self,

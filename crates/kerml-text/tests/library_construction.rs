@@ -356,7 +356,9 @@ fn defective_candidate(
             link.association(),
             link.ends().clone(),
             link.positions().clone(),
-            link.origin().clone(),
+            link.declared_origin()
+                .expect("declared library construction")
+                .clone(),
         );
     }
     if matches!(fault, Fault::Duplicate) {

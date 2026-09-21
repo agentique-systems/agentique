@@ -2,7 +2,7 @@ use crate::association::AssociationOccurrence;
 use crate::metamodel::{
     MetamodelError, MetamodelRegistry, Multiplicity, PropertyDescriptor, ValueKind,
 };
-use crate::provenance::{DeclaredOrigin, Origin};
+use crate::provenance::{DeclaredOrigin, FactKey, Origin};
 use crate::value::{SlotValue, Value};
 use crate::{
     AssociationId, AssociationOccurrenceId, ElementId, MetaclassId, PropertyId, RevisionId,
@@ -207,6 +207,7 @@ struct Indexes {
 /// Iteration is deterministic. Maps and storage handles are not public contracts.
 #[derive(Clone, Debug)]
 pub struct ModelView {
+    pub(crate) declared_source: Option<Snapshot>,
     pub(crate) registry: Arc<MetamodelRegistry>,
     pub(crate) records: BTreeMap<ElementId, Arc<ElementRecord>>,
     indexes: Indexes,
@@ -360,6 +361,7 @@ impl ModelView {
             entries.sort_by_key(|r| (r.source, r.property, r.position, r.target, r.carrier));
         }
         Ok(Self {
+            declared_source: None,
             registry,
             records,
             indexes,
@@ -532,6 +534,28 @@ impl ModelView {
             .slot(property)
             .or_else(|| self.indexes.inverse_slots.get(&(element, property)))
     }
+    /// Original submitted evidence, even when an overlay extends the same slot.
+    /// Association projections are not independent declared facts; inspect their
+    /// canonical occurrences instead. No inferred origin is reported as declared.
+    pub fn declared_fact_origin(&self, fact: FactKey) -> Option<&DeclaredOrigin> {
+        let origin = match fact {
+            FactKey::Element(id) => self.element(id).map(|r| r.origin()),
+            FactKey::Property { element, property } => self
+                .element(element)
+                .and_then(|r| r.slot(property))
+                .map(|s| s.origin()),
+            FactKey::AssociationOccurrence(id) => {
+                self.association_occurrence(id).map(|r| r.origin())
+            }
+        };
+        match origin {
+            Some(Origin::Declared(origin)) => Some(origin),
+            _ => self
+                .declared_source
+                .as_ref()
+                .and_then(|source| source.model().declared_fact_origin(fact)),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -540,9 +564,12 @@ struct SnapshotData {
     model: ModelView,
     used_ids: BTreeSet<ElementId>,
     used_links: BTreeSet<AssociationOccurrenceId>,
+    dependency: Option<Arc<crate::derived::DerivedOverlay>>,
 }
 
-/// An immutable declared revision. Cloning is cheap and preserves exact base identity.
+/// An immutable authored revision, optionally reading an immutable dependency.
+/// Cloning is cheap and preserves exact base identity. Dependency origins and
+/// explanations retain their declared/derived distinction.
 ///
 /// `Snapshot` and its queries are Send + Sync; no interior mutation is used.
 #[derive(Clone, Debug)]
@@ -556,6 +583,7 @@ impl Snapshot {
             inner: Arc::new(SnapshotData {
                 revision: RevisionId::new(),
                 model: ModelView {
+                    declared_source: None,
                     registry,
                     records: BTreeMap::new(),
                     indexes: Indexes::default(),
@@ -566,14 +594,43 @@ impl Snapshot {
                 },
                 used_ids: BTreeSet::new(),
                 used_links: BTreeSet::new(),
+                dependency: None,
             }),
         }
+    }
+    /// Start an independent authored history that can reference this immutable
+    /// dependency. Canonical Element records remain shared. Changes cannot edit,
+    /// remove, reorder or transfer ownership of dependency facts. This generic
+    /// operation confers no language-specific publication acceptance.
+    pub fn with_immutable_dependency(dependency: Arc<crate::derived::DerivedOverlay>) -> Self {
+        let mut used_ids = dependency.declared().inner.used_ids.clone();
+        used_ids.extend(dependency.model().elements().map(|r| r.id()));
+        let mut used_links = dependency.declared().inner.used_links.clone();
+        used_links.extend(dependency.model().association_occurrences().map(|r| r.id()));
+        Self {
+            inner: Arc::new(SnapshotData {
+                revision: RevisionId::new(),
+                model: dependency.model().clone(),
+                used_ids,
+                used_links,
+                dependency: Some(dependency),
+            }),
+        }
+    }
+    /// The exact shared dependency supplied when this authored history began.
+    pub fn immutable_dependency(&self) -> Option<&Arc<crate::derived::DerivedOverlay>> {
+        self.inner.dependency.as_ref()
+    }
+    /// Whether this identity belongs to the immutable dependency population.
+    pub fn is_dependency_element(&self, element: ElementId) -> bool {
+        self.immutable_dependency()
+            .is_some_and(|d| d.model().element(element).is_some())
     }
     /// Identity of this immutable declared state, independent of element identity.
     pub fn revision(&self) -> RevisionId {
         self.inner.revision
     }
-    /// Read-only queries over declared elements and slots.
+    /// Read-only authored and dependency facts, retaining their original provenance.
     pub fn model(&self) -> &ModelView {
         &self.inner.model
     }
@@ -591,18 +648,22 @@ impl Snapshot {
     /// must precede edits to that record, but reference targets may be created later.
     pub fn apply(&self, changes: &ChangeSet) -> Result<Self, ModelError> {
         let (records, used_ids, links, used_links) = self.stage(changes)?;
-        let model = ModelView::build(
+        let mut model = ModelView::build(
             self.model().registry.clone(),
             records,
             links,
-            BTreeMap::new(),
+            self.model().derived_navigation.clone(),
         )?;
+        model.statuses = self.model().statuses.clone();
+        model.declared_source = self.model().declared_source.clone();
+        model.searches = self.model().searches.clone();
         Ok(Self {
             inner: Arc::new(SnapshotData {
                 revision: changes.revision,
                 model,
                 used_ids,
                 used_links,
+                dependency: self.inner.dependency.clone(),
             }),
         })
     }
@@ -618,13 +679,16 @@ impl Snapshot {
         let mut validation = Validation {
             deficits: Some(BTreeMap::new()),
         };
-        let model = ModelView::build_with_validation(
+        let mut model = ModelView::build_with_validation(
             self.model().registry.clone(),
             records,
             links,
-            BTreeMap::new(),
+            self.model().derived_navigation.clone(),
             &mut validation,
         )?;
+        model.statuses = self.model().statuses.clone();
+        model.declared_source = self.model().declared_source.clone();
+        model.searches = self.model().searches.clone();
         Ok(ConstructionView {
             revision: changes.revision,
             model,
@@ -647,6 +711,23 @@ impl Snapshot {
         let mut links = self.model().links.clone();
         let mut used_links = self.inner.used_links.clone();
         for change in &changes.changes {
+            let target = match change {
+                Change::Create { id, .. }
+                | Change::Remove(id)
+                | Change::SetOrigin { id, .. }
+                | Change::MoveInverse { element: id, .. } => FactKey::Element(*id),
+                Change::Set { id, property, .. } | Change::Clear { id, property } => {
+                    FactKey::Property {
+                        element: *id,
+                        property: *property,
+                    }
+                }
+                Change::Link(link) => FactKey::AssociationOccurrence(link.id),
+                Change::Unlink(id) | Change::Reorder { id, .. } => {
+                    FactKey::AssociationOccurrence(*id)
+                }
+            };
+            self.check_dependency_write(target)?;
             match change {
                 Change::MoveInverse {
                     element,
@@ -669,15 +750,31 @@ impl Snapshot {
                         });
                     }
                     for record in records.values_mut() {
-                        if let Some(slot) = Arc::make_mut(record).slots.get_mut(&storage)
-                            && let SlotValue::Ordered(values) = &mut slot.value
-                            && values.contains(&Value::Reference(*element))
-                        {
+                        if record.slot(storage).is_some_and(|slot| {
+                            slot.value()
+                                .values()
+                                .any(|v| v == &Value::Reference(*element))
+                        }) {
+                            self.check_dependency_write(FactKey::Property {
+                                element: record.id(),
+                                property: storage,
+                            })?;
+                            let slot = Arc::make_mut(record)
+                                .slots
+                                .get_mut(&storage)
+                                .expect("checked slot");
+                            let SlotValue::Ordered(values) = &mut slot.value else {
+                                return Err(ModelError::UnsupportedAssociationStorage(storage));
+                            };
                             values.retain(|v| *v != Value::Reference(*element));
                             slot.origin = Origin::Declared(origin.clone());
                         }
                     }
                     if let Some((owner, position)) = owner {
+                        self.check_dependency_write(FactKey::Property {
+                            element: *owner,
+                            property: storage,
+                        })?;
                         let record = records
                             .get_mut(owner)
                             .ok_or(ModelError::UnknownElement(*owner))?;
@@ -722,7 +819,7 @@ impl Snapshot {
                         .get_mut(id)
                         .ok_or(ModelError::InvalidAssociationOccurrence(*id))?;
                     link.positions = positions.clone();
-                    link.origin = origin.clone();
+                    link.origin = Origin::Declared(origin.clone());
                 }
 
                 Change::Create {
@@ -809,6 +906,41 @@ impl Snapshot {
     pub(crate) fn has_used(&self, id: ElementId) -> bool {
         self.inner.used_ids.contains(&id)
     }
+    pub(crate) fn has_used_occurrence(&self, id: AssociationOccurrenceId) -> bool {
+        self.inner.used_links.contains(&id)
+    }
+    pub(crate) fn check_dependency_write(&self, fact: FactKey) -> Result<(), ModelError> {
+        let protected = match fact {
+            FactKey::Element(id) | FactKey::Property { element: id, .. } => {
+                self.is_dependency_element(id)
+            }
+            FactKey::AssociationOccurrence(id) => self
+                .immutable_dependency()
+                .is_some_and(|d| d.model().association_occurrence(id).is_some()),
+        };
+        if protected {
+            Err(ModelError::ImmutableDependency(fact))
+        } else {
+            Ok(())
+        }
+    }
+    pub(crate) fn has_declared_fact(&self, fact: FactKey) -> bool {
+        let origin = match fact {
+            FactKey::Element(id) => self.model().element(id).map(|r| r.origin()),
+            FactKey::Property { element, property } => self
+                .model()
+                .element(element)
+                .and_then(|r| r.slot(property))
+                .map(|s| s.origin()),
+            FactKey::AssociationOccurrence(id) => {
+                self.model().association_occurrence(id).map(|r| r.origin())
+            }
+        };
+        matches!(origin, Some(Origin::Declared(_)))
+            || self
+                .immutable_dependency()
+                .is_some_and(|d| d.declared().has_declared_fact(fact))
+    }
 }
 
 #[derive(Debug)]
@@ -893,7 +1025,7 @@ impl ChangeSet {
             association,
             ends,
             positions,
-            origin,
+            origin: Origin::Declared(origin),
         }));
         self
     }
@@ -983,6 +1115,8 @@ impl ChangeSet {
 /// Structural validation failure, preserving semantic identifiers and value shape.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum ModelError {
+    #[error("immutable dependency fact cannot be changed: {0:?}")]
+    ImmutableDependency(FactKey),
     #[error("invalid insertion position {position} for association property {property}")]
     InvalidAssociationPosition {
         property: PropertyId,
@@ -1252,57 +1386,73 @@ fn validate_slot(
     Ok(())
 }
 
-/// Exact cyclic SCC members in sorted order, using iterative Kosaraju traversal.
-/// Both passes use heap-backed stacks, with no recursion proportional to input size.
+/// Exact cyclic SCC members, borrowing adjacency without duplicating its edges.
 pub(crate) fn cyclic_nodes<K: Copy + Ord>(edges: &BTreeMap<K, BTreeSet<K>>) -> Vec<K> {
-    let mut reverse: BTreeMap<K, BTreeSet<K>> = BTreeMap::new();
-    for (&source, targets) in edges {
-        reverse.entry(source).or_default();
-        for &target in targets {
-            reverse.entry(target).or_default().insert(source);
-        }
-    }
+    cyclic_nodes_by(edges.keys().copied(), |node| {
+        edges.get(node).into_iter().flatten().copied()
+    })
+}
 
-    // Keep each DFS frame until all its edges are visited to record finish order.
-    // The reverse map includes isolated sources and vertices appearing only as targets.
-    let mut visited = BTreeSet::new();
-    let mut finished = Vec::with_capacity(reverse.len());
-    for &root in reverse.keys() {
-        if !visited.insert(root) {
+/// Iterative Tarjan traversal. Auxiliary storage is proportional to vertices,
+/// even when many nodes share one large immutable adjacency set. DFS frames
+/// retain borrowed iterators rather than allocating per-node edge collections.
+pub(crate) fn cyclic_nodes_by<K: Copy + Ord, I: Iterator<Item = K>>(
+    nodes: impl IntoIterator<Item = K>,
+    neighbors: impl Fn(&K) -> I,
+) -> Vec<K> {
+    let mut indices = BTreeMap::new();
+    let mut lowlinks = BTreeMap::new();
+    let mut active = BTreeSet::new();
+    let mut component_stack = Vec::new();
+    let mut cyclic = BTreeSet::new();
+    for root in nodes {
+        if indices.contains_key(&root) {
             continue;
         }
-        let mut stack = vec![(root, edges.get(&root).into_iter().flatten())];
-        while let Some((node, targets)) = stack.last_mut() {
-            if let Some(&target) = targets.next() {
-                if visited.insert(target) {
-                    stack.push((target, edges.get(&target).into_iter().flatten()));
+        let index = indices.len();
+        indices.insert(root, index);
+        lowlinks.insert(root, index);
+        active.insert(root);
+        component_stack.push(root);
+        let mut frames = vec![(root, neighbors(&root), false)];
+        while let Some((node, targets, self_loop)) = frames.last_mut() {
+            if let Some(target) = targets.next() {
+                *self_loop |= target == *node;
+                if let Some(&index) = indices.get(&target) {
+                    if active.contains(&target) {
+                        let low = lowlinks.get_mut(node).expect("visited node");
+                        *low = (*low).min(index);
+                    }
+                } else {
+                    let index = indices.len();
+                    indices.insert(target, index);
+                    lowlinks.insert(target, index);
+                    active.insert(target);
+                    component_stack.push(target);
+                    frames.push((target, neighbors(&target), false));
                 }
             } else {
-                finished.push(*node);
-                stack.pop();
-            }
-        }
-    }
-
-    // Reverse edges and reverse finish order isolate each strongly connected component.
-    visited.clear();
-    let mut cyclic = BTreeSet::new();
-    for root in finished.into_iter().rev() {
-        if !visited.insert(root) {
-            continue;
-        }
-        let mut component = Vec::new();
-        let mut stack = vec![root];
-        while let Some(node) = stack.pop() {
-            component.push(node);
-            for &source in &reverse[&node] {
-                if visited.insert(source) {
-                    stack.push(source);
+                let (node, _, self_loop) = frames.pop().expect("current frame");
+                let low = lowlinks[&node];
+                if low == indices[&node] {
+                    let mut component = Vec::new();
+                    loop {
+                        let member = component_stack.pop().expect("active SCC member");
+                        active.remove(&member);
+                        component.push(member);
+                        if member == node {
+                            break;
+                        }
+                    }
+                    if component.len() > 1 || self_loop {
+                        cyclic.extend(component);
+                    }
+                }
+                if let Some((parent, _, _)) = frames.last() {
+                    let parent_low = lowlinks.get_mut(parent).expect("visited parent");
+                    *parent_low = (*parent_low).min(low);
                 }
             }
-        }
-        if component.len() > 1 || reverse[&root].contains(&root) {
-            cyclic.extend(component);
         }
     }
     cyclic.into_iter().collect()
@@ -1311,6 +1461,35 @@ pub(crate) fn cyclic_nodes<K: Copy + Ord>(edges: &BTreeMap<K, BTreeSet<K>>) -> V
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_four_vertex_graph_matches_reachability_cycle_oracle() {
+        for mask in 0..(1u32 << 16) {
+            let mut reachable = [[false; 4]; 4];
+            let mut edges = BTreeMap::new();
+            for (source, row) in reachable.iter_mut().enumerate() {
+                for (target, present) in row.iter_mut().enumerate() {
+                    *present = mask & (1 << (source * 4 + target)) != 0;
+                    if *present {
+                        edges
+                            .entry(source)
+                            .or_insert_with(BTreeSet::new)
+                            .insert(target);
+                    }
+                }
+            }
+            for via in 0..4 {
+                for source in 0..4 {
+                    for target in 0..4 {
+                        reachable[source][target] |=
+                            reachable[source][via] && reachable[via][target];
+                    }
+                }
+            }
+            let expected: Vec<_> = (0..4).filter(|&node| reachable[node][node]).collect();
+            assert_eq!(cyclic_nodes(&edges), expected, "edge mask {mask}");
+        }
+    }
 
     #[test]
     fn cycle_members_exclude_downstream_vertices() {

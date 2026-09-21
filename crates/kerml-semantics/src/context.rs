@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/19";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/21";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -61,6 +61,9 @@ pub struct SemanticContextId {
     /// Exact canonical StandardLibrary records/occurrences, independent of authored
     /// revision changes. None means no validated canonical binding input was attached.
     pub library_graph_digest: Option<[u8; 32]>,
+    /// Accepted immutable dependency, including all publication derivations.
+    /// Authored revisions retain this identity without claiming their own closure.
+    pub publication_dependency_digest: Option<[u8; 32]>,
     /// Phase is part of query identity; a partial overlay cannot claim closure.
     pub derivation_phase: crate::DerivationPhase,
 }
@@ -77,6 +80,7 @@ pub enum ContextError {
     InvalidPendingScope(ElementId),
     /// A reviewed library fact belongs to a different explicit authority profile.
     CorrectionProfileMismatch(agq_kernel::provenance::FactKey),
+    PublicationDependencyMismatch,
 }
 
 impl<'m> SemanticContext<'m> {
@@ -119,8 +123,8 @@ impl<'m> SemanticContext<'m> {
                     .filter(|r| {
                         matches!(
                             r.origin(),
-                            agq_kernel::provenance::DeclaredOrigin::StandardLibrary { .. }
-                                | agq_kernel::provenance::DeclaredOrigin::ReviewedCorrection { .. }
+                            agq_kernel::provenance::Origin::Declared(agq_kernel::provenance::DeclaredOrigin::StandardLibrary { .. }
+                                | agq_kernel::provenance::DeclaredOrigin::ReviewedCorrection { .. })
                         )
                     })
                     .map(|r| format!("{r:?}")),
@@ -276,7 +280,7 @@ impl<'m> SemanticContext<'m> {
             }
         }
         for link in model.association_occurrences() {
-            if mismatch(&Origin::Declared(link.origin().clone())) {
+            if mismatch(link.origin()) {
                 return Err(ContextError::CorrectionProfileMismatch(
                     FactKey::AssociationOccurrence(link.id()),
                 ));
@@ -383,6 +387,7 @@ impl<'m> SemanticContext<'m> {
                 binding_version: crate::BINDING_VERSION,
                 library_graph_digest: None,
                 derivation_phase: crate::DerivationPhase::Declared,
+                publication_dependency_digest: None,
             },
         })
     }

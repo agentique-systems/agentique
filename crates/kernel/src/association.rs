@@ -17,7 +17,7 @@ pub struct AssociationOccurrence {
     pub(crate) association: AssociationId,
     pub(crate) ends: BTreeMap<PropertyId, ElementId>,
     pub(crate) positions: BTreeMap<PropertyId, usize>,
-    pub(crate) origin: DeclaredOrigin,
+    pub(crate) origin: Origin,
 }
 impl AssociationOccurrence {
     pub fn id(&self) -> AssociationOccurrenceId {
@@ -32,8 +32,15 @@ impl AssociationOccurrence {
     pub fn positions(&self) -> &BTreeMap<PropertyId, usize> {
         &self.positions
     }
-    pub fn origin(&self) -> &DeclaredOrigin {
+    pub fn origin(&self) -> &Origin {
         &self.origin
+    }
+    /// Submitted source evidence, absent for a semantically derived occurrence.
+    pub fn declared_origin(&self) -> Option<&DeclaredOrigin> {
+        match &self.origin {
+            Origin::Declared(origin) => Some(origin),
+            _ => None,
+        }
     }
 }
 
@@ -50,7 +57,12 @@ pub(crate) fn project(
     let mut groups: BTreeMap<(ElementId, PropertyId), Group<'_>> = BTreeMap::new();
     for link in links.values() {
         let association = registry.association(link.association)?;
-        if !registry.supports_occurrence_storage(link.association)? || association.is_abstract {
+        let supported = if matches!(link.origin, Origin::Derived(_)) {
+            registry.supports_derived_occurrence_storage(link.association)?
+        } else {
+            registry.supports_occurrence_storage(link.association)?
+        };
+        if !supported || association.is_abstract {
             return Err(ModelError::InvalidAssociationOccurrence(link.id));
         }
         if link.ends.keys().copied().collect::<BTreeSet<_>>()
@@ -94,6 +106,9 @@ pub(crate) fn project(
     let mut navigation = BTreeMap::new();
     for ((context, end), mut values) in groups {
         let p = registry.property(end)?;
+        if records[&context].slot(end).is_some() {
+            return Err(ModelError::UnsupportedAssociationStorage(end));
+        }
         validation.multiplicity(context, end, p.multiplicity, values.len())?;
         let unique: BTreeSet<_> = values.iter().map(|(_, target, _)| *target).collect();
         if p.unique && unique.len() != values.len() {
@@ -112,9 +127,13 @@ pub(crate) fn project(
         {
             return Err(ModelError::InvalidAssociationOccurrence(values[0].2.id));
         }
-        if p.derived {
+        if p.derived
+            && !values
+                .iter()
+                .any(|(_, _, link)| matches!(link.origin, Origin::Derived(_)))
+        {
             continue;
-        } // A submitted link never computes a derived property.
+        } // A declared link alone never asserts a derived computation.
         let origin =
             Origin::AssociationOccurrences(values.iter().map(|(_, _, link)| link.id).collect());
         let entries: Vec<_> = values

@@ -3,7 +3,8 @@ use crate::{
     DocumentId, ElementId, GeneratorId, LibraryId, PropertyId, RuleId, SourceRevisionId,
     SyntaxNodeId, TransformationId,
 };
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
+use std::sync::Arc;
 
 /// Validated half-open byte range in a separately managed source document.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -84,7 +85,7 @@ pub enum DeclaredOrigin {
 }
 
 /// Identifies an element assertion or a property assertion for explanations.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FactKey {
     AssociationOccurrence(crate::AssociationOccurrenceId),
     Element(ElementId),
@@ -95,14 +96,14 @@ pub enum FactKey {
 }
 
 /// Positive evidence in one pinned declared revision / derivation overlay.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Dependency {
     Declared(FactKey),
     Derived(FactKey),
 }
 
 /// One derivation's immediate evidence; follow `Derived` dependencies to explain it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Explanation {
     /// Producer's stable versioned rule identity; rule execution is outside the kernel.
     pub rule: RuleId,
@@ -111,11 +112,35 @@ pub struct Explanation {
     pub dependencies: BTreeSet<Dependency>,
 }
 
+/// Shares equal immutable evidence while producers plan and enqueue facts.
+/// Content equality alone determines sharing; allocation and hash iteration
+/// order never participate in semantic identity or validation.
+#[derive(Debug, Default)]
+pub struct ExplanationPool {
+    entries: HashSet<Arc<Explanation>>,
+}
+impl ExplanationPool {
+    /// Retain one allocation for this exact rule and dependency set.
+    pub fn intern(&mut self, explanation: Explanation) -> Arc<Explanation> {
+        self.intern_shared(Arc::new(explanation))
+    }
+    /// Reuse an already shared proof without copying its dependency set.
+    pub fn intern_shared(&mut self, explanation: Arc<Explanation>) -> Arc<Explanation> {
+        if let Some(existing) = self.entries.get(&explanation) {
+            existing.clone()
+        } else {
+            self.entries.insert(explanation.clone());
+            explanation
+        }
+    }
+}
+
 /// Explicit separation between submitted facts and semantic inference.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Origin {
     /// A read-only navigation projection; inspect every contributing canonical link.
     AssociationOccurrences(BTreeSet<crate::AssociationOccurrenceId>),
     Declared(DeclaredOrigin),
-    Derived(Explanation),
+    /// Immutable evidence is shared by records, indexes and explanation lookup.
+    Derived(Arc<Explanation>),
 }

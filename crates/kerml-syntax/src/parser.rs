@@ -66,7 +66,28 @@ impl Parser<'_> {
         Some(name)
     }
     fn starts_decl(&self) -> bool {
-        matches!(self.text(), "namespace" | "type" | "feature" | "abstract")
+        matches!(
+            self.text(),
+            "namespace"
+                | "type"
+                | "feature"
+                | "abstract"
+                | "public"
+                | "private"
+                | "protected"
+                | "alias"
+                | "import"
+        )
+    }
+    fn visibility(&mut self) -> Option<Visibility> {
+        let visibility = match self.text() {
+            "public" => Visibility::Public,
+            "protected" => Visibility::Protected,
+            "private" => Visibility::Private,
+            _ => return None,
+        };
+        self.pos += 1;
+        Some(visibility)
     }
     fn body(&mut self, depth: usize, nested: bool) -> Vec<SyntaxNode> {
         let mut nodes = vec![];
@@ -75,7 +96,17 @@ impl Parser<'_> {
                 break;
             }
             if self.starts_decl() && depth < self.max_depth {
-                nodes.push(SyntaxNode::Declaration(self.declaration(depth)));
+                let start = self.offset();
+                let visibility = self.visibility();
+                if matches!(self.text(), "import" | "alias") {
+                    nodes.push(self.namespace_reference(start, visibility));
+                } else {
+                    nodes.push(SyntaxNode::Declaration(self.declaration(
+                        depth,
+                        start,
+                        visibility.unwrap_or_default(),
+                    )));
+                }
             } else {
                 let start = self.offset();
                 let code = if depth >= self.max_depth {
@@ -128,9 +159,82 @@ impl Parser<'_> {
             self.pos += 1;
         }
     }
-    fn declaration(&mut self, depth: usize) -> DeclarationSyntax {
+    fn namespace_reference(&mut self, start: usize, visibility: Option<Visibility>) -> SyntaxNode {
+        let keyword = self.token().expect("namespace keyword").range;
+        let import = self.eat("import");
+        let mut valid = !import || visibility.is_some();
+        let alias = if import {
+            None
+        } else {
+            self.eat("alias");
+            let name = self.name();
+            valid &= name.is_some() && self.eat("for");
+            name
+        };
+        let ref_start = self.offset();
+        let absolute = self.eat("$");
+        if absolute {
+            valid &= self.eat("::");
+        }
+        let mut segments = vec![];
+        let mut wildcard = false;
+        loop {
+            if let Some(name) = self.name() {
+                segments.push(name);
+            } else {
+                valid = false;
+                break;
+            }
+            if !self.eat("::") {
+                break;
+            }
+            if import && self.eat("*") {
+                wildcard = true;
+                break;
+            }
+        }
+        let reference = ReferenceSyntax {
+            id: SyntaxNodeId::new(),
+            kind: if import {
+                ReferenceKind::NamespaceImport
+            } else {
+                ReferenceKind::Alias
+            },
+            range: range(ref_start, self.end().max(ref_start)),
+            absolute,
+            segments,
+        };
+        valid &= !import || wildcard;
+        if !self.eat(";") {
+            valid = false;
+            if self.token().is_some() && self.text() != "}" && !self.starts_decl() {
+                self.recover();
+            }
+        }
+        let span = range(start, self.end().max(start));
+        if !valid {
+            self.problem("KS_NAMESPACE_REFERENCE", span, "Expected a named alias or visibility-prefixed nonrecursive namespace import ending with a semicolon");
+            return SyntaxNode::Error {
+                id: SyntaxNodeId::new(),
+                range: span,
+            };
+        }
+        SyntaxNode::NamespaceReference(NamespaceReferenceSyntax {
+            id: SyntaxNodeId::new(),
+            range: span,
+            keyword,
+            visibility: visibility.unwrap_or_default(),
+            alias,
+            reference,
+        })
+    }
+    fn declaration(
+        &mut self,
+        depth: usize,
+        start: usize,
+        visibility: Visibility,
+    ) -> DeclarationSyntax {
         let diagnostic_start = self.doc.diagnostics.len();
-        let start = self.offset();
         let is_abstract = self.eat("abstract");
         let keyword = self
             .token()
@@ -256,6 +360,7 @@ impl Parser<'_> {
             header,
             name,
             is_abstract,
+            visibility,
             header_valid: valid,
             complete,
             references,

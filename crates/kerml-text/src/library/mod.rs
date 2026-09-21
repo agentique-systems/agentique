@@ -4,7 +4,9 @@
 //! It is not a validated standard-library binding or an alternative model store.
 mod construction;
 pub mod corrections;
+mod publication;
 mod vocabulary;
+pub use publication::*;
 
 use agq_kerml_semantics::QualifiedName;
 use agq_kerml_syntax::production;
@@ -41,6 +43,46 @@ pub struct LibraryDraft {
     superseded_references: Vec<PendingLibraryReference>,
 }
 impl LibraryDraft {
+    /// Revalidate every source record and occurrence with ordinary strict kernel
+    /// construction. This discharges storage obligations only; it does not assert
+    /// semantic producer closure, reference resolution or canonical publication.
+    pub fn strict_snapshot(&self) -> Result<Snapshot, LibraryLoadError> {
+        use agq_kernel::provenance::Origin;
+        let empty = Snapshot::new(std::sync::Arc::new(
+            self.candidate.model().registry().clone(),
+        ));
+        let mut changes = empty.change_set();
+        for record in self.candidate.model().elements() {
+            let Origin::Declared(origin) = record.origin() else {
+                return Err(LibraryLoadError::Interpretation(
+                    "Derived source record".into(),
+                ));
+            };
+            changes.create(record.id(), record.metaclass(), origin.clone());
+            for (property, slot) in record.slots() {
+                let Origin::Declared(origin) = slot.origin() else {
+                    return Err(LibraryLoadError::Interpretation(
+                        "Derived source slot".into(),
+                    ));
+                };
+                changes.set(record.id(), property, slot.value().clone(), origin.clone());
+            }
+        }
+        for occurrence in self.candidate.model().association_occurrences() {
+            let origin = occurrence.declared_origin().ok_or_else(|| {
+                LibraryLoadError::Interpretation("Derived source occurrence".into())
+            })?;
+            changes.link(
+                occurrence.id(),
+                occurrence.association(),
+                occurrence.ends().clone(),
+                occurrence.positions().clone(),
+                origin.clone(),
+            );
+        }
+        Ok(empty.apply(&changes)?)
+    }
+
     /// Queries over this unpublished candidate with exact archive pins and
     /// validated canonical anchor declarations. This is not publication acceptance.
     pub fn queries(
@@ -247,7 +289,7 @@ pub fn refine_declarations_with_profile(
             // Bound retained proof populations, as in the complete corpus audit.
             // Each batch evaluates exactly the same immutable semantic context.
             if index > 0 && index % 128 == 0 {
-                queries = draft.queries(sources)?;
+                queries = queries.fork();
                 assert_eq!(queries.context(), &context);
             }
             let result = queries.lookup_relationship_target(

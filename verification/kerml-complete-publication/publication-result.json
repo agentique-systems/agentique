@@ -1,0 +1,40 @@
+{
+  "format": "agentique-kerml-complete-publication-result/1",
+  "profile": "agentique-kerml-1.0-operational/8",
+  "status": "Incomplete",
+  "complete_overlay_gate_passed": false,
+  "focused_failures": 0,
+  "mandatory_references": null,
+  "full_expansion_run": true,
+  "publication_blocking_authority_conflicts": 0,
+  "authority_decisions": "verification/kerml-canonical-publication/authority-decisions.json",
+  "canonical_facade_accepted": false,
+  "accepted_bindings_regenerated": false,
+  "authored_consumption_verified": false,
+  "conformance_coverage": "Incomplete",
+  "current_gate_failure": "Second release attempt stopped before acceptance. producer stage 1: 11776/56433 subjects, 5603 proposed records. Sampled maximum private memory: 5239889920 bytes. Code inspection found full dependency-set copies retained in producer plans, including reproduction of existing facts, plus duplicated adjacency/reverse graphs in explanation validation. Sharing must begin during planning and enqueueing; a synthetic dense-proof resource gate must precede any next corpus attempt.",
+  "resource_observations": {
+    "samples": 63,
+    "sampled_peak_working_set_bytes": 1056038912,
+    "maximum_observed_private_bytes": 1130164224,
+    "timing_threshold_is_correctness_gate": false
+  },
+  "artifacts": {
+    "focused": {
+      "path": "verification/generated/kerml-complete-publication/focused-closure-early-sharing.json",
+      "sha256": "1f9427af38c6d72e955d0b20725ceb18f4583a5df4aaedbb474de7585d57e20d"
+    },
+    "full": {
+      "path": "verification/generated/kerml-complete-publication/full-plan-resource-aborted.json",
+      "sha256": "bef50b966cbbc91adfdf1388b25413350fee612c94884a751ef0b83e186e3722"
+    },
+    "conformance": {
+      "path": "verification/generated/kerml-complete-publication/focused-conformance-shared-evidence.json",
+      "sha256": "5069c2222a872fd9b9de7b62a57c60c4137cb70edcaa0474b05ed7bf0cf0d67c"
+    },
+    "resources": {
+      "path": "verification/generated/kerml-complete-publication/focused-early-sharing-resources.jsonl",
+      "sha256": "2112b230645ff027fa9cb83e0fe03cee7769ea44fe727c05db6203483efb9965"
+    }
+  }
+}

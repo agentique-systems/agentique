@@ -1,10 +1,11 @@
 //! Revision-bound semantic results with explicit evidence. No rule evaluator is built in.
-use crate::model::{Slot, cyclic_nodes};
-use crate::provenance::{Dependency, Explanation, FactKey, Origin};
+use crate::association::AssociationOccurrence;
+use crate::model::{Slot, cyclic_nodes_by};
+use crate::provenance::{Dependency, Explanation, ExplanationPool, FactKey, Origin};
 use crate::value::SlotValue;
 use crate::{
-    DerivationKey, ElementId, ElementRecord, MetaclassId, ModelError, ModelView, PropertyId,
-    RevisionId, Snapshot,
+    AssociationId, AssociationOccurrenceId, DerivationKey, ElementId, ElementRecord, MetaclassId,
+    ModelError, ModelView, PropertyId, RevisionId, Snapshot,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -16,34 +17,39 @@ use std::sync::Arc;
 /// changing declared inputs requires rebuilding it (conservative invalidation).
 #[derive(Clone, Debug)]
 pub struct DerivedOverlay {
+    inner: Arc<OverlayData>,
+}
+#[derive(Debug)]
+struct OverlayData {
     declared: Snapshot,
     model: ModelView,
-    explanations: BTreeMap<FactKey, Explanation>,
+    explanations: BTreeMap<FactKey, Arc<Explanation>>,
 }
 impl DerivedOverlay {
     /// Original declared revision, without any inferred slots or elements.
     pub fn declared(&self) -> &Snapshot {
-        &self.declared
+        &self.inner.declared
     }
     /// Declared input revision. This is not an identity for the overlay: different
     /// rule sets/results can be built over the same revision.
     pub fn base_revision(&self) -> RevisionId {
-        self.declared.revision()
+        self.inner.declared.revision()
     }
     /// Declared and derived records together, with provenance retained on all facts.
     pub fn model(&self) -> &ModelView {
-        &self.model
+        &self.inner.model
     }
     /// Immediate rule/evidence. Follow derived dependencies to inspect the chain.
     /// `None` means this overlay has no such derived assertion, not a false fact.
     pub fn explain(&self, fact: FactKey) -> Option<&Explanation> {
-        self.explanations.get(&fact)
+        self.inner.explanations.get(&fact).map(Arc::as_ref)
     }
     /// Derived assertion keys in deterministic order.
     pub fn facts(&self) -> impl Iterator<Item = (FactKey, &Explanation)> {
-        self.explanations
+        self.inner
+            .explanations
             .iter()
-            .map(|(key, evidence)| (*key, evidence))
+            .map(|(key, evidence)| (*key, evidence.as_ref()))
     }
 }
 
@@ -52,6 +58,15 @@ struct ElementInput {
     key: DerivationKey,
     class: MetaclassId,
     properties: Vec<(PropertyId, SlotValue)>,
+    explanation: Arc<Explanation>,
+}
+
+#[derive(Debug)]
+struct OccurrenceInput {
+    key: DerivationKey,
+    association: AssociationId,
+    ends: BTreeMap<PropertyId, ElementId>,
+    positions: BTreeMap<PropertyId, usize>,
     dependencies: BTreeSet<Dependency>,
 }
 
@@ -59,7 +74,9 @@ struct ElementInput {
 #[derive(Debug)]
 pub struct DerivationBuilder {
     declared: Snapshot,
+    previous: Option<DerivedOverlay>,
     elements: Vec<ElementInput>,
+    occurrences: Vec<OccurrenceInput>,
     properties: Vec<(ElementId, PropertyId, SlotValue, Explanation)>,
     extensions: Vec<(ElementId, PropertyId, Vec<ElementId>, Explanation)>,
     failures: BTreeMap<(ElementId, PropertyId), ComputationFailure>,
@@ -70,12 +87,22 @@ impl DerivationBuilder {
     pub fn new(declared: Snapshot) -> Self {
         Self {
             declared,
+            previous: None,
             elements: Vec::new(),
+            occurrences: Vec::new(),
             properties: Vec::new(),
             extensions: Vec::new(),
             failures: BTreeMap::new(),
             searches: BTreeMap::new(),
         }
+    }
+    /// Add a later producer stage to the same immutable declared revision.
+    /// Existing facts and evidence are retained; this is never a rebase. The
+    /// original overlay remains unchanged if the combined candidate is rejected.
+    pub fn from_overlay(previous: DerivedOverlay) -> Self {
+        let mut builder = Self::new(previous.declared().clone());
+        builder.previous = Some(previous);
+        builder
     }
     /// Add an implied element. Its ID is determined by `key`. The subject becomes
     /// an automatic dependency; other evidence must be supplied by the producer.
@@ -87,10 +114,53 @@ impl DerivationBuilder {
         properties: impl IntoIterator<Item = (PropertyId, SlotValue)>,
         dependencies: BTreeSet<Dependency>,
     ) -> &mut Self {
+        self.element_with_explanation(
+            key,
+            class,
+            properties,
+            Arc::new(Explanation {
+                rule: key.rule,
+                dependencies,
+            }),
+        )
+    }
+    /// Enqueue an element while sharing its immutable proof with other outputs.
+    /// `build` checks that the proof's rule matches the identity key and adds the
+    /// subject dependency without mutating the caller's proof. All ordinary
+    /// collision, dependency and structural validation still applies.
+    pub fn element_with_explanation(
+        &mut self,
+        key: DerivationKey,
+        class: MetaclassId,
+        properties: impl IntoIterator<Item = (PropertyId, SlotValue)>,
+        explanation: Arc<Explanation>,
+    ) -> &mut Self {
         self.elements.push(ElementInput {
             key,
             class,
             properties: properties.into_iter().collect(),
+            explanation,
+        });
+        self
+    }
+    /// Add a canonical inferred association occurrence. The exact registry ends
+    /// and explicit ordered-end positions follow the same contract as `ChangeSet::link`.
+    /// Identity depends on the key, association and endpoint identities. The
+    /// subject and participants become automatic declared/derived dependencies.
+    /// Repeated identities, including retired declared identities, fail atomically.
+    pub fn association_occurrence(
+        &mut self,
+        key: DerivationKey,
+        association: AssociationId,
+        ends: BTreeMap<PropertyId, ElementId>,
+        positions: BTreeMap<PropertyId, usize>,
+        dependencies: BTreeSet<Dependency>,
+    ) -> &mut Self {
+        self.occurrences.push(OccurrenceInput {
+            key,
+            association,
+            ends,
+            positions,
             dependencies,
         });
         self
@@ -150,26 +220,89 @@ impl DerivationBuilder {
     /// Validate structural constraints, dependencies and acyclic explanations.
     pub fn build(self) -> Result<DerivedOverlay, DerivationError> {
         let registry = self.declared.model().registry.clone();
-        let mut records = self.declared.model().records.clone();
-        let mut explanations = BTreeMap::new();
+        let input = self
+            .previous
+            .as_ref()
+            .map_or(self.declared.model(), |p| p.model());
+        let mut records = input.records.clone();
+        let mut explanations = self.previous.as_ref().map_or_else(
+            || {
+                self.declared
+                    .immutable_dependency()
+                    .map_or_else(BTreeMap::new, |p| p.inner.explanations.clone())
+            },
+            |p| p.inner.explanations.clone(),
+        );
+        let previous_facts: BTreeSet<_> = explanations.keys().copied().collect();
+        // Exact content equality, never allocation or hash iteration order,
+        // determines sharing. This pool has no effect on semantic identity.
+        let mut evidence_pool = ExplanationPool::default();
+        for explanation in explanations.values() {
+            evidence_pool.intern_shared(explanation.clone());
+        }
+        let mut links = input.links.clone();
+        for input in self.occurrences {
+            let id = input
+                .key
+                .association_occurrence_id(input.association, &input.ends);
+            if self.declared.has_used_occurrence(id) {
+                return Err(DerivationError::AssociationIdentityCollision(id));
+            }
+            if links.contains_key(&id) {
+                return Err(DerivationError::DuplicateFact(
+                    FactKey::AssociationOccurrence(id),
+                ));
+            }
+            let mut dependencies = input.dependencies;
+            for subject in std::iter::once(input.key.subject).chain(input.ends.values().copied()) {
+                let fact = FactKey::Element(subject);
+                dependencies.insert(if self.declared.has_declared_fact(fact) {
+                    Dependency::Declared(fact)
+                } else {
+                    Dependency::Derived(fact)
+                });
+            }
+            let explanation = evidence_pool.intern(Explanation {
+                rule: input.key.rule,
+                dependencies,
+            });
+            links.insert(
+                id,
+                AssociationOccurrence {
+                    id,
+                    association: input.association,
+                    ends: input.ends,
+                    positions: input.positions,
+                    origin: Origin::Derived(explanation.clone()),
+                },
+            );
+            explanations.insert(FactKey::AssociationOccurrence(id), explanation);
+        }
         for input in self.elements {
             let id = input.key.element_id();
             if self.declared.has_used(id) || records.contains_key(&id) {
                 return Err(DerivationError::IdentityCollision(id));
             }
-            let mut dependencies = input.dependencies;
+            let mut explanation = input.explanation;
+            if explanation.rule != input.key.rule {
+                return Err(DerivationError::ExplanationRuleMismatch {
+                    fact: FactKey::Element(id),
+                    expected: input.key.rule,
+                    actual: explanation.rule,
+                });
+            }
             let subject = FactKey::Element(input.key.subject);
-            dependencies.insert(
-                if self.declared.model().element(input.key.subject).is_some() {
-                    Dependency::Declared(subject)
-                } else {
-                    Dependency::Derived(subject)
-                },
-            );
-            let explanation = Explanation {
-                rule: input.key.rule,
-                dependencies,
+            let dependency = if self.declared.has_declared_fact(subject) {
+                Dependency::Declared(subject)
+            } else {
+                Dependency::Derived(subject)
             };
+            if !explanation.dependencies.contains(&dependency) {
+                Arc::make_mut(&mut explanation)
+                    .dependencies
+                    .insert(dependency);
+            }
+            let explanation = evidence_pool.intern_shared(explanation);
             let mut record = ElementRecord {
                 id,
                 metaclass: input.class,
@@ -183,10 +316,12 @@ impl DerivationBuilder {
                     element: id,
                     property,
                 };
-                let evidence = Explanation {
+                let mut evidence = Explanation {
                     rule: input.key.rule,
                     dependencies: BTreeSet::from([Dependency::Derived(FactKey::Element(id))]),
                 };
+                add_reference_dependencies(&self.declared, &value, &mut evidence.dependencies);
+                let evidence = evidence_pool.intern(evidence);
                 if record
                     .slots
                     .insert(
@@ -204,7 +339,10 @@ impl DerivationBuilder {
             }
             records.insert(id, Arc::new(record));
         }
+        let mut extended = BTreeSet::new();
         for (element, property, additions, mut explanation) in self.extensions {
+            self.declared
+                .check_dependency_write(FactKey::Property { element, property })?;
             let descriptor = registry.property(property).map_err(ModelError::from)?;
             if descriptor.derived
                 || !descriptor.ordered
@@ -221,15 +359,26 @@ impl DerivationBuilder {
                 return Err(DerivationError::InvalidCollectionExtension { element, property });
             }
             let key = FactKey::Property { element, property };
-            if explanations.contains_key(&key) {
+            if !extended.insert(key)
+                || (explanations.contains_key(&key) && !previous_facts.contains(&key))
+            {
                 return Err(DerivationError::DuplicateFact(key));
+            }
+            if let Some(previous) = explanations.get(&key) {
+                // Keep the evidence for every previous entry. No dependency on
+                // the same aggregate property is introduced into the DAG.
+                explanation
+                    .dependencies
+                    .extend(previous.dependencies.iter().copied());
             }
             let record = records
                 .get_mut(&element)
                 .ok_or(ModelError::UnknownElement(element))?;
             let mut values = match record.slot(property).map(|slot| slot.value()) {
                 Some(SlotValue::Ordered(values)) => {
-                    explanation.dependencies.insert(Dependency::Declared(key));
+                    if self.declared.has_declared_fact(key) {
+                        explanation.dependencies.insert(Dependency::Declared(key));
+                    }
                     values.clone()
                 }
                 None => Vec::new(),
@@ -241,13 +390,22 @@ impl DerivationBuilder {
                     return Err(DerivationError::InvalidCollectionExtension { element, property });
                 }
                 values.push(value);
-                explanation
-                    .dependencies
-                    .insert(Dependency::Derived(FactKey::Element(addition)));
+                explanation.dependencies.insert(
+                    if self.declared.has_declared_fact(FactKey::Element(addition)) {
+                        Dependency::Declared(FactKey::Element(addition))
+                    } else {
+                        Dependency::Derived(FactKey::Element(addition))
+                    },
+                );
             }
-            explanation
-                .dependencies
-                .insert(Dependency::Declared(FactKey::Element(element)));
+            explanation.dependencies.insert(
+                if self.declared.has_declared_fact(FactKey::Element(element)) {
+                    Dependency::Declared(FactKey::Element(element))
+                } else {
+                    Dependency::Derived(FactKey::Element(element))
+                },
+            );
+            let explanation = evidence_pool.intern(explanation);
             Arc::make_mut(record).slots.insert(
                 property,
                 Slot {
@@ -257,8 +415,13 @@ impl DerivationBuilder {
             );
             explanations.insert(key, explanation);
         }
-        let mut derived_navigation = BTreeMap::new();
+        let mut derived_navigation = input
+            .derived_navigation_results()
+            .map(|(key, slot)| (*key, slot.clone()))
+            .collect::<BTreeMap<_, _>>();
         for (element, property, mut value, mut explanation) in self.properties {
+            self.declared
+                .check_dependency_write(FactKey::Property { element, property })?;
             let descriptor = registry.property(property).map_err(ModelError::from)?;
             if !descriptor.derived {
                 return Err(DerivationError::NotDerivedProperty { element, property });
@@ -271,14 +434,16 @@ impl DerivationBuilder {
                 return Err(DerivationError::DuplicateFact(key));
             }
             let subject = FactKey::Element(element);
-            explanation
-                .dependencies
-                .insert(if self.declared.model().element(element).is_some() {
+            explanation.dependencies.insert(
+                if self.declared.has_declared_fact(FactKey::Element(element)) {
                     Dependency::Declared(subject)
                 } else {
                     Dependency::Derived(subject)
-                });
+                },
+            );
             value.normalize();
+            add_reference_dependencies(&self.declared, &value, &mut explanation.dependencies);
+            let explanation = evidence_pool.intern(explanation);
             let slot = Slot {
                 value,
                 origin: Origin::Derived(explanation.clone()),
@@ -293,13 +458,13 @@ impl DerivationBuilder {
             }
             explanations.insert(key, explanation);
         }
-        let mut model = ModelView::build(
-            registry,
-            records,
-            self.declared.model().links.clone(),
-            derived_navigation,
-        )?;
+        let mut model = ModelView::build(registry, records, links, derived_navigation)?;
+        model.declared_source = Some(self.declared.clone());
+        model.statuses = input.statuses.clone();
+        model.searches = input.searches.clone();
         for ((element, property), mut failure) in self.failures {
+            self.declared
+                .check_dependency_write(FactKey::Property { element, property })?;
             let record = model
                 .element(element)
                 .ok_or(ModelError::UnknownElement(element))?;
@@ -324,17 +489,18 @@ impl DerivationBuilder {
                 return Err(DerivationError::NotDerivedProperty { element, property });
             }
             let key = FactKey::Property { element, property };
-            if record.slot(property).is_some() || explanations.contains_key(&key) {
+            if model.navigation_slot(element, property).is_some() || explanations.contains_key(&key)
+            {
                 return Err(DerivationError::DuplicateFact(key));
             }
             let mut evidence = failure.explanation().clone();
-            evidence
-                .dependencies
-                .insert(if self.declared.model().element(element).is_some() {
+            evidence.dependencies.insert(
+                if self.declared.has_declared_fact(FactKey::Element(element)) {
                     Dependency::Declared(FactKey::Element(element))
                 } else {
                     Dependency::Derived(FactKey::Element(element))
-                });
+                },
+            );
             match &mut failure {
                 ComputationFailure::Incomplete {
                     explanation,
@@ -354,25 +520,13 @@ impl DerivationBuilder {
                         .extend(searches.iter().cloned());
                 }
             }
-            explanations.insert(key, evidence);
+            explanations.insert(key, evidence_pool.intern(evidence));
             model.statuses.insert((element, property), failure);
         }
-        let mut edges: BTreeMap<FactKey, BTreeSet<FactKey>> = BTreeMap::new();
         for (&fact, explanation) in &explanations {
             for &dependency in &explanation.dependencies {
                 let exists = match dependency {
-                    Dependency::Declared(FactKey::AssociationOccurrence(id)) => {
-                        self.declared.model().association_occurrence(id).is_some()
-                    }
-                    Dependency::Declared(FactKey::Element(id)) => {
-                        self.declared.model().element(id).is_some()
-                    }
-                    Dependency::Declared(FactKey::Property { element, property }) => self
-                        .declared
-                        .model()
-                        .element(element)
-                        .and_then(|e| e.slot(property))
-                        .is_some(),
+                    Dependency::Declared(key) => self.declared.has_declared_fact(key),
                     Dependency::Derived(key) => {
                         if let FactKey::Property { element, property } = key
                             && model.statuses.contains_key(&(element, property))
@@ -380,7 +534,6 @@ impl DerivationBuilder {
                         {
                             return Err(DerivationError::IncompleteDependency(key));
                         }
-                        edges.entry(fact).or_default().insert(key);
                         explanations.contains_key(&key)
                     }
                 };
@@ -395,21 +548,54 @@ impl DerivationBuilder {
             }
             model.searches.entry(fact).or_default().extend(searches);
         }
-        let cycle = cyclic_nodes(&edges);
+        let cycle = cyclic_nodes_by(explanations.keys().copied(), |fact| {
+            explanations[fact]
+                .dependencies
+                .iter()
+                .filter_map(|dependency| match dependency {
+                    Dependency::Derived(key) => Some(*key),
+                    Dependency::Declared(_) => None,
+                })
+        });
         if !cycle.is_empty() {
             return Err(DerivationError::DependencyCycle(cycle));
         }
         Ok(DerivedOverlay {
-            declared: self.declared,
-            model,
-            explanations,
+            inner: Arc::new(OverlayData {
+                declared: self.declared,
+                model,
+                explanations,
+            }),
         })
+    }
+}
+
+fn add_reference_dependencies(
+    snapshot: &Snapshot,
+    value: &SlotValue,
+    dependencies: &mut BTreeSet<Dependency>,
+) {
+    for value in value.values() {
+        if let crate::value::Value::Reference(target) = value {
+            let fact = FactKey::Element(*target);
+            dependencies.insert(if snapshot.has_declared_fact(fact) {
+                Dependency::Declared(fact)
+            } else {
+                Dependency::Derived(fact)
+            });
+        }
     }
 }
 
 /// Invalid inference results, distinct from the truth or validity of a semantic rule.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum DerivationError {
+    #[error("explanation rule {actual} does not match identity rule {expected} for {fact:?}")]
+    ExplanationRuleMismatch {
+        fact: FactKey,
+        expected: crate::RuleId,
+        actual: crate::RuleId,
+    },
     #[error("derivation input does not match the bound immutable semantic view")]
     InputContextMismatch,
     #[error("invalid monotone ordered-reference extension {element}/{property}")]
@@ -425,6 +611,8 @@ pub enum DerivationError {
     Model(#[from] ModelError),
     #[error("derived identity {0} collides with an existing or retired identity")]
     IdentityCollision(ElementId),
+    #[error("derived association identity {0} collides with an existing or retired identity")]
+    AssociationIdentityCollision(AssociationOccurrenceId),
     #[error("duplicate derived fact {0:?}")]
     DuplicateFact(FactKey),
     #[error("{element}/{property} is not a derived property")]
@@ -452,6 +640,9 @@ pub enum IncompleteReason {
 /// registry and immutable model revision, not only positive fact dependencies.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StructuralSearch {
+    /// Conservative search over the entire immutable input graph, including
+    /// absent facts. Any input change invalidates the computation.
+    Model,
     DescriptorGraph,
     Property {
         element: ElementId,

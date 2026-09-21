@@ -7,7 +7,7 @@ use agq_kernel::{
 };
 use std::collections::BTreeMap;
 
-pub const BINDING_VERSION: &str = "agq-kerml-bindings/3";
+pub const BINDING_VERSION: &str = "agq-kerml-bindings/4";
 
 /// KerML 1.0 semantic roles, not substitute declarations or OMG-defined IDs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -39,6 +39,10 @@ pub enum StandardRole {
     ThingsThat,
     OccurrenceStartShot,
     CollectionsArray,
+    BaseFunctions,
+    DataFunctions,
+    ControlFunctions,
+    FeatureChainSourceTarget,
 }
 impl StandardRole {
     /// Binding contract: full declared path and exact concrete metaclass.
@@ -72,9 +76,15 @@ impl StandardRole {
             OccurrenceStartShot => (&["Occurrences", "Occurrence", "startShot"], c::FEATURE),
             CollectionsArray => (&["Collections", "Array"], c::DATA_TYPE),
             OccurrenceSnapshots => (&["Occurrences", "Occurrence", "snapshots"], c::FEATURE),
+            BaseFunctions => (&["BaseFunctions"], c::LIBRARY_PACKAGE),
+            DataFunctions => (&["DataFunctions"], c::LIBRARY_PACKAGE),
+            ControlFunctions => (&["ControlFunctions"], c::LIBRARY_PACKAGE),
+            FeatureChainSourceTarget => {
+                (&["ControlFunctions", ".", "source", "target"], c::FEATURE)
+            }
         }
     }
-    pub const ALL: [Self; 27] = [
+    pub const ALL: [Self; 31] = [
         Self::Anything,
         Self::DataValue,
         Self::Things,
@@ -102,11 +112,19 @@ impl StandardRole {
         Self::ThingsThat,
         Self::OccurrenceStartShot,
         Self::CollectionsArray,
+        Self::BaseFunctions,
+        Self::DataFunctions,
+        Self::ControlFunctions,
+        Self::FeatureChainSourceTarget,
     ];
     /// Exact pinned library artifact that is authoritative for this role.
     pub const fn library_artifact(self) -> StandardLibraryArtifact {
         match self {
             Self::CollectionsArray => StandardLibraryArtifact::DataType,
+            Self::BaseFunctions
+            | Self::DataFunctions
+            | Self::ControlFunctions
+            | Self::FeatureChainSourceTarget => StandardLibraryArtifact::Function,
             _ => StandardLibraryArtifact::Semantic,
         }
     }
@@ -114,6 +132,8 @@ impl StandardRole {
         match (self, index) {
             (Self::OccurrenceSnapshots | Self::OccurrenceStartShot, 1) => c::CLASS,
             (Self::ThingsThat, 1) => c::FEATURE,
+            (Self::FeatureChainSourceTarget, 1) => c::FUNCTION,
+            (Self::FeatureChainSourceTarget, 2) => c::FEATURE,
             _ => c::LIBRARY_PACKAGE,
         }
     }

@@ -476,15 +476,17 @@
   "kerml_canonical_publication": {
     "status": "incomplete-publication-critical-closure",
     "profile": "agentique-kerml-1.0-operational/8",
-    "evidence": "verification/kerml-canonical-publication/README.md",
-    "capabilities": "verification/kerml-canonical-publication/publication-capabilities.json",
+    "evidence": "verification/kerml-complete-publication/README.md",
+    "capabilities": "verification/kerml-complete-publication/capability-status.json",
     "authority_decisions": "verification/kerml-canonical-publication/authority-decisions.json",
     "canonical_publication": false,
     "conformance_coverage": "Incomplete",
     "validator_coverage_is_publication_gate": false,
     "accepted_bindings_regenerated": false,
     "authored_accepted_library_consumption": false,
-    "generation_1_release_obligations": "unchanged"
+    "generation_1_release_obligations": "unchanged",
+    "semantic_rule_set": "agq-kerml-query/21",
+    "derivation_infrastructure": "Generic derived association occurrences, additive stages, ordered inverse navigation and immutable dependency isolation; complete pinned-corpus acceptance remains a separate gate"
   },
   "kerml_publication_convergence": {
     "status": "incomplete-publication-critical-closure",

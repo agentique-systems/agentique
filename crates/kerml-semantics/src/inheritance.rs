@@ -4,8 +4,8 @@ use agq_kernel::{ElementId, provenance::FactKey};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 impl KerMlQueries<'_> {
-    /// Owned and inherited FeatureMembership identities on acyclic supertype
-    /// graphs, including imports through general types, chains and conjugation.
+    /// Owned and inherited FeatureMembership identities, including imports,
+    /// chains and conjugation. Cycles use the namespace membership fixed point.
     /// Returns an identity set in ID order, not normative Type::feature ordering.
     pub fn effective_features(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
@@ -63,22 +63,14 @@ impl KerMlQueries<'_> {
             out.merge(direct);
             out.merge(owned);
         }
-        let Some(order) = dependency_order(&edges) else {
-            // Cyclic specialization is not itself illegal. The recursive membership
-            // exclusion algorithm needs a separate fixed-point rule not implemented here.
-            out.problem(
-                Completeness::Incomplete,
-                "KQ_CYCLIC_INHERITANCE",
-                ty,
-                "effective features in cyclic specialization graphs are outside this rule slice",
-            );
-            return out;
-        };
+        let order = dependency_order(&edges);
 
         // With imports or aliases, suppress the complete Membership population
         // before selecting FeatureMemberships. Distinct aliases retain their
         // normative effect even when they denote the same canonical feature.
-        if has_external_memberships {
+        // Cyclic specialization is legal. Reuse the same convergence and
+        // suppression contract as namespace navigation instead of rejecting it.
+        if has_external_memberships || order.is_none() {
             let inherited = self.inherited_memberships(ty);
             let mut features: BTreeSet<_> = own[&ty].keys().copied().collect();
             for &feature in &features {
@@ -155,7 +147,7 @@ impl KerMlQueries<'_> {
             closures.insert(feature, visited);
         }
         let mut effective = BTreeMap::<ElementId, BTreeMap<ElementId, ElementId>>::new();
-        for current in order {
+        for current in order.expect("acyclic fast path") {
             let mut inherited = BTreeMap::<ElementId, ElementId>::new();
             let mut paths = BTreeMap::<ElementId, BTreeSet<ElementId>>::new();
             for parent in &edges[&current] {

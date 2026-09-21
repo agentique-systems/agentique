@@ -98,6 +98,32 @@ pub struct DerivationKey {
     pub output: OutputKey,
 }
 impl DerivationKey {
+    /// Identify an implied occurrence in private kernel association ID scheme v1.
+    /// End descriptor identities define canonical encoding order; participant
+    /// order is therefore semantic, independent of insertion or traversal order.
+    /// Collection positions are validated separately and do not rename a fact.
+    pub fn association_occurrence_id(
+        self,
+        association: AssociationId,
+        ends: &std::collections::BTreeMap<PropertyId, ElementId>,
+    ) -> AssociationOccurrenceId {
+        const DOMAIN: uuid::Uuid = uuid::Uuid::from_u128(0xb9a9e093b50c5d20a2d6b03a3b7d82aa);
+        let mut bytes = Vec::with_capacity(64 + 32 * ends.len());
+        for value in [
+            self.rule.as_u128(),
+            self.subject.as_u128(),
+            self.output.as_u128(),
+            association.as_u128(),
+        ] {
+            bytes.extend_from_slice(&value.to_be_bytes());
+        }
+        for (end, participant) in ends {
+            bytes.extend_from_slice(&end.as_u128().to_be_bytes());
+            bytes.extend_from_slice(&participant.as_u128().to_be_bytes());
+        }
+        AssociationOccurrenceId::from_u128(uuid::Uuid::new_v5(&DOMAIN, &bytes).as_u128())
+    }
+
     /// Deterministically identify an implied element in kernel ID scheme v1.
     pub fn element_id(self) -> ElementId {
         const DOMAIN: uuid::Uuid = uuid::Uuid::from_u128(0xbc17c2dfe3e44b85a4d791eef738aa91);

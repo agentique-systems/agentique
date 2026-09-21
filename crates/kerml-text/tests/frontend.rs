@@ -146,10 +146,10 @@ fn malformed_and_incomplete_text_never_invents_semantics() {
     assert_eq!(model.syntax().status(), SyntaxStatus::Recovered);
     assert!(model.validate_slice().is_err());
     let draft = named(model, "Draft");
-    for name in ["good", "after", "unfinished"] {
+    for name in ["good", "after", "unfinished", "hidden"] {
         member(model, draft, name);
     }
-    for name in ["missing", "NotACompleteType", "hidden", "value"] {
+    for name in ["missing", "NotACompleteType", "value"] {
         assert!(
             model
                 .queries()
@@ -361,7 +361,7 @@ fn opaque_unsupported_constructs_cannot_inject_declarations_during_recovery() {
     for source in [
         "feature bad = \"; feature injected;\"; feature good;",
         "part def Fake { feature injected; } feature good;",
-        "private feature injected; feature good;",
+        "private part def Fake { feature injected; } feature good;",
         "import N { feature injected; } feature good;",
     ] {
         let doc = Document::new(source).unwrap();

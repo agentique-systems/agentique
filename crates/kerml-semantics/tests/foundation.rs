@@ -439,8 +439,9 @@ fn private_membership_is_direct_but_not_inherited() {
     assert!(q.effective_features(D).value.is_empty());
 }
 #[test]
-fn specialization_cycles_are_finite_but_cyclic_inheritance_is_explicitly_incomplete() {
+fn specialization_cycles_reuse_converged_membership_without_copying_features() {
     let mut f = diamond();
+    f.feature(id(30), A, FA);
     f.relation(id(25), c::SPECIALIZATION, A, B);
     let s = f.finish();
     let q = queries(&s);
@@ -448,10 +449,35 @@ fn specialization_cycles_are_finite_but_cyclic_inheritance_is_explicitly_incompl
     assert_eq!(r.value, vec![A, B, C]);
     assert_eq!(r.completeness, Completeness::Complete);
     assert_proofs(&r);
+    let effective = q.effective_features(D);
+    assert_eq!(effective.completeness, Completeness::Complete);
+    assert_eq!(effective.value, vec![FA]);
+    assert_proofs(&effective);
+}
+#[test]
+fn cyclic_membership_preserves_redefinition_suppression_and_search_evidence() {
+    let mut f = diamond();
+    f.relation(id(25), c::SPECIALIZATION, A, B);
+    f.feature(id(30), A, FA);
+    f.feature(id(31), B, FB);
+    f.relation(id(40), c::REDEFINITION, FB, FA);
+    let snapshot = f.finish();
+    let q = queries(&snapshot);
+    let answer = q.effective_features(D);
     assert_eq!(
-        q.effective_features(D).completeness,
-        Completeness::Incomplete
+        answer.completeness,
+        Completeness::Complete,
+        "{:?}",
+        answer.diagnostics
     );
+    assert_eq!(answer.value, vec![FB]);
+    assert_eq!(q.owner(FB).value, Some(B));
+    assert!(
+        answer
+            .search_dependencies
+            .contains(&SearchDependency::NamespaceMembers { namespace: A })
+    );
+    assert_proofs(&answer);
 }
 #[test]
 fn ownership_cycles_are_invalid_even_beyond_the_query_root() {
@@ -738,6 +764,96 @@ fn overlay_proofs_retain_recursive_kernel_evidence() {
     ));
     assert!(r.positive_dependencies.contains(&FactKey::Element(A)));
     assert!(r.positive_dependencies.contains(&FactKey::Element(B)));
+}
+
+#[test]
+fn declared_collection_evidence_does_not_expand_later_derived_additions() {
+    let mut f = Fixture::new();
+    f.create(A, c::TYPE);
+    f.create(B, c::TYPE);
+    f.feature(id(30), A, FA);
+    let snapshot = f.finish();
+    let source = FactKey::Property {
+        element: A,
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    };
+    let key = DerivationKey {
+        rule: RuleId::from_u128(70),
+        subject: B,
+        output: OutputKey::from_u128(1),
+    };
+    let unrelated = DerivationKey {
+        output: OutputKey::from_u128(2),
+        ..key
+    };
+    let mut builder = DerivationBuilder::new(snapshot.clone());
+    builder.element(
+        key,
+        c::TYPE,
+        defaults(snapshot.model().registry(), c::TYPE),
+        BTreeSet::from([Dependency::Declared(source)]),
+    );
+    let mut properties = defaults(snapshot.model().registry(), c::SPECIALIZATION);
+    properties.extend([
+        (p::SPECIALIZATION_SPECIFIC, reference(A)),
+        (p::SPECIALIZATION_GENERAL, reference(B)),
+    ]);
+    builder.element(unrelated, c::SPECIALIZATION, properties, BTreeSet::new());
+    builder.extend_ordered_references(
+        A,
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        vec![unrelated.element_id()],
+        Explanation {
+            rule: key.rule,
+            dependencies: BTreeSet::new(),
+        },
+    );
+    builder.searches(source, BTreeSet::from([StructuralSearch::Model]));
+    let overlay = builder.build().unwrap();
+    let q = KerMlQueries::new(
+        SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let original = q.owned_relationships(key.element_id());
+    assert_eq!(original.completeness, Completeness::Complete);
+    assert!(original.declared_fact_origins.contains_key(&source));
+    assert!(original.positive_dependencies.contains(&source));
+    assert!(
+        !original
+            .positive_dependencies
+            .contains(&FactKey::Element(unrelated.element_id()))
+    );
+    assert!(
+        !original
+            .search_dependencies
+            .contains(&SearchDependency::Kernel(StructuralSearch::Model))
+    );
+    assert!(
+        original
+            .canonical_dependencies
+            .contains(&Dependency::Derived(FactKey::Element(key.element_id())))
+    );
+    assert!(
+        !original
+            .canonical_dependencies
+            .contains(&Dependency::Derived(source))
+    );
+    let aggregate = q.owned_relationships(A);
+    assert!(aggregate.value.contains(&unrelated.element_id()));
+    assert!(matches!(
+        aggregate.fact_origins[&source].as_ref(),
+        Origin::Derived(_)
+    ));
+    assert!(aggregate.declared_fact_origins.contains_key(&source));
+    assert!(
+        aggregate
+            .search_dependencies
+            .contains(&SearchDependency::Kernel(StructuralSearch::Model))
+    );
+    assert!(
+        aggregate
+            .canonical_dependencies
+            .contains(&Dependency::Derived(source))
+    );
 }
 
 #[test]

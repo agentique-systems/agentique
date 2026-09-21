@@ -6,6 +6,71 @@ report. `SemanticContext` identifies partial derivation overlays explicitly.
 Partial overlays do not assert complete implied inclusion; callers can still run
 the strict assertion check separately. Kernel validation is unchanged.
 
+`DerivationBuilder::association_occurrence` adds canonical derived association
+facts through the same registry and navigation validation as declared links.
+Its identity includes the rule, subject, semantic output role, association and
+oriented descriptor/endpoint identities. Ordered-end positions remain explicit
+validated data; insertion order and random allocation do not determine identity.
+Occurrence explanations are ordinary `FactKey::AssociationOccurrence` evidence.
+Navigation retains occurrence provenance and does not store duplicate slots.
+Derived-only associations are also available to derivation; declared writes stay
+prohibited. A canonical authored slot carrier and an occurrence cannot both
+store the same association, and a projected end cannot also have a derived slot.
+
+`DerivationBuilder::from_overlay` adds a producer stage over the same immutable
+declared revision. Earlier facts and explanations remain available, and ordered
+extensions retain their declared prefix and earlier contributors. Conflicts,
+missing dependencies and explanation cycles reject the candidate atomically.
+Rebasing derived facts onto changed source inputs remains unsupported.
+
+Immutable kernel explanations are interned by exact content and shared between
+records, indexes and explanation lookup. Queries distinguish original declared
+evidence from a later derived collection with the same fact key. Both origins
+remain inspectable; a dependency on the original collection never traverses
+unrelated overlay additions. Producer evidence retains immediate canonical
+dependencies and their existing DAG instead of copying transitive proofs into
+every derived relationship.
+
+`ExplanationPool` and `element_with_explanation` share proofs during planning and
+enqueueing, before materialization. Rule identity and automatic subject evidence
+are still validated; adding evidence never mutates a caller's shared proof.
+Iterative Tarjan validation walks borrowed dependency sets and stores only
+per-vertex traversal state, avoiding forward/reverse copies of dense evidence.
+
+`Snapshot::with_immutable_dependency` starts an independent authored history over
+a shared immutable overlay. Its dependency Element records remain shared across
+projects and revisions. Kernel transactions protect dependency records, slots,
+occurrences and inverse ownership edits; they can still create local relationships
+that reference dependency identities. Local derivations retain the dependency's
+explanation DAG, including declared evidence beneath extended collections. This
+kernel operation does not certify that a dependency is an accepted language
+publication; that remains the language facade's responsibility.
+
+The KerML `CanonicalPublicationBuilder` visits every declared and generated
+subject in bounded batches under Operational v8. It can issue the sealed
+`CompletePublicationOverlay` only after all producers answer Complete on an
+unchanged graph and all publication capability queries succeed. Stage-budget
+exhaustion is incomplete, not acceptance. Scoped capability reports cannot
+promote an overlay. Producers retain conservative whole-model search evidence
+when releasing redundant aggregate proofs. This phase contract is independent
+of `KerMlConformanceReport` and does not alone establish accepted library or
+authored-project publication; those gates are recorded in the
+[milestone evidence](../verification/kerml-complete-publication/README.md).
+
+`CanonicalKermlStandardLibraries::publish` additionally checks the exact verified
+source construction and every mandatory reference against the closed graph. Its
+private immutable facade is the only standard-library input accepted by
+`SourceProject::with_standard_libraries`. Authored contexts retain the complete
+publication digest, profile, bindings and library identities; library roots never
+gain visibility of authored roots. The bounded authored syntax supports named
+aliases, visibility and nonrecursive namespace imports. Unsupported import forms
+and unresolved namespace populations remain explicit incomplete input.
+
+Effective feature lookup retains the acyclic fast path and uses the existing
+namespace membership fixed point for cyclic specialization. It preserves
+membership identity, redefinition suppression, visibility and search evidence;
+failure to converge remains incomplete.
+
 Operational v8 carries independent authority identities for the owned-cross
 domain and KERML11-75 import-population corrections. Selection of an owned cross
 Feature still uses v7; v8 excludes its owning end when deriving the domain.
@@ -18,7 +83,7 @@ imports are excluded symmetrically after deduplication.
 artifact and retains a `LibrarySetIdentity`. `CollectionsArray` is anchored in
 the Data Type Library; `ThingsThat` and `OccurrenceStartShot` are Semantic Library
 roles. These construction bindings do not establish an accepted publication.
-The [capability matrix](../verification/kerml-canonical-publication/publication-capabilities.json)
+The [capability matrix](../verification/kerml-complete-publication/capability-status.json)
 records remaining closure obligations separately from conformance coverage.
 
 [ADR 0009](adr/0009-property-redefinition-context.md) reassesses the Property

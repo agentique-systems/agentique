@@ -21,6 +21,8 @@ pub struct ReferenceAssertion {
     pub name: QualifiedName,
     pub origin: SourceOrigin,
     pub resolution: QueryResult<Resolution>,
+    alias: Option<String>,
+    visibility: agq_kerml_syntax::Visibility,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FrontendDiagnosticDomain {
@@ -48,6 +50,12 @@ pub(crate) struct LoweredModel {
     identities: BTreeMap<SyntaxNodeId, Ids>,
     references: Vec<ReferenceAssertion>,
     diagnostics: Vec<FrontendDiagnostic>,
+    dependency: Option<LibraryDependency>,
+}
+#[derive(Clone, Debug)]
+struct LibraryDependency {
+    publication: Arc<crate::library::CanonicalKermlStandardLibraries>,
+    project_root: ElementId,
 }
 #[derive(Debug)]
 pub struct WorkingModel {
@@ -111,11 +119,13 @@ impl LoweredModel {
             &self.snapshot,
             self.references
                 .iter()
+                .filter(|r| specialization_reference(r.kind))
                 .filter(|r| !matches!(r.resolution.value, Resolution::Resolved(_)))
                 .map(|r| r.specific)
                 .collect(),
             self.incomplete_namespaces.clone(),
             self.profile,
+            self.dependency.as_ref(),
         )
     }
 }
@@ -130,19 +140,6 @@ impl ValidatedModel<'_> {
 pub struct ValidationFailure {
     pub syntax_diagnostics: usize,
     pub semantic_diagnostics: usize,
-}
-fn queries(snapshot: &Snapshot, profile: agq_kerml::BaselineProfile) -> KerMlQueries<'_> {
-    KerMlQueries::new(
-        SemanticContext::for_snapshot(
-            snapshot,
-            SemanticOptions {
-                baseline_profile: profile,
-                ..Default::default()
-            },
-            BTreeSet::new(),
-        )
-        .expect("pinned KerML descriptors"),
-    )
 }
 fn authored(source: SourceOrigin) -> DeclaredOrigin {
     DeclaredOrigin::Authored {
@@ -162,10 +159,15 @@ struct Builder {
     links: BTreeMap<(ElementId, PropertyId), (Vec<Value>, SourceOrigin)>,
 }
 impl Builder {
-    fn new(profile: agq_kerml::BaselineProfile) -> Self {
-        let base = Snapshot::new(Arc::new(
-            agq_kerml::registry_for_profile(profile).expect("reviewed operational descriptors"),
-        ));
+    fn new(profile: agq_kerml::BaselineProfile, dependency: Option<&LibraryDependency>) -> Self {
+        let base = dependency
+            .map(|d| d.publication.project_snapshot())
+            .unwrap_or_else(|| {
+                Snapshot::new(Arc::new(
+                    agq_kerml::registry_for_profile(profile)
+                        .expect("reviewed operational descriptors"),
+                ))
+            });
         let changes = base.change_set();
         Self {
             base,
@@ -268,6 +270,68 @@ impl Builder {
     ) {
         self.changes.set(id, property, value, origin.clone());
     }
+    fn visibility(
+        &mut self,
+        id: ElementId,
+        property: PropertyId,
+        value: agq_kerml_syntax::Visibility,
+        origin: &SourceOrigin,
+    ) {
+        let registry = self.base.model().registry();
+        let metamodel::ValueKind::Enumeration(domain) =
+            registry.property(property).expect("visibility").value_kind
+        else {
+            unreachable!()
+        };
+        let literal = *registry
+            .enumeration(domain)
+            .expect("visibility domain")
+            .literals
+            .iter()
+            .find(|(_, name)| name.as_str() == value.as_str())
+            .expect("visibility literal")
+            .0;
+        self.set(
+            id,
+            property,
+            SlotValue::Scalar(Value::Enumeration(literal)),
+            origin,
+        );
+    }
+    fn reference(
+        &mut self,
+        source: ElementId,
+        property: PropertyId,
+        target: ElementId,
+        origin: &SourceOrigin,
+    ) {
+        let registry = self.base.model().registry();
+        if registry
+            .supports_slot_storage(property)
+            .expect("reference descriptor")
+        {
+            self.set(source, property, reference(target), origin);
+        } else {
+            let descriptor = registry.property(property).expect("reference descriptor");
+            let namespace = uuid::Uuid::from_u128(0x2c4e20fedfdf5918a9644e6ad5d16c14);
+            let mut key = source.as_u128().to_be_bytes().to_vec();
+            key.extend(property.as_u128().to_be_bytes());
+            key.extend(target.as_u128().to_be_bytes());
+            self.changes.link(
+                AssociationOccurrenceId::from_u128(uuid::Uuid::new_v5(&namespace, &key).as_u128()),
+                descriptor.association.expect("reference association"),
+                BTreeMap::from([
+                    (property, target),
+                    (
+                        *descriptor.opposite_ends.first().expect("opposite end"),
+                        source,
+                    ),
+                ]),
+                BTreeMap::new(),
+                authored(origin.clone()),
+            );
+        }
+    }
     fn link(
         &mut self,
         source: ElementId,
@@ -300,6 +364,8 @@ struct Pending {
     kind: ReferenceKind,
     name: QualifiedName,
     origin: SourceOrigin,
+    alias: Option<String>,
+    visibility: agq_kerml_syntax::Visibility,
 }
 pub(crate) fn lower(
     syntax: SyntaxDocument,
@@ -320,6 +386,7 @@ pub(crate) fn lower(
         origin,
         false,
         agq_kerml::BaselineProfile::OPERATIONAL,
+        None,
     )?;
     Ok(WorkingModel { syntax, model })
 }
@@ -331,8 +398,13 @@ pub(crate) fn lower_project<'a>(
     root_origin: DeclaredOrigin,
     incomplete_root: bool,
     profile: agq_kerml::BaselineProfile,
+    publication: Option<Arc<crate::library::CanonicalKermlStandardLibraries>>,
 ) -> Result<LoweredModel, ModelError> {
-    let mut builder = Builder::new(profile);
+    let dependency = publication.map(|publication| LibraryDependency {
+        publication,
+        project_root: root,
+    });
+    let mut builder = Builder::new(profile, dependency.as_ref());
     let mut identities = BTreeMap::new();
     let mut pending = vec![];
     let mut incomplete_namespaces: BTreeSet<_> =
@@ -362,12 +434,17 @@ pub(crate) fn lower_project<'a>(
         );
     }
     let declarations = builder.finish()?;
-    let scopes = pending.iter().map(|r| r.specific).collect();
+    let scopes = pending
+        .iter()
+        .filter(|r| specialization_reference(r.kind))
+        .map(|r| r.specific)
+        .collect();
     let initial = project_queries(
         &declarations,
         scopes,
         incomplete_namespaces.clone(),
         profile,
+        dependency.as_ref(),
     );
     let mut references: Vec<_> = pending
         .into_iter()
@@ -380,6 +457,8 @@ pub(crate) fn lower_project<'a>(
                 name: r.name,
                 origin: r.origin,
                 resolution,
+                alias: r.alias,
+                visibility: r.visibility,
             }
         })
         .collect();
@@ -387,23 +466,74 @@ pub(crate) fn lower_project<'a>(
     // Resolving a supertype can make inherited names available to subsequent
     // assertions. Rebuild the unpublished candidate until no additional endpoint
     // becomes available; publication remains a single atomic change.
+    let endpoint = |r: &ReferenceAssertion| {
+        if let Resolution::Resolved(id) = r.resolution.value {
+            Some(id)
+        } else {
+            None
+        }
+    };
+    let mut states = BTreeSet::new();
     loop {
+        let state: Vec<_> = references.iter().map(&endpoint).collect();
+        if !states.insert(state) {
+            // An oscillating namespace/reference population is not a resolved
+            // canonical model. Keep declarations and explicit pending assertions.
+            for r in &mut references {
+                r.resolution.value = Resolution::Incomplete;
+                r.resolution.completeness = Completeness::Incomplete;
+                incomplete_namespaces.insert(r.specific);
+            }
+            desired = add_relationships(&declarations, &references)?;
+            break;
+        }
         let scopes = references
             .iter()
+            .filter(|r| specialization_reference(r.kind))
             .filter(|r| !matches!(r.resolution.value, Resolution::Resolved(_)))
             .map(|r| r.specific)
             .collect();
-        let resolver = project_queries(&desired, scopes, incomplete_namespaces.clone(), profile);
+        let resolver = project_queries(
+            &desired,
+            scopes,
+            incomplete_namespaces.clone(),
+            profile,
+            dependency.as_ref(),
+        );
         let mut progress = false;
         for r in &mut references {
-            if matches!(r.resolution.value, Resolution::Resolved(_)) {
-                continue;
-            }
+            let previous = endpoint(r);
             r.resolution = resolve_assertion(&resolver, r.specific, &r.name, r.kind);
-            progress |= matches!(r.resolution.value, Resolution::Resolved(_));
+            progress |= endpoint(r) != previous;
         }
         if !progress {
             break;
+        }
+        desired = add_relationships(&declarations, &references)?;
+    }
+    // A missing import/alias leaves a namespace population open. Keep that
+    // barrier in every public query, including otherwise unrelated lookup misses.
+    incomplete_namespaces.extend(
+        references
+            .iter()
+            .filter(|r| {
+                !specialization_reference(r.kind)
+                    && !matches!(r.resolution.value, Resolution::Resolved(_))
+            })
+            .map(|r| r.specific),
+    );
+    if references.iter().any(|r| {
+        !specialization_reference(r.kind) && !matches!(r.resolution.value, Resolution::Resolved(_))
+    }) {
+        let resolver = project_queries(
+            &desired,
+            BTreeSet::new(),
+            incomplete_namespaces.clone(),
+            profile,
+            dependency.as_ref(),
+        );
+        for r in &mut references {
+            r.resolution = resolve_assertion(&resolver, r.specific, &r.name, r.kind);
         }
         desired = add_relationships(&declarations, &references)?;
     }
@@ -416,10 +546,17 @@ pub(crate) fn lower_project<'a>(
     // obligations in its semantic context. No speculative edges are constructed.
     let scopes = references
         .iter()
+        .filter(|r| specialization_reference(r.kind))
         .filter(|r| !matches!(r.resolution.value, Resolution::Resolved(_)))
         .map(|r| r.specific)
         .collect();
-    let resolver = project_queries(&snapshot, scopes, incomplete_namespaces.clone(), profile);
+    let resolver = project_queries(
+        &snapshot,
+        scopes,
+        incomplete_namespaces.clone(),
+        profile,
+        dependency.as_ref(),
+    );
     for r in &mut references {
         r.resolution = resolve_assertion(&resolver, r.specific, &r.name, r.kind);
     }
@@ -434,8 +571,17 @@ pub(crate) fn lower_project<'a>(
             });
         }
     }
-    let q = queries(&snapshot, profile);
+    let q = project_queries(
+        &snapshot,
+        BTreeSet::new(),
+        incomplete_namespaces.clone(),
+        profile,
+        dependency.as_ref(),
+    );
     for element in snapshot.model().elements() {
+        if snapshot.is_dependency_element(element.id()) {
+            continue;
+        }
         if snapshot
             .model()
             .registry()
@@ -469,14 +615,17 @@ pub(crate) fn lower_project<'a>(
             for membership in memberships.value {
                 if let Some(member) = q.member(membership).value {
                     let record = snapshot.model().element(member).unwrap();
-                    if let Some(slot) = record.slot(p::ELEMENT_DECLARED_NAME)
+                    let membership_record = snapshot.model().element(membership).unwrap();
+                    if let Some(slot) = membership_record
+                        .slot(p::MEMBERSHIP_MEMBER_NAME)
+                        .or_else(|| record.slot(p::ELEMENT_DECLARED_NAME))
                         && let SlotValue::Scalar(Value::String(name)) = slot.value()
                         && !names.insert(name.clone())
                     {
                         diagnostics.push(FrontendDiagnostic {
                             domain: FrontendDiagnosticDomain::KerMlSemanticValidation,
                             code: "KT_DUPLICATE_NAME",
-                            origin: source_origin(record.origin()),
+                            origin: source_origin(membership_record.origin()),
                             message: format!("Duplicate declared member name {name}"),
                         });
                     }
@@ -492,6 +641,7 @@ pub(crate) fn lower_project<'a>(
         identities,
         references,
         diagnostics,
+        dependency,
     })
 }
 fn source_origin(origin: &Origin) -> SourceOrigin {
@@ -503,12 +653,22 @@ fn source_origin(origin: &Origin) -> SourceOrigin {
     };
     source.clone()
 }
-fn project_queries(
-    snapshot: &Snapshot,
+fn project_queries<'m>(
+    snapshot: &'m Snapshot,
     scopes: BTreeSet<ElementId>,
     namespaces: BTreeSet<ElementId>,
     profile: agq_kerml::BaselineProfile,
-) -> KerMlQueries<'_> {
+    dependency: Option<&LibraryDependency>,
+) -> KerMlQueries<'m> {
+    if let Some(dependency) = dependency {
+        return KerMlQueries::new(
+            dependency
+                .publication
+                .complete_overlay()
+                .project_context(snapshot, dependency.project_root, scopes, namespaces)
+                .expect("protected publication dependency"),
+        );
+    }
     KerMlQueries::new(
         SemanticContext::for_project_snapshot(
             snapshot,
@@ -529,15 +689,22 @@ fn resolve_assertion(
     name: &QualifiedName,
     kind: ReferenceKind,
 ) -> QueryResult<Resolution> {
-    if kind == ReferenceKind::Redefinition {
+    if matches!(kind, ReferenceKind::Alias | ReferenceKind::NamespaceImport) {
+        queries.resolve_name(specific, name, expected(kind), false)
+    } else if kind == ReferenceKind::Redefinition {
         queries.resolve_redefinition_reference(specific, name)
     } else {
         queries.resolve_reference(specific, name, expected(kind))
     }
 }
+fn specialization_reference(kind: ReferenceKind) -> bool {
+    !matches!(kind, ReferenceKind::Alias | ReferenceKind::NamespaceImport)
+}
 fn expected(kind: ReferenceKind) -> MetaclassId {
     match kind {
         ReferenceKind::Specialization | ReferenceKind::Typing => c::TYPE,
+        ReferenceKind::Alias => c::ELEMENT,
+        ReferenceKind::NamespaceImport => c::NAMESPACE,
         _ => c::FEATURE,
     }
 }
@@ -547,6 +714,8 @@ fn relation_class(kind: ReferenceKind) -> MetaclassId {
         ReferenceKind::Typing => c::FEATURE_TYPING,
         ReferenceKind::Subsetting => c::SUBSETTING,
         ReferenceKind::Redefinition => c::REDEFINITION,
+        ReferenceKind::Alias => c::MEMBERSHIP,
+        ReferenceKind::NamespaceImport => c::NAMESPACE_IMPORT,
     }
 }
 
@@ -569,6 +738,39 @@ fn lower_nodes(
         .any(|node| matches!(node, SyntaxNode::Error { .. }))
     {
         incomplete_namespaces.insert(owner);
+    }
+    for node in nodes {
+        let SyntaxNode::NamespaceReference(item) = node else {
+            continue;
+        };
+        let id = previous
+            .and_then(|m| m.identities.get(&item.id))
+            .map(|ids| ids.element)
+            .unwrap_or_default();
+        identities.insert(
+            item.id,
+            Ids {
+                element: id,
+                membership: id,
+            },
+        );
+        pending.push(Pending {
+            id,
+            specific: owner,
+            kind: item.reference.kind,
+            name: QualifiedName {
+                absolute: item.reference.absolute,
+                segments: item
+                    .reference
+                    .segments
+                    .iter()
+                    .map(|n| n.value.clone())
+                    .collect(),
+            },
+            origin: syntax.origin(item.id, item.range),
+            alias: item.alias.as_ref().map(|n| n.value.clone()),
+            visibility: item.visibility,
+        });
     }
     for d in nodes
         .iter()
@@ -619,6 +821,12 @@ fn lower_nodes(
             c::OWNING_MEMBERSHIP
         };
         builder.create(ids.membership, membership_class, &origin);
+        builder.visibility(
+            ids.membership,
+            p::MEMBERSHIP_VISIBILITY,
+            d.visibility,
+            &origin,
+        );
         builder.link(
             owner,
             p::ELEMENT_OWNED_RELATIONSHIP,
@@ -672,6 +880,8 @@ fn lower_references(
                 segments: r.segments.iter().map(|n| n.value.clone()).collect(),
             },
             origin: syntax.origin(r.id, r.range),
+            alias: None,
+            visibility: agq_kerml_syntax::Visibility::Public,
         });
     }
 }
@@ -690,6 +900,38 @@ fn add_relationships(
         };
         let class = relation_class(r.kind);
         builder.create(r.relationship, class, &r.origin);
+        if !specialization_reference(r.kind) {
+            if let Some(alias) = &r.alias {
+                builder.set(
+                    r.relationship,
+                    p::MEMBERSHIP_MEMBER_NAME,
+                    text(alias),
+                    &r.origin,
+                );
+            }
+            let (target_property, visibility_property) = if r.kind == ReferenceKind::Alias {
+                (p::MEMBERSHIP_MEMBER_ELEMENT, p::MEMBERSHIP_VISIBILITY)
+            } else {
+                for property in [p::IMPORT_IS_IMPORT_ALL, p::IMPORT_IS_RECURSIVE] {
+                    builder.set(
+                        r.relationship,
+                        property,
+                        SlotValue::Scalar(Value::Boolean(false)),
+                        &r.origin,
+                    );
+                }
+                (p::NAMESPACE_IMPORT_IMPORTED_NAMESPACE, p::IMPORT_VISIBILITY)
+            };
+            builder.visibility(r.relationship, visibility_property, r.visibility, &r.origin);
+            builder.reference(r.relationship, target_property, target, &r.origin);
+            builder.link(
+                r.specific,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                r.relationship,
+                &r.origin,
+            );
+            continue;
+        }
         let registry = base.model().registry();
         let specific = registry
             .resolve_property(class, p::SPECIALIZATION_SPECIFIC)?
@@ -728,12 +970,39 @@ fn add_relationships(
 }
 fn publish(previous: &Snapshot, desired: &Snapshot) -> Result<Snapshot, ModelError> {
     let mut changes = previous.change_set();
+    for old in previous.model().association_occurrences() {
+        if desired.model().association_occurrence(old.id()).is_none() {
+            changes.unlink(old.id());
+        }
+    }
+    for link in desired.model().association_occurrences() {
+        if let Some(old) = previous.model().association_occurrence(link.id()) {
+            if old != link {
+                changes.reorder_link(
+                    link.id(),
+                    link.positions().clone(),
+                    declared_origin(link.origin()),
+                );
+            }
+        } else {
+            changes.link(
+                link.id(),
+                link.association(),
+                link.ends().clone(),
+                link.positions().clone(),
+                declared_origin(link.origin()),
+            );
+        }
+    }
     for old in previous.model().elements() {
         if desired.model().element(old.id()).is_none() {
             changes.remove(old.id());
         }
     }
     for record in desired.model().elements() {
+        if desired.is_dependency_element(record.id()) {
+            continue;
+        }
         let origin = declared_origin(record.origin());
         if let Some(old) = previous.model().element(record.id()) {
             changes.set_origin(record.id(), origin);

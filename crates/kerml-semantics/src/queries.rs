@@ -18,6 +18,7 @@ pub struct KerMlQueries<'m> {
     // Only origin values are shared; every answer still expands its own full
     // dependency closure and records every applicable computation search.
     origin_cache: Mutex<BTreeMap<FactKey, Option<Arc<Origin>>>>,
+    declared_origin_cache: Mutex<BTreeMap<FactKey, Option<Arc<Origin>>>>,
 }
 
 impl<'m> KerMlQueries<'m> {
@@ -28,10 +29,17 @@ impl<'m> KerMlQueries<'m> {
             library_cache: Default::default(),
             result_cache: Default::default(),
             origin_cache: Default::default(),
+            declared_origin_cache: Default::default(),
         }
     }
     pub fn context(&self) -> &SemanticContextId {
         self.context.id()
+    }
+    /// Start a fresh bounded query batch over the exact same immutable input.
+    /// Validated bindings and context identity are shared; traversal caches and
+    /// retained query proofs are released when the previous evaluator is dropped.
+    pub fn fork(&self) -> Self {
+        Self::new(self.context.fork())
     }
     pub(crate) fn model(&self) -> &'m ModelView {
         self.context.model
@@ -170,7 +178,7 @@ impl<'m> KerMlQueries<'m> {
             FactKey::AssociationOccurrence(id) => self
                 .model()
                 .association_occurrence(id)
-                .map(|link| Origin::Declared(link.origin().clone())),
+                .map(|link| link.origin().clone()),
             FactKey::Element(id) => self.model().element(id).map(|e| e.origin().clone()),
             FactKey::Property { element, property } => self
                 .model()
@@ -180,7 +188,7 @@ impl<'m> KerMlQueries<'m> {
                     || match self.model().property_state(element, property).ok()? {
                         agq_kernel::derived::PropertyState::Incomplete(failure)
                         | agq_kernel::derived::PropertyState::Invalid(failure) => {
-                            Some(Origin::Derived(failure.explanation().clone()))
+                            Some(Origin::Derived(failure.explanation().clone().into()))
                         }
                         _ => None,
                     },
@@ -195,34 +203,105 @@ impl<'m> KerMlQueries<'m> {
             .clone()
     }
 
-    /// Iterative expansion preserves the kernel's declared/derived distinction.
+    fn declared_fact_origin(&self, key: FactKey) -> Option<Arc<Origin>> {
+        if let Some(current) = self.fact_origin(key)
+            && matches!(current.as_ref(), Origin::Declared(_))
+        {
+            return Some(current);
+        }
+        let mut cache = self
+            .declared_origin_cache
+            .lock()
+            .expect("declared origin cache");
+        cache
+            .entry(key)
+            .or_insert_with(|| {
+                self.model()
+                    .declared_fact_origin(key)
+                    .map(|source| Arc::new(Origin::Declared(source.clone())))
+            })
+            .clone()
+    }
+
+    /// Expand provenance without conflating an original declared assertion with
+    /// a later derived extension of the same property key.
     pub(crate) fn fact<T>(&self, out: &mut QueryResult<T>, key: FactKey) {
-        let mut queue = vec![key];
-        while let Some(key) = queue.pop() {
-            if out.positive_dependencies.contains(&key) {
-                continue;
+        let Some(root) = self.fact_origin(key) else {
+            return;
+        };
+        match root.as_ref() {
+            Origin::Declared(_) => {
+                out.canonical_dependencies.insert(Dependency::Declared(key));
             }
-            let origin = self.fact_origin(key);
-            if let Some(origin) = origin {
-                if matches!(key, FactKey::AssociationOccurrence(_)) {
-                    out.positive_dependencies.insert(key);
-                    out.fact_origins.insert(key, origin);
+            Origin::Derived(_) => {
+                out.canonical_dependencies.insert(Dependency::Derived(key));
+            }
+            Origin::AssociationOccurrences(links) => {
+                for &id in links {
+                    let fact = FactKey::AssociationOccurrence(id);
+                    let dependency =
+                        if matches!(self.fact_origin(fact).as_deref(), Some(Origin::Derived(_))) {
+                            Dependency::Derived(fact)
+                        } else {
+                            Dependency::Declared(fact)
+                        };
+                    out.canonical_dependencies.insert(dependency);
+                }
+            }
+        }
+        let mut queue = vec![(key, false)];
+        while let Some((key, declared)) = queue.pop() {
+            if declared {
+                if out.declared_fact_origins.contains_key(&key) {
                     continue;
                 }
-                out.search_dependencies.extend(
-                    self.model()
-                        .computation_searches_for(key)
-                        .cloned()
-                        .map(SearchDependency::Kernel),
-                );
-                out.positive_dependencies.insert(key);
-                out.fact_origins.insert(key, origin.clone());
-                if let Origin::AssociationOccurrences(links) = origin.as_ref() {
-                    queue.extend(links.iter().copied().map(FactKey::AssociationOccurrence));
+                if let Some(origin) = self.declared_fact_origin(key) {
+                    let Origin::Declared(source) = origin.as_ref() else {
+                        unreachable!()
+                    };
+                    out.declared_fact_origins
+                        .insert(key, Arc::new(source.clone()));
+                    out.positive_dependencies.insert(key);
+                    out.fact_origins.entry(key).or_insert(origin);
                 }
-                if let Origin::Derived(explanation) = origin.as_ref() {
+                continue;
+            }
+            if out
+                .fact_origins
+                .get(&key)
+                .is_some_and(|o| !matches!(o.as_ref(), Origin::Declared(_)))
+            {
+                continue;
+            }
+            let Some(origin) = self.fact_origin(key) else {
+                continue;
+            };
+            out.search_dependencies.extend(
+                self.model()
+                    .computation_searches_for(key)
+                    .cloned()
+                    .map(SearchDependency::Kernel),
+            );
+            out.positive_dependencies.insert(key);
+            out.fact_origins.insert(key, origin.clone());
+            match origin.as_ref() {
+                Origin::Declared(source) => {
+                    out.declared_fact_origins
+                        .entry(key)
+                        .or_insert_with(|| Arc::new(source.clone()));
+                }
+                Origin::AssociationOccurrences(links) => {
+                    queue.extend(
+                        links
+                            .iter()
+                            .copied()
+                            .map(|id| (FactKey::AssociationOccurrence(id), false)),
+                    );
+                }
+                Origin::Derived(explanation) => {
                     queue.extend(explanation.dependencies.iter().map(|d| match d {
-                        Dependency::Declared(f) | Dependency::Derived(f) => *f,
+                        Dependency::Declared(f) => (*f, true),
+                        Dependency::Derived(f) => (*f, false),
                     }));
                 }
             }

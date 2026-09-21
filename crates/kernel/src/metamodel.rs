@@ -964,6 +964,25 @@ impl MetamodelRegistry {
         Ok(authored)
     }
 
+    /// Occurrences produced by semantic derivation may realize derived-only
+    /// associations. They remain exclusive with an authored canonical slot
+    /// carrier; provenance does not permit a second store for the same links.
+    pub fn supports_derived_occurrence_storage(
+        &self,
+        id: AssociationId,
+    ) -> Result<bool, MetamodelError> {
+        for &end in &self.association(id)?.member_ends {
+            let p = self.property(end)?;
+            if !p.derived
+                && self.is_navigable(end)?
+                && (self.supports_slot_storage(end)? || self.inverse_storage(end)?.is_some())
+            {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
     /// All raw properties in identity order, including association-owned ends.
     pub fn properties(&self) -> impl Iterator<Item = &PropertyDescriptor> {
         self.properties.values()

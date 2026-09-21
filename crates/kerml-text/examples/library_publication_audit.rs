@@ -74,7 +74,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             link.association(),
             link.ends().clone(),
             link.positions().clone(),
-            link.origin().clone(),
+            link.declared_origin()
+                .expect("declared library construction")
+                .clone(),
         );
     }
     let snapshot = empty.apply(&changes)?;

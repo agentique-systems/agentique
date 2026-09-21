@@ -55,11 +55,13 @@ pub struct KerMlConformanceReport {
 }
 
 /// Input phase for checks that assert that all implied relationships are included.
-/// There is intentionally no public way to assert publication closure: the
-/// complete publication constructor remains unavailable until its gates pass.
+/// Contexts acquire the complete phase only through `CanonicalPublicationBuilder`;
+/// supplying a phase label cannot promote a partial overlay.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DerivationPhase {
     #[default]
     Declared,
     PartialDerivationOverlay,
+    /// Assigned only after the canonical builder has checked producer closure.
+    CompletePublicationOverlay,
 }

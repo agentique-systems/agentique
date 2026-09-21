@@ -57,6 +57,24 @@ pub enum ReferenceKind {
     Typing,
     Subsetting,
     Redefinition,
+    NamespaceImport,
+    Alias,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Visibility {
+    #[default]
+    Public,
+    Protected,
+    Private,
+}
+impl Visibility {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Public => "public",
+            Self::Protected => "protected",
+            Self::Private => "private",
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Name {
@@ -80,6 +98,7 @@ pub struct DeclarationSyntax {
     pub header: ByteRange,
     pub name: Option<Name>,
     pub is_abstract: bool,
+    pub visibility: Visibility,
     /// A malformed/unsupported header must never assert declaration semantics.
     pub header_valid: bool,
     /// False if a body terminator was recovered. A valid header can still lower.
@@ -87,9 +106,21 @@ pub struct DeclarationSyntax {
     pub references: Vec<ReferenceSyntax>,
     pub children: Vec<SyntaxNode>,
 }
+/// Bounded namespace syntax: named aliases and nonrecursive namespace imports.
+/// Unsupported recursive/all/filter imports remain recovery regions.
+#[derive(Clone, Debug)]
+pub struct NamespaceReferenceSyntax {
+    pub id: SyntaxNodeId,
+    pub range: ByteRange,
+    pub keyword: ByteRange,
+    pub visibility: Visibility,
+    pub alias: Option<Name>,
+    pub reference: ReferenceSyntax,
+}
 #[derive(Clone, Debug)]
 pub enum SyntaxNode {
     Declaration(DeclarationSyntax),
+    NamespaceReference(NamespaceReferenceSyntax),
     Error { id: SyntaxNodeId, range: ByteRange },
 }
 /// Borrowed syntax AST view; no semantic identities or resolution results.

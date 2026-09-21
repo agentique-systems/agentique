@@ -103,6 +103,33 @@ fn reconcile(
         }
     }
     for node in new {
+        if let SyntaxNode::NamespaceReference(next) = node {
+            let matches: Vec<_> = old
+                .iter()
+                .filter_map(|node| {
+                    let SyntaxNode::NamespaceReference(previous) = node else {
+                        return None;
+                    };
+                    let same = same_reference(&previous.reference, &next.reference)
+                        && previous.visibility == next.visibility
+                        && previous.alias.as_ref().map(|n| &n.value)
+                            == next.alias.as_ref().map(|n| &n.value);
+                    (same
+                        && (if formatting {
+                            signature(old_doc, previous.range, None)
+                                == signature(new_doc, next.range, None)
+                        } else {
+                            mapped(previous.keyword, edit) == Some(next.keyword)
+                        }))
+                    .then_some(previous)
+                })
+                .collect();
+            if let [previous] = matches.as_slice() {
+                next.id = previous.id;
+                next.reference.id = previous.reference.id;
+            }
+            continue;
+        }
         let SyntaxNode::Declaration(next) = node else {
             continue;
         };

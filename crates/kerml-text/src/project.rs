@@ -218,6 +218,7 @@ pub struct SourceProject {
     limits: ParseLimits,
     current: Arc<ProjectRevision>,
     history: BTreeMap<RevisionId, Arc<ProjectRevision>>,
+    publication: Option<Arc<crate::library::CanonicalKermlStandardLibraries>>,
 }
 impl SourceProject {
     pub fn new() -> Result<Self, ProjectError> {
@@ -234,6 +235,29 @@ impl SourceProject {
         limits: ParseLimits,
         profile: agq_kerml::BaselineProfile,
     ) -> Result<Self, ProjectError> {
+        Self::create(limits, profile, None)
+    }
+    /// Share an accepted immutable publication across independent authored histories.
+    /// Its authority profile and canonical library identities cannot be overridden.
+    pub fn with_standard_libraries(
+        publication: Arc<crate::library::CanonicalKermlStandardLibraries>,
+    ) -> Result<Self, ProjectError> {
+        Self::create(
+            ParseLimits::default(),
+            publication.profile(),
+            Some(publication),
+        )
+    }
+    pub fn standard_libraries(
+        &self,
+    ) -> Option<&Arc<crate::library::CanonicalKermlStandardLibraries>> {
+        self.publication.as_ref()
+    }
+    fn create(
+        limits: ParseLimits,
+        profile: agq_kerml::BaselineProfile,
+        publication: Option<Arc<crate::library::CanonicalKermlStandardLibraries>>,
+    ) -> Result<Self, ProjectError> {
         let id = ProjectId(GeneratorId::new());
         let root = ElementId::new();
         let model = lowering::lower_project(
@@ -243,6 +267,7 @@ impl SourceProject {
             agq_kernel::provenance::DeclaredOrigin::Generated { generator: id.0 },
             false,
             profile,
+            publication.clone(),
         )?;
         let current = Arc::new(ProjectRevision {
             project: id,
@@ -257,6 +282,7 @@ impl SourceProject {
             limits,
             history: BTreeMap::from([(current.revision(), current.clone())]),
             current,
+            publication,
         })
     }
     pub fn baseline_profile(&self) -> agq_kerml::BaselineProfile {
@@ -348,6 +374,7 @@ impl SourceProject {
                 .values()
                 .any(|d| d.status() == DocumentStatus::FrontendUnavailable),
             self.profile,
+            self.publication.clone(),
         )?;
         let diagnostics = documents
             .values()

@@ -4,11 +4,12 @@ use agq_kerml::{BaselineProfile, classes as c, properties as p};
 use agq_kernel::{
     DerivationKey, ElementId, MetaclassId, OutputKey, PropertyId, RuleId, Snapshot,
     derived::{DerivationBuilder, DerivationError, DerivedOverlay},
-    provenance::{Dependency, Explanation as KernelExplanation, FactKey},
+    provenance::{Dependency, Explanation as KernelExplanation, ExplanationPool, FactKey, Origin},
     value::{SlotValue, Value},
 };
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 /// Semantic reason an implied BindingConnector exists. Its rule identity is
 /// provenance, not an authored annotation or an owner-metaclass heuristic.
@@ -86,7 +87,108 @@ fn identity(parts: &[&[u8]]) -> u128 {
 mod navigation_evidence_regression {
     use crate as agq_kerml_semantics;
     include!("../tests/common/result_fixture.rs");
-    use super::Graph;
+    use super::{DerivationError, Graph, ResultStructurePlan};
+
+    #[test]
+    fn planned_outputs_share_proofs_across_batches_and_reuse_existing_evidence() {
+        let mut f = Fixture::new();
+        f.create(1, c::FEATURE);
+        let snapshot = f.finish();
+        let q = KerMlQueries::new(
+            SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+        );
+        fn make<'m>(
+            q: &KerMlQueries<'m>,
+            role: &str,
+        ) -> (ResultStructurePlan<'m>, ElementId, DerivationKey) {
+            let mut plan = q.plan_result_structure([]);
+            let key = plan.graph.key("owned-cross-domain/1", id(1), role, &[]);
+            let output = plan.graph.create(key, c::FEATURE, &BTreeSet::new());
+            (plan, output, key)
+        }
+        let (mut first, a, key_a) = make(&q, "first");
+        let (second, b, _) = make(&q, "second");
+        first.merge(second).unwrap();
+        let retained = first.graph.records[&a].explanation.clone();
+        assert!(Arc::ptr_eq(&retained, &first.graph.records[&b].explanation));
+        let result = first.materialize(&snapshot).unwrap();
+        let Origin::Derived(stored) = result.overlay.model().element(a).unwrap().origin() else {
+            panic!()
+        };
+        assert!(Arc::ptr_eq(&retained, stored));
+        let q = KerMlQueries::new(
+            SemanticContext::for_overlay(&result.overlay, Default::default(), BTreeSet::new())
+                .unwrap(),
+        );
+        let (mut repeated, same_a, _) = make(&q, "first");
+        assert_eq!(a, same_a);
+        assert!(Arc::ptr_eq(stored, &repeated.graph.records[&a].explanation));
+        repeated.materialize_on_overlay(&result.overlay).unwrap();
+
+        // Evidence reuse never bypasses the class/rule/value collision checks.
+        repeated = q.plan_result_structure([]);
+        repeated
+            .graph
+            .create(key_a, c::CLASSIFIER, &BTreeSet::new());
+        assert!(matches!(
+            repeated.materialize_on_overlay(&result.overlay),
+            Err(DerivationError::IdentityCollision(_))
+        ));
+    }
+
+    #[test]
+    fn independent_relationship_producers_merge_on_one_owner_without_reordering_chains() {
+        let mut f = Fixture::new();
+        f.create(1, c::FEATURE);
+        f.create(2, c::FEATURE);
+        f.create(3, c::CLASSIFIER);
+        let snapshot = f.finish();
+        let q = KerMlQueries::new(
+            SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+        );
+        let plan = |typing: bool, subsetting: bool| {
+            let mut plan = q.plan_result_structure([]);
+            let deps = BTreeSet::from([
+                Dependency::Declared(FactKey::Element(id(1))),
+                Dependency::Declared(FactKey::Element(id(2))),
+                Dependency::Declared(FactKey::Element(id(3))),
+            ]);
+            if typing {
+                plan.graph.cross_typing(id(1), id(1), id(3), &deps);
+            }
+            if subsetting {
+                plan.graph
+                    .subset(id(1), id(1), id(2), "owned-cross-domain/1", &deps);
+            }
+            plan
+        };
+        let together = plan(true, true).materialize(&snapshot).unwrap();
+        for reverse in [false, true] {
+            let mut separate = plan(reverse, !reverse);
+            separate.merge(plan(!reverse, reverse)).unwrap();
+            let merged = separate.materialize(&snapshot).unwrap();
+            assert!(
+                together
+                    .overlay
+                    .model()
+                    .elements()
+                    .eq(merged.overlay.model().elements())
+            );
+            assert!(together.overlay.facts().eq(merged.overlay.facts()));
+            let owned = merged
+                .overlay
+                .model()
+                .navigation_slot(id(1), p::ELEMENT_OWNED_RELATIONSHIP)
+                .unwrap();
+            assert_eq!(owned.value().values().count(), 2);
+            assert!(
+                snapshot
+                    .model()
+                    .navigation_slot(id(1), p::ELEMENT_OWNED_RELATIONSHIP)
+                    .is_none()
+            );
+        }
+    }
 
     #[test]
     fn projected_crossed_feature_dependencies_materialize_as_canonical_link_facts() {
@@ -148,13 +250,18 @@ mod navigation_evidence_regression {
             model: snapshot.model(),
             profile,
             records: BTreeMap::new(),
+            evidence_pool: ExplanationPool::default(),
             attachments: BTreeMap::new(),
             unattached_contextual: BTreeSet::new(),
+            assignments: BTreeSet::new(),
+            conflict: None,
         };
+        let mut proof = q.result(());
+        q.fact(&mut proof, projected);
         let generated = graph.create(
             graph.key("evidence-regression", id(1), "feature", &[]),
             c::FEATURE,
-            &BTreeSet::from([projected]),
+            &proof.canonical_dependencies,
         );
         let overlay = graph.build(&snapshot).unwrap();
         let Origin::Derived(explanation) = overlay.model().element(generated).unwrap().origin()
@@ -212,6 +319,17 @@ pub(crate) fn structural_rule_profile(rule: RuleId) -> Option<BaselineProfile> {
                         "structural-result-ownership/1",
                         "initial-feature-value-context/1",
                         "owned-cross-domain/1",
+                        "checkFeatureCrossingSpecialization",
+                        "checkFeatureFeatureMembershipTypeFeaturing",
+                        "checkFeatureParameterRedefinition",
+                        "checkFeatureEndRedefinition",
+                        "checkFeatureResultRedefinition",
+                        "validateInstantiationExpressionResult",
+                        "checkInvocationExpressionSpecialization",
+                        "checkInvocationExpressionBehaviorResultSpecialization",
+                        "checkFeatureChainExpressionResultSpecialization",
+                        "checkFeatureChainExpressionTargetRedefinition",
+                        "checkFeatureChainExpressionSourceTargetRedefinition",
                     ])
                     .map(move |name| (rule_id(profile, name), profile))
             })
@@ -235,25 +353,286 @@ struct ImpliedRecord {
     key: DerivationKey,
     class: MetaclassId,
     slots: BTreeMap<PropertyId, SlotValue>,
-    dependencies: BTreeSet<Dependency>,
+    explanation: Arc<KernelExplanation>,
 }
 
 struct Graph<'a> {
     model: &'a agq_kernel::ModelView,
     profile: BaselineProfile,
     records: BTreeMap<ElementId, ImpliedRecord>,
-    attachments: BTreeMap<ElementId, Vec<ElementId>>,
+    evidence_pool: ExplanationPool,
+    // New relationships on an existing owner are enumerated by their stable
+    // semantic identity. Fresh chain ownership remains explicitly ordered in
+    // its record; it never passes through this unordered contribution set.
+    attachments: BTreeMap<ElementId, BTreeSet<ElementId>>,
     unattached_contextual: BTreeSet<ElementId>,
+    assignments: BTreeSet<(ElementId, PropertyId)>,
+    conflict: Option<FactKey>,
 }
 impl<'a> Graph<'a> {
-    fn cross_relation(
+    fn return_result(&mut self, expression: ElementId, deps: &BTreeSet<Dependency>) {
+        let rule = "validateInstantiationExpressionResult";
+        let result = self.create(
+            self.key(rule, expression, "owned-result", &[]),
+            c::FEATURE,
+            deps,
+        );
+        let agq_kernel::metamodel::ValueKind::Enumeration(domain) = self
+            .model
+            .registry()
+            .property(p::FEATURE_DIRECTION)
+            .expect("direction")
+            .value_kind
+        else {
+            unreachable!()
+        };
+        let literal = *self
+            .model
+            .registry()
+            .enumeration(domain)
+            .expect("direction domain")
+            .literals
+            .iter()
+            .find(|(_, name)| name.as_str() == "out")
+            .expect("output direction")
+            .0;
+        self.set(result, p::FEATURE_DIRECTION, Value::Enumeration(literal));
+        self.membership(
+            expression,
+            result,
+            c::RETURN_PARAMETER_MEMBERSHIP,
+            self.key(rule, expression, "return-membership", &[]),
+            deps,
+        );
+    }
+    fn specialize(
+        &mut self,
+        source: ElementId,
+        target: ElementId,
+        rule: &str,
+        deps: &BTreeSet<Dependency>,
+    ) {
+        let feature = self.records.get(&target).map_or_else(
+            || {
+                self.model.element(target).is_some_and(|r| {
+                    self.model
+                        .registry()
+                        .is_subtype(r.metaclass(), c::FEATURE)
+                        .unwrap_or(false)
+                })
+            },
+            |r| {
+                self.model
+                    .registry()
+                    .is_subtype(r.class, c::FEATURE)
+                    .unwrap_or(false)
+            },
+        );
+        let (class, endpoints) = if feature {
+            (
+                c::SUBSETTING,
+                (
+                    p::SUBSETTING_SUBSETTING_FEATURE,
+                    p::SUBSETTING_SUBSETTED_FEATURE,
+                ),
+            )
+        } else {
+            (
+                c::FEATURE_TYPING,
+                (p::FEATURE_TYPING_TYPED_FEATURE, p::FEATURE_TYPING_TYPE),
+            )
+        };
+        self.required_relationship(
+            source,
+            (source, target),
+            class,
+            endpoints,
+            (rule, "specialization"),
+            deps,
+        );
+    }
+    fn expression_chain(
+        &mut self,
+        expression: ElementId,
+        input: ElementId,
+        source_target: Option<ElementId>,
+        targets: (ElementId, ElementId),
+        result: ElementId,
+        deps: &BTreeSet<Dependency>,
+    ) {
+        let (actual, standard) = targets;
+        let source_rule = "checkFeatureChainExpressionSourceTargetRedefinition";
+        let source_target = source_target.unwrap_or_else(|| {
+            let feature = self.create(
+                self.key(source_rule, expression, "source-target", &[input]),
+                c::FEATURE,
+                deps,
+            );
+            self.membership(
+                input,
+                feature,
+                c::FEATURE_MEMBERSHIP,
+                self.key(
+                    source_rule,
+                    expression,
+                    "source-target-membership",
+                    &[input],
+                ),
+                deps,
+            );
+            feature
+        });
+        for (target, rule) in [
+            (actual, source_rule),
+            (standard, "checkFeatureChainExpressionTargetRedefinition"),
+        ] {
+            self.required_relationship(
+                source_target,
+                (source_target, target),
+                c::REDEFINITION,
+                (
+                    p::REDEFINITION_REDEFINING_FEATURE,
+                    p::REDEFINITION_REDEFINED_FEATURE,
+                ),
+                (rule, "target-redefinition"),
+                deps,
+            );
+        }
+        let rule = "checkFeatureChainExpressionResultSpecialization";
+        let inputs = [input, source_target];
+        let chain = self.create(
+            self.key(rule, input, "result-chain", &inputs),
+            c::FEATURE,
+            deps,
+        );
+        for (role, target) in [("input", input), ("target", source_target)] {
+            let chaining = self.create(
+                self.key(rule, input, role, &inputs),
+                c::FEATURE_CHAINING,
+                deps,
+            );
+            self.set(
+                chaining,
+                p::FEATURE_CHAINING_CHAINING_FEATURE,
+                Value::Reference(target),
+            );
+            self.own(chain, chaining);
+        }
+        self.unattached_contextual.insert(chain);
+        self.subset(expression, result, chain, rule, deps);
+    }
+    fn crossing(
+        &mut self,
+        end: ElementId,
+        first: ElementId,
+        cross: ElementId,
+        deps: &BTreeSet<Dependency>,
+    ) -> ElementId {
+        let rule = "checkFeatureCrossingSpecialization";
+        let inputs = [first, cross];
+        let relationship = self.create(
+            self.key(rule, end, "cross-subsetting", &inputs),
+            c::CROSS_SUBSETTING,
+            deps,
+        );
+        // The ordered semantic endpoints determine chain identity. Neither the
+        // caller's traversal order nor an element allocation counter participates.
+        let chain = self.create(
+            self.key(rule, first, "crossed-chain", &inputs),
+            c::FEATURE,
+            deps,
+        );
+        for (role, target) in [("first-chaining", first), ("second-chaining", cross)] {
+            let chaining = self.create(
+                self.key(rule, first, role, &inputs),
+                c::FEATURE_CHAINING,
+                deps,
+            );
+            self.set(
+                chaining,
+                p::FEATURE_CHAINING_CHAINING_FEATURE,
+                Value::Reference(target),
+            );
+            self.own(chain, chaining);
+        }
+        self.set(
+            relationship,
+            p::CROSS_SUBSETTING_CROSSED_FEATURE,
+            Value::Reference(chain),
+        );
+        self.set(
+            relationship,
+            p::CROSS_SUBSETTING_CROSSING_FEATURE,
+            Value::Reference(end),
+        );
+        self.set_value(
+            relationship,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            SlotValue::Ordered(vec![Value::Reference(chain)]),
+        );
+        self.own(end, relationship);
+        relationship
+    }
+    fn crossing_product(&mut self, ends: &[ElementId], deps: &BTreeSet<Dependency>) -> ElementId {
+        let rule = "checkFeatureCrossingSpecialization";
+        let mut first = ends[0];
+        for i in 1..ends.len() {
+            let inputs = &ends[..=i];
+            let product = self.create(
+                self.key(rule, ends[0], "end-product", inputs),
+                c::FEATURE,
+                deps,
+            );
+            let typing = self.create(
+                self.key(rule, ends[0], "end-product-type", inputs),
+                c::FEATURE_TYPING,
+                deps,
+            );
+            self.set(
+                typing,
+                p::FEATURE_TYPING_TYPED_FEATURE,
+                Value::Reference(product),
+            );
+            self.set(typing, p::FEATURE_TYPING_TYPE, Value::Reference(ends[i]));
+            self.own(product, typing);
+            let featuring = self.create(
+                self.key(rule, ends[0], "end-product-domain", inputs),
+                c::TYPE_FEATURING,
+                deps,
+            );
+            self.set(
+                featuring,
+                p::TYPE_FEATURING_FEATURE_OF_TYPE,
+                Value::Reference(product),
+            );
+            self.set(
+                featuring,
+                p::TYPE_FEATURING_FEATURING_TYPE,
+                Value::Reference(first),
+            );
+            self.own(product, featuring);
+            if i > 1 {
+                self.membership(
+                    product,
+                    first,
+                    c::OWNING_MEMBERSHIP,
+                    self.key(rule, ends[0], "end-product-owner", inputs),
+                    deps,
+                );
+            }
+            first = product;
+        }
+        first
+    }
+
+    fn required_relationship(
         &mut self,
         subject: ElementId,
         participants: (ElementId, ElementId),
         class: MetaclassId,
         endpoints: (PropertyId, PropertyId),
-        role: &str,
-        deps: &BTreeSet<FactKey>,
+        rule_role: (&str, &str),
+        deps: &BTreeSet<Dependency>,
     ) -> ElementId {
         let (source, target) = participants;
         // Required structure can already be authored. Preserve that relationship's
@@ -288,7 +667,7 @@ impl<'a> Graph<'a> {
             }
         }
         let r = self.create(
-            self.key("owned-cross-domain/1", subject, role, &[source, target]),
+            self.key(rule_role.0, subject, rule_role.1, &[source, target]),
             class,
             deps,
         );
@@ -302,9 +681,9 @@ impl<'a> Graph<'a> {
         subject: ElementId,
         feature: ElementId,
         ty: ElementId,
-        deps: &BTreeSet<FactKey>,
+        deps: &BTreeSet<Dependency>,
     ) {
-        self.cross_relation(
+        self.required_relationship(
             subject,
             (feature, ty),
             c::TYPE_FEATURING,
@@ -312,7 +691,61 @@ impl<'a> Graph<'a> {
                 p::TYPE_FEATURING_FEATURE_OF_TYPE,
                 p::TYPE_FEATURING_FEATURING_TYPE,
             ),
-            "featuring",
+            ("owned-cross-domain/1", "featuring"),
+            deps,
+        );
+    }
+    fn variable_snapshot(
+        &mut self,
+        owner: ElementId,
+        snapshots: ElementId,
+        deps: &BTreeSet<Dependency>,
+    ) -> ElementId {
+        let rule = "checkFeatureFeatureMembershipTypeFeaturing";
+        let domain = self.create(
+            self.key(rule, owner, "snapshot-domain", &[snapshots]),
+            c::FEATURE,
+            deps,
+        );
+        self.membership(
+            owner,
+            domain,
+            c::FEATURE_MEMBERSHIP,
+            self.key(rule, owner, "snapshot-membership", &[snapshots]),
+            deps,
+        );
+        self.required_relationship(
+            owner,
+            (domain, snapshots),
+            c::REDEFINITION,
+            (
+                p::REDEFINITION_REDEFINING_FEATURE,
+                p::REDEFINITION_REDEFINED_FEATURE,
+            ),
+            (rule, "snapshot-redefinition"),
+            deps,
+        );
+        domain
+    }
+
+    fn variable_featuring(
+        &mut self,
+        feature: ElementId,
+        domain: ElementId,
+        deps: &BTreeSet<Dependency>,
+    ) {
+        self.required_relationship(
+            feature,
+            (feature, domain),
+            c::TYPE_FEATURING,
+            (
+                p::TYPE_FEATURING_FEATURE_OF_TYPE,
+                p::TYPE_FEATURING_FEATURING_TYPE,
+            ),
+            (
+                "checkFeatureFeatureMembershipTypeFeaturing",
+                "variable-featuring",
+            ),
             deps,
         );
     }
@@ -321,14 +754,14 @@ impl<'a> Graph<'a> {
         subject: ElementId,
         feature: ElementId,
         ty: ElementId,
-        deps: &BTreeSet<FactKey>,
+        deps: &BTreeSet<Dependency>,
     ) {
-        self.cross_relation(
+        self.required_relationship(
             subject,
             (feature, ty),
             c::FEATURE_TYPING,
             (p::FEATURE_TYPING_TYPED_FEATURE, p::FEATURE_TYPING_TYPE),
-            "typing",
+            ("owned-cross-domain/1", "typing"),
             deps,
         );
     }
@@ -337,7 +770,7 @@ impl<'a> Graph<'a> {
         cross: ElementId,
         domain: &OwnedCrossDomain,
         inherited_domains: &[ElementId],
-        deps: &BTreeSet<FactKey>,
+        deps: &BTreeSet<Dependency>,
     ) -> Vec<ElementId> {
         if domain.factors.is_empty() {
             // A known empty population has no canonical opposite-end domain.
@@ -367,7 +800,7 @@ impl<'a> Graph<'a> {
                     deps,
                 );
                 for &target in &factor.types {
-                    self.cross_relation(
+                    self.required_relationship(
                         cross,
                         (ty, target),
                         c::INTERSECTING,
@@ -375,7 +808,7 @@ impl<'a> Graph<'a> {
                             p::INTERSECTING_TYPE_INTERSECTED,
                             p::INTERSECTING_INTERSECTING_TYPE,
                         ),
-                        "intersection",
+                        ("owned-cross-domain/1", "intersection"),
                         deps,
                     );
                 }
@@ -454,7 +887,10 @@ impl<'a> Graph<'a> {
     }
     fn initial_value_context(&mut self, that: ElementId, start: ElementId) -> ElementId {
         let inputs = [that, start];
-        let deps = BTreeSet::from([FactKey::Element(that), FactKey::Element(start)]);
+        let deps = BTreeSet::from([
+            Dependency::Declared(FactKey::Element(that)),
+            Dependency::Declared(FactKey::Element(start)),
+        ]);
         // This globally qualified chain has the same semantic context wherever
         // it is used. Its identity does not contain the requesting record ID.
         let chain = self.create(
@@ -498,10 +934,13 @@ impl<'a> Graph<'a> {
         &mut self,
         key: DerivationKey,
         class: MetaclassId,
-        dependencies: &BTreeSet<FactKey>,
+        dependencies: &BTreeSet<Dependency>,
     ) -> ElementId {
         let id = key.element_id();
-        if self.records.contains_key(&id) {
+        if let Some(existing) = self.records.get(&id) {
+            if existing.key != key || existing.class != class {
+                self.conflict = Some(FactKey::Element(id));
+            }
             return id;
         }
         let registry = self.model.registry();
@@ -566,48 +1005,82 @@ impl<'a> Graph<'a> {
                 SlotValue::Scalar(Value::Enumeration(literal)),
             );
         }
+        // Existing canonical facts keep their original proof. The materializer
+        // still compares class, rule and every planned slot before reusing them.
+        let explanation = if let Some(Origin::Derived(proof)) =
+            self.model.element(id).map(|record| record.origin())
+        {
+            self.evidence_pool.intern_shared(proof.clone())
+        } else {
+            let mut normalized = BTreeSet::new();
+            for &dependency in dependencies {
+                // Ownership extensions retain their prior contributors without
+                // depending on the same aggregate this producer may extend.
+                if let Dependency::Derived(FactKey::Property {
+                    element,
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                }) = dependency
+                    && let Some(slot) = self
+                        .model
+                        .navigation_slot(element, p::ELEMENT_OWNED_RELATIONSHIP)
+                    && let Origin::Derived(proof) = slot.origin()
+                {
+                    normalized.extend(proof.dependencies.iter().copied());
+                } else {
+                    normalized.insert(dependency);
+                }
+            }
+            let subject = FactKey::Element(key.subject);
+            normalized.insert(if self.model.declared_fact_origin(subject).is_some() {
+                Dependency::Declared(subject)
+            } else {
+                Dependency::Derived(subject)
+            });
+            self.evidence_pool.intern(KernelExplanation {
+                rule: key.rule,
+                dependencies: normalized,
+            })
+        };
         self.records.insert(
             id,
             ImpliedRecord {
                 key,
                 class,
                 slots,
-                dependencies: dependencies
-                    .iter()
-                    .copied()
-                    .flat_map(|fact| {
-                        // Association navigation is a read projection, not a
-                        // separately declared slot. Retain its canonical links
-                        // as kernel evidence instead of inventing a slot fact.
-                        if let FactKey::Property { element, property } = fact
-                            && let Some(slot) = self.model.navigation_slot(element, property)
-                            && let agq_kernel::provenance::Origin::AssociationOccurrences(links) =
-                                slot.origin()
-                        {
-                            return links
-                                .iter()
-                                .copied()
-                                .map(|link| {
-                                    Dependency::Declared(FactKey::AssociationOccurrence(link))
-                                })
-                                .collect::<Vec<_>>();
-                        }
-                        vec![Dependency::Declared(fact)]
-                    })
-                    .collect(),
+                explanation,
             },
         );
         id
     }
     fn set(&mut self, id: ElementId, property: PropertyId, value: Value) {
-        self.records
-            .get_mut(&id)
-            .expect("implied record")
-            .slots
-            .insert(property, SlotValue::Scalar(value));
+        self.set_value(id, property, SlotValue::Scalar(value));
+    }
+    fn set_value(&mut self, id: ElementId, property: PropertyId, value: SlotValue) {
+        let slots = &mut self.records.get_mut(&id).expect("implied record").slots;
+        if !self.assignments.insert((id, property)) && slots.get(&property) != Some(&value) {
+            self.conflict = Some(FactKey::Property {
+                element: id,
+                property,
+            });
+        } else {
+            slots.insert(property, value);
+        }
     }
     fn own(&mut self, owner: ElementId, relationship: ElementId) {
-        if let Some(record) = self.records.get_mut(&owner) {
+        if self
+            .model
+            .navigation_slot(owner, p::ELEMENT_OWNED_RELATIONSHIP)
+            .is_some_and(|s| {
+                s.value()
+                    .values()
+                    .any(|v| *v == Value::Reference(relationship))
+            })
+        {
+            return;
+        }
+        if self.model.element(owner).is_none()
+            && let Some(record) = self.records.get_mut(&owner)
+        {
             let SlotValue::Ordered(values) = record
                 .slots
                 .entry(p::ELEMENT_OWNED_RELATIONSHIP)
@@ -619,10 +1092,10 @@ impl<'a> Graph<'a> {
                 values.push(Value::Reference(relationship));
             }
         } else {
-            let values = self.attachments.entry(owner).or_default();
-            if !values.contains(&relationship) {
-                values.push(relationship);
-            }
+            self.attachments
+                .entry(owner)
+                .or_default()
+                .insert(relationship);
         }
     }
     fn membership(
@@ -631,17 +1104,14 @@ impl<'a> Graph<'a> {
         target: ElementId,
         class: MetaclassId,
         key: DerivationKey,
-        deps: &BTreeSet<FactKey>,
+        deps: &BTreeSet<Dependency>,
     ) {
         let member = self.create(key, class, deps);
-        self.records
-            .get_mut(&member)
-            .expect("membership")
-            .slots
-            .insert(
-                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
-                SlotValue::Ordered(vec![Value::Reference(target)]),
-            );
+        self.set_value(
+            member,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            SlotValue::Ordered(vec![Value::Reference(target)]),
+        );
         self.own(owner, member);
     }
     fn contextual(
@@ -650,7 +1120,7 @@ impl<'a> Graph<'a> {
         expression: ElementId,
         raw: ElementId,
         rule: ResultDomainRule,
-        deps: &BTreeSet<FactKey>,
+        deps: &BTreeSet<Dependency>,
     ) -> ContextualResult {
         let name = rule.constraint();
         let inputs = [expression, raw];
@@ -699,7 +1169,7 @@ impl<'a> Graph<'a> {
         specific: ElementId,
         general: ElementId,
         rule: &str,
-        deps: &BTreeSet<FactKey>,
+        deps: &BTreeSet<Dependency>,
     ) {
         let relationship = self.create(
             self.key(rule, subject, "subsetting", &[specific, general]),
@@ -727,14 +1197,11 @@ impl<'a> Graph<'a> {
         if !self.unattached_contextual.remove(&target) {
             return;
         }
-        self.records
-            .get_mut(&relationship)
-            .expect("target relationship")
-            .slots
-            .insert(
-                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
-                SlotValue::Ordered(vec![Value::Reference(target)]),
-            );
+        self.set_value(
+            relationship,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            SlotValue::Ordered(vec![Value::Reference(target)]),
+        );
     }
     fn binding(
         &mut self,
@@ -742,14 +1209,16 @@ impl<'a> Graph<'a> {
         endpoints: [ElementId; 2],
         domain: Option<ElementId>,
         role: ImpliedBindingRole,
-        deps: &BTreeSet<FactKey>,
+        deps: &BTreeSet<Dependency>,
     ) -> ElementId {
         let rule = role.constraint();
         let key = self.key(rule, owner, "binding", &endpoints);
         let binding = self.create(key, c::BINDING_CONNECTOR, deps);
         let membership = if matches!(
             role,
-            ImpliedBindingRole::ExpressionResult | ImpliedBindingRole::FunctionResult
+            ImpliedBindingRole::ExpressionResult
+                | ImpliedBindingRole::FunctionResult
+                | ImpliedBindingRole::Invocation
         ) {
             c::FEATURE_MEMBERSHIP
         } else {
@@ -823,15 +1292,197 @@ impl<'a> Graph<'a> {
         binding
     }
     fn build(self, snapshot: &Snapshot) -> Result<DerivedOverlay, DerivationError> {
-        let mut builder = DerivationBuilder::new(snapshot.clone());
+        self.build_with(DerivationBuilder::new(snapshot.clone()))
+    }
+    fn build_with(self, mut builder: DerivationBuilder) -> Result<DerivedOverlay, DerivationError> {
+        if let Some(fact) = self.conflict {
+            return Err(DerivationError::DuplicateFact(fact));
+        }
+        let mut owner_orders: BTreeMap<_, Vec<_>> = self
+            .records
+            .iter()
+            .filter_map(|(&id, r)| {
+                r.slots.get(&p::ELEMENT_OWNED_RELATIONSHIP).map(|v| {
+                    (
+                        id,
+                        v.values()
+                            .filter_map(|v| {
+                                if let Value::Reference(id) = v {
+                                    Some(*id)
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect(),
+                    )
+                })
+            })
+            .collect();
+        for (&owner, additions) in &self.attachments {
+            let order = owner_orders.entry(owner).or_insert_with(|| {
+                self.model
+                    .navigation_slot(owner, p::ELEMENT_OWNED_RELATIONSHIP)
+                    .into_iter()
+                    .flat_map(|s| s.value().values())
+                    .filter_map(|v| {
+                        if let Value::Reference(id) = v {
+                            Some(*id)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect()
+            });
+            order.extend(additions.iter().copied());
+        }
+        let mut occurrences = vec![];
         for record in self.records.into_values() {
-            builder.element(record.key, record.class, record.slots, record.dependencies);
+            if let Some(existing) = self.model.element(record.key.element_id()) {
+                if existing.metaclass() != record.class
+                    || !matches!(existing.origin(),
+                    agq_kernel::provenance::Origin::Derived(e) if e.rule == record.key.rule)
+                {
+                    return Err(DerivationError::IdentityCollision(existing.id()));
+                }
+                for (property, value) in &record.slots {
+                    if self
+                        .model
+                        .navigation_slot(existing.id(), *property)
+                        .map(|s| s.value())
+                        != Some(value)
+                    {
+                        return Err(DerivationError::DuplicateFact(FactKey::Property {
+                            element: existing.id(),
+                            property: *property,
+                        }));
+                    }
+                }
+                continue;
+            }
+            // Producer queries inspect positive and absent graph facts. Retain
+            // a conservative whole-input search rather than losing negative
+            // evidence when aggregate batch proofs are released. The complete
+            // builder reruns every producer to an unchanged graph before sealing.
+            builder.searches(
+                FactKey::Element(record.key.element_id()),
+                BTreeSet::from([agq_kernel::derived::StructuralSearch::Model]),
+            );
+            let mut slots = BTreeMap::new();
+            for (property, value) in record.slots {
+                let registry = self.model.registry();
+                let descriptor = registry
+                    .property(property)
+                    .map_err(agq_kernel::ModelError::from)?;
+                let derived_association = descriptor.derived
+                    && descriptor.association.is_some_and(|a| {
+                        registry
+                            .supports_derived_occurrence_storage(a)
+                            .unwrap_or(false)
+                    });
+                if registry
+                    .supports_slot_storage(property)
+                    .map_err(agq_kernel::ModelError::from)?
+                    && !derived_association
+                {
+                    slots.insert(property, value);
+                    continue;
+                }
+                let descriptor = registry
+                    .property(property)
+                    .map_err(agq_kernel::ModelError::from)?;
+                let association = descriptor.association.ok_or(
+                    agq_kernel::ModelError::UnsupportedAssociationStorage(property),
+                )?;
+                let opposite = *descriptor.opposite_ends.first().ok_or(
+                    agq_kernel::ModelError::UnsupportedAssociationStorage(property),
+                )?;
+                for (position, value) in value.values().enumerate() {
+                    let Value::Reference(target) = value else {
+                        return Err(agq_kernel::ModelError::UnsupportedAssociationStorage(
+                            property,
+                        )
+                        .into());
+                    };
+                    let ends =
+                        BTreeMap::from([(property, *target), (opposite, record.key.element_id())]);
+                    let mut positions = BTreeMap::new();
+                    if descriptor.ordered && !matches!(descriptor.multiplicity.upper, Some(0 | 1)) {
+                        positions.insert(property, position);
+                    }
+                    occurrences.push((record.key, association, ends, positions));
+                }
+            }
+            builder.element_with_explanation(record.key, record.class, slots, record.explanation);
+        }
+        // An ordered inverse of an owned relationship is selected from the
+        // canonical owner's ordered relationships. It must include precisely the
+        // participants of that end, preserving the declared prefix. Never infer
+        // semantic end order from allocation or producer traversal order.
+        let mut groups = BTreeMap::<(ElementId, PropertyId), BTreeSet<ElementId>>::new();
+        for (_, _, ends, _) in &occurrences {
+            for (&end, &target) in ends {
+                let p = self
+                    .model
+                    .registry()
+                    .property(end)
+                    .map_err(agq_kernel::ModelError::from)?;
+                let context = ends[p.opposite_ends.first().expect("binary association")];
+                groups.entry((context, end)).or_default().insert(target);
+            }
+        }
+        for link in self.model.association_occurrences() {
+            for (&end, &target) in link.ends() {
+                let p = self
+                    .model
+                    .registry()
+                    .property(end)
+                    .map_err(agq_kernel::ModelError::from)?;
+                let context = link.ends()[p.opposite_ends.first().expect("binary association")];
+                if let Some(group) = groups.get_mut(&(context, end)) {
+                    group.insert(target);
+                }
+            }
+        }
+        for (key, association, ends, mut positions) in occurrences {
+            for (&end, &target) in &ends {
+                let p = self
+                    .model
+                    .registry()
+                    .property(end)
+                    .map_err(agq_kernel::ModelError::from)?;
+                if !p.ordered
+                    || matches!(p.multiplicity.upper, Some(0 | 1))
+                    || positions.contains_key(&end)
+                {
+                    continue;
+                }
+                let context = ends[p.opposite_ends.first().expect("binary association")];
+                let targets = &groups[&(context, end)];
+                let order: Vec<_> = owner_orders
+                    .get(&context)
+                    .into_iter()
+                    .flatten()
+                    .filter(|id| targets.contains(id))
+                    .copied()
+                    .collect();
+                if order.iter().copied().collect::<BTreeSet<_>>() != *targets {
+                    return Err(agq_kernel::ModelError::UnsupportedAssociationStorage(end).into());
+                }
+                positions.insert(
+                    end,
+                    order
+                        .iter()
+                        .position(|id| *id == target)
+                        .expect("complete group"),
+                );
+            }
+            builder.association_occurrence(key, association, ends, positions, BTreeSet::new());
         }
         for (owner, additions) in self.attachments {
             builder.extend_ordered_references(
                 owner,
                 p::ELEMENT_OWNED_RELATIONSHIP,
-                additions,
+                additions.into_iter().collect(),
                 KernelExplanation {
                     rule: rule_id(self.profile, "structural-result-ownership/1"),
                     dependencies: BTreeSet::new(),
@@ -861,16 +1512,32 @@ pub struct ResultStructurePlan<'m> {
     pub contextual_results: Vec<ContextualResult>,
 }
 impl ResultStructurePlan<'_> {
+    /// Publication batches retain canonical per-fact evidence in the graph.
+    /// Release the redundant aggregate query proof before the kernel allocates
+    /// the merged overlay. This internal status is never returned as a query.
+    pub(crate) fn discard_aggregate_proof(&mut self) {
+        self.production.explanations.clear();
+        self.production.fact_origins.clear();
+        self.production.declared_fact_origins.clear();
+        self.production.canonical_dependencies.clear();
+        self.production.positive_dependencies.clear();
+        self.production.search_dependencies.clear();
+        self.contextual_results.clear();
+    }
     /// Stable implied identities, useful for independent batch comparisons.
     pub fn planned_elements(&self) -> impl Iterator<Item = ElementId> + '_ {
         self.graph.records.keys().copied()
     }
     /// Merge disjoint subject batches from the identical context. Duplicate
-    /// facts must agree exactly, including provenance. Conflicting ownership
-    /// sequences are rejected before mutation; a batch order cannot pick one.
+    /// facts must agree exactly, including provenance. Contributions to existing
+    /// ownership collections merge by stable identity, preserving declared
+    /// prefixes. Semantic sequences on fresh records must still agree exactly.
     pub fn merge(&mut self, other: Self) -> Result<(), DerivationError> {
         if self.context != other.context || !std::ptr::eq(self.graph.model, other.graph.model) {
             return Err(DerivationError::InputContextMismatch);
+        }
+        if let Some(fact) = self.graph.conflict.or(other.graph.conflict) {
+            return Err(DerivationError::DuplicateFact(fact));
         }
         for (&id, record) in &other.graph.records {
             if self
@@ -882,21 +1549,18 @@ impl ResultStructurePlan<'_> {
                 return Err(DerivationError::DuplicateFact(FactKey::Element(id)));
             }
         }
-        for (&owner, additions) in &other.graph.attachments {
-            if self
-                .graph
-                .attachments
-                .get(&owner)
-                .is_some_and(|existing| existing != additions)
-            {
-                return Err(DerivationError::InvalidCollectionExtension {
-                    element: owner,
-                    property: p::ELEMENT_OWNED_RELATIONSHIP,
-                });
-            }
+        for (id, mut record) in other.graph.records {
+            record.explanation = self.graph.evidence_pool.intern_shared(record.explanation);
+            self.graph.records.insert(id, record);
         }
-        self.graph.records.extend(other.graph.records);
-        self.graph.attachments.extend(other.graph.attachments);
+        self.graph.assignments.extend(other.graph.assignments);
+        for (owner, additions) in other.graph.attachments {
+            self.graph
+                .attachments
+                .entry(owner)
+                .or_default()
+                .extend(additions);
+        }
         self.graph
             .unattached_contextual
             .extend(other.graph.unattached_contextual);
@@ -925,6 +1589,25 @@ impl ResultStructurePlan<'_> {
             contextual_results: self.contextual_results,
         })
     }
+    /// Add a producer stage to its exact input overlay. The kernel retains all
+    /// earlier declared and derived facts and validates the combined evidence DAG.
+    pub fn materialize_on_overlay(
+        self,
+        input: &DerivedOverlay,
+    ) -> Result<ResultStructure, DerivationError> {
+        if input.base_revision() != self.context.revision
+            || !std::ptr::eq(input.model(), self.graph.model)
+        {
+            return Err(DerivationError::InputContextMismatch);
+        }
+        Ok(ResultStructure {
+            overlay: self
+                .graph
+                .build_with(DerivationBuilder::from_overlay(input.clone()))?,
+            production: self.production,
+            contextual_results: self.contextual_results,
+        })
+    }
 }
 
 impl<'m> KerMlQueries<'m> {
@@ -934,6 +1617,23 @@ impl<'m> KerMlQueries<'m> {
         expression: ElementId,
     ) -> Option<ElementId> {
         let result = self.expression_result(out, expression);
+        if self.context().options.baseline_profile == BaselineProfile::OPERATIONAL_V8
+            && self.is(expression, c::INSTANTIATION_EXPRESSION)
+            && let Some(result) = result
+        {
+            let owner = self.owning_type(result);
+            let owned = owner.value == Some(expression);
+            out.merge(owner);
+            if !owned {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_OWNED_INSTANTIATION_RESULT",
+                    expression,
+                    "Instantiation result ownership has not been produced",
+                );
+                return None;
+            }
+        }
         if result.is_none() {
             out.problem(
                 Completeness::Incomplete,
@@ -970,12 +1670,15 @@ impl<'m> KerMlQueries<'m> {
             model: self.model(),
             profile,
             records: BTreeMap::new(),
+            evidence_pool: ExplanationPool::default(),
             attachments: BTreeMap::new(),
             unattached_contextual: BTreeSet::new(),
+            assignments: BTreeSet::new(),
+            conflict: None,
         };
         let mut production = self.result(vec![]);
         let mut contextual_results = vec![];
-        for subject in subjects {
+        for subject in subjects.into_iter().collect::<BTreeSet<_>>() {
             if self.model().element(subject).is_none() {
                 production.problem(
                     Completeness::Invalid,
@@ -984,6 +1687,193 @@ impl<'m> KerMlQueries<'m> {
                     "Missing producer subject",
                 );
                 continue;
+            }
+            if profile == BaselineProfile::OPERATIONAL_V8
+                && self.is(subject, c::INSTANTIATION_EXPRESSION)
+            {
+                let mut proof = self.result(());
+                let members = self.memberships(subject);
+                let has_owned_result = members
+                    .value
+                    .iter()
+                    .any(|&m| self.is(m, c::RETURN_PARAMETER_MEMBERSHIP));
+                proof.merge(members);
+                if !has_owned_result {
+                    if proof.completeness == Completeness::Complete {
+                        graph.return_result(subject, &proof.canonical_dependencies);
+                        proof.problem(Completeness::Incomplete, "KQ_RESULT_STAGE", subject,
+                            "Owned result was staged; dependent producers require the next overlay stage");
+                    }
+                    production.merge(proof);
+                    continue;
+                }
+            }
+            if profile == BaselineProfile::OPERATIONAL_V8 && self.is(subject, c::FEATURE) {
+                let redefinitions = self.implied_redefinitions(subject);
+                if redefinitions.completeness == Completeness::Complete {
+                    for &target in &redefinitions.value {
+                        if let Some(proofs) = redefinitions.explanations.get(&Conclusion {
+                            query: QueryKind::RedefinedFeatures,
+                            subject,
+                            value: target,
+                        }) {
+                            for proof in proofs {
+                                let rule = match proof.rule {
+                                    Rule::ParameterRedefinition => {
+                                        "checkFeatureParameterRedefinition"
+                                    }
+                                    Rule::EndRedefinition => "checkFeatureEndRedefinition",
+                                    Rule::ResultRedefinition => "checkFeatureResultRedefinition",
+                                    _ => continue,
+                                };
+                                graph.required_relationship(
+                                    subject,
+                                    (subject, target),
+                                    c::REDEFINITION,
+                                    (
+                                        p::REDEFINITION_REDEFINING_FEATURE,
+                                        p::REDEFINITION_REDEFINED_FEATURE,
+                                    ),
+                                    (rule, "positional-redefinition"),
+                                    &redefinitions.canonical_dependencies,
+                                );
+                            }
+                        }
+                    }
+                }
+                production.merge(redefinitions);
+                let mut proof = self.result(());
+                if matches!(
+                    self.read_value(&mut proof, subject, p::FEATURE_IS_VARIABLE),
+                    Some(Value::Boolean(true))
+                ) {
+                    let owner = self.owning_type(subject);
+                    if let Some(owner_id) = owner.value {
+                        let snapshots = self.standard_role(StandardRole::OccurrenceSnapshots);
+                        let occurrence = self.standard_role(StandardRole::Occurrence);
+                        if let (Some(snapshots_id), Some(occurrence_id)) =
+                            (snapshots.value, occurrence.value)
+                        {
+                            let mut domain = (owner_id == occurrence_id).then_some(snapshots_id);
+                            if domain.is_none() {
+                                let mut scope = self.result(());
+                                let features = self.effective_features(owner_id);
+                                let mut candidates = vec![];
+                                for &feature in &features.value {
+                                    self.read_value(&mut scope, feature, p::FEATURE_IS_VARIABLE);
+                                    let redefined = self.all_redefined_features(feature);
+                                    if redefined.value.contains(&snapshots_id) {
+                                        let domains = self.featuring_types(feature);
+                                        if domains.value.contains(&owner_id) {
+                                            candidates.push(feature);
+                                        }
+                                        scope.merge(domains);
+                                    }
+                                    scope.merge(redefined);
+                                }
+                                scope.merge(features);
+                                let mut scope_deps = scope.canonical_dependencies.clone();
+                                scope_deps.extend(snapshots.canonical_dependencies.iter().copied());
+                                scope_deps
+                                    .extend(occurrence.canonical_dependencies.iter().copied());
+                                proof.merge(scope);
+                                match candidates.as_slice() {
+                                    [candidate] => domain = Some(*candidate),
+                                    [] if proof.completeness == Completeness::Complete => {
+                                        domain = Some(graph.variable_snapshot(owner_id, snapshots_id, &scope_deps));
+                                    }
+                                    [] => {},
+                                    _ => proof.problem(Completeness::Incomplete, "KQ_SNAPSHOT_DOMAIN_AMBIGUOUS", subject,
+                                        "Multiple effective snapshot redefinitions require a unique featuring domain"),
+                                }
+                            }
+                            if let Some(domain) = domain
+                                && proof.completeness == Completeness::Complete
+                            {
+                                graph.variable_featuring(
+                                    subject,
+                                    domain,
+                                    &proof.canonical_dependencies,
+                                );
+                            }
+                        }
+                        proof.merge(snapshots);
+                        proof.merge(occurrence);
+                    } else {
+                        proof.problem(
+                            Completeness::Incomplete,
+                            "KQ_VARIABLE_OWNER",
+                            subject,
+                            "A variable Feature requires its owning Type",
+                        );
+                    }
+                    proof.merge(owner);
+                }
+                production.merge(proof);
+            }
+            if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
+                let mut proof = self.owned_cross_feature(subject);
+                if let Some(cross) = proof.value {
+                    let existing = self.owned_cross_subsetting(subject);
+                    let has_crossing = existing.value.is_some();
+                    proof.merge(existing);
+                    if has_crossing {
+                        let actual = self.cross_feature(subject);
+                        if actual.value != Some(cross)
+                            && actual.completeness == Completeness::Complete
+                        {
+                            proof.problem(Completeness::Invalid, "KQ_CROSSING_CONFLICT", subject,
+                                "The canonical crossed chain conflicts with the selected owned cross Feature");
+                        }
+                        proof.merge(actual);
+                    } else {
+                        let owner = self.owning_type(subject);
+                        if let Some(owner) = owner.value {
+                            let ends = self.structural_end_features(owner);
+                            let other: Vec<_> = ends
+                                .value
+                                .iter()
+                                .copied()
+                                .filter(|e| *e != subject)
+                                .collect();
+                            proof.merge(ends);
+                            if let [first] = other.as_slice() {
+                                if proof.completeness == Completeness::Complete {
+                                    graph.crossing(
+                                        subject,
+                                        *first,
+                                        cross,
+                                        &proof.canonical_dependencies,
+                                    );
+                                }
+                            } else if other.len() > 1
+                                && proof.completeness == Completeness::Complete
+                            {
+                                let first =
+                                    graph.crossing_product(&other, &proof.canonical_dependencies);
+                                let relationship = graph.crossing(
+                                    subject,
+                                    first,
+                                    cross,
+                                    &proof.canonical_dependencies,
+                                );
+                                let SlotValue::Ordered(owned) = graph
+                                    .records
+                                    .get_mut(&relationship)
+                                    .expect("cross-subsetting")
+                                    .slots
+                                    .get_mut(&p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
+                                    .expect("owned chain")
+                                else {
+                                    unreachable!()
+                                };
+                                owned.push(Value::Reference(first));
+                            }
+                        }
+                        proof.merge(owner);
+                    }
+                }
+                production.merge(proof);
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
                 let mut proof = self.owned_cross_feature_domain(subject);
@@ -1002,10 +1892,10 @@ impl<'m> KerMlQueries<'m> {
                             subject,
                             &domain,
                             &inherited_domains,
-                            &proof.positive_dependencies,
+                            &proof.canonical_dependencies,
                         );
                         for ty in required_types {
-                            graph.cross_typing(subject, subject, ty, &proof.positive_dependencies);
+                            graph.cross_typing(subject, subject, ty, &proof.canonical_dependencies);
                         }
                         for &inherited in &domain.inherited_cross_features {
                             graph.subset(
@@ -1013,10 +1903,94 @@ impl<'m> KerMlQueries<'m> {
                                 subject,
                                 inherited,
                                 "owned-cross-domain/1",
-                                &proof.positive_dependencies,
+                                &proof.canonical_dependencies,
                             );
                         }
                     }
+                }
+                production.merge(proof);
+            }
+            if profile == BaselineProfile::OPERATIONAL_V8
+                && self.is(subject, c::INVOCATION_EXPRESSION)
+            {
+                let mut proof = self.result(());
+                let instantiated = self.instantiated_type(subject);
+                if let Some(target) = instantiated.value {
+                    let function = if self.is(target, c::FEATURE) {
+                        let types = self.feature_types(target);
+                        let function = types.value.iter().any(|&ty| self.is(ty, c::FUNCTION));
+                        proof.merge(types);
+                        function
+                    } else {
+                        self.is(target, c::FUNCTION)
+                    };
+                    proof.merge(instantiated);
+                    if proof.completeness == Completeness::Complete {
+                        graph.specialize(
+                            subject,
+                            target,
+                            "checkInvocationExpressionSpecialization",
+                            &proof.canonical_dependencies,
+                        );
+                    }
+                    if !function
+                        && let Some(raw) = self.required_structural_result(&mut proof, subject)
+                        && proof.completeness == Completeness::Complete
+                    {
+                        graph.specialize(
+                            raw,
+                            target,
+                            "checkInvocationExpressionBehaviorResultSpecialization",
+                            &proof.canonical_dependencies,
+                        );
+                        production.value.push(graph.binding(
+                            subject,
+                            [subject, raw],
+                            Some(subject),
+                            ImpliedBindingRole::Invocation,
+                            &proof.canonical_dependencies,
+                        ));
+                    }
+                } else {
+                    proof.merge(instantiated);
+                }
+                production.merge(proof);
+            }
+            if profile == BaselineProfile::OPERATIONAL_V8
+                && self.is(subject, c::FEATURE_CHAIN_EXPRESSION)
+            {
+                let mut proof = self.result(());
+                let input = self.first_input(subject);
+                let source_target = self.source_target_feature(subject);
+                let target = self.reference_referent(subject);
+                let standard = self.standard_role(StandardRole::FeatureChainSourceTarget);
+                let values = (
+                    input.value,
+                    source_target.value,
+                    target.value,
+                    standard.value,
+                );
+                proof.merge(input);
+                proof.merge(source_target);
+                proof.merge(target);
+                proof.merge(standard);
+                let raw = self.required_structural_result(&mut proof, subject);
+                if let (Some(input), source_target, Some(target), Some(standard), Some(raw)) =
+                    (values.0, values.1, values.2, values.3, raw)
+                {
+                    if proof.completeness == Completeness::Complete {
+                        graph.expression_chain(
+                            subject,
+                            input,
+                            source_target,
+                            (target, standard),
+                            raw,
+                            &proof.canonical_dependencies,
+                        );
+                    }
+                } else {
+                    proof.problem(Completeness::Incomplete, "KQ_FEATURE_CHAIN_STRUCTURE", subject,
+                        "The chain expression requires a source input, target Feature and owned result");
                 }
                 production.merge(proof);
             }
@@ -1036,7 +2010,7 @@ impl<'m> KerMlQueries<'m> {
                             [target, raw],
                             domain,
                             ImpliedBindingRole::FeatureReferenceResult,
-                            &proof.positive_dependencies,
+                            &proof.canonical_dependencies,
                         ));
                     }
                 }
@@ -1075,7 +2049,7 @@ impl<'m> KerMlQueries<'m> {
                                     nested,
                                     inner,
                                     rule,
-                                    &proof.positive_dependencies,
+                                    &proof.canonical_dependencies,
                                 );
                                 let id = contextual.feature;
                                 contextual_results.push(contextual);
@@ -1088,7 +2062,7 @@ impl<'m> KerMlQueries<'m> {
                                 [outer, target],
                                 Some(subject),
                                 role,
-                                &proof.positive_dependencies,
+                                &proof.canonical_dependencies,
                             ));
                         }
                     }
@@ -1144,7 +2118,7 @@ impl<'m> KerMlQueries<'m> {
                                     expression,
                                     raw,
                                     rule,
-                                    &proof.positive_dependencies,
+                                    &proof.canonical_dependencies,
                                 );
                                 let id = contextual.feature;
                                 contextual_results.push(contextual);
@@ -1163,7 +2137,7 @@ impl<'m> KerMlQueries<'m> {
                                 subject,
                                 target,
                                 ResultDomainRule::FeatureValuation.constraint(),
-                                &proof.positive_dependencies,
+                                &proof.canonical_dependencies,
                             );
                         }
                         if nondefault {
@@ -1181,7 +2155,7 @@ impl<'m> KerMlQueries<'m> {
                                         [subject, contextual.expect("value chain")],
                                         Some(context),
                                         ImpliedBindingRole::FeatureValue,
-                                        &proof.positive_dependencies,
+                                        &proof.canonical_dependencies,
                                     ));
                                 }
                             } else if initial && profile == BaselineProfile::OPERATIONAL_V7 {
@@ -1214,7 +2188,7 @@ impl<'m> KerMlQueries<'m> {
                                             [subject, contextual.expect("value chain")],
                                             Some(context),
                                             ImpliedBindingRole::FeatureValue,
-                                            &proof.positive_dependencies,
+                                            &proof.canonical_dependencies,
                                         ));
                                     }
                                 } else {
@@ -1235,7 +2209,7 @@ impl<'m> KerMlQueries<'m> {
                                     [subject, contextual.expect("value chain")],
                                     domains.value.first().copied(),
                                     ImpliedBindingRole::FeatureValue,
-                                    &proof.positive_dependencies,
+                                    &proof.canonical_dependencies,
                                 ));
                             } else {
                                 proof.problem(
@@ -1310,7 +2284,7 @@ impl<'m> KerMlQueries<'m> {
                                     argument,
                                     raw,
                                     rule,
-                                    &proof.positive_dependencies,
+                                    &proof.canonical_dependencies,
                                 );
                                 let id = contextual.feature;
                                 contextual_results.push(contextual);
@@ -1323,7 +2297,7 @@ impl<'m> KerMlQueries<'m> {
                                 result,
                                 target,
                                 rule.constraint(),
-                                &proof.positive_dependencies,
+                                &proof.canonical_dependencies,
                             );
                         }
                     }
