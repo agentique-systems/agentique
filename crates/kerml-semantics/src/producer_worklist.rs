@@ -136,6 +136,9 @@ pub struct PublicationClosure {
     pub counters: PublicationCounters,
     pub completeness: Completeness,
     pub converged: bool,
+    /// Bounded model population read by the latest evaluation of each producer.
+    /// Scoped callers can audit their boundary without rerunning producers.
+    pub producer_reads: QueryInvalidationSet,
 }
 
 #[derive(Default)]
@@ -291,6 +294,9 @@ pub fn close_result_structure(
                 counters.subjects_evaluated += batch.len();
                 counters.producer_families_attempted += part.producer_families_attempted;
                 for &subject in batch {
+                    // The reference batch shares a graph/proof accumulator;
+                    // retain its conservative reads for every batch member.
+                    index.replace(subject, &part.production, overlay.model(), &mut counters);
                     counters.dirty_reevaluations += usize::from(!seen.insert(subject));
                     status.insert(
                         subject,
@@ -419,6 +425,9 @@ pub fn close_result_structure(
         stages,
         counters,
         converged,
+        producer_reads: QueryInvalidationSet::from_keys(
+            index.subjects.into_values().flatten().collect(),
+        ),
         completeness: if converged {
             status
                 .values()

@@ -126,6 +126,22 @@ pub struct QueryInvalidationSet {
     entire_model: bool,
 }
 impl QueryInvalidationSet {
+    pub(crate) fn from_keys(keys: BTreeSet<InvalidationKey>) -> Self {
+        let mut entire_model = false;
+        let mut elements = Vec::with_capacity(keys.len());
+        for key in keys {
+            match key {
+                InvalidationKey::Element(id) | InvalidationKey::Incoming(id) => elements.push(id),
+                InvalidationKey::Global => entire_model = true,
+            }
+        }
+        elements.sort_unstable();
+        elements.dedup();
+        Self {
+            elements: elements.into_boxed_slice(),
+            entire_model,
+        }
+    }
     /// Distinct bounded positive/negative read subjects in identity order.
     pub fn bounded_elements(&self) -> &[ElementId] {
         &self.elements
@@ -185,20 +201,7 @@ impl QueryReadSet {
     pub fn into_invalidation(self) -> QueryInvalidationSet {
         drop(self.canonical_dependencies);
         drop(self.search_dependencies);
-        let mut entire_model = false;
-        let mut elements = Vec::with_capacity(self.keys.len());
-        for key in self.keys {
-            match key {
-                InvalidationKey::Element(id) | InvalidationKey::Incoming(id) => elements.push(id),
-                InvalidationKey::Global => entire_model = true,
-            }
-        }
-        elements.sort_unstable();
-        elements.dedup();
-        QueryInvalidationSet {
-            elements: elements.into_boxed_slice(),
-            entire_model,
-        }
+        QueryInvalidationSet::from_keys(self.keys)
     }
     /// `affected_elements` includes changed records/owners and BOTH old and new
     /// reference and occurrence endpoints, including inverse navigation. Changes

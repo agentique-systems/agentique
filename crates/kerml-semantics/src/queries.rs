@@ -851,6 +851,28 @@ impl<'m> KerMlQueries<'m> {
         out
     }
 
+    /// Compare the actual indexed reference role with the relationship's
+    /// effective source property (e.g. FeatureTyping::typedFeature redefines
+    /// Specialization::specific). A general endpoint does not make a
+    /// relationship an outgoing specialization of that general Type.
+    pub(crate) fn incoming_at_source(
+        &self,
+        relationship: ElementId,
+        actual_property: PropertyId,
+        source_property: PropertyId,
+    ) -> bool {
+        self.model()
+            .element(relationship)
+            .and_then(|record| {
+                self.model()
+                    .registry()
+                    .resolve_property(record.metaclass(), source_property)
+                    .ok()
+                    .flatten()
+            })
+            .is_some_and(|property| property.id == actual_property)
+    }
+
     pub(crate) fn targets(
         &self,
         source: ElementId,
@@ -900,14 +922,18 @@ impl<'m> KerMlQueries<'m> {
         let mut candidates: BTreeSet<_> = self
             .model()
             .incoming(source)
-            .filter(|r| self.is(r.source, class))
+            .filter(|r| {
+                self.is(r.source, class)
+                    && self.incoming_at_source(r.source, r.property, source_property)
+            })
             .map(|r| r.source)
             .collect();
         let owned = self.owned_relationships(source);
-        candidates.extend(owned.value.iter().copied().filter(|id| {
-            (self.is(*id, c::REFERENCE_SUBSETTING) || self.is(*id, c::CROSS_SUBSETTING))
-                && self.is(*id, class)
-        }));
+        // Owned relationships remain relevant even when their source endpoint
+        // has not been computed yet. Ref/CrossSubsetting additionally derive
+        // that endpoint from ownership below. Unknown *incoming general* sources
+        // are not evidence about this Type's outgoing specialization population.
+        candidates.extend(owned.value.iter().copied().filter(|id| self.is(*id, class)));
         out.merge(owned);
         for id in candidates {
             let Some(view) = self.checked::<views::Specialization, _>(&mut out, id) else {

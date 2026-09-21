@@ -54,8 +54,19 @@ impl KerMlQueries<'_> {
         }
         out.search_dependencies
             .insert(SearchDependency::Incoming { target: feature });
-        let mut relationships: BTreeSet<_> =
-            self.model().incoming(feature).map(|r| r.source).collect();
+        let mut relationships: BTreeSet<_> = self
+            .model()
+            .incoming(feature)
+            .filter(|r| {
+                self.is(r.source, c::SUBSETTING)
+                    && self.incoming_at_source(
+                        r.source,
+                        r.property,
+                        p::SUBSETTING_SUBSETTING_FEATURE,
+                    )
+            })
+            .map(|r| r.source)
+            .collect();
         let owned = self.owned_relationships(feature);
         relationships.extend(owned.value.iter().copied());
         out.merge(owned);

@@ -372,6 +372,21 @@ fn resource_limit_does_not_claim_closure() {
 #[test]
 #[ignore = "synthetic publication scale gate; run explicitly in release mode"]
 fn publication_scale_sixty_thousand_subjects() {
+    run_publication_scale(4000, 60000);
+}
+
+/// Same semantic shape as the full scale gate; useful for profiling a bounded
+/// probe without weakening or replacing the sixty-thousand-subject gate.
+#[test]
+#[ignore = "bounded profiling probe; run explicitly in release mode"]
+fn publication_scale_probe() {
+    let groups = std::env::var("AGQ_PUBLICATION_SCALE_GROUPS")
+        .map(|n| n.parse().expect("positive scale group count"))
+        .unwrap_or(128);
+    run_publication_scale(groups, groups * 15);
+}
+
+fn synthetic_publication_fixture(groups: u128, declared: u128) -> Snapshot {
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
     let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
     let mut f = Fixture {
@@ -384,8 +399,7 @@ fn publication_scale_sixty_thousand_subjects() {
     // derived Feature/FeatureChaining subjects without a global corpus rescan.
     f.create(1, c::CLASSIFIER);
     f.create(2, c::CLASSIFIER);
-    const GROUPS: u128 = 4000;
-    for group in 0..GROUPS {
+    for group in 0..groups {
         let n = 100 + group * 16;
         f.create(n, c::ASSOCIATION);
         for (end, ty, membership, typing) in [(n + 1, 1, n + 3, n + 5), (n + 2, 2, n + 4, n + 6)] {
@@ -409,13 +423,47 @@ fn publication_scale_sixty_thousand_subjects() {
         f.create(n + 7, c::FEATURE);
         member(&mut f, n + 1, n + 7, n + 8, c::OWNING_MEMBERSHIP);
     }
-    for n in 0..(60000 - (GROUPS * 9 + 2)) {
+    for n in 0..(declared - (groups * 9 + 2)) {
         f.create(1_000_000 + n, c::PACKAGE);
     }
     let snapshot = f.finish();
-    assert_eq!(snapshot.model().len(), 60000);
-    let result = close(&snapshot, None, PublicationClosureOptions::default());
-    eprintln!("semantic-scale {:?}", result.counters);
+    assert_eq!(snapshot.model().len(), declared as usize);
+    snapshot
+}
+
+fn run_publication_scale(groups: u128, declared: u128) {
+    let started = std::time::Instant::now();
+    eprintln!("semantic-scale start groups={groups} declared={declared}");
+    let snapshot = synthetic_publication_fixture(groups, declared);
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    eprintln!("semantic-scale snapshot elapsed={:?}", started.elapsed());
+    let result = close_result_structure(
+        &snapshot,
+        PublicationClosureOptions::default(),
+        |overlay| {
+            SemanticContext::for_overlay(
+                overlay,
+                SemanticOptions {
+                    baseline_profile: profile,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .map_err(PublicationOverlayError::Context)
+        },
+        |round, completed, total, facts| {
+            if completed % 1024 == 0 || completed == total {
+                eprintln!("semantic-scale round={round} evaluated={completed}/{total} proposed={facts} elapsed={:?}", started.elapsed());
+            }
+        },
+        |stage| eprintln!("semantic-scale frontier={} counters={:?} elapsed={:?}", stage.stage, stage.counters, started.elapsed()),
+    )
+    .unwrap();
+    eprintln!(
+        "semantic-scale elapsed={:?} {:?}",
+        started.elapsed(),
+        result.counters
+    );
     assert!(result.converged, "{:?}", result.stages);
     assert_eq!(
         result.completeness,
@@ -423,10 +471,10 @@ fn publication_scale_sixty_thousand_subjects() {
         "{:?}",
         result.stages.last()
     );
-    assert!(result.counters.new_elements_proposed >= 20000);
-    assert!(result.counters.new_association_occurrences_proposed >= GROUPS as usize);
+    assert!(result.counters.new_elements_proposed >= groups as usize * 5);
+    assert!(result.counters.new_association_occurrences_proposed >= groups as usize);
     assert!(
-        result.counters.subjects_skipped_by_applicability >= (60000 - (GROUPS * 9 + 2)) as usize
+        result.counters.subjects_skipped_by_applicability >= (declared - (groups * 9 + 2)) as usize
     );
     assert!(result.counters.fixed_point_rounds > 1);
     assert!(result.counters.existing_proof_sets_reused > 0);
@@ -438,6 +486,39 @@ fn publication_scale_sixty_thousand_subjects() {
     // Existing public explanations remain inspectable after compact evaluation.
     for (_, explanation) in result.overlay.facts() {
         assert!(!explanation.dependencies.is_empty());
+    }
+}
+
+#[test]
+fn worklist_matches_fullscan_on_medium_shared_endpoint_population() {
+    let snapshot = synthetic_publication_fixture(32, 512);
+    let expected = close(
+        &snapshot,
+        None,
+        PublicationClosureOptions {
+            strategy: PublicationClosureStrategy::ReferenceFullScan,
+            batch_size: 23,
+            ..Default::default()
+        },
+    );
+    for (order, batch_size) in [
+        (PublicationWorklistOrder::Fifo, 16),
+        (PublicationWorklistOrder::Lifo, 47),
+    ] {
+        let actual = close(
+            &snapshot,
+            None,
+            PublicationClosureOptions {
+                order,
+                batch_size,
+                ..Default::default()
+            },
+        );
+        compare(&expected, &actual, None);
+        assert!(!actual.producer_reads.reads_entire_model());
+        for shared in [id(1), id(2)] {
+            assert!(actual.producer_reads.bounded_elements().contains(&shared));
+        }
     }
 }
 
