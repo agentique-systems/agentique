@@ -21,6 +21,7 @@ mod publication;
 mod publication_overlay;
 mod queries;
 mod read_dependencies;
+mod relationship_sources;
 mod resolution;
 mod result_structure;
 mod status_queries;

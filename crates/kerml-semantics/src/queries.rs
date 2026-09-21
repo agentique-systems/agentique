@@ -14,6 +14,7 @@ pub struct KerMlQueries<'m> {
     pub(crate) context: SemanticContext<'m>,
     pub(crate) namespace_cache: crate::namespaces::NamespaceCache,
     pub(crate) effective_names_cache: Mutex<BTreeMap<ElementId, Arc<QueryResult<EffectiveNames>>>>,
+    pub(crate) source_role_cache: Mutex<crate::relationship_sources::SourceRoleCache>,
     pub(crate) library_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
     pub(crate) result_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
     // Scoped to this immutable model/context, like the other query caches.
@@ -30,6 +31,7 @@ impl<'m> KerMlQueries<'m> {
             context,
             namespace_cache: Default::default(),
             effective_names_cache: Default::default(),
+            source_role_cache: Default::default(),
             library_cache: Default::default(),
             result_cache: Default::default(),
             origin_cache: Default::default(),
@@ -851,28 +853,6 @@ impl<'m> KerMlQueries<'m> {
         out
     }
 
-    /// Compare the actual indexed reference role with the relationship's
-    /// effective source property (e.g. FeatureTyping::typedFeature redefines
-    /// Specialization::specific). A general endpoint does not make a
-    /// relationship an outgoing specialization of that general Type.
-    pub(crate) fn incoming_at_source(
-        &self,
-        relationship: ElementId,
-        actual_property: PropertyId,
-        source_property: PropertyId,
-    ) -> bool {
-        self.model()
-            .element(relationship)
-            .and_then(|record| {
-                self.model()
-                    .registry()
-                    .resolve_property(record.metaclass(), source_property)
-                    .ok()
-                    .flatten()
-            })
-            .is_some_and(|property| property.id == actual_property)
-    }
-
     pub(crate) fn targets(
         &self,
         source: ElementId,
@@ -918,16 +898,7 @@ impl<'m> KerMlQueries<'m> {
         }
         out.search_dependencies
             .insert(SearchDependency::Incoming { target: source });
-        // Uses the kernel incoming index, not a population scan per queried type.
-        let mut candidates: BTreeSet<_> = self
-            .model()
-            .incoming(source)
-            .filter(|r| {
-                self.is(r.source, class)
-                    && self.incoming_at_source(r.source, r.property, source_property)
-            })
-            .map(|r| r.source)
-            .collect();
+        let mut candidates = self.incoming_source_relationships(source, class, source_property);
         let owned = self.owned_relationships(source);
         // Owned relationships remain relevant even when their source endpoint
         // has not been computed yet. Ref/CrossSubsetting additionally derive
