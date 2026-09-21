@@ -535,3 +535,116 @@ fn authored_consumers_cannot_unlink_or_reorder_dependency_occurrences() {
         dependency.explain(FactKey::AssociationOccurrence(id))
     );
 }
+
+fn ownership_project(composite: bool, derived: bool) -> Snapshot {
+    let mut set = descriptors(false, false, None);
+    let left = set.properties.iter_mut().find(|p| p.id == LEFT).unwrap();
+    left.composite = composite;
+    left.derived = derived;
+    let base = Snapshot::new(Arc::new(MetamodelRegistry::from_descriptors(set).unwrap()));
+    let mut changes = base.change_set();
+    changes.create(ENGINE, ELEMENT, authored());
+    let dependency = DerivationBuilder::new(base.apply(&changes).unwrap())
+        .build()
+        .unwrap();
+    let project = Snapshot::with_immutable_dependency(Arc::new(dependency));
+    let mut changes = project.change_set();
+    changes
+        .create(VEHICLE, ELEMENT, authored())
+        .create(ENGINE_USE, ELEMENT, authored());
+    project.apply(&changes).unwrap()
+}
+
+#[test]
+fn new_occurrences_cannot_change_ownership_across_an_immutable_dependency() {
+    for composite in [false, true] {
+        let project = ownership_project(composite, false);
+        for participants in [ends(ENGINE, VEHICLE), ends(VEHICLE, ENGINE)] {
+            let protected = if participants[&LEFT] == ENGINE {
+                FactKey::Element(ENGINE)
+            } else {
+                FactKey::Property {
+                    element: ENGINE,
+                    property: LEFT,
+                }
+            };
+            let mut changes = project.change_set();
+            changes.link(
+                AssociationOccurrenceId::from_u128(900),
+                A,
+                participants.clone(),
+                BTreeMap::new(),
+                authored(),
+            );
+            for result in [
+                project.apply(&changes).map(|_| ()),
+                project.preview(&changes).map(|_| ()),
+            ] {
+                if composite {
+                    assert!(
+                        matches!(result, Err(ModelError::ImmutableDependency(fact)) if fact == protected)
+                    );
+                } else {
+                    result.unwrap();
+                }
+            }
+            let mut derived = DerivationBuilder::new(project.clone());
+            derived.association_occurrence(
+                key(900),
+                A,
+                participants,
+                BTreeMap::new(),
+                BTreeSet::new(),
+            );
+            let result = derived.build();
+            if composite {
+                assert!(
+                    matches!(result, Err(DerivationError::Model(ModelError::ImmutableDependency(fact))) if fact == protected)
+                );
+            } else {
+                result.unwrap();
+            }
+        }
+        // Local containment remains valid, and the immutable graph is unchanged.
+        let mut derived = DerivationBuilder::new(project.clone());
+        derived.association_occurrence(
+            key(901),
+            A,
+            ends(VEHICLE, ENGINE_USE),
+            BTreeMap::new(),
+            BTreeSet::new(),
+        );
+        derived.build().unwrap();
+        assert_eq!(project.model().association_occurrences().count(), 0);
+        assert_eq!(project.model().incoming(ENGINE).count(), 0);
+    }
+}
+
+#[test]
+fn derived_navigation_cannot_take_ownership_of_an_immutable_dependency() {
+    let project = ownership_project(true, true);
+    for target in [ENGINE, ENGINE_USE] {
+        let mut builder = DerivationBuilder::new(project.clone());
+        builder.property(
+            VEHICLE,
+            LEFT,
+            set_refs(&[target]),
+            Explanation {
+                rule: key(1).rule,
+                dependencies: BTreeSet::new(),
+            },
+        );
+        let result = builder.build();
+        if target == ENGINE {
+            assert!(matches!(
+                result,
+                Err(DerivationError::Model(ModelError::ImmutableDependency(
+                    FactKey::Element(ENGINE)
+                )))
+            ));
+        } else {
+            result.unwrap();
+        }
+    }
+    assert!(project.model().navigation_slot(VEHICLE, LEFT).is_none());
+}

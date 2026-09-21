@@ -720,6 +720,7 @@ impl Snapshot {
             links,
             self.model().derived_navigation.clone(),
         )?;
+        self.check_dependency_ownership(&model)?;
         model.statuses = self.model().statuses.clone();
         model.declared_source = self.model().declared_source.clone();
         model.searches = self.model().searches.clone();
@@ -752,6 +753,7 @@ impl Snapshot {
             self.model().derived_navigation.clone(),
             &mut validation,
         )?;
+        self.check_dependency_ownership(&model)?;
         model.statuses = self.model().statuses.clone();
         model.declared_source = self.model().declared_source.clone();
         model.searches = self.model().searches.clone();
@@ -989,6 +991,55 @@ impl Snapshot {
         } else {
             Ok(())
         }
+    }
+    /// New local carriers can change a dependency's ownership without writing
+    /// its records directly. Check the final navigation, including occurrence
+    /// projections and derived results, against the protected ownership graph.
+    pub(crate) fn check_dependency_ownership(
+        &self,
+        candidate: &ModelView,
+    ) -> Result<(), ModelError> {
+        let Some(dependency) = self.immutable_dependency() else {
+            return Ok(());
+        };
+        let protected = dependency.model();
+        let slots = candidate
+            .records
+            .values()
+            .flat_map(|record| record.slots().map(move |(p, slot)| (record.id(), p, slot)))
+            .chain(
+                candidate
+                    .indexes
+                    .inverse_slots
+                    .iter()
+                    .map(|(&(element, property), slot)| (element, property, slot)),
+            );
+        for (element, property, slot) in slots {
+            if !candidate.registry.property(property)?.composite {
+                continue;
+            }
+            if protected.element(element).is_some() {
+                if protected
+                    .navigation_slot(element, property)
+                    .map(Slot::value)
+                    != Some(slot.value())
+                {
+                    return Err(ModelError::ImmutableDependency(FactKey::Property {
+                        element,
+                        property,
+                    }));
+                }
+            } else {
+                for value in slot.value().values() {
+                    if let Value::Reference(target) = value
+                        && protected.element(*target).is_some()
+                    {
+                        return Err(ModelError::ImmutableDependency(FactKey::Element(*target)));
+                    }
+                }
+            }
+        }
+        Ok(())
     }
     pub(crate) fn has_declared_fact(&self, fact: FactKey) -> bool {
         let origin = match fact {

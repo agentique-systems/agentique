@@ -235,3 +235,59 @@ fn inverse_edits_cannot_attach_local_records_to_an_immutable_owner() {
         dependency.model().element(VEHICLE).unwrap()
     ));
 }
+
+#[test]
+fn local_composite_slots_cannot_take_ownership_of_dependency_roots() {
+    let dependency = publication();
+    let project = Snapshot::with_immutable_dependency(dependency.clone());
+    let local = ElementId::from_u128(900);
+    let mut changes = project.change_set();
+    changes.create(local, PART_DEF, authored()).set(
+        local,
+        CONTAINS,
+        set_refs(&[VEHICLE]),
+        authored(),
+    );
+    for result in [
+        project.apply(&changes).map(|_| ()),
+        project.preview(&changes).map(|_| ()),
+    ] {
+        assert!(matches!(
+            result,
+            Err(ModelError::ImmutableDependency(FactKey::Element(VEHICLE)))
+        ));
+    }
+    assert!(project.model().element(local).is_none());
+    assert_eq!(
+        project.model().incoming(VEHICLE).collect::<Vec<_>>(),
+        dependency.model().incoming(VEHICLE).collect::<Vec<_>>()
+    );
+    let mut derived = DerivationBuilder::new(project.clone());
+    derived.element(
+        key(VEHICLE, 900),
+        PART_DEF,
+        [(CONTAINS, set_refs(&[VEHICLE]))],
+        BTreeSet::new(),
+    );
+    assert!(matches!(
+        derived.build(),
+        Err(DerivationError::Model(ModelError::ImmutableDependency(
+            FactKey::Element(VEHICLE)
+        )))
+    ));
+
+    // Ordinary references to library elements and entirely local ownership
+    // remain legal; the guard protects ownership across the dependency boundary.
+    let child = ElementId::from_u128(901);
+    let relationship = ElementId::from_u128(902);
+    let mut changes = project.change_set();
+    changes
+        .create(local, PART_DEF, authored())
+        .create(child, PART_DEF, authored())
+        .set(local, CONTAINS, set_refs(&[child]), authored())
+        .create(relationship, SPECIALIZATION, authored())
+        .set(relationship, SPECIFIC, scalar_ref(local), authored())
+        .set(relationship, GENERAL, scalar_ref(VEHICLE), authored());
+    let authored = project.apply(&changes).unwrap();
+    DerivationBuilder::new(authored).build().unwrap();
+}

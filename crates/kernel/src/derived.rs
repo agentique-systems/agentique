@@ -550,6 +550,7 @@ impl DerivationBuilder {
             changed_facts.insert(key);
         }
         let mut model = ModelView::build(registry, records, links, derived_navigation)?;
+        self.declared.check_dependency_ownership(&model)?;
         model.declared_source = Some(self.declared.clone());
         model.statuses = parts.statuses;
         model.searches = parts.searches;
