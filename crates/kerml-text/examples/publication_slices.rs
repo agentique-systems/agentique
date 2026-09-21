@@ -14,12 +14,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let slice = std::env::args()
         .find_map(|a| a.strip_prefix("--slice=").map(str::to_owned))
-        .ok_or("--slice=A|B|C|D|E|all is required")?;
+        .ok_or("--slice=A|B|C|D|E|all (or a comma-separated selection) is required")?;
     let slices: Vec<_> = if slice == "all" {
         vec!["A", "B", "C", "D", "E"]
     } else {
-        vec![slice.as_str()]
+        slice.split(',').collect()
     };
+    if slices
+        .iter()
+        .any(|s| !["A", "B", "C", "D", "E"].contains(s))
+        || slices.iter().copied().collect::<BTreeSet<_>>().len() != slices.len()
+    {
+        return Err("Select distinct slice labels A through E".into());
+    }
+    let fail_fast = std::env::args().any(|a| a == "--fail-fast");
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
     let input = PublicationInput::load(&sources)?;
     let mut failed = false;
@@ -27,6 +35,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Err(error) = run_slice(&root, &sources, &input, slice) {
             eprintln!("slice {slice}: {error}");
             failed = true;
+            if fail_fast {
+                break;
+            }
         }
     }
     if failed {
