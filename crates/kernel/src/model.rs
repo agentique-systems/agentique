@@ -217,7 +217,39 @@ pub struct ModelView {
     pub(crate) searches:
         BTreeMap<crate::provenance::FactKey, BTreeSet<crate::derived::StructuralSearch>>,
 }
+
+/// Mutable ownership transferred only inside an unpublished derivation batch.
+/// Reconstructible indexes are intentionally absent: callers never clone them
+/// just to discard them during validation of the next semantic frontier.
+pub(crate) struct DerivationModelParts {
+    pub records: BTreeMap<ElementId, Arc<ElementRecord>>,
+    pub links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    pub derived_navigation: crate::association::Navigation,
+    pub statuses: BTreeMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
+    pub searches: BTreeMap<FactKey, BTreeSet<crate::derived::StructuralSearch>>,
+}
+
 impl ModelView {
+    pub(crate) fn derivation_parts(&self) -> DerivationModelParts {
+        DerivationModelParts {
+            records: self.records.clone(),
+            links: self.links.clone(),
+            derived_navigation: self.derived_navigation.clone(),
+            statuses: self.statuses.clone(),
+            searches: self.searches.clone(),
+        }
+    }
+
+    pub(crate) fn into_derivation_parts(self) -> DerivationModelParts {
+        DerivationModelParts {
+            records: self.records,
+            links: self.links,
+            derived_navigation: self.derived_navigation,
+            statuses: self.statuses,
+            searches: self.searches,
+        }
+    }
+
     pub(crate) fn build(
         registry: Arc<MetamodelRegistry>,
         records: BTreeMap<ElementId, Arc<ElementRecord>>,

@@ -7,7 +7,7 @@ use crate::{
     AssociationId, AssociationOccurrenceId, DerivationKey, ElementId, ElementRecord, MetaclassId,
     ModelError, ModelView, PropertyId, RevisionId, Snapshot,
 };
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 
 /// Validated, immutable derived results and a merged read-only semantic view.
@@ -24,6 +24,23 @@ struct OverlayData {
     declared: Snapshot,
     model: ModelView,
     explanations: BTreeMap<FactKey, Arc<Explanation>>,
+    evidence_pool: ExplanationPool,
+    build_metrics: DerivationBuildMetrics,
+}
+
+/// Work performed by the latest additive overlay materialization. These counters
+/// describe implementation work, never semantic completeness or acceptance.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct DerivationBuildMetrics {
+    pub new_elements: usize,
+    pub new_association_occurrences: usize,
+    pub existing_facts_reused: usize,
+    pub proof_sets_interned: usize,
+    pub proof_sets_reused: usize,
+    pub dependency_edges_considered: usize,
+    pub full_model_validations: usize,
+    /// The earlier overlay had no remaining readers, so its maps were moved.
+    pub reused_owned_storage: bool,
 }
 impl DerivedOverlay {
     /// Original declared revision, without any inferred slots or elements.
@@ -38,6 +55,10 @@ impl DerivedOverlay {
     /// Declared and derived records together, with provenance retained on all facts.
     pub fn model(&self) -> &ModelView {
         &self.inner.model
+    }
+    /// Per-stage diagnostic counters; no global mutable accounting is used.
+    pub fn build_metrics(&self) -> &DerivationBuildMetrics {
+        &self.inner.build_metrics
     }
     /// Immediate rule/evidence. Follow derived dependencies to inspect the chain.
     /// `None` means this overlay has no such derived assertion, not a false fact.
@@ -67,7 +88,7 @@ struct OccurrenceInput {
     association: AssociationId,
     ends: BTreeMap<PropertyId, ElementId>,
     positions: BTreeMap<PropertyId, usize>,
-    dependencies: BTreeSet<Dependency>,
+    explanation: Arc<Explanation>,
 }
 
 /// Explicit candidate construction; `build` validates the entire result atomically.
@@ -156,12 +177,33 @@ impl DerivationBuilder {
         positions: BTreeMap<PropertyId, usize>,
         dependencies: BTreeSet<Dependency>,
     ) -> &mut Self {
+        self.association_occurrence_with_explanation(
+            key,
+            association,
+            ends,
+            positions,
+            Arc::new(Explanation {
+                rule: key.rule,
+                dependencies,
+            }),
+        )
+    }
+    /// Enqueue an occurrence with shared immutable proof. Subject and endpoint
+    /// dependencies are added with copy-on-write only when they are absent.
+    pub fn association_occurrence_with_explanation(
+        &mut self,
+        key: DerivationKey,
+        association: AssociationId,
+        ends: BTreeMap<PropertyId, ElementId>,
+        positions: BTreeMap<PropertyId, usize>,
+        explanation: Arc<Explanation>,
+    ) -> &mut Self {
         self.occurrences.push(OccurrenceInput {
             key,
             association,
             ends,
             positions,
-            dependencies,
+            explanation,
         });
         self
     }
@@ -217,30 +259,67 @@ impl DerivationBuilder {
         self.failures.insert((element, property), failure);
         Ok(self)
     }
-    /// Validate structural constraints, dependencies and acyclic explanations.
-    pub fn build(self) -> Result<DerivedOverlay, DerivationError> {
-        let registry = self.declared.model().registry.clone();
-        let input = self
-            .previous
-            .as_ref()
-            .map_or(self.declared.model(), |p| p.model());
-        let mut records = input.records.clone();
-        let mut explanations = self.previous.as_ref().map_or_else(
-            || {
-                self.declared
-                    .immutable_dependency()
-                    .map_or_else(BTreeMap::new, |p| p.inner.explanations.clone())
-            },
-            |p| p.inner.explanations.clone(),
-        );
-        let previous_facts: BTreeSet<_> = explanations.keys().copied().collect();
-        // Exact content equality, never allocation or hash iteration order,
-        // determines sharing. This pool has no effect on semantic identity.
-        let mut evidence_pool = ExplanationPool::default();
-        for explanation in explanations.values() {
-            evidence_pool.intern_shared(explanation.clone());
+    /// Finish a prepared batch after releasing its borrowed input queries. The
+    /// exact declared snapshot must match. Consuming an unshared input transfers
+    /// its accumulated maps and proof pool instead of cloning the whole stage.
+    pub fn build_on_overlay(
+        mut self,
+        previous: DerivedOverlay,
+    ) -> Result<DerivedOverlay, DerivationError> {
+        if self.previous.is_some()
+            || !std::ptr::eq(self.declared.model(), previous.declared().model())
+        {
+            return Err(DerivationError::InputContextMismatch);
         }
-        let mut links = input.links.clone();
+        self.previous = Some(previous);
+        self.build()
+    }
+    /// Validate structural constraints, dependencies and acyclic explanations.
+    pub fn build(mut self) -> Result<DerivedOverlay, DerivationError> {
+        let registry = self.declared.model().registry.clone();
+        let (parts, mut explanations, mut evidence_pool, reused_owned_storage) =
+            match self.previous.take() {
+                Some(previous) => match Arc::try_unwrap(previous.inner) {
+                    Ok(previous) => (
+                        previous.model.into_derivation_parts(),
+                        previous.explanations,
+                        previous.evidence_pool,
+                        true,
+                    ),
+                    Err(previous) => (
+                        previous.model.derivation_parts(),
+                        previous.explanations.clone(),
+                        previous.evidence_pool.clone(),
+                        false,
+                    ),
+                },
+                None => {
+                    let (explanations, pool) = self.declared.immutable_dependency().map_or_else(
+                        || (BTreeMap::new(), ExplanationPool::default()),
+                        |p| (p.inner.explanations.clone(), p.inner.evidence_pool.clone()),
+                    );
+                    (
+                        self.declared.model().derivation_parts(),
+                        explanations,
+                        pool,
+                        false,
+                    )
+                }
+            };
+        let mut records = parts.records;
+        let mut links = parts.links;
+        let mut derived_navigation = parts.derived_navigation;
+        let mut metrics = DerivationBuildMetrics {
+            new_elements: self.elements.len(),
+            new_association_occurrences: self.occurrences.len(),
+            existing_facts_reused: explanations.len(),
+            full_model_validations: 1,
+            reused_owned_storage,
+            ..Default::default()
+        };
+        let initial_pool = evidence_pool.statistics();
+        let mut changed_facts = BTreeSet::new();
+        let mut changed_existing_explanation = false;
         for input in self.occurrences {
             let id = input
                 .key
@@ -253,19 +332,28 @@ impl DerivationBuilder {
                     FactKey::AssociationOccurrence(id),
                 ));
             }
-            let mut dependencies = input.dependencies;
+            let mut explanation = input.explanation;
+            if explanation.rule != input.key.rule {
+                return Err(DerivationError::ExplanationRuleMismatch {
+                    fact: FactKey::AssociationOccurrence(id),
+                    expected: input.key.rule,
+                    actual: explanation.rule,
+                });
+            }
             for subject in std::iter::once(input.key.subject).chain(input.ends.values().copied()) {
                 let fact = FactKey::Element(subject);
-                dependencies.insert(if self.declared.has_declared_fact(fact) {
+                let dependency = if self.declared.has_declared_fact(fact) {
                     Dependency::Declared(fact)
                 } else {
                     Dependency::Derived(fact)
-                });
+                };
+                if !explanation.dependencies.contains(&dependency) {
+                    Arc::make_mut(&mut explanation)
+                        .dependencies
+                        .insert(dependency);
+                }
             }
-            let explanation = evidence_pool.intern(Explanation {
-                rule: input.key.rule,
-                dependencies,
-            });
+            let explanation = evidence_pool.intern_shared(explanation);
             links.insert(
                 id,
                 AssociationOccurrence {
@@ -277,6 +365,7 @@ impl DerivationBuilder {
                 },
             );
             explanations.insert(FactKey::AssociationOccurrence(id), explanation);
+            changed_facts.insert(FactKey::AssociationOccurrence(id));
         }
         for input in self.elements {
             let id = input.key.element_id();
@@ -310,6 +399,7 @@ impl DerivationBuilder {
                 origin: Origin::Derived(explanation.clone()),
             };
             explanations.insert(FactKey::Element(id), explanation);
+            changed_facts.insert(FactKey::Element(id));
             for (property, mut value) in input.properties {
                 value.normalize();
                 let key = FactKey::Property {
@@ -336,6 +426,7 @@ impl DerivationBuilder {
                     return Err(DerivationError::DuplicateFact(key));
                 }
                 explanations.insert(key, evidence);
+                changed_facts.insert(key);
             }
             records.insert(id, Arc::new(record));
         }
@@ -359,12 +450,11 @@ impl DerivationBuilder {
                 return Err(DerivationError::InvalidCollectionExtension { element, property });
             }
             let key = FactKey::Property { element, property };
-            if !extended.insert(key)
-                || (explanations.contains_key(&key) && !previous_facts.contains(&key))
-            {
+            if !extended.insert(key) || changed_facts.contains(&key) {
                 return Err(DerivationError::DuplicateFact(key));
             }
             if let Some(previous) = explanations.get(&key) {
+                changed_existing_explanation = true;
                 // Keep the evidence for every previous entry. No dependency on
                 // the same aggregate property is introduced into the DAG.
                 explanation
@@ -414,11 +504,8 @@ impl DerivationBuilder {
                 },
             );
             explanations.insert(key, explanation);
+            changed_facts.insert(key);
         }
-        let mut derived_navigation = input
-            .derived_navigation_results()
-            .map(|(key, slot)| (*key, slot.clone()))
-            .collect::<BTreeMap<_, _>>();
         for (element, property, mut value, mut explanation) in self.properties {
             self.declared
                 .check_dependency_write(FactKey::Property { element, property })?;
@@ -457,11 +544,12 @@ impl DerivationBuilder {
                 }
             }
             explanations.insert(key, explanation);
+            changed_facts.insert(key);
         }
         let mut model = ModelView::build(registry, records, links, derived_navigation)?;
         model.declared_source = Some(self.declared.clone());
-        model.statuses = input.statuses.clone();
-        model.searches = input.searches.clone();
+        model.statuses = parts.statuses;
+        model.searches = parts.searches;
         for ((element, property), mut failure) in self.failures {
             self.declared
                 .check_dependency_write(FactKey::Property { element, property })?;
@@ -521,16 +609,28 @@ impl DerivationBuilder {
                 }
             }
             explanations.insert(key, evidence_pool.intern(evidence));
+            changed_facts.insert(key);
             model.statuses.insert((element, property), failure);
         }
-        for (&fact, explanation) in &explanations {
+        // Old facts were already validated and additive batches cannot remove
+        // their dependencies. Check each new immutable proof once per outcome
+        // class, even when thousands of outputs share a large dependency set.
+        let mut checked_proofs = HashSet::new();
+        for &fact in &changed_facts {
+            let explanation = &explanations[&fact];
+            let unsuccessful = matches!(fact, FactKey::Property { element, property }
+                if model.statuses.contains_key(&(element, property)));
+            if !checked_proofs.insert((Arc::as_ptr(explanation) as usize, unsuccessful)) {
+                continue;
+            }
             for &dependency in &explanation.dependencies {
+                metrics.dependency_edges_considered += 1;
                 let exists = match dependency {
                     Dependency::Declared(key) => self.declared.has_declared_fact(key),
                     Dependency::Derived(key) => {
                         if let FactKey::Property { element, property } = key
                             && model.statuses.contains_key(&(element, property))
-                            && !matches!(fact, FactKey::Property { element,property } if model.statuses.contains_key(&(element,property)))
+                            && !unsuccessful
                         {
                             return Err(DerivationError::IncompleteDependency(key));
                         }
@@ -548,26 +648,85 @@ impl DerivationBuilder {
             }
             model.searches.entry(fact).or_default().extend(searches);
         }
-        let cycle = cyclic_nodes_by(explanations.keys().copied(), |fact| {
-            explanations[fact]
-                .dependencies
-                .iter()
-                .filter_map(|dependency| match dependency {
-                    Dependency::Derived(key) => Some(*key),
-                    Dependency::Declared(_) => None,
-                })
-        });
+        // Every new cycle contains a changed fact. Without modification of an
+        // earlier explanation, old facts cannot point to newly introduced facts,
+        // so the cycle search only needs the new subgraph.
+        let cycle = cyclic_explanations(
+            &explanations,
+            &evidence_pool,
+            &changed_facts,
+            changed_existing_explanation,
+        );
         if !cycle.is_empty() {
             return Err(DerivationError::DependencyCycle(cycle));
         }
+        let final_pool = evidence_pool.statistics();
+        metrics.proof_sets_interned = final_pool.interned - initial_pool.interned;
+        metrics.proof_sets_reused = final_pool.reused - initial_pool.reused;
         Ok(DerivedOverlay {
             inner: Arc::new(OverlayData {
                 declared: self.declared,
                 model,
                 explanations,
+                evidence_pool,
+                build_metrics: metrics,
             }),
         })
     }
+}
+
+/// A fact points to its shared proof, and each proof points to its derived
+/// dependencies. This factors N outputs sharing M premises into N + M edges,
+/// rather than expanding the same M premises N times during cycle validation.
+fn cyclic_explanations(
+    explanations: &BTreeMap<FactKey, Arc<Explanation>>,
+    pool: &ExplanationPool,
+    changed: &BTreeSet<FactKey>,
+    include_previous: bool,
+) -> Vec<FactKey> {
+    #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    enum Node {
+        Fact(FactKey),
+        // The least fact identity using a proof is its deterministic local key.
+        Proof(FactKey),
+    }
+    let mut representatives = BTreeMap::new();
+    let mut fact_proofs = BTreeMap::new();
+    let mut proof_dependencies = BTreeMap::new();
+    for (&fact, proof) in explanations {
+        if !include_previous && !changed.contains(&fact) {
+            continue;
+        }
+        let representative = *representatives
+            .entry(Arc::as_ptr(proof) as usize)
+            .or_insert_with(|| {
+                proof_dependencies.insert(
+                    fact,
+                    pool.derived_dependencies(proof)
+                        .iter()
+                        .copied()
+                        .filter(|dependency| include_previous || changed.contains(dependency))
+                        .collect::<Vec<_>>(),
+                );
+                fact
+            });
+        fact_proofs.insert(fact, representative);
+    }
+    cyclic_nodes_by(changed.iter().copied().map(Node::Fact), |node| {
+        let (proof, dependencies): (_, &[FactKey]) = match node {
+            Node::Fact(fact) => (Some(Node::Proof(fact_proofs[fact])), &[]),
+            Node::Proof(proof) => (None, &proof_dependencies[proof]),
+        };
+        proof
+            .into_iter()
+            .chain(dependencies.iter().copied().map(Node::Fact))
+    })
+    .into_iter()
+    .filter_map(|node| match node {
+        Node::Fact(fact) => Some(fact),
+        Node::Proof(_) => None,
+    })
+    .collect()
 }
 
 fn add_reference_dependencies(
@@ -644,6 +803,9 @@ pub enum StructuralSearch {
     /// absent facts. Any input change invalidates the computation.
     Model,
     DescriptorGraph,
+    /// Existence, metaclass or any stored property of one element, including a
+    /// bounded negative lookup for an element not present in the input view.
+    Element(ElementId),
     Property {
         element: ElementId,
         property: PropertyId,

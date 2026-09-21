@@ -3,7 +3,7 @@ use crate::{
     DocumentId, ElementId, GeneratorId, LibraryId, PropertyId, RuleId, SourceRevisionId,
     SyntaxNodeId, TransformationId,
 };
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 /// Validated half-open byte range in a separately managed source document.
@@ -115,23 +115,67 @@ pub struct Explanation {
 /// Shares equal immutable evidence while producers plan and enqueue facts.
 /// Content equality alone determines sharing; allocation and hash iteration
 /// order never participate in semantic identity or validation.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ExplanationPool {
     entries: HashSet<Arc<Explanation>>,
+    // Every address is kept alive by `entries`. This only avoids re-hashing an
+    // already interned immutable allocation; equality still decides sharing for
+    // distinct allocations. Addresses never become semantic identities.
+    allocations: HashSet<usize>,
+    derived_dependencies: HashMap<usize, Vec<FactKey>>,
+    statistics: ExplanationPoolStatistics,
 }
+
+/// Deterministic work counters local to one explanation pool.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ExplanationPoolStatistics {
+    pub interned: usize,
+    pub reused: usize,
+}
+
 impl ExplanationPool {
+    /// Counts requests, including equal proofs supplied in separate allocations.
+    pub fn statistics(&self) -> ExplanationPoolStatistics {
+        self.statistics
+    }
+
     /// Retain one allocation for this exact rule and dependency set.
     pub fn intern(&mut self, explanation: Explanation) -> Arc<Explanation> {
         self.intern_shared(Arc::new(explanation))
     }
     /// Reuse an already shared proof without copying its dependency set.
     pub fn intern_shared(&mut self, explanation: Arc<Explanation>) -> Arc<Explanation> {
+        let allocation = Arc::as_ptr(&explanation) as usize;
+        if self.allocations.contains(&allocation) {
+            self.statistics.reused += 1;
+            return explanation;
+        }
         if let Some(existing) = self.entries.get(&explanation) {
+            self.statistics.reused += 1;
             existing.clone()
         } else {
             self.entries.insert(explanation.clone());
+            self.allocations.insert(allocation);
+            self.derived_dependencies.insert(
+                allocation,
+                explanation
+                    .dependencies
+                    .iter()
+                    .filter_map(|dependency| match dependency {
+                        Dependency::Derived(fact) => Some(*fact),
+                        Dependency::Declared(_) => None,
+                    })
+                    .collect(),
+            );
+            self.statistics.interned += 1;
             explanation
         }
+    }
+
+    /// Borrow the unique proof's positive derived adjacency without rescanning
+    /// declared evidence for every output that shares this proof.
+    pub(crate) fn derived_dependencies(&self, explanation: &Arc<Explanation>) -> &[FactKey] {
+        &self.derived_dependencies[&(Arc::as_ptr(explanation) as usize)]
     }
 }
 
