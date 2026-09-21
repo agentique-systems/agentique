@@ -1098,6 +1098,10 @@ impl MetamodelRegistry {
             .get(&id)
             .ok_or(MetamodelError::UnknownClass(id))
     }
+    /// Registered metaclasses in deterministic identity order.
+    pub fn classes(&self) -> impl Iterator<Item = &MetaclassDescriptor> {
+        self.classes.values()
+    }
     /// Look up a property by identity.
     pub fn property(&self, id: PropertyId) -> Result<&PropertyDescriptor, MetamodelError> {
         self.properties
