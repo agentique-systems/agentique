@@ -530,3 +530,93 @@ fn worklist_matches_fullscan_for_reference_expression_and_feature_values() {
     f.value(109, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
     permutations(&f.finish(), None, None);
 }
+
+#[test]
+fn missing_scoped_subject_is_invalid_even_when_no_facts_are_added() {
+    let snapshot = crossing_fixture();
+    for strategy in [
+        PublicationClosureStrategy::Worklist,
+        PublicationClosureStrategy::ReferenceFullScan,
+    ] {
+        let result = close(
+            &snapshot,
+            None,
+            PublicationClosureOptions {
+                initial_subjects: Some(BTreeSet::from([id(999999)])),
+                strategy,
+                ..Default::default()
+            },
+        );
+        assert!(result.converged);
+        assert_eq!(result.completeness, Completeness::Invalid);
+        assert!(
+            result
+                .stages
+                .last()
+                .unwrap()
+                .diagnostics
+                .iter()
+                .any(|d| d.code == "KQ_PRODUCER_SUBJECT" && d.subject == id(999999))
+        );
+    }
+}
+
+#[test]
+fn changing_formal_binding_contract_is_rejected_between_frontiers() {
+    let snapshot = crossing_fixture();
+    let mut calls = 0;
+    let result = close_result_structure(
+        &snapshot,
+        PublicationClosureOptions::default(),
+        |overlay| {
+            calls += 1;
+            let context = SemanticContext::for_overlay(
+                overlay,
+                SemanticOptions {
+                    baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V8,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .map_err(PublicationOverlayError::Context)?;
+            Ok(context.with_formal_constraint_targets(&[], LibraryId::from_u128(calls)))
+        },
+        |_, _, _, _| {},
+        |_| {},
+    );
+    assert!(matches!(
+        result,
+        Err(PublicationOverlayError::Derivation(
+            agq_kernel::derived::DerivationError::InputContextMismatch
+        ))
+    ));
+}
+
+#[test]
+fn formal_binding_read_metadata_rebinds_to_each_publication_frontier() {
+    let snapshot = crossing_fixture();
+    let mut digests = BTreeSet::new();
+    let result = close_result_structure(
+        &snapshot,
+        PublicationClosureOptions::default(),
+        |overlay| {
+            let context = SemanticContext::for_overlay(
+                overlay,
+                SemanticOptions {
+                    baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V8,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .map_err(PublicationOverlayError::Context)?;
+            digests.insert(context.id().model_digest);
+            Ok(context.with_formal_constraint_targets(&[], LibraryId::from_u128(1)))
+        },
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(digests.len() > 1);
+    assert!(result.converged);
+    assert_eq!(result.completeness, Completeness::Complete);
+}

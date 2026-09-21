@@ -148,6 +148,23 @@ pub struct FormalConstraintTargets {
     bindings: BTreeMap<FormalConstraintId, Binding>,
 }
 
+impl FormalConstraintTargets {
+    /// The binding contract is fixed across an additive publication session.
+    /// Its graph digest and read evidence are freshly bound to each frontier.
+    pub(crate) fn same_binding_contract(&self, other: &Self) -> bool {
+        self.profile == other.profile
+            && self.library == other.library
+            && self.bindings.len() == other.bindings.len()
+            && self
+                .bindings
+                .iter()
+                .zip(&other.bindings)
+                .all(|((a, x), (b, y))| {
+                    a == b && x.target == y.target && x.completeness == y.completeness
+                })
+    }
+}
+
 impl<'m> SemanticContext<'m> {
     /// Resolve all six exact path contracts against canonical owned memberships.
     /// Failure records are retained so an applicable rule can never silently pass.

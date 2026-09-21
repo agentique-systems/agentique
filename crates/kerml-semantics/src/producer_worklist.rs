@@ -86,7 +86,10 @@ pub enum PublicationWorklistOrder {
 }
 #[derive(Clone, Debug)]
 pub struct PublicationClosureOptions {
-    /// Restricts a scoped audit; canonical publication always uses None.
+    /// Restricts a scoped audit to these subjects plus their generated outputs.
+    /// The caller supplies any required dependency closure; reading a dependency
+    /// does not automatically schedule producers outside this population.
+    /// Canonical publication always uses None and covers the entire input.
     pub initial_subjects: Option<BTreeSet<ElementId>>,
     pub max_rounds: usize,
     pub batch_size: usize,
@@ -309,6 +312,13 @@ pub fn close_result_structure(
             current.model_digest = previous.model_digest;
             current.derivation_phase = previous.derivation_phase;
             current.library_graph_digest = previous.library_graph_digest;
+            if let (Some(current_targets), Some(previous_targets)) = (
+                &current.formal_constraint_targets,
+                &previous.formal_constraint_targets,
+            ) && current_targets.same_binding_contract(previous_targets)
+            {
+                current.formal_constraint_targets = previous.formal_constraint_targets.clone();
+            }
             if &current != previous {
                 return Err(PublicationOverlayError::Derivation(
                     agq_kernel::derived::DerivationError::InputContextMismatch,
@@ -322,6 +332,17 @@ pub fn close_result_structure(
         for subject in worklist {
             counters.subjects_considered += 1;
             let Some(record) = overlay.model().element(subject) else {
+                status.insert(
+                    subject,
+                    (
+                        Completeness::Invalid,
+                        BTreeSet::from([Diagnostic {
+                            code: "KQ_PRODUCER_SUBJECT",
+                            subject,
+                            message: "Missing producer subject".into(),
+                        }]),
+                    ),
+                );
                 continue;
             };
             let families = applicability.entry(record.metaclass()).or_insert_with(|| {
@@ -353,21 +374,39 @@ pub fn close_result_structure(
                 }
                 PublicationClosureStrategy::ReferenceFullScan => KerMlQueries::new(context.fork()),
             };
-            for &subject in batch {
-                counters.subjects_evaluated += 1;
-                counters.dirty_reevaluations += usize::from(!seen.insert(subject));
-                let mut part = q.plan_result_structure([subject]);
+            if options.strategy == PublicationClosureStrategy::ReferenceFullScan {
+                let mut part = q.plan_result_structure_reference(batch.iter().copied());
+                counters.subjects_evaluated += batch.len();
                 counters.producer_families_attempted += part.producer_families_attempted;
-                index.replace(subject, &part.production, overlay.model(), &mut counters);
-                status.insert(
-                    subject,
-                    (
-                        part.production.completeness,
-                        part.production.diagnostics.clone(),
-                    ),
-                );
+                for &subject in batch {
+                    counters.dirty_reevaluations += usize::from(!seen.insert(subject));
+                    status.insert(
+                        subject,
+                        (
+                            part.production.completeness,
+                            part.production.diagnostics.clone(),
+                        ),
+                    );
+                }
                 part.discard_aggregate_proof();
                 plan.merge(part)?;
+            } else {
+                for &subject in batch {
+                    counters.subjects_evaluated += 1;
+                    counters.dirty_reevaluations += usize::from(!seen.insert(subject));
+                    let mut part = q.plan_result_structure([subject]);
+                    counters.producer_families_attempted += part.producer_families_attempted;
+                    index.replace(subject, &part.production, overlay.model(), &mut counters);
+                    status.insert(
+                        subject,
+                        (
+                            part.production.completeness,
+                            part.production.diagnostics.clone(),
+                        ),
+                    );
+                    part.discard_aggregate_proof();
+                    plan.merge(part)?;
+                }
             }
             batch_progress(
                 round,
@@ -394,9 +433,28 @@ pub fn close_result_structure(
             .collect();
         let input_elements = overlay.model().len();
         let input_occurrences = overlay.model().association_occurrences().count();
+        // The slow reference retains and compares the complete old graph. It
+        // deliberately does not trust the optimized additive change boundary.
+        let reference_input = (options.strategy == PublicationClosureStrategy::ReferenceFullScan)
+            .then(|| overlay.clone());
         let prepared = plan.prepare_on_overlay(&overlay)?;
         drop(context);
         let next = prepared.build_on_overlay(overlay)?;
+        let stable = reference_input.as_ref().map_or_else(
+            || changed.is_empty(),
+            |before| {
+                before.facts().eq(next.facts())
+                    && before.model().elements().eq(next.model().elements())
+                    && before
+                        .model()
+                        .association_occurrences()
+                        .eq(next.model().association_occurrences())
+                    && before
+                        .model()
+                        .computation_searches()
+                        .eq(next.model().computation_searches())
+            },
+        );
         let metrics = next.build_metrics();
         counters.existing_derived_facts_reused += metrics.existing_facts_reused;
         counters.new_proof_sets_interned += metrics.proof_sets_interned;
@@ -418,7 +476,7 @@ pub fn close_result_structure(
         };
         progress(&record);
         stages.push(record);
-        if changed.is_empty() {
+        if stable {
             converged = true;
             overlay = next;
             break;
@@ -430,7 +488,16 @@ pub fn close_result_structure(
                 .intersection(&population)
                 .copied()
                 .collect(),
-            PublicationClosureStrategy::ReferenceFullScan => population.clone(),
+            PublicationClosureStrategy::ReferenceFullScan => {
+                // Independent full scan also discovers every fresh subject.
+                population.extend(
+                    next.model()
+                        .elements()
+                        .map(|r| r.id())
+                        .filter(|id| snapshot.model().element(*id).is_none()),
+                );
+                population.clone()
+            }
         };
         counters.dirty_subjects_enqueued += worklist.len();
         overlay = next;

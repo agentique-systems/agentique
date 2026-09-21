@@ -257,6 +257,7 @@ mod navigation_evidence_regression {
             conflict: None,
             searches: BTreeMap::new(),
             direct_searches: BTreeSet::new(),
+            touched_records: BTreeSet::new(),
         };
         let mut proof = q.result(());
         q.fact(&mut proof, projected);
@@ -372,8 +373,28 @@ struct Graph<'a> {
     conflict: Option<FactKey>,
     searches: BTreeMap<ElementId, BTreeSet<agq_kernel::derived::StructuralSearch>>,
     direct_searches: BTreeSet<SearchDependency>,
+    touched_records: BTreeSet<ElementId>,
 }
 impl<'a> Graph<'a> {
+    fn finish_subject(
+        &mut self,
+        production: &mut QueryResult<Vec<ElementId>>,
+        aggregate: &mut QueryResult<Vec<ElementId>>,
+    ) {
+        production
+            .search_dependencies
+            .append(&mut self.direct_searches);
+        let searches = crate::producer_worklist::structural_searches(production);
+        for id in std::mem::take(&mut self.touched_records) {
+            self.searches
+                .entry(id)
+                .or_default()
+                .extend(searches.iter().cloned());
+        }
+        aggregate.value.extend(production.value.iter().copied());
+        let next = QueryResult::new(&production.context, vec![]);
+        aggregate.merge(std::mem::replace(production, next));
+    }
     fn return_result(&mut self, expression: ElementId, deps: &BTreeSet<Dependency>) {
         let rule = "validateInstantiationExpressionResult";
         let result = self.create(
@@ -953,6 +974,7 @@ impl<'a> Graph<'a> {
         dependencies: &BTreeSet<Dependency>,
     ) -> ElementId {
         let id = key.element_id();
+        self.touched_records.insert(id);
         if let Some(existing) = self.records.get(&id) {
             if existing.key != key || existing.class != class {
                 self.conflict = Some(FactKey::Element(id));
@@ -1761,6 +1783,14 @@ impl<'m> KerMlQueries<'m> {
         }
         plan
     }
+    /// Original shared-graph batch planner, retained as an independent test
+    /// oracle for the optimized per-subject extraction and plan merge.
+    pub(crate) fn plan_result_structure_reference(
+        &self,
+        subjects: impl IntoIterator<Item = ElementId>,
+    ) -> ResultStructurePlan<'m> {
+        self.plan_result_structure_subjects(subjects)
+    }
     fn plan_result_structure_subjects(
         &self,
         subjects: impl IntoIterator<Item = ElementId>,
@@ -1777,11 +1807,13 @@ impl<'m> KerMlQueries<'m> {
             conflict: None,
             searches: BTreeMap::new(),
             direct_searches: BTreeSet::new(),
+            touched_records: BTreeSet::new(),
         };
-        let mut production = self.result(vec![]);
+        let mut aggregate = self.result(vec![]);
         let mut contextual_results = vec![];
         let mut producer_families_attempted = 0;
         for subject in subjects.into_iter().collect::<BTreeSet<_>>() {
+            let mut production = self.result(vec![]);
             if self.model().element(subject).is_none() {
                 production.problem(
                     Completeness::Invalid,
@@ -1789,6 +1821,7 @@ impl<'m> KerMlQueries<'m> {
                     subject,
                     "Missing producer subject",
                 );
+                graph.finish_subject(&mut production, &mut aggregate);
                 continue;
             }
             if profile == BaselineProfile::OPERATIONAL_V8
@@ -1809,6 +1842,7 @@ impl<'m> KerMlQueries<'m> {
                             "Owned result was staged; dependent producers require the next overlay stage");
                     }
                     production.merge(proof);
+                    graph.finish_subject(&mut production, &mut aggregate);
                     continue;
                 }
             }
@@ -2417,7 +2451,9 @@ impl<'m> KerMlQueries<'m> {
                 }
                 production.merge(proof);
             }
+            graph.finish_subject(&mut production, &mut aggregate);
         }
+        let mut production = aggregate;
         // These lists enumerate produced identities, not semantic ownership.
         // V7 normalizes them exactly as merge does so caller/batch order cannot
         // change the complete producer answer. Graph ownership and historical
@@ -2427,13 +2463,6 @@ impl<'m> KerMlQueries<'m> {
             production.value.dedup();
             contextual_results.sort_by_key(|result| result.feature);
             contextual_results.dedup();
-        }
-        production
-            .search_dependencies
-            .extend(graph.direct_searches.iter().cloned());
-        let searches = crate::producer_worklist::structural_searches(&production);
-        for id in graph.records.keys() {
-            graph.searches.insert(*id, searches.clone());
         }
         ResultStructurePlan {
             graph,
