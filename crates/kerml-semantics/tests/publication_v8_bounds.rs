@@ -142,6 +142,15 @@ fn bound_reference_to_outer_feature_retains_the_unresolved_context_obligation() 
         assert!(actual.converged);
         assert_eq!(actual.completeness, Completeness::Incomplete);
         assert_eq!(actual.completeness, expected.completeness);
+        assert!(
+            actual
+                .stages
+                .last()
+                .unwrap()
+                .diagnostics
+                .iter()
+                .any(|d| { d.subject == id(2) && d.code == "KQ_REFERENCE_CONTEXT" })
+        );
         assert_eq!(
             actual.stages.last().unwrap().diagnostics,
             expected.stages.last().unwrap().diagnostics
@@ -173,8 +182,17 @@ fn bound_reference_to_outer_feature_retains_the_unresolved_context_obligation() 
             q.context(),
             overlay_queries(&expected.overlay, profile).context()
         );
+        let final_context = q.reference_binding_context(id(2), id(4), id(3));
+        assert_eq!(final_context.value, None);
+        assert_eq!(final_context.completeness, Completeness::Incomplete);
+        assert!(
+            final_context
+                .diagnostics
+                .iter()
+                .any(|d| { d.subject == id(2) && d.code == "KQ_REFERENCE_CONTEXT" })
+        );
         assert_eq!(
-            q.reference_binding_context(id(2), id(4), id(3)),
+            final_context,
             overlay_queries(&expected.overlay, profile).reference_binding_context(
                 id(2),
                 id(4),

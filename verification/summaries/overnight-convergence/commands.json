@@ -1399,6 +1399,125 @@
         "min_free_disk_bytes": 1073741824
       },
       "output_sha256": "2abd83a0fe20f08100f3cab4ad2727408b3ed43a422ac4d9980770873ceee4dd"
+    },
+    {
+      "name": "publication-shared-searches-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "publication_focus",
+        "--example",
+        "canonical_publication"
+      ],
+      "source_commit": "1393a35eb0d651addd8a3be3b303e775aeafddf3",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-shared-searches-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 380,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2554015744,
+      "safety_stop": null,
+      "duration_seconds": 134.157,
+      "peak_rss_bytes": 1217708032,
+      "peak_private_bytes": 1613778944,
+      "samples": 135,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "87f7027fb328ae1c620f1fbfe714563e798213ee6c9c645ec16a1b13bb37868d"
+    },
+    {
+      "name": "reference-context-source-inspection",
+      "command": [
+        "target/release/examples/library_elements.exe",
+        "--input=verification/generated/overnight-convergence/reference-context-subjects.json",
+        "--output=verification/generated/overnight-convergence/reference-context-sources.json"
+      ],
+      "source_commit": "1393a35eb0d651addd8a3be3b303e775aeafddf3",
+      "working_changes_sha256": "86411612283f68116db420e46680fdce7d57c92257008665544345d29b4730a0",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/reference-context-source-inspection",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 28320,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2558140416,
+      "safety_stop": null,
+      "duration_seconds": 2.125,
+      "peak_rss_bytes": 36593664,
+      "peak_private_bytes": 487899136,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 30.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "f13b72ab3176b0d1999ff6bafcfb8e865806431ad4e1044e380b65bef59b9b8b"
+    },
+    {
+      "name": "publication-slices-shared-searches-ab",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=A,B",
+        "--fail-fast",
+        "--output=verification/generated/overnight-convergence/slice-shared-searches-{slice}.json"
+      ],
+      "source_commit": "1393a35eb0d651addd8a3be3b303e775aeafddf3",
+      "working_changes_sha256": "256ea00165b6f66ff8ef6b194ddaeb6f1659bb285df69d01b697bfc53e0e533a",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "slice (?P<slice>[A-E]) round (?P<round>\\d+): (?P<evaluated>\\d+)/(?P<subjects>\\d+)",
+      "output": "verification/generated/overnight-convergence/publication-slices-shared-searches-ab",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 17396,
+      "monitor_error": null,
+      "last_progress": {
+        "slice": "A",
+        "round": "5",
+        "evaluated": "988",
+        "subjects": "988"
+      },
+      "minimum_free_disk_bytes": 2558132224,
+      "safety_stop": null,
+      "duration_seconds": 419.969,
+      "peak_rss_bytes": 1906884608,
+      "peak_private_bytes": 2045722624,
+      "samples": 420,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "76e952d27a0b46a18cc9273e99f080ed1552798c2919a27dc1da2df02c2622a8"
     }
   ]
 }

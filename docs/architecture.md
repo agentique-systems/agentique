@@ -27,7 +27,10 @@ Membership collision interpretations. Its independent authority manifests extend
 v7 without rewriting earlier profiles. Current publication remains incomplete
 until the complete corpus passes closure, capability and mandatory-reference
 acceptance. Dependency-driven producer frontiers and bounded reference reuse are
-implemented; scoped success cannot seal a canonical publication. See the current
+implemented; scoped success cannot seal a canonical publication. A symbolic
+multiplicity-bound reference now demonstrates a publication-blocking consequence
+of the retained v8 domain decision; the selected profile remains unchanged.
+See the current
 [convergence evidence](../verification/summaries/overnight-convergence/README.md)
 and the earlier [publication evidence](../verification/kerml-canonical-publication/README.md).
 New evidence follows [ADR 0021](adr/0021-verification-evidence-policy.md).

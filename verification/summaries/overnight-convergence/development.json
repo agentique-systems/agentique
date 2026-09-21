@@ -332,6 +332,24 @@
       "duration_seconds": 3.39,
       "output": "verification/generated/overnight-convergence/watchdog-disk-reserve.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "shared-searches-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "1393a35eb0d651addd8a3be3b303e775aeafddf3",
+      "working_changes_sha256": "fcb280e8694fff5ed786fccc86edc42c2a26d8e4bc1ce1ed0d6839fce5aa932c",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.56,
+      "output": "verification/generated/overnight-convergence/shared-searches-fmt.log",
+      "environment_overrides": {}
     }
   ]
 }

@@ -131,3 +131,27 @@ diff checks exited 0. Explicit selected Packages still expand, concrete Feature
 anchors still bring their owning Function, missing anchors fail, and the final
 read boundary remains mandatory. Whole Packages used only as binding lookup
 anchors no longer unconditionally schedule all their members.
+
+Producer-side search sharing (`79a9a84`, integrated as `f8a5c18`) passed
+`cargo test --locked --offline -p agq-kerml-semantics`: exit 0, 167 passed and
+two explicitly ignored scale gates across 32 result summaries. The first build
+exited 101 for an unqualified import in a nested test initializer; correcting
+that import preceded the successful rerun. All-target semantic Clippy exited 0
+in 9.70 seconds; formatting and diff checks exited 0. The commands used two jobs,
+no debug symbols and no incremental cache. Raw logs are
+`shared-search-semantics-package{,-fixed}.log` and
+`shared-search-semantics-clippy.log` under ignored generated storage.
+
+A separate read-only review found no lost search keys, dangling allocation-cache
+keys, snapshot mutation or allocation-dependent digest. The review does not
+replace the exact graph/search/digest equivalence fixtures above.
+
+The symbolic-bound fixture (`74bf6de`, integrated as `2fdefad`) passed
+`cargo test --locked --offline -p agq-kerml-semantics --test publication_v8_bounds -- --nocapture`:
+exit 0, two tests, 1.12 seconds. An initial build exited 101 for unavailable test
+helper functions; local equivalents fixed it before the passing rerun. Targeted
+Clippy, formatting and diff checks exited 0. Raw logs are
+`multiplicity-reference-context-regression{,-fixed}.log` and
+`multiplicity-reference-context-clippy.log`. A subsequent read-only review
+confirmed the current authority contract permits no lexical-context fallback and
+requested explicit final-overlay diagnostic assertions, added by the lead.

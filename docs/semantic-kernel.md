@@ -86,6 +86,14 @@ of `KerMlConformanceReport` and does not alone establish accepted library or
 authored-project publication; those gates are recorded in the
 [milestone evidence](../verification/kerml-complete-publication/README.md).
 
+The current convergence slice also exposes a publication-blocking symbolic-bound
+reference: the retained v8 multiplicity interpretation gives its expression an
+empty domain, while the required reference binding has no permitted context for
+the outer Feature. Worklist and full scan agree on Incomplete. The
+[current witness and authority impact](../verification/summaries/overnight-convergence/README.md)
+record this boundary; no successor profile or implicit lexical-domain fallback
+has been adopted.
+
 Additive kernel handoff consumes an unshared overlay and transfers its accumulated
 maps; retained readers force a safe copy. Proof interning persists across frontiers.
 Cycle checking factors many facts with the same proof through one proof node, so

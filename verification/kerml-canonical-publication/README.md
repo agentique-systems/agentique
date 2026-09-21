@@ -37,6 +37,12 @@ worktree. Branch: `foundation/kerml-canonical-publication-closure`.
 
 ## Acceptance boundary
 
+The later [overnight convergence witness](../summaries/overnight-convergence/README.md)
+demonstrates publication relevance of the retained KERML11-4 decision: a symbolic
+bound reference has no permitted featuring context. The current authority record
+therefore classifies it as publication-blocking. The following paragraph records
+this earlier milestone's assessment, superseded for that issue by the witness.
+
 The [capability matrix](publication-capabilities.json) is the publication checklist.
 The two former graph-affecting authority conflicts are
 `CoveredByOperationalV8`; [authority decisions](authority-decisions.json) retain

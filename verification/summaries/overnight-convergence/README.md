@@ -134,9 +134,48 @@ records that failure alongside the smaller kernel scale success.
 
 ## Acceptance
 
-Publication acceptance remains pending the focused preflight and monitored corpus
-gate. KerML conformance coverage remains incomplete and separate. SysML semantic
-work must not start before canonical KerML publication succeeds.
+Publication is blocked by the concrete symbolic-bound reference witness below.
+No new whole-corpus attempt has been launched. The operational default and
+historical accepted-binding file remain unchanged. KerML conformance coverage
+remains incomplete and separate. SysML semantic work has not started.
+
+The later A-only result from the A/B fail-fast command (`1393a35`) converged in
+419.969 seconds with 2,045,722,624 peak private bytes, exit 1 and no resource stop.
+Declaration/reference preparation is included. Its 7,889 selected declarations
+from 21 documents produced 8,442 Elements and 120 AssociationOccurrences over
+six frontiers. It evaluated 13,849 subjects, retained 3,342,750 scheduler read
+edges, and reused two empty frontiers (five materializations including the empty
+input). The 10,916,786 logical search entries retained 3,885,584 entries in 3,346
+shared sets. This run combines sharing and scope corrections; it is not an
+isolated measurement of either change. B did not run after A failed.
+
+The sole final producer diagnostic is `KQ_REFERENCE_CONTEXT` on
+`3f630d5e-a2f0-5bdb-a20e-33d03f0970d3`, the `instantNum` reference at bytes
+1813..1823 in pinned `Kernel Semantic Library/Transfers.kerml`:
+`Transfers::Transfer::instant[instantNum]`. Both capability and mandatory-reference
+audits were explicitly `not_run` after incomplete producer closure. Stage
+observations are retained in ignored generated storage, and the exact command,
+source identity and output hash are in [commands.json](commands.json).
+
+The retained [multiplicity decision](../../kerml-publication-convergence/authority-blockers.json)
+fixes an empty domain when `Multiplicity::owningType` is absent, and explicitly
+rejects substituting the lexical owning Namespace. The bound-expression domain
+must match that domain. The existing reference-binding correction requires a
+direct or indirect expression featuring context for the referent, and explicitly
+leaves a missing context Incomplete. Here the referent is featured by `Transfer`.
+The [arbitrary-name structural fixture](../../../crates/kerml-semantics/tests/publication_v8_bounds.rs)
+reproduces that shape independently of library identities: worklist and full scan
+converge to the same graph, proofs, searches, query answers and digest while
+retaining the final missing-context obligation. This fixture is paired with the
+actual pinned-source observation above; neither implies an authority correction.
+
+Consequently, [the current authority impact](../../kerml-canonical-publication/authority-decisions.json)
+now classifies KERML11-4 as publication-blocking, retaining its previous
+validation-only classification and evidence. The earlier assessment deferred
+bound-expression accessibility and missed its required reference-binding
+consequence. No replacement domain, profile successor or unrelated validator has
+been implemented. Publication and conformance reporting tools read the same
+current impact record instead of hard-coding the earlier classification.
 
 The first indexed slice run exposed a real producer conflict in slice A's second
 frontier: an existing derived TypeFeaturing was proposed with a different

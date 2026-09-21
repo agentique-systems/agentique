@@ -8,6 +8,8 @@ use serde_json::json;
 use std::{collections::BTreeSet, io::Write, path::Path, sync::Arc};
 #[path = "support/authored_publication.rs"]
 mod authored_publication;
+#[path = "support/publication_authority.rs"]
+mod publication_authority;
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
 #[path = "support/publication_refinement.rs"]
@@ -27,16 +29,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     std::fs::create_dir_all(path.parent().ok_or("output parent")?)?;
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
-    let authority: serde_json::Value = serde_json::from_slice(&std::fs::read(
-        root.join("verification/kerml-canonical-publication/authority-decisions.json"),
-    )?)?;
-    let blockers = authority["decisions"]
-        .as_array()
-        .ok_or("authority decisions")?
-        .iter()
-        .filter(|a| a["impact"] == "PublicationBlockingAuthorityConflict")
+    let authority = publication_authority::conflicts(&root)?;
+    let blockers = authority
+        .values()
+        .filter(|&&impact| impact == AuthorityImpact::PublicationBlockingAuthorityConflict)
         .count();
-    if authority["profile"] != BaselineProfile::OPERATIONAL_V8.id() || blockers != 0 {
+    if blockers != 0 {
         return Err("Publication authority gate failed".into());
     }
     let (draft, refinement) = publication_refinement::prepare(&sources)?;
@@ -162,18 +160,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 checked: BTreeSet::new(),
                 deferred_by_phase: BTreeSet::new(),
             },
-            authority_conflicts: authority["decisions"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .filter(|a| a["impact"] == "ValidationOnlyAuthorityConflict")
-                .map(|a| {
-                    (
-                        a["issue"].as_str().unwrap().into(),
-                        AuthorityImpact::ValidationOnlyAuthorityConflict,
-                    )
-                })
-                .collect(),
+            authority_conflicts: authority,
         };
         let subjects: Vec<_> = model.elements().map(|r| r.id()).collect();
         for (index, batch) in subjects

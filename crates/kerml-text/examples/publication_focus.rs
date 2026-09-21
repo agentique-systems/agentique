@@ -9,6 +9,8 @@ use agq_kernel::{
 };
 use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::{Value, json};
+#[path = "support/publication_authority.rs"]
+mod publication_authority;
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
 #[path = "support/publication_refinement.rs"]
@@ -354,15 +356,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             checked: BTreeSet::new(),
             deferred_by_phase: BTreeSet::from(["validateElementIsImpliedIncluded".into()]),
         },
-        authority_conflicts: ["KERML11-2", "KERML11-4"]
-            .into_iter()
-            .map(|key| {
-                (
-                    key.into(),
-                    agq_kerml_semantics::AuthorityImpact::ValidationOnlyAuthorityConflict,
-                )
-            })
-            .collect(),
+        authority_conflicts: publication_authority::conflicts(&root)?,
     };
     let conformance_requested = std::env::args().any(|a| a == "--conformance");
     for batch in subjects.chunks(16).filter(|_| conformance_requested) {
@@ -396,7 +390,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let conformance = json!({"format":"agentique-kerml-conformance-report/1", "scope":"FocusedDocumentPartialOverlay", "executed":conformance_requested,
         "profile":report.context.baseline_profile_id, "coverage":format!("{:?}",report.coverage.status()),
         "checked":report.coverage.checked, "deferred_by_phase":report.coverage.deferred_by_phase,
-        "authority_conflicts":report.authority_conflicts.keys().map(|issue|json!({"issue":issue,"impact":"ValidationOnlyAuthorityConflict"})).collect::<Vec<_>>(),
+        "authority_conflicts":report.authority_conflicts.iter().map(|(issue,impact)|json!({"issue":issue,"impact":format!("{impact:?}")})).collect::<Vec<_>>(),
         "diagnostics":report.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject.to_string(),"message":d.message})).collect::<Vec<_>>()});
     let output = std::env::args()
         .find_map(|a| a.strip_prefix("--output=").map(str::to_owned))

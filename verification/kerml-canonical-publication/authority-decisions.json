@@ -18,11 +18,14 @@
       "id": "KLCV10-F-002",
       "issue": "KERML11-4",
       "prior_impact": "ValidationOnlyAuthorityConflict",
-      "impact": "ValidationOnlyAuthorityConflict",
+      "impact": "PublicationBlockingAuthorityConflict",
       "evidence": [
-        "verification/kerml-publication-convergence/authority-blockers.json"
+        "verification/kerml-publication-convergence/authority-blockers.json",
+        "crates/kerml-semantics/tests/publication_v8_bounds.rs",
+        "verification/summaries/overnight-convergence/README.md"
       ],
-      "conformance_disposition": "Retain the validation-only conflict"
+      "conformance_disposition": "Retain the conflicting multiplicity checks without changing the selected v8 graph interpretation",
+      "publication_disposition": "Transfers::Transfer::instant[instantNum] requires a reference-result binding. The retained empty multiplicity and bound-expression domains provide no permitted direct or indirect featuring context for its outer Feature referent. Worklist and independent full-scan fixtures converge Incomplete. No replacement domain or successor profile is adopted."
     },
     {
       "id": "KLCV10-F-003",
@@ -47,5 +50,5 @@
       "conformance_disposition": "Versioned project-authorized operational interpretation; not a claim about literal OCL"
     }
   ],
-  "publication_blocking_authority_conflicts": 0
+  "publication_blocking_authority_conflicts": 1
 }

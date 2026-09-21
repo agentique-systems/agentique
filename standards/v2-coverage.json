@@ -474,7 +474,7 @@
     "remaining": "Separate reviewed library-source authority correction; remaining structural/derived/implied constraints and any reported ordinary query obligations; accepted semantic publication, facade, bindings and authored library dependencies. No SysML semantic readiness."
   },
   "kerml_canonical_publication": {
-    "status": "incomplete-publication-critical-closure",
+    "status": "incomplete-symbolic-multiplicity-reference-context",
     "profile": "agentique-kerml-1.0-operational/8",
     "evidence": "verification/kerml-complete-publication/README.md",
     "capabilities": "verification/kerml-complete-publication/capability-status.json",
@@ -484,9 +484,10 @@
     "validator_coverage_is_publication_gate": false,
     "accepted_bindings_regenerated": false,
     "authored_accepted_library_consumption": false,
+    "publication_blocker": "The retained v8 multiplicity domain decision leaves Transfers::Transfer::instant[instantNum] without a permitted reference-binding context; worklist and independent full-scan fixtures agree. No authority interpretation or profile change is adopted.",
     "generation_1_release_obligations": "unchanged",
     "semantic_rule_set": "agq-kerml-query/23",
-    "derivation_infrastructure": "Dependency-driven immutable producer frontiers, metaclass applicability, positive and negative query read dependencies, compact status queries, persistent proof sharing, factored cycle validation and consumed additive overlays; complete pinned-corpus acceptance remains a separate gate",
+    "derivation_infrastructure": "Dependency-driven immutable producer frontiers, metaclass applicability, positive and negative query read dependencies, compact status queries, persistent proof and search-set sharing, factored cycle validation, consumed additive overlays and validated empty-frontier reuse; complete pinned-corpus acceptance remains a separate gate",
     "convergence_evidence": "verification/summaries/overnight-convergence/README.md"
   },
   "kerml_publication_convergence": {
