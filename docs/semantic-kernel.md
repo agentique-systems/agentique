@@ -46,16 +46,32 @@ explanation DAG, including declared evidence beneath extended collections. This
 kernel operation does not certify that a dependency is an accepted language
 publication; that remains the language facade's responsibility.
 
-The KerML `CanonicalPublicationBuilder` visits every declared and generated
-subject in bounded batches under Operational v8. It can issue the sealed
-`CompletePublicationOverlay` only after all producers answer Complete on an
+The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
+under Operational v8. A metaclass applicability index excludes unrelated records;
+subsequent immutable frontiers schedule only new subjects and readers invalidated
+by canonical positive or bounded negative search dependencies. Every producer in
+a frontier observes the same graph. Contributions merge by semantic identity before
+the next frontier, so traversal order and batch size cannot select winners.
+The retained reference full scan compares records, occurrences, ownership, proofs,
+query answers, capabilities and semantic digests on fixtures.
+
+`CompletePublicationOverlay` is issued only after producers answer Complete on an
 unchanged graph and all publication capability queries succeed. Stage-budget
-exhaustion is incomplete, not acceptance. Scoped capability reports cannot
-promote an overlay. Producers retain conservative whole-model search evidence
-when releasing redundant aggregate proofs. This phase contract is independent
+exhaustion is incomplete, not acceptance. Scoped closures and capability reports
+cannot promote an overlay. Internal producer queries retain immediate canonical
+proof edges and bounded searches without repeatedly expanding the same explanation
+DAG. Public evidence-bearing queries retain their full contract. This phase contract is independent
 of `KerMlConformanceReport` and does not alone establish accepted library or
 authored-project publication; those gates are recorded in the
 [milestone evidence](../verification/kerml-complete-publication/README.md).
+
+Additive kernel handoff consumes an unshared overlay and transfers its accumulated
+maps; retained readers force a safe copy. Proof interning persists across frontiers.
+Cycle checking factors many facts with the same proof through one proof node, so
+N outputs sharing M premises require N+M dependency edges rather than N×M.
+Structural validation and navigation indexes are still rebuilt once per frontier;
+this is not an incremental-index implementation. Published snapshots remain
+immutable and atomic validation is unchanged.
 
 `CanonicalKermlStandardLibraries::publish` additionally checks the exact verified
 source construction and every mandatory reference against the closed graph. Its

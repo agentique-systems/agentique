@@ -2,6 +2,7 @@
 //!
 //! Construction is explicitly unpublished until structural references resolve.
 //! It is not a validated standard-library binding or an alternative model store.
+mod binding_manifest;
 mod construction;
 pub mod corrections;
 mod publication;
@@ -282,7 +283,7 @@ pub fn refine_declarations_with_profile(
             sources,
         )?;
         progress(round, resolved.len(), draft.candidate.obligations().len());
-        let mut queries = draft.queries(sources)?;
+        let mut queries = draft.queries(sources)?.status_queries();
         let context = queries.context().clone();
         let mut next = BTreeMap::new();
         for (index, reference) in draft.references.iter().enumerate() {

@@ -9,26 +9,11 @@ use agq_kernel::{
 };
 use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::{Value, json};
+#[path = "support/publication_metrics.rs"]
+mod publication_metrics;
 use std::{collections::BTreeSet, path::Path, sync::Arc};
 fn id(text: &str) -> ElementId {
     ElementId::from_u128(u128::from_str_radix(&text.replace('-', ""), 16).unwrap())
-}
-// This example reports producer status, never aggregate query answers. Canonical
-// per-fact explanations remain in the plan; release redundant diagnostic-query
-// proof populations before merging the next bounded batch.
-fn status_plan<'m>(
-    q: &KerMlQueries<'m>,
-    batch: &[ElementId],
-) -> agq_kerml_semantics::ResultStructurePlan<'m> {
-    let mut plan = q.plan_result_structure(batch.iter().copied());
-    plan.production.explanations.clear();
-    plan.production.fact_origins.clear();
-    plan.production.declared_fact_origins.clear();
-    plan.production.canonical_dependencies.clear();
-    plan.production.positive_dependencies.clear();
-    plan.production.search_dependencies.clear();
-    plan.contextual_results.clear();
-    plan
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -113,7 +98,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .map(|d| d.document())
         .collect();
-    let q = KerMlQueries::new(context.fork());
     let subjects: Vec<_> = draft
         .source_map()
         .iter()
@@ -122,88 +106,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             _ => None,
         })
         .collect();
-    let mut plan = q.plan_result_structure([]);
-    for batch in subjects.chunks(64) {
-        let q = KerMlQueries::new(context.fork());
-        plan.merge(status_plan(&q, batch))?;
-    }
-    println!(
-        "Focused document plan: {} derived records; {:?}; {:?}",
-        plan.planned_elements().count(),
-        plan.production.completeness,
-        plan.production.diagnostics
-    );
-    let mut derived = plan.materialize(&snapshot)?;
-    let staged = std::env::args().any(|arg| arg == "--staged");
+    // The focused regression uses the same scheduler as canonical publication.
+    // Its selected population can never seal a whole-library overlay.
+    let staged = true;
     let mut stages = vec![];
-    let mut closed = false;
-    if staged {
-        for stage in 1..=8 {
-            let input_count = derived.overlay.model().len();
-            let next = SemanticContext::for_overlay(
-                &derived.overlay,
+    let derived = agq_kerml_semantics::close_result_structure(
+        &snapshot,
+        agq_kerml_semantics::PublicationClosureOptions {
+            initial_subjects: Some(subjects.iter().copied().collect()),
+            ..Default::default()
+        },
+        |overlay| {
+            Ok(SemanticContext::for_overlay(
+                overlay,
                 context.id().options.clone(),
                 context.id().pinned_libraries.clone(),
             )
             .and_then(|c| c.with_available_roots((*context.id().available_roots).clone()))
-            .map_err(|e| format!("{e:?}"))?
+            .map_err(agq_kerml_semantics::PublicationOverlayError::Context)?
             .with_standard_bindings(
                 draft.roots(),
                 original.standard_bindings.as_ref().unwrap().library_set(),
             )
-            .map_err(|e| format!("{e:?}"))?
+            .map_err(agq_kerml_semantics::PublicationOverlayError::Bindings)?
             .with_formal_constraint_targets(
                 draft.roots(),
                 original.standard_bindings.as_ref().unwrap().library(),
-            );
-            let q = KerMlQueries::new(next.fork());
-            let mut plan = q.plan_result_structure([]);
-            let stage_subjects: Vec<_> = subjects
-                .iter()
-                .copied()
-                .chain(
-                    derived
-                        .overlay
-                        .model()
-                        .elements()
-                        .filter(|r| matches!(r.origin(), Origin::Derived(_)))
-                        .map(|r| r.id()),
-                )
-                .collect();
-            for batch in stage_subjects.chunks(32) {
-                let q = KerMlQueries::new(next.fork());
-                plan.merge(status_plan(&q, batch))?;
+            ))
+        },
+        |round, done, total, records| {
+            if done % 256 == 0 || done == total {
+                println!(
+                    "Focused round {round}: {done}/{total} subjects; {records} proposed records"
+                );
             }
-            let result = plan.materialize_on_overlay(&derived.overlay)?;
-            let output_count = result.overlay.model().len();
-            let stable = result.overlay.facts().eq(derived.overlay.facts())
-                && result
-                    .overlay
-                    .model()
-                    .elements()
-                    .eq(derived.overlay.model().elements())
-                && result
-                    .overlay
-                    .model()
-                    .association_occurrences()
-                    .eq(derived.overlay.model().association_occurrences());
+        },
+        |stage| {
             println!(
-                "Focused stage {stage}: {} new elements; {:?}; {:?}",
-                output_count - input_count,
-                result.production.completeness,
-                result.production.diagnostics
+                "Focused round {}: {} new Elements; {:?}; {:?}",
+                stage.stage, stage.added_elements, stage.completeness, stage.diagnostics
             );
-            stages.push(
-                json!({"stage":stage,"added_elements":output_count-input_count,
-                "complete":result.production.completeness == Completeness::Complete}),
-            );
-            derived = result;
-            if stable {
-                closed = derived.production.completeness == Completeness::Complete;
-                break;
-            }
-        }
-    }
+            stages.push(json!({"stage":stage.stage,"added_elements":stage.added_elements,"complete":stage.completeness == Completeness::Complete}));
+        },
+    )?;
+    let closed = derived.converged && derived.completeness == Completeness::Complete;
     let expanded = SemanticContext::for_overlay(
         &derived.overlay,
         context.id().options.clone(),
@@ -261,7 +207,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .filter(|r| references.contains(&r.relationship))
     {
-        let q = KerMlQueries::new(expanded.fork());
+        let q = agq_kerml_semantics::KerMlStatusQueries::new(expanded.fork());
         let answer = q.lookup_relationship_target(r.relationship, r.property, &r.name);
         let model = derived.overlay.model();
         let stored = model
@@ -460,9 +406,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = root.join(output);
     std::fs::create_dir_all(path.parent().unwrap())?;
     let diagnostics = derived
-        .production
-        .diagnostics
-        .iter()
+        .stages
+        .last()
+        .into_iter()
+        .flat_map(|s| s.diagnostics.iter())
         .map(|d| json!({"code":d.code,"subject":d.subject.to_string(),"message":d.message}))
         .collect::<Vec<_>>();
     std::fs::write(
@@ -478,7 +425,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "effective_namespaces":namespace_rows,"focused_failures":failures,"capability_failures":capability_failures,
             "self_link_domain_passed":true,"import_collision_witnesses_passed":witnesses["collisions"].as_array().unwrap().len(),
             "validated_binding_roles":original.standard_bindings.as_ref().unwrap().iter().count(),
-            "producer_complete":derived.production.completeness == Completeness::Complete, "producer_diagnostics":diagnostics,
+            "counters":publication_metrics::counters(&derived.counters),
+            "producer_complete":derived.completeness == Completeness::Complete, "producer_diagnostics":diagnostics,
             "conformance":conformance
         }))?,
     )?;

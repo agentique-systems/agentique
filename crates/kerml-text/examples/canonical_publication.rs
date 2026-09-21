@@ -8,6 +8,8 @@ use serde_json::json;
 use std::{collections::BTreeSet, path::Path, sync::Arc};
 #[path = "support/authored_publication.rs"]
 mod authored_publication;
+#[path = "support/publication_metrics.rs"]
+mod publication_metrics;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     if cfg!(debug_assertions) {
@@ -60,7 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "stage {}: {} new Elements, {} occurrences, {:?}",
                 stage.stage, stage.added_elements, stage.added_occurrences, stage.completeness
             );
-            stages.push(json!({"stage":stage.stage,"subjects":stage.input_elements,"added_elements":stage.added_elements,"added_occurrences":stage.added_occurrences,"completeness":format!("{:?}", stage.completeness),"diagnostics":stage.diagnostics.iter().map(|d|json!({"subject":d.subject.to_string(),"code":d.code,"message":d.message})).collect::<Vec<_>>()}));
+            stages.push(json!({"stage":stage.stage,"subjects":stage.input_elements,"added_elements":stage.added_elements,"added_occurrences":stage.added_occurrences,"completeness":format!("{:?}", stage.completeness),"counters":publication_metrics::counters(&stage.counters),"diagnostics":stage.diagnostics.iter().map(|d|json!({"subject":d.subject.to_string(),"code":d.code,"message":d.message})).collect::<Vec<_>>()}));
         },
         |done, failures| {
             if done % 512 == 0 {
@@ -88,6 +90,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     let publication = Arc::new(publication);
+    // Reuse the accepted in-memory publication; never launch a second corpus
+    // closure merely to regenerate or stale-check its binding manifest.
+    let accepted_manifest = publication.binding_manifest(&sources)?;
+    let manifest_path = root.join("standards/kerml-standard-bindings.json");
+    if std::env::args().any(|a| a == "--write-bindings") {
+        std::fs::write(
+            &manifest_path,
+            format!("{}\n", serde_json::to_string_pretty(&accepted_manifest)?),
+        )?;
+    }
+    if std::env::args().any(|a| a == "--write-bindings" || a == "--check-bindings") {
+        publication.check_binding_manifest(
+            &sources,
+            &serde_json::from_slice(&std::fs::read(&manifest_path)?)?,
+        )?;
+    }
     let complete = publication.complete_overlay();
     let model = publication.overlay().model();
     let authored = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -103,10 +121,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "format":"agq-kerml-complete-publication/1", "profile":BaselineProfile::OPERATIONAL_V8.id(),
             "input_set":sources.content_set_id(), "overlay":"CompletePublicationOverlay", "accepted_overlay_and_references":true,
             "kernel_construction_obligations":0,"publication_blocking_authority_conflicts":blockers,
-            "mandatory_references":{"total":publication.mandatory_reference_count(),"unresolved":0,"incomplete":0,"ambiguous":0,"invalid":0},
+            "mandatory_references":{"total":publication.mandatory_reference_count(),"unresolved":0,"incomplete":0,"ambiguous":0,"invalid":0,"stored_endpoint_mismatch":0},
             "reference_findings":[],"canonical_facade_accepted":true,"authored_consumption_verified":accepted,"authored_failure":authored.as_ref().err().map(|e| format!("{e}")),"stages":stages,"source_elements":publication.snapshot().model().len(),"expanded_elements":model.len(),"derived_facts":complete.overlay().facts().count(),
             "capabilities":complete.checked_items().iter().map(|(family,count)|json!({"family":format!("{family:?}"),"checked_items":count,"status":"Complete"})).collect::<Vec<_>>(),
             "semantic_digest":complete.context().model_digest,
+            "counters":publication_metrics::counters(complete.counters()),
         }))?,
     )?;
     if let Some(output) =
@@ -142,7 +161,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .collect(),
         };
         let subjects: Vec<_> = model.elements().map(|r| r.id()).collect();
-        for (index, batch) in subjects.chunks(16).enumerate() {
+        for (index, batch) in subjects
+            .chunks(16)
+            .enumerate()
+            .filter(|_| std::env::args().any(|a| a == "--validate-conformance"))
+        {
             let q = complete.queries();
             for &subject in batch {
                 let class = model.element(subject).unwrap().metaclass();
@@ -168,7 +191,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::fs::write(
             root.join(output),
             serde_json::to_vec_pretty(
-                &json!({"format":"agentique-kerml-conformance-report/1","profile":report.context.baseline_profile_id,"scope":"CompletePublicationOverlay","coverage":format!("{:?}",report.coverage.status()),"checked":report.coverage.checked,"authority_conflicts":report.authority_conflicts.iter().map(|(issue,impact)|json!({"issue":issue,"impact":format!("{impact:?}")})).collect::<Vec<_>>(),"diagnostics":report.diagnostics.iter().map(|d|json!({"subject":d.subject.to_string(),"code":d.code,"message":d.message})).collect::<Vec<_>>()}),
+                &json!({"format":"agentique-kerml-conformance-report/1","profile":report.context.baseline_profile_id,"scope":"CompletePublicationOverlay","validation_executed":std::env::args().any(|a|a == "--validate-conformance"),"coverage":format!("{:?}",report.coverage.status()),"checked":report.coverage.checked,"authority_conflicts":report.authority_conflicts.iter().map(|(issue,impact)|json!({"issue":issue,"impact":format!("{impact:?}")})).collect::<Vec<_>>(),"diagnostics":report.diagnostics.iter().map(|d|json!({"subject":d.subject.to_string(),"code":d.code,"message":d.message})).collect::<Vec<_>>()}),
             )?,
         )?;
     }

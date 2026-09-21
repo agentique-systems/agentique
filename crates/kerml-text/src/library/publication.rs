@@ -10,6 +10,10 @@ use agq_kernel::{ElementId, Snapshot, derived::DerivedOverlay, value::Value};
 use agq_standard_libraries::VerifiedLibrarySet;
 use std::sync::Arc;
 
+#[cfg(test)]
+#[path = "publication_tests.rs"]
+mod tests;
+
 /// A mandatory reference must have one Complete answer matching its stored endpoint.
 #[derive(Clone, Debug)]
 pub struct PublicationReferenceFailure {
@@ -74,7 +78,7 @@ impl CanonicalKermlStandardLibraries {
         let model = complete.overlay().model();
         let mut failures = vec![];
         for (index, batch) in draft.references().chunks(32).enumerate() {
-            let q = complete.queries();
+            let q = complete.queries().status_queries();
             for reference in batch {
                 let answer = q.lookup_relationship_target(
                     reference.relationship,

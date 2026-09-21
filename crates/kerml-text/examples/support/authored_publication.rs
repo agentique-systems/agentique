@@ -1,6 +1,8 @@
 //! Acceptance regressions over the same publication instance as the release gate.
 use agq_kerml::{BaselineProfile, properties as p};
-use agq_kerml_semantics::{Completeness, QualifiedName, Resolution, StandardRole};
+use agq_kerml_semantics::{
+    Completeness, QualifiedName, Resolution, SemanticContext, SemanticOptions, StandardRole,
+};
 use agq_kerml_text::{
     ProjectChange, SourceLanguage, SourceProject, library::CanonicalKermlStandardLibraries,
 };
@@ -44,7 +46,7 @@ pub fn verify(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let digest = publication.semantic_digest();
     let mut project = SourceProject::with_standard_libraries(publication.clone())?;
-    let second = SourceProject::with_standard_libraries(publication.clone())?;
+    let mut second = SourceProject::with_standard_libraries(publication.clone())?;
     assert!(Arc::ptr_eq(
         project.standard_libraries().unwrap(),
         second.standard_libraries().unwrap()
@@ -65,7 +67,7 @@ pub fn verify(
         }
         namespace Shadow {
             private import Base::*;
-            feature Anything;
+            type Anything specializes Base::Anything;
             feature picked : Anything;
         }
     "#,
@@ -149,6 +151,57 @@ pub fn verify(
     );
     assert_eq!(publication.semantic_digest(), digest);
     assert!(second.current().documents().next().is_none());
+    let independent = second.apply(second.current().revision(), [add(
+        "independent.kerml",
+        "namespace Independent { private import Base::*; alias Universe for Anything; feature other : Universe subsets things; }",
+    )])?;
+    assert!(
+        independent.is_complete_slice(),
+        "{:?}",
+        independent.semantic_diagnostics()
+    );
+    assert_eq!(lookup(&second, &["Independent", "Universe"])?, anything);
+    assert_eq!(
+        stable_ids,
+        next.queries()
+            .context()
+            .standard_bindings
+            .as_ref()
+            .unwrap()
+            .iter()
+            .collect::<Vec<_>>()
+    );
+    // A dependency cannot be rebound under an earlier interpretation authority.
+    assert!(
+        SemanticContext::for_snapshot(
+            next.snapshot(),
+            SemanticOptions {
+                baseline_profile: BaselineProfile::OPERATIONAL_V7,
+                ..Default::default()
+            },
+            publication.library_set().pins.clone()
+        )
+        .is_err()
+    );
+    // Each reader owns its query caches and shares the same immutable records.
+    std::thread::scope(|scope| {
+        for revision in [&first, &next, &independent] {
+            scope.spawn(move || {
+                let q = revision.queries();
+                let found = q.lookup_path(
+                    revision.root(),
+                    &QualifiedName {
+                        absolute: false,
+                        segments: vec!["Base".into(), "Anything".into()],
+                    },
+                );
+                assert_eq!(found.completeness, Completeness::Complete);
+                assert_eq!(found.value.len(), 1);
+                assert_eq!(found.value[0].element, anything);
+                assert_eq!(q.context().publication_dependency_digest, Some(digest));
+            });
+        }
+    });
     let derived = publication
         .overlay()
         .model()

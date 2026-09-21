@@ -6,6 +6,9 @@ use serde_json::json;
 use std::path::Path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args().any(|a| a == "--write") {
+        return Err("Construction bindings cannot replace the accepted manifest. Use canonical_publication --write-bindings after the publication preflight gates.".into());
+    }
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
     let draft = lower_declarations(&sources)?;
@@ -41,9 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     let encoded = format!("{}\n", serde_json::to_string_pretty(&manifest)?);
     let path = root.join("standards/kerml-standard-bindings.json");
-    if std::env::args().any(|a| a == "--write") {
-        std::fs::write(path, encoded)?;
-    } else if std::fs::read_to_string(path)?.replace("\r\n", "\n") != encoded {
+    if std::fs::read_to_string(path)?.replace("\r\n", "\n") != encoded {
         return Err("KerML binding manifest is stale".into());
     }
     println!(
