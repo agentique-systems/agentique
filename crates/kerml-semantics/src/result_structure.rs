@@ -1393,6 +1393,18 @@ impl<'a> Graph<'a> {
                         .map(|s| s.value())
                         != Some(value)
                     {
+                        if std::env::var_os("AGQ_TRACE_DERIVATION_CONFLICT").is_some() {
+                            eprintln!(
+                                "publication-conflict key={:?} property={property} previous={:?} proposed={value:?} subject_name={:?}",
+                                record.key,
+                                self.model
+                                    .navigation_slot(existing.id(), *property)
+                                    .map(|slot| slot.value()),
+                                self.model
+                                    .navigation_slot(record.key.subject, p::ELEMENT_DECLARED_NAME)
+                                    .map(|slot| slot.value()),
+                            );
+                        }
                         return Err(DerivationError::DuplicateFact(FactKey::Property {
                             element: existing.id(),
                             property: *property,
