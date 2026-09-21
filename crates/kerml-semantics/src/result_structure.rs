@@ -1603,7 +1603,7 @@ impl ResultStructurePlan<'_> {
         self.production.declared_fact_origins.clear();
         self.production.canonical_dependencies.clear();
         self.production.positive_dependencies.clear();
-        self.production.search_dependencies.clear();
+        self.production.clear_search_dependencies();
         self.contextual_results.clear();
     }
     /// Stable implied identities, useful for independent batch comparisons.

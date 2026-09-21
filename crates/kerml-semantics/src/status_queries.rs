@@ -66,10 +66,11 @@ impl<'m> KerMlStatusQueries<'m> {
         property: PropertyId,
         name: &QualifiedName,
     ) -> QueryOutcomeWithReads<Vec<MemberMatch>> {
-        let answer = self
+        let mut answer = self
             .queries
             .lookup_relationship_target(relationship, property, name);
         let keys = query_read_keys(&answer, self.queries.model());
+        answer.expand_search_dependencies();
         QueryOutcomeWithReads {
             outcome: QueryOutcome {
                 context: answer.context,

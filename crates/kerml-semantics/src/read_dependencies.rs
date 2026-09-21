@@ -16,45 +16,55 @@ pub(crate) enum InvalidationKey {
     Global,
 }
 
-fn search_keys(search: &SearchDependency) -> Vec<InvalidationKey> {
+fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
+    use InvalidationKey as K;
+    match search {
+        StructuralSearch::Element(id)
+        | StructuralSearch::Property { element: id, .. }
+        | StructuralSearch::Association { element: id, .. } => Some(K::Element(*id)),
+        StructuralSearch::Incoming(id) => Some(K::Incoming(*id)),
+        StructuralSearch::Model => Some(K::Global),
+        StructuralSearch::DescriptorGraph => None,
+    }
+}
+fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKey> {
     use InvalidationKey as K;
     use SearchDependency as S;
     match search {
-        S::Element(id) => vec![K::Element(*id)],
-        S::PropertySet { element, .. } => vec![K::Element(*element)],
-        S::Incoming { target } => vec![K::Incoming(*target)],
+        S::Element(id) => [Some(K::Element(*id)), None],
+        S::PropertySet { element, .. } => [Some(K::Element(*element)), None],
+        S::Incoming { target } => [Some(K::Incoming(*target)), None],
         S::NamespaceMembers { namespace } | S::ImportSet { namespace } => {
-            vec![K::Element(*namespace)]
+            [Some(K::Element(*namespace)), None]
         }
         S::ImportedNamespace { import, namespace } => {
-            vec![K::Element(*import), K::Element(*namespace)]
+            [Some(K::Element(*import)), Some(K::Element(*namespace))]
         }
         S::RedefinitionScope {
             relationship,
             namespace,
             ..
-        } => vec![K::Element(*relationship), K::Element(*namespace)],
-        S::Kernel(StructuralSearch::Element(id)) => vec![K::Element(*id)],
-        S::Kernel(
-            StructuralSearch::Property { element, .. }
-            | StructuralSearch::Association { element, .. },
-        ) => vec![K::Element(*element)],
-        S::Kernel(StructuralSearch::Incoming(id)) => vec![K::Incoming(*id)],
-        S::Kernel(StructuralSearch::Model) | S::Instances { .. } => vec![K::Global],
+        } => [
+            Some(K::Element(*relationship)),
+            Some(K::Element(*namespace)),
+        ],
+        S::Kernel(search) => [structural_search_key(search), None],
+        S::Instances { .. } => [Some(K::Global), None],
         // These identities are immutable during this additive session. Binding
         // role reads are local provenance reads, not global role-population scans.
-        S::Kernel(StructuralSearch::DescriptorGraph)
-        | S::StandardLibraries
+        S::StandardLibraries
         | S::ProjectRoots { .. }
         | S::FormalConstraintTarget(_)
         | S::ValidationRule(_)
-        | S::ImpliedBindingRole(_) => vec![],
+        | S::ImpliedBindingRole(_) => [None, None],
     }
+    .into_iter()
+    .flatten()
 }
 /// Translate language-level reads into persistent kernel computation searches.
 /// Context identities (profile, bindings, available roots) are fixed for closure.
 pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<StructuralSearch> {
-    let mut result = BTreeSet::new();
+    let mut result: BTreeSet<_> = answer.shared_search_dependencies.iter().cloned().collect();
     for search in &answer.search_dependencies {
         if let SearchDependency::Kernel(search) = search {
             result.insert(search.clone());
@@ -64,7 +74,7 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
                 property: *property,
             });
         } else {
-            result.extend(search_keys(search).into_iter().map(|key| match key {
+            result.extend(search_keys(search).map(|key| match key {
                 InvalidationKey::Element(id) => StructuralSearch::Element(id),
                 InvalidationKey::Incoming(id) => StructuralSearch::Incoming(id),
                 InvalidationKey::Global => StructuralSearch::Model,
@@ -82,6 +92,12 @@ pub(crate) fn query_read_keys<T>(
         .iter()
         .flat_map(search_keys)
         .collect();
+    keys.extend(
+        answer
+            .shared_search_dependencies
+            .iter()
+            .filter_map(structural_search_key),
+    );
     // Immediate canonical dependencies suffice: kernel computation searches
     // propagate the bounded negative reads of any derived facts queried.
     for dependency in &answer.canonical_dependencies {

@@ -476,6 +476,15 @@ impl ModelView {
     ) -> impl Iterator<Item = &crate::derived::StructuralSearch> {
         self.searches.get(&fact).into_iter().flat_map(|s| s.iter())
     }
+    /// Share immutable search evidence without expanding its entries. Equal
+    /// sets may share storage across facts; allocation identity is not semantic.
+    /// Absence, like an empty iterator, makes no completeness assertion.
+    pub fn computation_searches_shared(
+        &self,
+        fact: crate::provenance::FactKey,
+    ) -> Option<&Arc<BTreeSet<crate::derived::StructuralSearch>>> {
+        self.searches.get(&fact)
+    }
     pub fn computation_failures(
         &self,
     ) -> impl Iterator<

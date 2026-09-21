@@ -8,6 +8,10 @@ use agq_kernel::{
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
+#[cfg(test)]
+#[path = "../tests/unit/shared_query_searches.rs"]
+mod shared_search_tests;
+
 /// An immutable evaluator; per-invocation traversal state is always discardable.
 pub struct KerMlQueries<'m> {
     producer_evidence: bool,
@@ -275,12 +279,9 @@ impl<'m> KerMlQueries<'m> {
                 if !out.positive_dependencies.insert(fact) {
                     continue;
                 }
-                out.search_dependencies.extend(
-                    self.model()
-                        .computation_searches_for(fact)
-                        .cloned()
-                        .map(SearchDependency::Kernel),
-                );
+                if let Some(searches) = self.model().computation_searches_shared(fact) {
+                    out.shared_search_dependencies.insert(searches);
+                }
                 match self.fact_origin(fact).as_deref() {
                     Some(Origin::Derived(proof)) => {
                         queue.extend(proof.dependencies.iter().filter_map(|d| {

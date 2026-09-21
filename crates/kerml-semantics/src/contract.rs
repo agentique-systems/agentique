@@ -198,11 +198,14 @@ pub struct Explanation {
     pub premises: BTreeSet<Evidence>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct QueryResult<T> {
     // Internal producer evaluation retains canonical dependencies and bounded
     // searches; public query evaluators always retain the full explanation view.
     pub(crate) producer_evidence: bool,
+    // Only private producer/status evaluators defer kernel search expansion.
+    // Public evidence fields are populated eagerly by ordinary query evaluators.
+    pub(crate) shared_search_dependencies: SharedSearchDependencies,
     pub context: SemanticContextId,
     pub value: T,
     pub completeness: Completeness,
@@ -227,6 +230,7 @@ impl<T> QueryResult<T> {
     pub(crate) fn new(context: &SemanticContextId, value: T) -> Self {
         Self {
             producer_evidence: false,
+            shared_search_dependencies: SharedSearchDependencies::default(),
             context: context.clone(),
             value,
             completeness: Completeness::Complete,
@@ -246,6 +250,18 @@ impl<T> QueryResult<T> {
         self.positive_dependencies
             .extend(other.positive_dependencies);
         self.search_dependencies.extend(other.search_dependencies);
+        if self.producer_evidence {
+            self.shared_search_dependencies
+                .merge(other.shared_search_dependencies);
+        } else {
+            self.search_dependencies.extend(
+                other
+                    .shared_search_dependencies
+                    .iter()
+                    .cloned()
+                    .map(SearchDependency::Kernel),
+            );
+        }
         for (claim, proofs) in other.explanations {
             self.explanations.entry(claim).or_default().extend(proofs);
         }
@@ -262,6 +278,20 @@ impl<T> QueryResult<T> {
             .extend(other.declared_fact_origins);
         self.canonical_dependencies
             .extend(other.canonical_dependencies);
+    }
+    /// Materialize deferred reads only when exposing an evidence-bearing result.
+    pub(crate) fn expand_search_dependencies(&mut self) {
+        self.search_dependencies.extend(
+            self.shared_search_dependencies
+                .iter()
+                .cloned()
+                .map(SearchDependency::Kernel),
+        );
+        self.shared_search_dependencies.clear();
+    }
+    pub(crate) fn clear_search_dependencies(&mut self) {
+        self.search_dependencies.clear();
+        self.shared_search_dependencies.clear();
     }
     pub(crate) fn problem(
         &mut self,
@@ -293,6 +323,18 @@ impl<T> QueryResult<T> {
         {
             return;
         }
+        let mut premises: BTreeSet<_> = premises.into_iter().collect();
+        if self.producer_evidence {
+            // Positional redefinition proofs remain observable to the producer.
+            // Their premise assembly reads the whole answer's search population;
+            // preserve that exact boundary while other private proofs are omitted.
+            premises.extend(
+                self.shared_search_dependencies
+                    .iter()
+                    .cloned()
+                    .map(|search| Evidence::Search(SearchDependency::Kernel(search))),
+            );
+        }
         self.explanations
             .entry(Conclusion {
                 query,
@@ -300,10 +342,84 @@ impl<T> QueryResult<T> {
                 value,
             })
             .or_default()
-            .insert(Explanation {
-                rule,
-                premises: premises.into_iter().collect(),
-            });
+            .insert(Explanation { rule, premises });
+    }
+}
+
+impl<T: PartialEq> PartialEq for QueryResult<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.producer_evidence == other.producer_evidence
+            && self.context == other.context
+            && self.value == other.value
+            && self.completeness == other.completeness
+            && self.diagnostics == other.diagnostics
+            && self.positive_dependencies == other.positive_dependencies
+            && self.explanations == other.explanations
+            && self.fact_origins == other.fact_origins
+            && self.declared_fact_origins == other.declared_fact_origins
+            && self.canonical_dependencies == other.canonical_dependencies
+            && if self.shared_search_dependencies.is_empty()
+                && other.shared_search_dependencies.is_empty()
+            {
+                self.search_dependencies == other.search_dependencies
+            } else {
+                let expanded = |answer: &Self| {
+                    answer
+                        .search_dependencies
+                        .iter()
+                        .cloned()
+                        .chain(
+                            answer
+                                .shared_search_dependencies
+                                .iter()
+                                .cloned()
+                                .map(SearchDependency::Kernel),
+                        )
+                        .collect::<BTreeSet<_>>()
+                };
+                expanded(self) == expanded(other)
+            }
+    }
+}
+impl<T: Eq> Eq for QueryResult<T> {}
+
+/// Allocation keys are only a local deduplication index. Owned Arcs keep each
+/// key alive; comparison, formatting, read boundaries and digests use contents.
+#[derive(Clone, Default)]
+pub(crate) struct SharedSearchDependencies {
+    sets: BTreeMap<usize, Arc<BTreeSet<agq_kernel::derived::StructuralSearch>>>,
+}
+impl SharedSearchDependencies {
+    pub(crate) fn insert(
+        &mut self,
+        searches: &Arc<BTreeSet<agq_kernel::derived::StructuralSearch>>,
+    ) {
+        if !searches.is_empty() {
+            self.sets
+                .entry(Arc::as_ptr(searches) as usize)
+                .or_insert_with(|| searches.clone());
+        }
+    }
+    fn merge(&mut self, other: Self) {
+        self.sets.extend(other.sets);
+    }
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &agq_kernel::derived::StructuralSearch> {
+        self.sets.values().flat_map(|set| set.iter())
+    }
+    fn clear(&mut self) {
+        self.sets.clear();
+    }
+    fn is_empty(&self) -> bool {
+        self.sets.is_empty()
+    }
+}
+impl std::fmt::Debug for SharedSearchDependencies {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Canonical content order, without local allocation keys or multiplicity.
+        formatter
+            .debug_set()
+            .entries(self.iter().collect::<BTreeSet<_>>())
+            .finish()
     }
 }
 pub(crate) fn claim(query: QueryKind, subject: ElementId, value: ElementId) -> Evidence {
