@@ -6,8 +6,10 @@ mod binding_manifest;
 mod construction;
 pub mod corrections;
 mod publication;
+mod refinement;
 mod vocabulary;
 pub use publication::*;
+pub use refinement::{ReferenceRefinementRound, ReferenceRefinementStrategy};
 
 use agq_kerml_semantics::QualifiedName;
 use agq_kerml_syntax::production;
@@ -19,7 +21,7 @@ use agq_standard_libraries::{LibraryDocument, LibraryLanguage, VerifiedLibrarySe
 use std::collections::BTreeMap;
 
 /// A reference is an unlowered assertion until its target is established semantically.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PendingLibraryReference {
     pub relationship: ElementId,
     pub property: PropertyId,
@@ -268,63 +270,40 @@ pub fn refine_declarations_with_profile(
     profile: agq_kerml::BaselineProfile,
     mut progress: impl FnMut(usize, usize, usize),
 ) -> Result<LibraryDraft, LibraryLoadError> {
+    refine_declarations_with_report(
+        sources,
+        profile,
+        ReferenceRefinementStrategy::DependencyDriven,
+        |round| {
+            progress(
+                round.round,
+                round.input_endpoints,
+                round.structural_obligations,
+            )
+        },
+    )
+}
+
+/// Refine unpublished endpoints with explicit per-frontier work and phase timing.
+/// The full-scan strategy remains a reference oracle for bounded fixtures. Both
+/// strategies preserve provisional candidates; accepted publication independently
+/// requires every mandatory reference to resolve completely to its stored target.
+pub fn refine_declarations_with_report(
+    sources: &VerifiedLibrarySet,
+    profile: agq_kerml::BaselineProfile,
+    strategy: ReferenceRefinementStrategy,
+    progress: impl FnMut(&ReferenceRefinementRound),
+) -> Result<LibraryDraft, LibraryLoadError> {
     let inputs = parse_sources(sources)?;
-    let mut resolved = BTreeMap::new();
-    let mut previous = std::collections::BTreeSet::new();
-    let mut round = 0;
-    loop {
-        if !previous.insert(resolved.clone()) {
-            return Err(LibraryLoadError::Interpretation(
-                "Resolution refinement cycle".into(),
-            ));
-        }
-        let draft = apply_profile(
-            construction::construct(&inputs, &resolved, profile)?,
-            sources,
-        )?;
-        progress(round, resolved.len(), draft.candidate.obligations().len());
-        let mut queries = draft.queries(sources)?.status_queries();
-        let context = queries.context().clone();
-        let mut next = BTreeMap::new();
-        for (index, reference) in draft.references.iter().enumerate() {
-            // Bound retained proof populations, as in the complete corpus audit.
-            // Each batch evaluates exactly the same immutable semantic context.
-            if index > 0 && index % 128 == 0 {
-                queries = queries.fork();
-                assert_eq!(queries.context(), &context);
-            }
-            let result = queries.lookup_relationship_target(
-                reference.relationship,
-                reference.property,
-                &reference.name,
-            );
-            if let [member] = result.value.as_slice() {
-                let target = if reference.membership_target {
-                    member.membership
-                } else {
-                    member.element
-                };
-                let class = draft
-                    .candidate
-                    .model()
-                    .element(target)
-                    .expect("query endpoint")
-                    .metaclass();
-                if draft
-                    .candidate
-                    .model()
-                    .registry()
-                    .is_subtype(class, reference.expected)
-                    .map_err(agq_kernel::ModelError::from)?
-                {
-                    next.insert((reference.relationship, reference.property), target);
-                }
-            }
-        }
-        if next == resolved {
-            return Ok(draft);
-        }
-        resolved = next;
-        round += 1;
-    }
+    refinement::refine(
+        |resolved| {
+            apply_profile(
+                construction::construct(&inputs, resolved, profile)?,
+                sources,
+            )
+        },
+        |draft| Ok(draft.queries(sources)?.status_queries()),
+        strategy,
+        progress,
+    )
 }
