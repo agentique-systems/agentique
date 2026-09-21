@@ -11,6 +11,8 @@ use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::{Value, json};
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
+#[path = "support/publication_refinement.rs"]
+mod publication_refinement;
 use std::{collections::BTreeSet, path::Path, sync::Arc};
 fn id(text: &str) -> ElementId {
     ElementId::from_u128(u128::from_str_radix(&text.replace('-', ""), 16).unwrap())
@@ -18,13 +20,7 @@ fn id(text: &str) -> ElementId {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
-    let draft = agq_kerml_text::library::refine_declarations_with_profile(
-        &sources,
-        BaselineProfile::OPERATIONAL_V8,
-        |round, refs, obligations| {
-            println!("refinement {round}: {refs} endpoints, {obligations} obligations")
-        },
-    )?;
+    let (draft, refinement) = publication_refinement::prepare(&sources)?;
     let original = draft.queries(&sources)?.context().clone();
     // Ordinary atomic kernel validation; passing this is not semantic acceptance.
     let empty = Snapshot::new(Arc::new(draft.candidate().model().registry().clone()));
@@ -416,6 +412,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         path,
         serde_json::to_vec_pretty(&json!({
             "profile":BaselineProfile::OPERATIONAL_V8.id(), "verified_input_set":sources.content_set_id(),
+            "reference_refinement":refinement,
             "library_set":original.standard_bindings.as_ref().unwrap().library_set().artifacts.iter().map(|(artifact, library)|
                 json!({"artifact":artifact.resource(), "library":library.to_string()})).collect::<Vec<_>>(),
             "scope":"FocusedDocumentPartialOverlay", "full_expansion":false, "stages":stages,"focused_producer_closure":closed,

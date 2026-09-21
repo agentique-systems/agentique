@@ -59,7 +59,7 @@ fn run_slice(
         ],
         _ => return Err("unknown slice".into()),
     };
-    let subjects = input.subjects(sources, documents);
+    let subjects = input.subjects(sources, documents)?;
     let document_counts = input.document_counts(&subjects, sources);
     println!(
         "slice {slice}: {} structural dependency subjects, {} source documents",
@@ -83,7 +83,7 @@ fn run_slice(
         std::fs::write(
             path,
             serde_json::to_vec_pretty(
-                &json!({"slice":slice, "subjects":subjects.len(), "documents":document_counts}),
+                &json!({"slice":slice, "subjects":subjects.len(), "documents":document_counts, "reference_refinement":input.refinement}),
             )?,
         )?;
         return Ok(());
@@ -191,6 +191,7 @@ fn run_slice(
         path,
         serde_json::to_vec_pretty(&json!({
             "format":"agentique-publication-slice/1", "slice":slice, "seed_documents":documents,
+            "reference_refinement":input.refinement,
             "scope":"Scoped structural dependency closure; complete declared namespace environment retained",
             "documents":document_counts, "subjects":subjects.len(), "audited_subjects":audit_subjects.len(),
             "source_content_set":sources.content_set_id(), "converged":closure.converged,

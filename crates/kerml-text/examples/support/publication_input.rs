@@ -1,31 +1,29 @@
 //! Shared preparation for bounded, explicitly scoped publication preflights.
-use agq_kerml::{BaselineProfile, classes as c};
+use agq_kerml::classes as c;
 use agq_kerml_semantics::*;
-use agq_kerml_text::library::{LibraryDraft, refine_declarations_with_profile};
+use agq_kerml_text::library::LibraryDraft;
 use agq_kernel::{DocumentId, ElementId, Snapshot, derived::DerivedOverlay, provenance::FactKey};
 use agq_standard_libraries::VerifiedLibrarySet;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
+#[path = "publication_refinement.rs"]
+mod publication_refinement;
 
 pub struct PublicationInput {
     pub draft: LibraryDraft,
     pub snapshot: Snapshot,
     pub identity: SemanticContextId,
+    pub refinement: Vec<serde_json::Value>,
 }
 impl PublicationInput {
     pub fn load(sources: &VerifiedLibrarySet) -> Result<Self, Box<dyn std::error::Error>> {
-        let draft = refine_declarations_with_profile(
-            sources,
-            BaselineProfile::OPERATIONAL_V8,
-            |round, refs, obligations| {
-                println!("refinement {round}: {refs} endpoints, {obligations} obligations")
-            },
-        )?;
+        let (draft, refinement) = publication_refinement::prepare(sources)?;
         let identity = draft.queries(sources)?.context().clone();
         let snapshot = draft.strict_snapshot()?;
         Ok(Self {
             draft,
             snapshot,
             identity,
+            refinement,
         })
     }
 
@@ -58,7 +56,19 @@ impl PublicationInput {
         &self,
         sources: &VerifiedLibrarySet,
         documents: &[&str],
-    ) -> BTreeSet<ElementId> {
+    ) -> Result<BTreeSet<ElementId>, Box<dyn std::error::Error>> {
+        for name in documents {
+            if sources
+                .documents()
+                .filter(|d| d.path().ends_with(name))
+                .count()
+                != 1
+            {
+                return Err(
+                    format!("Slice document must identify one pinned source: {name}").into(),
+                );
+            }
+        }
         let documents: BTreeSet<DocumentId> = sources
             .documents()
             .filter(|d| documents.iter().any(|name| d.path().ends_with(name)))
@@ -96,7 +106,10 @@ impl PublicationInput {
                 }
             }
         }
-        selected
+        if selected.is_empty() {
+            return Err("Slice has no canonical source subjects".into());
+        }
+        Ok(selected)
     }
 
     pub fn document_counts(

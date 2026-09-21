@@ -10,6 +10,8 @@ use std::{collections::BTreeSet, path::Path, sync::Arc};
 mod authored_publication;
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
+#[path = "support/publication_refinement.rs"]
+mod publication_refinement;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     if cfg!(debug_assertions) {
@@ -37,13 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if authority["profile"] != BaselineProfile::OPERATIONAL_V8.id() || blockers != 0 {
         return Err("Publication authority gate failed".into());
     }
-    let draft = agq_kerml_text::library::refine_declarations_with_profile(
-        &sources,
-        BaselineProfile::OPERATIONAL_V8,
-        |round, refs, obligations| {
-            println!("refinement {round}: {refs} endpoints, {obligations} obligations");
-        },
-    )?;
+    let (draft, refinement) = publication_refinement::prepare(&sources)?;
     let construction_obligations = draft.candidate().obligations().len();
     let mut stages = vec![];
     let closure = CanonicalKermlStandardLibraries::publish(
@@ -120,6 +116,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         serde_json::to_vec_pretty(&json!({
             "format":"agq-kerml-complete-publication/1", "profile":BaselineProfile::OPERATIONAL_V8.id(),
             "input_set":sources.content_set_id(), "overlay":"CompletePublicationOverlay", "accepted_overlay_and_references":true,
+            "reference_refinement":refinement,
             "kernel_construction_obligations":0,"publication_blocking_authority_conflicts":blockers,
             "mandatory_references":{"total":publication.mandatory_reference_count(),"unresolved":0,"incomplete":0,"ambiguous":0,"invalid":0,"stored_endpoint_mismatch":0},
             "reference_findings":[],"canonical_facade_accepted":true,"authored_consumption_verified":accepted,"authored_failure":authored.as_ref().err().map(|e| format!("{e}")),"stages":stages,"source_elements":publication.snapshot().model().len(),"expanded_elements":model.len(),"derived_facts":complete.overlay().facts().count(),
