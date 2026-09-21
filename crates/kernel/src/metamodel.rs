@@ -1049,13 +1049,14 @@ impl MetamodelRegistry {
         property: PropertyId,
     ) -> Result<Option<&PropertyDescriptor>, MetamodelError> {
         self.property(property)?;
-        let properties: Vec<_> = self.effective_properties(class)?.collect();
-        if let Some(p) = properties.iter().find(|p| p.id == property) {
-            return Ok(Some(*p));
+        let properties = self.effective_properties(class)?;
+        // Most navigation requests already use an effective slot identity. The
+        // immutable registry has its membership index; do not allocate and scan
+        // every descriptor on each property read.
+        if self.effective[&class].contains(&property) {
+            return Ok(Some(&self.properties[&property]));
         }
-        let mut matches = properties
-            .into_iter()
-            .filter(|p| self.redefined[&p.id].contains(&property));
+        let mut matches = properties.filter(|p| self.redefined[&p.id].contains(&property));
         let first = matches.next();
         if let (Some(first), Some(second)) = (first, matches.next()) {
             return Err(MetamodelError::PropertyConflict {
