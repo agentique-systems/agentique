@@ -1539,6 +1539,7 @@ impl ResultStructurePlan<'_> {
     /// Release the redundant aggregate query proof before the kernel allocates
     /// the merged overlay. This internal status is never returned as a query.
     pub(crate) fn discard_aggregate_proof(&mut self) {
+        self.production.value.clear();
         self.production.explanations.clear();
         self.production.fact_origins.clear();
         self.production.declared_fact_origins.clear();

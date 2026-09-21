@@ -255,7 +255,7 @@ fn compare(
         "semantic digest/search metadata differ"
     );
     let population: Vec<_> = actual.overlay.model().elements().map(|r| r.id()).collect();
-    let a = expected_q.audit_publication_capabilities(population.iter().copied());
+    let a = expected_q.audit_expanded_capabilities(population.iter().copied());
     let b = actual_q.audit_publication_capabilities(population.iter().copied());
     assert_eq!(a.checked_items, b.checked_items);
     assert_eq!(a.failures, b.failures);
@@ -427,4 +427,106 @@ fn publication_scale_sixty_thousand_subjects() {
     for (_, explanation) in result.overlay.facts() {
         assert!(!explanation.dependencies.is_empty());
     }
+}
+
+#[test]
+fn status_queries_preserve_reference_values_completeness_and_diagnostics() {
+    let mut f = Fixture::new();
+    f.create(1, c::PACKAGE);
+    f.member(1, 10, 2, c::CLASS, "Base");
+    f.member(1, 11, 3, c::CLASS, "Derived");
+    f.member(1, 12, 4, c::CLASS, "Repeated");
+    f.member(1, 13, 5, c::CLASS, "Repeated");
+    relation(
+        &mut f,
+        3,
+        2,
+        20,
+        c::SPECIALIZATION,
+        p::SPECIALIZATION_GENERAL,
+    );
+    f.value(20, p::SPECIALIZATION_SPECIFIC, Value::Reference(id(3)));
+    let snapshot = f.finish();
+    for pending in [BTreeSet::new(), BTreeSet::from([id(1)])] {
+        let q = KerMlQueries::new(
+            SemanticContext::for_project_snapshot(
+                &snapshot,
+                Default::default(),
+                BTreeSet::new(),
+                BTreeSet::new(),
+                pending,
+            )
+            .unwrap(),
+        );
+        let status = q.status_queries();
+        assert_eq!(status.context(), q.context());
+        for name in ["Base", "Missing", "Repeated"] {
+            let name = QualifiedName {
+                absolute: false,
+                segments: vec![name.into()],
+            };
+            assert_eq!(
+                status.lookup_relationship_target(id(20), p::SPECIALIZATION_GENERAL, &name),
+                QueryOutcome::from(q.lookup_relationship_target(
+                    id(20),
+                    p::SPECIALIZATION_GENERAL,
+                    &name
+                ))
+            );
+            for class in [c::CLASS, c::FEATURE] {
+                assert_eq!(
+                    status.resolve_name(id(1), &name, class, false),
+                    QueryOutcome::from(q.resolve_name(id(1), &name, class, false))
+                );
+                assert_eq!(
+                    status.resolve_reference(id(3), &name, class),
+                    QueryOutcome::from(q.resolve_reference(id(3), &name, class))
+                );
+                assert_eq!(
+                    status.fork().resolve_reference(id(3), &name, class),
+                    status.resolve_reference(id(3), &name, class)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn worklist_matches_fullscan_for_reference_expression_and_feature_values() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(1, c::FUNCTION);
+    f.create(2, c::FEATURE_REFERENCE_EXPRESSION);
+    for n in [3, 4, 5, 6] {
+        f.create(n, c::FEATURE);
+    }
+    member(&mut f, 1, 2, 101, c::RESULT_EXPRESSION_MEMBERSHIP);
+    member(&mut f, 2, 3, 102, c::RETURN_PARAMETER_MEMBERSHIP);
+    member(&mut f, 1, 4, 103, c::FEATURE_MEMBERSHIP);
+    member(&mut f, 1, 5, 104, c::RETURN_PARAMETER_MEMBERSHIP);
+    member(&mut f, 1, 6, 105, c::FEATURE_MEMBERSHIP);
+    f.enumeration(3, p::FEATURE_DIRECTION, "out");
+    f.enumeration(5, p::FEATURE_DIRECTION, "out");
+    relation(
+        &mut f,
+        2,
+        4,
+        106,
+        c::MEMBERSHIP,
+        p::MEMBERSHIP_MEMBER_ELEMENT,
+    );
+    type_featuring(&mut f, 2, 1, 107);
+    f.create(7, c::EXPRESSION);
+    f.create(8, c::FEATURE);
+    f.enumeration(8, p::FEATURE_DIRECTION, "out");
+    member(&mut f, 7, 8, 108, c::RETURN_PARAMETER_MEMBERSHIP);
+    member(&mut f, 6, 7, 109, c::FEATURE_VALUE);
+    f.value(109, p::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(false));
+    f.value(109, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
+    permutations(&f.finish(), None, None);
 }

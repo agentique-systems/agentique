@@ -266,7 +266,7 @@ impl<'a> CanonicalPublicationBuilder<'a> {
         let mut checks = PublicationChecks::default();
         let subjects: Vec<_> = overlay.model().elements().map(|r| r.id()).collect();
         for (index, batch) in subjects.chunks(32).enumerate() {
-            let q = KerMlQueries::new(context.fork());
+            let q = KerMlQueries::for_production(context.fork());
             for &subject in batch {
                 checks.subject(&q, subject);
             }
@@ -332,14 +332,30 @@ pub struct PublicationCapabilityReport {
     pub failures: BTreeMap<PublicationFamily, BTreeSet<Diagnostic>>,
 }
 impl KerMlQueries<'_> {
-    /// Audit a selected population for focused publication regressions.
-    pub fn audit_publication_capabilities(
+    #[cfg(test)]
+    pub(crate) fn audit_expanded_capabilities(
         &self,
         subjects: impl IntoIterator<Item = ElementId>,
     ) -> PublicationCapabilityReport {
         let mut checks = PublicationChecks::default();
         for subject in subjects {
             checks.subject(self, subject);
+        }
+        PublicationCapabilityReport {
+            context: self.context().clone(),
+            checked_items: checks.counts,
+            failures: checks.failures,
+        }
+    }
+    /// Audit a selected population for focused publication regressions.
+    pub fn audit_publication_capabilities(
+        &self,
+        subjects: impl IntoIterator<Item = ElementId>,
+    ) -> PublicationCapabilityReport {
+        let q = KerMlQueries::for_production(self.context.fork());
+        let mut checks = PublicationChecks::default();
+        for subject in subjects {
+            checks.subject(&q, subject);
         }
         PublicationCapabilityReport {
             context: self.context().clone(),

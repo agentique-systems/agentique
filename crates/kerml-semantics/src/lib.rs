@@ -21,6 +21,7 @@ mod publication_overlay;
 mod queries;
 mod resolution;
 mod result_structure;
+mod status_queries;
 mod structural;
 mod typing;
 mod validation;
@@ -48,6 +49,7 @@ pub use publication_overlay::*;
 pub use queries::KerMlQueries;
 pub use resolution::*;
 pub use result_structure::*;
+pub use status_queries::*;
 pub use structural::MultiplicityBounds;
 pub use validation::RedefinitionEndConformance;
 
