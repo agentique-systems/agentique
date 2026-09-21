@@ -1,10 +1,12 @@
 //! Shared preparation for bounded, explicitly scoped publication preflights.
-use agq_kerml::classes as c;
 use agq_kerml_semantics::*;
 use agq_kerml_text::library::LibraryDraft;
 use agq_kernel::{DocumentId, ElementId, Snapshot, derived::DerivedOverlay, provenance::FactKey};
 use agq_standard_libraries::VerifiedLibrarySet;
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
+#[path = "publication_dependencies.rs"]
+mod publication_dependencies;
+pub use publication_dependencies::Boundary as PublicationScopeBoundary;
 #[path = "publication_refinement.rs"]
 mod publication_refinement;
 
@@ -48,10 +50,10 @@ impl PublicationInput {
         .with_formal_constraint_targets(self.draft.roots(), bindings.library()))
     }
 
-    /// Select real declarations, then follow canonical forward structural edges.
+    /// Select real declarations and their structural and semantic owner dependencies.
     /// Imports retain the complete declared namespace environment but do not
-    /// demand every unrelated producer in that namespace. Inverse ownership and
-    /// inverse specialization navigation are not forward dependencies.
+    /// demand every unrelated producer in that namespace. Enclosing Types are
+    /// selected because their producers can change a referenced child Feature.
     pub fn subjects(
         &self,
         sources: &VerifiedLibrarySet,
@@ -83,33 +85,22 @@ impl PublicationInput {
                 _ => None,
             })
             .collect();
-        let mut pending: VecDeque<_> = selected.iter().copied().collect();
-        let model = self.snapshot.model();
-        while let Some(subject) = pending.pop_front() {
-            let record = model.element(subject).expect("source subject");
-            if model
-                .registry()
-                .is_subtype(record.metaclass(), c::IMPORT)
-                .expect("registered class")
-            {
-                continue;
-            }
-            for edge in model.outgoing(subject) {
-                if !model
-                    .registry()
-                    .property(edge.property)
-                    .expect("registered property")
-                    .derived
-                    && selected.insert(edge.target)
-                {
-                    pending.push_back(edge.target);
-                }
-            }
-        }
         if selected.is_empty() {
             return Err("Slice has no canonical source subjects".into());
         }
-        Ok(selected)
+        // These producer inputs are contextual anchors, not authored graph edges.
+        selected.extend(
+            self.identity
+                .standard_bindings
+                .as_ref()
+                .expect("validated bindings")
+                .iter()
+                .map(|(_, id)| id),
+        );
+        Ok(publication_dependencies::subjects(
+            self.snapshot.model(),
+            selected,
+        )?)
     }
 
     pub fn document_counts(
