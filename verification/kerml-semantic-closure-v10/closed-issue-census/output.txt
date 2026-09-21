@@ -1,0 +1,10 @@
+{
+  "closed": 291,
+  "prefix_counts": {
+    "KERML_": 104,
+    "SYSML2_": 2,
+    "KERML": 185
+  },
+  "closed_KERML11_records": [],
+  "note": "Status census only, not proof that every resolution was incorporated into a pinned formal rule."
+}

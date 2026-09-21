@@ -1,0 +1,858 @@
+{
+  "format": "agentique-v10-additional-issue-scope-review/1",
+  "issue_inventory_sha256": "a9dc64f60301f88727f3c44cfb6839067f95a1b9cc67571f8b724292eeddec64",
+  "pinned_archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2",
+  "issues_reviewed": 63,
+  "category_counts": {
+    "DocumentationSyntaxOrInterchange": 10,
+    "InstanceOrExecutionInterpretation": 18,
+    "StructuralEvaluabilityReviewRequired": 4,
+    "StructuralCorpusProofRequired": 19,
+    "UnadoptedExtensionProposal": 8,
+    "AbsentCorpusAntecedent": 1,
+    "OutsideKerMLCorpus": 3
+  },
+  "reviews": [
+    {
+      "issue": "KERML11-105",
+      "issue_text_sha256": "a5af6d8098d3022714d664808f5183a3244d256329289148e5ee320efe7fafef",
+      "title": "MULTILINE_NOTE Element Ambiguous Syntax",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "The multiline-note closing example disagrees with the grammar. Pinned lexical corpus verification remains separate from structural semantic acceptance.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-106",
+      "issue_text_sha256": "58bc6911d81ed78ec08dda898f13065379a999909de43c97d6a9da9d0ab0d149",
+      "title": "SINGLE_LINE_NOTE and MULTILINE_NOTE Unclear Semantics or Intended Use",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "The issue asks how lexical notes differ from semantic comments. It does not authorize dropping canonical annotations or changing the grammar.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-14",
+      "issue_text_sha256": "acd29bd4db74c7b6e2f46f6fe161bb9ba234584aac432a17a9550bf37b5b151b",
+      "title": "Classifier multiplicity, semantics",
+      "linked_constraints": [
+        "validateClassifierMultiplicityDomain"
+      ],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Classifier multiplicity interpretation asks about instance cardinality. The separate validateClassifierMultiplicityDomain structural rule remains mandatory.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-144",
+      "issue_text_sha256": "75b7e30ad0d383d56c8d56ba7c749579c88367b381a856ecbfed94239da81b25",
+      "title": "Discrepancy between documentation of Collections library in spec and textual notation file",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "This asks to align documentation text with the specification. Original library bytes and comments are preserved; no structural correction is adopted.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-15",
+      "issue_text_sha256": "bb5aad0b7deb1fc587284bd0c3f29f9f126d9ef0b5e2e3c40783b5149f31fad5",
+      "title": "Dynamic multiplicity, semantics",
+      "linked_constraints": [
+        "checkMultiplicityTypeFeaturing",
+        "validateFeatureMultiplicityDomain"
+      ],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Dynamic multiplicity compares evaluated cardinalities over time. This does not defer multiplicity ownership, typing, bound structure or featuring domains.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-16",
+      "issue_text_sha256": "b33e0b58514623207860e2c666a2012f3dfbd4e1321aadb08d4124acab755948",
+      "title": "isReadOnly, semantics",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Constancy over the entire lifetime of a domain instance requires values and time. The canonical flag and any existing structural restrictions remain required.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-17",
+      "issue_text_sha256": "cb05af5aa5424a69c8c4951e9d8fa2b82274f9e019aae777bab5c7f21249e3a3",
+      "title": "isPortion, semantics",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Temporal/whole-instance interpretation of isPortion is separate from structural flag conformance and required portion specialization. Neither is silently changed.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-178",
+      "issue_text_sha256": "81a91f756d472389ccc655bebd310f836d203207072d696329353e715752c9eb",
+      "title": "Model-level evaluability of body expressions",
+      "linked_constraints": [],
+      "category": "StructuralEvaluabilityReviewRequired",
+      "rationale": "Whether a body expression is model-level evaluable can depend on structural operand/referent facts. Do not classify the operation itself as runtime execution merely because actual evaluation is deferred.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-179",
+      "issue_text_sha256": "9d86e3d7321d0e1b639c62795cef4610e9221033f7eb9f9951cab16bcc69e3e8",
+      "title": "Undefined rules in the text notation grammar.",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "The listed undefined grammar references and capitalization require syntax authority review. The owned-cross correction changes no grammar production.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-18",
+      "issue_text_sha256": "63e0996745530a1307a18823dc71a9625528b2b133d04d60fc622d5f19328462",
+      "title": "isAbstract, semantics",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Interpretation of isAbstract refers to which instances exist. The flag and specialization graph remain structurally checkable without choosing an instance interpretation.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-181",
+      "issue_text_sha256": "175fad3982d8e055f31796bfcf4e8586f0494b8b568bb407af9919e4884c8705",
+      "title": "FeatureDefinition should not be mandatory in Expression productions",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "The grammar optionality complaint must be distinguished from structural expression semantics. The full pinned corpus parses; no grammar correction is introduced by v7.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-19",
+      "issue_text_sha256": "c3df46c1c143d8ad42af3adc6ddf05d233a5a75abd5a24763ac04a5648407543",
+      "title": "isSufficient, semantics, expressiveness",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Sufficient and necessary extent conditions concern instance interpretation. Structural Type flags and all existing derivations remain required.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-197",
+      "issue_text_sha256": "a985a8283921960b350e0c51eff66add7e0ac4040de7ba3d256ee3af609e9ffe",
+      "title": "Special metaclasses supporting Flow shorthand",
+      "linked_constraints": [
+        "checkFeatureFlowFeatureRedefinition",
+        "checkPayloadFeatureRedefinition",
+        "deriveFlowFlowEnd",
+        "deriveFlowPayloadFeature",
+        "deriveFlowPayloadType"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Longhand FlowEnd and PayloadFeature projections can be empty under the published derivations. The at-most-one payload constraint permits this; the remaining full Flow derivation/validation obligations are not waived.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-199",
+      "issue_text_sha256": "95b7149f43d25abdfe2a1feb2c101b3188c7b6989869883c73ffffce21ec30d9",
+      "title": "Occurrence::superoccurrence is in the library, but not in the specification",
+      "linked_constraints": [],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "The pinned superoccurrence Feature exists. The issue questions documentation or library intent; source identity and ordinary structural validity must both be preserved until an authorized correction exists.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-20",
+      "issue_text_sha256": "094b687e1e37f84572c96fdddb53b733769549dc8eaac3478aa682c523783aab",
+      "title": "direction, semantics",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Who may change a directed value requires instance/time semantics. Structural direction, conjugation and redefinition conformance are not deferred.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-201",
+      "issue_text_sha256": "649f0bd8f5d8b761877ca9b0271f23de74fd1da2756fd05a47a96c233ee6b147",
+      "title": "Textual notation does not expose inherited members",
+      "linked_constraints": [],
+      "category": "UnadoptedExtensionProposal",
+      "rationale": "Displaying inherited members with a caret is proposed new notation. Inherited semantic memberships are still required and must not be copied into canonical ownership.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-202",
+      "issue_text_sha256": "7a4fcb9b5add19d2e978e1734e76974a21d3bf83b48343840d5d44a7e1a9c369",
+      "title": "Functions missing (for SysPhSv2)",
+      "linked_constraints": [],
+      "category": "UnadoptedExtensionProposal",
+      "rationale": "Additional numerical and simulation functions are an extension request. Existing required references and pinned function declarations must remain complete without adding unpinned functions.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-209",
+      "issue_text_sha256": "3163676a7a768a21cfc526626ee5f785d97996693d34e10c0bd2d92ab8572c32",
+      "title": "User-readable definitions of KerML functions (KerML 9.4)",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "Missing human-readable function definitions do not supply an alternative structural graph. Evaluation semantics remain separate from structural parameter/result validation.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-21",
+      "issue_text_sha256": "18f7ceb6a910dcde8464df117904ac74f21b7ec06060226d02dbe7f055a9ded7",
+      "title": "Steps are not always time enclosed",
+      "linked_constraints": [
+        "checkStepEnclosedPerformanceSpecialization",
+        "checkStepOwnedPerformanceSpecialization",
+        "checkStepSpecialization",
+        "checkStepSubperformanceSpecialization"
+      ],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Whether a Step happens during its owning occurrence is a temporal interpretation question. Every applicable published Step specialization, with the already authorized target-name corrections, remains mandatory.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-210",
+      "issue_text_sha256": "4376e9c26a338851c5d9f729c7c95b9e7ba4540b8d898d01eb4a4a90615bd380",
+      "title": "Lexical scoping, semantics",
+      "linked_constraints": [
+        "checkConnectorTypeFeaturing",
+        "checkFeatureReferenceExpressionBindingConnector",
+        "validateSubsettingFeaturingTypes"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Lexical name resolution and contextual connector chains must be distinguished. A resolved name alone does not establish the instance-specific binding graph; complete connector/domain analysis remains required.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-22",
+      "issue_text_sha256": "e656deee2cb0b23a0bcb660d685379d0ab96fa90c6e81cacd0f0ca96ed238839",
+      "title": "Decision/MergePerformance element descriptions give incorrect modeling pattern",
+      "linked_constraints": [],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "The decision/merge modeling-pattern discrepancy concerns relationships as well as runtime traversals. Exact local union/subsetting/binding populations still need analysis.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-23",
+      "issue_text_sha256": "e74d8a0b08a7ecea5c163339ab08ca3b236e552d9dec2d9d62f1370f47f4295d",
+      "title": "Succession cross multiplicities too loose",
+      "linked_constraints": [],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Succession cross-multiplicity structure must be checked independently of the temporal-order interpretation. This issue does not authorize tightening the pinned bounds.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-24",
+      "issue_text_sha256": "e40974d4c44eb60675a89b1e0437d676893588d85bcb2251c6d2218348bdaa0f",
+      "title": "Sufficiency missing for some library types",
+      "linked_constraints": [],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "The requested sufficiency of spaceTimeCoincidentOccurrences would change library semantics. Its existing graph must be checked without adding the flag.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-25",
+      "issue_text_sha256": "39b70f58e2891b2bed96226118e6095a4cb2aa9418828ff8dff39ac09f092428",
+      "title": "Conditions missing for some sufficient library types",
+      "linked_constraints": [],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "The sufficient portions Feature is present. The relationship graph and sufficient flag are preserved; proving unintended extent equivalence is distinct from deciding a source correction.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-26",
+      "issue_text_sha256": "6058433daa4086f4c71db3931361685a37e971181c139b0921be6440cd697f1c",
+      "title": "XMI and JSON for model libraries",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "Additional normative XMI/JSON library archives are an artifact request. Pilot reference XMI is corroboration, not replacement authority for pinned library bytes.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-27",
+      "issue_text_sha256": "60f7026288e49137398fb7e7cb6d4c5fe6c20a68e9a47cbafbd83f5603bb6e28",
+      "title": "Some types not given any semantics",
+      "linked_constraints": [],
+      "category": "AbsentCorpusAntecedent",
+      "rationale": "No pinned Type instance lies outside Classifier or Feature. This absence is computed below from normative metaclass conformance, not names or reference behavior.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-28",
+      "issue_text_sha256": "57d109faa475dcbaac448322d85cf098068f36614b37c790cc84d0b3a303e729",
+      "title": "Machine readable project interchange file(s) for language description examples",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "Missing interchange files for language-description examples are an artifact request, not a correction to the three pinned libraries.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-29",
+      "issue_text_sha256": "1fd055328f8ddcc06f6ed90a8d9a34dc7dbac4af374109ab509beb6477ffb0a7",
+      "title": "Some package-level features are mandatory",
+      "linked_constraints": [],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Package-level features and their bounds are present. Domain structure is mandatory even though the consequences for every runtime instance concern extent interpretation.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-3",
+      "issue_text_sha256": "f2fc9c8b067123c512ddd0a11f5c841c77ef1bb7c37aeb2b24cbea5f27e4fbed",
+      "title": "Featuring type of the multiplicity of a cross feature",
+      "linked_constraints": [
+        "checkFeatureOwnedCrossFeatureTypeFeaturing",
+        "checkMultiplicityTypeFeaturing",
+        "validateFeatureMultiplicityDomain"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Six diagnosed cross-multiplicity bound expressions require a domain analysis separate from both KERML11-4 and the owned-cross selector. No alternative domain is adopted.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-30",
+      "issue_text_sha256": "936aaf5b42da1a736c5e18c7d426b154928fd0b2095d1e2f0eb2d9f0ba29b0ec",
+      "title": "Feature values do not specify when their expressions are evaluated",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Evaluation time for a FeatureValue requires runtime state. Ownership, expression domains, result structure and binding production remain structural and mandatory.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-31",
+      "issue_text_sha256": "836aa0abe428251a1bec8b807ca6759584a30fa8829b0f5af2852c497131950f",
+      "title": "Invariants only hold when evaluated",
+      "linked_constraints": [
+        "checkExpressionSpecialization",
+        "checkInvariantSpecialization"
+      ],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "The complaint asks when invariant expressions are evaluated and true. It does not replace the mandatory structural specializations of Expression and Invariant.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-34",
+      "issue_text_sha256": "a158f74f5e0ac16cccbc72435883c3e4bf4e5103fe775b2f87abd57ec4b78dc5",
+      "title": "Inherited multiplicities, semantics",
+      "linked_constraints": [
+        "deriveTypeMultiplicity",
+        "validateTypeOwnedMultiplicity"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Multiplicity ownership and inherited closure remain structural obligations. The disputed cardinality interpretation must not justify omitting inherited graph facts.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-35",
+      "issue_text_sha256": "ec8b33b3b739d66fa1abbd266fa40843a0e1441ec955e8d9747e9b4131938945",
+      "title": "Add validateSubsettingTypeConformance constraint",
+      "linked_constraints": [
+        "deriveFeatureType",
+        "validateSubsettingFeaturingTypes"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "The issue proposes an additional static type-conformance constraint. Published subsetting currently accumulates types. Existing typing and disjoining constraints still require independent evaluation; no new presumed-disjointness rule is adopted.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-36",
+      "issue_text_sha256": "298706fe8ad4ac0b27991d055c953055c7db900837f2c97e8e8836fd078af985",
+      "title": "Root namespaces restricted to one single file",
+      "linked_constraints": [],
+      "category": "UnadoptedExtensionProposal",
+      "rationale": "Merging namespaces across files is proposed new authoring semantics. Duplicate declarations must not be silently merged; current import/namespace rules remain mandatory.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-37",
+      "issue_text_sha256": "ed0175112265c6b66786e5c18773e6087a9a6e2129950aec229fc493538683c3",
+      "title": "Ambiguity In Directionality InOut semantics",
+      "linked_constraints": [
+        "deriveTypeDirectedFeature",
+        "validateParameterMembershipParameterDirection"
+      ],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Determination and use of inout values concern instance semantics. Explicit direction derivation and parameter/redefinition direction conformance remain structural.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-38",
+      "issue_text_sha256": "6b27e8ad3105b171712f5705ea6f64e32ef2659ff8eab4cda41e7b446de2a7ae",
+      "title": "Redefining features sometimes must respecify metaproperties even when they are the same as those of the redefined feature",
+      "linked_constraints": [
+        "validateRedefinitionDirectionConformance",
+        "validateRedefinitionEndConformance",
+        "validateRedefinitionFeaturingTypes"
+      ],
+      "category": "UnadoptedExtensionProposal",
+      "rationale": "Automatic inheritance of additional metaproperties is proposed. Existing explicit direction/end/conformance rules and v2 redefinition semantics are retained.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-39",
+      "issue_text_sha256": "c3a8afc2c02516ad820935644bd84abf8db4a85985d3391f1f7b9b58047c1325",
+      "title": "Serious limitation of textual concrete syntax as model interchange format for representing UUIDs",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "Textual UUID interchange is a representation limitation. The kernel must preserve canonical identities; it does not authorize changing any library source.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-40",
+      "issue_text_sha256": "5b2667d42364d32527ec817d5fe31153a08c27d19f43521e30d212a11946810c",
+      "title": "Annex A coverage",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "The issue explicitly concerns execution-algorithm coverage in Annex A. It cannot justify deferring any structural constraint from the normative inventory.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-41",
+      "issue_text_sha256": "53cd87273d0b190ae36a073d2519c46d7c18748932095b64ca7113020d1b7b05",
+      "title": "Some syntax in Core has time-dependent semantics",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "The issue questions temporal interpretations of Core flags. It does not remove structural flag, direction, specialization, domain or ownership obligations.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-42",
+      "issue_text_sha256": "0cf5a27adb31e4f6afeff2ebbf395af36a7e42fbf3c26777501683cd582c5c7b",
+      "title": "TimeOf::timeContinuityConstraint might be too restrictive",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "The continuity invariant compares evaluated timestamps under alternative time models. Its references and expression/result structure remain structural requirements.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-44",
+      "issue_text_sha256": "ce087c3f81a1d97488cd5aa2771c7c24cc3b19befccb738e2ee3a3c3e5a27700",
+      "title": "isDerived, semantics",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Whether every derived Feature value is computable at all times is an evaluation question. Ownership and FeatureValue binding structure must still be checked.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-46",
+      "issue_text_sha256": "95bbdb4f250de2cb9428ae9a232b0b08db795db3e4d7341372dfe1ad18ae2979",
+      "title": "Space triggers missings",
+      "linked_constraints": [],
+      "category": "UnadoptedExtensionProposal",
+      "rationale": "Quantified-space triggers are a requested library extension. No additional trigger is added to the frozen corpus.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-47",
+      "issue_text_sha256": "3fba6ba5cd1f7b9727947e3d95d0ead83e2dd19afc336f8ee5fc0767c2e8e758",
+      "title": "Impossible to specialize (redefine, subset) unnamed features in textual syntax",
+      "linked_constraints": [],
+      "category": "UnadoptedExtensionProposal",
+      "rationale": "A textual way to specialize anonymous features is an extension request. Canonical identity-based specialization and all references actually present in the pinned corpus still require closure.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-48",
+      "issue_text_sha256": "cf47bbe1476e9c999d892fe4da68300e7fc460af237a552ec05655360aac1246",
+      "title": "TransferBefore is unsatisfiable",
+      "linked_constraints": [],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "TransferBefore has a static disjoint-supertype path. An empty extent alone is not forbidden structural syntax. Complete disjoining and multiplicity obligations must establish whether any structural contradiction follows without requiring an instance.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-49",
+      "issue_text_sha256": "9b24ec7bf43e7c431ac36ee1bc9147594ff3257d6f2cf27096b3df92f2bdc8c9",
+      "title": "HappensLink disjointness documentation inconsistent",
+      "linked_constraints": [],
+      "category": "DocumentationSyntaxOrInterchange",
+      "rationale": "The declared disjoining from Occurrence is explicit; the prose names its narrower LinkObject subtype. The graph is preserved, and the separate TransferBefore issue is still analyzed.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-5",
+      "issue_text_sha256": "f99a3378a4a41484c138bb010604ff5eac99b7b459fd03d3619592cde601f7d3",
+      "title": "Description and semantics of model-level evaluable constructor expressions",
+      "linked_constraints": [],
+      "category": "StructuralEvaluabilityReviewRequired",
+      "rationale": "The prose has not followed a constructor evaluability constraint change. Structural modelLevelEvaluable derivation and actual constructor execution are separate obligations.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-50",
+      "issue_text_sha256": "3685b1dbcf70a02e4fbe9130a0b7fcd54431284fc483ec47f07c43bca0b29fe9",
+      "title": "Eliminate EndFeatureMembership and ParameterMembership from abstract syntax",
+      "linked_constraints": [
+        "deriveTypeOwnedEndFeature",
+        "validateEndFeatureMembershipIsEnd",
+        "validateParameterMembershipOwningType"
+      ],
+      "category": "UnadoptedExtensionProposal",
+      "rationale": "Eliminating membership metaclasses would change the metamodel. Published membership classes and their constraints remain authoritative in v7.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-51",
+      "issue_text_sha256": "b12d553c83bed743ad20aa91dc445f1ffc8b3876845daf16cdb645e381a41957",
+      "title": "Problem with nested feature semantics",
+      "linked_constraints": [],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "The question distinguishes nested-feature domains from role-type interpretation. Domain and connector structure cannot be deferred; any additional interpretation conflict requires a pinned local proof.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-52",
+      "issue_text_sha256": "1573225d67b5a62ba431015253cbc51db749f205c59aff215599376f4664381b",
+      "title": "Incorrect succession in state and transition library",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Interruptibility and run-to-completion concern temporal execution. The exact pinned succession and its references still require structural validation; no source edit is authorized.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-69",
+      "issue_text_sha256": "a5aa59a6ecde79df06e871614d66b2d0e366b617d0f1aecb62cf2337e3034ee9",
+      "title": "Indexing Collection types",
+      "linked_constraints": [
+        "checkIndexExpressionResultSpecialization"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "All 23 reference guards agree, but that is not a proof for the independently expanded pinned graph. The Array guard is unchanged.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-71",
+      "issue_text_sha256": "51afc849df5514c3586517de48fd2b5b7a661e6c326180f068b69321b8f2ab06",
+      "title": "TriggerAfter uses a binding to var 'currentTime'",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "Capturing currentTime versus continuously binding it changes values over time. Both default/non-default and initial structural graph cases remain mandatory; the pinned source is unchanged.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-72",
+      "issue_text_sha256": "c28813f7fc888703780ee4614db3ad35174b2b2f0a513d0864feda665709b465",
+      "title": "Redefinition inheritance anomaly",
+      "linked_constraints": [
+        "deriveTypeFeatureMembership",
+        "deriveTypeInheritedFeature",
+        "deriveTypeInheritedMembership",
+        "validateNamespaceDistinguishibility"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Complete inherited membership and redefinition suppression must be compared with optional redundant-specialization removal; two Triggers findings cannot be waived on the issue title alone.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-73",
+      "issue_text_sha256": "833ca909b2f9eac32fca751a5f4f40b930ffc926291f9856dc5ff1c9b6fab0da",
+      "title": "State::entryAction HappensJustBefore State::doAction",
+      "linked_constraints": [],
+      "category": "InstanceOrExecutionInterpretation",
+      "rationale": "The requested immediate start of doAction changes temporal behavior. Existing entry/do-action successions and all their structural constraints still require checking.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-75",
+      "issue_text_sha256": "66b88c200b5dd87636245c7d9442fb8acc2aa18152f2786cd0b077de911fa4f7",
+      "title": "OCL for importedMemberships is incorrect",
+      "linked_constraints": [
+        "deriveMembershipImportImportedElement",
+        "deriveNamespaceImportImportedElement",
+        "deriveNamespaceImportedMembership",
+        "deriveNamespaceMembers"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Five direct VectorFunctions imported/owned membership collisions now independently prove the prose/OCL disagreement (KLCV10-F-004). Broader cyclic/inherited/visibility closure remains mandatory; no correction is adopted.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-78",
+      "issue_text_sha256": "eeaeec67108142ce8ef48873b0f0ba5fe6fcca74b9fc6220eea9f61bbb4354a5",
+      "title": "Transfers::transfers and Transfers::flowTransfers subset each other",
+      "linked_constraints": [
+        "checkFlowWithEndsSpecialization"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "All five pinned Flows are longhand. The independently retained transfers/flowTransfers cycle is exercised. A cycle alone is not a structural contradiction; the disjoint MessageTransfer/FlowTransfer types also require analysis before any acceptance claim.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-79",
+      "issue_text_sha256": "ab7343d9d0c0fc4d016de3fdc7c18eb8f98de0b9c030122ab8f0cbe7e517f009",
+      "title": "TransitionPerformance::accept is incorrect",
+      "linked_constraints": [
+        "checkFeatureParameterRedefinition"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "accept explicitly redefines the second inherited parameter while its local direction-bearing Feature is first. Exact positional and explicit redefinition closure is still required; the reference source change is not authorized.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-86",
+      "issue_text_sha256": "9e80d4c2a66bec2fb09fe3c40b48bbfc205e94e0a08c940703bc331b7f0a7763",
+      "title": "Type::specializes() Operation shall be Model-Level Evaluable and Accessible from Expressions",
+      "linked_constraints": [],
+      "category": "StructuralEvaluabilityReviewRequired",
+      "rationale": "Exposure of Type::specializes through model libraries is a library/API extension. The existing semantic specialization query remains a mandatory structural operation.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-87",
+      "issue_text_sha256": "2ae88610c65c5f4bec658a7be795a995db1c71f6afb95513d23bea8cc1c373d2",
+      "title": "ForAll and Exists Should be Model-Level Evaluable",
+      "linked_constraints": [],
+      "category": "StructuralEvaluabilityReviewRequired",
+      "rationale": "The proposed forAll/exists evaluability rule requires a structural predicate/body classification before execution. No unreviewed evaluability extension is implemented.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-88",
+      "issue_text_sha256": "1670462b2d316db0d0caaadb7cd84f988304a9fdd80b71eebfe7dae2375b82ec",
+      "title": "Dynamic Metadata Retrieval",
+      "linked_constraints": [],
+      "category": "UnadoptedExtensionProposal",
+      "rationale": "Dynamic metadata retrieval is a proposed new library/notation facility. Existing metadata ownership, typing and filtering structure must still be validated.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "KERML11-90",
+      "issue_text_sha256": "b06744ca9192c64f6a02e5512536950ff1169ff8c9c351149209a2dcc92b65b9",
+      "title": "checkConstructorExpressionResultDefaultValueBindingConnector not specified",
+      "linked_constraints": [
+        "checkConstructorExpressionResultDefaultValueBindingConnector"
+      ],
+      "category": "StructuralCorpusProofRequired",
+      "rationale": "Both constructors inherit default FeatureValues. Missing direct defaults is not an absence proof. Complete default-binding graph analysis remains required.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "SYSML21-245",
+      "issue_text_sha256": "f42994f4fbfdb63772b461cb9bb886820a2cc055b2fe23017169e32e4a089178",
+      "title": "Message Connector Ends are Absent by Default; If Ends are Specified, Message is Indistinguishable from Flow",
+      "linked_constraints": [],
+      "category": "OutsideKerMLCorpus",
+      "rationale": "The disputed FlowConnectionUsage message notation belongs to SysML. No SysML semantic rules or frontend are introduced.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "SYSML21-274",
+      "issue_text_sha256": "a90115464fe084adae69c980d75554ce5330f94ddfd28ab3646c687d49230fa5",
+      "title": "ShapeItems can't be SpatialItems",
+      "linked_constraints": [],
+      "category": "OutsideKerMLCorpus",
+      "rationale": "ShapeItems/SpatialItems belong to the Systems Library, excluded from this publication scope. Their geometry is not imported into KerML acceptance.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    },
+    {
+      "issue": "SYSML21-7",
+      "issue_text_sha256": "31c2cce8318e8f822887ef4e3a5755aa0d02857239853d8a263ae65065381424",
+      "title": "Missing descriptions of specialized effective naming",
+      "linked_constraints": [],
+      "category": "OutsideKerMLCorpus",
+      "rationale": "The specialized PerformActionUsage/RequirementConstraintMembership naming rules belong to SysML. Generic KerML effective naming remains mandatory.",
+      "structural_constraints_deferred": false,
+      "authorizes_correction": false,
+      "exhaustive_conditional_corpus_proof_complete": false
+    }
+  ],
+  "independently_checked_populations": {
+    "naked_types": [],
+    "kerml_metaclasses_only": true,
+    "longhand_flows": [
+      {
+        "id": "50a49449-2ede-55d6-81d4-7b18b906225d",
+        "path": "Transfers::messageTransfers",
+        "kind": "Flow",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 6903, end: 7326 }, syntax_node: Some(SyntaxNodeId(135787954210986582176723155488124462284)) }",
+          "range": [
+            6903,
+            7326
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "abstract flow messageTransfers: MessageTransfer[0..*] nonunique subsets transfers {\n        doc\n        /*\n         * messageTransfers is a specialization of transfers restricted to type MessageTransfers.\n         */\n        \n        end feature source: Occurrence redefines MessageTransfer::source, transfers::source;\n        end feature target: Occurrence redefines MessageTransfer::target, transfers::target;      \n    }"
+        }
+      },
+      {
+        "id": "79768ad2-8cdb-5182-9eab-cf8fd48aee75",
+        "path": "Transfers::transfers",
+        "kind": "Flow",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 6472, end: 6893 }, syntax_node: Some(SyntaxNodeId(101139047600179565079679678065664278268)) }",
+          "range": [
+            6472,
+            6893
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "abstract flow transfers: Transfer[0..*] nonunique subsets performances, binaryLinks {\n        doc\n        /*\n         * transfers is a specialization of performances and binaryLinks restricted to type \n         * Transfer.\n         */\n    \n        end feature source: Occurrence redefines Transfer::source, binaryLinks::source;\n        end feature target: Occurrence redefines Transfer::target, binaryLinks::target;\n    }"
+        }
+      },
+      {
+        "id": "88dcb443-1c23-5148-b38b-628a1447554d",
+        "path": "Transfers::transfersBefore",
+        "kind": "Flow",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 7814, end: 8399 }, syntax_node: Some(SyntaxNodeId(101425567400889699358530625684731375821)) }",
+          "range": [
+            7814,
+            8399
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "abstract flow transfersBefore: TransferBefore[0..*] nonunique subsets transfers, happensBeforeLinks\n        intersects transfers, happensBeforeLinks {\n        doc\n        /*\n         * transfersBefore is a specialization of transfers and happensBeforeLinks restricted to\n         * type TransferBefore.\n         */\n    \n        end feature source: Occurrence redefines TransferBefore::source, transfers::source, happensBeforeLinks::earlierOccurrence;\n        end feature target: Occurrence redefines TransferBefore::target, transfers::target, happensBeforeLinks::laterOccurrence;\n    }"
+        }
+      },
+      {
+        "id": "e909cd59-6625-5b42-b196-8a3b7eec7cfd",
+        "path": "Transfers::flowTransfers",
+        "kind": "Flow",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 7336, end: 7802 }, syntax_node: Some(SyntaxNodeId(101080338140606876770443630999610945714)) }",
+          "range": [
+            7336,
+            7802
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "abstract flow flowTransfers: FlowTransfer[0..*] nonunique subsets transfers {\n        doc\n        /*\n         * flowTransfers is a specialization of transfers restricted to type FlowTransfers.\n         * It is the default subsetting for non-succession flows.\n         */\n         \n        end feature source: Occurrence redefines FlowTransfer::source, transfers::source;\n        end feature target: Occurrence redefines FlowTransfer::target, transfers::target;\n    }"
+        }
+      },
+      {
+        "id": "f453f403-73fb-5bd0-bf43-be4bc1c12b49",
+        "path": "Transfers::flowTransfersBefore",
+        "kind": "Flow",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 8409, end: 9062 }, syntax_node: Some(SyntaxNodeId(78505104996486351977988275308498289805)) }",
+          "range": [
+            8409,
+            9062
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "abstract flow flowTransfersBefore: FlowTransferBefore[0..*] nonunique subsets flowTransfers, transfersBefore\n        intersects flowTransfers, transfersBefore {\n        doc\n        /*\n         * flowTransfersBefore is a specialization of flowTransfers and transfersBefore that is restricted\n         * to type FlowTransferBefore. IT is the default subsetting for succession flows.\n         */\n    \n        end feature source: Occurrence redefines FlowTransferBefore::source, flowTransfers::source, transfersBefore::source;\n        end feature target: Occurrence redefines FlowTransferBefore::target, flowTransfers::target, transfersBefore::target;\n    }"
+        }
+      }
+    ],
+    "flow_ends": 0,
+    "payload_features": 0
+  },
+  "authority_applicability_closed": false,
+  "structural_coverage_closed": false,
+  "scope": "All 63 previously scope-unreviewed issues were read. Scope categorization is not a waiver, a completed per-rule applicability proof, or a claim that only registered authority blockers remain."
+}

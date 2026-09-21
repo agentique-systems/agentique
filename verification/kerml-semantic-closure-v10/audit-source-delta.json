@@ -1,0 +1,34 @@
+{
+  "format": "agentique-v10-audit-source-delta/1",
+  "audited_input_manifest_sha256": "098282f6359bfcdaf1bc22449744ac3f829b6f7dc03fd79e02eac32e0938c0cb",
+  "unchanged_inputs": 334,
+  "exact_source_deltas": [
+    {
+      "path": "crates/kerml-semantics/tests/initial_values_v10.rs",
+      "audit_input_sha256": "1f9148a717a86bbfcbdfa61024178e5e024c247d3d07ffb148b3f541e4cda332",
+      "final_sha256": "8fcfd884cf8a4952864eab62e11967d70960badd5c8f44d000eaa7b097ab5bb2",
+      "exact_added_text": "    assert_eq!(result.production, reversed.production);\n    assert_eq!(result.production, merged.production);\n    assert_eq!(result.contextual_results, reversed.contextual_results);\n    assert_eq!(result.contextual_results, merged.contextual_results);\n",
+      "reconstructed_audit_input_matches": true
+    },
+    {
+      "path": "crates/kerml-semantics/src/result_structure.rs",
+      "audit_input_sha256": "3df7153f74adb43def49da0240fb4ab50877bd2669235407b0cc6344331a0098",
+      "final_sha256": "e42ab50674b9e066c33b1ed40411aba33667673092ac01be8b66dbcca577b261",
+      "exact_added_text": "        // These lists enumerate produced identities, not semantic ownership.\n        // V7 normalizes them exactly as merge does so caller/batch order cannot\n        // change the complete producer answer. Graph ownership and historical\n        // profile output sequences are untouched.\n        if profile.corrects_owned_cross_feature() {\n            production.value.sort();\n            production.value.dedup();\n            contextual_results.sort_by_key(|result| result.feature);\n            contextual_results.dedup();\n        }\n",
+      "reconstructed_audit_input_matches": true
+    }
+  ],
+  "authority_register_delta": {
+    "path": "standards/kerml-1.0-operational-authority-blockers.json",
+    "audit_start_sha256": "20ac7557d12c9ffd7720a6c2d1f30437bff3f675e4beb921ec6ac2fee3d38723",
+    "final_sha256": "145d2fffeda1de839ec99b7d105acb530954856f917de0a27ff0a204fba83a5b",
+    "added_blocker": "KLCV10-F-004",
+    "earlier_register_reconstructed_exactly": true,
+    "graph_and_query_execution_unchanged": true,
+    "audit_reads_current_register_at_end": true
+  },
+  "canonical_graph_code_unchanged": true,
+  "audit_already_normalizes_all_producer_plans_through_merge": true,
+  "historical_profile_output_sequences_unchanged": true,
+  "scope": "Exact source delta proof, plus the independent complete-answer regression. This does not relabel the retained executable as rebuilt from final sources."
+}

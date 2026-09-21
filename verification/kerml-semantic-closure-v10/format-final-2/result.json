@@ -1,0 +1,11 @@
+{
+  "command": [
+    "cargo",
+    "fmt",
+    "--all"
+  ],
+  "started": "2026-09-20T12:17:29.156498+00:00",
+  "duration_seconds": 1.687000000034459,
+  "exit_code": 0,
+  "output": "output.txt"
+}

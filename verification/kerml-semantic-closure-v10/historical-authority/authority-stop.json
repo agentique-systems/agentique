@@ -1,0 +1,86 @@
+{
+  "id": "KLCV5-F-001",
+  "issue": "KERML11-68",
+  "issue_status": "open",
+  "authority": "Pinned Published KerML 1.0, independently corroborated by current reference XMI",
+  "source": {
+    "path": "standards\\libraries\\Semantic-Library\\Kernel Semantic Library\\StatePerformances.kerml",
+    "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+    "range": [
+      4571,
+      4899
+    ],
+    "text": "feature transitionLinkTarget [0..1] : Occurrence = transitionLink.laterOccurrence {\n\t\t\tinv { (that istype StatePerformance) implies\n\t\t\t      (that as StatePerformance).incomingTransitionTrigger == trigger }\n\t\t}\n\t\t\n\t\tfeature acceptable: Transfer [*] subsets transitionLinkSource.acceptable, triggerTarget.incomingTransfersToSelf;"
+  },
+  "specification": {
+    "pdf_sha256": "3bcc96f989bfa9d05cd28e026df3351b795fe8d494187b87bff3db7d96373697",
+    "physical_pages": [
+      201,
+      296
+    ],
+    "printed_pages": [
+      175,
+      270
+    ],
+    "xmi_sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+    "constraint_xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Redefinition-validateRedefinitionEndConformance\" ns0:type=\"uml:Constraint\" name=\"validateRedefinitionEndConformance\">\n            <constrainedElement ns0:idref=\"Core-Features-Redefinition\" />\n            <ownedComment ns0:id=\"Core-Features-Redefinition-validateRedefinitionEndConformance-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If the redefinedFeature of a Redefinition has isEnd = true, then the redefiningFeature must have isEnd = true.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Redefinition-validateRedefinitionEndConformance\" />\n            </ownedComment>\n            <specification ns0:id=\"Core-Features-Redefinition-validateRedefinitionEndConformance-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"redefinedFeature.isEnd implies redefiningFeature.isEnd\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          ",
+    "isEnd_default_xml": "<defaultValue xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isEnd-defaultValue\" ns0:type=\"uml:LiteralBoolean\" name=\"\" />\n            "
+  },
+  "reference_failures": [
+    {
+      "relationship": {
+        "file": "StatePerformances.kermlx",
+        "id": "d14579f0-2861-5636-9df1-9fcc05ebfc9d",
+        "kind": "Redefinition",
+        "path": "StatePerformances::StateTransitionPerformance::transitionLinkTarget::source::target",
+        "xml": "<ownedRelationship xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:Redefinition\" ns1:id=\"d14579f0-2861-5636-9df1-9fcc05ebfc9d\" elementId=\"d14579f0-2861-5636-9df1-9fcc05ebfc9d\" isImplied=\"true\" redefiningFeature=\"9170f9c9-f876-5e97-8bf0-eafa287cab5a\">\n                            <redefinedFeature href=\"Occurrences.kermlx#a23c2158-ef23-5f2a-b903-a2245b573535\" />\n                          </ownedRelationship>\n                          "
+      },
+      "redefining": {
+        "file": "StatePerformances.kermlx",
+        "id": "9170f9c9-f876-5e97-8bf0-eafa287cab5a",
+        "path": "StatePerformances::StateTransitionPerformance::transitionLinkTarget::source::target",
+        "isEnd": false
+      },
+      "redefined": {
+        "file": "Occurrences.kermlx",
+        "id": "a23c2158-ef23-5f2a-b903-a2245b573535",
+        "path": "Occurrences::HappensBefore::laterOccurrence",
+        "isEnd": true
+      }
+    }
+  ],
+  "truth_table": [
+    {
+      "redefined_isEnd": false,
+      "redefining_isEnd": false,
+      "valid": true
+    },
+    {
+      "redefined_isEnd": false,
+      "redefining_isEnd": true,
+      "valid": true
+    },
+    {
+      "redefined_isEnd": true,
+      "redefining_isEnd": false,
+      "valid": false
+    },
+    {
+      "redefined_isEnd": true,
+      "redefining_isEnd": true,
+      "valid": true
+    }
+  ],
+  "implementation_isolation": "Independent XML endpoints and literal flags; arbitrary-name canonical Rust witness; no Agentique feature-chain lowering or operational transform used.",
+  "existing_corrections_do_not_cover": [
+    "KERML11-81 removes contradictory participant descriptors",
+    "KERML11-140 changes redefinition name lookup",
+    "KERML11-76 corrects inherited-member collisions in four other library documents"
+  ],
+  "alternatives_requiring_new_authority": [
+    "Change the prescribed feature-chain nested feature to an end",
+    "Relax validateRedefinitionEndConformance for this context",
+    "Change the pinned StatePerformances feature-value expression"
+  ],
+  "disposition": "Strict semantic publication blocked. No relaxation, source rewrite or unreviewed semantic correction applied."
+}

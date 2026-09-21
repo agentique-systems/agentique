@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "cross_feature_audit",
+    "--",
+    "--output=verification/kerml-semantic-closure-v10/cross-corpus-v7.json"
+  ],
+  "started": "2026-09-20T11:23:48.331126+00:00",
+  "duration_seconds": 35.81200000003446,
+  "exit_code": 0,
+  "output": "output.txt"
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "verification/kerml-semantic-closure-v10/verify-evidence.py"
+  ],
+  "started": "2026-09-20T14:41:59.361967+00:00",
+  "duration_seconds": 0.18700000003445894,
+  "exit_code": 0,
+  "output": "output.txt"
+}

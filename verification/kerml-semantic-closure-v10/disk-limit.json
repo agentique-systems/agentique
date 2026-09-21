@@ -1,0 +1,25 @@
+{
+  "format": "agentique-v10-resource-failure/1",
+  "alternate_release_capture": "shared-provenance-release",
+  "alternate_release_capture_exit_code": 1,
+  "alternate_release_child_exit_code": null,
+  "alternate_release_result_record_written": false,
+  "capture_failure": "Python could not create result.json after the compiler failed: OSError [Errno 28] No space left on device.",
+  "verification_attempt": "final-verification-shared",
+  "observed_verification_commands": [
+    {"command": "cargo fmt --all -- --check", "exit_code": 0},
+    {"command": "cargo clippy --workspace --all-targets -- -D warnings", "exit_code": 0},
+    {"command": "cargo test --workspace", "exit_code": 101}
+  ],
+  "verification_capture_exit_code": 1,
+  "verification_capture_failure": "Node ENOSPC while writing results.json; retain the incomplete file and command logs, do not represent the attempt as a completed matrix.",
+  "initial_observed_free_bytes": 0,
+  "recursive_powershell_cleanup": "Automatic approval review rejected the proposed recursive cache cleanup. No deletion by that command occurred.",
+  "safer_cleanup_command": "cargo clean --release --target-dir C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\kerml-v10-final",
+  "safer_cleanup_exit_code": 0,
+  "safer_cleanup_output": "Removed 1088 files, 297.4MiB total",
+  "cleanup_scope": "Verified non-reparse release build cache created for this audit. No source, standards or verification artifacts removed.",
+  "audit_restart": "resource-restart-shared.json",
+  "observed_free_bytes_after_stopping_old_audit": 7133536256,
+  "semantic_correctness_inferred_from_timing_or_resource_exit": false
+}

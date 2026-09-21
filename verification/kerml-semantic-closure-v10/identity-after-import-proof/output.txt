@@ -1,0 +1,1 @@
+V7 manifest/authority identities, eight-profile selector, aggregate blockers, preservation, and both runtime gates agree. No incomplete review is represented as accepted publication.

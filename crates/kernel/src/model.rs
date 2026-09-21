@@ -421,6 +421,14 @@ impl ModelView {
     > {
         self.searches.iter()
     }
+    /// Recorded search evidence for one fact, including negative searches.
+    /// An empty iterator does not assert that the fact exists or is complete.
+    pub fn computation_searches_for(
+        &self,
+        fact: crate::provenance::FactKey,
+    ) -> impl Iterator<Item = &crate::derived::StructuralSearch> {
+        self.searches.get(&fact).into_iter().flatten()
+    }
     pub fn computation_failures(
         &self,
     ) -> impl Iterator<

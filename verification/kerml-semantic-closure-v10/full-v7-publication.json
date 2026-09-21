@@ -1,0 +1,197 @@
+{
+  "accepted_snapshot_ids": [],
+  "ambiguous": 0,
+  "authority_blockers": 3,
+  "canonical_records": 29140,
+  "coverage_closed": false,
+  "derived_overlay_count": 0,
+  "distinguishability": 0,
+  "evaluated_rules": {},
+  "execution_implemented": false,
+  "format": "agentique-v7-corpus-publication-audit/1",
+  "incomplete": 10,
+  "incomplete_queries": 0,
+  "invalid_queries": 0,
+  "invalid_references": 0,
+  "kernel_storage_valid": true,
+  "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "overlay_error": "MissingDependency { fact: Element(ElementId(40180291517517495029976148605197402156)), dependency: Declared(Property { element: ElementId(297332565745921015022144421290808404729), property: PropertyId(50518364560662921492233641288546012934) }) }",
+  "planned_derived_records": 20194,
+  "producer_complete": false,
+  "producer_diagnostics": [
+    {
+      "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+      "message": "Effective owner typing is required to establish this antecedent",
+      "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+    },
+    {
+      "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+      "message": "Effective owner typing is required to establish this antecedent",
+      "subject": "7916664e-cad0-5522-91de-764b9b87abea"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "2796afaf-1633-553e-acc3-dc1ad28f0f54"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "31120298-7b2b-565d-930b-8e29dde9ee75"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "3f630d5e-a2f0-5bdb-a20e-33d03f0970d3"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "4941cca2-d407-5336-b93e-29f97ebb742c"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "50044d97-d809-516d-9065-8d3dfb48efb9"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "50637f8c-972e-5951-8aac-e4ca6627d385"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "5100fa35-67c5-51c5-9769-ed5a68ffc0e9"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "78e497fe-fe02-543f-9dad-4281b6f1f7dd"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "8e97e6b9-8756-59d5-a889-25e008001a89"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "ae67a31f-e263-55af-9549-b901fe8ec89e"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "aff98c9d-e1be-50cb-be0d-38afe58d1bfa"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "ba5a05e4-79ce-57e2-bf90-fa6113147a1e"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "bbbdfce1-62c9-5194-b443-08b839aaff3f"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "e2704e2f-b5ad-5683-8816-6c714127a1fd"
+    },
+    {
+      "code": "KQ_REFERENCE_CONTEXT",
+      "message": "No unique expression context features the referent",
+      "subject": "f0a910e0-17c9-5bd6-8ad0-9ae0933dee80"
+    },
+    {
+      "code": "KQ_VARIABLE_FEATURING",
+      "message": "Variable featuring requires its snapshot domain",
+      "subject": "8af4b7a2-f659-55c4-a727-48f088780d89"
+    },
+    {
+      "code": "KQ_VARIABLE_FEATURING",
+      "message": "Variable featuring requires its snapshot domain",
+      "subject": "c6418c9e-9064-5245-96db-a92598baaf60"
+    }
+  ],
+  "profile": "agentique-kerml-1.0-operational/7",
+  "query_count": 0,
+  "reference_findings": [
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "observer"
+      ],
+      "relationship": "74b3de60-7b7b-5793-a48c-be0b28962b67"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "signal"
+      ],
+      "relationship": "dec0ad32-bd32-5e80-ab0a-eeba6ed1b72c"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "thisMonitor"
+      ],
+      "relationship": "6576a9e4-f129-52f9-a8f5-6b20a4f0f4b5"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "observations"
+      ],
+      "relationship": "d7df1235-384d-5ba7-b0bd-59758d1ba54e"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "including"
+      ],
+      "relationship": "27e3950d-0262-535d-b167-ba96ee8a6897"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "observation"
+      ],
+      "relationship": "2781b20d-712a-5166-87fd-7f73836ebfce"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "thisMonitor"
+      ],
+      "relationship": "e169da6e-5bf3-5261-98a0-5551c5944044"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "observations"
+      ],
+      "relationship": "74adc8f9-4ec5-5432-a625-27a60d861b97"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "excluding"
+      ],
+      "relationship": "989f1bd7-b5dc-5a5e-a431-4a9df4518240"
+    },
+    {
+      "completeness": "Incomplete",
+      "name": [
+        "observations"
+      ],
+      "relationship": "ebbeceac-ab27-5bba-8a7a-8ff94c90f38e"
+    }
+  ],
+  "remaining": "Unimplemented structural producer/validation families and authority applicability proofs remain mandatory. Audit completion does not accept a publication.",
+  "required_references": 4000,
+  "semantic_publication_accepted": false,
+  "unresolved": 0,
+  "validation_findings": []
+}

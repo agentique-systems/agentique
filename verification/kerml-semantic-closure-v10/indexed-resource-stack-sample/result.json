@@ -1,0 +1,10 @@
+{
+  "command": [
+    ".cache/v10-stack-sample.exe",
+    "27528"
+  ],
+  "started": "2026-09-20T14:59:34.259048+00:00",
+  "duration_seconds": 0.10899999993853271,
+  "exit_code": 0,
+  "output": "output.txt"
+}

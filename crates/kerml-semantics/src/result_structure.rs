@@ -81,12 +81,103 @@ fn identity(parts: &[&[u8]]) -> u128 {
     }
     u128::from_be_bytes(hash.finalize()[..16].try_into().expect("128-bit prefix"))
 }
+
+#[cfg(test)]
+mod navigation_evidence_regression {
+    use crate as agq_kerml_semantics;
+    include!("../tests/common/result_fixture.rs");
+    use super::Graph;
+
+    #[test]
+    fn projected_crossed_feature_dependencies_materialize_as_canonical_link_facts() {
+        let profile = agq_kerml::BaselineProfile::OPERATIONAL_V7;
+        let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+        let mut f = Fixture {
+            changes: base.change_set(),
+            base,
+            owned: BTreeMap::new(),
+        };
+        f.create(1, c::FEATURE);
+        f.create(2, c::FEATURE);
+        relation(
+            &mut f,
+            1,
+            2,
+            3,
+            c::CROSS_SUBSETTING,
+            p::CROSS_SUBSETTING_CROSSED_FEATURE,
+        );
+        let snapshot = f.finish();
+        let projected = FactKey::Property {
+            element: id(3),
+            property: p::CROSS_SUBSETTING_CROSSED_FEATURE,
+        };
+        let q = KerMlQueries::new(
+            SemanticContext::for_snapshot(
+                &snapshot,
+                SemanticOptions {
+                    baseline_profile: profile,
+                    ..Default::default()
+                },
+                Default::default(),
+            )
+            .unwrap(),
+        );
+        assert!(
+            q.cross_feature(id(1))
+                .positive_dependencies
+                .contains(&projected)
+        );
+        assert!(
+            snapshot
+                .model()
+                .element(id(3))
+                .unwrap()
+                .slot(p::CROSS_SUBSETTING_CROSSED_FEATURE)
+                .is_none()
+        );
+        let Origin::AssociationOccurrences(links) = snapshot
+            .model()
+            .navigation_slot(id(3), p::CROSS_SUBSETTING_CROSSED_FEATURE)
+            .unwrap()
+            .origin()
+        else {
+            panic!("canonical association navigation");
+        };
+        let mut graph = Graph {
+            model: snapshot.model(),
+            profile,
+            records: BTreeMap::new(),
+            attachments: BTreeMap::new(),
+            unattached_contextual: BTreeSet::new(),
+        };
+        let generated = graph.create(
+            graph.key("evidence-regression", id(1), "feature", &[]),
+            c::FEATURE,
+            &BTreeSet::from([projected]),
+        );
+        let overlay = graph.build(&snapshot).unwrap();
+        let Origin::Derived(explanation) = overlay.model().element(generated).unwrap().origin()
+        else {
+            panic!("derived fact");
+        };
+        let mut expected: BTreeSet<_> = links
+            .iter()
+            .copied()
+            .map(|link| Dependency::Declared(FactKey::AssociationOccurrence(link)))
+            .collect();
+        expected.insert(Dependency::Declared(FactKey::Element(id(1))));
+        assert_eq!(explanation.dependencies, expected);
+    }
+}
 fn rule_id(profile: BaselineProfile, rule: &str) -> RuleId {
     RuleId::from_u128(identity(&[
         profile.id().as_bytes(),
         &profile.errata_manifest_sha256().unwrap_or_default(),
         rule.as_bytes(),
-        RULE_SET_VERSION.as_bytes(),
+        // Frozen v9 producer identity. Ordinary query-version changes must not
+        // change the IDs of already reviewed contextual results and bindings.
+        b"agq-kerml-query/16",
     ]))
 }
 
@@ -104,6 +195,7 @@ pub(crate) fn structural_rule_profile(rule: RuleId) -> Option<BaselineProfile> {
                 P::OPERATIONAL_V4,
                 P::OPERATIONAL_V5,
                 P::OPERATIONAL_V6,
+                P::OPERATIONAL_V7,
             ]
             .into_iter()
             .flat_map(|profile| {
@@ -115,7 +207,10 @@ pub(crate) fn structural_rule_profile(rule: RuleId) -> Option<BaselineProfile> {
                             .into_iter()
                             .map(ResultDomainRule::constraint),
                     )
-                    .chain(["structural-result-ownership/1"])
+                    .chain([
+                        "structural-result-ownership/1",
+                        "initial-feature-value-context/1",
+                    ])
                     .map(move |name| (rule_id(profile, name), profile))
             })
             .collect()
@@ -133,6 +228,7 @@ pub struct ContextualResult {
     pub rule: ResultDomainRule,
 }
 
+#[derive(PartialEq, Eq)]
 struct ImpliedRecord {
     key: DerivationKey,
     class: MetaclassId,
@@ -141,12 +237,38 @@ struct ImpliedRecord {
 }
 
 struct Graph<'a> {
-    snapshot: &'a Snapshot,
+    model: &'a agq_kernel::ModelView,
     profile: BaselineProfile,
     records: BTreeMap<ElementId, ImpliedRecord>,
     attachments: BTreeMap<ElementId, Vec<ElementId>>,
+    unattached_contextual: BTreeSet<ElementId>,
 }
 impl<'a> Graph<'a> {
+    fn initial_value_context(&mut self, that: ElementId, start: ElementId) -> ElementId {
+        let inputs = [that, start];
+        let deps = BTreeSet::from([FactKey::Element(that), FactKey::Element(start)]);
+        // This globally qualified chain has the same semantic context wherever
+        // it is used. Its identity does not contain the requesting record ID.
+        let chain = self.create(
+            self.key("initial-feature-value-context/1", that, "chain", &inputs),
+            c::FEATURE,
+            &deps,
+        );
+        for (role, target) in [("first", that), ("last", start)] {
+            let relation = self.create(
+                self.key("initial-feature-value-context/1", that, role, &inputs),
+                c::FEATURE_CHAINING,
+                &deps,
+            );
+            self.set(
+                relation,
+                p::FEATURE_CHAINING_CHAINING_FEATURE,
+                Value::Reference(target),
+            );
+            self.own(chain, relation);
+        }
+        chain
+    }
     fn key(
         &self,
         rule: &str,
@@ -174,7 +296,7 @@ impl<'a> Graph<'a> {
         if self.records.contains_key(&id) {
             return id;
         }
-        let registry = self.snapshot.model().registry();
+        let registry = self.model.registry();
         let mut slots = BTreeMap::new();
         slots.insert(
             p::ELEMENT_ELEMENT_ID,
@@ -245,7 +367,25 @@ impl<'a> Graph<'a> {
                 dependencies: dependencies
                     .iter()
                     .copied()
-                    .map(Dependency::Declared)
+                    .flat_map(|fact| {
+                        // Association navigation is a read projection, not a
+                        // separately declared slot. Retain its canonical links
+                        // as kernel evidence instead of inventing a slot fact.
+                        if let FactKey::Property { element, property } = fact
+                            && let Some(slot) = self.model.navigation_slot(element, property)
+                            && let agq_kernel::provenance::Origin::AssociationOccurrences(links) =
+                                slot.origin()
+                        {
+                            return links
+                                .iter()
+                                .copied()
+                                .map(|link| {
+                                    Dependency::Declared(FactKey::AssociationOccurrence(link))
+                                })
+                                .collect::<Vec<_>>();
+                        }
+                        vec![Dependency::Declared(fact)]
+                    })
                     .collect(),
             },
         );
@@ -307,14 +447,24 @@ impl<'a> Graph<'a> {
         let name = rule.constraint();
         let inputs = [expression, raw];
         let key = self.key(name, subject, "contextual-result", &inputs);
+        let is_new = !self.records.contains_key(&key.element_id());
         let feature = self.create(key, c::FEATURE, deps);
-        self.membership(
-            subject,
-            feature,
-            c::OWNING_MEMBERSHIP,
-            self.key(name, subject, "contextual-membership", &inputs),
-            deps,
-        );
+        if !self.profile.corrects_owned_cross_feature()
+            || !matches!(
+                rule,
+                ResultDomainRule::FeatureValuation | ResultDomainRule::FeatureValueBinding
+            )
+        {
+            self.membership(
+                subject,
+                feature,
+                c::OWNING_MEMBERSHIP,
+                self.key(name, subject, "contextual-membership", &inputs),
+                deps,
+            );
+        } else if is_new {
+            self.unattached_contextual.insert(feature);
+        }
         for (role, target) in [("chain-expression", expression), ("chain-result", raw)] {
             let chain = self.create(
                 self.key(name, subject, role, &inputs),
@@ -359,6 +509,24 @@ impl<'a> Graph<'a> {
             Value::Reference(general),
         );
         self.own(specific, relationship);
+        self.own_unattached_contextual(relationship, general);
+    }
+
+    // A contextual target is semantic infrastructure of the relationship using
+    // it, not an additional owned member of an end Feature. Preserve historical
+    // v6 ownership; v7 fixes the producer defect exposed by KERML11-1 integration.
+    fn own_unattached_contextual(&mut self, relationship: ElementId, target: ElementId) {
+        if !self.unattached_contextual.remove(&target) {
+            return;
+        }
+        self.records
+            .get_mut(&relationship)
+            .expect("target relationship")
+            .slots
+            .insert(
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                SlotValue::Ordered(vec![Value::Reference(target)]),
+            );
     }
     fn binding(
         &mut self,
@@ -424,6 +592,7 @@ impl<'a> Graph<'a> {
                 Value::Reference(endpoint),
             );
             self.own(end, reference);
+            self.own_unattached_contextual(reference, endpoint);
         }
         if let Some(domain) = domain {
             let featuring = self.create(
@@ -445,8 +614,8 @@ impl<'a> Graph<'a> {
         }
         binding
     }
-    fn build(self) -> Result<DerivedOverlay, DerivationError> {
-        let mut builder = DerivationBuilder::new(self.snapshot.clone());
+    fn build(self, snapshot: &Snapshot) -> Result<DerivedOverlay, DerivationError> {
+        let mut builder = DerivationBuilder::new(snapshot.clone());
         for record in self.records.into_values() {
             builder.element(record.key, record.class, record.slots, record.dependencies);
         }
@@ -473,7 +642,84 @@ pub struct ResultStructure {
     pub contextual_results: Vec<ContextualResult>,
 }
 
-impl KerMlQueries<'_> {
+/// A bounded producer plan over one immutable semantic context. This is a
+/// proposed derivation, not canonical storage or an accepted publication.
+/// Construction inputs can be audited without inventing a valid Snapshot.
+pub struct ResultStructurePlan<'m> {
+    graph: Graph<'m>,
+    /// Exact input identity, including unresolved construction obligations.
+    pub context: SemanticContextId,
+    pub production: QueryResult<Vec<ElementId>>,
+    pub contextual_results: Vec<ContextualResult>,
+}
+impl ResultStructurePlan<'_> {
+    /// Stable implied identities, useful for independent batch comparisons.
+    pub fn planned_elements(&self) -> impl Iterator<Item = ElementId> + '_ {
+        self.graph.records.keys().copied()
+    }
+    /// Merge disjoint subject batches from the identical context. Duplicate
+    /// facts must agree exactly, including provenance. Conflicting ownership
+    /// sequences are rejected before mutation; a batch order cannot pick one.
+    pub fn merge(&mut self, other: Self) -> Result<(), DerivationError> {
+        if self.context != other.context || !std::ptr::eq(self.graph.model, other.graph.model) {
+            return Err(DerivationError::InputContextMismatch);
+        }
+        for (&id, record) in &other.graph.records {
+            if self
+                .graph
+                .records
+                .get(&id)
+                .is_some_and(|existing| existing != record)
+            {
+                return Err(DerivationError::DuplicateFact(FactKey::Element(id)));
+            }
+        }
+        for (&owner, additions) in &other.graph.attachments {
+            if self
+                .graph
+                .attachments
+                .get(&owner)
+                .is_some_and(|existing| existing != additions)
+            {
+                return Err(DerivationError::InvalidCollectionExtension {
+                    element: owner,
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                });
+            }
+        }
+        self.graph.records.extend(other.graph.records);
+        self.graph.attachments.extend(other.graph.attachments);
+        self.graph
+            .unattached_contextual
+            .extend(other.graph.unattached_contextual);
+        self.production
+            .value
+            .extend(other.production.value.iter().copied());
+        self.production.merge(other.production);
+        self.production.value.sort();
+        self.production.value.dedup();
+        self.contextual_results.extend(other.contextual_results);
+        self.contextual_results.sort_by_key(|r| r.feature);
+        self.contextual_results.dedup();
+        Ok(())
+    }
+    /// Materialization requires the identical validated Snapshot; a plan over
+    /// an incomplete construction cannot be converted into an overlay here.
+    pub fn materialize(self, snapshot: &Snapshot) -> Result<ResultStructure, DerivationError> {
+        if snapshot.revision() != self.context.revision
+            || !std::ptr::eq(snapshot.model(), self.graph.model)
+        {
+            return Err(DerivationError::InputContextMismatch);
+        }
+        Ok(ResultStructure {
+            overlay: self.graph.build(snapshot)?,
+            production: self.production,
+            contextual_results: self.contextual_results,
+        })
+    }
+}
+
+impl<'m> KerMlQueries<'m> {
     fn required_structural_result<T>(
         &self,
         out: &mut QueryResult<T>,
@@ -500,17 +746,37 @@ impl KerMlQueries<'_> {
         {
             return Err(DerivationError::InputContextMismatch);
         }
+        self.plan_result_structure(self.model().elements().map(|r| r.id()))
+            .materialize(snapshot)
+    }
+
+    /// Execute all result producers for the supplied subjects. The scope is
+    /// explicit so a corpus audit can release query evidence between batches.
+    /// No rule is skipped merely because an unrelated reference is unresolved.
+    pub fn plan_result_structure(
+        &self,
+        subjects: impl IntoIterator<Item = ElementId>,
+    ) -> ResultStructurePlan<'m> {
         let profile = self.context().options.baseline_profile;
         let mut graph = Graph {
-            snapshot,
+            model: self.model(),
             profile,
             records: BTreeMap::new(),
             attachments: BTreeMap::new(),
+            unattached_contextual: BTreeSet::new(),
         };
         let mut production = self.result(vec![]);
         let mut contextual_results = vec![];
-        for record in self.model().elements() {
-            let subject = record.id();
+        for subject in subjects {
+            if self.model().element(subject).is_none() {
+                production.problem(
+                    Completeness::Invalid,
+                    "KQ_PRODUCER_SUBJECT",
+                    subject,
+                    "Missing producer subject",
+                );
+                continue;
+            }
             if self.is(subject, c::FEATURE_REFERENCE_EXPRESSION) {
                 let mut proof = self.result(());
                 let referent = self.reference_referent(subject);
@@ -659,7 +925,43 @@ impl KerMlQueries<'_> {
                         }
                         if nondefault {
                             let domains = self.featuring_types(subject);
-                            if initial {
+                            if initial && profile == BaselineProfile::OPERATIONAL_V7 {
+                                let mut targets = vec![];
+                                for segments in [
+                                    ["Base", "things", "that"],
+                                    ["Occurrences", "Occurrence", "startShot"],
+                                ] {
+                                    let resolved = self.resolve_reference(
+                                        subject,
+                                        &QualifiedName {
+                                            absolute: true,
+                                            segments: segments
+                                                .into_iter()
+                                                .map(str::to_owned)
+                                                .collect(),
+                                        },
+                                        c::FEATURE,
+                                    );
+                                    if let Resolution::Resolved(target) = resolved.value {
+                                        targets.push(target);
+                                    }
+                                    proof.merge(resolved);
+                                }
+                                if let [that, start] = targets.as_slice() {
+                                    if proof.completeness == Completeness::Complete {
+                                        let context = graph.initial_value_context(*that, *start);
+                                        production.value.push(graph.binding(
+                                            subject,
+                                            [subject, contextual.expect("value chain")],
+                                            Some(context),
+                                            ImpliedBindingRole::FeatureValue,
+                                            &proof.positive_dependencies,
+                                        ));
+                                    }
+                                } else {
+                                    proof.problem(Completeness::Incomplete,"KQ_INITIAL_VALUE_CONTEXT",value,"Initial binding requires exact canonical Base::things::that and Occurrences::Occurrence::startShot");
+                                }
+                            } else if initial {
                                 proof.problem(
                                     Completeness::Incomplete,
                                     "KQ_INITIAL_VALUE_CONTEXT",
@@ -759,10 +1061,21 @@ impl KerMlQueries<'_> {
                 production.merge(proof);
             }
         }
-        Ok(ResultStructure {
-            overlay: graph.build()?,
+        // These lists enumerate produced identities, not semantic ownership.
+        // V7 normalizes them exactly as merge does so caller/batch order cannot
+        // change the complete producer answer. Graph ownership and historical
+        // profile output sequences are untouched.
+        if profile.corrects_owned_cross_feature() {
+            production.value.sort();
+            production.value.dedup();
+            contextual_results.sort_by_key(|result| result.feature);
+            contextual_results.dedup();
+        }
+        ResultStructurePlan {
+            graph,
+            context: self.context().clone(),
             production,
             contextual_results,
-        })
+        }
     }
 }

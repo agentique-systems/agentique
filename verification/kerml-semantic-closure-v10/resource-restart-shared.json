@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-20T14:15:20.1675658Z",
+  "pid": 11820,
+  "executable": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\release\\examples\\library_publication_audit.exe",
+  "cpu_seconds": 4706.265625,
+  "private_bytes": 7486853120,
+  "reason": "Restart with immutable shared provenance after independent regression and Clippy passed; disk exhaustion prevented concurrent verification. Complete producers, exact expanded witness assertions and 4000 expanded references ran; structural validation did not complete.",
+  "completed": false,
+  "completed_expanded_references": 4000,
+  "unresolved": 0,
+  "incomplete": 10,
+  "ambiguous": 0
+}

@@ -1,0 +1,8 @@
+tree 3f486b8a6af136066641c33d4964ea872d9ca26a
+parent c1a76cebcff41f7a4bd105e48f8aaccbc446d835
+author Ed Seidewitz <ed-s@modeldriven.com> 1785624267 -0400
+committer Ed Seidewitz <ed-s@modeldriven.com> 1785778903 -0400
+
+KERML11-1 Updated Feature.ownedCrossFeature operation per resolution.
+
+- Added a test to KERML11_Ballot3_Tests.

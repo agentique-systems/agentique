@@ -1,0 +1,746 @@
+{
+  "format": "agentique-v10-import-authority/1",
+  "issue": {
+    "key": "KERML11-75",
+    "title": "OCL for importedMemberships is incorrect",
+    "status": "open",
+    "url": "https://issues.omg.org/issues/KERML11-75",
+    "anchor": "issue-57246",
+    "text": "OCL for importedMemberships is incorrect Key: KERML11-75 Status: open Source: Model Driven Solutions ( Mr. Ed Seidewitz ) Summary: In 8.3.2.4.5 Namespace, the description of the operation importedMemberships is: Derive the importedMemberships of this Namespace as the importedMembership of all ownedImports , excluding those Imports whose importOwningNamespace is in the excluded set, and excluding Memberships that have distinguisibility collisions with each other or with any ownedMembership . However, the OCL does not seem to cover the part about the exclusion of \" Memberships that have distinguisibility collisions with each other or with any ownedMembership \". Reported: KerML 1.0b4 —\n                                    Thu, 24 Jul 2025 22:59 GMT Updated: Thu, 24 Jul 2025 22:59 GMT",
+    "updated": "Thu, 24 Jul 2025 22:59 GMT"
+  },
+  "formal": [
+    {
+      "kind": "ownedOperation",
+      "owner": "NamespaceImport",
+      "name": "importedMemberships",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-NamespaceImport-importedMemberships_Namespace",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "importedMemberships"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-NamespaceImport-importedMemberships_Namespace-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "if excluded->includes(importedNamespace) then Sequence{} else importedNamespace.visibleMemberships(excluded, isRecursive, isImportAll)",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-NamespaceImport-importedMemberships_Namespace-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Returns at least the visible <code>Memberships</code> of the <code>importedNamespace</code>. If <code>isRecursive = true</code>, then <code>Memberships</code> are also recursively imported from any <code>ownedMembers</code> of the <code>importedNamespace</code> that are themselves <code>Namespaces</code>.</p> "
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace\" ns0:type=\"uml:Operation\" name=\"importedMemberships\">\n            <bodyCondition ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if excluded-&gt;includes(importedNamespace) then Sequence{} else importedNamespace.visibleMemberships(excluded, isRecursive, isImportAll)\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Returns at least the visible &lt;code&gt;Memberships&lt;/code&gt; of the &lt;code&gt;importedNamespace&lt;/code&gt;. If &lt;code&gt;isRecursive = true&lt;/code&gt;, then &lt;code&gt;Memberships&lt;/code&gt; are also recursively imported from any &lt;code&gt;ownedMembers&lt;/code&gt; of the &lt;code&gt;importedNamespace&lt;/code&gt; that are themselves &lt;code&gt;Namespaces&lt;/code&gt;.&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-unnamed1\" />\n            <redefinedOperation ns0:idref=\"Root-Namespaces-Import-importedMemberships_Namespace\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Namespace",
+      "name": "visibleMemberships",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "visibleMemberships"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "let visibleMemberships : OrderedSet(Membership) =      if includeAll then membershipsOfVisibility(null, excluded)     else membershipsOfVisibility(VisibilityKind::public, excluded)     endif in if not isRecursive then visibleMemberships else visibleMemberships->union(ownedMember->     selectAsKind(Namespace).     select(includeAll or owningMembership.visibility = VisibilityKind::public)->     visibleMemberships(excluded->including(self), true, includeAll)) endif ",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If <code>includeAll = true</code>, then return all the <code>Memberships</code> of this <code>Namespace</code>. Otherwise, return only the publicly visible <code>Memberships</code> of this <code>Namespace</code>, including <code>ownedMemberships</code> that have a <code>visibility</code> of <code>public</code> and <code>Memberships</code> imported with a <code>visibility</code> of <code>public</code>. If <code>isRecursive = true</code>, also recursively include all visible <code>Memberships</code> of any <code>public</code> owned <code>Namespaces</code>, or, if <code>IncludeAll = true</code>, all <code>Memberships</code> of all owned <code>Namespaces</code>. When computing imported <code>Memberships</code>, ignore this <code>Namespace</code> and any <code>Namespaces</code> in the given <code>excluded</code> set.</p> "
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean\" ns0:type=\"uml:Operation\" name=\"visibleMemberships\">\n            <bodyCondition ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"let visibleMemberships : OrderedSet(Membership) =      if includeAll then membershipsOfVisibility(null, excluded)     else membershipsOfVisibility(VisibilityKind::public, excluded)     endif in if not isRecursive then visibleMemberships else visibleMemberships-&gt;union(ownedMember-&gt;     selectAsKind(Namespace).     select(includeAll or owningMembership.visibility = VisibilityKind::public)-&gt;     visibleMemberships(excluded-&gt;including(self), true, includeAll)) endif \" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If &lt;code&gt;includeAll = true&lt;/code&gt;, then return all the &lt;code&gt;Memberships&lt;/code&gt; of this &lt;code&gt;Namespace&lt;/code&gt;. Otherwise, return only the publicly visible &lt;code&gt;Memberships&lt;/code&gt; of this &lt;code&gt;Namespace&lt;/code&gt;, including &lt;code&gt;ownedMemberships&lt;/code&gt; that have a &lt;code&gt;visibility&lt;/code&gt; of &lt;code&gt;public&lt;/code&gt; and &lt;code&gt;Memberships&lt;/code&gt; imported with a &lt;code&gt;visibility&lt;/code&gt; of &lt;code&gt;public&lt;/code&gt;. If &lt;code&gt;isRecursive = true&lt;/code&gt;, also recursively include all visible &lt;code&gt;Memberships&lt;/code&gt; of any &lt;code&gt;public&lt;/code&gt; owned &lt;code&gt;Namespaces&lt;/code&gt;, or, if &lt;code&gt;IncludeAll = true&lt;/code&gt;, all &lt;code&gt;Memberships&lt;/code&gt; of all owned &lt;code&gt;Namespaces&lt;/code&gt;. When computing imported &lt;code&gt;Memberships&lt;/code&gt;, ignore this &lt;code&gt;Namespace&lt;/code&gt; and any &lt;code&gt;Namespaces&lt;/code&gt; in the given &lt;code&gt;excluded&lt;/code&gt; set.&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-isRecursive\" ns0:type=\"uml:Parameter\" name=\"isRecursive\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-includeAll\" ns0:type=\"uml:Parameter\" name=\"includeAll\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Root-Namespaces-Namespace-visibleMemberships_Namespace_Boolean_Boolean-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Namespace",
+      "name": "importedMemberships",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-importedMemberships_Namespace",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "importedMemberships"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-importedMemberships_Namespace-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "ownedImport.importedMemberships(excluded->including(self))",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-importedMemberships_Namespace-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Derive the imported <code>Memberships</code> of this <code>Namespace</code> as the <code>importedMembership</code> of all <code>ownedImports</code>, excluding those Imports whose <code>importOwningNamespace</code> is in the <code>excluded</code> set, and excluding <code>Memberships</code> that have distinguisibility collisions with each other or with any <code>ownedMembership</code>.</p> "
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace\" ns0:type=\"uml:Operation\" name=\"importedMemberships\">\n            <bodyCondition ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedImport.importedMemberships(excluded-&gt;including(self))\" language=\"OCL2.0\" name=\"\" />\n            </bodyCondition>\n            <ownedComment ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Derive the imported &lt;code&gt;Memberships&lt;/code&gt; of this &lt;code&gt;Namespace&lt;/code&gt; as the &lt;code&gt;importedMembership&lt;/code&gt; of all &lt;code&gt;ownedImports&lt;/code&gt;, excluding those Imports whose &lt;code&gt;importOwningNamespace&lt;/code&gt; is in the &lt;code&gt;excluded&lt;/code&gt; set, and excluding &lt;code&gt;Memberships&lt;/code&gt; that have distinguisibility collisions with each other or with any &lt;code&gt;ownedMembership&lt;/code&gt;.&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Namespace-importedMemberships_Namespace\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Root-Namespaces-Namespace-importedMemberships_Namespace-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Namespace",
+      "name": "membershipsOfVisibility",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "membershipsOfVisibility"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "ownedMembership->     select(mem | visibility = null or mem.visibility = visibility)->     union(ownedImport->         select(imp | visibility = null or imp.visibility = visibility).         importedMemberships(excluded->including(self)))",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If <code>visibility</code> is not null, return the <code>Memberships</code> of this <code>Namespace</code> with the given <code>visibility</code>, including <code>ownedMemberships</code> with the given <code>visibility</code> and <code>Memberships</code> imported with the given <code>visibility</code>. If <code>visibility</code> is null, return all <code>ownedMemberships</code> and imported <code>Memberships</code> regardless of visibility. When computing imported <code>Memberships</code>, ignore this <code>Namespace</code> and any <code>Namespaces</code> in the given <code>excluded</code> set.</p>"
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace\" ns0:type=\"uml:Operation\" name=\"membershipsOfVisibility\">\n            <bodyCondition ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedMembership-&gt;     select(mem | visibility = null or mem.visibility = visibility)-&gt;     union(ownedImport-&gt;         select(imp | visibility = null or imp.visibility = visibility).         importedMemberships(excluded-&gt;including(self)))\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If &lt;code&gt;visibility&lt;/code&gt; is not null, return the &lt;code&gt;Memberships&lt;/code&gt; of this &lt;code&gt;Namespace&lt;/code&gt; with the given &lt;code&gt;visibility&lt;/code&gt;, including &lt;code&gt;ownedMemberships&lt;/code&gt; with the given &lt;code&gt;visibility&lt;/code&gt; and &lt;code&gt;Memberships&lt;/code&gt; imported with the given &lt;code&gt;visibility&lt;/code&gt;. If &lt;code&gt;visibility&lt;/code&gt; is null, return all &lt;code&gt;ownedMemberships&lt;/code&gt; and imported &lt;code&gt;Memberships&lt;/code&gt; regardless of visibility. When computing imported &lt;code&gt;Memberships&lt;/code&gt;, ignore this &lt;code&gt;Namespace&lt;/code&gt; and any &lt;code&gt;Namespaces&lt;/code&gt; in the given &lt;code&gt;excluded&lt;/code&gt; set.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-visibility\" ns0:type=\"uml:Parameter\" name=\"visibility\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-visibility-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-VisibilityKind\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-visibility-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Root-Namespaces-Namespace-membershipsOfVisibility_VisibilityKind_Namespace-unnamed1\" />\n          </ownedOperation>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Namespace",
+      "name": "deriveNamespaceImportedMembership",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceImportedMembership",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "deriveNamespaceImportedMembership"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceImportedMembership-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>The <code>importedMemberships</code> of a <code>Namespace</code> are derived using the <code>importedMemberships()</code> operation, with no initially <code>excluded</code> <code>Namespaces</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceImportedMembership-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "importedMembership = importedMemberships(Set{})",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceImportedMembership\" ns0:type=\"uml:Constraint\" name=\"deriveNamespaceImportedMembership\">\n            <constrainedElement ns0:idref=\"Root-Namespaces-Namespace\" />\n            <ownedComment ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceImportedMembership-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;importedMemberships&lt;/code&gt; of a &lt;code&gt;Namespace&lt;/code&gt; are derived using the &lt;code&gt;importedMemberships()&lt;/code&gt; operation, with no initially &lt;code&gt;excluded&lt;/code&gt; &lt;code&gt;Namespaces&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Namespace-deriveNamespaceImportedMembership\" />\n</ownedComment>\n            <specification ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceImportedMembership-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"importedMembership = importedMemberships(Set{})\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedOperation",
+      "owner": "Membership",
+      "name": "isDistinguishableFrom",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Membership-isDistinguishableFrom_Membership",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+        "name": "isDistinguishableFrom"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Membership-isDistinguishableFrom_Membership-unnamed1-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "not (memberElement.oclKindOf(other.memberElement.oclType()) or      other.memberElement.oclKindOf(memberElement.oclType())) or (shortMemberName = null or     (shortMemberName <> other.shortMemberName and      shortMemberName <> other.memberName)) and (memberName = null or     (memberName <> other.shortMemberName and      memberName <> other.memberName))) ",
+          "language": "OCL2.0",
+          "name": ""
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Membership-isDistinguishableFrom_Membership-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>Whether this <code>Membership</code> is distinguishable from a given <code>other</code> <code>Membership</code>. By default, this is true if this <code>Membership</code> has no <code>memberShortName</code> or <code>memberName</code>; or each of the <code>memberShortName</code> and <code>memberName</code> are different than both of those of the <code>other</code> <code>Membership</code>; or neither of the metaclasses of the <code>memberElement</code> of this <code>Membership</code> and the <code>memberElement</code> of the <code>other</code> <code>Membership</code> conform to the other. But this may be overridden in specializations of <code>Membership</code>.</p> "
+        }
+      ],
+      "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Membership-isDistinguishableFrom_Membership\" ns0:type=\"uml:Operation\" name=\"isDistinguishableFrom\">\n            <bodyCondition ns0:id=\"Root-Namespaces-Membership-isDistinguishableFrom_Membership-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Root-Namespaces-Membership-isDistinguishableFrom_Membership-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"not (memberElement.oclKindOf(other.memberElement.oclType()) or      other.memberElement.oclKindOf(memberElement.oclType())) or (shortMemberName = null or     (shortMemberName &lt;&gt; other.shortMemberName and      shortMemberName &lt;&gt; other.memberName)) and (memberName = null or     (memberName &lt;&gt; other.shortMemberName and      memberName &lt;&gt; other.memberName))) \" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Root-Namespaces-Membership-isDistinguishableFrom_Membership-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Whether this &lt;code&gt;Membership&lt;/code&gt; is distinguishable from a given &lt;code&gt;other&lt;/code&gt; &lt;code&gt;Membership&lt;/code&gt;. By default, this is true if this &lt;code&gt;Membership&lt;/code&gt; has no &lt;code&gt;memberShortName&lt;/code&gt; or &lt;code&gt;memberName&lt;/code&gt;; or each of the &lt;code&gt;memberShortName&lt;/code&gt; and &lt;code&gt;memberName&lt;/code&gt; are different than both of those of the &lt;code&gt;other&lt;/code&gt; &lt;code&gt;Membership&lt;/code&gt;; or neither of the metaclasses of the &lt;code&gt;memberElement&lt;/code&gt; of this &lt;code&gt;Membership&lt;/code&gt; and the &lt;code&gt;memberElement&lt;/code&gt; of the &lt;code&gt;other&lt;/code&gt; &lt;code&gt;Membership&lt;/code&gt; conform to the other. But this may be overridden in specializations of &lt;code&gt;Membership&lt;/code&gt;.&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Membership-isDistinguishableFrom_Membership\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-Membership-isDistinguishableFrom_Membership-other\" ns0:type=\"uml:Parameter\" name=\"other\">\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Membership-isDistinguishableFrom_Membership-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Root-Namespaces-Membership-isDistinguishableFrom_Membership-unnamed1\" />\n          </ownedOperation>\n          "
+    }
+  ],
+  "source_archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2",
+  "source_refinement_audit_sha256": "ab886d3b3f9a83706a7648d0824c594be6b6e41124d98a229df0fffd2f025f4a",
+  "namespace": {
+    "id": "e010ab46-f249-5732-a2c0-9a55ecb18dcd",
+    "path": "VectorFunctions"
+  },
+  "imported_namespace": {
+    "id": "4b988144-1ac2-5762-9ff4-29ea1b9f726a",
+    "path": "NumericalFunctions"
+  },
+  "import_": {
+    "id": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+    "path": "VectorFunctions",
+    "kind": "NamespaceImport",
+    "source": {
+      "document": "Kernel Function Library/VectorFunctions.kerml",
+      "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 478, end: 515 }, syntax_node: Some(SyntaxNodeId(24128265204410674977592721617206707192)) }",
+      "range": [
+        478,
+        515
+      ],
+      "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+      "text": "private import NumericalFunctions::*;"
+    }
+  },
+  "witnesses": [
+    {
+      "namespace": "VectorFunctions",
+      "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+      "imported_membership": "af1c7087-4df1-5d23-99b8-b6b26ea7b527",
+      "imported": "NumericalFunctions::+",
+      "local_membership": "4e2b74da-d952-59d1-981e-e8f30271548a",
+      "local": "VectorFunctions::+",
+      "names": [
+        "+"
+      ],
+      "facts": {
+        "imported_membership": {
+          "id": "af1c7087-4df1-5d23-99b8-b6b26ea7b527",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 481, end: 620 }, syntax_node: Some(SyntaxNodeId(282850657325706413526179535052765971882)) }",
+            "range": [
+              481,
+              620
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '+' specializes ScalarFunctions::'+' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+          }
+        },
+        "imported_member": {
+          "id": "c9091cb6-b2b8-5947-b148-a8f1de83bf40",
+          "path": "NumericalFunctions::+",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 481, end: 620 }, syntax_node: Some(SyntaxNodeId(176491977823884710472796215837903265136)) }",
+            "range": [
+              481,
+              620
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '+' specializes ScalarFunctions::'+' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+          }
+        },
+        "local_membership": {
+          "id": "4e2b74da-d952-59d1-981e-e8f30271548a",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 928, end: 1314 }, syntax_node: Some(SyntaxNodeId(291243066751959704807691606468225741912)) }",
+            "range": [
+              928,
+              1314
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function '+' specializes DataFunctions::'+' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the sum of two VectorValues. With one argument, returns that VectorValue.\n\t\t */\n\t\t \n\t \tin v: VectorValue[1]; \n\t \tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv zeroAddition { w == null or isZeroVector(w) implies u == w }\n\t\tinv commutivity { w != null implies u == w + v }\n\t}"
+          }
+        },
+        "local_member": {
+          "id": "44fa1bd7-5b4f-53a8-abd5-b41057bf8e57",
+          "path": "VectorFunctions::+",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 928, end: 1314 }, syntax_node: Some(SyntaxNodeId(262898604474878730169897631526952486139)) }",
+            "range": [
+              928,
+              1314
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function '+' specializes DataFunctions::'+' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the sum of two VectorValues. With one argument, returns that VectorValue.\n\t\t */\n\t\t \n\t \tin v: VectorValue[1]; \n\t \tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv zeroAddition { w == null or isZeroVector(w) implies u == w }\n\t\tinv commutivity { w != null implies u == w + v }\n\t}"
+          }
+        },
+        "imported_visibility": "public",
+        "same_metaclass": true,
+        "is_distinguishable": false,
+        "literal_includes_imported_membership": true,
+        "prose_excludes_imported_membership": true
+      }
+    },
+    {
+      "namespace": "VectorFunctions",
+      "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+      "imported_membership": "a41c305d-fd90-5822-afe2-2a399b7666cd",
+      "imported": "NumericalFunctions::-",
+      "local_membership": "96a0c4f1-09f4-5571-b866-199a190f2035",
+      "local": "VectorFunctions::-",
+      "names": [
+        "-"
+      ],
+      "facts": {
+        "imported_membership": {
+          "id": "a41c305d-fd90-5822-afe2-2a399b7666cd",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 622, end: 761 }, syntax_node: Some(SyntaxNodeId(29814011261590539083410980634193701520)) }",
+            "range": [
+              622,
+              761
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '-' specializes ScalarFunctions::'-' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+          }
+        },
+        "imported_member": {
+          "id": "a7f94d5b-7e62-50d1-9a5d-865f91fbf9c5",
+          "path": "NumericalFunctions::-",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 622, end: 761 }, syntax_node: Some(SyntaxNodeId(9842805701781815230407703551151272655)) }",
+            "range": [
+              622,
+              761
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '-' specializes ScalarFunctions::'-' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+          }
+        },
+        "local_membership": {
+          "id": "96a0c4f1-09f4-5571-b866-199a190f2035",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1318, end: 1826 }, syntax_node: Some(SyntaxNodeId(282438272423975978177669903186767934032)) }",
+            "range": [
+              1318,
+              1826
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function '-' specializes DataFunctions::'-' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the difference of two VectorValues. With one arguments, returns the inverse\n\t\t * of the given VectorValue, that is, the VectorValue that, when added to the original VectorValue, results in\n\t\t * the zeroVector.\n\t\t */\n\t \n\t\tin v: VectorValue[1]; \n\t\tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv negation { w == null implies isZeroVector(v + u) }\n\t\tinv difference { w != null implies v + u == w }\n\t}"
+          }
+        },
+        "local_member": {
+          "id": "bf6bbf44-968f-5428-a055-0517ad65e027",
+          "path": "VectorFunctions::-",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1318, end: 1826 }, syntax_node: Some(SyntaxNodeId(61806847914459429782553789090840425084)) }",
+            "range": [
+              1318,
+              1826
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function '-' specializes DataFunctions::'-' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the difference of two VectorValues. With one arguments, returns the inverse\n\t\t * of the given VectorValue, that is, the VectorValue that, when added to the original VectorValue, results in\n\t\t * the zeroVector.\n\t\t */\n\t \n\t\tin v: VectorValue[1]; \n\t\tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv negation { w == null implies isZeroVector(v + u) }\n\t\tinv difference { w != null implies v + u == w }\n\t}"
+          }
+        },
+        "imported_visibility": "public",
+        "same_metaclass": true,
+        "is_distinguishable": false,
+        "literal_includes_imported_membership": true,
+        "prose_excludes_imported_membership": true
+      }
+    },
+    {
+      "namespace": "VectorFunctions",
+      "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+      "imported_membership": "5426c2d1-1e9f-5737-82b4-b303b8aafb6f",
+      "imported": "NumericalFunctions::*",
+      "local_membership": "8366a01b-1f99-54fd-875c-1bf301929fb5",
+      "local": "VectorFunctions::scalarVectorMult",
+      "names": [
+        "*"
+      ],
+      "facts": {
+        "imported_membership": {
+          "id": "5426c2d1-1e9f-5737-82b4-b303b8aafb6f",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 763, end: 899 }, syntax_node: Some(SyntaxNodeId(247685722275115722428540710106639227370)) }",
+            "range": [
+              763,
+              899
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '*' specializes ScalarFunctions::'*' { in x: NumericalValue[1]; in y: NumericalValue[1]; return : NumericalValue[1]; }"
+          }
+        },
+        "imported_member": {
+          "id": "590d4f85-d42a-5b93-924d-68ebea5f3257",
+          "path": "NumericalFunctions::*",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 763, end: 899 }, syntax_node: Some(SyntaxNodeId(48831945329038869822082060355517108664)) }",
+            "range": [
+              763,
+              899
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '*' specializes ScalarFunctions::'*' { in x: NumericalValue[1]; in y: NumericalValue[1]; return : NumericalValue[1]; }"
+          }
+        },
+        "local_membership": {
+          "id": "8366a01b-1f99-54fd-875c-1bf301929fb5",
+          "path": "VectorFunctions",
+          "kind": "Membership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 2966, end: 2997 }, syntax_node: Some(SyntaxNodeId(200489674563154524688885915936817519221)) }",
+            "range": [
+              2966,
+              2997
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "alias '*' for scalarVectorMult;"
+          }
+        },
+        "local_member": {
+          "id": "967a2bab-e4c6-593d-93a4-53e4313d8bc9",
+          "path": "VectorFunctions::scalarVectorMult",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 2607, end: 2964 }, syntax_node: Some(SyntaxNodeId(90865668154349941762038236485831844146)) }",
+            "range": [
+              2607,
+              2964
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function scalarVectorMult specializes DataFunctions::'*' {\n\t\tdoc\n\t\t/*\n\t\t * Scalar product of a NumericalValue and a NumericalVectorValue.\n\t\t */\n\t \n\t\tin x: NumericalValue[1]; \n\t\tin v: NumericalVectorValue[1];\n\t\treturn w: NumericalVectorValue[1];\n\t\tinv scaling { norm(w) == x * norm(v) }\n\t\tinv zeroLength { isZeroVector(w) implies isZero(norm(w))}\n\t}"
+          }
+        },
+        "imported_visibility": "public",
+        "same_metaclass": true,
+        "is_distinguishable": false,
+        "literal_includes_imported_membership": true,
+        "prose_excludes_imported_membership": true
+      }
+    },
+    {
+      "namespace": "VectorFunctions",
+      "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+      "imported_membership": "0c7c5b60-4293-503b-83ac-9a28dbd1ea11",
+      "imported": "NumericalFunctions::sum",
+      "local_membership": "6a5ea5d7-e51a-5074-b68b-8d696e178e2a",
+      "local": "VectorFunctions::sum",
+      "names": [
+        "sum"
+      ],
+      "facts": {
+        "imported_membership": {
+          "id": "0c7c5b60-4293-503b-83ac-9a28dbd1ea11",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2265, end: 2349 }, syntax_node: Some(SyntaxNodeId(81194072104973068336700086484390484047)) }",
+            "range": [
+              2265,
+              2349
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function sum { in collection: ScalarValue[0..*]; return : ScalarValue[1]; }"
+          }
+        },
+        "imported_member": {
+          "id": "715b5164-fbb8-54f5-8b4f-15f12328e328",
+          "path": "NumericalFunctions::sum",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2265, end: 2349 }, syntax_node: Some(SyntaxNodeId(158125193898809302909917932280489756937)) }",
+            "range": [
+              2265,
+              2349
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function sum { in collection: ScalarValue[0..*]; return : ScalarValue[1]; }"
+          }
+        },
+        "local_membership": {
+          "id": "6a5ea5d7-e51a-5074-b68b-8d696e178e2a",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7821, end: 7957 }, syntax_node: Some(SyntaxNodeId(184670573524233408577954262195805630332)) }",
+            "range": [
+              7821,
+              7957
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "function sum { \n\t\tin coll: CartesianThreeVectorValue[*];\n\t\treturn : CartesianThreeVectorValue[1] = sum0(coll, cartesian3DZeroVector);\n\t}"
+          }
+        },
+        "local_member": {
+          "id": "5639bd0e-47f3-555c-9e61-e346aa0f2e2f",
+          "path": "VectorFunctions::sum",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7821, end: 7957 }, syntax_node: Some(SyntaxNodeId(220681100671919019061758194252571512335)) }",
+            "range": [
+              7821,
+              7957
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "function sum { \n\t\tin coll: CartesianThreeVectorValue[*];\n\t\treturn : CartesianThreeVectorValue[1] = sum0(coll, cartesian3DZeroVector);\n\t}"
+          }
+        },
+        "imported_visibility": "public",
+        "same_metaclass": true,
+        "is_distinguishable": false,
+        "literal_includes_imported_membership": true,
+        "prose_excludes_imported_membership": true
+      }
+    },
+    {
+      "namespace": "VectorFunctions",
+      "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+      "imported_membership": "9573c8e2-9fee-5ff8-bdfa-efbe7ebff837",
+      "imported": "NumericalFunctions::sum0",
+      "local_membership": "dc816ee8-fa65-5160-9ada-87ed3aa3f7c2",
+      "local": "VectorFunctions::sum0",
+      "names": [
+        "sum0"
+      ],
+      "facts": {
+        "imported_membership": {
+          "id": "9573c8e2-9fee-5ff8-bdfa-efbe7ebff837",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2444, end: 2614 }, syntax_node: Some(SyntaxNodeId(78593412927192742678350010708382950409)) }",
+            "range": [
+              2444,
+              2614
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "function sum0 { in collection: NumericalValue[0..*]; in zero: ScalarValue[1]; \n \t\tinv { isZero(zero) }\t\t\n        return : ScalarValue = collection->reduce '+' ?? zero;\n\t}"
+          }
+        },
+        "imported_member": {
+          "id": "6443586a-9d2c-5bc6-9d48-84e4505d0614",
+          "path": "NumericalFunctions::sum0",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2444, end: 2614 }, syntax_node: Some(SyntaxNodeId(246475518329795609549970669250154241218)) }",
+            "range": [
+              2444,
+              2614
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "function sum0 { in collection: NumericalValue[0..*]; in zero: ScalarValue[1]; \n \t\tinv { isZero(zero) }\t\t\n        return : ScalarValue = collection->reduce '+' ?? zero;\n\t}"
+          }
+        },
+        "local_membership": {
+          "id": "dc816ee8-fa65-5160-9ada-87ed3aa3f7c2",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1830, end: 2149 }, syntax_node: Some(SyntaxNodeId(51192635262677591411409218240600672145)) }",
+            "range": [
+              1830,
+              2149
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function sum0 {\n\t\tdoc\n\t\t/*\n\t\t * Return the sum of a collection of VectorValues. If the collection is empty, return a given zero vector.\n\t\t */\n\t \n\t\tin coll: VectorValue[*] nonunique; \n\t\tin zero: VectorValue[1]; \n\t\tinv precondition { isZeroVector(zero) }\n\t\treturn s: VectorValue[1] = coll->reduce '+' ?? zero;\n\t}"
+          }
+        },
+        "local_member": {
+          "id": "18e0c80a-0440-5151-8ef7-22ab3a597187",
+          "path": "VectorFunctions::sum0",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1830, end: 2149 }, syntax_node: Some(SyntaxNodeId(250269064484722991546211941635945575287)) }",
+            "range": [
+              1830,
+              2149
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function sum0 {\n\t\tdoc\n\t\t/*\n\t\t * Return the sum of a collection of VectorValues. If the collection is empty, return a given zero vector.\n\t\t */\n\t \n\t\tin coll: VectorValue[*] nonunique; \n\t\tin zero: VectorValue[1]; \n\t\tinv precondition { isZeroVector(zero) }\n\t\treturn s: VectorValue[1] = coll->reduce '+' ?? zero;\n\t}"
+          }
+        },
+        "imported_visibility": "public",
+        "same_metaclass": true,
+        "is_distinguishable": false,
+        "literal_includes_imported_membership": true,
+        "prose_excludes_imported_membership": true
+      }
+    }
+  ],
+  "package_scopes_scanned": 39,
+  "local_contradiction_independently_proven": true,
+  "exhaustive_import_closure_proven": false,
+  "reference": {
+    "import_": {
+      "file": "VectorFunctions.kermlx",
+      "id": "371b70c4-647f-5a0c-879d-7f41f7b95e46",
+      "kind": "NamespaceImport",
+      "path": "VectorFunctions",
+      "xml": "<ownedRelationship xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:NamespaceImport\" ns1:id=\"371b70c4-647f-5a0c-879d-7f41f7b95e46\" elementId=\"371b70c4-647f-5a0c-879d-7f41f7b95e46\">\n        <importedNamespace href=\"NumericalFunctions.kermlx#cdf129df-3833-52cb-ae4b-3b49743b6632\" />\n      </ownedRelationship>\n      "
+    },
+    "witnesses": [
+      {
+        "name": "+",
+        "local_membership": {
+          "id": "8aadbd26-0c92-5510-af67-a4074e2d6221",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "file": "VectorFunctions.kermlx"
+        },
+        "local_member": {
+          "id": "28ef1c83-e88a-54fc-b9b0-145d270d5ab5",
+          "path": "VectorFunctions::+",
+          "kind": "Function",
+          "file": "VectorFunctions.kermlx"
+        },
+        "imported_membership": {
+          "id": "7099f6b3-54aa-5de8-8680-9abc13d6531f",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "file": "NumericalFunctions.kermlx"
+        },
+        "imported_member": {
+          "id": "a10c48ed-7b31-5077-8640-36732311cc1c",
+          "path": "NumericalFunctions::+",
+          "kind": "Function",
+          "file": "NumericalFunctions.kermlx"
+        }
+      },
+      {
+        "name": "-",
+        "local_membership": {
+          "id": "515f9244-687b-5377-9d83-1bd088675367",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "file": "VectorFunctions.kermlx"
+        },
+        "local_member": {
+          "id": "7f21e908-159f-5a86-83a8-b37e67c07d86",
+          "path": "VectorFunctions::-",
+          "kind": "Function",
+          "file": "VectorFunctions.kermlx"
+        },
+        "imported_membership": {
+          "id": "66347f36-692f-5f5d-a150-750e4efcd005",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "file": "NumericalFunctions.kermlx"
+        },
+        "imported_member": {
+          "id": "8963f906-5a1c-5097-9590-c60d3a7ca32b",
+          "path": "NumericalFunctions::-",
+          "kind": "Function",
+          "file": "NumericalFunctions.kermlx"
+        }
+      },
+      {
+        "name": "*",
+        "local_membership": {
+          "id": "2f791551-7b79-5a08-ae29-f063ae079f00",
+          "path": "VectorFunctions",
+          "kind": "Membership",
+          "file": "VectorFunctions.kermlx"
+        },
+        "local_member": {
+          "id": "74c40384-559c-50ef-915a-e0ff8929d0af",
+          "path": "VectorFunctions::scalarVectorMult",
+          "kind": "Function",
+          "file": "VectorFunctions.kermlx"
+        },
+        "imported_membership": {
+          "id": "dfbe226c-ea52-57f8-b521-18f6b6b3f6ef",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "file": "NumericalFunctions.kermlx"
+        },
+        "imported_member": {
+          "id": "f3b47cf2-5d97-582d-aea3-2dae03419536",
+          "path": "NumericalFunctions::*",
+          "kind": "Function",
+          "file": "NumericalFunctions.kermlx"
+        }
+      },
+      {
+        "name": "sum",
+        "local_membership": {
+          "id": "2e1c4d36-2cae-5e32-8e74-0222a9437a26",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "file": "VectorFunctions.kermlx"
+        },
+        "local_member": {
+          "id": "424373a5-09fe-5c9a-aba2-e4109af53b2d",
+          "path": "VectorFunctions::sum",
+          "kind": "Function",
+          "file": "VectorFunctions.kermlx"
+        },
+        "imported_membership": {
+          "id": "cf0cfc98-f5a1-59e2-92bf-359a8f155d68",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "file": "NumericalFunctions.kermlx"
+        },
+        "imported_member": {
+          "id": "6d745ea3-e265-5ddd-aa6c-b3fe29dc4272",
+          "path": "NumericalFunctions::sum",
+          "kind": "Function",
+          "file": "NumericalFunctions.kermlx"
+        }
+      },
+      {
+        "name": "sum0",
+        "local_membership": {
+          "id": "cf7a5be2-0e46-51b5-855d-4eaa263a51bc",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "file": "VectorFunctions.kermlx"
+        },
+        "local_member": {
+          "id": "b2da962d-9a57-559d-8041-64598a572523",
+          "path": "VectorFunctions::sum0",
+          "kind": "Function",
+          "file": "VectorFunctions.kermlx"
+        },
+        "imported_membership": {
+          "id": "4e8ef7cf-2fed-5d47-a39a-9e2f0051a431",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "file": "NumericalFunctions.kermlx"
+        },
+        "imported_member": {
+          "id": "3165fc20-d93a-5cd6-ba28-967c80741f36",
+          "path": "NumericalFunctions::sum0",
+          "kind": "Function",
+          "file": "NumericalFunctions.kermlx"
+        }
+      }
+    ],
+    "serialized_derived_import_membership": false,
+    "behavior": "Reference XMI retains all five colliding source pairs. Pinned current pilot NamespaceAdapter delegates to NamespaceImportAdapter, which appends every visible membership without a distinguishability filter; this corroborates the literal OCL result, not the conflicting prose.",
+    "pilot_sources": {
+      "pilot/NamespaceAdapter.java": "bed12509fe1d53f695296144cded354d1af799624d247912d2f3736062febc56",
+      "pilot/NamespaceUtil.java": "e411c4c1517fb895f99336d3714d595a94b9ef261180316f517c83014714ffce",
+      "pilot/ImportAdapter.java": "041572a1bc27cbd2b285dfb9f02dabafebd8703e685936a08abacb5f230fa3e6",
+      "pilot/NamespaceImportAdapter.java": "44990f28d076927662e22aca191fa1d8c8d243da9b43ad9e7a0ec8ececf28a58"
+    }
+  },
+  "issue_associated_resolution": {
+    "source": "verification/kerml-semantic-closure-v10/resolution/search-KERML11-75.json",
+    "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+    "total_count": 0,
+    "interpretation": "No issue-labelled resolution commit found; this does not exclude unlabelled changes or establish OMG adoption."
+  },
+  "correction_applied": false,
+  "conclusion": "Five direct public NumericalFunctions memberships must both be included by the published OCL and excluded by its prose when imported into VectorFunctions. The predicates depend only on canonical ownership, names and metaclass conformance. Neither runtime evaluation nor unresolved inherited lookup is needed. KERML11-1 and earlier profiles do not correct importedMemberships."
+}

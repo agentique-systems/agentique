@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-c",
+    "import ast,pathlib; files=list(pathlib.Path('verification/kerml-semantic-closure-v10').glob('*.py')); [ast.parse(p.read_text(encoding='utf8'), filename=str(p)) for p in files]; print(str(len(files))+' v10 evidence scripts parse successfully')"
+  ],
+  "started": "2026-09-20T14:46:18.147359+00:00",
+  "duration_seconds": 0.09299999999348074,
+  "exit_code": 0,
+  "output": "output.txt"
+}

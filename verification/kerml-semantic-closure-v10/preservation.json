@@ -1,0 +1,56 @@
+{
+  "format": "agentique-v10-preservation/1",
+  "base_commit": "59abd9801d59de025bf7e346464a32848047fd80",
+  "original_files": 3076,
+  "unchanged": true,
+  "verified_new_acquisitions": 35,
+  "historical_manifests_and_evidence_modified": false,
+  "inherited_acquisition_discrepancies": [
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/KERML11-72.html",
+      "recorded_sha256": "60ff41a0aea73ed21b7eb8dd1059a88bc4d18c5305ab345b40399b0ee7f88a7c",
+      "base_and_current_sha256": "ef4f5d260cbd09e735101b987841af163c05555d65cb107d4657cf4473a22c39"
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/release/sysml.library/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "recorded_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "base_and_current_sha256": "9de3be898f2e6e62caa782af6cf8227ef26c80637e7dfb08f085f5c251756539"
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/pilot/org.omg.kerml.xpect.tests/library/FeatureReferencingPerformances.kerml",
+      "recorded_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "base_and_current_sha256": "9de3be898f2e6e62caa782af6cf8227ef26c80637e7dfb08f085f5c251756539"
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/pilot/org.omg.sysml.xpect.tests/library.kernel/FeatureReferencingPerformances.kerml",
+      "recorded_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "base_and_current_sha256": "9de3be898f2e6e62caa782af6cf8227ef26c80637e7dfb08f085f5c251756539"
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/pilot/sysml.library/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "recorded_sha256": "b6f9e5349c7c7f393591c0334c3bec86f1766b3e37209819179310c2f8fe1fb7",
+      "base_and_current_sha256": "9de3be898f2e6e62caa782af6cf8227ef26c80637e7dfb08f085f5c251756539"
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/historical/sysml.library/Kernel Libraries/Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "recorded_sha256": "216d0bd5ac2676565a5606c5ff219aacd84a6ad394c7f16c7d5e78d1cd54d6e6",
+      "base_and_current_sha256": "da7d953e8bd86a133cfaa867413d5a4741925f9db16ef1e506094c792760e2ae"
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/MembershipTests_Distinguishability.kerml.xt",
+      "recorded_sha256": "cdf796a0c5983db89243c53e32ca146881fa5640c054eb3726189cea223b831a",
+      "base_and_current_sha256": "972dbc54de914406b15e2bc3201890e910bbba6ea76d7ea3f815028a0d7ce467"
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/pilot/org.omg.kerml.xpect.tests/src/org/omg/kerml/xpect/tests/validation/Redefinition_DirectionConformance_invalid.kerml.xt",
+      "recorded_sha256": "653eab7f4ea1b058ab9f620f974d3f42e70ccd2fd3e77efc612f7060bf1d3c53",
+      "base_and_current_sha256": "39d7b4eebdbad3156d69cc641ecf219c06f4e13488c9132e7d9f2813b8427ffe"
+    },
+    {
+      "path": "verification/kerml-library-content-errata-publication-v5/KERML11-68.html",
+      "recorded_sha256": "dfa30a27558ce977daa8c9be033d789935cbc74ddb6099a4ed89cdd7de0d65dd",
+      "base_and_current_sha256": "33409746c1c3754827e49781cd38d5146bb0786df4c2f075fe0d71d4fbff2b2d"
+    }
+  ],
+  "discrepancies_already_present_on_clean_main": true
+}

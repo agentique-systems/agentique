@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "-X",
+    "utf8",
+    "-B",
+    "-c",
+    "import collections,json; from pathlib import Path; j=json.loads(Path('verification/kerml-semantic-closure-v10/issue-inventory.json').read_text(encoding='utf8')); xs=[r for r in j['issues'] if r['status']=='closed']; counts=collections.Counter(r['key'].rsplit('-',1)[0] for r in xs); current=[r['key'] for r in xs if r['key'].startswith('KERML11-')]; print(json.dumps({'closed':len(xs),'prefix_counts':counts,'closed_KERML11_records':current,'note':'Status census only, not proof that every resolution was incorporated into a pinned formal rule.'},indent=2)); assert not current"
+  ],
+  "started": "2026-09-20T17:38:40.084750+00:00",
+  "duration_seconds": 0.06299999996554106,
+  "exit_code": 0,
+  "output": "output.txt"
+}

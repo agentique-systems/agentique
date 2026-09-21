@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-X",
+    "utf8",
+    "-B",
+    "verification/kerml-semantic-closure-v10/index-authority.py"
+  ],
+  "started": "2026-09-20T17:11:01.479548+00:00",
+  "duration_seconds": 1.7030000000959262,
+  "exit_code": 0,
+  "output": "output.txt"
+}

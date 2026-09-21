@@ -1,0 +1,10 @@
+{
+  "command": [
+    "target/release/examples/library_publication_audit.exe",
+    "--output=verification/kerml-semantic-closure-v10/full-v7-complete.json"
+  ],
+  "started": "2026-09-20T14:35:41.285007+00:00",
+  "duration_seconds": 19542.187000000034,
+  "exit_code": 0,
+  "output": "output.txt"
+}

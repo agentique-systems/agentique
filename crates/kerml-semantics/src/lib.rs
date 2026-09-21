@@ -5,6 +5,7 @@
 mod bindings;
 mod context;
 mod contract;
+mod cross_features;
 mod featuring;
 mod formal_targets;
 mod implicit;
@@ -15,6 +16,8 @@ mod ordering;
 mod queries;
 mod resolution;
 mod result_structure;
+mod structural;
+mod typing;
 mod validation;
 
 pub use bindings::*;

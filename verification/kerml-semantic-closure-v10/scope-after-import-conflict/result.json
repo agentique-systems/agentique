@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-X",
+    "utf8",
+    "-B",
+    "verification/kerml-semantic-closure-v10/issue-scope-review.py"
+  ],
+  "started": "2026-09-20T16:47:26.371852+00:00",
+  "duration_seconds": 2.0320000000065193,
+  "exit_code": 0,
+  "output": "output.txt"
+}

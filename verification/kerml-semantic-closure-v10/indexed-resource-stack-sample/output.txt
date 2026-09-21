@@ -1,0 +1,19 @@
+pid=27528 thread=17144 user_100ns=14142812500
+00 00007ff64a1e48b4 ZN5alloc11collections5btree6search142_$LT$impl$u20$alloc..collections..btree..node..NodeRef$LT$BorrowType$C$K$C$V$C$alloc..collections..btree..node..marker..LeafOrInternal$GT$$GT$11search_tree17h13dad4614d682aa5E + 340
+01 00007ff64a1e48b4 ZN5alloc11collections5btree6search142_$LT$impl$u20$alloc..collections..btree..node..NodeRef$LT$BorrowType$C$K$C$V$C$alloc..collections..btree..node..marker..LeafOrInternal$GT$$GT$11search_tree17h13dad4614d682aa5E + 340
+02 00007ff64a22c053 ZN19agq_kerml_semantics7queries12KerMlQueries2is17h6b3fde781daaf2a5E + 3235
+03 00007ff64a231168 ZN19agq_kerml_semantics7queries12KerMlQueries7checked17h66b3211773f6bca6E.llvm.14152045937301020801 + 2360
+04 00007ff64a231763 ZN19agq_kerml_semantics7queries12KerMlQueries7checked17h66b3211773f6bca6E.llvm.14152045937301020801 + 3891
+05 00007ff64a226dcd ZN19agq_kerml_semantics7queries12KerMlQueries18redefined_features17h035b2c37a31103baE + 61
+06 00007ff64a1ed037 ZN19agq_kerml_semantics10namespaces60_$LT$impl$u20$agq_kerml_semantics..queries..KerMlQueries$GT$13lookup_member17h3c4fe7d864dfe70fE + 9703
+07 00007ff64a1eaab6 ZN19agq_kerml_semantics10namespaces60_$LT$impl$u20$agq_kerml_semantics..queries..KerMlQueries$GT$13lookup_member17h3c4fe7d864dfe70fE + 102
+08 00007ff64a1f5e30 ZN19agq_kerml_semantics10resolution60_$LT$impl$u20$agq_kerml_semantics..queries..KerMlQueries$GT$21lookup_path_excluding17hf47a6b1314e56eadE.llvm.14152045937301020801 + 1984
+09 00007ff64a1fa328 ZN19agq_kerml_semantics10resolution60_$LT$impl$u20$agq_kerml_semantics..queries..KerMlQueries$GT$26lookup_relationship_target17h9f16005eb40fbc68E + 8680
+10 00007ff64a44f6b0 ZN25library_publication_audit4main17hc15f51a8bd681ad8E + 26576
+11 00007ff64a47b9d6 ZN3std3sys9backtrace28__rust_begin_short_backtrace17hfc251a6d0110b89dE + 6
+12 00007ff64a4770ec ZN3std2rt10lang_start28_$u7b$$u7b$closure$u7d$$u7d$17h40dfaf7f9cb4d590E.llvm.2068572209026297299 + 12
+13 00007ff64a4ac465 std::rt::lang_start_internal + 181
+14 00007ff64a45d29c main + 44
+15 00007ff64a4bfcfc __scrt_common_main_seh + 268
+16 00007ffb35787374 BaseThreadInitThunk + 20
+17 00007ffb3597cc91 RtlUserThreadStart + 33

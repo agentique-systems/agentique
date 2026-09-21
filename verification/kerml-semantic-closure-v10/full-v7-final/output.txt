@@ -1,0 +1,71 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling cfg-if v1.0.5
+   Compiling serde_core v1.0.229
+   Compiling version_check v0.9.5
+   Compiling autocfg v1.5.1
+   Compiling typenum v1.20.1
+   Compiling serde v1.0.229
+   Compiling thiserror v2.0.20
+   Compiling getrandom v0.4.3
+   Compiling crc32fast v1.5.2
+   Compiling sha1_smol v1.0.1
+   Compiling simd-adler32 v0.3.10
+   Compiling zmij v1.0.23
+   Compiling generic-array v0.14.7
+   Compiling cpufeatures v0.2.17
+   Compiling num-traits v0.2.19
+   Compiling adler2 v2.0.1
+   Compiling zip v2.4.2
+   Compiling memchr v2.8.3
+   Compiling miniz_oxide v0.9.1
+   Compiling log v0.4.34
+   Compiling hashbrown v0.17.1
+   Compiling serde_json v1.0.151
+   Compiling bumpalo v3.20.3
+   Compiling equivalent v1.0.2
+   Compiling itoa v1.0.18
+   Compiling zopfli v0.8.3
+   Compiling syn v3.0.5
+   Compiling flate2 v1.1.10
+   Compiling indexmap v2.14.2
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling num-integer v0.1.47
+   Compiling sha2 v0.10.9
+   Compiling uuid v1.26.1
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling displaydoc v0.2.7
+   Compiling num-bigint v0.4.8
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 2m 32s
+     Running `target/kerml-v10-final\release\examples\library_publication_audit.exe --output=verification/kerml-semantic-closure-v10/full-v7-final.json`
+refinement 0: 0 endpoints, 4000 obligations
+refinement 1: 2110 endpoints, 1890 obligations
+refinement 2: 3661 endpoints, 339 obligations
+refinement 3: 3838 endpoints, 162 obligations
+refinement 4: 3919 endpoints, 81 obligations
+refinement 5: 3952 endpoints, 48 obligations
+refinement 6: 3973 endpoints, 27 obligations
+refinement 7: 3994 endpoints, 6 obligations
+refinement 8: 4000 endpoints, 0 obligations
+references: 0 unresolved, 10 incomplete, 0 ambiguous
+producer batch 0: 75 proposed records
+producer batch 25: 2316 proposed records
+producer batch 50: 4694 proposed records
+producer batch 75: 7054 proposed records
+producer batch 100: 9267 proposed records
+producer batch 125: 11568 proposed records
+producer batch 150: 14036 proposed records
+producer batch 175: 15943 proposed records
+producer batch 200: 18018 proposed records
+producer batch 225: 20091 proposed records
+Kernel storage valid; 0 derived records; 0 distinguishability findings; semantic publication INCOMPLETE

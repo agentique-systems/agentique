@@ -1,0 +1,1 @@
+{"feature_values": 1144, "default_values": 59, "initial_values": 0, "feature_chains": 123, "chain_lengths": {"2": 114, "4": 3, "3": 6}, "positional_owners": 3993, "owned_ends": 273, "owned_nonresult_parameters": 1524, "owned_results": 3811}

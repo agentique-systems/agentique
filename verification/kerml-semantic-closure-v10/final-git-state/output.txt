@@ -1,0 +1,36 @@
+## semantics/kerml-cross-feature-errata-closure-v10
+ M crates/kerml-semantics/src/bindings.rs
+ M crates/kerml-semantics/src/context.rs
+ M crates/kerml-semantics/src/contract.rs
+ M crates/kerml-semantics/src/featuring.rs
+ M crates/kerml-semantics/src/formal_targets.rs
+ M crates/kerml-semantics/src/implicit.rs
+ M crates/kerml-semantics/src/lib.rs
+ M crates/kerml-semantics/src/queries.rs
+ M crates/kerml-semantics/src/resolution.rs
+ M crates/kerml-semantics/src/result_structure.rs
+ M crates/kerml-semantics/tests/foundation.rs
+ M crates/kerml-semantics/tests/library_authority_conflict.rs
+ M crates/kerml-semantics/tests/redefinition_end_v4.rs
+ M crates/kerml-text/examples/library_quality.rs
+ M crates/kerml-text/tests/project.rs
+ M crates/kerml/src/profiles.rs
+ M crates/kernel/src/model.rs
+ M crates/kernel/tests/foundation_v3.rs
+ M docs/kerml-standard-library-foundation-review.md
+ M docs/operational-kerml-profile.md
+?? crates/kerml-semantics/src/cross_features.rs
+?? crates/kerml-semantics/src/structural.rs
+?? crates/kerml-semantics/src/typing.rs
+?? crates/kerml-semantics/tests/cross_features_v10.rs
+?? crates/kerml-semantics/tests/initial_values_v10.rs
+?? crates/kerml-semantics/tests/typing_v10.rs
+?? crates/kerml-text/examples/cross_feature_audit.rs
+?? crates/kerml-text/examples/library_expansion_audit.rs
+?? crates/kerml-text/examples/library_publication_audit.rs
+?? crates/kerml/tests/profile_lineage_v10.rs
+?? docs/adr/0020-operational-owned-cross-feature-correction.md
+?? standards/kerml-1.0-operational-authority-blockers.json
+?? standards/kerml-1.0-operational-owned-cross-feature-errata-v7.json
+?? standards/kerml-1.0-operational-profile-v7.json
+?? verification/kerml-semantic-closure-v10/
