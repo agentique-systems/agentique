@@ -477,6 +477,36 @@ fn status_queries_preserve_reference_values_completeness_and_diagnostics() {
                 absolute: false,
                 segments: vec![name.into()],
             };
+            let tracked = status.lookup_relationship_target_with_reads(
+                id(20),
+                p::SPECIALIZATION_GENERAL,
+                &name,
+            );
+            assert_eq!(
+                tracked.outcome,
+                status.lookup_relationship_target(id(20), p::SPECIALIZATION_GENERAL, &name)
+            );
+            assert!(tracked.reads.affected_by(&BTreeSet::from([id(1)]), false));
+            assert!(
+                !tracked
+                    .reads
+                    .affected_by(&BTreeSet::from([id(999999)]), false)
+            );
+            assert!(tracked.reads.affected_by(&BTreeSet::new(), true));
+            assert!(!tracked.reads.search_dependencies().is_empty());
+            assert!(QueryReadSet::context_compatible(
+                q.context(),
+                status.context()
+            ));
+            let mut changed = status.context().clone();
+            changed.model_digest = [42; 32];
+            changed.pending_namespace_scopes.insert(id(1));
+            assert!(QueryReadSet::context_compatible(status.context(), &changed));
+            changed.options.exclude_implied = !changed.options.exclude_implied;
+            assert!(!QueryReadSet::context_compatible(
+                status.context(),
+                &changed
+            ));
             assert_eq!(
                 status.lookup_relationship_target(id(20), p::SPECIALIZATION_GENERAL, &name),
                 QueryOutcome::from(q.lookup_relationship_target(

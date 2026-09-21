@@ -139,7 +139,7 @@ pub struct PublicationClosure {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum InvalidationKey {
+pub(crate) enum InvalidationKey {
     Element(ElementId),
     Incoming(ElementId),
     Global,
@@ -202,6 +202,38 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
     }
     result
 }
+pub(crate) fn query_read_keys<T>(
+    answer: &QueryResult<T>,
+    model: &ModelView,
+) -> BTreeSet<InvalidationKey> {
+    let mut keys: BTreeSet<_> = answer
+        .search_dependencies
+        .iter()
+        .flat_map(search_keys)
+        .collect();
+    // Immediate canonical dependencies suffice: kernel computation searches
+    // propagate the bounded negative reads of any derived facts queried.
+    for dependency in &answer.canonical_dependencies {
+        let (Dependency::Declared(fact) | Dependency::Derived(fact)) = dependency;
+        match fact {
+            FactKey::Element(id) | FactKey::Property { element: id, .. } => {
+                keys.insert(InvalidationKey::Element(*id));
+            }
+            FactKey::AssociationOccurrence(id) => {
+                if let Some(occurrence) = model.association_occurrence(*id) {
+                    keys.extend(
+                        occurrence
+                            .ends()
+                            .values()
+                            .copied()
+                            .map(InvalidationKey::Element),
+                    );
+                }
+            }
+        }
+    }
+    keys
+}
 #[derive(Default)]
 struct DependencyIndex {
     readers: BTreeMap<InvalidationKey, BTreeSet<ElementId>>,
@@ -215,32 +247,7 @@ impl DependencyIndex {
         model: &ModelView,
         counters: &mut PublicationCounters,
     ) {
-        let mut keys: BTreeSet<_> = answer
-            .search_dependencies
-            .iter()
-            .flat_map(search_keys)
-            .collect();
-        // Immediate canonical dependencies suffice: kernel computation searches
-        // propagate the bounded negative reads of any derived facts queried.
-        for dependency in &answer.canonical_dependencies {
-            let (Dependency::Declared(fact) | Dependency::Derived(fact)) = dependency;
-            match fact {
-                FactKey::Element(id) | FactKey::Property { element: id, .. } => {
-                    keys.insert(InvalidationKey::Element(*id));
-                }
-                FactKey::AssociationOccurrence(id) => {
-                    if let Some(occurrence) = model.association_occurrence(*id) {
-                        keys.extend(
-                            occurrence
-                                .ends()
-                                .values()
-                                .copied()
-                                .map(InvalidationKey::Element),
-                        );
-                    }
-                }
-            }
-        }
+        let mut keys = query_read_keys(answer, model);
         keys.insert(InvalidationKey::Element(subject));
         counters.dependency_edges_considered += keys.len();
         if let Some(previous) = self.subjects.insert(subject, keys.clone()) {
