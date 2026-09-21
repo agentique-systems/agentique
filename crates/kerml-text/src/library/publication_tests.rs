@@ -2,11 +2,14 @@
 //! pinned corpus. Only the ordinary publication builder may seal its overlay.
 //! This private test facade makes no assertion about accepted source-library bytes.
 use super::*;
-use crate::{ProjectChange, SourceLanguage, SourceProject};
+use crate::{
+    ProjectChange, SourceLanguage, SourceProject,
+    syntax::{ByteRange, TextEdit},
+};
 use agq_kerml::{classes as c, properties as p};
 use agq_kerml_semantics::{
-    ContextError, DerivationPhase, LibraryPin, PublicationFamily, QualifiedName, Resolution,
-    SemanticContext, SemanticOptions, StandardLibraryArtifact, StandardRole,
+    ContextError, DerivationPhase, LibraryPin, PublicationFamily, QualifiedName, QueryResult,
+    Resolution, SemanticContext, SemanticOptions, StandardLibraryArtifact, StandardRole,
 };
 use agq_kernel::{
     ChangeSet, LibraryId, MetaclassId, PropertyId,
@@ -280,6 +283,15 @@ fn lookup(project: &SourceProject, segments: &[&str]) -> ElementId {
     assert_eq!(answer.value.len(), 1, "{segments:?}: {answer:?}");
     answer.value[0].element
 }
+fn complete_value<T>(answer: QueryResult<T>) -> T {
+    assert_eq!(
+        answer.completeness,
+        Completeness::Complete,
+        "{:?}",
+        answer.diagnostics
+    );
+    answer.value
+}
 
 #[test]
 fn shared_publication_resolves_authored_structure_without_copying_library_records() {
@@ -331,11 +343,11 @@ fn shared_publication_resolves_authored_structure_without_copying_library_record
     let local = lookup(&first, &["Shadow", "Anything"]);
     let picked = lookup(&first, &["Shadow", "picked"]);
     let q = revision.queries();
-    assert!(q.all_specializations(special).value.contains(&anything));
-    assert!(q.feature_types(value).value.contains(&anything));
-    assert!(q.all_specializations(value).value.contains(&things));
-    assert!(q.redefined_features(renamed).value.contains(&original));
-    assert!(!q.effective_features(changed).value.contains(&original));
+    assert!(complete_value(q.all_specializations(special)).contains(&anything));
+    assert!(complete_value(q.feature_types(value)).contains(&anything));
+    assert!(complete_value(q.all_specializations(value)).contains(&things));
+    assert!(complete_value(q.redefined_features(renamed)).contains(&original));
+    assert!(!complete_value(q.effective_features(changed)).contains(&original));
     assert!(
         revision
             .references()
@@ -392,14 +404,45 @@ fn authored_revisions_and_parallel_readers_preserve_the_dependency_and_its_expla
     let next = project
         .apply(
             old.revision(),
-            [add(
-                "next.kerml",
-                "namespace More { private import Base::*; feature another : Anything; }",
-            )],
+            [
+                ProjectChange::Edit {
+                    document: old.document_at("first.kerml").unwrap().id(),
+                    edit: TextEdit {
+                        range: ByteRange::new(0, 0).unwrap(),
+                        replacement: "namespace Edited { feature edited : Base::Anything; }\n"
+                            .into(),
+                    },
+                },
+                add(
+                    "next.kerml",
+                    "namespace More { private import Base::*; feature another : Anything; }",
+                ),
+            ],
         )
         .unwrap();
     assert!(next.is_complete_slice());
     assert_ne!(old.revision(), next.revision());
+    let edited = lookup(&project, &["Edited", "edited"]);
+    assert_eq!(
+        complete_value(next.queries().feature_types(edited)),
+        vec![publication.bindings().get(StandardRole::Anything)]
+    );
+    assert_eq!(
+        old.queries()
+            .context()
+            .standard_bindings
+            .as_ref()
+            .unwrap()
+            .iter()
+            .collect::<Vec<_>>(),
+        next.queries()
+            .context()
+            .standard_bindings
+            .as_ref()
+            .unwrap()
+            .iter()
+            .collect::<Vec<_>>()
+    );
     assert_eq!(
         publication.semantic_digest(),
         old.queries()

@@ -105,11 +105,15 @@ fn run_slice(
         },
         |stage| {
             println!(
-                "slice {slice} round {}: {} new Elements, {} occurrences; {:?}",
-                stage.stage, stage.added_elements, stage.added_occurrences, stage.completeness
+                "slice {slice} round {} ({:?}): {} new Elements, {} occurrences; {:?}",
+                stage.stage,
+                stage.stratum,
+                stage.added_elements,
+                stage.added_occurrences,
+                stage.completeness
             );
             completed_stages.push(json!({
-                "round":stage.stage, "added_elements":stage.added_elements,
+                "round":stage.stage, "stratum":format!("{:?}",stage.stratum), "added_elements":stage.added_elements,
                 "added_occurrences":stage.added_occurrences,
                 "completeness":format!("{:?}",stage.completeness),
                 "counters":publication_metrics::counters(&stage.counters),

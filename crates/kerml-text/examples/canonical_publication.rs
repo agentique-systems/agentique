@@ -55,10 +55,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         |stage| {
             println!(
-                "stage {}: {} new Elements, {} occurrences, {:?}",
-                stage.stage, stage.added_elements, stage.added_occurrences, stage.completeness
+                "stage {} ({:?}): {} new Elements, {} occurrences, {:?}",
+                stage.stage,
+                stage.stratum,
+                stage.added_elements,
+                stage.added_occurrences,
+                stage.completeness
             );
-            stages.push(json!({"stage":stage.stage,"subjects":stage.input_elements,"added_elements":stage.added_elements,"added_occurrences":stage.added_occurrences,"completeness":format!("{:?}", stage.completeness),"counters":publication_metrics::counters(&stage.counters),"diagnostics":stage.diagnostics.iter().map(|d|json!({"subject":d.subject.to_string(),"code":d.code,"message":d.message})).collect::<Vec<_>>()}));
+            stages.push(json!({"stage":stage.stage,"stratum":format!("{:?}",stage.stratum),"subjects":stage.input_elements,"added_elements":stage.added_elements,"added_occurrences":stage.added_occurrences,"completeness":format!("{:?}", stage.completeness),"counters":publication_metrics::counters(&stage.counters),"diagnostics":stage.diagnostics.iter().map(|d|json!({"subject":d.subject.to_string(),"code":d.code,"message":d.message})).collect::<Vec<_>>()}));
         },
         |done, failures| {
             if done % 512 == 0 {

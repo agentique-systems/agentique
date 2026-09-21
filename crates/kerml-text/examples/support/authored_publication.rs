@@ -1,10 +1,13 @@
 //! Acceptance regressions over the same publication instance as the release gate.
 use agq_kerml::{BaselineProfile, properties as p};
 use agq_kerml_semantics::{
-    Completeness, QualifiedName, Resolution, SemanticContext, SemanticOptions, StandardRole,
+    Completeness, QualifiedName, QueryResult, Resolution, SemanticContext, SemanticOptions,
+    StandardRole,
 };
 use agq_kerml_text::{
-    ProjectChange, SourceLanguage, SourceProject, library::CanonicalKermlStandardLibraries,
+    ProjectChange, SourceLanguage, SourceProject,
+    library::CanonicalKermlStandardLibraries,
+    syntax::{ByteRange, TextEdit},
 };
 use agq_kernel::{
     ElementId,
@@ -40,6 +43,16 @@ fn lookup(
         .into());
     }
     Ok(answer.value[0].element)
+}
+fn complete_value<T>(answer: QueryResult<T>) -> Result<T, Box<dyn std::error::Error>> {
+    if answer.completeness != Completeness::Complete {
+        return Err(format!(
+            "Authored semantic query: {:?}; {:?}",
+            answer.completeness, answer.diagnostics
+        )
+        .into());
+    }
+    Ok(answer.value)
 }
 pub fn verify(
     publication: Arc<CanonicalKermlStandardLibraries>,
@@ -92,11 +105,11 @@ pub fn verify(
     let local = lookup(&project, &["Shadow", "Anything"])?;
     let picked = lookup(&project, &["Shadow", "picked"])?;
     let q = first.queries();
-    assert!(q.all_specializations(special).value.contains(&anything));
-    assert!(q.feature_types(value).value.contains(&anything));
-    assert!(q.all_specializations(value).value.contains(&things));
-    assert!(q.redefined_features(renamed).value.contains(&original));
-    assert!(!q.effective_features(changed).value.contains(&original));
+    assert!(complete_value(q.all_specializations(special))?.contains(&anything));
+    assert!(complete_value(q.feature_types(value))?.contains(&anything));
+    assert!(complete_value(q.all_specializations(value))?.contains(&things));
+    assert!(complete_value(q.redefined_features(renamed))?.contains(&original));
+    assert!(!complete_value(q.effective_features(changed))?.contains(&original));
     assert!(
         first
             .references()
@@ -135,10 +148,19 @@ pub fn verify(
     }
     let next = project.apply(
         first.revision(),
-        [add(
-            "next.kerml",
-            "namespace More { private import Base::*; feature another : Anything; }",
-        )],
+        [
+            ProjectChange::Edit {
+                document: first.document_at("use.kerml").unwrap().id(),
+                edit: TextEdit {
+                    range: ByteRange::new(0, 0)?,
+                    replacement: "namespace Edited { feature edited : Base::Anything; }\n".into(),
+                },
+            },
+            add(
+                "next.kerml",
+                "namespace More { private import Base::*; feature another : Anything; }",
+            ),
+        ],
     )?;
     assert!(
         next.is_complete_slice(),
@@ -150,6 +172,13 @@ pub fn verify(
         Some(digest)
     );
     assert_eq!(publication.semantic_digest(), digest);
+    assert_eq!(
+        complete_value(
+            next.queries()
+                .feature_types(lookup(&project, &["Edited", "edited"])?)
+        )?,
+        vec![anything]
+    );
     assert!(second.current().documents().next().is_none());
     let independent = second.apply(second.current().revision(), [add(
         "independent.kerml",

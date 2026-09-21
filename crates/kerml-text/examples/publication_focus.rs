@@ -139,10 +139,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         |stage| {
             println!(
-                "Focused round {}: {} new Elements; {:?}; {:?}",
-                stage.stage, stage.added_elements, stage.completeness, stage.diagnostics
+                "Focused round {} ({:?}): {} new Elements; {:?}; {:?}",
+                stage.stage,
+                stage.stratum,
+                stage.added_elements,
+                stage.completeness,
+                stage.diagnostics
             );
-            stages.push(json!({"stage":stage.stage,"added_elements":stage.added_elements,"complete":stage.completeness == Completeness::Complete}));
+            stages.push(json!({"stage":stage.stage,"stratum":format!("{:?}",stage.stratum),"added_elements":stage.added_elements,"complete":stage.completeness == Completeness::Complete}));
         },
     )?;
     let closed = derived.converged && derived.completeness == Completeness::Complete;
