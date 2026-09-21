@@ -95,3 +95,19 @@ return Feature. Explicit result redefinition corrected that incidental defect;
 the valid fixture then reproduced the intended TypeFeaturing collision (exit
 101, 0.49 seconds) before the producer-phase fix. Those diagnostic failures are
 not semantic acceptance passes.
+
+Empty-frontier reuse (`dc942d0`, `afc21cb`, `c9efbc1`) retains the immutable overlay
+only after validating every proposed record. The independent reference still
+materializes the frontier. All six pending write classes count as changes,
+including failed computations and search-only metadata. Retained scheduler
+subject/read-key edges are now counted, and empty reverse-index buckets removed.
+
+- `cargo test -p agq-kernel --test derivations --locked --offline`: exit 0, 17 tests, 0.01 seconds in the test body.
+- `cargo test --locked --offline -p agq-kerml-semantics --lib producer_worklist -- --nocapture`: exit 0, 14 passed and two explicitly ignored, 12.35 seconds.
+- `cargo clippy --locked --offline -p agq-kerml-semantics --all-targets -- -D warnings`: initial exit 101 for `items_after_test_module`; moving the module produced exit 0, 3.05 seconds.
+- Formatting and diff checks: exit 0.
+
+The semantic commands used two build jobs, no debug symbols and no incremental
+cache; the kernel command disabled incremental caching. Raw observations remain
+in the workers' ignored generated directories. These checks include unchanged
+proof metrics on reuse and replacement/pruning of retained read edges.

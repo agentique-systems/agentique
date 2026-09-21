@@ -5,7 +5,7 @@ use agq_kerml_semantics::*;
 use agq_kerml_text::library::{CanonicalKermlStandardLibraries, CanonicalPublicationError};
 use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::json;
-use std::{collections::BTreeSet, path::Path, sync::Arc};
+use std::{collections::BTreeSet, io::Write, path::Path, sync::Arc};
 #[path = "support/authored_publication.rs"]
 mod authored_publication;
 #[path = "support/publication_metrics.rs"]
@@ -42,6 +42,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (draft, refinement) = publication_refinement::prepare(&sources)?;
     let construction_obligations = draft.candidate().obligations().len();
     let mut stages = vec![];
+    let mut stage_log = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path.with_extension("stages.jsonl"))?;
+    let mut stage_log_error = None;
     let closure = CanonicalKermlStandardLibraries::publish(
         draft,
         &sources,
@@ -63,6 +68,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 stage.completeness
             );
             stages.push(json!({"stage":stage.stage,"stratum":format!("{:?}",stage.stratum),"subjects":stage.input_elements,"added_elements":stage.added_elements,"added_occurrences":stage.added_occurrences,"completeness":format!("{:?}", stage.completeness),"counters":publication_metrics::counters(&stage.counters),"diagnostics":stage.diagnostics.iter().map(|d|json!({"subject":d.subject.to_string(),"code":d.code,"message":d.message})).collect::<Vec<_>>()}));
+            if let Err(error) = writeln!(stage_log, "{}", stages.last().expect("current stage"))
+                .and_then(|()| stage_log.sync_data())
+            {
+                eprintln!("cannot persist publication stage diagnostics: {error}");
+                stage_log_error = Some(error);
+            }
         },
         |done, failures| {
             if done % 512 == 0 {
@@ -77,6 +88,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         },
     );
+    if let Some(error) = stage_log_error {
+        return Err(error.into());
+    }
     let publication = match closure {
         Ok(complete) => complete,
         Err(error) => {

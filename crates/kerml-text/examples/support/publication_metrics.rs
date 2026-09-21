@@ -19,6 +19,12 @@ pub fn counters(c: &PublicationCounters) -> Value {
         "dirty_reevaluations": c.dirty_reevaluations,
         "maximum_worklist_size": c.maximum_worklist_size,
         "overlay_materializations": c.overlay_materializations,
+        "empty_frontiers_reused": c.empty_frontiers_reused,
+        "active_dependency_subjects": c.active_dependency_subjects,
+        "active_dependency_keys": c.active_dependency_keys,
+        "active_dependency_edges": c.active_dependency_edges,
+        "maximum_dependency_keys": c.maximum_dependency_keys,
+        "maximum_dependency_edges": c.maximum_dependency_edges,
         "fixed_point_rounds": c.fixed_point_rounds,
     })
 }
