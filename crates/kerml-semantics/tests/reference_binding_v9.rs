@@ -39,6 +39,78 @@ fn reference_fixture(profile: agq_kerml::BaselineProfile) -> Snapshot {
     reference_builder(profile).finish()
 }
 
+#[test]
+fn reference_binding_waits_for_value_specialization_context() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let mut f = reference_builder(profile);
+    f.create(20, c::EXPRESSION);
+    f.create(21, c::FEATURE);
+    f.enumeration(21, p::FEATURE_DIRECTION, "out");
+    member(&mut f, 20, 21, 120, c::RETURN_PARAMETER_MEMBERSHIP);
+    relation(
+        &mut f,
+        21,
+        1,
+        121,
+        c::FEATURE_TYPING,
+        p::FEATURE_TYPING_TYPE,
+    );
+    f.value(
+        121,
+        p::FEATURE_TYPING_TYPED_FEATURE,
+        Value::Reference(id(21)),
+    );
+    member(&mut f, 2, 20, 122, c::FEATURE_VALUE);
+    f.value(122, p::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(true));
+    f.value(122, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
+    let snapshot = f.finish();
+    let q = queries(&snapshot, profile);
+    let before = q.reference_binding_context(id(2), id(4), id(3));
+    assert_eq!(before.value, Some(id(1)));
+    assert_eq!(before.completeness, Completeness::Complete);
+    let first = q
+        .plan_result_structure([id(2)])
+        .materialize(&snapshot)
+        .unwrap();
+    let q = KerMlQueries::new(
+        SemanticContext::for_overlay(
+            &first.overlay,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap(),
+    );
+    let after = q.reference_binding_context(id(2), id(4), id(3));
+    assert_eq!(after.value, Some(id(2)));
+    assert_eq!(after.completeness, Completeness::Complete);
+    // Both answers are complete for their immutable frontier. Publication must
+    // establish the dependent specialization before committing the selected
+    // context, so no obsolete scalar featuring fact survives into the result.
+    let closure = close_result_structure(
+        &snapshot,
+        PublicationClosureOptions::default(),
+        |overlay| {
+            SemanticContext::for_overlay(
+                overlay,
+                SemanticOptions {
+                    baseline_profile: profile,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .map_err(PublicationOverlayError::Context)
+        },
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(closure.converged);
+    assert_eq!(closure.completeness, Completeness::Complete);
+}
+
 fn queries(snapshot: &Snapshot, profile: agq_kerml::BaselineProfile) -> KerMlQueries<'_> {
     KerMlQueries::new(
         SemanticContext::for_snapshot(
