@@ -198,7 +198,7 @@ class PosixGroup:
         pass
 
 
-def execute(command, output, wall_seconds, private_bytes, interval, environment, progress_pattern=None):
+def execute(command, output, wall_seconds, private_bytes, interval, environment, progress_pattern=None, min_free_bytes=0):
     """Return observations even on failure; failure to monitor terminates the tree."""
     output.mkdir(parents=True, exist_ok=False)
     monitor = WindowsJob() if os.name == "nt" else PosixGroup()
@@ -209,6 +209,7 @@ def execute(command, output, wall_seconds, private_bytes, interval, environment,
     monitor_error = None
     command_pid = None
     progress = None
+    minimum_free_bytes = None
     progress_regex = re.compile(progress_pattern) if progress_pattern else None
     try:
         with (output / "output.log").open("w", encoding="utf-8") as log, \
@@ -229,6 +230,10 @@ def execute(command, output, wall_seconds, private_bytes, interval, environment,
             while True:
                 elapsed = time.monotonic() - start
                 observation = monitor.sample()
+                if min_free_bytes:
+                    free = shutil.disk_usage(ROOT).free
+                    minimum_free_bytes = free if minimum_free_bytes is None else min(minimum_free_bytes, free)
+                    observation["free_disk_bytes"] = free
                 if progress_regex:
                     # Observe a bounded tail, never copy a growing command log.
                     with (output / "output.log").open("rb") as progress_log:
@@ -245,6 +250,8 @@ def execute(command, output, wall_seconds, private_bytes, interval, environment,
                     stop = "wall_time"
                 elif peak_private > private_bytes:
                     stop = "private_memory"
+                elif min_free_bytes and minimum_free_bytes < min_free_bytes:
+                    stop = "disk_space"
                 elif (output / "stop").exists():
                     stop = "requested"
                 if stop:
@@ -275,9 +282,10 @@ def execute(command, output, wall_seconds, private_bytes, interval, environment,
         "command_exit_code": result, "command_pid": command_pid,
         "monitor_error": monitor_error,
         "last_progress": progress,
+        "minimum_free_disk_bytes": minimum_free_bytes,
         "safety_stop": stop, "duration_seconds": round(time.monotonic() - start, 3),
         "peak_rss_bytes": peak_rss, "peak_private_bytes": peak_private, "samples": samples,
-        "limits": {"wall_seconds": wall_seconds, "private_bytes": private_bytes, "sample_seconds": interval},
+        "limits": {"wall_seconds": wall_seconds, "private_bytes": private_bytes, "sample_seconds": interval, "min_free_disk_bytes": min_free_bytes},
         "output_sha256": hashlib.sha256((output / "output.log").read_bytes()).hexdigest(),
     }
 
@@ -288,13 +296,14 @@ def main():
     parser.add_argument("--wall-seconds", type=float, default=600)
     parser.add_argument("--private-mib", type=float, default=6144)
     parser.add_argument("--sample-seconds", type=float, default=1)
+    parser.add_argument("--min-free-mib", type=float, default=0, help="Optional workspace disk reserve; zero disables this workflow stop")
     parser.add_argument("--progress-pattern", help="Optional regex; named groups become sampled progress counters")
     parser.add_argument("--summary", default="verification/summaries/overnight-convergence/commands.json")
     parser.add_argument("--env", action="append", default=[])
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
-    if not command or min(args.wall_seconds, args.private_mib, args.sample_seconds) <= 0:
+    if not command or min(args.wall_seconds, args.private_mib, args.sample_seconds) <= 0 or args.min_free_mib < 0:
         parser.error("a command and positive limits are required")
     if Path(args.name).name != args.name or args.name in (".", ".."):
         parser.error("name must be a filename component")
@@ -313,7 +322,7 @@ def main():
     overrides = dict(item.split("=", 1) for item in args.env)
     executable = shutil.which(command[0]) or command[0]
     result = execute([executable, *command[1:]], output, args.wall_seconds,
-                     int(args.private_mib * 1024**2), args.sample_seconds, {**os.environ, **overrides}, args.progress_pattern)
+                     int(args.private_mib * 1024**2), args.sample_seconds, {**os.environ, **overrides}, args.progress_pattern, int(args.min_free_mib * 1024**2))
     record = {"name": args.name, "command": command, "source_commit": commit,
               "working_changes_sha256": digest, "environment_overrides": overrides,
               "watchdog_python": sys.version.split()[0], "progress_pattern": args.progress_pattern,

@@ -311,6 +311,27 @@
       "duration_seconds": 1.66,
       "output": "verification/generated/overnight-convergence/fmt-context-strata.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "watchdog-disk-reserve",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_watchdog.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5e58b7b7c51ae6e93062221ae1fd3823ce242da9",
+      "working_changes_sha256": "45ac9a60f2e3241830a42787445eaaecf4124f349fcbe0a6eacab3f32d51b7c1",
+      "output_sha256": "b10bdf22799922a8da7ca34f1eec199821ce41ef791e837f72edfcb1225a1a3d",
+      "duration_seconds": 3.39,
+      "output": "verification/generated/overnight-convergence/watchdog-disk-reserve.log",
+      "environment_overrides": {}
     }
   ]
 }

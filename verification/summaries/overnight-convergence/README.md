@@ -76,6 +76,20 @@ three required metamodel stale/runtime checks, and all four browser tests passed
 at the source identities recorded in the command summaries. Later source fixes
 still require their appropriate integration checks.
 
+The first workspace-test build was stopped during compilation after 148.172
+seconds as Windows debug artifacts reduced free disk from about 13 GiB to 3 GiB.
+It did not execute the suite. The subsequent command disables debug symbols and
+incremental caches while retaining ordinary test optimization, debug assertions
+and overflow checks. A new optional watchdog disk reserve stops before workspace
+free space falls below 1 GiB; all nine watchdog regressions pass. Existing caches
+remain untouched following the earlier automatic approval rejection.
+
+The workspace rerun passed: **412 tests, zero failures, two explicitly ignored
+scale gates**, across 105 result summaries, in 304.328 seconds including
+compilation. Peak private memory was 1,025,343,488 bytes, and more than 3.2 GB of
+disk remained free. The ignored semantic scale gate is run separately in release
+mode; this workspace result does not substitute for that performance preflight.
+
 The old `early-sharing` corpus process was already running before this task.
 The lead stopped it at 10,804.95 seconds elapsed, 3,522,764,800 private bytes and
 2,360,279,040 working-set bytes. Its original wrapper subsequently appended the

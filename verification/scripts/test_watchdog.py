@@ -42,10 +42,10 @@ class WatchdogTests(unittest.TestCase):
             finally:
                 kernel.CloseHandle(handle)
 
-    def run_argv(self, command, wall=10, memory=512 * 1024**2, progress_pattern=None):
+    def run_argv(self, command, wall=10, memory=512 * 1024**2, progress_pattern=None, min_free_bytes=0):
         self.sequence += 1
         output = self.directory / f"run-{self.sequence}"
-        result = execute(command, output, wall, memory, 0.025, dict(os.environ), progress_pattern)
+        result = execute(command, output, wall, memory, 0.025, dict(os.environ), progress_pattern, min_free_bytes)
         observations = [json.loads(line) for line in (output / "observations.jsonl").read_text().splitlines()]
         process_ids = [result["command_pid"]] if result["command_pid"] else []
         process_ids.extend(pid for sample in observations for pid in sample["process_ids"])
@@ -137,6 +137,15 @@ class WatchdogTests(unittest.TestCase):
         self.assertEqual(result["safety_stop"], "monitor_error")
         self.assertEqual(result["exit_code"], 125)
         self.assertIn("injected accounting failure", result["monitor_error"])
+
+    def test_disk_reserve_terminates_work_without_deleting_files(self):
+        usage = shutil.disk_usage(ROOT)._replace(free=512)
+        with patch("watchdog.shutil.disk_usage", return_value=usage):
+            result, samples = self.run_command("import time; time.sleep(5)", min_free_bytes=1024)
+        self.assertEqual(result["safety_stop"], "disk_space")
+        self.assertEqual(result["exit_code"], 124)
+        self.assertEqual(result["minimum_free_disk_bytes"], 512)
+        self.assertEqual(samples[0]["free_disk_bytes"], 512)
 
 
 if __name__ == "__main__":

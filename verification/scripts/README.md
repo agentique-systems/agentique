@@ -27,6 +27,14 @@ Release verification uses `CARGO_BUILD_JOBS=2`, `CARGO_PROFILE_RELEASE_DEBUG=0`,
 to bound compilation concurrency and avoid unneeded verification artifacts.
 Optimization remains enabled. Commands and overrides are retained in the summary.
 
+For workspace tests on disk-constrained Windows hosts, use
+`CARGO_PROFILE_TEST_DEBUG=0`, `CARGO_PROFILE_DEV_DEBUG=0` and `CARGO_INCREMENTAL=0`.
+These disable debug symbols and incremental caches; optimization levels, debug
+assertions and overflow checks retain their normal test-profile defaults.
+`--min-free-mib 1024` adds an optional workspace disk reserve to the watchdog.
+Crossing it terminates the command tree with a recorded `disk_space` stop; the
+wrapper never removes files to recover space.
+
 Only after all publication preflights pass, the lead may run the release binary
 with `--wall-seconds 5400 --private-mib 6144`. At most two full-corpus attempts are
 allowed in this milestone; a stop requires implementation work before another.

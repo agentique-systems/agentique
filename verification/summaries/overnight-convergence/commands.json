@@ -1073,6 +1073,121 @@
         "sample_seconds": 1
       },
       "output_sha256": "972498260134fabb920648df6ad1c4bf2c6ff803cb33db033dd38785e5cbd7bd"
+    },
+    {
+      "name": "workspace-tests-integration",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "source_commit": "85731dff814eeae7e468156cc4d95add0d712e99",
+      "working_changes_sha256": "683c9bb9ec8cc9ffa1ca9313521056bafb875047362f859c79993f4b281b8fb6",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/workspace-tests-integration",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 15584,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": "requested",
+      "duration_seconds": 148.172,
+      "peak_rss_bytes": 2116153344,
+      "peak_private_bytes": 1804865536,
+      "samples": 149,
+      "limits": {
+        "wall_seconds": 1800.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "7f60a0db5dce087c55a2f94b383d8116b40d9dd9a06cad46f1cce4afe5156a0f"
+    },
+    {
+      "name": "workspace-tests-no-symbols",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "source_commit": "5e58b7b7c51ae6e93062221ae1fd3823ce242da9",
+      "working_changes_sha256": "876ec291bed05e3c0fbac9d3b6ba80ce05b08eea63213e25aa13b8a529c32189",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/workspace-tests-no-symbols",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 16548,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 3225649152,
+      "safety_stop": null,
+      "duration_seconds": 304.328,
+      "peak_rss_bytes": 873320448,
+      "peak_private_bytes": 1025343488,
+      "samples": 305,
+      "limits": {
+        "wall_seconds": 1800.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "569856a7f42764c22417b778352edb0e03aad839798e300aca1e32aa6a5bcc5c"
+    },
+    {
+      "name": "changed-language-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "5e58b7b7c51ae6e93062221ae1fd3823ce242da9",
+      "working_changes_sha256": "756d1a20d95d96166e58ef09b4819656e664e1f243d7c24554b8bf4cf534cc26",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/changed-language-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 15124,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 3241725952,
+      "safety_stop": null,
+      "duration_seconds": 11.032,
+      "peak_rss_bytes": 481521664,
+      "peak_private_bytes": 661684224,
+      "samples": 12,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "91bab74d09bd2190688fee1ff7e3e8028392a5e79f51e58e896b029ef287b34f"
     }
   ]
 }

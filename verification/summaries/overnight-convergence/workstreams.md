@@ -1,8 +1,8 @@
 # Focused workstream checks
 
-Source work ran in isolated worktrees against the fetched base. All commands
-below exited 0; failed integration and resource attempts are retained separately
-in [commands.json](commands.json). Raw output stays in ignored generated storage.
+Source work ran in isolated worktrees against the fetched base. The table records
+successful focused checks; diagnostic failures are described below and in
+[commands.json](commands.json). Raw output stays in ignored generated storage.
 Compilation used the shared target directory and at most two Rust workers.
 
 | Integrated work | Actual command | Result |
