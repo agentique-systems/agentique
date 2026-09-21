@@ -13,6 +13,7 @@ pub struct KerMlQueries<'m> {
     producer_evidence: bool,
     pub(crate) context: SemanticContext<'m>,
     pub(crate) namespace_cache: crate::namespaces::NamespaceCache,
+    pub(crate) effective_names_cache: Mutex<BTreeMap<ElementId, Arc<QueryResult<EffectiveNames>>>>,
     pub(crate) library_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
     pub(crate) result_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
     // Scoped to this immutable model/context, like the other query caches.
@@ -28,6 +29,7 @@ impl<'m> KerMlQueries<'m> {
             producer_evidence: false,
             context,
             namespace_cache: Default::default(),
+            effective_names_cache: Default::default(),
             library_cache: Default::default(),
             result_cache: Default::default(),
             origin_cache: Default::default(),

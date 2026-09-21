@@ -21,6 +21,26 @@ impl KerMlQueries<'_> {
     /// Explicit owned Redefinitions use exact ownership order. For implied-only
     /// redefinitions, agreement proves names independently of any insertion order.
     pub fn effective_names(&self, element: ElementId) -> QueryResult<EffectiveNames> {
+        if let Some(cached) = self
+            .effective_names_cache
+            .lock()
+            .expect("effective names cache")
+            .get(&element)
+        {
+            return (**cached).clone();
+        }
+        let result = self.compute_effective_names(element);
+        self.effective_names_cache
+            .lock()
+            .expect("effective names cache")
+            .insert(element, std::sync::Arc::new(result.clone()));
+        result
+    }
+
+    // Namespace lookups repeatedly inspect the same members' names. Cache the
+    // bounded naming answer in this immutable evaluator, including incomplete
+    // outcomes and all proof/search metadata. A fork starts with an empty memo.
+    fn compute_effective_names(&self, element: ElementId) -> QueryResult<EffectiveNames> {
         let mut out = self.result(EffectiveNames::Determinate(BTreeSet::new()));
         let mut graph = BTreeMap::<ElementId, Vec<ElementId>>::new();
         let mut values = BTreeMap::<ElementId, BTreeSet<BTreeSet<String>>>::new();
@@ -123,3 +143,7 @@ impl KerMlQueries<'_> {
         out
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/unit/naming_cache.rs"]
+mod tests;
