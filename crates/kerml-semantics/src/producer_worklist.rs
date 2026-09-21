@@ -218,6 +218,8 @@ pub fn close_result_structure(
     let mut applicability = BTreeMap::<MetaclassId, Vec<ProducerFamily>>::new();
     let mut identity: Option<SemanticContextId> = None;
     let mut converged = false;
+    let mut stratum = ResultStructureStratum::Structural;
+    let mut deferred_bindings = BTreeSet::new();
     for round in 0..options.max_rounds {
         let context = context(&overlay)?;
         if let Some(previous) = &identity {
@@ -243,6 +245,12 @@ pub fn close_result_structure(
             identity = Some(context.id().clone());
         }
         let profile = context.id().options.baseline_profile;
+        // Only v8 establishes the required isolation: these binding roles use
+        // OwningMembership, and BindingConnector is excluded from owned-cross
+        // production. Historical profiles retain their existing closure policy.
+        if profile != BaselineProfile::OPERATIONAL_V8 {
+            stratum = ResultStructureStratum::ContextualBindings;
+        }
         counters.maximum_worklist_size = counters.maximum_worklist_size.max(worklist.len());
         let mut subjects = vec![];
         for subject in worklist {
@@ -281,7 +289,8 @@ pub fn close_result_structure(
             }
             _ => {}
         }
-        let mut plan = KerMlQueries::new(context.fork()).plan_result_structure([]);
+        let mut plan =
+            KerMlQueries::new(context.fork()).plan_result_structure_in_stratum([], stratum);
         for (batch_index, batch) in subjects.chunks(options.batch_size.max(1)).enumerate() {
             let q = match options.strategy {
                 PublicationClosureStrategy::Worklist => {
@@ -290,7 +299,7 @@ pub fn close_result_structure(
                 PublicationClosureStrategy::ReferenceFullScan => KerMlQueries::new(context.fork()),
             };
             if options.strategy == PublicationClosureStrategy::ReferenceFullScan {
-                let mut part = q.plan_result_structure_reference(batch.iter().copied());
+                let mut part = q.plan_result_structure_reference(batch.iter().copied(), stratum);
                 counters.subjects_evaluated += batch.len();
                 counters.producer_families_attempted += part.producer_families_attempted;
                 for &subject in batch {
@@ -312,7 +321,7 @@ pub fn close_result_structure(
                 for &subject in batch {
                     counters.subjects_evaluated += 1;
                     counters.dirty_reevaluations += usize::from(!seen.insert(subject));
-                    let mut part = q.plan_result_structure([subject]);
+                    let mut part = q.plan_result_structure_in_stratum([subject], stratum);
                     counters.producer_families_attempted += part.producer_families_attempted;
                     index.replace(subject, &part.production, overlay.model(), &mut counters);
                     status.insert(
@@ -333,6 +342,7 @@ pub fn close_result_structure(
                 plan.planned_elements().count(),
             );
         }
+        deferred_bindings.extend(plan.deferred_bindings.iter().copied());
         let changed = plan.changed_population();
         let new_subjects: BTreeSet<_> = changed
             .iter()
@@ -384,6 +394,7 @@ pub fn close_result_structure(
         counters.new_association_occurrences_proposed +=
             next.model().association_occurrences().count() - input_occurrences;
         let record = PublicationStage {
+            stratum,
             counters: counters.clone(),
             stage: round,
             input_elements,
@@ -395,6 +406,24 @@ pub fn close_result_structure(
         progress(&record);
         stages.push(record);
         if stable {
+            if stratum == ResultStructureStratum::Structural
+                && (!deferred_bindings.is_empty()
+                    || options.strategy == PublicationClosureStrategy::ReferenceFullScan)
+            {
+                // Structural fixed point is not publication completion. Query
+                // failures remain in `status`; every deferred subject is now
+                // reevaluated against the closed structural frontier.
+                stratum = ResultStructureStratum::ContextualBindings;
+                worklist = match options.strategy {
+                    PublicationClosureStrategy::Worklist => std::mem::take(&mut deferred_bindings),
+                    // The oracle scans all subjects at this transition too; it
+                    // does not trust optimized deferred-subject discovery.
+                    PublicationClosureStrategy::ReferenceFullScan => population.clone(),
+                };
+                counters.dirty_subjects_enqueued += worklist.len();
+                overlay = next;
+                continue;
+            }
             converged = true;
             overlay = next;
             break;

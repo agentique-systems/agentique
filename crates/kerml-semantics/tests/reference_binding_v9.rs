@@ -63,14 +63,51 @@ fn reference_binding_waits_for_value_specialization_context() {
     member(&mut f, 2, 20, 122, c::FEATURE_VALUE);
     f.value(122, p::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(true));
     f.value(122, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
+    redefine(&mut f, 3, 5, 123);
     let snapshot = f.finish();
-    let q = queries(&snapshot, profile);
+    assert_context_specialization_closure(&snapshot, id(2), id(2));
+}
+
+#[test]
+fn reference_binding_waits_for_invocation_specialization_context() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let mut f = reference_builder(profile);
+    f.create(20, c::INVOCATION_EXPRESSION);
+    f.create(21, c::FEATURE);
+    f.enumeration(21, p::FEATURE_DIRECTION, "out");
+    member(&mut f, 20, 21, 120, c::RETURN_PARAMETER_MEMBERSHIP);
+    relation(
+        &mut f,
+        20,
+        1,
+        121,
+        c::MEMBERSHIP,
+        p::MEMBERSHIP_MEMBER_ELEMENT,
+    );
+    type_featuring(&mut f, 20, 1, 122);
+    f.value(
+        106,
+        p::TYPE_FEATURING_FEATURING_TYPE,
+        Value::Reference(id(20)),
+    );
+    redefine(&mut f, 21, 5, 123);
+    let snapshot = f.finish();
+    assert_context_specialization_closure(&snapshot, id(20), id(20));
+}
+
+fn assert_context_specialization_closure(
+    snapshot: &Snapshot,
+    structural_subject: ElementId,
+    expected_domain: ElementId,
+) {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let q = queries(snapshot, profile);
     let before = q.reference_binding_context(id(2), id(4), id(3));
     assert_eq!(before.value, Some(id(1)));
     assert_eq!(before.completeness, Completeness::Complete);
     let first = q
-        .plan_result_structure([id(2)])
-        .materialize(&snapshot)
+        .plan_result_structure([structural_subject])
+        .materialize(snapshot)
         .unwrap();
     let q = KerMlQueries::new(
         SemanticContext::for_overlay(
@@ -84,31 +121,142 @@ fn reference_binding_waits_for_value_specialization_context() {
         .unwrap(),
     );
     let after = q.reference_binding_context(id(2), id(4), id(3));
-    assert_eq!(after.value, Some(id(2)));
-    assert_eq!(after.completeness, Completeness::Complete);
+    assert_eq!(after.value, Some(expected_domain));
+    assert_eq!(
+        after.completeness,
+        Completeness::Complete,
+        "{:?}",
+        after.diagnostics
+    );
     // Both answers are complete for their immutable frontier. Publication must
     // establish the dependent specialization before committing the selected
     // context, so no obsolete scalar featuring fact survives into the result.
-    let closure = close_result_structure(
-        &snapshot,
-        PublicationClosureOptions::default(),
-        |overlay| {
-            SemanticContext::for_overlay(
-                overlay,
-                SemanticOptions {
-                    baseline_profile: profile,
-                    ..Default::default()
-                },
-                BTreeSet::new(),
-            )
-            .map_err(PublicationOverlayError::Context)
-        },
-        |_, _, _, _| {},
-        |_| {},
+    let run = |options| {
+        close_result_structure(
+            snapshot,
+            options,
+            |overlay| {
+                SemanticContext::for_overlay(
+                    overlay,
+                    SemanticOptions {
+                        baseline_profile: profile,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .map_err(PublicationOverlayError::Context)
+            },
+            |_, _, _, _| {},
+            |_| {},
+        )
+        .unwrap()
+    };
+    let expected = run(PublicationClosureOptions {
+        strategy: PublicationClosureStrategy::ReferenceFullScan,
+        ..Default::default()
+    });
+    assert!(expected.converged);
+    assert_eq!(
+        expected.completeness,
+        Completeness::Complete,
+        "{:?}",
+        expected.stages
+    );
+    let expected_q = overlay_queries(&expected.overlay, profile);
+    for order in [
+        PublicationWorklistOrder::Fifo,
+        PublicationWorklistOrder::Lifo,
+        PublicationWorklistOrder::ReversedInitial,
+        PublicationWorklistOrder::Partitioned,
+    ] {
+        for batch_size in [1, 7, 32] {
+            let actual = run(PublicationClosureOptions {
+                order,
+                batch_size,
+                ..Default::default()
+            });
+            assert!(actual.converged);
+            assert_eq!(
+                actual.completeness,
+                Completeness::Complete,
+                "{:?}",
+                actual.stages
+            );
+            assert_eq!(
+                actual.stages.last().unwrap().stratum,
+                ResultStructureStratum::ContextualBindings
+            );
+            assert!(
+                actual
+                    .overlay
+                    .model()
+                    .elements()
+                    .eq(expected.overlay.model().elements())
+            );
+            assert!(
+                actual
+                    .overlay
+                    .model()
+                    .association_occurrences()
+                    .eq(expected.overlay.model().association_occurrences())
+            );
+            assert!(actual.overlay.facts().eq(expected.overlay.facts()));
+            assert!(
+                actual
+                    .overlay
+                    .model()
+                    .computation_searches()
+                    .eq(expected.overlay.model().computation_searches())
+            );
+            let q = overlay_queries(&actual.overlay, profile);
+            assert_eq!(q.context(), expected_q.context());
+            assert_eq!(
+                q.reference_binding_context(id(2), id(4), id(3)),
+                expected_q.reference_binding_context(id(2), id(4), id(3))
+            );
+            let population: Vec<_> = actual
+                .overlay
+                .model()
+                .elements()
+                .map(|record| record.id())
+                .collect();
+            let report = q.audit_publication_capabilities(population.iter().copied());
+            let oracle = expected_q.audit_publication_capabilities(population);
+            assert_eq!(report.checked_items, oracle.checked_items);
+            assert_eq!(report.failures, oracle.failures);
+            let bindings: Vec<_> = actual
+                .overlay
+                .model()
+                .instances(c::BINDING_CONNECTOR, true)
+                .unwrap()
+                .map(|record| record.id())
+                .filter(|&binding| {
+                    q.implied_binding_role(binding)
+                        == Some(ImpliedBindingRole::FeatureReferenceResult)
+                        && q.owner(binding).value == Some(id(2))
+                })
+                .collect();
+            assert_eq!(bindings.len(), 1);
+            assert_eq!(q.featuring_types(bindings[0]).value, vec![expected_domain]);
+        }
+    }
+}
+
+fn overlay_queries(
+    overlay: &agq_kernel::derived::DerivedOverlay,
+    profile: agq_kerml::BaselineProfile,
+) -> KerMlQueries<'_> {
+    KerMlQueries::new(
+        SemanticContext::for_overlay(
+            overlay,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap(),
     )
-    .unwrap();
-    assert!(closure.converged);
-    assert_eq!(closure.completeness, Completeness::Complete);
 }
 
 fn queries(snapshot: &Snapshot, profile: agq_kerml::BaselineProfile) -> KerMlQueries<'_> {

@@ -688,6 +688,61 @@ fn missing_scoped_subject_is_invalid_even_when_no_facts_are_added() {
 }
 
 #[test]
+fn deferred_binding_failure_cannot_certify_structural_fixed_point() {
+    let base = Snapshot::new(Arc::new(
+        agq_kerml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8).unwrap(),
+    ));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(1, c::FEATURE_REFERENCE_EXPRESSION);
+    f.create(2, c::FEATURE);
+    f.enumeration(2, p::FEATURE_DIRECTION, "out");
+    member(&mut f, 1, 2, 3, c::RETURN_PARAMETER_MEMBERSHIP);
+    // Structurally valid records, but no referent exists for the deferred rule.
+    let snapshot = f.finish();
+    for strategy in [
+        PublicationClosureStrategy::Worklist,
+        PublicationClosureStrategy::ReferenceFullScan,
+    ] {
+        let result = close(
+            &snapshot,
+            None,
+            PublicationClosureOptions {
+                strategy,
+                ..Default::default()
+            },
+        );
+        assert!(result.converged);
+        assert_ne!(result.completeness, Completeness::Complete);
+        assert_eq!(
+            result.stages.first().unwrap().stratum,
+            ResultStructureStratum::Structural
+        );
+        let last = result.stages.last().unwrap();
+        assert_eq!(last.stratum, ResultStructureStratum::ContextualBindings);
+        assert!(
+            last.diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "KQ_REFERENCE_REFERENT")
+        );
+        let limited = close(
+            &snapshot,
+            None,
+            PublicationClosureOptions {
+                strategy,
+                max_rounds: 1,
+                ..Default::default()
+            },
+        );
+        assert!(!limited.converged);
+        assert_eq!(limited.completeness, Completeness::Incomplete);
+    }
+}
+
+#[test]
 fn changing_formal_binding_contract_is_rejected_between_frontiers() {
     let snapshot = crossing_fixture();
     let mut calls = 0;

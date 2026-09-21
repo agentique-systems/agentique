@@ -47,6 +47,7 @@ impl PublicationFamily {
 /// Resource accounting for one additive producer stage; elapsed time is not a gate.
 #[derive(Clone, Debug)]
 pub struct PublicationStage {
+    pub stratum: ResultStructureStratum,
     /// Cumulative deterministic work, retained even when a later gate fails.
     pub counters: PublicationCounters,
     pub stage: usize,

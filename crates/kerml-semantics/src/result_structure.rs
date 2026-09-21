@@ -11,6 +11,15 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+/// Publication closes positive structural implications before choosing nearest
+/// featuring contexts. The second stratum still runs all ordinary producers on
+/// newly generated subjects and rejects any conflicting context reassignment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResultStructureStratum {
+    Structural,
+    ContextualBindings,
+}
+
 /// Semantic reason an implied BindingConnector exists. Its rule identity is
 /// provenance, not an authored annotation or an owner-metaclass heuristic.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -1563,6 +1572,7 @@ pub struct ResultStructure {
 pub struct ResultStructurePlan<'m> {
     graph: Graph<'m>,
     pub(crate) producer_families_attempted: usize,
+    pub(crate) deferred_bindings: BTreeSet<ElementId>,
     /// Exact input identity, including unresolved construction obligations.
     pub context: SemanticContextId,
     pub production: QueryResult<Vec<ElementId>>,
@@ -1670,6 +1680,7 @@ impl ResultStructurePlan<'_> {
             .direct_searches
             .extend(other.graph.direct_searches);
         self.producer_families_attempted += other.producer_families_attempted;
+        self.deferred_bindings.extend(other.deferred_bindings);
         self.graph.assignments.extend(other.graph.assignments);
         for (owner, additions) in other.graph.attachments {
             self.graph
@@ -1782,9 +1793,16 @@ impl<'m> KerMlQueries<'m> {
         &self,
         subjects: impl IntoIterator<Item = ElementId>,
     ) -> ResultStructurePlan<'m> {
-        let mut plan = self.plan_result_structure_subjects([]);
+        self.plan_result_structure_in_stratum(subjects, ResultStructureStratum::ContextualBindings)
+    }
+    pub(crate) fn plan_result_structure_in_stratum(
+        &self,
+        subjects: impl IntoIterator<Item = ElementId>,
+        stratum: ResultStructureStratum,
+    ) -> ResultStructurePlan<'m> {
+        let mut plan = self.plan_result_structure_subjects([], stratum);
         for subject in subjects.into_iter().collect::<BTreeSet<_>>() {
-            let part = self.plan_result_structure_subjects([subject]);
+            let part = self.plan_result_structure_subjects([subject], stratum);
             // Preserve the established API's deferred collision behavior.
             if let Err(error) = plan.merge(part) {
                 plan.graph.conflict = Some(match error {
@@ -1800,12 +1818,14 @@ impl<'m> KerMlQueries<'m> {
     pub(crate) fn plan_result_structure_reference(
         &self,
         subjects: impl IntoIterator<Item = ElementId>,
+        stratum: ResultStructureStratum,
     ) -> ResultStructurePlan<'m> {
-        self.plan_result_structure_subjects(subjects)
+        self.plan_result_structure_subjects(subjects, stratum)
     }
     fn plan_result_structure_subjects(
         &self,
         subjects: impl IntoIterator<Item = ElementId>,
+        stratum: ResultStructureStratum,
     ) -> ResultStructurePlan<'m> {
         let profile = self.context().options.baseline_profile;
         let mut graph = Graph {
@@ -1824,6 +1844,7 @@ impl<'m> KerMlQueries<'m> {
         let mut aggregate = self.result(vec![]);
         let mut contextual_results = vec![];
         let mut producer_families_attempted = 0;
+        let mut deferred_bindings = BTreeSet::new();
         for subject in subjects.into_iter().collect::<BTreeSet<_>>() {
             let mut production = self.result(vec![]);
             if self.model().element(subject).is_none() {
@@ -2151,26 +2172,30 @@ impl<'m> KerMlQueries<'m> {
             }
             if self.is(subject, c::FEATURE_REFERENCE_EXPRESSION) {
                 producer_families_attempted += 1;
-                let mut proof = self.result(());
-                let referent = self.reference_referent(subject);
-                let target = referent.value;
-                proof.merge(referent);
-                let raw = self.required_structural_result(&mut proof, subject);
-                if let (Some(target), Some(raw)) = (target, raw) {
-                    let context = self.reference_binding_context(subject, target, raw);
-                    let domain = context.value;
-                    proof.merge(context);
-                    if proof.completeness == Completeness::Complete {
-                        production.value.push(graph.binding(
-                            subject,
-                            [target, raw],
-                            domain,
-                            ImpliedBindingRole::FeatureReferenceResult,
-                            &proof.canonical_dependencies,
-                        ));
+                if stratum == ResultStructureStratum::Structural {
+                    deferred_bindings.insert(subject);
+                } else {
+                    let mut proof = self.result(());
+                    let referent = self.reference_referent(subject);
+                    let target = referent.value;
+                    proof.merge(referent);
+                    let raw = self.required_structural_result(&mut proof, subject);
+                    if let (Some(target), Some(raw)) = (target, raw) {
+                        let context = self.reference_binding_context(subject, target, raw);
+                        let domain = context.value;
+                        proof.merge(context);
+                        if proof.completeness == Completeness::Complete {
+                            production.value.push(graph.binding(
+                                subject,
+                                [target, raw],
+                                domain,
+                                ImpliedBindingRole::FeatureReferenceResult,
+                                &proof.canonical_dependencies,
+                            ));
+                        }
                     }
+                    production.merge(proof);
                 }
-                production.merge(proof);
             }
             if self.is(subject, c::EXPRESSION) || self.is(subject, c::FUNCTION) {
                 producer_families_attempted += 1;
@@ -2299,48 +2324,21 @@ impl<'m> KerMlQueries<'m> {
                             );
                         }
                         if nondefault {
-                            let domains = self.featuring_types(subject);
-                            if initial && profile == BaselineProfile::OPERATIONAL_V8 {
-                                let that = self.standard_role(StandardRole::ThingsThat);
-                                let start = self.standard_role(StandardRole::OccurrenceStartShot);
-                                let anchors = (that.value, start.value);
-                                proof.merge(that);
-                                proof.merge(start);
-                                if let (Some(that), Some(start)) = anchors {
-                                    let context = graph.initial_value_context(that, start);
-                                    production.value.push(graph.binding(
-                                        subject,
-                                        [subject, contextual.expect("value chain")],
-                                        Some(context),
-                                        ImpliedBindingRole::FeatureValue,
-                                        &proof.canonical_dependencies,
-                                    ));
-                                }
-                            } else if initial && profile == BaselineProfile::OPERATIONAL_V7 {
-                                let mut targets = vec![];
-                                for segments in [
-                                    ["Base", "things", "that"],
-                                    ["Occurrences", "Occurrence", "startShot"],
-                                ] {
-                                    let resolved = self.resolve_reference(
-                                        subject,
-                                        &QualifiedName {
-                                            absolute: true,
-                                            segments: segments
-                                                .into_iter()
-                                                .map(str::to_owned)
-                                                .collect(),
-                                        },
-                                        c::FEATURE,
-                                    );
-                                    if let Resolution::Resolved(target) = resolved.value {
-                                        targets.push(target);
-                                    }
-                                    proof.merge(resolved);
-                                }
-                                if let [that, start] = targets.as_slice() {
-                                    if proof.completeness == Completeness::Complete {
-                                        let context = graph.initial_value_context(*that, *start);
+                            if stratum == ResultStructureStratum::Structural {
+                                // The contextual chain and valuation Subsetting
+                                // above are structural prerequisites, not delayed.
+                                deferred_bindings.insert(subject);
+                            } else {
+                                let domains = self.featuring_types(subject);
+                                if initial && profile == BaselineProfile::OPERATIONAL_V8 {
+                                    let that = self.standard_role(StandardRole::ThingsThat);
+                                    let start =
+                                        self.standard_role(StandardRole::OccurrenceStartShot);
+                                    let anchors = (that.value, start.value);
+                                    proof.merge(that);
+                                    proof.merge(start);
+                                    if let (Some(that), Some(start)) = anchors {
+                                        let context = graph.initial_value_context(that, start);
                                         production.value.push(graph.binding(
                                             subject,
                                             [subject, contextual.expect("value chain")],
@@ -2349,35 +2347,70 @@ impl<'m> KerMlQueries<'m> {
                                             &proof.canonical_dependencies,
                                         ));
                                     }
+                                } else if initial && profile == BaselineProfile::OPERATIONAL_V7 {
+                                    let mut targets = vec![];
+                                    for segments in [
+                                        ["Base", "things", "that"],
+                                        ["Occurrences", "Occurrence", "startShot"],
+                                    ] {
+                                        let resolved = self.resolve_reference(
+                                            subject,
+                                            &QualifiedName {
+                                                absolute: true,
+                                                segments: segments
+                                                    .into_iter()
+                                                    .map(str::to_owned)
+                                                    .collect(),
+                                            },
+                                            c::FEATURE,
+                                        );
+                                        if let Resolution::Resolved(target) = resolved.value {
+                                            targets.push(target);
+                                        }
+                                        proof.merge(resolved);
+                                    }
+                                    if let [that, start] = targets.as_slice() {
+                                        if proof.completeness == Completeness::Complete {
+                                            let context =
+                                                graph.initial_value_context(*that, *start);
+                                            production.value.push(graph.binding(
+                                                subject,
+                                                [subject, contextual.expect("value chain")],
+                                                Some(context),
+                                                ImpliedBindingRole::FeatureValue,
+                                                &proof.canonical_dependencies,
+                                            ));
+                                        }
+                                    } else {
+                                        proof.problem(Completeness::Incomplete,"KQ_INITIAL_VALUE_CONTEXT",value,"Initial binding requires exact canonical Base::things::that and Occurrences::Occurrence::startShot");
+                                    }
+                                } else if initial {
+                                    proof.problem(
+                                        Completeness::Incomplete,
+                                        "KQ_INITIAL_VALUE_CONTEXT",
+                                        value,
+                                        "Initial binding requires canonical that.startShot context",
+                                    );
+                                } else if domains.value.len() <= 1
+                                    && domains.completeness == Completeness::Complete
+                                {
+                                    production.value.push(graph.binding(
+                                        subject,
+                                        [subject, contextual.expect("value chain")],
+                                        domains.value.first().copied(),
+                                        ImpliedBindingRole::FeatureValue,
+                                        &proof.canonical_dependencies,
+                                    ));
                                 } else {
-                                    proof.problem(Completeness::Incomplete,"KQ_INITIAL_VALUE_CONTEXT",value,"Initial binding requires exact canonical Base::things::that and Occurrences::Occurrence::startShot");
+                                    proof.problem(
+                                        Completeness::Incomplete,
+                                        "KQ_VALUE_CONTEXT",
+                                        value,
+                                        "Value binding requires complete featuring domains",
+                                    );
                                 }
-                            } else if initial {
-                                proof.problem(
-                                    Completeness::Incomplete,
-                                    "KQ_INITIAL_VALUE_CONTEXT",
-                                    value,
-                                    "Initial binding requires canonical that.startShot context",
-                                );
-                            } else if domains.value.len() <= 1
-                                && domains.completeness == Completeness::Complete
-                            {
-                                production.value.push(graph.binding(
-                                    subject,
-                                    [subject, contextual.expect("value chain")],
-                                    domains.value.first().copied(),
-                                    ImpliedBindingRole::FeatureValue,
-                                    &proof.canonical_dependencies,
-                                ));
-                            } else {
-                                proof.problem(
-                                    Completeness::Incomplete,
-                                    "KQ_VALUE_CONTEXT",
-                                    value,
-                                    "Value binding requires complete featuring domains",
-                                );
+                                proof.merge(domains);
                             }
-                            proof.merge(domains);
                         }
                     }
                 }
@@ -2479,6 +2512,7 @@ impl<'m> KerMlQueries<'m> {
         ResultStructurePlan {
             graph,
             producer_families_attempted,
+            deferred_bindings,
             context: self.context().clone(),
             production,
             contextual_results,
