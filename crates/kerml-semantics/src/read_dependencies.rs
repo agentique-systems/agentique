@@ -113,12 +113,92 @@ pub struct QueryReadSet {
     pub(crate) search_dependencies: BTreeSet<SearchDependency>,
     pub(crate) keys: BTreeSet<InvalidationKey>,
 }
+
+/// Compact outcome-cache invalidation keys, without retained query evidence.
+///
+/// The affected-element protocol already treats element changes and incoming
+/// navigation changes identically. One sorted identity population therefore
+/// preserves the full read set's invalidation decisions. Public evidence-bearing
+/// queries and `QueryReadSet` remain available when explanations are needed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct QueryInvalidationSet {
+    elements: Box<[ElementId]>,
+    entire_model: bool,
+}
+impl QueryInvalidationSet {
+    /// Distinct bounded positive/negative read subjects in identity order.
+    pub fn bounded_elements(&self) -> &[ElementId] {
+        &self.elements
+    }
+    pub fn reads_entire_model(&self) -> bool {
+        self.entire_model
+    }
+    /// Uses exactly the same affected-element/context protocol as `QueryReadSet`.
+    pub fn affected_by(
+        &self,
+        affected_elements: &BTreeSet<ElementId>,
+        context_contract_changed: bool,
+    ) -> bool {
+        if context_contract_changed {
+            return true;
+        }
+        if affected_elements.is_empty() {
+            return false;
+        }
+        if self.entire_model {
+            return true;
+        }
+        // Probe the smaller population; late refinement frontiers commonly
+        // change only a handful of records in a much larger namespace read set.
+        if affected_elements.len() < self.elements.len() {
+            affected_elements
+                .iter()
+                .any(|id| self.elements.binary_search(id).is_ok())
+        } else {
+            self.elements
+                .iter()
+                .any(|id| affected_elements.contains(id))
+        }
+    }
+}
+
 impl QueryReadSet {
     pub fn canonical_dependencies(&self) -> &BTreeSet<Dependency> {
         &self.canonical_dependencies
     }
     pub fn search_dependencies(&self) -> &BTreeSet<SearchDependency> {
         &self.search_dependencies
+    }
+    /// Bounded read subjects; callers collecting a set deduplicate identities
+    /// read through both their records and their incoming navigation.
+    pub fn bounded_elements(&self) -> impl Iterator<Item = ElementId> + '_ {
+        self.keys.iter().filter_map(|key| match key {
+            InvalidationKey::Element(id) | InvalidationKey::Incoming(id) => Some(*id),
+            InvalidationKey::Global => None,
+        })
+    }
+    pub fn reads_entire_model(&self) -> bool {
+        self.keys.contains(&InvalidationKey::Global)
+    }
+    /// Discard the proof/search payload after deriving a compact invalidation
+    /// contract. This conversion never drops a positive or negative read key.
+    pub fn into_invalidation(self) -> QueryInvalidationSet {
+        drop(self.canonical_dependencies);
+        drop(self.search_dependencies);
+        let mut entire_model = false;
+        let mut elements = Vec::with_capacity(self.keys.len());
+        for key in self.keys {
+            match key {
+                InvalidationKey::Element(id) | InvalidationKey::Incoming(id) => elements.push(id),
+                InvalidationKey::Global => entire_model = true,
+            }
+        }
+        elements.sort_unstable();
+        elements.dedup();
+        QueryInvalidationSet {
+            elements: elements.into_boxed_slice(),
+            entire_model,
+        }
     }
     /// `affected_elements` includes changed records/owners and BOTH old and new
     /// reference and occurrence endpoints, including inverse navigation. Changes
@@ -160,3 +240,7 @@ impl QueryReadSet {
         &current == previous
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/unit/invalidation_set.rs"]
+mod tests;

@@ -49,7 +49,7 @@ pub use producer_worklist::*;
 pub use publication::*;
 pub use publication_overlay::*;
 pub use queries::KerMlQueries;
-pub use read_dependencies::QueryReadSet;
+pub use read_dependencies::{QueryInvalidationSet, QueryReadSet};
 pub use resolution::*;
 pub use result_structure::*;
 pub use status_queries::*;

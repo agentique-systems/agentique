@@ -1,7 +1,9 @@
 //! Candidate reconstruction and dependency-checked reference outcome reuse.
 use super::{LibraryDraft, LibraryLoadError, PendingLibraryReference};
 use agq_kerml::properties as p;
-use agq_kerml_semantics::{KerMlStatusQueries, QueryReadSet, SemanticContextId};
+use agq_kerml_semantics::{
+    KerMlStatusQueries, QueryInvalidationSet, QueryReadSet, SemanticContextId,
+};
 use agq_kernel::{ConstructionView, ElementId, ElementRecord, ModelView, PropertyId, value::Value};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -39,7 +41,7 @@ pub struct ReferenceRefinementRound {
 
 struct CachedReference {
     request: PendingLibraryReference,
-    reads: QueryReadSet,
+    reads: QueryInvalidationSet,
     // The expected-metaclass filter below is outside the semantic query, so its
     // candidate records are additional explicit positive cache dependencies.
     candidates: BTreeSet<ElementId>,
@@ -283,7 +285,7 @@ pub(super) fn refine(
                 // completeness requirement remains in the separate final audit.
                 CachedReference {
                     request: reference.clone(),
-                    reads: result.reads,
+                    reads: result.reads.into_invalidation(),
                     candidates,
                     selected,
                 }
