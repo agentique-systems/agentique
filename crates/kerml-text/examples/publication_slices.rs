@@ -6,7 +6,7 @@ use serde_json::json;
 use std::{collections::BTreeSet, path::Path};
 #[path = "support/publication_input.rs"]
 mod publication_input;
-use publication_input::PublicationInput;
+use publication_input::{PublicationInput, PublicationScopeBoundary};
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
 
@@ -124,6 +124,9 @@ fn run_slice(
         .collect();
     let mut counts = std::collections::BTreeMap::<PublicationFamily, usize>::new();
     let mut failures = Vec::new();
+    let model = closure.overlay.model();
+    let mut scope_boundary = PublicationScopeBoundary::from_graph(model, &audit_subjects)?;
+    scope_boundary.include_invalidation(model, &audit_subjects, &closure.producer_reads);
     for batch in audit_subjects
         .iter()
         .copied()
@@ -132,6 +135,7 @@ fn run_slice(
     {
         let audit =
             KerMlQueries::new(context.fork()).audit_publication_capabilities(batch.iter().copied());
+        scope_boundary.include_invalidation(model, &audit_subjects, &audit.read_dependencies);
         for (family, count) in audit.checked_items {
             *counts.entry(family).or_default() += count;
         }
@@ -139,7 +143,6 @@ fn run_slice(
             failures.extend(diagnostics.into_iter().map(|d| json!({"family":format!("{family:?}"), "subject":d.subject.to_string(), "code":d.code, "message":d.message})));
         }
     }
-    let model = closure.overlay.model();
     let references: Vec<_> = input
         .draft
         .references()
@@ -150,11 +153,13 @@ fn run_slice(
     for batch in references.chunks(32) {
         let q = KerMlStatusQueries::new(context.fork());
         for reference in batch {
-            let answer = q.lookup_relationship_target(
+            let answer = q.lookup_relationship_target_with_reads(
                 reference.relationship,
                 reference.property,
                 &reference.name,
             );
+            scope_boundary.include_reads(model, &audit_subjects, &answer.reads);
+            let answer = answer.outcome;
             let stored: Vec<_> = model
                 .navigation_slot(reference.relationship, reference.property)
                 .into_iter()
@@ -185,6 +190,7 @@ fn run_slice(
     }
     let success = closure.converged
         && closure.completeness == Completeness::Complete
+        && scope_boundary.is_complete()
         && failures.is_empty()
         && reference_failures.is_empty();
     std::fs::write(
@@ -192,7 +198,11 @@ fn run_slice(
         serde_json::to_vec_pretty(&json!({
             "format":"agentique-publication-slice/1", "slice":slice, "seed_documents":documents,
             "reference_refinement":input.refinement,
-            "scope":"Scoped structural dependency closure; complete declared namespace environment retained",
+            "scope":"Scoped structural and semantic-owner closure; graph, producer, capability and reference read boundaries audited",
+            "scope_boundary":{"complete":scope_boundary.is_complete(),
+                "missing_subject_count":scope_boundary.missing_subjects.len(),
+                "missing_subjects":scope_boundary.missing_subjects.iter().take(32).map(ToString::to_string).collect::<Vec<_>>(),
+                "unbounded_reads":scope_boundary.unbounded_reads},
             "documents":document_counts, "subjects":subjects.len(), "audited_subjects":audit_subjects.len(),
             "source_content_set":sources.content_set_id(), "converged":closure.converged,
             "producer_completeness":format!("{:?}",closure.completeness), "passed":success,

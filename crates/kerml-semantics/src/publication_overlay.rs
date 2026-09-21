@@ -1,10 +1,11 @@
 //! Canonical publication closure, independent of conformance validation coverage.
+use crate::read_dependencies::{InvalidationKey, query_read_keys};
 use crate::*;
 use agq_kerml::{BaselineProfile, classes as c};
 use agq_kernel::{
-    ElementId, Snapshot,
+    ElementId, ModelView, Snapshot,
     derived::{DerivationError, DerivedOverlay},
-    provenance::{DeclaredOrigin, FactKey, Origin},
+    provenance::{DeclaredOrigin, Dependency, FactKey, Origin},
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -263,7 +264,7 @@ impl<'a> CanonicalPublicationBuilder<'a> {
             ..
         } = closure;
         let context = self.context(&overlay)?;
-        let mut checks = PublicationChecks::default();
+        let mut checks = PublicationChecks::new(overlay.model(), false);
         let subjects: Vec<_> = overlay.model().elements().map(|r| r.id()).collect();
         for (index, batch) in subjects.chunks(32).enumerate() {
             let q = KerMlQueries::for_production(context.fork());
@@ -284,10 +285,11 @@ impl<'a> CanonicalPublicationBuilder<'a> {
         }
         let mut identity = context.id().clone();
         identity.derivation_phase = DerivationPhase::CompletePublicationOverlay;
+        let checked = checks.counts;
         Ok(CompletePublicationOverlay {
             overlay,
             context: identity,
-            checked: checks.counts,
+            checked,
             stages,
             counters,
         })
@@ -300,6 +302,9 @@ pub struct PublicationCapabilityReport {
     /// Number of applicable query answers checked, not distinct subjects.
     pub checked_items: BTreeMap<PublicationFamily, usize>,
     pub failures: BTreeMap<PublicationFamily, BTreeSet<Diagnostic>>,
+    /// Inputs consulted by capability queries and canonical provenance. Scoped
+    /// callers must check their producer population against these dependencies.
+    pub read_dependencies: QueryInvalidationSet,
 }
 impl KerMlQueries<'_> {
     #[cfg(test)]
@@ -307,7 +312,7 @@ impl KerMlQueries<'_> {
         &self,
         subjects: impl IntoIterator<Item = ElementId>,
     ) -> PublicationCapabilityReport {
-        let mut checks = PublicationChecks::default();
+        let mut checks = PublicationChecks::new(self.model(), true);
         checks.standard_bindings(self);
         for subject in subjects {
             checks.subject(self, subject);
@@ -316,6 +321,7 @@ impl KerMlQueries<'_> {
             context: self.context().clone(),
             checked_items: checks.counts,
             failures: checks.failures,
+            read_dependencies: QueryInvalidationSet::from_keys(checks.read_keys.unwrap()),
         }
     }
     /// Audit a selected population for focused publication regressions.
@@ -324,7 +330,7 @@ impl KerMlQueries<'_> {
         subjects: impl IntoIterator<Item = ElementId>,
     ) -> PublicationCapabilityReport {
         let q = KerMlQueries::for_production(self.context.fork());
-        let mut checks = PublicationChecks::default();
+        let mut checks = PublicationChecks::new(self.model(), true);
         checks.standard_bindings(&q);
         for subject in subjects {
             checks.subject(&q, subject);
@@ -333,25 +339,34 @@ impl KerMlQueries<'_> {
             context: self.context().clone(),
             checked_items: checks.counts,
             failures: checks.failures,
+            read_dependencies: QueryInvalidationSet::from_keys(checks.read_keys.unwrap()),
         }
     }
 }
 
-struct PublicationChecks {
+struct PublicationChecks<'m> {
+    model: &'m ModelView,
     provenance_checked: BTreeSet<FactKey>,
+    // Borrowed immutable proof allocations stay alive with the model. Addresses
+    // only avoid rereading a shared premise set; they never enter published data.
+    proof_reads_checked: BTreeSet<usize>,
+    read_keys: Option<BTreeSet<InvalidationKey>>,
     counts: BTreeMap<PublicationFamily, usize>,
     failures: BTreeMap<PublicationFamily, BTreeSet<Diagnostic>>,
 }
-impl Default for PublicationChecks {
-    fn default() -> Self {
+impl<'m> PublicationChecks<'m> {
+    fn new(model: &'m ModelView, capture_reads: bool) -> Self {
         Self {
+            model,
             provenance_checked: BTreeSet::new(),
+            proof_reads_checked: BTreeSet::new(),
+            read_keys: capture_reads.then(BTreeSet::new),
             counts: PublicationFamily::ALL.into_iter().map(|f| (f, 0)).collect(),
             failures: BTreeMap::new(),
         }
     }
 }
-impl PublicationChecks {
+impl PublicationChecks<'_> {
     fn standard_bindings(&mut self, q: &KerMlQueries<'_>) {
         // A scoped audit without a library dependency makes no binding claim.
         // Attached bindings were validated against this exact semantic context.
@@ -379,6 +394,27 @@ impl PublicationChecks {
         if !self.provenance_checked.insert(fact) {
             return;
         }
+        if let Some(keys) = &mut self.read_keys
+            && self
+                .proof_reads_checked
+                .insert(std::sync::Arc::as_ptr(explanation) as usize)
+        {
+            for dependency in &explanation.dependencies {
+                let (Dependency::Declared(fact) | Dependency::Derived(fact)) = dependency;
+                match fact {
+                    FactKey::Element(id) | FactKey::Property { element: id, .. } => {
+                        keys.insert(InvalidationKey::Element(*id));
+                    }
+                    FactKey::AssociationOccurrence(id) => {
+                        if let Some(link) = self.model.association_occurrence(*id) {
+                            keys.extend(
+                                link.ends().values().copied().map(InvalidationKey::Element),
+                            );
+                        }
+                    }
+                }
+            }
+        }
         *self
             .counts
             .entry(PublicationFamily::IdentityProvenance)
@@ -395,6 +431,9 @@ impl PublicationChecks {
         }
     }
     fn answer<T>(&mut self, family: PublicationFamily, subject: ElementId, answer: QueryResult<T>) {
+        if let Some(keys) = &mut self.read_keys {
+            keys.extend(query_read_keys(&answer, self.model));
+        }
         *self.counts.entry(family).or_default() += 1;
         if answer.completeness != Completeness::Complete {
             self.problem(
@@ -525,3 +564,7 @@ impl PublicationChecks {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/unit/publication_reads.rs"]
+mod tests;
