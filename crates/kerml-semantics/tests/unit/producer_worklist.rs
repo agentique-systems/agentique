@@ -502,6 +502,9 @@ fn status_queries_preserve_reference_values_completeness_and_diagnostics() {
             changed.model_digest = [42; 32];
             changed.pending_namespace_scopes.insert(id(1));
             assert!(QueryReadSet::context_compatible(status.context(), &changed));
+            let mut phase = changed.clone();
+            phase.derivation_phase = DerivationPhase::CompletePublicationOverlay;
+            assert!(!QueryReadSet::context_compatible(status.context(), &phase));
             changed.options.exclude_implied = !changed.options.exclude_implied;
             assert!(!QueryReadSet::context_compatible(
                 status.context(),

@@ -384,7 +384,7 @@ impl<'a> Graph<'a> {
         production
             .search_dependencies
             .append(&mut self.direct_searches);
-        let searches = crate::producer_worklist::structural_searches(production);
+        let searches = crate::read_dependencies::structural_searches(production);
         for id in std::mem::take(&mut self.touched_records) {
             self.searches
                 .entry(id)
