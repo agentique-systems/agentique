@@ -76,7 +76,7 @@ impl PublicationInput {
             .filter(|d| documents.iter().any(|name| d.path().ends_with(name)))
             .map(|d| d.document())
             .collect();
-        let mut selected: BTreeSet<_> = self
+        let selected: BTreeSet<_> = self
             .draft
             .source_map()
             .iter()
@@ -88,18 +88,17 @@ impl PublicationInput {
         if selected.is_empty() {
             return Err("Slice has no canonical source subjects".into());
         }
-        // These producer inputs are contextual anchors, not authored graph edges.
-        selected.extend(
+        // Every binding stays validated in the context. Package anchors provide
+        // lookup environments, without selecting all their unrelated producers.
+        Ok(publication_dependencies::subjects_with_context_anchors(
+            self.snapshot.model(),
+            selected,
             self.identity
                 .standard_bindings
                 .as_ref()
                 .expect("validated bindings")
                 .iter()
                 .map(|(_, id)| id),
-        );
-        Ok(publication_dependencies::subjects(
-            self.snapshot.model(),
-            selected,
         )?)
     }
 

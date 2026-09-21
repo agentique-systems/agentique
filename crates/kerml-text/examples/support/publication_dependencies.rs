@@ -14,6 +14,27 @@ fn is(model: &ModelView, id: ElementId, class: agq_kernel::MetaclassId) -> bool 
     })
 }
 
+/// Context anchors identify the validated standard library, but a Package anchor
+/// is only a lookup environment. It does not request producers for every member.
+/// Explicit seeds and structural references still expand Packages normally.
+/// Concrete non-Package anchors retain their complete semantic owner closure.
+pub fn subjects_with_context_anchors(
+    model: &ModelView,
+    seeds: impl IntoIterator<Item = ElementId>,
+    anchors: impl IntoIterator<Item = ElementId>,
+) -> Result<BTreeSet<ElementId>, String> {
+    let mut selected: BTreeSet<_> = seeds.into_iter().collect();
+    for anchor in anchors {
+        if model.element(anchor).is_none() {
+            return Err(format!("Missing slice context anchor {anchor}"));
+        }
+        if !is(model, anchor, c::PACKAGE) {
+            selected.insert(anchor);
+        }
+    }
+    subjects(model, selected)
+}
+
 /// Follow stored structural dependencies, together with enclosing semantic Types.
 /// A return Feature brings its Function; an end brings its Connector; a nested
 /// Feature brings its owning Type. A lexical Package does not bring all siblings.

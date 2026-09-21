@@ -9,7 +9,7 @@ use agq_kernel::{
     provenance::DeclaredOrigin,
     value::{SlotValue, Value},
 };
-use publication_dependencies::{Boundary, subjects};
+use publication_dependencies::{Boundary, subjects, subjects_with_context_anchors};
 use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
@@ -105,8 +105,8 @@ impl Fixture {
 // producer creates the required result binding to its nested body expression.
 fn fixture() -> Snapshot {
     let mut f = Fixture::new();
-    f.create(1, c::NAMESPACE);
-    f.create(100, c::NAMESPACE);
+    f.create(1, c::LIBRARY_PACKAGE);
+    f.create(100, c::PACKAGE);
     f.create(2, c::FUNCTION);
     f.member(1, 3, 2, c::OWNING_MEMBERSHIP);
     f.create(20, c::FEATURE);
@@ -220,6 +220,55 @@ fn an_external_return_feature_schedules_its_function_without_importing_package_s
         "missing {:?}",
         boundary.missing_subjects
     );
+}
+
+#[test]
+fn a_library_package_context_anchor_does_not_schedule_unrelated_functions() {
+    let snapshot = fixture();
+    let model = snapshot.model();
+    let selected = subjects_with_context_anchors(model, [id(4), id(110)], [id(1)]).unwrap();
+    assert_eq!(selected, subjects(model, [id(4), id(110)]).unwrap());
+    // The concrete referenced return still brings its Function and body.
+    for subject in [2, 20, 21, 30, 31, 40, 41] {
+        assert!(selected.contains(&id(subject)), "missing {subject}");
+    }
+    for unrelated in [1, 60, 61, 62, 63] {
+        assert!(!selected.contains(&id(unrelated)), "unrelated {unrelated}");
+    }
+    assert!(
+        Boundary::from_graph(model, &selected)
+            .unwrap()
+            .is_complete()
+    );
+
+    // Excluding a concrete provider is still rejected by the unchanged boundary.
+    let mut omitted_provider = selected;
+    omitted_provider.remove(&id(2));
+    let boundary = Boundary::from_graph(model, &omitted_provider).unwrap();
+    assert!(boundary.missing_subjects.contains(&id(2)));
+    assert!(!boundary.is_complete());
+}
+
+#[test]
+fn a_package_selected_as_source_still_schedules_all_its_members() {
+    let snapshot = fixture();
+    let selected = subjects_with_context_anchors(snapshot.model(), [id(1)], [id(1)]).unwrap();
+    assert_eq!(selected, subjects(snapshot.model(), [id(1)]).unwrap());
+    for subject in [1, 2, 20, 21, 30, 31, 40, 41, 60, 61, 62, 63] {
+        assert!(selected.contains(&id(subject)), "missing {subject}");
+    }
+}
+
+#[test]
+fn concrete_context_anchors_keep_their_semantic_owner_dependencies() {
+    let snapshot = fixture();
+    let selected =
+        subjects_with_context_anchors(snapshot.model(), [id(4)], [id(1), id(62)]).unwrap();
+    for subject in [60, 61, 62, 63] {
+        assert!(selected.contains(&id(subject)), "missing {subject}");
+    }
+    assert!(!selected.contains(&id(1)));
+    assert!(subjects_with_context_anchors(snapshot.model(), [id(4)], [id(999)]).is_err());
 }
 
 #[test]
