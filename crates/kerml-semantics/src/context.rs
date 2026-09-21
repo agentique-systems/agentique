@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/22";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/23";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -102,38 +102,8 @@ impl<'m> SemanticContext<'m> {
         let bindings = crate::StandardKermlBindings::validate(&queries, roots, library_set)?;
         self = queries.context;
         self.id.standard_bindings = Some(Arc::new(bindings));
-        let mut digest = Sha256::new();
-        digest.update(b"agq-canonical-library-graph/1");
-        for encoded in self
-            .model
-            .elements()
-            .filter(|r| {
-                matches!(
-                    r.origin(),
-                    agq_kernel::provenance::Origin::Declared(
-                        agq_kernel::provenance::DeclaredOrigin::StandardLibrary { .. }
-                            | agq_kernel::provenance::DeclaredOrigin::ReviewedCorrection { .. }
-                    )
-                )
-            })
-            .map(|r| format!("{r:?}"))
-            .chain(
-                self.model
-                    .association_occurrences()
-                    .filter(|r| {
-                        matches!(
-                            r.origin(),
-                            agq_kernel::provenance::Origin::Declared(agq_kernel::provenance::DeclaredOrigin::StandardLibrary { .. }
-                                | agq_kernel::provenance::DeclaredOrigin::ReviewedCorrection { .. })
-                        )
-                    })
-                    .map(|r| format!("{r:?}")),
-            )
-        {
-            digest.update((encoded.len() as u64).to_be_bytes());
-            digest.update(encoded.as_bytes());
-        }
-        self.id.library_graph_digest = Some(digest.finalize().into());
+        self.id.library_graph_digest =
+            Some(crate::context_digest::library_graph_digest(self.model));
         Ok(self)
     }
     /// Bind an unpublished candidate without claiming structural publication.
@@ -345,27 +315,12 @@ impl<'m> SemanticContext<'m> {
         }
         // Private, deterministic and rule-versioned; not a persistence format.
         let descriptors = format!("{registry:?}");
-        let mut digest = Sha256::new();
-        for record in model.elements() {
-            let encoded = format!("{record:?}");
-            digest.update((encoded.len() as u64).to_be_bytes());
-            digest.update(encoded.as_bytes());
-        }
-        for encoded in model
-            .association_occurrences()
-            .map(|v| format!("{v:?}"))
-            .chain(model.derived_navigation_results().map(|v| format!("{v:?}")))
-            .chain(model.computation_failures().map(|v| format!("{v:?}")))
-            .chain(model.computation_searches().map(|v| format!("{v:?}")))
-        {
-            digest.update((encoded.len() as u64).to_be_bytes());
-            digest.update(encoded.as_bytes());
-        }
+        let model_digest = crate::context_digest::model_digest(model);
         Ok(Self {
             model,
             id: SemanticContextId {
                 revision,
-                model_digest: digest.finalize().into(),
+                model_digest,
                 baseline_profile_id: profile.id(),
                 metamodel_version: METAMODEL_VERSION,
                 errata_manifest_digest: profile.errata_manifest_sha256(),

@@ -5,6 +5,7 @@
 mod bindings;
 mod connector_structure;
 mod context;
+mod context_digest;
 mod contract;
 mod cross_features;
 mod expression_structure;
