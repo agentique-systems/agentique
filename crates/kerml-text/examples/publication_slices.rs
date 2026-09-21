@@ -168,6 +168,7 @@ fn run_slice(
         }
     };
     if !closure.converged || closure.completeness != Completeness::Complete {
+        let context = input.context(&closure.overlay)?;
         std::fs::write(
             &path,
             serde_json::to_vec_pretty(&json!({
@@ -177,6 +178,7 @@ fn run_slice(
                 "reference_refinement":input.refinement, "passed":false,
                 "failure_phase":"producer_closure", "converged":closure.converged,
                 "producer_completeness":format!("{:?}",closure.completeness),
+                "semantic_digest":context.id().model_digest,
                 "counters":publication_metrics::counters(&closure.counters),
                 "capability_audit":"not_run", "mandatory_reference_audit":"not_run",
                 "stages":completed_stages,
