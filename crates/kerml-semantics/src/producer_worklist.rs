@@ -126,7 +126,15 @@ pub struct PublicationCounters {
     pub dirty_reevaluations: usize,
     pub maximum_worklist_size: usize,
     pub overlay_materializations: usize,
+    /// Validated worklist frontiers that retained the previous immutable overlay.
+    pub empty_frontiers_reused: usize,
     pub fixed_point_rounds: usize,
+    pub active_dependency_subjects: usize,
+    pub active_dependency_keys: usize,
+    /// Logical subject/read-key pairs; the bidirectional index stores each twice.
+    pub active_dependency_edges: usize,
+    pub maximum_dependency_keys: usize,
+    pub maximum_dependency_edges: usize,
 }
 /// A scoped closure is useful for authored projects and real-corpus slices, but
 /// cannot assert whole-library capabilities or become a complete publication.
@@ -145,6 +153,7 @@ pub struct PublicationClosure {
 struct DependencyIndex {
     readers: BTreeMap<InvalidationKey, BTreeSet<ElementId>>,
     subjects: BTreeMap<ElementId, BTreeSet<InvalidationKey>>,
+    edges: usize,
 }
 impl DependencyIndex {
     fn replace<T>(
@@ -157,16 +166,34 @@ impl DependencyIndex {
         let mut keys = query_read_keys(answer, model);
         keys.insert(InvalidationKey::Element(subject));
         counters.dependency_edges_considered += keys.len();
+        self.replace_keys(subject, keys, counters);
+    }
+    fn replace_keys(
+        &mut self,
+        subject: ElementId,
+        keys: BTreeSet<InvalidationKey>,
+        counters: &mut PublicationCounters,
+    ) {
+        self.edges += keys.len();
         if let Some(previous) = self.subjects.insert(subject, keys.clone()) {
+            self.edges -= previous.len();
             for key in previous {
                 if let Some(readers) = self.readers.get_mut(&key) {
                     readers.remove(&subject);
+                    if readers.is_empty() {
+                        self.readers.remove(&key);
+                    }
                 }
             }
         }
         for key in keys {
             self.readers.entry(key).or_default().insert(subject);
         }
+        counters.active_dependency_subjects = self.subjects.len();
+        counters.active_dependency_keys = self.readers.len();
+        counters.active_dependency_edges = self.edges;
+        counters.maximum_dependency_keys = counters.maximum_dependency_keys.max(self.readers.len());
+        counters.maximum_dependency_edges = counters.maximum_dependency_edges.max(self.edges);
     }
     fn dirty(
         &self,
@@ -187,6 +214,7 @@ impl DependencyIndex {
         result
     }
 }
+
 /// Close structural producers using immutable frontiers and query dependencies.
 /// The context factory must retain identical profile, binding and availability
 /// identities between frontiers; only the supplied overlay may change.
@@ -367,7 +395,15 @@ pub fn close_result_structure(
             .then(|| overlay.clone());
         let prepared = plan.prepare_on_overlay(&overlay)?;
         drop(context);
-        let next = prepared.build_on_overlay(overlay)?;
+        // Preparation validates every reused record and proposed slot even when
+        // no writes remain. Only then may an empty optimized frontier reuse its
+        // input. The reference still builds and compares an independent graph.
+        let materialized = prepared.has_changes() || reference_input.is_some();
+        let next = if materialized {
+            prepared.build_on_overlay(overlay)?
+        } else {
+            overlay
+        };
         let stable = reference_input.as_ref().map_or_else(
             || changed.is_empty(),
             |before| {
@@ -383,12 +419,18 @@ pub fn close_result_structure(
                         .eq(next.model().computation_searches())
             },
         );
-        let metrics = next.build_metrics();
-        counters.existing_derived_facts_reused += metrics.existing_facts_reused;
-        counters.new_proof_sets_interned += metrics.proof_sets_interned;
-        counters.existing_proof_sets_reused += metrics.proof_sets_reused;
-        counters.dependency_edges_considered += metrics.dependency_edges_considered;
-        counters.overlay_materializations += 1;
+        if materialized {
+            let metrics = next.build_metrics();
+            counters.existing_derived_facts_reused += metrics.existing_facts_reused;
+            counters.new_proof_sets_interned += metrics.proof_sets_interned;
+            counters.existing_proof_sets_reused += metrics.proof_sets_reused;
+            counters.dependency_edges_considered += metrics.dependency_edges_considered;
+            counters.overlay_materializations += 1;
+        } else {
+            // build_metrics describes the previous actual build and must not be
+            // counted again when the previous overlay is retained unchanged.
+            counters.empty_frontiers_reused += 1;
+        }
         counters.fixed_point_rounds += 1;
         counters.new_elements_proposed += next.model().len() - input_elements;
         counters.new_association_occurrences_proposed +=
@@ -467,4 +509,51 @@ pub fn close_result_structure(
             Completeness::Incomplete
         },
     })
+}
+
+#[cfg(test)]
+mod dependency_index_tests {
+    use super::*;
+
+    #[test]
+    fn replaced_reads_release_empty_reverse_buckets_and_track_live_edges() {
+        let first = ElementId::from_u128(1);
+        let second = ElementId::from_u128(2);
+        let endpoint = ElementId::from_u128(3);
+        let own = InvalidationKey::Element(first);
+        let incoming = InvalidationKey::Incoming(endpoint);
+        let mut index = DependencyIndex::default();
+        let mut counters = PublicationCounters::default();
+        index.replace_keys(first, BTreeSet::from([own, incoming]), &mut counters);
+        index.replace_keys(second, BTreeSet::from([incoming]), &mut counters);
+        assert_eq!(counters.active_dependency_subjects, 2);
+        assert_eq!(counters.active_dependency_keys, 2);
+        assert_eq!(counters.active_dependency_edges, 3);
+
+        index.replace_keys(first, BTreeSet::from([own]), &mut counters);
+        assert_eq!(counters.active_dependency_keys, 2);
+        assert_eq!(counters.active_dependency_edges, 2);
+        assert_eq!(
+            index.dirty(&BTreeSet::from([endpoint]), &mut counters),
+            BTreeSet::from([endpoint, second])
+        );
+        index.replace_keys(second, BTreeSet::from([own]), &mut counters);
+        assert!(!index.readers.contains_key(&incoming));
+        assert_eq!(counters.active_dependency_keys, 1);
+        assert_eq!(counters.active_dependency_edges, 2);
+        assert_eq!(counters.maximum_dependency_keys, 2);
+        assert_eq!(counters.maximum_dependency_edges, 3);
+        assert_eq!(
+            index.readers.values().map(BTreeSet::len).sum::<usize>(),
+            counters.active_dependency_edges
+        );
+        assert_eq!(
+            index.subjects.values().map(BTreeSet::len).sum::<usize>(),
+            counters.active_dependency_edges
+        );
+        assert_eq!(
+            index.dirty(&BTreeSet::from([endpoint]), &mut counters),
+            BTreeSet::from([endpoint])
+        );
+    }
 }

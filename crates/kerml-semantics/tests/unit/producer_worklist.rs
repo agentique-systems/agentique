@@ -353,6 +353,72 @@ fn worklist_matches_fullscan_for_multiple_expression_rounds() {
     );
 }
 #[test]
+fn empty_frontier_reuses_overlay_without_recounting_the_previous_build() {
+    let snapshot = crossing_fixture();
+    let actual = close(&snapshot, None, PublicationClosureOptions::default());
+    let expected = close(
+        &snapshot,
+        None,
+        PublicationClosureOptions {
+            strategy: PublicationClosureStrategy::ReferenceFullScan,
+            ..Default::default()
+        },
+    );
+    compare(&expected, &actual, None);
+    let [.., previous, last] = actual.stages.as_slice() else {
+        panic!("fixture must derive facts before its empty frontier");
+    };
+    assert_eq!(last.added_elements, 0);
+    assert_eq!(last.added_occurrences, 0);
+    assert!(previous.counters.new_proof_sets_interned > 0);
+    assert_eq!(
+        last.counters.empty_frontiers_reused,
+        previous.counters.empty_frontiers_reused + 1
+    );
+    assert_eq!(
+        last.counters.overlay_materializations,
+        previous.counters.overlay_materializations
+    );
+    assert_eq!(
+        last.counters.new_proof_sets_interned,
+        previous.counters.new_proof_sets_interned
+    );
+    assert_eq!(
+        last.counters.existing_proof_sets_reused,
+        previous.counters.existing_proof_sets_reused
+    );
+    assert_eq!(expected.counters.empty_frontiers_reused, 0);
+    assert_eq!(
+        expected.counters.overlay_materializations,
+        expected.counters.fixed_point_rounds + 1
+    );
+    assert!(actual.counters.active_dependency_edges > 0);
+    assert!(actual.counters.active_dependency_keys > 0);
+    assert!(actual.counters.active_dependency_subjects > 0);
+}
+
+#[test]
+fn inapplicable_population_requires_only_the_initial_materialization() {
+    let snapshot = synthetic_publication_fixture(0, 4);
+    let actual = close(&snapshot, None, PublicationClosureOptions::default());
+    assert!(actual.converged);
+    assert_eq!(actual.completeness, Completeness::Complete);
+    assert_eq!(actual.counters.overlay_materializations, 1);
+    assert_eq!(actual.counters.empty_frontiers_reused, 1);
+    assert_eq!(actual.counters.new_proof_sets_interned, 0);
+    assert_eq!(actual.counters.existing_proof_sets_reused, 0);
+    assert_eq!(actual.counters.active_dependency_subjects, 0);
+    assert_eq!(actual.counters.active_dependency_keys, 0);
+    assert_eq!(actual.counters.active_dependency_edges, 0);
+    assert!(
+        snapshot
+            .model()
+            .elements()
+            .eq(actual.overlay.model().elements())
+    );
+}
+
+#[test]
 fn resource_limit_does_not_claim_closure() {
     let (snapshot, bindings) = expression_fixture();
     let result = close(
