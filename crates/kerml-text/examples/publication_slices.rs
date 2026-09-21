@@ -108,7 +108,23 @@ fn run_slice(
                 stage.stage, stage.added_elements, stage.added_occurrences, stage.completeness
             )
         },
-    )?;
+    );
+    let closure = match closure {
+        Ok(closure) => closure,
+        Err(error) => {
+            std::fs::write(
+                &path,
+                serde_json::to_vec_pretty(&json!({
+                    "format":"agentique-publication-slice/1", "slice":slice,
+                    "seed_documents":documents, "documents":document_counts,
+                    "subjects":subjects.len(), "source_content_set":sources.content_set_id(),
+                    "reference_refinement":input.refinement, "passed":false,
+                    "failure_phase":"producer_closure", "failure":error.to_string(),
+                }))?,
+            )?;
+            return Err(error.into());
+        }
+    };
     let context = input.context(&closure.overlay)?;
     let audit_subjects: BTreeSet<_> = subjects
         .iter()
@@ -127,11 +143,12 @@ fn run_slice(
     let model = closure.overlay.model();
     let mut scope_boundary = PublicationScopeBoundary::from_graph(model, &audit_subjects)?;
     scope_boundary.include_invalidation(model, &audit_subjects, &closure.producer_reads);
-    for batch in audit_subjects
+    for (index, batch) in audit_subjects
         .iter()
         .copied()
         .collect::<Vec<_>>()
         .chunks(32)
+        .enumerate()
     {
         let audit =
             KerMlQueries::new(context.fork()).audit_publication_capabilities(batch.iter().copied());
@@ -141,6 +158,14 @@ fn run_slice(
         }
         for (family, diagnostics) in audit.failures {
             failures.extend(diagnostics.into_iter().map(|d| json!({"family":format!("{family:?}"), "subject":d.subject.to_string(), "code":d.code, "message":d.message})));
+        }
+        let done = ((index + 1) * 32).min(audit_subjects.len());
+        if done % 512 == 0 || done == audit_subjects.len() {
+            println!(
+                "slice {slice} capabilities: {done}/{}, {} findings",
+                audit_subjects.len(),
+                failures.len()
+            );
         }
     }
     let references: Vec<_> = input
