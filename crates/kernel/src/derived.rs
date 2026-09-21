@@ -128,6 +128,20 @@ impl DerivationBuilder {
         builder.previous = Some(previous);
         builder
     }
+    /// Whether this batch contains any pending write, including failure or search
+    /// metadata. An inherited overlay alone is not a pending write.
+    ///
+    /// This inspects queued operations, not semantic equivalence: redundant,
+    /// empty-valued or invalid submissions still return `true` and require normal
+    /// validation. It does not validate input identity or producer proposals.
+    pub fn has_changes(&self) -> bool {
+        !self.elements.is_empty()
+            || !self.occurrences.is_empty()
+            || !self.properties.is_empty()
+            || !self.extensions.is_empty()
+            || !self.failures.is_empty()
+            || !self.searches.is_empty()
+    }
     /// Add an implied element. Its ID is determined by `key`. The subject becomes
     /// an automatic dependency; other evidence must be supplied by the producer.
     /// Ordinary required properties must be present on the resulting record.
