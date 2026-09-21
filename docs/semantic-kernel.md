@@ -37,6 +37,13 @@ are still validated; adding evidence never mutates a caller's shared proof.
 Iterative Tarjan validation walks borrowed dependency sets and stores only
 per-vertex traversal state, avoiding forward/reverse copies of dense evidence.
 
+`StructuralSearchPool` shares exact negative-search populations independently of
+proof interning. Producers share one immutable search set across their outputs;
+kernel overlay handoff retains those shared sets. Combining evidence takes the
+exact union without changing any caller's set. Public query iteration still
+returns ordered search contents. Logical entry counts and retained distinct-set
+counts expose the allocation difference without changing semantic identities.
+
 `Snapshot::with_immutable_dependency` starts an independent authored history over
 a shared immutable overlay. Its dependency Element records remain shared across
 projects and revisions. Kernel transactions protect dependency records, slots,
@@ -83,9 +90,13 @@ Additive kernel handoff consumes an unshared overlay and transfers its accumulat
 maps; retained readers force a safe copy. Proof interning persists across frontiers.
 Cycle checking factors many facts with the same proof through one proof node, so
 N outputs sharing M premises require N+M dependency edges rather than N×M.
-Structural validation and navigation indexes are still rebuilt once per frontier;
-this is not an incremental-index implementation. Published snapshots remain
-immutable and atomic validation is unchanged.
+Structural validation and navigation indexes are still rebuilt for frontiers
+with changes; this is not an incremental-index implementation. A worklist
+frontier with no pending writes reuses its immutable input after all proposed
+records and scalar slots have been checked. Failure metadata and search-only
+changes require materialization too. The reference full scan still rebuilds
+independently. Published snapshots remain immutable and atomic validation is
+unchanged.
 
 Semantic rule set `/23` uses a framed content encoding for model and library
 digests. A shared explanation is hashed once and referenced by its content hash

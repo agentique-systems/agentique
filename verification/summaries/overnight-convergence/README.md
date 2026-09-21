@@ -22,6 +22,9 @@ integrates commits and owns whole-corpus acceptance.
 - Additive overlay handoff transfers unshared accumulated maps. Persistent proof
   interning and fact-to-proof-to-premise cycle validation avoid repeated large
   dependency copies. Structural validation/index rebuilding remains per frontier.
+- Negative-search evidence is also interned and shared across producer outputs
+  and immutable overlays. Exact unions preserve all search keys. Validated empty
+  worklist frontiers reuse their input; actual changes still rebuild indexes.
 - Explicit status-only query outcomes avoid producing an unused explanation
   forest. The ordinary evidence-bearing query API remains available.
 - A sealed synthetic library with all 31 roles exercises two authored projects,

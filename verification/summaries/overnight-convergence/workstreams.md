@@ -111,3 +111,23 @@ The semantic commands used two build jobs, no debug symbols and no incremental
 cache; the kernel command disabled incremental caching. Raw observations remain
 in the workers' ignored generated directories. These checks include unchanged
 proof metrics on reuse and replacement/pruning of retained read edges.
+
+Structural-search interning (`ff734cf`, `be043fa`) preserves the borrowed public
+search APIs while sharing immutable sets across facts and overlay revisions.
+`cargo test -p agq-kernel --locked --offline` exited 0: 90 unit/integration tests
+and one doctest. The three shared-search tests took 0.27 seconds. Their scale
+fixture has 12,000 facts with 6,000 identical negative-search keys: 72 million
+logical entries retain exactly one 6,000-entry set. The next owned frontier
+retains that same allocation; exact unions, caller isolation, failed-computation
+metadata and immutable snapshot sharing are checked. Kernel all-target Clippy
+exited 0 in 3.47 seconds. Commands used two jobs, no symbols and no incremental
+cache; raw logs remain under the worker's ignored `overnight-shared-searches/`.
+
+Package-anchor scope correction (`0b69c3e`) passed five dependency-slice tests:
+`cargo test --locked --offline -p agq-kerml-text --test publication_slice_dependencies -- --nocapture`,
+exit 0, 0.37 seconds. Targeted example/test Clippy exited 0 in 5.10 seconds.
+Formatting was corrected after an initial check failure; final formatting and
+diff checks exited 0. Explicit selected Packages still expand, concrete Feature
+anchors still bring their owning Function, missing anchors fail, and the final
+read boundary remains mandatory. Whole Packages used only as binding lookup
+anchors no longer unconditionally schedule all their members.
