@@ -135,6 +135,15 @@ pub struct PublicationCounters {
     pub active_dependency_edges: usize,
     pub maximum_dependency_keys: usize,
     pub maximum_dependency_edges: usize,
+    /// Current published search metadata before sharing, counted per fact.
+    pub logical_search_sets: usize,
+    pub logical_search_entries: usize,
+    /// Current retained search pool, including distinct superseded union inputs.
+    pub retained_search_sets: usize,
+    pub retained_search_entries: usize,
+    /// Cumulative interning work from actual overlay materializations only.
+    pub search_sets_interned: usize,
+    pub search_sets_reused: usize,
 }
 /// A scoped closure is useful for authored projects and real-corpus slices, but
 /// cannot assert whole-library capabilities or become a complete publication.
@@ -232,6 +241,12 @@ pub fn close_result_structure(
     let mut counters = PublicationCounters {
         declared_subjects: snapshot.model().len(),
         overlay_materializations: 1, // The empty derived input is a materialization too.
+        logical_search_sets: overlay.build_metrics().logical_search_sets,
+        logical_search_entries: overlay.build_metrics().logical_search_entries,
+        retained_search_sets: overlay.build_metrics().retained_search_sets,
+        retained_search_entries: overlay.build_metrics().retained_search_entries,
+        search_sets_interned: overlay.build_metrics().search_sets_interned,
+        search_sets_reused: overlay.build_metrics().search_sets_reused,
         ..Default::default()
     };
     let mut stages = vec![];
@@ -426,6 +441,12 @@ pub fn close_result_structure(
             counters.existing_proof_sets_reused += metrics.proof_sets_reused;
             counters.dependency_edges_considered += metrics.dependency_edges_considered;
             counters.overlay_materializations += 1;
+            counters.logical_search_sets = metrics.logical_search_sets;
+            counters.logical_search_entries = metrics.logical_search_entries;
+            counters.retained_search_sets = metrics.retained_search_sets;
+            counters.retained_search_entries = metrics.retained_search_entries;
+            counters.search_sets_interned += metrics.search_sets_interned;
+            counters.search_sets_reused += metrics.search_sets_reused;
         } else {
             // build_metrics describes the previous actual build and must not be
             // counted again when the previous overlay is retained unchanged.

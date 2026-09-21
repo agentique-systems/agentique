@@ -3,7 +3,9 @@ use crate::*;
 use agq_kerml::{BaselineProfile, classes as c, properties as p};
 use agq_kernel::{
     DerivationKey, ElementId, MetaclassId, OutputKey, PropertyId, RuleId, Snapshot,
-    derived::{DerivationBuilder, DerivationError, DerivedOverlay},
+    derived::{
+        DerivationBuilder, DerivationError, DerivedOverlay, StructuralSearch, StructuralSearchPool,
+    },
     provenance::{Dependency, Explanation as KernelExplanation, ExplanationPool, FactKey, Origin},
     value::{SlotValue, Value},
 };
@@ -265,6 +267,7 @@ mod navigation_evidence_regression {
             assignments: BTreeSet::new(),
             conflict: None,
             searches: BTreeMap::new(),
+            search_pool: agq_kernel::derived::StructuralSearchPool::default(),
             direct_searches: BTreeSet::new(),
             touched_records: BTreeSet::new(),
         };
@@ -380,7 +383,8 @@ struct Graph<'a> {
     unattached_contextual: BTreeSet<ElementId>,
     assignments: BTreeSet<(ElementId, PropertyId)>,
     conflict: Option<FactKey>,
-    searches: BTreeMap<ElementId, BTreeSet<agq_kernel::derived::StructuralSearch>>,
+    searches: BTreeMap<ElementId, Arc<BTreeSet<StructuralSearch>>>,
+    search_pool: StructuralSearchPool,
     direct_searches: BTreeSet<SearchDependency>,
     touched_records: BTreeSet<ElementId>,
 }
@@ -393,16 +397,26 @@ impl<'a> Graph<'a> {
         production
             .search_dependencies
             .append(&mut self.direct_searches);
-        let searches = crate::read_dependencies::structural_searches(production);
-        for id in std::mem::take(&mut self.touched_records) {
-            self.searches
-                .entry(id)
-                .or_default()
-                .extend(searches.iter().cloned());
+        let touched = std::mem::take(&mut self.touched_records);
+        if !touched.is_empty() {
+            let searches = self
+                .search_pool
+                .intern(crate::read_dependencies::structural_searches(production));
+            for id in touched {
+                self.merge_searches(id, searches.clone());
+            }
         }
         aggregate.value.extend(production.value.iter().copied());
         let next = QueryResult::new(&production.context, vec![]);
         aggregate.merge(std::mem::replace(production, next));
+    }
+    fn merge_searches(&mut self, id: ElementId, searches: Arc<BTreeSet<StructuralSearch>>) {
+        let merged = if let Some(previous) = self.searches.get(&id) {
+            self.search_pool.union_shared(previous, searches)
+        } else {
+            self.search_pool.intern_shared(searches)
+        };
+        self.searches.insert(id, merged);
     }
     fn return_result(&mut self, expression: ElementId, deps: &BTreeSet<Dependency>) {
         let rule = "validateInstantiationExpressionResult";
@@ -1425,7 +1439,7 @@ impl<'a> Graph<'a> {
             // Retain the producer's actual bounded searches, including misses.
             // Reading this fact in a later producer transfers these dependencies
             // without turning every derived fact into a whole-model search.
-            builder.searches(
+            builder.searches_shared(
                 FactKey::Element(record.key.element_id()),
                 self.searches
                     .get(&record.key.element_id())
@@ -1674,7 +1688,7 @@ impl ResultStructurePlan<'_> {
             self.graph.records.insert(id, record);
         }
         for (id, searches) in other.graph.searches {
-            self.graph.searches.entry(id).or_default().extend(searches);
+            self.graph.merge_searches(id, searches);
         }
         self.graph
             .direct_searches
@@ -1838,6 +1852,7 @@ impl<'m> KerMlQueries<'m> {
             assignments: BTreeSet::new(),
             conflict: None,
             searches: BTreeMap::new(),
+            search_pool: StructuralSearchPool::default(),
             direct_searches: BTreeSet::new(),
             touched_records: BTreeSet::new(),
         };

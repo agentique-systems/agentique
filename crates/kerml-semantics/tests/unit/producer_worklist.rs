@@ -387,6 +387,22 @@ fn empty_frontier_reuses_overlay_without_recounting_the_previous_build() {
         last.counters.existing_proof_sets_reused,
         previous.counters.existing_proof_sets_reused
     );
+    assert_eq!(
+        last.counters.search_sets_interned,
+        previous.counters.search_sets_interned
+    );
+    assert_eq!(
+        last.counters.search_sets_reused,
+        previous.counters.search_sets_reused
+    );
+    assert_eq!(
+        last.counters.logical_search_entries,
+        previous.counters.logical_search_entries
+    );
+    assert_eq!(
+        last.counters.retained_search_entries,
+        previous.counters.retained_search_entries
+    );
     assert_eq!(expected.counters.empty_frontiers_reused, 0);
     assert_eq!(
         expected.counters.overlay_materializations,
@@ -416,6 +432,28 @@ fn inapplicable_population_requires_only_the_initial_materialization() {
             .elements()
             .eq(actual.overlay.model().elements())
     );
+}
+
+#[test]
+fn derived_siblings_share_identical_negative_search_evidence() {
+    let snapshot = crossing_fixture();
+    let result = close(&snapshot, None, PublicationClosureOptions::default());
+    let searches: Vec<_> = result.overlay.model().computation_searches().collect();
+    let mut shared = 0;
+    for (index, (_, left)) in searches.iter().enumerate() {
+        for (_, right) in &searches[index + 1..] {
+            if !left.is_empty() && left == right {
+                assert!(
+                    std::ptr::eq(*left, *right),
+                    "equal search evidence must remain shared in the published graph"
+                );
+                shared += 1;
+            }
+        }
+    }
+    assert!(shared > 0, "fixture must exercise shared negative searches");
+    assert!(result.counters.retained_search_entries < result.counters.logical_search_entries);
+    assert!(result.counters.retained_search_sets < result.counters.logical_search_sets);
 }
 
 #[test]
