@@ -1,0 +1,124 @@
+{
+  "format": "agentique-publication-capabilities/1",
+  "profile": "agentique-kerml-1.0-operational/8",
+  "scope": "Local capability contracts for pinned KerML publication; full expanded acceptance is a separate gate",
+  "validator_coverage_is_publication_gate": false,
+  "capabilities": [
+    {
+      "family": "Namespace/import semantics",
+      "status": "Complete",
+      "traceability": [
+        "Namespace::importedMemberships",
+        "Membership::isDistinguishableFrom"
+      ],
+      "evidence": ["crates/kerml-semantics/tests/publication_v8_imports.rs", "crates/kerml-text/examples/publication_focus.rs"],
+      "scope": "Canonical identities, distinguishability, visibility, aliases, recursive/cyclic discovery and all five retained import witnesses"
+    },
+    {
+      "family": "Inheritance/effective membership",
+      "status": "Complete",
+      "traceability": [
+        "checkFeatureParameterRedefinition",
+        "checkFeatureEndRedefinition",
+        "checkFeatureResultRedefinition"
+      ],
+      "evidence": ["crates/kerml-semantics/tests/publication_v8_members.rs", "crates/kerml-text/examples/publication_focus.rs"],
+      "scope": "Effective positional suppression and names; both retained Triggers populations complete with zero collisions"
+    },
+    {
+      "family": "Specialization/subsetting/redefinition",
+      "status": "Incomplete",
+      "traceability": [
+        "checkFeatureOwnedCrossFeatureSpecialization",
+        "checkFeatureOwnedCrossFeatureRedefinitionSpecialization"
+      ],
+      "remaining": "Required implication closure still unproved"
+    },
+    {
+      "family": "Typing",
+      "status": "Incomplete",
+      "traceability": [
+        "deriveFeatureType"
+      ],
+      "remaining": "Required valuation, positional and cross typing consequences are not yet closed by a publication overlay"
+    },
+    {
+      "family": "Featuring/domain",
+      "status": "Incomplete",
+      "traceability": [
+        "checkFeatureFeatureMembershipTypeFeaturing",
+        "checkFeatureOwnedCrossFeatureTypeFeaturing"
+      ],
+      "remaining": "Variable snapshot domains and expression contexts still incomplete"
+    },
+    {
+      "family": "Feature chains",
+      "status": "Incomplete",
+      "traceability": [
+        "deriveFeatureChainingFeature",
+        "deriveFeatureFeatureTarget"
+      ],
+      "remaining": "Required crossing chains and expression contexts are not fully produced"
+    },
+    {
+      "family": "Cross features",
+      "status": "Incomplete",
+      "traceability": [
+        "deriveFeatureCrossFeature",
+        "checkFeatureCrossingSpecialization"
+      ],
+      "remaining": "Required CrossSubsetting producer remains incomplete"
+    },
+    {
+      "family": "Connector/association structure",
+      "status": "Incomplete",
+      "traceability": [
+        "deriveConnectorRelatedFeature",
+        "deriveAssociationRelatedType"
+      ],
+      "remaining": "Default featuring domains retain incomplete variable/expression contexts"
+    },
+    {
+      "family": "Expression/function result structure",
+      "status": "Incomplete",
+      "traceability": [
+        "deriveExpressionResult",
+        "deriveFunctionResult"
+      ],
+      "remaining": "Reference-binding context closure remains incomplete"
+    },
+    {
+      "family": "FeatureValue/reference bindings",
+      "status": "Incomplete",
+      "traceability": [
+        "checkFeatureValueBindingConnector",
+        "checkFeatureReferenceExpressionBindingConnector"
+      ],
+      "remaining": "Reference-binding context closure remains incomplete"
+    },
+    {
+      "family": "Multiplicity structural representation",
+      "status": "Complete",
+      "traceability": [
+        "deriveMultiplicityRangeLowerBound",
+        "deriveMultiplicityRangeUpperBound",
+        "deriveMultiplicityRangeBound"
+      ],
+      "evidence": ["crates/kerml-semantics/tests/publication_v8_bounds.rs"],
+      "scope": "Ordered canonical lower/upper/bound expressions; evaluation is outside publication"
+    },
+    {
+      "family": "Standard bindings",
+      "status": "Complete",
+      "traceability": [],
+      "evidence": ["crates/kerml-text/tests/library_construction.rs"],
+      "scope": "27 exact role contracts with per-role library identity; accepted manifest regeneration is a separate post-publication gate"
+    },
+    {
+      "family": "Identity/provenance",
+      "status": "Incomplete",
+      "traceability": [],
+      "remaining": "Derived association-occurrence provenance needed for required crossings is not supported by the current overlay builder"
+    }
+  ]
+}

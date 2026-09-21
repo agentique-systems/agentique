@@ -87,6 +87,20 @@ impl LibraryDraft {
                 LibraryLoadError::Interpretation("Missing exact Semantic Library artifact".into())
             })?
             .id();
+        let library_set = agq_kerml_semantics::LibrarySetIdentity {
+            artifacts: agq_kerml_semantics::StandardLibraryArtifact::ALL
+                .into_iter()
+                .map(|artifact| {
+                    let library = sources
+                        .libraries()
+                        .values()
+                        .find(|l| l.resource() == artifact.resource())
+                        .expect("verified KerML dependency closure");
+                    (artifact, library.id())
+                })
+                .collect(),
+            pins: pins.clone(),
+        };
         let roots: std::collections::BTreeSet<_> = self.roots.iter().copied().collect();
         let availability = roots.iter().map(|r| (*r, roots.clone())).collect();
         let context = SemanticContext::for_construction(
@@ -99,7 +113,7 @@ impl LibraryDraft {
         )
         .and_then(|c| c.with_available_roots(availability))
         .map_err(|e| LibraryLoadError::Interpretation(format!("{e:?}")))?
-        .with_standard_bindings(&self.roots, semantic)
+        .with_standard_bindings(&self.roots, &library_set)
         .map_err(|e| LibraryLoadError::Interpretation(format!("Binding validation: {e:?}")))?
         .with_formal_constraint_targets(&self.roots, semantic);
         Ok(KerMlQueries::new(context))

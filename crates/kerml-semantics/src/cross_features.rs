@@ -3,7 +3,128 @@ use crate::*;
 use agq_kerml::{classes as c, properties as p, views};
 use agq_kernel::{ElementId, provenance::FactKey};
 
+/// One association end contributes the intersection of its effective Types.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CrossDomainFactor {
+    pub end: ElementId,
+    pub types: Vec<ElementId>,
+}
+
+/// Required domain, separate from selection and from its canonical realization.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OwnedCrossDomain {
+    pub owning_end: ElementId,
+    pub owning_type: ElementId,
+    /// Ordered factors; more than one requires a Cartesian product, never a union.
+    pub factors: Vec<CrossDomainFactor>,
+    pub inherited_cross_features: Vec<ElementId>,
+}
+
 impl KerMlQueries<'_> {
+    /// Required owned-cross domain under the exact context profile. The published
+    /// rule excludes the cross Feature itself; v8 excludes its owning end.
+    pub fn owned_cross_feature_domain(
+        &self,
+        cross: ElementId,
+    ) -> QueryResult<Option<OwnedCrossDomain>> {
+        let mut out = self.result(None);
+        let selected = self.is_owned_cross_feature(cross);
+        let applies = selected.value;
+        out.merge(selected);
+        if !applies {
+            return out;
+        }
+        let owner = self.owner(cross);
+        let end = owner.value;
+        out.merge(owner);
+        let Some(end) = end else {
+            return out;
+        };
+        let owner = self.owning_type(end);
+        let ty = owner.value;
+        out.merge(owner);
+        let Some(ty) = ty else {
+            return out;
+        };
+        let corrected = self
+            .context()
+            .options
+            .baseline_profile
+            .corrects_owned_cross_domain();
+        out.search_dependencies
+            .insert(SearchDependency::ValidationRule(if corrected {
+                "agentique-kerml10-owned-cross-domain/1"
+            } else {
+                "checkFeatureOwnedCrossFeatureTypeFeaturing"
+            }));
+        let ends = self.structural_end_features(ty);
+        let mut factors = vec![];
+        for &other in &ends.value {
+            if other == if corrected { end } else { cross } {
+                continue;
+            }
+            let types = self.feature_types(other);
+            if types.value.is_empty() {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_CROSS_END_TYPE",
+                    other,
+                    "A cross domain requires the effective Types of every other end",
+                );
+            }
+            factors.push(CrossDomainFactor {
+                end: other,
+                types: types.value.clone(),
+            });
+            out.merge(types);
+        }
+        out.merge(ends);
+        // An empty, fully known end population is not missing evidence. Its
+        // cardinality can fail conformance (KERML11-2) without making this
+        // structural projection incomplete or inventing an opposite end.
+        let redefined = self.redefined_features(end);
+        let mut inherited_cross_features = vec![];
+        for &general in &redefined.value {
+            let inherited = self.cross_feature(general);
+            inherited_cross_features.extend(inherited.value);
+            if inherited.value.is_none() {
+                let selected = self.owned_cross_feature(general);
+                if selected.value.is_some() {
+                    let owner = self.owning_type(general);
+                    if let Some(owner) = owner.value {
+                        let ends = self.structural_end_features(owner);
+                        if ends.value.len() > 1 {
+                            out.problem(
+                                Completeness::Incomplete,
+                                "KQ_INHERITED_CROSS_STRUCTURE",
+                                general,
+                                "The inherited selected cross Feature still requires its crossing structure",
+                            );
+                        }
+                        out.merge(ends);
+                    }
+                    out.merge(owner);
+                }
+                out.merge(selected);
+            }
+            out.merge(inherited);
+        }
+        out.merge(redefined);
+        out.value = Some(OwnedCrossDomain {
+            owning_end: end,
+            owning_type: ty,
+            factors,
+            inherited_cross_features,
+        });
+        out.prove(
+            QueryKind::OwnedCrossDomain,
+            cross,
+            ty,
+            Rule::OwnedCrossDomain,
+            cross_evidence(&out),
+        );
+        out
+    }
     /// Feature::ownedCrossFeature, with the exact KERML11-1 profile boundary.
     ///
     /// Selects only directly owned members, in normative ownedMembership order.

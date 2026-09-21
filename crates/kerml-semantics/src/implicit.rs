@@ -414,7 +414,10 @@ impl KerMlQueries<'_> {
                     out.merge(results);
                     values
                 } else {
-                    self.positioned_features(&mut out, general, position)
+                    let parameters = self.structural_parameter_features(general);
+                    let values = parameters.value.clone();
+                    out.merge(parameters);
+                    values
                 };
                 if let Some(&target) = inherited.get(index).filter(|&&target| target != feature) {
                     out.value.push(target);
@@ -450,6 +453,18 @@ impl KerMlQueries<'_> {
     /// association specialization. Compute before library implications to avoid
     /// circularly assuming the very binary base whose obligation is being tested.
     pub(crate) fn structural_end_features(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
+        self.structural_positioned_features(ty, Position::End)
+    }
+    /// Effective non-result parameters in semantic order, including feature-chain targets.
+    /// This projection precedes positional redefinition and does not copy inherited members.
+    pub fn structural_parameter_features(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
+        self.structural_positioned_features(ty, Position::Parameter)
+    }
+    fn structural_positioned_features(
+        &self,
+        ty: ElementId,
+        position: Position,
+    ) -> QueryResult<Vec<ElementId>> {
         use std::collections::{BTreeMap, BTreeSet, VecDeque};
         let mut out = self.result(vec![]);
         let mut graph = BTreeMap::new();
@@ -459,7 +474,7 @@ impl KerMlQueries<'_> {
             if graph.contains_key(&current) {
                 continue;
             }
-            let ends = self.positioned_features(&mut out, current, Position::End);
+            let ends = self.positioned_features(&mut out, current, position);
             owned.insert(current, ends);
             let relationships = self.owned_relationships(current);
             let targets = self.owned_specialization_targets(current);

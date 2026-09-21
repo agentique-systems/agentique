@@ -1,0 +1,32 @@
+{
+  "format": "agentique-reviewed-publication-interpretation/1",
+  "profile_id": "agentique-kerml-1.0-operational/8",
+  "extends": {
+    "profile_id": "agentique-kerml-1.0-operational/7",
+    "path": "standards/kerml-1.0-operational-profile-v7.json",
+    "sha256": "e44da6e5c9242398f420064339b509ab665962b9c31bb1c947a2439beb3c03df"
+  },
+  "authority": "Explicit project authorization for canonical publication closure; operational interpretation, not final OMG adoption",
+  "normative_artifact": {
+    "path": "standards/normative/kerml-1.0/KerML.xmi",
+    "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466"
+  },
+  "historical_profiles": "Published through Operational v7 unchanged",
+  "issue": "KERML11-75",
+  "operation": "Namespace::importedMemberships",
+  "algorithm_id": "agentique-kerml10-import-collisions/1",
+  "interpretation": "Use normative prose exclusion omitted by formal OCL",
+  "steps": [
+    "Discover imported canonical Membership identities through applicable Imports",
+    "Deduplicate the same canonical Membership identity",
+    "Remove candidates colliding with an applicable owned Membership using KerML distinguishability",
+    "Symmetrically remove all remaining distinct imported identities that collide with one another",
+    "Preserve discovery order of surviving Membership identities"
+  ],
+  "prohibited_precedence": [
+    "ElementId",
+    "HashMap order",
+    "first import wins"
+  ],
+  "retained_witnesses": "standards/kerml-1.0-operational-authority-blockers.json#KLCV10-F-004"
+}

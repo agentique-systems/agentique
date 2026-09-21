@@ -178,6 +178,27 @@ impl KerMlQueries<'_> {
                 }
             }
             out.merge(owned);
+            if self
+                .context()
+                .options
+                .baseline_profile
+                .corrects_owned_cross_domain()
+            {
+                let domain = self.owned_cross_feature_domain(current);
+                if let Some(domain) = &domain.value {
+                    if let [factor] = domain.factors.as_slice() {
+                        out.value.extend(factor.types.iter().copied());
+                    } else if domain.factors.len() > 1 && !explicit {
+                        out.problem(
+                            Completeness::Incomplete,
+                            "KQ_CROSS_CARTESIAN_DOMAIN",
+                            current,
+                            "The required n-ary Cartesian domain has not been produced",
+                        );
+                    }
+                }
+                out.merge(domain);
+            }
             let chain = self.chaining_features(current);
             if let Some(&first) = chain.value.first() {
                 if first == current {

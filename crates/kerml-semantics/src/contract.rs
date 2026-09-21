@@ -80,6 +80,9 @@ pub struct Diagnostic {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum QueryKind {
+    ImportedMemberships,
+    ImportedMembershipPopulation,
+    MultiplicityBound,
     OwnedRelationships,
     OwningRelationship,
     OwningRelatedElement,
@@ -110,6 +113,7 @@ pub enum QueryKind {
     FormalConstraintTarget,
     ConnectorFeaturing,
     OwnedCrossFeature,
+    OwnedCrossDomain,
     OwnedCrossSubsetting,
     CrossFeature,
     TypingFeatures,
@@ -136,6 +140,9 @@ pub enum Evidence {
 /// Stable within RULE_SET_VERSION. Exact normative anchors are in ADR 0005.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
+    PublishedImportedMemberships,
+    OperationalImportedMembershipsV1,
+    MultiplicityBound,
     TypingFeatures,
     FeatureTypes,
     FeatureTarget,
@@ -143,6 +150,7 @@ pub enum Rule {
     PublishedOwnedCrossFeature,
     /// KERML11-1; exact pilot resolution predicates and semantic ownership order.
     OperationalOwnedCrossFeatureV1,
+    OwnedCrossDomain,
     OwnedCrossSubsetting,
     CrossFeature,
     ImpliedBinding(crate::ImpliedBindingRole),

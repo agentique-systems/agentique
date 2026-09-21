@@ -3,7 +3,70 @@ use crate::*;
 use agq_kerml::{classes as c, views};
 use agq_kernel::ElementId;
 
+/// Structural expressions, with no claim to have evaluated their values.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MultiplicityBounds {
+    pub lower: Option<ElementId>,
+    pub upper: Option<ElementId>,
+    pub bound: Vec<ElementId>,
+}
+
 impl KerMlQueries<'_> {
+    /// KerML deriveMultiplicityRangeLowerBound/UpperBound/Bound in owned-member order.
+    pub fn multiplicity_bounds(&self, multiplicity: ElementId) -> QueryResult<MultiplicityBounds> {
+        let mut out = self.result(MultiplicityBounds {
+            lower: None,
+            upper: None,
+            bound: vec![],
+        });
+        if self
+            .checked::<views::MultiplicityRange, _>(&mut out, multiplicity)
+            .is_none()
+        {
+            return out;
+        }
+        let memberships = self.memberships(multiplicity);
+        let mut expressions = vec![];
+        for &membership in &memberships.value {
+            if !self.is(membership, c::OWNING_MEMBERSHIP) {
+                continue;
+            }
+            let member = self.member(membership);
+            expressions.extend(member.value.filter(|&e| self.is(e, c::EXPRESSION)));
+            out.merge(member);
+        }
+        out.merge(memberships);
+        if self
+            .context()
+            .pending_namespace_scopes
+            .contains(&multiplicity)
+        {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_MULTIPLICITY_BOUNDS",
+                multiplicity,
+                "Pending members do not establish ordered multiplicity bounds",
+            );
+        }
+        if out.completeness == Completeness::Complete {
+            out.value.upper = expressions.get(usize::from(expressions.len() > 1)).copied();
+            if expressions.len() > 1 {
+                out.value.lower = expressions.first().copied();
+            }
+            out.value.bound.extend(out.value.lower);
+            out.value.bound.extend(out.value.upper);
+            for value in out.value.bound.clone() {
+                out.prove(
+                    QueryKind::MultiplicityBound,
+                    multiplicity,
+                    value,
+                    Rule::MultiplicityBound,
+                    evidence(&out),
+                );
+            }
+        }
+        out
+    }
     /// deriveFeatureFeatureTarget: self or the last canonical chainingFeature.
     /// An incomplete chain never supplies a definitive terminal.
     pub fn feature_target(&self, feature: ElementId) -> QueryResult<Option<ElementId>> {

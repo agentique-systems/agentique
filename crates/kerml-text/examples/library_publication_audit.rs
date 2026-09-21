@@ -91,7 +91,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .map_err(|e| format!("{e:?}"))?
     .with_standard_bindings(
         draft.roots(),
-        original.standard_bindings.as_ref().unwrap().library(),
+        original.standard_bindings.as_ref().unwrap().library_set(),
     )
     .map_err(|e| format!("{e:?}"))?
     .with_formal_constraint_targets(
@@ -172,7 +172,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map_err(|e| format!("{e:?}"))?
             .with_standard_bindings(
                 draft.roots(),
-                original.standard_bindings.as_ref().unwrap().library(),
+                original.standard_bindings.as_ref().unwrap().library_set(),
             )
             .map_err(|e| format!("{e:?}"))?
             .with_formal_constraint_targets(

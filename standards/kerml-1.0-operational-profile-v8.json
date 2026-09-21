@@ -1,0 +1,21 @@
+{
+  "format": "agentique-operational-semantic-profile/1",
+  "profile_id": "agentique-kerml-1.0-operational/8",
+  "extends": {
+    "profile_id": "agentique-kerml-1.0-operational/7",
+    "path": "standards/kerml-1.0-operational-profile-v7.json",
+    "sha256": "e44da6e5c9242398f420064339b509ab665962b9c31bb1c947a2439beb3c03df"
+  },
+  "manifests": [
+    {
+      "path": "standards/kerml-1.0-operational-cross-domain-errata-v8.json",
+      "sha256": "e5758ce87ac56d5920565d2fb2652dad2606f2cb15091489de50ebf76d263c6a"
+    },
+    {
+      "path": "standards/kerml-1.0-operational-import-collision-errata-v8.json",
+      "sha256": "9f3243f46d9baad4e642dcc035c2851097e8872d19b471f03f5da37d70edca77"
+    }
+  ],
+  "default_profile": "agentique-kerml-1.0-operational/2",
+  "accepted_publication": false
+}

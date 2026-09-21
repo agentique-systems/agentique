@@ -11,14 +11,14 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def source_identity():
+def source_identity(summary):
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT).decode().strip()
-    digest = hashlib.sha256(subprocess.check_output(["git", "diff", "HEAD", "--binary"], cwd=ROOT, stderr=subprocess.DEVNULL))
+    digest = hashlib.sha256(subprocess.check_output(["git", "diff", "HEAD", "--binary", "--", ".", ":(exclude)" + summary], cwd=ROOT, stderr=subprocess.DEVNULL))
     paths = subprocess.check_output(
         ["git", "ls-files", "--others", "--exclude-standard", "-z"], cwd=ROOT
     ).decode().split("\0")
     for name in sorted(filter(None, paths)):
-        if name.startswith("verification/kerml-publication-convergence/summary.json"):
+        if name == summary:
             continue
         digest.update(name.encode())
         digest.update((ROOT / name).read_bytes())
@@ -37,14 +37,18 @@ def main():
         command = command[1:]
     if not command:
         parser.error("a command is required")
-    output = ROOT / "verification/generated/kerml-publication-convergence"
+    output = ROOT / "verification/generated" / Path(args.summary).parent.name
     output.mkdir(parents=True, exist_ok=True)
-    commit, digest = source_identity()
+    commit, digest = source_identity(Path(args.summary).as_posix())
     executable = shutil.which(command[0]) or command[0]
     overrides = dict(item.split("=", 1) for item in args.env)
     version = subprocess.run([executable, "--version"], cwd=ROOT, capture_output=True, text=True)
     start = time.monotonic()
     log = output / (args.name + ".log")
+    attempt = 1
+    while log.exists():
+        attempt += 1
+        log = output / f"{args.name}-{attempt}.log"
     with log.open("w", encoding="utf-8") as stream:
         result = subprocess.run([executable, *command[1:]], cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT,
                                 env={**os.environ, **overrides})

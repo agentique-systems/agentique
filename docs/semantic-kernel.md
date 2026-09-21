@@ -6,6 +6,21 @@ report. `SemanticContext` identifies partial derivation overlays explicitly.
 Partial overlays do not assert complete implied inclusion; callers can still run
 the strict assertion check separately. Kernel validation is unchanged.
 
+Operational v8 carries independent authority identities for the owned-cross
+domain and KERML11-75 import-population corrections. Selection of an owned cross
+Feature still uses v7; v8 excludes its owning end when deriving the domain.
+Binary domains use the opposite end's Types, while n-ary domains require an
+ordered Cartesian construction over every other end. Imported Memberships retain
+canonical identity: owned collisions are removed first, then distinct colliding
+imports are excluded symmetrically after deduplication.
+
+`StandardKermlBindings` validates each role against its authoritative library
+artifact and retains a `LibrarySetIdentity`. `CollectionsArray` is anchored in
+the Data Type Library; `ThingsThat` and `OccurrenceStartShot` are Semantic Library
+roles. These construction bindings do not establish an accepted publication.
+The [capability matrix](../verification/kerml-canonical-publication/publication-capabilities.json)
+records remaining closure obligations separately from conformance coverage.
+
 [ADR 0009](adr/0009-property-redefinition-context.md) reassesses the Property
 context invariant without changing it. Final UML text and the resolved mixed
 ownership issue do not establish a safe correction for the pinned failing edge.

@@ -1,6 +1,8 @@
 use agq_kerml::{classes as c, properties as p};
 use agq_kerml_semantics::*;
 use agq_kernel::{metamodel::ValueKind, provenance::*, value::*, *};
+// Included by independently scoped test binaries with different builder needs.
+#[allow(unused_imports)]
 use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,

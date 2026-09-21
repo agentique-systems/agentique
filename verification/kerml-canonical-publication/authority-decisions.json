@@ -1,0 +1,51 @@
+{
+  "format": "agentique-publication-authority-decisions/1",
+  "profile": "agentique-kerml-1.0-operational/8",
+  "historical_register": "verification/kerml-publication-convergence/authority-blockers.json",
+  "decisions": [
+    {
+      "id": "KLCV10-F-001",
+      "issue": "KERML11-2",
+      "prior_impact": "ValidationOnlyAuthorityConflict",
+      "impact": "ValidationOnlyAuthorityConflict",
+      "evidence": [
+        "verification/kerml-publication-convergence/authority-blockers.json",
+        "crates/kerml-semantics/tests/publication_v8_cross_domains.rs"
+      ],
+      "conformance_disposition": "Retain the validation-only conflict; a known unary end population is determinate without inventing an opposite end"
+    },
+    {
+      "id": "KLCV10-F-002",
+      "issue": "KERML11-4",
+      "prior_impact": "ValidationOnlyAuthorityConflict",
+      "impact": "ValidationOnlyAuthorityConflict",
+      "evidence": [
+        "verification/kerml-publication-convergence/authority-blockers.json"
+      ],
+      "conformance_disposition": "Retain the validation-only conflict"
+    },
+    {
+      "id": "KLCV10-F-003",
+      "issue": "UNREPORTED-owned-cross-featuring-otherEnds",
+      "prior_impact": "PublicationBlockingAuthorityConflict",
+      "impact": "CoveredByOperationalV8",
+      "evidence": [
+        "crates/kerml-semantics/tests/publication_v8_cross_domains.rs",
+        "crates/kerml-text/examples/publication_focus.rs"
+      ],
+      "conformance_disposition": "Versioned project-authorized operational interpretation; not a claim about literal OCL"
+    },
+    {
+      "id": "KLCV10-F-004",
+      "issue": "KERML11-75",
+      "prior_impact": "PublicationBlockingAuthorityConflict",
+      "impact": "CoveredByOperationalV8",
+      "evidence": [
+        "crates/kerml-semantics/tests/publication_v8_imports.rs",
+        "crates/kerml-text/examples/publication_focus.rs"
+      ],
+      "conformance_disposition": "Versioned project-authorized operational interpretation; not a claim about literal OCL"
+    }
+  ],
+  "publication_blocking_authority_conflicts": 0
+}

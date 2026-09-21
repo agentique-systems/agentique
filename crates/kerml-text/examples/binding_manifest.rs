@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .find(|d| d.document() == source.document)
             .expect("source evidence");
         entries.push(json!({
-            "semantic_role": format!("{role:?}"), "library": bindings.library().to_string(),
+            "semantic_role": format!("{role:?}"), "library": bindings.bound(role).library.to_string(),
             "qualified_path": path, "expected_metaclass": metaclass.to_string(),
             "expected_metaclass_name": draft.candidate().model().registry().class(metaclass)?.name,
             "element_id": target.to_string(),

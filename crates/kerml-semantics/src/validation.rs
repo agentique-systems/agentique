@@ -182,27 +182,7 @@ impl KerMlQueries<'_> {
         for (name, members) in names {
             for (index, left) in members.iter().enumerate() {
                 for right in &members[index + 1..] {
-                    let left_class = self
-                        .model()
-                        .element(left.element)
-                        .expect("membership endpoint")
-                        .metaclass();
-                    let right_class = self
-                        .model()
-                        .element(right.element)
-                        .expect("membership endpoint")
-                        .metaclass();
-                    if self
-                        .model()
-                        .registry()
-                        .is_subtype(left_class, right_class)
-                        .unwrap_or(false)
-                        || self
-                            .model()
-                            .registry()
-                            .is_subtype(right_class, left_class)
-                            .unwrap_or(false)
-                    {
+                    if self.comparable_member_kinds(&mut out, left.element, right.element) {
                         out.problem(Completeness::Invalid,"validateNamespaceDistinguishibility",namespace,
                             format!("Name {name:?} identifies comparable members {} and {} through memberships {} and {}",
                                 left.element,right.element,left.membership,right.membership));

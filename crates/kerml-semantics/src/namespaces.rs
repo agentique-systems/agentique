@@ -20,25 +20,43 @@ pub struct MemberMatch {
     pub element: ElementId,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct State {
     namespace: ElementId,
     access: MemberAccess,
     recursive: bool,
     excluded: Option<ElementId>,
     inherited_projection: bool,
+    imported_projection: bool,
+    excluded_import_scopes: Vec<ElementId>,
 }
 pub(crate) type NamespaceCache =
     std::sync::Mutex<BTreeMap<State, std::sync::Arc<QueryResult<Vec<MemberMatch>>>>>;
 #[derive(Default)]
 struct Population {
-    own: BTreeSet<MemberMatch>,
-    imported: BTreeSet<MemberMatch>,
+    own: Vec<MemberMatch>,
+    collision_owned: Vec<MemberMatch>,
+    imported: Vec<MemberMatch>,
+    import_order: Vec<ImportSource>,
     owned_names: BTreeSet<String>,
     local_redefinitions: BTreeSet<ElementId>,
     imports: Vec<State>,
     inherited: Vec<State>,
     recursive: Vec<State>,
+}
+
+#[derive(Clone)]
+enum ImportSource {
+    Member(MemberMatch),
+    Namespace(State),
+}
+
+fn deduplicate(members: impl IntoIterator<Item = MemberMatch>) -> Vec<MemberMatch> {
+    let mut seen = BTreeSet::new();
+    members
+        .into_iter()
+        .filter(|m| seen.insert(m.membership))
+        .collect()
 }
 
 impl KerMlQueries<'_> {
@@ -217,7 +235,7 @@ impl KerMlQueries<'_> {
         access: MemberAccess,
         excluded: Option<ElementId>,
     ) -> QueryResult<Vec<MemberMatch>> {
-        self.membership_population(namespace, access, excluded, false)
+        self.membership_population(namespace, access, excluded, false, false)
     }
 
     /// Type::inheritedMemberships retains Membership identity during suppression.
@@ -225,7 +243,60 @@ impl KerMlQueries<'_> {
         &self,
         namespace: ElementId,
     ) -> QueryResult<Vec<MemberMatch>> {
-        self.membership_population(namespace, MemberAccess::NonPrivate, None, true)
+        self.membership_population(namespace, MemberAccess::NonPrivate, None, true, false)
+    }
+
+    /// Imported Membership identities, before combination with owned/inherited members.
+    /// Historical profiles retain the formal OCL population. V8 applies prose collisions.
+    pub fn imported_memberships(
+        &self,
+        namespace: ElementId,
+        access: MemberAccess,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        self.membership_population(namespace, access, None, false, true)
+    }
+
+    /// Membership::isDistinguishableFrom, shared by imports and validation.
+    pub fn memberships_distinguishable(
+        &self,
+        left: ElementId,
+        right: ElementId,
+    ) -> QueryResult<bool> {
+        let mut out = self.result(true);
+        let a = self.member(left);
+        let b = self.member(right);
+        if let (Some(a), Some(b)) = (a.value, b.value) {
+            let left_names = self.names(&mut out, left, Some(a));
+            let right_names = self.names(&mut out, right, Some(b));
+            out.value = left_names.is_disjoint(&right_names)
+                || !self.comparable_member_kinds(&mut out, a, b);
+        }
+        out.merge(a);
+        out.merge(b);
+        out
+    }
+
+    pub(crate) fn comparable_member_kinds<T>(
+        &self,
+        out: &mut QueryResult<T>,
+        left: ElementId,
+        right: ElementId,
+    ) -> bool {
+        self.fact(out, FactKey::Element(left));
+        self.fact(out, FactKey::Element(right));
+        let registry = self.model().registry();
+        let left = self
+            .model()
+            .element(left)
+            .expect("membership endpoint")
+            .metaclass();
+        let right = self
+            .model()
+            .element(right)
+            .expect("membership endpoint")
+            .metaclass();
+        registry.is_subtype(left, right).unwrap_or(false)
+            || registry.is_subtype(right, left).unwrap_or(false)
     }
 
     fn membership_population(
@@ -234,6 +305,7 @@ impl KerMlQueries<'_> {
         access: MemberAccess,
         excluded: Option<ElementId>,
         inherited_projection: bool,
+        imported_projection: bool,
     ) -> QueryResult<Vec<MemberMatch>> {
         // Exclusion cannot change a population that did not read the excluded
         // declaration. Reuse its full evidence within this immutable context.
@@ -252,6 +324,8 @@ impl KerMlQueries<'_> {
             recursive: false,
             excluded,
             inherited_projection,
+            imported_projection,
+            excluded_import_scopes: vec![],
         };
         if let Some(cached) = self
             .namespace_cache
@@ -272,9 +346,20 @@ impl KerMlQueries<'_> {
             );
             return out;
         }
+        let corrected = self
+            .context()
+            .options
+            .baseline_profile
+            .corrects_import_collisions();
+        if corrected {
+            out.search_dependencies
+                .insert(SearchDependency::ValidationRule(
+                    "agentique-kerml10-import-collisions/1",
+                ));
+        }
         let mut graph = BTreeMap::<State, Population>::new();
         let mut names = BTreeMap::new();
-        let mut pending = VecDeque::from([start]);
+        let mut pending = VecDeque::from([start.clone()]);
         let mut closures = BTreeMap::new();
         while let Some(state) = pending.pop_front() {
             if graph.contains_key(&state) {
@@ -312,6 +397,10 @@ impl KerMlQueries<'_> {
                 let visible =
                     self.visible(&mut out, membership, p::MEMBERSHIP_VISIBILITY, state.access);
                 if let Some(element) = member.value {
+                    pop.collision_owned.push(MemberMatch {
+                        membership,
+                        element,
+                    });
                     if self.is(element, c::FEATURE) {
                         let redefined = self.redefined_features(element);
                         // removeRedefinedFeatures uses ownedFeature, not aliases.
@@ -328,28 +417,29 @@ impl KerMlQueries<'_> {
                             entry.insert(closure);
                         }
                     }
-                    if visible && !state.inherited_projection {
-                        pop.own.insert(MemberMatch {
+                    if visible && !state.inherited_projection && !state.imported_projection {
+                        pop.own.push(MemberMatch {
                             membership,
                             element,
                         });
                     }
                     if state.recursive
                         && !state.inherited_projection
+                        && !state.imported_projection
                         && visible
                         && self.is(element, c::NAMESPACE)
                         && self.is(membership, c::OWNING_MEMBERSHIP)
                     {
                         pop.recursive.push(State {
                             namespace: element,
-                            ..state
+                            ..state.clone()
                         });
                     }
                 }
                 out.merge(member);
             }
             out.merge(memberships);
-            if self.is(namespace, c::TYPE) {
+            if self.is(namespace, c::TYPE) && !state.imported_projection {
                 let supers = self.supertypes(namespace);
                 for &general in &supers.value {
                     pop.inherited.push(State {
@@ -362,6 +452,8 @@ impl KerMlQueries<'_> {
                         recursive: state.recursive,
                         excluded,
                         inherited_projection: false,
+                        imported_projection: false,
+                        excluded_import_scopes: state.excluded_import_scopes.clone(),
                     });
                 }
                 out.merge(supers);
@@ -394,10 +486,12 @@ impl KerMlQueries<'_> {
                                 membership,
                                 self.names(&mut out, membership, Some(element)),
                             );
-                            pop.imported.insert(MemberMatch {
+                            let candidate = MemberMatch {
                                 membership,
                                 element,
-                            });
+                            };
+                            pop.imported.push(candidate);
+                            pop.import_order.push(ImportSource::Member(candidate));
                         }
                         let target = member
                             .value
@@ -417,18 +511,33 @@ impl KerMlQueries<'_> {
                     None
                 };
                 if let Some(target) = target {
+                    if corrected
+                        && (target == namespace || state.excluded_import_scopes.contains(&target))
+                    {
+                        continue;
+                    }
+                    let mut excluded_import_scopes = state.excluded_import_scopes.clone();
+                    if corrected {
+                        excluded_import_scopes.push(namespace);
+                        excluded_import_scopes.sort();
+                        excluded_import_scopes.dedup();
+                    }
                     out.search_dependencies
                         .insert(SearchDependency::ImportedNamespace {
                             import,
                             namespace: target,
                         });
-                    pop.imports.push(State {
+                    let target = State {
                         namespace: target,
                         access,
                         recursive,
                         excluded,
                         inherited_projection: false,
-                    });
+                        imported_projection: false,
+                        excluded_import_scopes,
+                    };
+                    pop.imports.push(target.clone());
+                    pop.import_order.push(ImportSource::Namespace(target));
                 }
             }
             out.merge(owned);
@@ -437,7 +546,7 @@ impl KerMlQueries<'_> {
                     .iter()
                     .chain(&pop.inherited)
                     .chain(&pop.recursive)
-                    .copied(),
+                    .cloned(),
             );
             graph.insert(state, pop);
         }
@@ -449,7 +558,10 @@ impl KerMlQueries<'_> {
                 closures.insert(member.element, closure);
             }
         }
-        let mut values: BTreeMap<_, _> = graph.iter().map(|(s, p)| (*s, p.own.clone())).collect();
+        let mut values: BTreeMap<_, _> = graph
+            .iter()
+            .map(|(s, p)| (s.clone(), p.own.clone()))
+            .collect();
         let mut states = BTreeSet::new();
         loop {
             if !states.insert(values.clone()) {
@@ -464,17 +576,40 @@ impl KerMlQueries<'_> {
             let mut next = BTreeMap::new();
             for (state, pop) in &graph {
                 let mut members = pop.own.clone();
-                let imported: BTreeSet<_> = pop
-                    .imported
-                    .iter()
-                    .copied()
-                    .chain(pop.imports.iter().flat_map(|s| values[s].iter().copied()))
-                    .collect();
-                members.extend(imported.into_iter().filter(|m| {
-                    names
-                        .get(&m.membership)
-                        .is_none_or(|n| n.is_disjoint(&pop.owned_names))
-                }));
+                let imported =
+                    deduplicate(pop.import_order.iter().flat_map(|source| match source {
+                        ImportSource::Member(member) => vec![*member],
+                        ImportSource::Namespace(state) => values[state].clone(),
+                    }));
+                if corrected {
+                    // First exclude owned collisions; only then compare the surviving imports.
+                    // All pairs see the same population, so traversal order never picks a winner.
+                    let mut collides = |a: &MemberMatch, b: &MemberMatch| {
+                        a.membership != b.membership
+                            && names
+                                .get(&a.membership)
+                                .zip(names.get(&b.membership))
+                                .is_some_and(|(a, b)| !a.is_disjoint(b))
+                            && self.comparable_member_kinds(&mut out, a.element, b.element)
+                    };
+                    let candidates: Vec<_> = imported
+                        .into_iter()
+                        .filter(|m| !pop.collision_owned.iter().any(|own| collides(m, own)))
+                        .collect();
+                    members.extend(
+                        candidates
+                            .iter()
+                            .copied()
+                            .filter(|m| !candidates.iter().any(|other| collides(m, other))),
+                    );
+                } else {
+                    members.extend(imported.into_iter().filter(|m| {
+                        state.imported_projection
+                            || names
+                                .get(&m.membership)
+                                .is_none_or(|n| n.is_disjoint(&pop.owned_names))
+                    }));
+                }
                 let inherited: BTreeSet<_> = pop
                     .inherited
                     .iter()
@@ -491,11 +626,15 @@ impl KerMlQueries<'_> {
                         .get(&member.element)
                         .is_some_and(|c| !c.is_disjoint(&pop.local_redefinitions));
                     if !superseded && !locally_redefined {
-                        members.insert(*member);
+                        members.push(*member);
                     }
                 }
                 members.extend(pop.recursive.iter().flat_map(|s| values[s].iter().copied()));
-                next.insert(*state, members);
+                let mut members = deduplicate(members);
+                if !corrected {
+                    members.sort();
+                }
+                next.insert(state.clone(), members);
             }
             if next == values {
                 break;
@@ -519,22 +658,40 @@ impl KerMlQueries<'_> {
                     .map(Evidence::Search),
             )
             .collect();
+        let population_query = if imported_projection {
+            QueryKind::ImportedMembershipPopulation
+        } else {
+            QueryKind::NamespacePopulation
+        };
+        let population_rule = if imported_projection {
+            if corrected {
+                Rule::OperationalImportedMembershipsV1
+            } else {
+                Rule::PublishedImportedMemberships
+            }
+        } else {
+            Rule::NamespaceResolution
+        };
         out.prove(
-            QueryKind::NamespacePopulation,
+            population_query,
             namespace,
             namespace,
-            Rule::NamespaceResolution,
+            population_rule,
             premises,
         );
         for member in out.value.clone() {
             self.fact(&mut out, FactKey::Element(member.membership));
             out.prove(
-                QueryKind::NamespaceMemberships,
+                if imported_projection {
+                    QueryKind::ImportedMemberships
+                } else {
+                    QueryKind::NamespaceMemberships
+                },
                 namespace,
                 member.membership,
-                Rule::NamespaceResolution,
+                population_rule,
                 [
-                    crate::contract::claim(QueryKind::NamespacePopulation, namespace, namespace),
+                    crate::contract::claim(population_query, namespace, namespace),
                     Evidence::Fact(FactKey::Element(member.membership)),
                 ],
             );

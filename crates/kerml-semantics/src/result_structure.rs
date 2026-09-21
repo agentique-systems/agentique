@@ -196,6 +196,7 @@ pub(crate) fn structural_rule_profile(rule: RuleId) -> Option<BaselineProfile> {
                 P::OPERATIONAL_V5,
                 P::OPERATIONAL_V6,
                 P::OPERATIONAL_V7,
+                P::OPERATIONAL_V8,
             ]
             .into_iter()
             .flat_map(|profile| {
@@ -210,6 +211,7 @@ pub(crate) fn structural_rule_profile(rule: RuleId) -> Option<BaselineProfile> {
                     .chain([
                         "structural-result-ownership/1",
                         "initial-feature-value-context/1",
+                        "owned-cross-domain/1",
                     ])
                     .map(move |name| (rule_id(profile, name), profile))
             })
@@ -244,6 +246,212 @@ struct Graph<'a> {
     unattached_contextual: BTreeSet<ElementId>,
 }
 impl<'a> Graph<'a> {
+    fn cross_relation(
+        &mut self,
+        subject: ElementId,
+        participants: (ElementId, ElementId),
+        class: MetaclassId,
+        endpoints: (PropertyId, PropertyId),
+        role: &str,
+        deps: &BTreeSet<FactKey>,
+    ) -> ElementId {
+        let (source, target) = participants;
+        // Required structure can already be authored. Preserve that relationship's
+        // identity instead of adding a second realization of the same obligation.
+        if let Some(owned) = self
+            .model
+            .navigation_slot(source, p::ELEMENT_OWNED_RELATIONSHIP)
+        {
+            for value in owned.value().values() {
+                let Value::Reference(relationship) = value else {
+                    continue;
+                };
+                let Some(record) = self.model.element(*relationship) else {
+                    continue;
+                };
+                let endpoint = |property| {
+                    self.model
+                        .navigation_slot(*relationship, property)
+                        .and_then(|slot| {
+                            slot.value().values().find_map(|value| match value {
+                                Value::Reference(id) => Some(*id),
+                                _ => None,
+                            })
+                        })
+                };
+                if record.metaclass() == class
+                    && endpoint(endpoints.0) == Some(source)
+                    && endpoint(endpoints.1) == Some(target)
+                {
+                    return *relationship;
+                }
+            }
+        }
+        let r = self.create(
+            self.key("owned-cross-domain/1", subject, role, &[source, target]),
+            class,
+            deps,
+        );
+        self.set(r, endpoints.0, Value::Reference(source));
+        self.set(r, endpoints.1, Value::Reference(target));
+        self.own(source, r);
+        r
+    }
+    fn cross_featuring(
+        &mut self,
+        subject: ElementId,
+        feature: ElementId,
+        ty: ElementId,
+        deps: &BTreeSet<FactKey>,
+    ) {
+        self.cross_relation(
+            subject,
+            (feature, ty),
+            c::TYPE_FEATURING,
+            (
+                p::TYPE_FEATURING_FEATURE_OF_TYPE,
+                p::TYPE_FEATURING_FEATURING_TYPE,
+            ),
+            "featuring",
+            deps,
+        );
+    }
+    fn cross_typing(
+        &mut self,
+        subject: ElementId,
+        feature: ElementId,
+        ty: ElementId,
+        deps: &BTreeSet<FactKey>,
+    ) {
+        self.cross_relation(
+            subject,
+            (feature, ty),
+            c::FEATURE_TYPING,
+            (p::FEATURE_TYPING_TYPED_FEATURE, p::FEATURE_TYPING_TYPE),
+            "typing",
+            deps,
+        );
+    }
+    fn cross_domain(
+        &mut self,
+        cross: ElementId,
+        domain: &OwnedCrossDomain,
+        inherited_domains: &[ElementId],
+        deps: &BTreeSet<FactKey>,
+    ) -> Vec<ElementId> {
+        if domain.factors.is_empty() {
+            // A known empty population has no canonical opposite-end domain.
+            // Do not fabricate factors to satisfy a validation-only cardinality
+            // conflict. The conformance report retains that conflict separately.
+            return vec![];
+        }
+        if let [factor] = domain.factors.as_slice() {
+            for &ty in &factor.types {
+                self.cross_featuring(cross, cross, ty, deps);
+            }
+            return factor.types.clone();
+        }
+        let mut types = vec![];
+        for factor in &domain.factors {
+            let ty = if let [ty] = factor.types.as_slice() {
+                *ty
+            } else {
+                let ty = self.create(
+                    self.key(
+                        "owned-cross-domain/1",
+                        cross,
+                        "factor-intersection",
+                        &[factor.end],
+                    ),
+                    c::TYPE,
+                    deps,
+                );
+                for &target in &factor.types {
+                    self.cross_relation(
+                        cross,
+                        (ty, target),
+                        c::INTERSECTING,
+                        (
+                            p::INTERSECTING_TYPE_INTERSECTED,
+                            p::INTERSECTING_INTERSECTING_TYPE,
+                        ),
+                        "intersection",
+                        deps,
+                    );
+                }
+                self.membership(
+                    cross,
+                    ty,
+                    c::OWNING_MEMBERSHIP,
+                    self.key(
+                        "owned-cross-domain/1",
+                        cross,
+                        "intersection-owner",
+                        &[factor.end],
+                    ),
+                    deps,
+                );
+                ty
+            };
+            types.push(ty);
+        }
+        let mut domain_type = types[0];
+        let mut previous_product = None;
+        for (i, &ty) in types.iter().enumerate().skip(1) {
+            let product = self.create(
+                self.key(
+                    "owned-cross-domain/1",
+                    cross,
+                    "cartesian-product",
+                    &[domain.factors[i].end],
+                ),
+                c::FEATURE,
+                deps,
+            );
+            self.cross_typing(cross, product, ty, deps);
+            self.cross_featuring(cross, product, domain_type, deps);
+            if let Some(previous) = previous_product {
+                self.membership(
+                    product,
+                    previous,
+                    c::OWNING_MEMBERSHIP,
+                    self.key(
+                        "owned-cross-domain/1",
+                        cross,
+                        "cartesian-owner",
+                        &[previous],
+                    ),
+                    deps,
+                );
+            }
+            domain_type = product;
+            previous_product = Some(product);
+        }
+        self.membership(
+            cross,
+            domain_type,
+            c::OWNING_MEMBERSHIP,
+            self.key("owned-cross-domain/1", cross, "cartesian-root-owner", &[]),
+            deps,
+        );
+        self.cross_featuring(cross, cross, domain_type, deps);
+        for &general in inherited_domains {
+            if self
+                .model
+                .registry()
+                .is_subtype(
+                    self.model.element(general).expect("domain").metaclass(),
+                    c::FEATURE,
+                )
+                .unwrap_or(false)
+            {
+                self.subset(cross, domain_type, general, "owned-cross-domain/1", deps);
+            } else {
+                self.cross_typing(cross, domain_type, general, deps);
+            }
+        }
+        vec![domain_type]
+    }
     fn initial_value_context(&mut self, that: ElementId, start: ElementId) -> ElementId {
         let inputs = [that, start];
         let deps = BTreeSet::from([FactKey::Element(that), FactKey::Element(start)]);
@@ -777,6 +985,41 @@ impl<'m> KerMlQueries<'m> {
                 );
                 continue;
             }
+            if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
+                let mut proof = self.owned_cross_feature_domain(subject);
+                if let Some(domain) = proof.value.clone() {
+                    let mut inherited_domains = vec![];
+                    for &inherited in &domain.inherited_cross_features {
+                        let featuring = self.featuring_types(inherited);
+                        inherited_domains.extend(featuring.value.iter().copied());
+                        proof.merge(featuring);
+                    }
+                    let types = self.feature_types(domain.owning_end);
+                    let required_types = types.value.clone();
+                    proof.merge(types);
+                    if proof.completeness == Completeness::Complete {
+                        graph.cross_domain(
+                            subject,
+                            &domain,
+                            &inherited_domains,
+                            &proof.positive_dependencies,
+                        );
+                        for ty in required_types {
+                            graph.cross_typing(subject, subject, ty, &proof.positive_dependencies);
+                        }
+                        for &inherited in &domain.inherited_cross_features {
+                            graph.subset(
+                                subject,
+                                subject,
+                                inherited,
+                                "owned-cross-domain/1",
+                                &proof.positive_dependencies,
+                            );
+                        }
+                    }
+                }
+                production.merge(proof);
+            }
             if self.is(subject, c::FEATURE_REFERENCE_EXPRESSION) {
                 let mut proof = self.result(());
                 let referent = self.reference_referent(subject);
@@ -925,7 +1168,23 @@ impl<'m> KerMlQueries<'m> {
                         }
                         if nondefault {
                             let domains = self.featuring_types(subject);
-                            if initial && profile == BaselineProfile::OPERATIONAL_V7 {
+                            if initial && profile == BaselineProfile::OPERATIONAL_V8 {
+                                let that = self.standard_role(StandardRole::ThingsThat);
+                                let start = self.standard_role(StandardRole::OccurrenceStartShot);
+                                let anchors = (that.value, start.value);
+                                proof.merge(that);
+                                proof.merge(start);
+                                if let (Some(that), Some(start)) = anchors {
+                                    let context = graph.initial_value_context(that, start);
+                                    production.value.push(graph.binding(
+                                        subject,
+                                        [subject, contextual.expect("value chain")],
+                                        Some(context),
+                                        ImpliedBindingRole::FeatureValue,
+                                        &proof.positive_dependencies,
+                                    ));
+                                }
+                            } else if initial && profile == BaselineProfile::OPERATIONAL_V7 {
                                 let mut targets = vec![];
                                 for segments in [
                                     ["Base", "things", "that"],
@@ -1000,7 +1259,18 @@ impl<'m> KerMlQueries<'m> {
                     let result = self.required_structural_result(&mut proof, subject);
                     if let (Some(raw), Some(result)) = (raw, result) {
                         let index = self.is(subject, c::INDEX_EXPRESSION);
-                        let applies = if index {
+                        let applies = if index && profile == BaselineProfile::OPERATIONAL_V8 {
+                            let array = self.standard_role(StandardRole::CollectionsArray);
+                            let mut applies = false;
+                            if let Some(array) = array.value {
+                                let supers = self.all_supertypes(raw);
+                                applies = !supers.value.contains(&array);
+                                proof.merge(supers);
+                            }
+                            proof.merge(array);
+                            applies
+                        } else if index {
+                            // Historical profiles retain their original path lookup.
                             // The exact Array guard is bound through ordinary global resolution.
                             let resolution = self.resolve_reference(
                                 subject,

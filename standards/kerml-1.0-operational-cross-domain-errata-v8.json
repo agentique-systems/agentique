@@ -1,0 +1,29 @@
+{
+  "format": "agentique-reviewed-publication-interpretation/1",
+  "profile_id": "agentique-kerml-1.0-operational/8",
+  "extends": {
+    "profile_id": "agentique-kerml-1.0-operational/7",
+    "path": "standards/kerml-1.0-operational-profile-v7.json",
+    "sha256": "e44da6e5c9242398f420064339b509ab665962b9c31bb1c947a2439beb3c03df"
+  },
+  "authority": "Explicit project authorization for canonical publication closure; operational interpretation, not final OMG adoption",
+  "normative_artifact": {
+    "path": "standards/normative/kerml-1.0/KerML.xmi",
+    "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466"
+  },
+  "historical_profiles": "Published through Operational v7 unchanged",
+  "rule": "checkFeatureOwnedCrossFeatureTypeFeaturing",
+  "algorithm_id": "agentique-kerml10-owned-cross-domain/1",
+  "selection": "Existing v7 ownedCrossFeature selector unchanged",
+  "interpretation": "For cross X owned by end E of T, otherEnds = T.endFeature excluding E, not X",
+  "binary": "The featuring domain is the type intersection of the single other end",
+  "n_ary": "Cartesian product over the type intersections of every other end in endFeature order; retain specialization of inherited/redefined cross domains",
+  "formal_conflict": "The literal published excluding(self) removes X, which is not an association end. It does not express this correction.",
+  "corroboration": {
+    "retained_register": "standards/kerml-1.0-operational-authority-blockers.json#KLCV10-F-003",
+    "implementation": "Systems-Modeling/SysML-v2-Pilot-Implementation FeatureAdapter.addOwnedCrossFeatureTypeFeaturing",
+    "historical_work": "KERML_-18",
+    "binary": "endFeatures[1 - endFeatures.indexOf(owningFeature)]",
+    "n_ary": "Exclude owningFeature from the Cartesian factors"
+  }
+}

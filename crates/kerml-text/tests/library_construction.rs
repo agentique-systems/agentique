@@ -33,7 +33,7 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
         assert_eq!(
             record.origin(),
             &Origin::Declared(DeclaredOrigin::StandardLibrary {
-                library: bindings.library()
+                library: bindings.bound(role).library
             })
         );
     }
@@ -65,12 +65,12 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
                     baseline_profile: first.baseline_profile(),
                     ..Default::default()
                 },
-                Default::default(),
+                bindings.library_set().pins.clone(),
             )
             .unwrap(),
         );
         let error =
-            StandardKermlBindings::validate(&q, first.roots(), bindings.library()).unwrap_err();
+            StandardKermlBindings::validate(&q, first.roots(), bindings.library_set()).unwrap_err();
         assert!(matches!(
             (fault, error),
             (
@@ -90,6 +90,45 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
                 BindingError::Inaccessible(StandardRole::Anything, _)
             )
         ));
+    }
+    for role in [
+        agq_kerml_semantics::StandardRole::ThingsThat,
+        agq_kerml_semantics::StandardRole::OccurrenceStartShot,
+        agq_kerml_semantics::StandardRole::CollectionsArray,
+    ] {
+        use agq_kerml_semantics::{
+            BindingError, KerMlQueries, SemanticContext, StandardKermlBindings,
+        };
+        let bound = bindings.bound(role);
+        let artifact = sources
+            .libraries()
+            .values()
+            .find(|l| l.resource() == role.library_artifact().resource())
+            .unwrap();
+        assert_eq!(bound.library, artifact.id());
+        for fault in [Fault::Missing, Fault::WrongLibrary, Fault::Private] {
+            let candidate = defective_candidate(model, &queries, bound.element, fault);
+            let q = KerMlQueries::new(
+                SemanticContext::for_construction(
+                    &candidate,
+                    agq_kerml_semantics::SemanticOptions {
+                        baseline_profile: first.baseline_profile(),
+                        ..Default::default()
+                    },
+                    bindings.library_set().pins.clone(),
+                )
+                .unwrap(),
+            );
+            let error = StandardKermlBindings::validate(&q, first.roots(), bindings.library_set())
+                .unwrap_err();
+            let failed_role = match error {
+                BindingError::Missing(role)
+                | BindingError::WrongLibrary(role, _)
+                | BindingError::Inaccessible(role, _) => role,
+                other => panic!("Unexpected binding failure: {other:?}"),
+            };
+            assert_eq!(failed_role, role);
+        }
     }
     assert_eq!(first.roots().len(), 36);
     assert_eq!(

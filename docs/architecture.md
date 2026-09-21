@@ -3,17 +3,19 @@
 The publication convergence review separates strict kernel validity, canonical
 KerML publication and conformance coverage ([ADR 0022](adr/0022-kerml-publication-vs-conformance.md)).
 Incomplete validator coverage alone does not block a canonical semantic graph.
-Current publication remains incomplete because essential graph closure and two
-graph-affecting authority interpretations remain open; see the
-[convergence evidence](../verification/kerml-publication-convergence/README.md).
+Operational v8 explicitly resolves the owned-cross featuring-domain and imported
+Membership collision interpretations. Its independent authority manifests extend
+v7 without rewriting earlier profiles. Current publication remains incomplete
+because essential producer and graph closure are not established; see the
+[publication evidence](../verification/kerml-canonical-publication/README.md).
 New evidence follows [ADR 0021](adr/0021-verification-evidence-policy.md).
 
 The operational errata publication v3 milestone adds explicit published and
 Agentique operational KerML 1.0 profiles ([ADR 0014](adr/0014-operational-standard-errata-profiles.md)).
 Authored generation-2 KerML and standard-library construction explicitly use the
 operational profile; legacy descriptor/registry APIs retain published metadata.
-The reviewed KERML11-81 deletion is independently verified. Canonical library
-publication remains blocked at Gate 7 by the separate
+The reviewed KERML11-81 deletion is independently verified. That historical
+milestone stopped at Gate 7 on the separate
 [KERML11-140 resolution authority conflict](kerml-operational-library-publication-authority-conflict.md).
 No accepted library facade or SysML semantic readiness is claimed.
 

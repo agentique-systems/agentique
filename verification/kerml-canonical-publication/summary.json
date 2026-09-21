@@ -1,0 +1,1430 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "v8-imports",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_imports"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "edc9e04c0812f58e0a8dd093f8a9db9c213fb1c50fdcd1dceeba7976e16abbbd",
+      "output_sha256": "1a92e6e92368e676ee188615c6ae6b04aa24ccf4c467efdde41e6785dc072be1",
+      "duration_seconds": 7.3,
+      "output": "verification/generated/kerml-publication-convergence/v8-imports.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-cross-domains",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_cross_domains"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "14f2e5c8c628131c11c2cc8f61b99f6965bf93463170e5a1318ff8bce1fdef10",
+      "output_sha256": "d7edde9f2f9b52150061d8a88d2859968824353179248bff1d68cd3315e34607",
+      "duration_seconds": 5.31,
+      "output": "verification/generated/kerml-publication-convergence/v8-cross-domains.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-bindings",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "library_construction"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "e12aa1d52a529edba1bd2cdc22e5c4bd3ed19a63ca361b0d8a34b0a066dd9057",
+      "output_sha256": "ecb684403152d9f4edc29b9bfb8e65009a9d245c24fe4d704fa9ff11fd974504",
+      "duration_seconds": 76.8,
+      "output": "verification/generated/kerml-publication-convergence/v8-bindings.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-semantic-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "a7d1adc5c8bb1b3ab874d01bbea677640a682cc04b2d704584c7f68844d97261",
+      "output_sha256": "8d064ed02c6f2fdadf62e313070525af6be83c4fe3d8348d50d0781bbdecb12d",
+      "duration_seconds": 101.12,
+      "output": "verification/generated/kerml-publication-convergence/v8-semantic-regressions.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-effective-parameters",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_members"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "de65ae3965646315e825627669fa080520107750fd57feaa8c5245ffab26299a",
+      "output_sha256": "21b8c0f6c348a87336adad1192611ae1d61804df16e3da70b9e62b614b85c6e3",
+      "duration_seconds": 8.2,
+      "output": "verification/generated/kerml-canonical-publication/v8-effective-parameters.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-owner-typing",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_members",
+        "--test",
+        "formal_targets_v5"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "69adf5c6a793644ff540ab7264d1d960430ed789c79b49a12a536d4d98b04c5e",
+      "output_sha256": "f81ff2fde4913cd66d2b613404818045db92de35bdf887ef10b767fc2a08eeff",
+      "duration_seconds": 12.31,
+      "output": "verification/generated/kerml-canonical-publication/v8-owner-typing.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-focused-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "b931719e2216ec0ffcdae0beab10323aeeb9d08611901933e12f4898ef07b7de",
+      "output_sha256": "bbbc170f93ca22001fabf6622c8a4e4dae1cae0d5f7b66c793d2ed3b8b5e556d",
+      "duration_seconds": 7.59,
+      "output": "verification/generated/kerml-canonical-publication/v8-focused-clippy.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-focused-clippy-fixed",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "028add63dbc8f99d862444a39191d91060ebdb43d2afc0ed5de7bbcb4c11f71c",
+      "output_sha256": "2f3276379660067f7d40a3143155d9dc6b1749671bd0848ec139ff7cfb948a47",
+      "duration_seconds": 3.05,
+      "output": "verification/generated/kerml-canonical-publication/v8-focused-clippy-fixed.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-focused-clippy-clean",
+      "command": [
+        "cargo",
+        "clippy",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "43bf527bfae6f13cc5d095c883c007cd34f431e7f7a88c57e54f5f4c543d2ca2",
+      "output_sha256": "6807bcb553670c3e9e3cd145b2b02c851c449a8095fb27a7a5a1868a646e8d71",
+      "duration_seconds": 2.05,
+      "output": "verification/generated/kerml-canonical-publication/v8-focused-clippy-clean.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-authority",
+      "command": [
+        "python",
+        "verification/kerml-canonical-publication/scripts/authority.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "676172bf43f35f248b9e9a39d26a804d0961b11ab85aa8a312c78fefb2048dd6",
+      "output_sha256": "6efffce881dcc8347c7f00a93b367b419efa4c62580e9b5743183d8f0c82835d",
+      "duration_seconds": 0.14,
+      "output": "verification/generated/kerml-canonical-publication/v8-authority.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-focused-final",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml",
+        "--test",
+        "profile_lineage_publication_v8",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_cross_domains",
+        "--test",
+        "publication_v8_imports",
+        "--test",
+        "publication_v8_members",
+        "--test",
+        "publication_v8_bounds"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "366e3379be4d1cb700b03fe92c883f01afaec81c828f47eaf8598e967335dca9",
+      "output_sha256": "833ec52462d5d8bfe86e9801ad188192371b399a82cede2736bb35d4344b1ae1",
+      "duration_seconds": 11.8,
+      "output": "verification/generated/kerml-canonical-publication/v8-focused-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-standards",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "03abcf2a8de58485a183da6d86aa40c5c72c6e8e8990850d83424ec46bbb64af",
+      "output_sha256": "fd4b0178823a46e6168f9dae57252b299577352a2f8507669715d89ee16038d4",
+      "duration_seconds": 0.98,
+      "output": "verification/generated/kerml-canonical-publication/final-standards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-console-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "03abcf2a8de58485a183da6d86aa40c5c72c6e8e8990850d83424ec46bbb64af",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.16,
+      "output": "verification/generated/kerml-canonical-publication/final-console-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-console-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "03abcf2a8de58485a183da6d86aa40c5c72c6e8e8990850d83424ec46bbb64af",
+      "output_sha256": "adc93d537c61a2ee658cac329b0396e46e991ff74ced3c2a29b598548b9a319a",
+      "duration_seconds": 2.48,
+      "output": "verification/generated/kerml-canonical-publication/final-console-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-console-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "03abcf2a8de58485a183da6d86aa40c5c72c6e8e8990850d83424ec46bbb64af",
+      "output_sha256": "56f73cecff10f2b4378cfe99023b051287135a4067cb75b6ea144ba5a6a48f8d",
+      "duration_seconds": 0.69,
+      "output": "verification/generated/kerml-canonical-publication/final-console-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-e2e",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "03abcf2a8de58485a183da6d86aa40c5c72c6e8e8990850d83424ec46bbb64af",
+      "output_sha256": "4bbd45ae80cc0ee489f37e39943edf73b32b7e2e9dde8b021d7f4c561a00b4b6",
+      "duration_seconds": 71.02,
+      "output": "verification/generated/kerml-canonical-publication/final-e2e.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "66ac3e03bc74c41af0115902cfbd87183dcff378161f3acafd235a374a7602de",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.78,
+      "output": "verification/generated/kerml-canonical-publication/final-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "66ac3e03bc74c41af0115902cfbd87183dcff378161f3acafd235a374a7602de",
+      "output_sha256": "77bdf869bb291023f869208726b4f9141f6c9da1eae8853aeba62be05b5442dd",
+      "duration_seconds": 11.2,
+      "output": null,
+      "environment_overrides": {},
+      "output_retention": "Earlier raw log was overwritten by a rerun before unique attempt paths were added; original digest and exit status retained."
+    },
+    {
+      "name": "final-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "66ac3e03bc74c41af0115902cfbd87183dcff378161f3acafd235a374a7602de",
+      "output_sha256": "171850605b29654b1ab8dd287a4c9ef741a486912fb57142a1d4ac99a3b5928c",
+      "duration_seconds": 25.16,
+      "output": null,
+      "environment_overrides": {},
+      "output_retention": "Earlier raw log was overwritten by a rerun before unique attempt paths were added; original digest and exit status retained."
+    },
+    {
+      "name": "final-metamodel",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "66ac3e03bc74c41af0115902cfbd87183dcff378161f3acafd235a374a7602de",
+      "output_sha256": "dbcdaacf05323f97ae8a0f89613a77b404b80990bce7e8dfb73d7ea63cf806d2",
+      "duration_seconds": 8.05,
+      "output": "verification/generated/kerml-canonical-publication/final-metamodel.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-kerml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "66ac3e03bc74c41af0115902cfbd87183dcff378161f3acafd235a374a7602de",
+      "output_sha256": "f0d0818c417c43a488586315572f0b4928e0aa2cafce3f1c9c2771bfc448987e",
+      "duration_seconds": 2.19,
+      "output": "verification/generated/kerml-canonical-publication/final-kerml-runtime.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-sysml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "66ac3e03bc74c41af0115902cfbd87183dcff378161f3acafd235a374a7602de",
+      "output_sha256": "fcea818465042c5807962c4df6063dbf094b42f97fe8f47edbc583a036a877f3",
+      "duration_seconds": 4.36,
+      "output": "verification/generated/kerml-canonical-publication/final-sysml-runtime.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "66ac3e03bc74c41af0115902cfbd87183dcff378161f3acafd235a374a7602de",
+      "output_sha256": "7b3a9ee75235d760f4403709e031b90274a6111c4bb930f694c1caf3f54b6e0b",
+      "duration_seconds": 20.36,
+      "output": "verification/generated/kerml-canonical-publication/final-rustdoc.log",
+      "environment_overrides": {
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "name": "v8-publication-focus",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_focus"
+      ],
+      "exit_code": 1,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "a7d1adc5c8bb1b3ab874d01bbea677640a682cc04b2d704584c7f68844d97261",
+      "output_sha256": "fa3e25bb4621945896a44348aa326d8f807de65aa8b8b82dc9155f8c5560259b",
+      "duration_seconds": 1346.5,
+      "output": "verification/generated/kerml-publication-convergence/v8-publication-focus.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-workspace-tests-retry",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "555b22e7d399d6093baf83d2d3fc69b903921f65b78f303c90ead59b83e125a8",
+      "output_sha256": "f4b4e4bf3033236b9bf08eb192ba8ffe6658363795e8c74686c2719a4c0e2352",
+      "duration_seconds": 488.66,
+      "output": "verification/generated/kerml-canonical-publication/final-workspace-tests-retry.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-cross-domain-obligations",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_cross_domains"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "a51c5d2fc0b3ba71c0cc365c5b062cde093cbd8116f1fe78263bd214a41ec599",
+      "output_sha256": "4f9f67c903fe575e4b06b69581a53534e70cc49f2341afad896db0292511c2fb",
+      "duration_seconds": 23.3,
+      "output": "verification/generated/kerml-canonical-publication/v8-cross-domain-obligations.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-negative-typing-proof",
+      "command": [
+        "cargo",
+        "test",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_members",
+        "--test",
+        "formal_targets_v5"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "5414c848a86e2adbb3e81c54ceffbe577d9204d9d57abfb86e5ee3cce58d3557",
+      "output_sha256": "da5173a7eac251ebb5c46177549bdf44973316fa375edfe53c346e4bf4ea6fcd",
+      "duration_seconds": 16.61,
+      "output": "verification/generated/kerml-canonical-publication/v8-negative-typing-proof.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "27e67ca577c2ea2b26501fa756575e4cc36471302009baa335e0225d04e89a33",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.55,
+      "output": "verification/generated/kerml-canonical-publication/final-fmt.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "27e67ca577c2ea2b26501fa756575e4cc36471302009baa335e0225d04e89a33",
+      "output_sha256": "fb44a5d014d064e019be828298ae2d7c7e6d322b599bb33a41081b27d23bbd48",
+      "duration_seconds": 24.84,
+      "output": "verification/generated/kerml-canonical-publication/final-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-authority-final",
+      "command": [
+        "python",
+        "verification/kerml-canonical-publication/scripts/authority.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "b45cc01595866af7ab5600576e172e840e8287c9643634ba23b95ce4c06fc4e0",
+      "output_sha256": "6efffce881dcc8347c7f00a93b367b419efa4c62580e9b5743183d8f0c82835d",
+      "duration_seconds": 0.5,
+      "output": "verification/generated/kerml-canonical-publication/v8-authority-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v8-focused-semantics-complete",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "63b5fc61407878e99c5158f501c5237cff22aff62c440711f574a366ebd30642",
+      "output_sha256": "956bec71a51239157252c09645cc4e24e8e4645ae537c246df0538c8006030a1",
+      "duration_seconds": 120.41,
+      "output": "verification/generated/kerml-canonical-publication/v8-focused-semantics-complete.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-clippy-publication",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "0a663d9be6cad23016549fe2c3073ea814f02be9c9d547ae43a2efdc0a056cdb",
+      "duration_seconds": 10.52,
+      "output": "verification/generated/kerml-canonical-publication/final-clippy-publication.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "27e67ca577c2ea2b26501fa756575e4cc36471302009baa335e0225d04e89a33",
+      "output_sha256": "6f9d21b6bb6eec2facfc8dd0ebda1afec84ee0c4e899203d6c10438e95a4892b",
+      "duration_seconds": 436.12,
+      "output": "verification/generated/kerml-canonical-publication/final-workspace-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-metamodel",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "f460d2e2f3fcd20eb32ffc93cce5081c662dd50931625d29cdc2641d1850192d",
+      "duration_seconds": 16.02,
+      "output": "verification/generated/kerml-canonical-publication/final-metamodel-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-kerml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "f0d0818c417c43a488586315572f0b4928e0aa2cafce3f1c9c2771bfc448987e",
+      "duration_seconds": 2.16,
+      "output": "verification/generated/kerml-canonical-publication/final-kerml-runtime-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-sysml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "4a4b87fe8189617c6cf4c2689667299712641ad7fca4e5a885618424a4960252",
+      "duration_seconds": 4.03,
+      "output": "verification/generated/kerml-canonical-publication/final-sysml-runtime-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-standards-publication",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "07e91efa659efa51fd4ca2979d44eab7f7c216b2e6719b6f933eac2864e30afa",
+      "duration_seconds": 0.78,
+      "output": "verification/generated/kerml-canonical-publication/final-standards-publication.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-fmt-publication",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.03,
+      "output": "verification/generated/kerml-canonical-publication/final-fmt-publication.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "73f8e5223262e8a933247feb7c3dcc172bc3de454c58a624e50bb12d06ef46b9",
+      "duration_seconds": 26.52,
+      "output": "verification/generated/kerml-canonical-publication/final-rustdoc-2.log",
+      "environment_overrides": {
+        "RUSTDOCFLAGS": "-D warnings",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-publication-focus-closure",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_focus"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "555b22e7d399d6093baf83d2d3fc69b903921f65b78f303c90ead59b83e125a8",
+      "output_sha256": "5ba6cf128c4f6daa09a72e8026212d45a41b3cd3efd9d4279a5935870005e3ae",
+      "duration_seconds": 1479.98,
+      "output": "verification/generated/kerml-canonical-publication/v8-publication-focus-closure.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-historical-binding-manifest",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "binding_manifest",
+        "--",
+        "--check"
+      ],
+      "exit_code": 1,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "a3188b3bc1d2c46f2f5d82a8db12b198e2518c98fbdde895fa08e943e1d021a6",
+      "duration_seconds": 111.78,
+      "output": "verification/generated/kerml-canonical-publication/v8-historical-binding-manifest.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-binding-manifest-stale",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "binding_manifest",
+        "--",
+        "--check"
+      ],
+      "exit_code": 1,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "770380d7bd6414b8cde1e9bb4e5319dd3392012fdbfc7d34d0ab9ce4ae040b94",
+      "output_sha256": "a3f04c2d2c0cdcb1d610c579425e8153dc68013f230802cb7f50a0ac0cb74d8e",
+      "duration_seconds": 155.72,
+      "output": "verification/generated/kerml-canonical-publication/v8-binding-manifest-stale.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-validation-only-cross-cardinality",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_cross_domains"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "875094a2f2ac2e2e005332c468c244d175def321340ca6a5f30834e4822b43af",
+      "output_sha256": "36be20ad0e8ec8c2bac9e5455d5e927505ef13d04c0fda417b5a8e9b0d15d6fd",
+      "duration_seconds": 8.78,
+      "output": "verification/generated/kerml-canonical-publication/v8-validation-only-cross-cardinality.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-cross-domain-final",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_cross_domains"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "e70b15a1cdc80f838a113c4f48f557346a51075a2ae0932e3af2e9ee2363287f",
+      "output_sha256": "ac06f49a344337acf0412412e6f76d8cb687d291b744af88e9cc556f2685c857",
+      "duration_seconds": 7.94,
+      "output": "verification/generated/kerml-canonical-publication/v8-cross-domain-final.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-inherited-cross-domain",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_cross_domains"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4eb36abca8c3ba865d7878373a34626ee5364a9aef9417d586a4e88a4e3cc569",
+      "output_sha256": "a51eaa88991331a2ef5771df7a3c9c4dc317f8a01ca5be5cb1834d3436ee0eae",
+      "duration_seconds": 2.03,
+      "output": "verification/generated/kerml-canonical-publication/v8-inherited-cross-domain.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-final-semantic-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4eb36abca8c3ba865d7878373a34626ee5364a9aef9417d586a4e88a4e3cc569",
+      "output_sha256": "08df51440cb8189a2ccf6a4893e8682f083291e8f854269ee2e63292abdd3df6",
+      "duration_seconds": 110.73,
+      "output": "verification/generated/kerml-canonical-publication/v8-final-semantic-regressions.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-clippy-cross-cardinality",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "5123f747c485c18327f4bd2adbb7f8d7c6b44c942cb4f8e5e217a86725f8c226",
+      "output_sha256": "17e11a367d963eacf611cc96e1c0defefb9c298f38981b4887d378130691b384",
+      "duration_seconds": 8.33,
+      "output": "verification/generated/kerml-canonical-publication/final-clippy-cross-cardinality.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-repeated-cartesian-factors",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_v8_cross_domains"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "a6911157e88f9c05dc0be664d27cbe9a5efd556bed553b47944a6ade0418279d",
+      "output_sha256": "d63e0b8f649978cc03b24a68b4c49267c5c2249767d9c5bc2df3cce85f9ca175",
+      "duration_seconds": 2.09,
+      "output": "verification/generated/kerml-canonical-publication/v8-repeated-cartesian-factors.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "a6911157e88f9c05dc0be664d27cbe9a5efd556bed553b47944a6ade0418279d",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.53,
+      "output": "verification/generated/kerml-canonical-publication/final-fmt-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "a6911157e88f9c05dc0be664d27cbe9a5efd556bed553b47944a6ade0418279d",
+      "output_sha256": "82f2d8379e87d073de114cfe9a5029695165104f72e1a85799ca31c2678367fe",
+      "duration_seconds": 3.02,
+      "output": "verification/generated/kerml-canonical-publication/final-clippy-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v8-publication-focus-final",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_focus",
+        "--",
+        "--output=verification/generated/kerml-canonical-publication/focused-final.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "4a8ad7b405bf6c098f4f050976f48bc70310f5baa48e3c4d1064b3ef1460eecb",
+      "output_sha256": "739b1197cc37e5222a0129902cd75c1aa0cb3d5d4fef0de5e860ee9f863b25ed",
+      "duration_seconds": 1277.8,
+      "output": "verification/generated/kerml-canonical-publication/v8-publication-focus-final.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "a6911157e88f9c05dc0be664d27cbe9a5efd556bed553b47944a6ade0418279d",
+      "output_sha256": "2cd28db1241ead9d8e98c7778e58eb1590b06dbeb4907688f6762fe48fe57ebd",
+      "duration_seconds": 388.66,
+      "output": "verification/generated/kerml-canonical-publication/final-workspace-tests-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-metamodel",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "1333266f3a269aa0f8e45b610f28cdfbab024570e5bd3343680a3128cd5cbf32",
+      "output_sha256": "ba1e1bc53bc059318bbea5d9b6e9ae5e7993ba98398150c6b7457a3ff95d86c4",
+      "duration_seconds": 6.59,
+      "output": "verification/generated/kerml-canonical-publication/final-metamodel-3.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-kerml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "1333266f3a269aa0f8e45b610f28cdfbab024570e5bd3343680a3128cd5cbf32",
+      "output_sha256": "54a82a132cf690ab2faf27ab733a7b711b0a2c6087b1d69abf7f032569996c62",
+      "duration_seconds": 1.75,
+      "output": "verification/generated/kerml-canonical-publication/final-kerml-runtime-3.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-sysml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "1333266f3a269aa0f8e45b610f28cdfbab024570e5bd3343680a3128cd5cbf32",
+      "output_sha256": "8e8bc3901e5df6a6be073273417b554a161147aa1adb1709fa571832dce7740f",
+      "duration_seconds": 3.56,
+      "output": "verification/generated/kerml-canonical-publication/final-sysml-runtime-3.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "final-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "1333266f3a269aa0f8e45b610f28cdfbab024570e5bd3343680a3128cd5cbf32",
+      "output_sha256": "41a8aeaa149fad6874470ae67bc5576ae34dc777a74549b636f381b7326cf9c2",
+      "duration_seconds": 8.41,
+      "output": "verification/generated/kerml-canonical-publication/final-rustdoc-3.log",
+      "environment_overrides": {
+        "RUSTDOCFLAGS": "-D warnings",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "canonical-publication-gate",
+      "command": [
+        "python",
+        "verification/kerml-canonical-publication/scripts/report.py",
+        "publication",
+        "--focused",
+        "verification/generated/kerml-canonical-publication/focused-final.json"
+      ],
+      "exit_code": 1,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "bc807f80017efca0e4146706c1902dad1d2161cffa208dc5378499e500177a17",
+      "output_sha256": "8616e31e0350a4a6b1e15f574e069b36a963acb704bc4de929538149f52e8efc",
+      "duration_seconds": 0.14,
+      "output": "verification/generated/kerml-canonical-publication/canonical-publication-gate.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "separate-conformance-report",
+      "command": [
+        "python",
+        "verification/kerml-canonical-publication/scripts/report.py",
+        "conformance",
+        "--focused",
+        "verification/generated/kerml-canonical-publication/focused-final.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5279d879534e1b56934b733ba638e14c90168db1",
+      "working_changes_sha256": "bc807f80017efca0e4146706c1902dad1d2161cffa208dc5378499e500177a17",
+      "output_sha256": "d18486608ec48f4472d01166873fe4c84c6a0b4ec1759914933fa55a7621f5b4",
+      "duration_seconds": 0.12,
+      "output": "verification/generated/kerml-canonical-publication/separate-conformance-report.log",
+      "environment_overrides": {}
+    }
+  ],
+  "environment_remediation": {
+    "cause": "Workspace test build exhausted disk space while writing Windows PDBs",
+    "failed_command": "cargo test --workspace",
+    "recovery_command": [
+      "cargo",
+      "clean",
+      "--profile",
+      "dev",
+      "-p",
+      "agq-kerml-semantics",
+      "-p",
+      "agq-kerml-text"
+    ],
+    "recovery_exit_code": 0,
+    "recovery_output": "Removed 18989 files, 17.7GiB total",
+    "retry_environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "2"
+    }
+  },
+  "publication": {
+    "focused_evidence": "verification/generated/kerml-canonical-publication/focused-final.json",
+    "focused_sha256": "caa31a76d5e79df574862f9af6686c5c23de566f3a03c604af0fd0f06c30e43a",
+    "profile": "agentique-kerml-1.0-operational/8",
+    "scope": "FocusedDocumentPartialOverlay",
+    "measurements": {
+      "source_records": 29140,
+      "focused_derived_records": 948,
+      "library_artifacts": 3,
+      "source_structural_references": 4000,
+      "references_evaluated": 10,
+      "scoped_result_producer_complete": true,
+      "producer_diagnostic_counts": {}
+    },
+    "accepted": false,
+    "blockers": [
+      "publication capabilities remain incomplete",
+      "complete three-library expanded publication gate not run",
+      "canonical_facade not accepted",
+      "accepted_bindings not accepted",
+      "authored_publication_integration not accepted"
+    ],
+    "publication_blocking_authority_conflicts": 0,
+    "capabilities_incomplete": [
+      "Specialization/subsetting/redefinition",
+      "Typing",
+      "Featuring/domain",
+      "Feature chains",
+      "Cross features",
+      "Connector/association structure",
+      "Expression/function result structure",
+      "FeatureValue/reference bindings",
+      "Identity/provenance"
+    ],
+    "focused_references": {
+      "count": 10,
+      "incomplete": 0,
+      "unresolved": 0,
+      "ambiguous": 0,
+      "invalid": 0
+    },
+    "effective_namespaces": [
+      {
+        "completeness": "Complete",
+        "findings": 0,
+        "members": 103,
+        "namespace": "4a74747a-c385-5a89-89c8-be2fadaa9ecb"
+      },
+      {
+        "completeness": "Complete",
+        "findings": 0,
+        "members": 103,
+        "namespace": "518b9181-2fd8-5bfa-953c-3292058bc119"
+      }
+    ],
+    "full_expansion_run": false,
+    "validator_coverage_is_publication_gate": false
+  },
+  "conformance": {
+    "focused_evidence": "verification/generated/kerml-canonical-publication/focused-final.json",
+    "focused_sha256": "caa31a76d5e79df574862f9af6686c5c23de566f3a03c604af0fd0f06c30e43a",
+    "profile": "agentique-kerml-1.0-operational/8",
+    "scope": "FocusedDocumentPartialOverlay",
+    "measurements": {
+      "source_records": 29140,
+      "focused_derived_records": 948,
+      "library_artifacts": 3,
+      "source_structural_references": 4000,
+      "references_evaluated": 10,
+      "scoped_result_producer_complete": true,
+      "producer_diagnostic_counts": {}
+    },
+    "coverage": "Incomplete",
+    "checked_rules": 42,
+    "diagnostic_counts": {},
+    "authority_conflicts": [
+      {
+        "impact": "ValidationOnlyAuthorityConflict",
+        "issue": "KERML11-2"
+      },
+      {
+        "impact": "ValidationOnlyAuthorityConflict",
+        "issue": "KERML11-4"
+      }
+    ],
+    "validator_coverage_is_publication_gate": false
+  },
+  "primary_status": "KERML CANONICAL LIBRARY PUBLICATION INCOMPLETE — DO NOT START SYSML SEMANTICS",
+  "conformance_coverage": "incomplete",
+  "branch": "foundation/kerml-canonical-publication-closure",
+  "gate_dispositions": {
+    "canonical-publication-gate": "Failed acceptance gate: nine capability families remain incomplete; full expansion and downstream acceptance remain gated.",
+    "v8-binding-manifest-stale": "Failed acceptance gate: retained manifest /1 has 22 roles; current contract /3 validates 27. No accepted regeneration before publication.",
+    "separate-conformance-report": "Report generation succeeded; scoped conformance coverage is Incomplete and both validation-only authority conflicts remain visible.",
+    "v8-publication-focus": "Initial reproduction failed on ten reference cases and two namespace populations; final focused run passes all of them.",
+    "v8-focused-clippy": "Development check failure corrected; final workspace Clippy passes.",
+    "v8-focused-clippy-fixed": "Development fixture warning corrected; final workspace Clippy passes."
+  },
+  "required_check_exit_codes": {
+    "final-fmt": 0,
+    "final-clippy": 0,
+    "final-workspace-tests": 0,
+    "final-metamodel": 0,
+    "final-kerml-runtime": 0,
+    "final-sysml-runtime": 0,
+    "final-rustdoc": 0,
+    "final-standards-publication": 0,
+    "final-console-check": 0,
+    "final-console-build": 0,
+    "final-console-tests": 0,
+    "final-e2e": 0
+  },
+  "raw_output_retention_correction": [
+    "final-clippy",
+    "final-workspace-tests"
+  ]
+}

@@ -134,8 +134,25 @@ fn required_general_scope_retains_an_independently_named_redefined_member() {
     // Test the algorithm independently of binding-path validation (which
     // has its own production tests); no test-only binding API is exposed.
     context.id.standard_bindings = Some(Arc::new(StandardKermlBindings {
-        targets: bindings,
-        library: LibraryId::from_u128(1),
+        targets: bindings
+            .into_iter()
+            .map(|(role, element)| {
+                (
+                    role,
+                    BoundStandardElement {
+                        element,
+                        library: LibraryId::from_u128(1),
+                    },
+                )
+            })
+            .collect(),
+        library_set: LibrarySetIdentity {
+            artifacts: BTreeMap::from([(
+                StandardLibraryArtifact::Semantic,
+                LibraryId::from_u128(1),
+            )]),
+            pins: BTreeSet::new(),
+        },
     }));
     let q = KerMlQueries::new(context);
     let implicit_type = q.feature_types(id(500));

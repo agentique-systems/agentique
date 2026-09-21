@@ -473,6 +473,19 @@
     "authored_accepted_library_consumption": false,
     "remaining": "Separate reviewed library-source authority correction; remaining structural/derived/implied constraints and any reported ordinary query obligations; accepted semantic publication, facade, bindings and authored library dependencies. No SysML semantic readiness."
   },
+  "kerml_canonical_publication": {
+    "status": "incomplete-publication-critical-closure",
+    "profile": "agentique-kerml-1.0-operational/8",
+    "evidence": "verification/kerml-canonical-publication/README.md",
+    "capabilities": "verification/kerml-canonical-publication/publication-capabilities.json",
+    "authority_decisions": "verification/kerml-canonical-publication/authority-decisions.json",
+    "canonical_publication": false,
+    "conformance_coverage": "Incomplete",
+    "validator_coverage_is_publication_gate": false,
+    "accepted_bindings_regenerated": false,
+    "authored_accepted_library_consumption": false,
+    "generation_1_release_obligations": "unchanged"
+  },
   "kerml_publication_convergence": {
     "status": "incomplete-publication-critical-closure",
     "profile": "agentique-kerml-1.0-operational/7",
