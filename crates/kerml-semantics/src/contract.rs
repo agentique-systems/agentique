@@ -200,6 +200,9 @@ pub struct Explanation {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QueryResult<T> {
+    // Internal producer evaluation retains canonical dependencies and bounded
+    // searches; public query evaluators always retain the full explanation view.
+    pub(crate) producer_evidence: bool,
     pub context: SemanticContextId,
     pub value: T,
     pub completeness: Completeness,
@@ -223,6 +226,7 @@ pub struct QueryResult<T> {
 impl<T> QueryResult<T> {
     pub(crate) fn new(context: &SemanticContextId, value: T) -> Self {
         Self {
+            producer_evidence: false,
             context: context.clone(),
             value,
             completeness: Completeness::Complete,
@@ -281,6 +285,14 @@ impl<T> QueryResult<T> {
         rule: Rule,
         premises: impl IntoIterator<Item = Evidence>,
     ) {
+        if self.producer_evidence
+            && !matches!(
+                rule,
+                Rule::ParameterRedefinition | Rule::ResultRedefinition | Rule::EndRedefinition
+            )
+        {
+            return;
+        }
         self.explanations
             .entry(Conclusion {
                 query,

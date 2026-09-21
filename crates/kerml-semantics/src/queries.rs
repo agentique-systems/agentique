@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 
 /// An immutable evaluator; per-invocation traversal state is always discardable.
 pub struct KerMlQueries<'m> {
+    producer_evidence: bool,
     pub(crate) context: SemanticContext<'m>,
     pub(crate) namespace_cache: crate::namespaces::NamespaceCache,
     pub(crate) library_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
@@ -24,12 +25,22 @@ pub struct KerMlQueries<'m> {
 impl<'m> KerMlQueries<'m> {
     pub fn new(context: SemanticContext<'m>) -> Self {
         Self {
+            producer_evidence: false,
             context,
             namespace_cache: Default::default(),
             library_cache: Default::default(),
             result_cache: Default::default(),
             origin_cache: Default::default(),
             declared_origin_cache: Default::default(),
+        }
+    }
+    /// A producer needs immediate canonical proof edges and all search reads,
+    /// not the expanded user-facing explanation forest. This mode never escapes
+    /// through a public query evaluator or a returned aggregate production proof.
+    pub(crate) fn for_production(context: SemanticContext<'m>) -> Self {
+        Self {
+            producer_evidence: true,
+            ..Self::new(context)
         }
     }
     pub fn context(&self) -> &SemanticContextId {
@@ -45,7 +56,9 @@ impl<'m> KerMlQueries<'m> {
         self.context.model
     }
     pub(crate) fn result<T>(&self, value: T) -> QueryResult<T> {
-        QueryResult::new(self.context(), value)
+        let mut result = QueryResult::new(self.context(), value);
+        result.producer_evidence = self.producer_evidence;
+        result
     }
 
     pub(crate) fn checked<V: TypedView<'m>, T>(
@@ -248,6 +261,39 @@ impl<'m> KerMlQueries<'m> {
                     out.canonical_dependencies.insert(dependency);
                 }
             }
+        }
+        if self.producer_evidence {
+            // Immediate DAG edges above retain explainability. Search metadata
+            // must still traverse dependencies, including negative reads beneath
+            // an ownership extension or association navigation projection.
+            let mut queue = vec![key];
+            while let Some(fact) = queue.pop() {
+                if !out.positive_dependencies.insert(fact) {
+                    continue;
+                }
+                out.search_dependencies.extend(
+                    self.model()
+                        .computation_searches_for(fact)
+                        .cloned()
+                        .map(SearchDependency::Kernel),
+                );
+                match self.fact_origin(fact).as_deref() {
+                    Some(Origin::Derived(proof)) => {
+                        queue.extend(proof.dependencies.iter().filter_map(|d| {
+                            if let Dependency::Derived(fact) = d {
+                                Some(*fact)
+                            } else {
+                                None
+                            }
+                        }))
+                    }
+                    Some(Origin::AssociationOccurrences(links)) => {
+                        queue.extend(links.iter().copied().map(FactKey::AssociationOccurrence))
+                    }
+                    _ => {}
+                }
+            }
+            return;
         }
         let mut queue = vec![(key, false)];
         while let Some((key, declared)) = queue.pop() {

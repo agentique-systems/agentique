@@ -15,6 +15,7 @@ mod inheritance;
 mod namespaces;
 mod naming;
 mod ordering;
+mod producer_worklist;
 mod publication;
 mod publication_overlay;
 mod queries;
@@ -41,6 +42,7 @@ pub use featuring::ConnectorFeaturing;
 pub use formal_targets::*;
 pub use namespaces::{MemberAccess, MemberMatch};
 pub use naming::EffectiveNames;
+pub use producer_worklist::*;
 pub use publication::*;
 pub use publication_overlay::*;
 pub use queries::KerMlQueries;
@@ -48,3 +50,7 @@ pub use resolution::*;
 pub use result_structure::*;
 pub use structural::MultiplicityBounds;
 pub use validation::RedefinitionEndConformance;
+
+#[cfg(test)]
+#[path = "../tests/unit/producer_worklist.rs"]
+mod producer_worklist_tests;

@@ -255,6 +255,7 @@ mod navigation_evidence_regression {
             unattached_contextual: BTreeSet::new(),
             assignments: BTreeSet::new(),
             conflict: None,
+            searches: BTreeMap::new(),
         };
         let mut proof = q.result(());
         q.fact(&mut proof, projected);
@@ -368,6 +369,7 @@ struct Graph<'a> {
     unattached_contextual: BTreeSet<ElementId>,
     assignments: BTreeSet<(ElementId, PropertyId)>,
     conflict: Option<FactKey>,
+    searches: BTreeMap<ElementId, BTreeSet<agq_kernel::derived::StructuralSearch>>,
 }
 impl<'a> Graph<'a> {
     fn return_result(&mut self, expression: ElementId, deps: &BTreeSet<Dependency>) {
@@ -1359,13 +1361,15 @@ impl<'a> Graph<'a> {
                 }
                 continue;
             }
-            // Producer queries inspect positive and absent graph facts. Retain
-            // a conservative whole-input search rather than losing negative
-            // evidence when aggregate batch proofs are released. The complete
-            // builder reruns every producer to an unchanged graph before sealing.
+            // Retain the producer's actual bounded searches, including misses.
+            // Reading this fact in a later producer transfers these dependencies
+            // without turning every derived fact into a whole-model search.
             builder.searches(
                 FactKey::Element(record.key.element_id()),
-                BTreeSet::from([agq_kernel::derived::StructuralSearch::Model]),
+                self.searches
+                    .get(&record.key.element_id())
+                    .cloned()
+                    .unwrap_or_default(),
             );
             let mut slots = BTreeMap::new();
             for (property, value) in record.slots {
@@ -1528,6 +1532,34 @@ impl ResultStructurePlan<'_> {
     pub fn planned_elements(&self) -> impl Iterator<Item = ElementId> + '_ {
         self.graph.records.keys().copied()
     }
+    /// Changed producers can only add these records and owner collections.
+    /// The worklist compares their canonical before/after state, including
+    /// occurrence-backed navigation, without scanning the whole model.
+    pub(crate) fn affected_elements(&self) -> BTreeSet<ElementId> {
+        let mut result: BTreeSet<_> = self
+            .graph
+            .records
+            .keys()
+            .copied()
+            .chain(self.graph.attachments.keys().copied())
+            .collect();
+        for record in self.graph.records.values() {
+            result.extend(
+                record
+                    .slots
+                    .values()
+                    .flat_map(|v| v.values())
+                    .filter_map(|v| {
+                        if let Value::Reference(id) = v {
+                            Some(*id)
+                        } else {
+                            None
+                        }
+                    }),
+            );
+        }
+        result
+    }
     /// Merge disjoint subject batches from the identical context. Duplicate
     /// facts must agree exactly, including provenance. Contributions to existing
     /// ownership collections merge by stable identity, preserving declared
@@ -1552,6 +1584,9 @@ impl ResultStructurePlan<'_> {
         for (id, mut record) in other.graph.records {
             record.explanation = self.graph.evidence_pool.intern_shared(record.explanation);
             self.graph.records.insert(id, record);
+        }
+        for (id, searches) in other.graph.searches {
+            self.graph.searches.entry(id).or_default().extend(searches);
         }
         self.graph.assignments.extend(other.graph.assignments);
         for (owner, additions) in other.graph.attachments {
@@ -1665,6 +1700,23 @@ impl<'m> KerMlQueries<'m> {
         &self,
         subjects: impl IntoIterator<Item = ElementId>,
     ) -> ResultStructurePlan<'m> {
+        let mut plan = self.plan_result_structure_subjects([]);
+        for subject in subjects.into_iter().collect::<BTreeSet<_>>() {
+            let part = self.plan_result_structure_subjects([subject]);
+            // Preserve the established API's deferred collision behavior.
+            if let Err(error) = plan.merge(part) {
+                plan.graph.conflict = Some(match error {
+                    DerivationError::DuplicateFact(fact) => fact,
+                    _ => FactKey::Element(subject),
+                });
+            }
+        }
+        plan
+    }
+    fn plan_result_structure_subjects(
+        &self,
+        subjects: impl IntoIterator<Item = ElementId>,
+    ) -> ResultStructurePlan<'m> {
         let profile = self.context().options.baseline_profile;
         let mut graph = Graph {
             model: self.model(),
@@ -1675,6 +1727,7 @@ impl<'m> KerMlQueries<'m> {
             unattached_contextual: BTreeSet::new(),
             assignments: BTreeSet::new(),
             conflict: None,
+            searches: BTreeMap::new(),
         };
         let mut production = self.result(vec![]);
         let mut contextual_results = vec![];
@@ -2314,6 +2367,10 @@ impl<'m> KerMlQueries<'m> {
             production.value.dedup();
             contextual_results.sort_by_key(|result| result.feature);
             contextual_results.dedup();
+        }
+        let searches = crate::producer_worklist::structural_searches(&production);
+        for id in graph.records.keys() {
+            graph.searches.insert(*id, searches.clone());
         }
         ResultStructurePlan {
             graph,

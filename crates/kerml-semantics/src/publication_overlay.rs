@@ -3,7 +3,7 @@ use crate::*;
 use agq_kerml::{BaselineProfile, classes as c};
 use agq_kernel::{
     ElementId, Snapshot,
-    derived::{DerivationBuilder, DerivationError, DerivedOverlay},
+    derived::{DerivationError, DerivedOverlay},
     provenance::{DeclaredOrigin, FactKey, Origin},
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -61,6 +61,7 @@ pub struct CompletePublicationOverlay {
     context: SemanticContextId,
     checked: BTreeMap<PublicationFamily, usize>,
     stages: Vec<PublicationStage>,
+    counters: PublicationCounters,
 }
 impl CompletePublicationOverlay {
     /// Bind an authored snapshot only when the kernel retains this exact immutable
@@ -108,6 +109,10 @@ impl CompletePublicationOverlay {
     pub fn checked_items(&self) -> &BTreeMap<PublicationFamily, usize> {
         &self.checked
     }
+    /// Deterministic resource accounting from the dependency-driven closure.
+    pub fn counters(&self) -> &PublicationCounters {
+        &self.counters
+    }
     pub fn stages(&self) -> &[PublicationStage] {
         &self.stages
     }
@@ -142,7 +147,7 @@ impl From<DerivationError> for PublicationOverlayError {
     }
 }
 
-/// The sole constructor for a complete publication overlay. It always scans the
+/// The sole constructor for a complete publication overlay. It covers the
 /// entire strict input and every produced subject under Operational v8. Callers
 /// cannot supply capability statuses or restrict the mandatory subject population.
 pub struct CanonicalPublicationBuilder<'a> {
@@ -236,61 +241,25 @@ impl<'a> CanonicalPublicationBuilder<'a> {
                 ));
             }
         }
-        let mut overlay = DerivationBuilder::new(self.snapshot.clone()).build()?;
-        let mut stages = vec![];
-        let mut closed = false;
-        for stage in 0..max_stages {
-            let context = self.context(&overlay)?;
-            let subjects: Vec<_> = overlay.model().elements().map(|r| r.id()).collect();
-            let mut plan = KerMlQueries::new(context.fork()).plan_result_structure([]);
-            for (index, batch) in subjects.chunks(32).enumerate() {
-                let q = KerMlQueries::new(context.fork());
-                let mut part = q.plan_result_structure(batch.iter().copied());
-                part.discard_aggregate_proof();
-                plan.merge(part)?;
-                batch_progress(
-                    stage,
-                    ((index + 1) * 32).min(subjects.len()),
-                    subjects.len(),
-                    plan.planned_elements().count(),
-                );
-            }
-            let completeness = plan.production.completeness;
-            let diagnostics = plan.production.diagnostics.clone();
-            let next = plan.materialize_on_overlay(&overlay)?;
-            let record = PublicationStage {
-                stage,
-                input_elements: overlay.model().len(),
-                added_elements: next.overlay.model().len() - overlay.model().len(),
-                added_occurrences: next.overlay.model().association_occurrences().count()
-                    - overlay.model().association_occurrences().count(),
-                completeness,
-                diagnostics,
-            };
-            let stable = record.added_elements == 0
-                && record.added_occurrences == 0
-                && next.overlay.facts().eq(overlay.facts())
-                && next
-                    .overlay
-                    .model()
-                    .elements()
-                    .eq(overlay.model().elements())
-                && next
-                    .overlay
-                    .model()
-                    .association_occurrences()
-                    .eq(overlay.model().association_occurrences());
-            progress(&record);
-            stages.push(record);
-            overlay = next.overlay;
-            if stable {
-                closed = completeness == Completeness::Complete;
-                break;
-            }
+        let closure = close_result_structure(
+            self.snapshot,
+            PublicationClosureOptions {
+                max_rounds: max_stages,
+                ..Default::default()
+            },
+            |overlay| self.context(overlay),
+            &mut batch_progress,
+            &mut progress,
+        )?;
+        if !closure.converged || closure.completeness != Completeness::Complete {
+            return Err(PublicationOverlayError::IncompleteProducers(closure.stages));
         }
-        if !closed {
-            return Err(PublicationOverlayError::IncompleteProducers(stages));
-        }
+        let PublicationClosure {
+            overlay,
+            stages,
+            counters,
+            ..
+        } = closure;
         let context = self.context(&overlay)?;
         let mut checks = PublicationChecks::default();
         let subjects: Vec<_> = overlay.model().elements().map(|r| r.id()).collect();
@@ -348,6 +317,7 @@ impl<'a> CanonicalPublicationBuilder<'a> {
             context: identity,
             checked: checks.counts,
             stages,
+            counters,
         })
     }
 }
