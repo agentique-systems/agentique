@@ -11,7 +11,9 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 
 mod proof_graph;
+mod search_sets;
 use proof_graph::cyclic_explanations;
+pub use search_sets::{StructuralSearchPool, StructuralSearchPoolStatistics};
 
 /// Validated, immutable derived results and a merged read-only semantic view.
 ///
@@ -28,6 +30,7 @@ struct OverlayData {
     model: ModelView,
     explanations: BTreeMap<FactKey, Arc<Explanation>>,
     evidence_pool: ExplanationPool,
+    search_pool: StructuralSearchPool,
     build_metrics: DerivationBuildMetrics,
 }
 
@@ -41,6 +44,15 @@ pub struct DerivationBuildMetrics {
     pub proof_sets_interned: usize,
     pub proof_sets_reused: usize,
     pub dependency_edges_considered: usize,
+    /// Logical per-fact populations after this stage, including shared entries.
+    pub logical_search_sets: usize,
+    pub logical_search_entries: usize,
+    /// Distinct allocations retained by the interning pool, including earlier
+    /// union inputs. These are storage counters, not semantic work counts.
+    pub retained_search_sets: usize,
+    pub retained_search_entries: usize,
+    pub search_sets_interned: usize,
+    pub search_sets_reused: usize,
     pub full_model_validations: usize,
     /// The earlier overlay had no remaining readers, so its maps were moved.
     pub reused_owned_storage: bool,
@@ -104,7 +116,8 @@ pub struct DerivationBuilder {
     properties: Vec<(ElementId, PropertyId, SlotValue, Explanation)>,
     extensions: Vec<(ElementId, PropertyId, Vec<ElementId>, Explanation)>,
     failures: BTreeMap<(ElementId, PropertyId), ComputationFailure>,
-    searches: BTreeMap<FactKey, BTreeSet<StructuralSearch>>,
+    searches: BTreeMap<FactKey, Arc<BTreeSet<StructuralSearch>>>,
+    search_pool: StructuralSearchPool,
 }
 impl DerivationBuilder {
     /// Begin a new overlay pinned to this snapshot; no earlier results are reused.
@@ -118,6 +131,7 @@ impl DerivationBuilder {
             extensions: Vec::new(),
             failures: BTreeMap::new(),
             searches: BTreeMap::new(),
+            search_pool: StructuralSearchPool::default(),
         }
     }
     /// Add a later producer stage to the same immutable declared revision.
@@ -256,7 +270,16 @@ impl DerivationBuilder {
     /// Supply search evidence for a computed or unsuccessful result. Absence in a
     /// search is evidence too; results remain bound to the full immutable revision.
     pub fn searches(&mut self, fact: FactKey, searches: BTreeSet<StructuralSearch>) -> &mut Self {
-        self.searches.entry(fact).or_default().extend(searches);
+        self.searches_shared(fact, Arc::new(searches))
+    }
+    /// Supply shared immutable search evidence without copying its set for every
+    /// derived fact. Repeated submissions union all keys without mutating callers.
+    pub fn searches_shared(
+        &mut self,
+        fact: FactKey,
+        searches: Arc<BTreeSet<StructuralSearch>>,
+    ) -> &mut Self {
+        merge_searches(&mut self.searches, &mut self.search_pool, fact, searches);
         self
     }
     /// Record an incomplete or invalid derived result with positive and search evidence.
@@ -294,35 +317,54 @@ impl DerivationBuilder {
     /// Validate structural constraints, dependencies and acyclic explanations.
     pub fn build(mut self) -> Result<DerivedOverlay, DerivationError> {
         let registry = self.declared.model().registry.clone();
-        let (parts, mut explanations, mut evidence_pool, reused_owned_storage) =
+        let (parts, mut explanations, mut evidence_pool, mut search_pool, reused_owned_storage) =
             match self.previous.take() {
                 Some(previous) => match Arc::try_unwrap(previous.inner) {
                     Ok(previous) => (
                         previous.model.into_derivation_parts(),
                         previous.explanations,
                         previous.evidence_pool,
+                        previous.search_pool,
                         true,
                     ),
                     Err(previous) => (
                         previous.model.derivation_parts(),
                         previous.explanations.clone(),
                         previous.evidence_pool.clone(),
+                        previous.search_pool.clone(),
                         false,
                     ),
                 },
                 None => {
-                    let (explanations, pool) = self.declared.immutable_dependency().map_or_else(
-                        || (BTreeMap::new(), ExplanationPool::default()),
-                        |p| (p.inner.explanations.clone(), p.inner.evidence_pool.clone()),
-                    );
+                    let (explanations, pool, searches) =
+                        self.declared.immutable_dependency().map_or_else(
+                            || {
+                                (
+                                    BTreeMap::new(),
+                                    ExplanationPool::default(),
+                                    StructuralSearchPool::default(),
+                                )
+                            },
+                            |p| {
+                                (
+                                    p.inner.explanations.clone(),
+                                    p.inner.evidence_pool.clone(),
+                                    p.inner.search_pool.clone(),
+                                )
+                            },
+                        );
                     (
                         self.declared.model().derivation_parts(),
                         explanations,
                         pool,
+                        searches,
                         false,
                     )
                 }
             };
+        // The queued map retains its shared sets. Release this batch's temporary
+        // interner before canonicalizing them into the persistent overlay pool.
+        drop(self.search_pool);
         let mut records = parts.records;
         let mut links = parts.links;
         let mut derived_navigation = parts.derived_navigation;
@@ -335,6 +377,7 @@ impl DerivationBuilder {
             ..Default::default()
         };
         let initial_pool = evidence_pool.statistics();
+        let initial_search_pool = search_pool.statistics();
         let mut changed_facts = BTreeSet::new();
         let mut changed_existing_explanation = false;
         for input in self.occurrences {
@@ -619,11 +662,12 @@ impl DerivationBuilder {
                     ..
                 } => {
                     *explanation = evidence.clone();
-                    model
-                        .searches
-                        .entry(key)
-                        .or_default()
-                        .extend(searches.iter().cloned());
+                    merge_searches(
+                        &mut model.searches,
+                        &mut search_pool,
+                        key,
+                        Arc::new(searches.clone()),
+                    );
                 }
             }
             explanations.insert(key, evidence_pool.intern(evidence));
@@ -664,7 +708,7 @@ impl DerivationBuilder {
             if !explanations.contains_key(&fact) {
                 return Err(DerivationError::MissingSearchSubject(fact));
             }
-            model.searches.entry(fact).or_default().extend(searches);
+            merge_searches(&mut model.searches, &mut search_pool, fact, searches);
         }
         // Every new cycle contains a changed fact. Without modification of an
         // earlier explanation, old facts cannot point to newly introduced facts,
@@ -681,15 +725,40 @@ impl DerivationBuilder {
         let final_pool = evidence_pool.statistics();
         metrics.proof_sets_interned = final_pool.interned - initial_pool.interned;
         metrics.proof_sets_reused = final_pool.reused - initial_pool.reused;
+        let final_search_pool = search_pool.statistics();
+        metrics.logical_search_sets = model.searches.len();
+        metrics.logical_search_entries = model.searches.values().map(|s| s.len()).sum();
+        metrics.retained_search_sets = final_search_pool.interned;
+        metrics.retained_search_entries = final_search_pool.entries;
+        metrics.search_sets_interned = final_search_pool.interned - initial_search_pool.interned;
+        metrics.search_sets_reused = final_search_pool.reused - initial_search_pool.reused;
         Ok(DerivedOverlay {
             inner: Arc::new(OverlayData {
                 declared: self.declared,
                 model,
                 explanations,
                 evidence_pool,
+                search_pool,
                 build_metrics: metrics,
             }),
         })
+    }
+}
+
+fn merge_searches(
+    output: &mut BTreeMap<FactKey, Arc<BTreeSet<StructuralSearch>>>,
+    pool: &mut StructuralSearchPool,
+    fact: FactKey,
+    searches: Arc<BTreeSet<StructuralSearch>>,
+) {
+    match output.entry(fact) {
+        std::collections::btree_map::Entry::Vacant(entry) => {
+            entry.insert(pool.intern_shared(searches));
+        }
+        std::collections::btree_map::Entry::Occupied(mut entry) => {
+            let union = pool.union_shared(entry.get(), searches);
+            entry.insert(union);
+        }
     }
 }
 
@@ -761,7 +830,7 @@ pub enum IncompleteReason {
 }
 /// Search dependencies include empty searches. They are evaluated against the exact
 /// registry and immutable model revision, not only positive fact dependencies.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum StructuralSearch {
     /// Conservative search over the entire immutable input graph, including
     /// absent facts. Any input change invalidates the computation.

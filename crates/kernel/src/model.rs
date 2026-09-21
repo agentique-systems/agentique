@@ -217,7 +217,7 @@ pub struct ModelView {
     derived_navigation: crate::association::Navigation,
     pub(crate) statuses: BTreeMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
     pub(crate) searches:
-        BTreeMap<crate::provenance::FactKey, BTreeSet<crate::derived::StructuralSearch>>,
+        BTreeMap<crate::provenance::FactKey, Arc<BTreeSet<crate::derived::StructuralSearch>>>,
 }
 
 /// Mutable ownership transferred only inside an unpublished derivation batch.
@@ -228,7 +228,7 @@ pub(crate) struct DerivationModelParts {
     pub links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
     pub derived_navigation: crate::association::Navigation,
     pub statuses: BTreeMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
-    pub searches: BTreeMap<FactKey, BTreeSet<crate::derived::StructuralSearch>>,
+    pub searches: BTreeMap<FactKey, Arc<BTreeSet<crate::derived::StructuralSearch>>>,
 }
 
 impl ModelView {
@@ -464,7 +464,9 @@ impl ModelView {
             &BTreeSet<crate::derived::StructuralSearch>,
         ),
     > {
-        self.searches.iter()
+        self.searches
+            .iter()
+            .map(|(fact, searches)| (fact, searches.as_ref()))
     }
     /// Recorded search evidence for one fact, including negative searches.
     /// An empty iterator does not assert that the fact exists or is complete.
@@ -472,7 +474,7 @@ impl ModelView {
         &self,
         fact: crate::provenance::FactKey,
     ) -> impl Iterator<Item = &crate::derived::StructuralSearch> {
-        self.searches.get(&fact).into_iter().flatten()
+        self.searches.get(&fact).into_iter().flat_map(|s| s.iter())
     }
     pub fn computation_failures(
         &self,
