@@ -169,7 +169,7 @@ impl StandardKermlBindings {
                             .origin()
                             != &Origin::Declared(DeclaredOrigin::StandardLibrary { library })
                             || evidence.fact_origins.values().any(|origin| {
-                                origin
+                                origin.as_ref()
                                     != &Origin::Declared(DeclaredOrigin::StandardLibrary {
                                         library,
                                     })

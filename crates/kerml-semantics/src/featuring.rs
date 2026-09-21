@@ -134,6 +134,41 @@ impl KerMlQueries<'_> {
                 match self.read_value(&mut out, current, p::FEATURE_IS_VARIABLE) {
                     Some(Value::Boolean(false)) => out.value.push(ty),
                     Some(Value::Boolean(true)) if explicit => {}
+                    Some(Value::Boolean(true))
+                        if self
+                            .context()
+                            .standard_bindings
+                            .as_ref()
+                            .is_some_and(|b| b.get(StandardRole::Occurrence) == ty) =>
+                    {
+                        // Feature::isFeaturingType has a specific canonical
+                        // Occurrence case; no per-feature snapshot type is needed.
+                        out.search_dependencies
+                            .insert(SearchDependency::StandardLibraries);
+                        let target = self.resolve_reference(
+                            current,
+                            &QualifiedName {
+                                absolute: true,
+                                segments: vec![
+                                    "Occurrences".into(),
+                                    "Occurrence".into(),
+                                    "snapshots".into(),
+                                ],
+                            },
+                            c::FEATURE,
+                        );
+                        if let Resolution::Resolved(snapshot) = target.value {
+                            out.value.push(snapshot);
+                        } else {
+                            out.problem(
+                                Completeness::Incomplete,
+                                "KQ_SNAPSHOT_FEATURING",
+                                current,
+                                "Requires canonical Occurrences::Occurrence::snapshots",
+                            );
+                        }
+                        out.merge(target);
+                    }
                     _ => out.problem(
                         Completeness::Incomplete,
                         "KQ_VARIABLE_FEATURING",

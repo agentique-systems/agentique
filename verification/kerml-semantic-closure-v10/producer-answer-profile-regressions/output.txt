@@ -1,0 +1,30 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.89s
+     Running tests\initial_values_v10.rs (target\debug\deps\initial_values_v10-7169f7ec8c72dca6.exe)
+
+running 1 test
+test initial_value_context_is_the_exact_shared_chain_and_is_batch_invariant ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+     Running tests\reference_binding_v9.rs (target\debug\deps\reference_binding_v9-cdce8bd83d184ba6.exe)
+
+running 7 tests
+test incomplete_referent_never_becomes_a_complete_endpoint ... ok
+test ambiguous_source_reference_is_not_a_canonical_referent ... ok
+test incomparable_connector_contexts_remain_incomplete_regardless_of_ids ... ok
+test authored_and_unclassified_implied_bindings_keep_strict_domains_and_binary_shape ... ok
+test role_provenance_extra_endpoint_and_endpoint_asymmetry_are_enforced ... ok
+test seven_profiles_separate_inner_raw_identity_from_outer_contextual_identity ... ok
+test reference_role_adversarial_domains_and_ownership ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.58s
+
+     Running tests\result_domains_v9.rs (target\debug\deps\result_domains_v9-0e43cc5e478c7bda.exe)
+
+running 2 tests
+test valuation_antecedent_and_array_guard_are_not_copied_from_other_rules ... ok
+test five_rules_and_seven_profiles_have_independent_graphs_and_domains ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.21s
+

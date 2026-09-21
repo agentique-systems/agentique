@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--test",
+    "cross_features_v10",
+    "immutable_readers_and_batch_partitions_preserve_complete_cross_answers"
+  ],
+  "started": "2026-09-20T12:24:14.904367+00:00",
+  "duration_seconds": 4.26500000001397,
+  "exit_code": 0,
+  "output": "output.txt"
+}

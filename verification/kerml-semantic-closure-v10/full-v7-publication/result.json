@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "library_publication_audit",
+    "--",
+    "--output=verification/kerml-semantic-closure-v10/full-v7-publication.json"
+  ],
+  "started": "2026-09-20T11:53:42.876159+00:00",
+  "duration_seconds": 1508.859999999986,
+  "exit_code": 0,
+  "output": "output.txt"
+}

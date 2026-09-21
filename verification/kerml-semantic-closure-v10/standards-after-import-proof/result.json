@@ -1,0 +1,13 @@
+{
+  "command": [
+    "cmd",
+    "/c",
+    "npm",
+    "run",
+    "standards:check"
+  ],
+  "started": "2026-09-20T16:48:45.206157+00:00",
+  "duration_seconds": 0.7959999999729916,
+  "exit_code": 0,
+  "output": "output.txt"
+}

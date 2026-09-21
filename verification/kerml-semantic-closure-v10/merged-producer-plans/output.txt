@@ -1,0 +1,23 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.69s
+     Running tests\cross_features_v10.rs (target\debug\deps\cross_features_v10-8703f59f4ae0b6a5.exe)
+
+running 5 tests
+test cross_subsetting_uses_second_chain_feature_and_keeps_operations_separate ... ok
+test no_eligible_member_means_none_and_cross_derivation_does_not_manufacture_one ... ok
+test incomplete_owned_membership_population_never_selects_a_candidate ... ok
+test produced_value_infrastructure_does_not_become_an_owned_cross_feature ... ok
+test owned_cross_feature_eight_profile_matrix_uses_membership_order_and_metaclass_conformance ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.28s
+
+     Running tests\initial_values_v10.rs (target\debug\deps\initial_values_v10-7169f7ec8c72dca6.exe)
+
+running 1 test
+test initial_value_context_is_the_exact_shared_chain_and_is_batch_invariant ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+

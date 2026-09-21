@@ -524,6 +524,16 @@ fn derived_association_results_have_states_and_evidence_without_class_slots() {
         ReferenceCarrier::DerivedNavigation
     );
     assert_eq!(overlay.model().computation_searches().count(), 1);
+    for key in [fact, FactKey::Element(ENGINE), FactKey::Element(VEHICLE)] {
+        let scanned: Vec<_> = overlay
+            .model()
+            .computation_searches()
+            .filter(|(candidate, _)| **candidate == key)
+            .flat_map(|(_, searches)| searches.iter())
+            .collect();
+        let indexed: Vec<_> = overlay.model().computation_searches_for(key).collect();
+        assert_eq!(indexed, scanned);
+    }
     assert!(
         overlay
             .explain(fact)

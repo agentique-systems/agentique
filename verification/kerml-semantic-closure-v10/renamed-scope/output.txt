@@ -1,0 +1,31 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+warning: unused import: `BTreeSet`
+ --> crates\kerml-semantics\src\../tests/common/namespace_fixture.rs:5:29
+  |
+5 |     collections::{BTreeMap, BTreeSet},
+  |                             ^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `agq-kerml-semantics` (lib test) generated 1 warning (run `cargo fix --lib -p agq-kerml-semantics --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.26s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_semantics-b557b710ee1a32e9.exe)
+
+running 1 test
+test resolution::tests::required_general_scope_retains_an_independently_named_redefined_member ... FAILED
+
+failures:
+
+---- resolution::tests::required_general_scope_retains_an_independently_named_redefined_member stdout ----
+
+thread 'resolution::tests::required_general_scope_retains_an_independently_named_redefined_member' (30248) panicked at crates\kerml-semantics\src\resolution.rs:42:31:
+called `Result::unwrap()` on an `Err` value: UnsupportedMetamodel
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    resolution::tests::required_general_scope_retains_an_independently_named_redefined_member
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `-p agq-kerml-semantics --lib`

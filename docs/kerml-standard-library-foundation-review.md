@@ -649,3 +649,115 @@ gates. Systems Library publication, SysML semantics/frontends, persistence/APIs,
 execution and application migration remain outside this change.
 
 **KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**
+
+
+## V10 — operational owned-cross-feature correction and continued structural work
+
+Operational KerML 1.0/v7 is implemented with exactly the authorized KERML11-1
+selector. The default operational profile remains v2. The exact pilot commit
+`553cf8205c19241c9127ab264f8372f5b58d3895`, its parent, two-file diff, complete
+before/after implementation and regression are independently verified. The issue
+remains open; this is Agentique operational authority, not final OMG adoption.
+The original specifications, libraries and historical evidence are unchanged.
+
+Selection uses the normative ordered owned-membership projection and metaclass
+conformance. BindingConnectors, Multiplicities, MetadataFeatures,
+FeatureMembership-owned members and FeatureValue-owned members are excluded.
+Incomplete order or population evidence produces Incomplete, with no selected ID.
+The Published/v1-v6 literal behavior remains separately reproducible. No arbitrary
+implied-element exclusion or connector-domain waiver was added.
+
+The milestone continued after new conflicts. All 258 named constraints, 218
+operation/derived-property inventory entries and 410 issue records were traversed.
+Four independent conflicts are recorded in the single
+[authority blocker register](../standards/kerml-1.0-operational-authority-blockers.json):
+KERML11-2's unary crossing, KERML11-4's multiplicity domain, and the literal
+`excluding(self)` in `checkFeatureOwnedCrossFeatureTypeFeaturing` on a legitimate
+binary cross Feature, plus KERML11-75's imported-membership prose/OCL conflict
+on five exact VectorFunctions memberships. No additional correction was applied. Inventory traversal
+is complete; exhaustive per-antecedent applicability proof is **not** complete.
+The register therefore does not claim to exhaust every possible remaining conflict.
+
+Ordinary implementation proceeded independently: required implied general scopes
+resolve the four previously missing references; canonical typing closure improves
+positive owner-type evidence; the formal Occurrence snapshots case is supported;
+FeatureValue initial binding uses a deterministic `that.startShot` chain; and
+cross/value/target/result queries retain distinct evidence. A reproduced v9
+ownership defect is repaired under v7: contextual valuation infrastructure belongs
+to its consuming relationship and cannot become an owned cross Feature. Another
+full-corpus regression repaired producer provenance to cite association occurrences
+instead of non-stored navigation slots. Bounded immutable producer plans merge
+only agreeing facts and semantic ownership sequences.
+
+A further batch regression exposed caller-order differences in a single plan's
+producer output lists. V7 now normalizes those identity lists consistently with
+merged plans. Forward, reversed and partitioned fixtures compare complete
+answers, evidence and contextual results; semantic ownership sequences and
+historical profile output lists are unchanged. The full corpus audit already
+merges every plan, and the exact final source delta is retained in its evidence.
+
+The full corpus reference result is 4,000 required references, zero unresolved,
+10 incomplete, zero ambiguous and zero invalid reference answers. The incomplete
+answers still require negative effective-typing evidence; they are not reclassified
+as complete merely because a unique target exists. All 15 reference-binding
+context findings were independently traced to multiplicity-bound expressions
+(nine ordinary and six cross multiplicities). Both Triggers redefinition paths
+are recorded as unfinished ordinary parameter/chain work, not source errata.
+All 657 pinned FeatureReferenceExpressions have explicit referents, independently
+ruling out the operandless antecedents of KERML11-182 and KERML11-32 in this source
+population. The reference review also checks all 23 indexing guards and both
+constructors' inherited default candidates.
+
+The new [corpus and publication review](../verification/kerml-semantic-closure-v10/README.md)
+records the actual v7 producer expansion, overlay materialization, implemented
+validation results, coverage inventory and failed publication prerequisites.
+The completed audit contains 29,140 canonical and 20,212 derived records and
+183,094 query evaluations. It reports 240 incomplete and 1,708 invalid query
+answers, 1,925 distinct diagnostics, and four distinguishability member-pair
+findings in the two Triggers namespaces. Structural coverage records 44
+implemented/checked constraints, six reviewed errata, eight authority-blocked
+constraints and 200 still unimplemented. The 1,706 implied-inclusion failures
+cannot be suppressed by asserting complete implied semantics on a partial overlay.
+A valid kernel Snapshot and successful audit execution do not establish semantic
+acceptance. Ordinary cross-feature, feature-chain, positional, derived-operation,
+validation and acceptance integration work remains incomplete. This is not the
+completion state in which authority decisions are the only publication blockers.
+
+| Required review question | V10 answer |
+| --- | --- |
+| 1. Pinned bytes unchanged? | Yes; 3,076 starting standards/evidence files and the newly acquired authority bytes are verified. |
+| 2. V7 implements exactly the reviewed KERML11-1 selector? | Yes; exact Git object/diff verification, independent selector, and eight-profile regressions pass. |
+| 3. BindingConnectors excluded? | Yes under v7, using metaclass conformance, regardless of authored/implied origin. |
+| 4. FeatureValue-owned members excluded? | Yes under v7; value Expression ownership is retained. |
+| 5. True owned-cross-feature ordering semantic and deterministic? | Yes; ownedRelationship projection determines selection. Incomplete population/order gives no selected identity. |
+| 6. Both exact Occurrences witnesses pass? | Yes. Both complete expanded-corpus queries return none under v7, and independent replay verifies the actual FeatureValue Expression and BindingConnector exclusions and source membership order. Published/v1-v6 retain the historical value Expression selection. Full cross-feature structural closure is not claimed. |
+| 7. Cross-feature typing/featuring complete? | No; required producer and validation families remain, and independently disputed domains are registered. |
+| 8. Entire authority applicability sweep completed? | No. The entire inventory was traversed without stopping at the first issue, but per-antecedent applicability proofs remain incomplete. |
+| 9. Independently exercised unresolved conflicts? | Four proved conflicts. Remaining applicability work prevents claiming an exhaustive final total. |
+| 10. All proved conflicts in one register? | Yes; every independently reproduced conflict from this milestone is in the register. |
+| 11. Unresolved ordinary references zero? | Yes; zero of 4,000. |
+| 12. Incomplete ordinary references zero? | No; 10 remain. Positive owner typing does not prove all negative antecedents. |
+| 13. Ordinary distinguishability findings zero? | No; the expanded audit has four member-pair findings in the two Triggers namespaces. Parameter/chain suppression is not closed. |
+| 14. FeatureValue structural semantics complete? | No. Initial/default/non-default and contextual ownership support improved, but complete dependent graph/constraint closure remains. |
+| 15. Feature chains structurally complete? | No; ordered stored chains and contextual result chains are supported, with additional required implications outstanding. |
+| 16. Positional semantics complete? | No; complete inherited parameter/chain interaction remains ordinary work. |
+| 17. All required derived operations implemented? | No; the full inventory and known implemented query paths are retained without upgrading partial support to closure. |
+| 18. Structural validation contains no unimplemented category? | No; missing structural validation remains explicit, not DeferredExecution. |
+| 19. V7 run over the complete corpus? | Yes for all currently implemented producers and audit queries across the three pinned KerML libraries. This is not a claim that absent producer families are implemented. |
+| 20. Strict semantic publication passes? | No; references, derived coverage, validation, applicability proof and authority blockers prevent acceptance. The production acceptance API is not finalized. |
+| 21. Accepted bindings current? | No. The stale-binding check fails; regeneration and version advancement are withheld pending acceptance. |
+| 22. LoadedKermlStandardLibraries available? | No accepted facade is exposed. |
+| 23. Authored projects consume it? | No accepted-library integration. V7 authored metadata is tested; the complete non-accepted-fixture integration matrix is also unfinished. |
+| 24. Historical profiles reproducible? | Eight-profile boundaries pass; historical manifests/evidence and v9 producer identity seeds remain frozen. |
+| 25. Executable semantics separate? | Yes; no evaluation or simulation was added, and no unfinished structural rule is deferred as execution. |
+| 26. Both complete structural runtime gates green? | Yes; KerML and SysML runtime commands exit zero, independently of failed raw published conformance and failed library acceptance. |
+
+[ADR 0020](adr/0020-operational-owned-cross-feature-correction.md) records the
+correction and accepted-library integration design. The v10 evidence index
+includes actual command outputs and exit codes, unsuccessful attempts and repaired
+regressions. The historical acquisition-index mismatch is retained and separately
+proved to predate this branch. No Systems Library publication, SysML semantics,
+SysML frontend, persistence, API, diagram, transform, execution, simulation or
+application migration was started.
+
+**KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**

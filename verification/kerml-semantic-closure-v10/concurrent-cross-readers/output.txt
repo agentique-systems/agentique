@@ -1,0 +1,9 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.68s
+     Running tests\cross_features_v10.rs (target\debug\deps\cross_features_v10-8703f59f4ae0b6a5.exe)
+
+running 1 test
+test immutable_readers_and_batch_partitions_preserve_complete_cross_answers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.27s
+

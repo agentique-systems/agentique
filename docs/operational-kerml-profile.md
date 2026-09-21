@@ -244,3 +244,38 @@ accepted binding and facade stages remain blocked at that new authority decision
 The [v9 record](../verification/kerml-semantic-closure-v9/README.md) separates the
 implemented producer tests, fresh unchanged-v5 measurements, and uncompleted
 publication gates. No structural obligation is deferred as executable semantics.
+
+
+## Operational v7: owned cross Features
+
+Operational v7 (`agentique-kerml-1.0-operational/7`) adds exactly the reviewed
+KERML11-1 `Feature::ownedCrossFeature` correction to immutable v6. The default
+`BaselineProfile::OPERATIONAL` remains v2. See [ADR 0020](adr/0020-operational-owned-cross-feature-correction.md),
+the [profile manifest](../standards/kerml-1.0-operational-profile-v7.json), and the
+[authority packet](../verification/kerml-semantic-closure-v10/authority-packet.json).
+
+The operation requires an end Feature and an owning Type. It selects the first
+eligible owned Feature in normative owned-membership order. Multiplicity,
+MetadataFeature and BindingConnector instances, including subclasses, are
+excluded, as are members owned through FeatureMembership or FeatureValue.
+Incomplete order/population evidence yields Incomplete, with no guessed identity.
+No eligible member yields none. No origin-based exclusion is added.
+
+The exact pilot commit `553cf8205c19241c9127ab264f8372f5b58d3895` is independently
+verified from Git objects and its full diff. Its regression puts a BindingConnector
+before the legitimate cross Feature. KERML11-1 remains formally open; this is an
+explicit Agentique operational authority decision, not final OMG adoption.
+
+V7 repairs the contextual FeatureValue infrastructure ownership defect exposed by
+integration with this selector. That infrastructure is owned by its consuming
+relationship, preserving FeatureValue domains and all v6 identities. Published
+through v6 retain the historical selection boundary. The independent verifier
+compares all 11,632 corpus Features and 120 synthetic profile cases, including the
+two exact Occurrences ends.
+
+V10's inventory sweep continues beyond each conflict. Its aggregate blocker
+register and unfinished applicability/structural work remain publication gates.
+Registration of v7 does not accept a library Snapshot, regenerate accepted
+bindings, or enable a production accepted-library facade. Full structural runtime
+readiness remains separate from strict raw metamodel conformance and KerML
+semantic publication.

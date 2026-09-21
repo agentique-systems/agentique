@@ -4,6 +4,7 @@ use agq_kernel::{
     provenance::{FactKey, Origin},
 };
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 /// Complete means complete for the named bounded query, not language validation success.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -108,6 +109,13 @@ pub enum QueryKind {
     RedefinitionEndConformance,
     FormalConstraintTarget,
     ConnectorFeaturing,
+    OwnedCrossFeature,
+    OwnedCrossSubsetting,
+    CrossFeature,
+    TypingFeatures,
+    FeatureTypes,
+    FeatureTarget,
+    FeatureWithValue,
 }
 
 /// Subject is part of every conclusion; a target ID alone cannot identify a proof.
@@ -128,6 +136,15 @@ pub enum Evidence {
 /// Stable within RULE_SET_VERSION. Exact normative anchors are in ADR 0005.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
+    TypingFeatures,
+    FeatureTypes,
+    FeatureTarget,
+    FeatureWithValue,
+    PublishedOwnedCrossFeature,
+    /// KERML11-1; exact pilot resolution predicates and semantic ownership order.
+    OperationalOwnedCrossFeatureV1,
+    OwnedCrossSubsetting,
+    CrossFeature,
     ImpliedBinding(crate::ImpliedBindingRole),
     ConnectorFeaturing,
     StoredRelationship,
@@ -184,7 +201,9 @@ pub struct QueryResult<T> {
     /// Alternative proofs share conclusion keys; no feature or semantic ID is allocated.
     pub explanations: BTreeMap<Conclusion, BTreeSet<Explanation>>,
     /// Leaf evidence retains kernel declared origins and recursively expanded overlay proofs.
-    pub fact_origins: BTreeMap<FactKey, Origin>,
+    /// Immutable origins are shared when answers are cloned; their content, not
+    /// allocation identity, participates in answer equality and debugging output.
+    pub fact_origins: BTreeMap<FactKey, Arc<Origin>>,
 }
 
 impl<T> QueryResult<T> {

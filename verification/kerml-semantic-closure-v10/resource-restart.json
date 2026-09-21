@@ -1,0 +1,9 @@
+{
+    "ProcessId":  19784,
+    "Path":  "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\release\\examples\\library_publication_audit.exe",
+    "PrivateMemoryBytes":  11086225408,
+    "WorkingSetBytes":  7980281856,
+    "CpuSeconds":  1878.796875,
+    "Reason":  "Restart complete audit after releasing aggregate producer proof before validation and reducing validation batch size; no authority stop",
+    "Completed":  false
+}

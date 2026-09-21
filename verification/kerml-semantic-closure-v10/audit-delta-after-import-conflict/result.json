@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-X",
+    "utf8",
+    "-B",
+    "verification/kerml-semantic-closure-v10/verify-audit-source-delta.py"
+  ],
+  "started": "2026-09-20T16:47:26.373853+00:00",
+  "duration_seconds": 0.20400000002700835,
+  "exit_code": 0,
+  "output": "output.txt"
+}

@@ -6,6 +6,7 @@ use agq_kernel::{
     value::Value,
 };
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::sync::{Arc, Mutex};
 
 /// An immutable evaluator; per-invocation traversal state is always discardable.
 pub struct KerMlQueries<'m> {
@@ -13,6 +14,10 @@ pub struct KerMlQueries<'m> {
     pub(crate) namespace_cache: crate::namespaces::NamespaceCache,
     pub(crate) library_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
     pub(crate) result_cache: std::sync::Mutex<BTreeMap<ElementId, QueryResult<Vec<ElementId>>>>,
+    // Scoped to this immutable model/context, like the other query caches.
+    // Only origin values are shared; every answer still expands its own full
+    // dependency closure and records every applicable computation search.
+    origin_cache: Mutex<BTreeMap<FactKey, Option<Arc<Origin>>>>,
 }
 
 impl<'m> KerMlQueries<'m> {
@@ -22,6 +27,7 @@ impl<'m> KerMlQueries<'m> {
             namespace_cache: Default::default(),
             library_cache: Default::default(),
             result_cache: Default::default(),
+            origin_cache: Default::default(),
         }
     }
     pub fn context(&self) -> &SemanticContextId {
@@ -156,6 +162,39 @@ impl<'m> KerMlQueries<'m> {
         }
         evidence
     }
+    fn fact_origin(&self, key: FactKey) -> Option<Arc<Origin>> {
+        if let Some(origin) = self.origin_cache.lock().expect("origin cache").get(&key) {
+            return origin.clone();
+        }
+        let origin = match key {
+            FactKey::AssociationOccurrence(id) => self
+                .model()
+                .association_occurrence(id)
+                .map(|link| Origin::Declared(link.origin().clone())),
+            FactKey::Element(id) => self.model().element(id).map(|e| e.origin().clone()),
+            FactKey::Property { element, property } => self
+                .model()
+                .navigation_slot(element, property)
+                .map(|s| s.origin().clone())
+                .or_else(
+                    || match self.model().property_state(element, property).ok()? {
+                        agq_kernel::derived::PropertyState::Incomplete(failure)
+                        | agq_kernel::derived::PropertyState::Invalid(failure) => {
+                            Some(Origin::Derived(failure.explanation().clone()))
+                        }
+                        _ => None,
+                    },
+                ),
+        }
+        .map(Arc::new);
+        self.origin_cache
+            .lock()
+            .expect("origin cache")
+            .entry(key)
+            .or_insert(origin)
+            .clone()
+    }
+
     /// Iterative expansion preserves the kernel's declared/derived distinction.
     pub(crate) fn fact<T>(&self, out: &mut QueryResult<T>, key: FactKey) {
         let mut queue = vec![key];
@@ -163,46 +202,25 @@ impl<'m> KerMlQueries<'m> {
             if out.positive_dependencies.contains(&key) {
                 continue;
             }
-            if let FactKey::AssociationOccurrence(id) = key {
-                if let Some(link) = self.model().association_occurrence(id) {
-                    out.positive_dependencies.insert(key);
-                    out.fact_origins
-                        .insert(key, Origin::Declared(link.origin().clone()));
-                }
-                continue;
-            }
-            let origin = match key {
-                FactKey::AssociationOccurrence(_) => unreachable!("handled above"),
-                FactKey::Element(id) => self.model().element(id).map(|e| e.origin().clone()),
-                FactKey::Property { element, property } => self
-                    .model()
-                    .navigation_slot(element, property)
-                    .map(|s| s.origin().clone())
-                    .or_else(
-                        || match self.model().property_state(element, property).ok()? {
-                            agq_kernel::derived::PropertyState::Incomplete(failure)
-                            | agq_kernel::derived::PropertyState::Invalid(failure) => {
-                                Some(Origin::Derived(failure.explanation().clone()))
-                            }
-                            _ => None,
-                        },
-                    ),
-            };
+            let origin = self.fact_origin(key);
             if let Some(origin) = origin {
-                for (_, searches) in self
-                    .model()
-                    .computation_searches()
-                    .filter(|(fact, _)| **fact == key)
-                {
-                    out.search_dependencies
-                        .extend(searches.iter().cloned().map(SearchDependency::Kernel));
+                if matches!(key, FactKey::AssociationOccurrence(_)) {
+                    out.positive_dependencies.insert(key);
+                    out.fact_origins.insert(key, origin);
+                    continue;
                 }
+                out.search_dependencies.extend(
+                    self.model()
+                        .computation_searches_for(key)
+                        .cloned()
+                        .map(SearchDependency::Kernel),
+                );
                 out.positive_dependencies.insert(key);
                 out.fact_origins.insert(key, origin.clone());
-                if let Origin::AssociationOccurrences(links) = &origin {
+                if let Origin::AssociationOccurrences(links) = origin.as_ref() {
                     queue.extend(links.iter().copied().map(FactKey::AssociationOccurrence));
                 }
-                if let Origin::Derived(explanation) = &origin {
+                if let Origin::Derived(explanation) = origin.as_ref() {
                     queue.extend(explanation.dependencies.iter().map(|d| match d {
                         Dependency::Declared(f) | Dependency::Derived(f) => *f,
                     }));

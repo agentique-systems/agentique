@@ -1,0 +1,112 @@
+diff --git a/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java b/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java
+index 30d7ce5430a6f4b444248e3dc0d4448905289e9f..7ceeda8e65db45dece2ef26ac7d6f980a4ebce2b 100644
+--- a/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java
++++ b/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java
+@@ -35,6 +35,7 @@ import org.eclipse.emf.common.util.EList;
+ import org.eclipse.emf.ecore.InternalEObject;
+ import org.omg.sysml.adapter.FeatureAdapter;
+ import org.omg.sysml.lang.sysml.Behavior;
++import org.omg.sysml.lang.sysml.BindingConnector;
+ import org.omg.sysml.lang.sysml.CrossSubsetting;
+ import org.omg.sysml.lang.sysml.Expression;
+ import org.omg.sysml.lang.sysml.Feature;
+@@ -233,12 +234,15 @@ public class FeatureUtil {
+ 	}
+ 
+ 	public static Feature getOwnedCrossFeatureOf(Namespace namespace) {
+-		return !(namespace instanceof Feature) || !((Feature)namespace).isEnd()? null:
++		return !(namespace instanceof Feature feature) || 
++					!feature.isEnd() || 
++					feature.getOwningType() == null? null:
+ 				(Feature)namespace.getOwnedMember().stream().
+ 				filter(element->element instanceof Feature && 
+ 						!(element instanceof Multiplicity) && 
+ 						!(element instanceof MetadataFeature) &&
+-						!(element.getOwningMembership() instanceof FeatureMembership)&&
++						!(element instanceof BindingConnector) &&
++						!(element.getOwningMembership() instanceof FeatureMembership) &&
+ 						!(element.getOwningMembership() instanceof FeatureValue)).
+ 				findFirst().orElse(null);
+ 	}
+diff --git a/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java b/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4faa7ac4c33e4f8b16d5f49e557a2ba55e95c4d1
+--- /dev/null
++++ b/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java
+@@ -0,0 +1,76 @@
++/*******************************************************************************
++ * SysML 2 Pilot Implementation
++ * Copyright (c) 2026 Model Driven Solutions, Inc.
++ *
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the Eclipse Public License as published by
++ * the Eclipse Foundation, version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * Eclipse Public License for more details.
++ *
++ * You should have received a copy of theEclipse Public License
++ * along with this program. If not, see <https://www.eclipse.org/legal/epl-2.0/>.
++ *
++ * @license EPL-2.0 <http://spdx.org/licenses/EPL-2.0>
++ *
++ *******************************************************************************/
++package org.omg.sysml.logic;
++
++import static org.junit.Assert.assertEquals;
++import static org.junit.Assert.assertNotNull;
++
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import org.omg.sysml.lang.sysml.Association;
++import org.omg.sysml.lang.sysml.BindingConnector;
++import org.omg.sysml.lang.sysml.Feature;
++import org.omg.sysml.lang.sysml.SysMLFactory;
++import org.omg.sysml.util.ConnectorUtil;
++import org.omg.sysml.util.FeatureUtil;
++import org.omg.sysml.util.NamespaceUtil;
++import org.omg.sysml.util.TypeUtil;
++
++public class KERML11_Ballot3_Tests {
++
++	@BeforeClass
++	public static void setUp() {
++		SysMLLogicStandaloneSetup.doSetup();
++	}
++
++	/**
++	 * Test resolution to KERML11-1 Binding connectors should not be considered owned cross features
++	 * @throws InvocationTargetException
++	 */
++	@Test
++	public void testKERML11_1() {
++		Association association = SysMLFactory.eINSTANCE.createAssociation();
++		
++		Feature end1 = SysMLFactory.eINSTANCE.createFeature();
++		end1.setDeclaredName("end1");
++		end1.setIsEnd(true);
++		TypeUtil.addOwnedFeatureTo(association, end1);
++		
++		Feature end2 = SysMLFactory.eINSTANCE.createFeature();
++		end2.setDeclaredName("end2");
++		end2.setIsEnd(true);
++		TypeUtil.addOwnedFeatureTo(association, end2);
++		
++		BindingConnector connector = SysMLFactory.eINSTANCE.createBindingConnector();
++		FeatureUtil.addTypeFeaturingTo(connector).setFeaturingType(association);
++		ConnectorUtil.addConnectorEndTo(connector, end1);
++		ConnectorUtil.addConnectorEndTo(connector, end1);
++		NamespaceUtil.addOwnedMemberTo(end1, connector);
++		
++		Feature feature = SysMLFactory.eINSTANCE.createFeature();
++		feature.setDeclaredName("crossFeature");
++		NamespaceUtil.addOwnedMemberTo(end1, feature);		
++		
++		Feature crossFeature = end1.ownedCrossFeature();
++		assertNotNull("Not null", crossFeature);
++		assertEquals("cross feature", feature, crossFeature);
++	}
++}

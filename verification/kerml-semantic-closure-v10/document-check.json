@@ -1,0 +1,116 @@
+{
+  "format": "agentique-v10-document-verification/1",
+  "documents": [
+    {
+      "path": "verification/kerml-semantic-closure-v10/README.md",
+      "sha256": "246ef86dc635f3c65d3d914283e5485074add75ee542a3cb11fe7fcb26a9b867",
+      "historical_prefix_unchanged": null,
+      "checked_local_links": [
+        "git-context.json",
+        "../../standards/kerml-1.0-operational-owned-cross-feature-errata-v7.json",
+        "../../standards/kerml-1.0-operational-profile-v7.json",
+        "authority-packet.json",
+        "selector-verification.json",
+        "expanded-selector-verification.json",
+        "authority-applicability.json",
+        "additional-issue-scope-review.json",
+        "../../standards/kerml-1.0-operational-authority-blockers.json",
+        "import-authority.json",
+        "supplemental-authority-review.json",
+        "index-authority.json",
+        "remaining-structural-investigations.json",
+        "parameter-position-authority.json",
+        "source-structural-populations.json",
+        "baseline-v7.json",
+        "full-v7-producers.json",
+        "full-v7-publication.json",
+        "full-v7-final.json",
+        "full-v7-overlay/",
+        "resource-restart.json",
+        "full-v7-complete/",
+        "resource-restart-shared.json",
+        "disk-limit.json",
+        "full-v7-shared/",
+        "resource-restart-indexed.json",
+        "full-v7-complete.json",
+        "audit-diagnostics.json",
+        "full-v7-indexed/",
+        "producer-answer-order-regression/",
+        "producer-answer-profile-regressions/",
+        "audit-source-delta.json",
+        "publication-review.json",
+        "structural-coverage.json",
+        "derived-coverage.json",
+        "milestone-gates.json",
+        "latest-standards-integrity.json",
+        "historical-standards-output-restoration.json",
+        "final-verification-plan-order/results.json",
+        "strict-semantic-publication/",
+        "preservation.json",
+        "raw-conformance/results.json",
+        "stale-binding-gate/",
+        "operational-product/",
+        "resource-samples.jsonl",
+        "resource-inspection.json",
+        "../../docs/adr/0020-operational-owned-cross-feature-correction.md",
+        "../../docs/kerml-standard-library-foundation-review.md"
+      ]
+    },
+    {
+      "path": "docs/adr/0020-operational-owned-cross-feature-correction.md",
+      "sha256": "12a24926584a3e3e08a137fc076e43087b0fa6691b6b5543090f8de3fe877e3d",
+      "historical_prefix_unchanged": null,
+      "checked_local_links": [
+        "../../standards/kerml-1.0-operational-owned-cross-feature-errata-v7.json",
+        "../../standards/kerml-1.0-operational-profile-v7.json",
+        "../../standards/kerml-1.0-operational-authority-blockers.json",
+        "../../verification/kerml-semantic-closure-v10/README.md"
+      ]
+    },
+    {
+      "path": "docs/kerml-standard-library-foundation-review.md",
+      "sha256": "7553138610a40498f574843d08daef59717234485c0992e876bdb583f60d723d",
+      "historical_prefix_unchanged": true,
+      "checked_local_links": [
+        "../standards/kerml-1.0-operational-authority-blockers.json",
+        "../verification/kerml-semantic-closure-v10/README.md",
+        "adr/0020-operational-owned-cross-feature-correction.md"
+      ]
+    },
+    {
+      "path": "docs/operational-kerml-profile.md",
+      "sha256": "1c55ccad3c0b197ec3f784f3bc6a487683ba47fba94f4c7481fbe671cbac4b86",
+      "historical_prefix_unchanged": true,
+      "checked_local_links": [
+        "adr/0020-operational-owned-cross-feature-correction.md",
+        "../standards/kerml-1.0-operational-profile-v7.json",
+        "../verification/kerml-semantic-closure-v10/authority-packet.json"
+      ]
+    }
+  ],
+  "python_scripts_parsed": [
+    "acquire.py",
+    "audit-diagnostics.py",
+    "authority.py",
+    "capture.py",
+    "corpus.py",
+    "document-check.py",
+    "expanded-selector-verifier.py",
+    "import-authority.py",
+    "index-authority.py",
+    "investigations.py",
+    "issue-scope-review.py",
+    "milestone-gates.py",
+    "parameter-position-authority.py",
+    "preservation.py",
+    "review.py",
+    "selector-verifier.py",
+    "structural-populations.py",
+    "supplement.py",
+    "sweep.py",
+    "verify-audit-source-delta.py",
+    "verify-evidence.py"
+  ],
+  "missing_local_links": [],
+  "evidence_syntax_valid": true
+}

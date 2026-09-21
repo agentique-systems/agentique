@@ -1,0 +1,1706 @@
+{
+  "format": "agentique-operational-authority-blockers/1",
+  "profile": "agentique-kerml-1.0-operational/7",
+  "issue_inventory_sha256": "397135e041c43f3841be685397e5a6e053ecd2bbfa70e672dbae28c50ea95699",
+  "normative_xmi_sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+  "reference_release": "fb97b754f29588b8e9c7a35f370880cd15eb29e7",
+  "source_archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2",
+  "blockers": [
+    {
+      "id": "KLCV10-F-001",
+      "issue": {
+        "key": "KERML11-2",
+        "title": "Occurrence::surroundedByOccurrences::surroundingSpace should not be an end feature",
+        "status": "open",
+        "url": "https://issues.omg.org/issues/KERML11-2",
+        "anchor": "issue-56674",
+        "text": "Occurrence::surroundedByOccurrences::surroundingSpace should not be an end feature Key: KERML11-2 Status: open Source: Model Driven Solutions ( Mr. Ed Seidewitz ) Summary: In the Kernel Semantic Library model Occurrences , the feature Occurrence::surroundedByOccurrences has a single nested end feature end [1] feature surroundingSpace: Occurrence subsets self; However, the cross multiplicity is invalid here, because constraint validateCrossSubsettingCrossFeature requires that the owningType of an end feature with an owned cross feature have at least two ends. Indeed, it is not clear why this feature should be an end feature at all. Reported: KerML 1.0b2 —\n                                    Thu, 19 Jun 2025 23:05 GMT Updated: Wed, 29 Apr 2026 21:30 GMT",
+        "updated": "Wed, 29 Apr 2026 21:30 GMT"
+      },
+      "formal": [
+        {
+          "kind": "ownedRule",
+          "owner": "Feature",
+          "name": "checkFeatureCrossingSpecialization",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureCrossingSpecialization",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+            "name": "checkFeatureCrossingSpecialization"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureCrossingSpecialization-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>If this <code>Feature</code> has <code>isEnd = true</code> and <code>ownedCrossFeature</code> returns a non-null value, then the <code>crossFeature</code> of the <code>Feature</code> must be the <code>Feature</code> returned from <code>ownedCrossFeature</code> (which implies that this <code>Feature</code> has an appropriate <code>ownedCrossSubsetting</code> to realize this).</p>"
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureCrossingSpecialization-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "ownedCrossFeature() <> null implies crossFeature = ownedCrossFeature()",
+              "language": "OCL2.0",
+              "name": ""
+            }
+          ],
+          "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureCrossingSpecialization\" ns0:type=\"uml:Constraint\" name=\"checkFeatureCrossingSpecialization\">\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureCrossingSpecialization-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If this &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;isEnd = true&lt;/code&gt; and &lt;code&gt;ownedCrossFeature&lt;/code&gt; returns a non-null value, then the &lt;code&gt;crossFeature&lt;/code&gt; of the &lt;code&gt;Feature&lt;/code&gt; must be the &lt;code&gt;Feature&lt;/code&gt; returned from &lt;code&gt;ownedCrossFeature&lt;/code&gt; (which implies that this &lt;code&gt;Feature&lt;/code&gt; has an appropriate &lt;code&gt;ownedCrossSubsetting&lt;/code&gt; to realize this).&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureCrossingSpecialization\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureCrossingSpecialization-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedCrossFeature() &lt;&gt; null implies crossFeature = ownedCrossFeature()\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+        },
+        {
+          "kind": "ownedRule",
+          "owner": "CrossSubsetting",
+          "name": "validateCrossSubsettingCrossingFeature",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-CrossSubsetting-validateCrossSubsettingCrossingFeature",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+            "name": "validateCrossSubsettingCrossingFeature"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-CrossSubsetting-validateCrossSubsettingCrossingFeature-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>The <code>crossingFeature</code> of a <code>CrossSubsetting</code> must be an end <code>Feature</code> that is owned by a <code>Type</code> with at least two end <code>Features</code>.</p>"
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-CrossSubsetting-validateCrossSubsettingCrossingFeature-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "crossingFeature.isEnd and crossingFeature.owningType<>null and crossingFeature.owningType.endFeature ->size() > 1",
+              "language": "OCL2.0",
+              "name": ""
+            }
+          ],
+          "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-CrossSubsetting-validateCrossSubsettingCrossingFeature\" ns0:type=\"uml:Constraint\" name=\"validateCrossSubsettingCrossingFeature\">\n            <ownedComment ns0:id=\"Core-Features-CrossSubsetting-validateCrossSubsettingCrossingFeature-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;crossingFeature&lt;/code&gt; of a &lt;code&gt;CrossSubsetting&lt;/code&gt; must be an end &lt;code&gt;Feature&lt;/code&gt; that is owned by a &lt;code&gt;Type&lt;/code&gt; with at least two end &lt;code&gt;Features&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-CrossSubsetting-validateCrossSubsettingCrossingFeature\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-CrossSubsetting-validateCrossSubsettingCrossingFeature-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"crossingFeature.isEnd and crossingFeature.owningType&lt;&gt;null and crossingFeature.owningType.endFeature -&gt;size() &gt; 1\" language=\"OCL2.0\" name=\"\">\n            </specification>\n          </ownedRule>\n        "
+        },
+        {
+          "kind": "ownedOperation",
+          "owner": "Feature",
+          "name": "ownedCrossFeature",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-ownedCrossFeature_",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "name": "ownedCrossFeature"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-ownedCrossFeature_-unnamed1-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "if not isEnd or owningType = null then null else     let ownedMemberFeatures: Sequence(Feature) =         ownedMember->selectByKind(Feature)->             reject(oclIsKindOf(Multiplicity) or                     oclIsKindOf(MetadataFeature) or                    oclIsKindOf(FeatureValue))->             reject(owningMembership.oclIsKindOf(FeatureMembership)) in     if ownedMemberFeatures.isEmpty() then null     else ownedMemberFeatures->first()     endif",
+              "language": "OCL2.0",
+              "name": ""
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-ownedCrossFeature_-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>If this <code>Feature</code> is an end <code>Feature</code> of its <code>owningType</code>, then return the first <code>ownedMember</code> of the <code>Feature</code> that is a <code>Feature</code>, but not a <code>Multiplicity</code> or a <code>MetadataFeature</code>, and whose <code>owningMembership</code> is <em>not</em> a <code>FeatureMembership</code>. If this exists, it is the <code>crossFeature</code> of the end <code>Feature</code>.</p>"
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-ownedCrossFeature_\" ns0:type=\"uml:Operation\" name=\"ownedCrossFeature\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-ownedCrossFeature_-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-ownedCrossFeature_-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if not isEnd or owningType = null then null else     let ownedMemberFeatures: Sequence(Feature) =         ownedMember-&gt;selectByKind(Feature)-&gt;             reject(oclIsKindOf(Multiplicity) or                     oclIsKindOf(MetadataFeature) or                    oclIsKindOf(FeatureValue))-&gt;             reject(owningMembership.oclIsKindOf(FeatureMembership)) in     if ownedMemberFeatures.isEmpty() then null     else ownedMemberFeatures-&gt;first()     endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-ownedCrossFeature_-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If this &lt;code&gt;Feature&lt;/code&gt; is an end &lt;code&gt;Feature&lt;/code&gt; of its &lt;code&gt;owningType&lt;/code&gt;, then return the first &lt;code&gt;ownedMember&lt;/code&gt; of the &lt;code&gt;Feature&lt;/code&gt; that is a &lt;code&gt;Feature&lt;/code&gt;, but not a &lt;code&gt;Multiplicity&lt;/code&gt; or a &lt;code&gt;MetadataFeature&lt;/code&gt;, and whose &lt;code&gt;owningMembership&lt;/code&gt; is &lt;em&gt;not&lt;/em&gt; a &lt;code&gt;FeatureMembership&lt;/code&gt;. If this exists, it is the &lt;code&gt;crossFeature&lt;/code&gt; of the end &lt;code&gt;Feature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-ownedCrossFeature_\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-ownedCrossFeature_-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <lowerValue ns0:id=\"Core-Features-Feature-ownedCrossFeature_--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Core-Features-Feature\" />\n              <upperValue ns0:id=\"Core-Features-Feature-ownedCrossFeature_--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-ownedCrossFeature_-unnamed1\" />\n          </ownedOperation>\n          "
+        }
+      ],
+      "pinned_witnesses": [
+        {
+          "id": "dbe41028-1d5a-5a31-9703-8004dd5f5174",
+          "path": "Occurrences::Occurrence::surroundedByOccurrences::surroundingSpace",
+          "kind": "Feature",
+          "source": {
+            "document": "Kernel Semantic Library/Occurrences.kerml",
+            "origin": "SourceOrigin { document: DocumentId(98512626470886325522064892244953763144), revision: SourceRevisionId(126516864061020806065564589327181708881), range: ByteRange { start: 22413, end: 22471 }, syntax_node: Some(SyntaxNodeId(81617416524163681859946481004148363763)) }",
+            "range": [
+              22413,
+              22471
+            ],
+            "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+            "text": "end [1] feature surroundingSpace: Occurrence subsets self;"
+          }
+        },
+        {
+          "id": "2cb1d763-3dca-5003-99d2-4edf2af5c41e",
+          "path": "Occurrences::Occurrence::surroundedByOccurrences::surroundingSpace",
+          "kind": "Feature",
+          "source": {
+            "document": "Kernel Semantic Library/Occurrences.kerml",
+            "origin": "SourceOrigin { document: DocumentId(98512626470886325522064892244953763144), revision: SourceRevisionId(126516864061020806065564589327181708881), range: ByteRange { start: 22417, end: 22420 }, syntax_node: Some(SyntaxNodeId(316114841197651397396359005203633248635)) }",
+            "range": [
+              22417,
+              22420
+            ],
+            "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+            "text": "[1]"
+          }
+        }
+      ],
+      "complete_local_structural_facts": {
+        "owning_type": {
+          "id": "d8e08703-2b50-59e3-ac4c-83e4a919eaaa",
+          "path": "Occurrences::Occurrence::surroundedByOccurrences",
+          "kind": "Feature",
+          "source": {
+            "document": "Kernel Semantic Library/Occurrences.kerml",
+            "origin": "SourceOrigin { document: DocumentId(98512626470886325522064892244953763144), revision: SourceRevisionId(126516864061020806065564589327181708881), range: ByteRange { start: 22162, end: 22647 }, syntax_node: Some(SyntaxNodeId(170166389648388706825664958299633494106)) }",
+            "range": [
+              22162,
+              22647
+            ],
+            "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+            "text": "feature surroundedByOccurrences: Occurrence [0..*] subsets outsideOfOccurrences {\r\n\t\t\tdoc\r\n\t\t\t/*\r\n\t\t\t * Occurrences that have inner spaces that completely include this occurrence.\r\n\t\t\t */\r\n\r\n\t\t\tfeature surroundedSpace: Occurrence[1] subsets that;\r\n\t\t\tend [1] feature surroundingSpace: Occurrence subsets self;\r\n\r\n\t\t\tconnector :InsideOf\r\n\t\t\t\tfrom [0..1] smallerOccurrence references surroundedSpace\r\n\t\t\t\tto [1..*] largerOccurrence references surroundingSpace.innerSpaceOccurrences;\r\n\t\t}"
+          }
+        },
+        "own_end_sequence": [
+          "dbe41028-1d5a-5a31-9703-8004dd5f5174"
+        ],
+        "reference_supertype_closure": [
+          {
+            "id": "3176ab6a-8d7b-5e14-b263-57bd30f77f78",
+            "path": "Base::things",
+            "kind": "Feature",
+            "file": "Base.kermlx"
+          },
+          {
+            "id": "d5b4e7df-e644-5f2f-b95e-cf6f1f6c076d",
+            "path": "Base::Anything",
+            "kind": "Classifier",
+            "file": "Base.kermlx"
+          },
+          {
+            "id": "05fff4e4-cdd3-5942-b213-8df135a6c562",
+            "path": "Occurrences::Occurrence::withoutOccurrences",
+            "kind": "Feature",
+            "file": "Occurrences.kermlx"
+          },
+          {
+            "id": "1751daae-ec84-5a00-980e-e09247703500",
+            "path": "Occurrences::occurrences",
+            "kind": "Feature",
+            "file": "Occurrences.kermlx"
+          },
+          {
+            "id": "39e7ab46-4b77-56c5-be49-cec0a1b784fe",
+            "path": "Occurrences::Occurrence::outsideOfOccurrences",
+            "kind": "Feature",
+            "file": "Occurrences.kermlx"
+          },
+          {
+            "id": "741ea0aa-b16b-5b44-ac46-564c85d4f05d",
+            "path": "Occurrences::Occurrence::surroundedByOccurrences",
+            "kind": "Feature",
+            "file": "Occurrences.kermlx"
+          },
+          {
+            "id": "80f4284e-73b1-589c-ad80-e25f33022e4f",
+            "path": "Occurrences::Occurrence",
+            "kind": "Class",
+            "file": "Occurrences.kermlx"
+          }
+        ],
+        "inherited_ends": [],
+        "selected_cross": "2cb1d763-3dca-5003-99d2-4edf2af5c41e",
+        "end_flag": true
+      },
+      "published_result": "v7 selects the authored cross Feature. Crossing specialization requires an owned CrossSubsetting, whose crossing Feature has only one end in its owning Type; the >1 validation predicate is false.",
+      "alternative_results": [
+        "Remove the source end/cross-multiplicity as suggested by the issue.",
+        "Change the applicability or validity of unary crossings. Neither change is authorized."
+      ],
+      "reference_behavior": {
+        "end": {
+          "file": "Occurrences.kermlx",
+          "id": "ebd42c82-2141-5c45-9f96-5e7829b341ea",
+          "kind": "Feature",
+          "path": "Occurrences::Occurrence::surroundedByOccurrences::surroundingSpace",
+          "xml": "<ownedRelatedElement xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:Feature\" ns1:id=\"ebd42c82-2141-5c45-9f96-5e7829b341ea\" declaredName=\"surroundingSpace\" elementId=\"ebd42c82-2141-5c45-9f96-5e7829b341ea\" isImpliedIncluded=\"true\">\n                  <ownedRelationship xsi:type=\"sysml:FeatureTyping\" ns1:id=\"dd4d7ac0-14f8-52d9-9d9c-10c52e4695a1\" elementId=\"dd4d7ac0-14f8-52d9-9d9c-10c52e4695a1\" type=\"80f4284e-73b1-589c-ad80-e25f33022e4f\" typedFeature=\"ebd42c82-2141-5c45-9f96-5e7829b341ea\" />\n                  <ownedRelationship xsi:type=\"sysml:OwningMembership\" ns1:id=\"be2e8a69-3098-5e00-a788-9582102a6095\" elementId=\"be2e8a69-3098-5e00-a788-9582102a6095\">\n                    <ownedRelatedElement xsi:type=\"sysml:MultiplicityRange\" ns1:id=\"b792bf3e-42e4-5abc-992d-5f069b577eb7\" elementId=\"b792bf3e-42e4-5abc-992d-5f069b577eb7\" isImpliedIncluded=\"true\">\n                      <ownedRelationship xsi:type=\"sysml:OwningMembership\" ns1:id=\"7254be0e-806c-55b5-bea0-f9b105a23b3a\" elementId=\"7254be0e-806c-55b5-bea0-f9b105a23b3a\">\n                        <ownedRelatedElement xsi:type=\"sysml:LiteralInteger\" ns1:id=\"e1bce47a-1ff2-5189-8277-ac166c5880bf\" elementId=\"e1bce47a-1ff2-5189-8277-ac166c5880bf\" isImpliedIncluded=\"true\" value=\"1\">\n                          <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"493c96da-227d-510a-9b04-a6951454a885\" elementId=\"493c96da-227d-510a-9b04-a6951454a885\" isImplied=\"true\" subsettingFeature=\"e1bce47a-1ff2-5189-8277-ac166c5880bf\">\n                            <subsettedFeature href=\"Performances.kermlx#fb4cc07d-8595-55f8-a84f-5f5431024e1b\" />\n                          </ownedRelationship>\n                          <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"ffeec968-f36c-52bc-b947-35ff048e29be\" elementId=\"ffeec968-f36c-52bc-b947-35ff048e29be\" isImplied=\"true\" featureOfType=\"e1bce47a-1ff2-5189-8277-ac166c5880bf\" featuringType=\"741ea0aa-b16b-5b44-ac46-564c85d4f05d\" />\n                        </ownedRelatedElement>\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"5d096139-3f9c-5788-85f0-c79279f427bb\" elementId=\"5d096139-3f9c-5788-85f0-c79279f427bb\" isImplied=\"true\" subsettingFeature=\"b792bf3e-42e4-5abc-992d-5f069b577eb7\">\n                        <subsettedFeature href=\"Base.kermlx#7f46a88a-4eb2-501d-ad8b-9eefbb9b38e9\" />\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"9c01704b-ec8d-5e0f-8238-534be8bb5214\" elementId=\"9c01704b-ec8d-5e0f-8238-534be8bb5214\" isImplied=\"true\" featureOfType=\"b792bf3e-42e4-5abc-992d-5f069b577eb7\" featuringType=\"741ea0aa-b16b-5b44-ac46-564c85d4f05d\" />\n                    </ownedRelatedElement>\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"596f138f-5b48-562e-82f9-3330016f1e80\" elementId=\"596f138f-5b48-562e-82f9-3330016f1e80\" subsettedFeature=\"e926c99e-a7d4-57e2-8d79-f4088a0c00f9\" subsettingFeature=\"ebd42c82-2141-5c45-9f96-5e7829b341ea\" />\n                  <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"79cf902e-efef-5048-a2c3-224aa1e723fb\" elementId=\"79cf902e-efef-5048-a2c3-224aa1e723fb\" isImplied=\"true\" featureOfType=\"ebd42c82-2141-5c45-9f96-5e7829b341ea\" featuringType=\"741ea0aa-b16b-5b44-ac46-564c85d4f05d\" />\n                </ownedRelatedElement>\n              "
+        },
+        "is_end": false,
+        "source_diff": "Reference treats surroundingSpace as a regular feature with an ordinary multiplicity."
+      },
+      "issue_associated_resolution": {
+        "searched": true,
+        "source": "verification/kerml-semantic-closure-v10/resolution/search-KERML11-2.json",
+        "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+        "commits": [],
+        "interpretation": "Issue-associated commit search, not proof of OMG adoption; no result is not proof that no unlabelled commit exists."
+      },
+      "covered_by_profile": false,
+      "authorized_correction": false,
+      "independent_local_reproduction": true,
+      "execution_required": false,
+      "acceptance_block": "Required structural crossing and its validity cannot both hold for the exact pinned end. KERML11-1 changes selection only and cannot repair this witness."
+    },
+    {
+      "id": "KLCV10-F-002",
+      "issue": {
+        "key": "KERML11-4",
+        "title": "Error in constraint checkMultiplicityTypeFeaturing",
+        "status": "open",
+        "url": "https://issues.omg.org/issues/KERML11-4",
+        "anchor": "issue-56670",
+        "text": "Error in constraint checkMultiplicityTypeFeaturing Key: KERML11-4 Status: open Source: Model Driven Solutions ( Mr. Ed Seidewitz ) Summary: The description of the constraint checkMultiplicityTypeFeaturing begins \"If the owningType of a Multiplicity is a Feature...\". However, a Multiplicity is never owned via a FeatureMembership , so it cannot have a non-null owningType . The constraint should use owningNamespace instead of owningType (in the description and the OCL). Reported: KerML 1.0b2 —\n                                    Thu, 19 Jun 2025 21:30 GMT Updated: Tue, 9 Dec 2025 01:13 GMT",
+        "updated": "Tue, 9 Dec 2025 01:13 GMT"
+      },
+      "formal": [
+        {
+          "kind": "ownedRule",
+          "owner": "Multiplicity",
+          "name": "checkMultiplicityTypeFeaturing",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+            "name": "checkMultiplicityTypeFeaturing"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>If the <code>owningType</code> of a <code>Multiplicity</code> is a <code>Feature</code>, then the <code>Multiplicity</code> must have the same <code>featuringTypes</code> as that <code>Feature</code>. Otherwise, it must have no <code>featuringTypes</code> (meaning that it is implicitly featured by the base <code>Classifier</code> <em><code>Anything</code></em>).</p>"
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "if owningType <> null and owningType.oclIsKindOf(Feature) then     featuringType =          owningType.oclAsType(Feature).featuringType else     featuringType->isEmpty() endif",
+              "language": "OCL2.0",
+              "name": ""
+            }
+          ],
+          "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Multiplicity-checkMultiplicityTypeFeaturing\" ns0:type=\"uml:Constraint\" name=\"checkMultiplicityTypeFeaturing\">\n            <constrainedElement ns0:idref=\"Core-Types-Multiplicity\" />\n            <ownedComment ns0:id=\"Core-Types-Multiplicity-checkMultiplicityTypeFeaturing-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If the &lt;code&gt;owningType&lt;/code&gt; of a &lt;code&gt;Multiplicity&lt;/code&gt; is a &lt;code&gt;Feature&lt;/code&gt;, then the &lt;code&gt;Multiplicity&lt;/code&gt; must have the same &lt;code&gt;featuringTypes&lt;/code&gt; as that &lt;code&gt;Feature&lt;/code&gt;. Otherwise, it must have no &lt;code&gt;featuringTypes&lt;/code&gt; (meaning that it is implicitly featured by the base &lt;code&gt;Classifier&lt;/code&gt; &lt;em&gt;&lt;code&gt;Anything&lt;/code&gt;&lt;/em&gt;).&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Types-Multiplicity-checkMultiplicityTypeFeaturing\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Types-Multiplicity-checkMultiplicityTypeFeaturing-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if owningType &lt;&gt; null and owningType.oclIsKindOf(Feature) then     featuringType =          owningType.oclAsType(Feature).featuringType else     featuringType-&gt;isEmpty() endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+        },
+        {
+          "kind": "ownedRule",
+          "owner": "Feature",
+          "name": "validateFeatureMultiplicityDomain",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureMultiplicityDomain",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+            "name": "validateFeatureMultiplicityDomain"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureMultiplicityDomain-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>If a <code>Feature</code> has a <code>multiplicity</code>, then the <code>featuringTypes</code> of the <code>multiplicity</code> must be the same as those of the <code>Feature</code> itself.</p>"
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureMultiplicityDomain-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "multiplicity <> null implies multiplicity.featuringType = featuringType ",
+              "language": "OCL2.0",
+              "name": ""
+            }
+          ],
+          "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-validateFeatureMultiplicityDomain\" ns0:type=\"uml:Constraint\" name=\"validateFeatureMultiplicityDomain\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-validateFeatureMultiplicityDomain-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; has a &lt;code&gt;multiplicity&lt;/code&gt;, then the &lt;code&gt;featuringTypes&lt;/code&gt; of the &lt;code&gt;multiplicity&lt;/code&gt; must be the same as those of the &lt;code&gt;Feature&lt;/code&gt; itself.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-validateFeatureMultiplicityDomain\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-validateFeatureMultiplicityDomain-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"multiplicity &lt;&gt; null implies multiplicity.featuringType = featuringType \" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+        },
+        {
+          "kind": "ownedRule",
+          "owner": "Feature",
+          "name": "checkFeatureFeatureMembershipTypeFeaturing",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+            "name": "checkFeatureFeatureMembershipTypeFeaturing"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>If a <code>Feature</code> is owned via a <code>FeatureMembership</code>, then it must have a <code>featuringType</code> for which the operation <code>isFeaturingType</code> returns true.</p>"
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "owningFeatureMembership <> null implies featuringTypes->exists(t | isFeaturingType(t))",
+              "language": "OCL2.0",
+              "name": ""
+            }
+          ],
+          "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing\" ns0:type=\"uml:Constraint\" name=\"checkFeatureFeatureMembershipTypeFeaturing\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; is owned via a &lt;code&gt;FeatureMembership&lt;/code&gt;, then it must have a &lt;code&gt;featuringType&lt;/code&gt; for which the operation &lt;code&gt;isFeaturingType&lt;/code&gt; returns true.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningFeatureMembership &lt;&gt; null implies featuringTypes-&gt;exists(t | isFeaturingType(t))\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+        },
+        {
+          "kind": "ownedOperation",
+          "owner": "Feature",
+          "name": "isFeaturingType",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "name": "isFeaturingType"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type-unnamed1-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "owningType <> null and if not isVariable then type = owningType else if owningType = resolveGlobal('Occurrences::Occurrence').memberElement then     type = resolveGlobal('Occurrences::Occurrence::snapshots').memberElement  else      type.oclIsKindOf(Feature) and     let feature : Feature = type.oclAsType(Feature) in     feature.featuringType->includes(owningType) and     feature.redefinesFromLibrary('Occurrences::Occurrence::snapshots') endif ",
+              "language": "OCL2.0",
+              "name": ""
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isFeaturingType_Type-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>Return whether the given <code>type</code> must be a <code>featuringType</code> of this <code>Feature</code>. If this <code>Feature</code> has <code>isVariable = false</code>, then return true if the <code>type</code> is the <code>owningType</code> of the <code>Feature</code>. If <code>isVariable = true</code>, then return true if the <code>type</code> is a <code>Feature</code> representing the <em><code>snapshots</code></em> of the <code>owningType</code> of this <code>Feature</code>.</p>"
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isFeaturingType_Type\" ns0:type=\"uml:Operation\" name=\"isFeaturingType\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isFeaturingType_Type-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-isFeaturingType_Type-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningType &lt;&gt; null and if not isVariable then type = owningType else if owningType = resolveGlobal('Occurrences::Occurrence').memberElement then     type = resolveGlobal('Occurrences::Occurrence::snapshots').memberElement  else      type.oclIsKindOf(Feature) and     let feature : Feature = type.oclAsType(Feature) in     feature.featuringType-&gt;includes(owningType) and     feature.redefinesFromLibrary('Occurrences::Occurrence::snapshots') endif \" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isFeaturingType_Type-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Return whether the given &lt;code&gt;type&lt;/code&gt; must be a &lt;code&gt;featuringType&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt;. If this &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;isVariable = false&lt;/code&gt;, then return true if the &lt;code&gt;type&lt;/code&gt; is the &lt;code&gt;owningType&lt;/code&gt; of the &lt;code&gt;Feature&lt;/code&gt;. If &lt;code&gt;isVariable = true&lt;/code&gt;, then return true if the &lt;code&gt;type&lt;/code&gt; is a &lt;code&gt;Feature&lt;/code&gt; representing the &lt;em&gt;&lt;code&gt;snapshots&lt;/code&gt;&lt;/em&gt; of the &lt;code&gt;owningType&lt;/code&gt; of this &lt;code&gt;Feature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isFeaturingType_Type\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturingType_Type-type\" ns0:type=\"uml:Parameter\" name=\"type\">\n              <type ns0:idref=\"Core-Types-Type\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isFeaturingType_Type-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isFeaturingType_Type-unnamed1\" />\n          </ownedOperation>\n          "
+        }
+      ],
+      "pinned_witnesses": [
+        {
+          "id": "3da361d2-987f-50e0-ba03-7eb4dd5ecaca",
+          "path": "TransitionPerformances::TransitionPerformance::accept",
+          "kind": "Step",
+          "source": {
+            "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+            "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1674, end: 1869 }, syntax_node: Some(SyntaxNodeId(192829237199880656046971300439802205360)) }",
+            "range": [
+              1674,
+              1869
+            ],
+            "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+            "text": "step accept: AcceptPerformance[accNum] subsets timeEnclosedOccurrences, acceptPerformances {\n\t\t\tin feature redefines receiver = triggerTarget;\n\t\t\tfeature redefines acceptedTransfer = trigger;\n\t\t}"
+          }
+        },
+        {
+          "id": "df7baea9-d442-51cd-b66f-73ded21ab117",
+          "path": "TransitionPerformances::TransitionPerformance::accept",
+          "kind": "MultiplicityRange",
+          "source": {
+            "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+            "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1704, end: 1712 }, syntax_node: Some(SyntaxNodeId(7680831542113813807298268358790864760)) }",
+            "range": [
+              1704,
+              1712
+            ],
+            "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+            "text": "[accNum]"
+          }
+        }
+      ],
+      "complete_local_structural_facts": {
+        "feature_owning_type": {
+          "id": "d955516b-44ea-5113-8f24-f40677870d07",
+          "path": "TransitionPerformances::TransitionPerformance",
+          "kind": "Behavior",
+          "source": {
+            "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+            "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 770, end: 1926 }, syntax_node: Some(SyntaxNodeId(22364001266214919218705072564219404305)) }",
+            "range": [
+              770,
+              1926
+            ],
+            "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+            "text": "abstract behavior TransitionPerformance {\n\t\tin feature transitionLinkSource: Performance[1];\n\t\t\n\t\tfeature trigger: MessageTransfer[*];\n\t\tbool guard[*] subsets enclosedPerformances;\n\t\tstep effect[*] subsets enclosedPerformances;\n\n\t\tfeature triggerTarget : Occurrence [1] default this;\n\t\tfeature transitionLink: HappensBefore[0..1];\n\t\t\n\t\tprivate binding [0..1] transitionLink.earlierOccurrence = [1] transitionLinkSource;\n\t\tprivate succession [1] transitionLinkSource then [*] effect;\n\t\tprivate succession [*] effect then [1] transitionLink.laterOccurrence;\n\t\t\n\t\tprivate connector [0..1] transitionLink to [1..*] trigger;\n\t\tprivate connector all guardConstraint: TPCGuardConstraint[*] \n\t\t\tfrom [0..1] transitionLink to [*] guard;\n\t\t\t\n\t\tprivate succession all [*] trigger then [*] guard;\n\t\tprivate succession all [*] guard then [*] effect;\n\n\t\tfeature accNum: Natural [1] = if isEmpty(trigger) ? 0 else 1;\n\t\tstep accept: AcceptPerformance[accNum] subsets timeEnclosedOccurrences, acceptPerformances {\n\t\t\tin feature redefines receiver = triggerTarget;\n\t\t\tfeature redefines acceptedTransfer = trigger;\n\t\t}\n\n\t\tprivate succession [*] guard then [accNum] accept;\n\t}"
+          }
+        },
+        "feature_is_variable": false,
+        "multiplicity_owning_membership": {
+          "id": "b58903e8-9e31-5b0c-8829-77826ddf24dc",
+          "path": "TransitionPerformances::TransitionPerformance::accept",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+            "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1704, end: 1712 }, syntax_node: Some(SyntaxNodeId(333386723001649887837544736782616823234)) }",
+            "range": [
+              1704,
+              1712
+            ],
+            "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+            "text": "[accNum]"
+          }
+        },
+        "multiplicity_owning_type": null,
+        "required_feature_featuring_types": [
+          "d955516b-44ea-5113-8f24-f40677870d07"
+        ],
+        "required_multiplicity_featuring_types_literal": []
+      },
+      "published_result": "checkMultiplicityTypeFeaturing requires an empty domain because owningType is null; validateFeatureMultiplicityDomain requires the nonempty featuring domain of the owning Feature.",
+      "alternative_results": [
+        "Use owningNamespace in checkMultiplicityTypeFeaturing, as proposed by KERML11-4.",
+        "Change multiplicity-domain validation. Neither is authorized."
+      ],
+      "reference_behavior": {
+        "multiplicity": {
+          "file": "TransitionPerformances.kermlx",
+          "id": "edb7d196-a34e-57ea-8f81-209311673da9",
+          "kind": "MultiplicityRange",
+          "path": "TransitionPerformances::TransitionPerformance::accept",
+          "xml": "<ownedRelatedElement xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:MultiplicityRange\" ns1:id=\"edb7d196-a34e-57ea-8f81-209311673da9\" elementId=\"edb7d196-a34e-57ea-8f81-209311673da9\" isImpliedIncluded=\"true\">\n                  <ownedRelationship xsi:type=\"sysml:OwningMembership\" ns1:id=\"c63a4df4-7178-5f99-a637-fd14cd699daa\" elementId=\"c63a4df4-7178-5f99-a637-fd14cd699daa\">\n                    <ownedRelatedElement xsi:type=\"sysml:FeatureReferenceExpression\" ns1:id=\"dc506e84-de60-5f45-86ca-99914a9613f0\" elementId=\"dc506e84-de60-5f45-86ca-99914a9613f0\" isImpliedIncluded=\"true\">\n                      <ownedRelationship xsi:type=\"sysml:Membership\" ns1:id=\"ecd060d0-7034-5147-92e3-42db607a4e5c\" elementId=\"ecd060d0-7034-5147-92e3-42db607a4e5c\" memberElement=\"91d59727-452e-550f-8a4f-3355f6977cf3\" />\n                      <ownedRelationship xsi:type=\"sysml:ReturnParameterMembership\" ns1:id=\"3a77a538-8a80-5646-a0a8-db4141bf0a26\" elementId=\"3a77a538-8a80-5646-a0a8-db4141bf0a26\">\n                        <ownedRelatedElement xsi:type=\"sysml:Feature\" ns1:id=\"c82ab168-2bbc-580f-98ff-92ade0423fcf\" elementId=\"c82ab168-2bbc-580f-98ff-92ade0423fcf\" isImpliedIncluded=\"true\" direction=\"out\">\n                          <ownedRelationship xsi:type=\"sysml:Redefinition\" ns1:id=\"9e11aad2-c77c-56a6-9784-c79474d061c4\" elementId=\"9e11aad2-c77c-56a6-9784-c79474d061c4\" isImplied=\"true\" redefiningFeature=\"c82ab168-2bbc-580f-98ff-92ade0423fcf\">\n                            <redefinedFeature href=\"Performances.kermlx#d4c65e7a-f5cd-5e32-bb56-93a0cfa01d23\" />\n                          </ownedRelationship>\n                          <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"b4578766-e692-5672-97e1-c35379fb4fdf\" elementId=\"b4578766-e692-5672-97e1-c35379fb4fdf\" isImplied=\"true\" subsettedFeature=\"91d59727-452e-550f-8a4f-3355f6977cf3\" subsettingFeature=\"c82ab168-2bbc-580f-98ff-92ade0423fcf\" />\n                          <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"f45ac9c6-3a0e-5691-b004-cf93ddcf8e84\" elementId=\"f45ac9c6-3a0e-5691-b004-cf93ddcf8e84\" isImplied=\"true\" featureOfType=\"c82ab168-2bbc-580f-98ff-92ade0423fcf\" featuringType=\"dc506e84-de60-5f45-86ca-99914a9613f0\" />\n                        </ownedRelatedElement>\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:OwningMembership\" ns1:id=\"3ebb7e8b-6c2b-573b-9554-908174b8c59b\" elementId=\"3ebb7e8b-6c2b-573b-9554-908174b8c59b\">\n                        <ownedRelatedElement xsi:type=\"sysml:BindingConnector\" ns1:id=\"15ce79dd-78bc-556e-82fb-a6c6381e0817\" elementId=\"15ce79dd-78bc-556e-82fb-a6c6381e0817\" isImpliedIncluded=\"true\" isImplied=\"true\">\n                          <ownedRelationship xsi:type=\"sysml:FeatureMembership\" ns1:id=\"ff546de8-439d-5df4-88a7-487841fefc53\" elementId=\"ff546de8-439d-5df4-88a7-487841fefc53\">\n                            <ownedRelatedElement xsi:type=\"sysml:Feature\" ns1:id=\"cc09bfb5-0e87-5afc-8a27-b482c828ab91\" elementId=\"cc09bfb5-0e87-5afc-8a27-b482c828ab91\" isImpliedIncluded=\"true\" isEnd=\"true\">\n                              <ownedRelationship xsi:type=\"sysml:ReferenceSubsetting\" ns1:id=\"99709a47-b461-5749-b66c-40de596e9f6c\" elementId=\"99709a47-b461-5749-b66c-40de596e9f6c\" referencedFeature=\"91d59727-452e-550f-8a4f-3355f6977cf3\" />\n                              <ownedRelationship xsi:type=\"sysml:Redefinition\" ns1:id=\"d4d1aed5-9217-5bd3-bb71-dd0f453df49b\" elementId=\"d4d1aed5-9217-5bd3-bb71-dd0f453df49b\" isImplied=\"true\" redefiningFeature=\"cc09bfb5-0e87-5afc-8a27-b482c828ab91\">\n                                <redefinedFeature href=\"Links.kermlx#62a34d15-e2ee-5001-8412-61fe7ff53890\" />\n                              </ownedRelationship>\n                              <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"d9b5524b-3edd-541d-b412-43dd7bae4843\" elementId=\"d9b5524b-3edd-541d-b412-43dd7bae4843\" isImplied=\"true\" featureOfType=\"cc09bfb5-0e87-5afc-8a27-b482c828ab91\" featuringType=\"15ce79dd-78bc-556e-82fb-a6c6381e0817\" />\n                            </ownedRelatedElement>\n                          </ownedRelationship>\n                          <ownedRelationship xsi:type=\"sysml:FeatureMembership\" ns1:id=\"908041e9-275a-5a8c-947e-80d9b6af274f\" elementId=\"908041e9-275a-5a8c-947e-80d9b6af274f\">\n                            <ownedRelatedElement xsi:type=\"sysml:Feature\" ns1:id=\"af8784c4-5836-501d-ab57-0e04d8e264c9\" elementId=\"af8784c4-5836-501d-ab57-0e04d8e264c9\" isImpliedIncluded=\"true\" isEnd=\"true\">\n                              <ownedRelationship xsi:type=\"sysml:ReferenceSubsetting\" ns1:id=\"61b509be-3b30-515f-aa3c-f79fd068d72f\" elementId=\"61b509be-3b30-515f-aa3c-f79fd068d72f\" referencedFeature=\"c82ab168-2bbc-580f-98ff-92ade0423fcf\" />\n                              <ownedRelationship xsi:type=\"sysml:Redefinition\" ns1:id=\"c84876c7-6c29-5f9e-b5cb-c15b51abe352\" elementId=\"c84876c7-6c29-5f9e-b5cb-c15b51abe352\" isImplied=\"true\" redefiningFeature=\"af8784c4-5836-501d-ab57-0e04d8e264c9\">\n                                <redefinedFeature href=\"Links.kermlx#a18980e2-a22e-53a9-8947-c358715d3c0b\" />\n                              </ownedRelationship>\n                              <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"9a658d2d-d183-52da-9966-a0d4c551b02c\" elementId=\"9a658d2d-d183-52da-9966-a0d4c551b02c\" isImplied=\"true\" featureOfType=\"af8784c4-5836-501d-ab57-0e04d8e264c9\" featuringType=\"15ce79dd-78bc-556e-82fb-a6c6381e0817\" />\n                            </ownedRelatedElement>\n                          </ownedRelationship>\n                          <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"9827c2cd-226b-5e0e-9d80-01316fcb5035\" elementId=\"9827c2cd-226b-5e0e-9d80-01316fcb5035\" isImplied=\"true\" subsettingFeature=\"15ce79dd-78bc-556e-82fb-a6c6381e0817\">\n                            <subsettedFeature href=\"Links.kermlx#5c75806f-0abf-51c3-a80d-bbf5346a0f36\" />\n                          </ownedRelationship>\n                          <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"3d03d79b-6a1f-57da-b710-d8b33b9ad26c\" elementId=\"3d03d79b-6a1f-57da-b710-d8b33b9ad26c\" isImplied=\"true\" featureOfType=\"15ce79dd-78bc-556e-82fb-a6c6381e0817\" featuringType=\"c2e011f2-962f-55de-bfd5-cabc42e021fe\" />\n                        </ownedRelatedElement>\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"bc345c25-4db8-5779-817c-698cf44184d5\" elementId=\"bc345c25-4db8-5779-817c-698cf44184d5\" isImplied=\"true\" subsettingFeature=\"dc506e84-de60-5f45-86ca-99914a9613f0\">\n                        <subsettedFeature href=\"Performances.kermlx#c590aa58-6c78-5aeb-b1c9-a784abcb2e29\" />\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"0b949e3d-011c-5b4e-8b92-b7aee3e2e551\" elementId=\"0b949e3d-011c-5b4e-8b92-b7aee3e2e551\" isImplied=\"true\" featureOfType=\"dc506e84-de60-5f45-86ca-99914a9613f0\" featuringType=\"c2e011f2-962f-55de-bfd5-cabc42e021fe\" />\n                    </ownedRelatedElement>\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"39e67940-f7ce-5705-b750-c1d635911153\" elementId=\"39e67940-f7ce-5705-b750-c1d635911153\" isImplied=\"true\" subsettingFeature=\"edb7d196-a34e-57ea-8f81-209311673da9\">\n                    <subsettedFeature href=\"Base.kermlx#7f46a88a-4eb2-501d-ad8b-9eefbb9b38e9\" />\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"6d9cb4e9-4463-5dd2-9161-ef363913f534\" elementId=\"6d9cb4e9-4463-5dd2-9161-ef363913f534\" isImplied=\"true\" featureOfType=\"edb7d196-a34e-57ea-8f81-209311673da9\" featuringType=\"c2e011f2-962f-55de-bfd5-cabc42e021fe\" />\n                </ownedRelatedElement>\n              "
+        },
+        "feature_featuring_types": [
+          {
+            "id": "c2e011f2-962f-55de-bfd5-cabc42e021fe",
+            "path": "TransitionPerformances::TransitionPerformance",
+            "kind": "Behavior",
+            "file": "TransitionPerformances.kermlx"
+          }
+        ],
+        "multiplicity_featuring_types": [
+          {
+            "id": "c2e011f2-962f-55de-bfd5-cabc42e021fe",
+            "path": "TransitionPerformances::TransitionPerformance",
+            "kind": "Behavior",
+            "file": "TransitionPerformances.kermlx"
+          }
+        ]
+      },
+      "issue_associated_resolution": {
+        "searched": true,
+        "source": "verification/kerml-semantic-closure-v10/resolution/search-KERML11-4.json",
+        "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+        "commits": [],
+        "interpretation": "Issue-associated commit search, not proof of OMG adoption; no result is not proof that no unlabelled commit exists."
+      },
+      "covered_by_profile": false,
+      "authorized_correction": false,
+      "independent_local_reproduction": true,
+      "execution_required": false,
+      "acceptance_block": "The same Multiplicity is required to have both an empty and a nonempty featuringType. No runtime value or unresolved reference is needed for this contradiction."
+    },
+    {
+      "id": "KLCV10-F-003",
+      "issue": {
+        "key": "UNREPORTED-owned-cross-featuring-otherEnds",
+        "status": "No matching issue found in retained tracker"
+      },
+      "formal": [
+        {
+          "kind": "ownedRule",
+          "owner": "Feature",
+          "name": "checkFeatureOwnedCrossFeatureTypeFeaturing",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+            "name": "checkFeatureOwnedCrossFeatureTypeFeaturing"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>If this <code>Feature</code> is the <code>ownedCrossFeature</code> of an end <code>Feature</code>, then it must have <code>featuringTypes</code> consistent with the crossing from other end <code>Features</code> of the <code>owningType</code> of its end <code>Feature</code>.</p>"
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "isOwnedCrossFeature() implies     let otherEnds : OrderedSet(Feature) =          owner.oclAsType(Feature).owningType.endFeature->excluding(self) in     if (otherEnds->size() = 1) then         featuringType = otherEnds->first().type     else         featuringType->size() = 1 and         featuringType->first().isCartesianProduct() and         featuringType->first().asCartesianProduct() = otherEnds.type and         featuringType->first().allSupertypes()->includesAll(             owner.oclAsType(Feature).ownedRedefinition.redefinedFeature->                select(crossFeature() <> null).crossFeature().featuringType)           endif",
+              "language": "OCL2.0",
+              "name": ""
+            }
+          ],
+          "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing\" ns0:type=\"uml:Constraint\" name=\"checkFeatureOwnedCrossFeatureTypeFeaturing\">\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If this &lt;code&gt;Feature&lt;/code&gt; is the &lt;code&gt;ownedCrossFeature&lt;/code&gt; of an end &lt;code&gt;Feature&lt;/code&gt;, then it must have &lt;code&gt;featuringTypes&lt;/code&gt; consistent with the crossing from other end &lt;code&gt;Features&lt;/code&gt; of the &lt;code&gt;owningType&lt;/code&gt; of its end &lt;code&gt;Feature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"isOwnedCrossFeature() implies     let otherEnds : OrderedSet(Feature) =          owner.oclAsType(Feature).owningType.endFeature-&gt;excluding(self) in     if (otherEnds-&gt;size() = 1) then         featuringType = otherEnds-&gt;first().type     else         featuringType-&gt;size() = 1 and         featuringType-&gt;first().isCartesianProduct() and         featuringType-&gt;first().asCartesianProduct() = otherEnds.type and         featuringType-&gt;first().allSupertypes()-&gt;includesAll(             owner.oclAsType(Feature).ownedRedefinition.redefinedFeature-&gt;                select(crossFeature() &lt;&gt; null).crossFeature().featuringType)           endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+        },
+        {
+          "kind": "ownedOperation",
+          "owner": "Feature",
+          "name": "isOwnedCrossFeature",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isOwnedCrossFeature_",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "name": "isOwnedCrossFeature"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isOwnedCrossFeature_-unnamed1-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "owningNamespace <> null and owningNamespace.oclIsKindOf(Feature) and owningNamespace.oclAsType(Feature).ownedCrossFeature() = self",
+              "language": "OCL2.0",
+              "name": ""
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isOwnedCrossFeature_-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>Return whether this <code>Feature</code> is an owned cross <code>Feature</code> of an end <code>Feature</code>.</p>"
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isOwnedCrossFeature_\" ns0:type=\"uml:Operation\" name=\"isOwnedCrossFeature\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isOwnedCrossFeature_-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-isOwnedCrossFeature_-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningNamespace &lt;&gt; null and owningNamespace.oclIsKindOf(Feature) and owningNamespace.oclAsType(Feature).ownedCrossFeature() = self\" language=\"OCL2.0\" name=\"\" />\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isOwnedCrossFeature_-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Return whether this &lt;code&gt;Feature&lt;/code&gt; is an owned cross &lt;code&gt;Feature&lt;/code&gt; of an end &lt;code&gt;Feature&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isOwnedCrossFeature_\" />\n            </ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isOwnedCrossFeature_-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isOwnedCrossFeature_-unnamed1\" />\n          </ownedOperation>\n          "
+        },
+        {
+          "kind": "ownedOperation",
+          "owner": "Feature",
+          "name": "isCartesianProduct",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCartesianProduct_",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "name": "isCartesianProduct"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCartesianProduct_-unnamed1-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "type->size() = 1 and featuringType.size() = 1 and (featuringType.first().owner = self implies     featuringType.first().oclIsKindOf(Feature) and     featuringType.first().oclAsType(Feature).isCartesianProduct())",
+              "language": "OCL2.0",
+              "name": ""
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-isCartesianProduct_-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>Check whether this <code>Feature</code> can be used to represent a Cartesian product of <code>Types</code>.</p>"
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-isCartesianProduct_\" ns0:type=\"uml:Operation\" name=\"isCartesianProduct\">\n            <bodyCondition ns0:id=\"Core-Features-Feature-isCartesianProduct_-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Core-Features-Feature-isCartesianProduct_-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"type-&gt;size() = 1 and featuringType.size() = 1 and (featuringType.first().owner = self implies     featuringType.first().oclIsKindOf(Feature) and     featuringType.first().oclAsType(Feature).isCartesianProduct())\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Core-Features-Feature-isCartesianProduct_-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Check whether this &lt;code&gt;Feature&lt;/code&gt; can be used to represent a Cartesian product of &lt;code&gt;Types&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-isCartesianProduct_\" />\n            </ownedComment>\n            <ownedParameter ns0:id=\"Core-Features-Feature-isCartesianProduct_-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <type href=\"https://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Core-Features-Feature-isCartesianProduct_-unnamed1\" />\n          </ownedOperation>\n          "
+        }
+      ],
+      "pinned_witnesses": [
+        {
+          "id": "2b40cff8-b50e-5b6e-8c93-3ba39062efae",
+          "path": "Links::SelfLink::sameThing",
+          "kind": "Feature",
+          "source": {
+            "document": "Kernel Semantic Library/Links.kerml",
+            "origin": "SourceOrigin { document: DocumentId(279658666298143799287711162262576885698), revision: SourceRevisionId(136011301157993432009689722280988614709), range: ByteRange { start: 1239, end: 1316 }, syntax_node: Some(SyntaxNodeId(164555029268321227126421266549552107769)) }",
+            "range": [
+              1239,
+              1316
+            ],
+            "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+            "text": "end self2 [1] feature sameThing: Anything redefines target subsets thisThing;"
+          }
+        },
+        {
+          "id": "5cdfc215-1fc0-5fe1-8e1a-b5764230c704",
+          "path": "Links::SelfLink::sameThing::self2",
+          "kind": "Feature",
+          "source": {
+            "document": "Kernel Semantic Library/Links.kerml",
+            "origin": "SourceOrigin { document: DocumentId(279658666298143799287711162262576885698), revision: SourceRevisionId(136011301157993432009689722280988614709), range: ByteRange { start: 1243, end: 1252 }, syntax_node: Some(SyntaxNodeId(191451079275816708091923346396801457258)) }",
+            "range": [
+              1243,
+              1252
+            ],
+            "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+            "text": "self2 [1]"
+          }
+        }
+      ],
+      "complete_local_structural_facts": {
+        "owning_type": {
+          "id": "42fdca67-fdbe-52f1-9180-d479cbce28a9",
+          "path": "Links::SelfLink",
+          "kind": "Association",
+          "source": {
+            "document": "Kernel Semantic Library/Links.kerml",
+            "origin": "SourceOrigin { document: DocumentId(279658666298143799287711162262576885698), revision: SourceRevisionId(136011301157993432009689722280988614709), range: ByteRange { start: 924, end: 1322 }, syntax_node: Some(SyntaxNodeId(157292389087423761234725399024373585212)) }",
+            "range": [
+              924,
+              1322
+            ],
+            "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+            "text": "assoc all SelfLink specializes BinaryLink {\n        doc\n        /*\n         * SelfLink is a binary association in which the things at the two ends are asserted\n         * to be the same.\n         */\n        \n        end feature thisThing: Anything redefines source subsets sameThing crosses sameThing.self;\n        end self2 [1] feature sameThing: Anything redefines target subsets thisThing;\n    }"
+          }
+        },
+        "end_sequence": [
+          "e2d92809-9575-5f03-8c8b-85028f72a22b",
+          "2b40cff8-b50e-5b6e-8c93-3ba39062efae"
+        ],
+        "context_self": "5cdfc215-1fc0-5fe1-8e1a-b5764230c704",
+        "literal_other_ends": [
+          "e2d92809-9575-5f03-8c8b-85028f72a22b",
+          "2b40cff8-b50e-5b6e-8c93-3ba39062efae"
+        ],
+        "opposite_end_alternative": [
+          "e2d92809-9575-5f03-8c8b-85028f72a22b"
+        ]
+      },
+      "published_result": "The constraint is evaluated on the cross Feature; excluding(self) removes neither association end. Even this binary association therefore takes the Cartesian-product branch.",
+      "alternative_results": [
+        "Exclude the owning end instead of the cross Feature, yielding the opposite-end domain. This is what current pilot code implements."
+      ],
+      "reference_behavior": {
+        "cross": {
+          "file": "Links.kermlx",
+          "id": "fad2d755-ba0f-5c26-93f5-348332124d5c",
+          "kind": "Feature",
+          "path": "Links::SelfLink::sameThing::self2",
+          "xml": "<ownedRelatedElement xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:Feature\" ns1:id=\"fad2d755-ba0f-5c26-93f5-348332124d5c\" declaredName=\"self2\" elementId=\"fad2d755-ba0f-5c26-93f5-348332124d5c\" isImpliedIncluded=\"true\">\n                  <ownedRelationship xsi:type=\"sysml:OwningMembership\" ns1:id=\"b8c42a36-596b-5c39-957b-cff737d57067\" elementId=\"b8c42a36-596b-5c39-957b-cff737d57067\">\n                    <ownedRelatedElement xsi:type=\"sysml:MultiplicityRange\" ns1:id=\"04744760-658b-50b3-81bd-9ada265fb8fc\" elementId=\"04744760-658b-50b3-81bd-9ada265fb8fc\" isImpliedIncluded=\"true\">\n                      <ownedRelationship xsi:type=\"sysml:OwningMembership\" ns1:id=\"f8daa646-fb28-565a-bce6-9bdabf75389f\" elementId=\"f8daa646-fb28-565a-bce6-9bdabf75389f\">\n                        <ownedRelatedElement xsi:type=\"sysml:LiteralInteger\" ns1:id=\"072fa1b7-b4c0-57ed-a40f-5ac12ff55b73\" elementId=\"072fa1b7-b4c0-57ed-a40f-5ac12ff55b73\" isImpliedIncluded=\"true\" value=\"1\">\n                          <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"242a00d0-9e1a-58f9-8cc3-3f7f3671fb4a\" elementId=\"242a00d0-9e1a-58f9-8cc3-3f7f3671fb4a\" isImplied=\"true\" subsettingFeature=\"072fa1b7-b4c0-57ed-a40f-5ac12ff55b73\">\n                            <subsettedFeature href=\"Performances.kermlx#fb4cc07d-8595-55f8-a84f-5f5431024e1b\" />\n                          </ownedRelationship>\n                          <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"0e074852-0966-5aa6-81ea-5aeebbfbd65e\" elementId=\"0e074852-0966-5aa6-81ea-5aeebbfbd65e\" isImplied=\"true\" featureOfType=\"072fa1b7-b4c0-57ed-a40f-5ac12ff55b73\" featuringType=\"e0130145-70fb-56a0-a9dc-a7dfb54e62dd\" />\n                        </ownedRelatedElement>\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"76dc5f0b-654a-59e0-b046-a8ad9ceb4d10\" elementId=\"76dc5f0b-654a-59e0-b046-a8ad9ceb4d10\" isImplied=\"true\" subsettingFeature=\"04744760-658b-50b3-81bd-9ada265fb8fc\">\n                        <subsettedFeature href=\"Base.kermlx#7f46a88a-4eb2-501d-ad8b-9eefbb9b38e9\" />\n                      </ownedRelationship>\n                      <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"a19f29e2-1c73-58ee-bf01-3fd577eae88b\" elementId=\"a19f29e2-1c73-58ee-bf01-3fd577eae88b\" isImplied=\"true\" featureOfType=\"04744760-658b-50b3-81bd-9ada265fb8fc\">\n                        <featuringType href=\"Base.kermlx#d5b4e7df-e644-5f2f-b95e-cf6f1f6c076d\" />\n                      </ownedRelationship>\n                    </ownedRelatedElement>\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:Subsetting\" ns1:id=\"fc2bc6c4-8073-57f6-becb-209065a31eb8\" elementId=\"fc2bc6c4-8073-57f6-becb-209065a31eb8\" isImplied=\"true\" subsettingFeature=\"fad2d755-ba0f-5c26-93f5-348332124d5c\">\n                    <subsettedFeature href=\"Base.kermlx#3176ab6a-8d7b-5e14-b263-57bd30f77f78\" />\n                  </ownedRelationship>\n                  <ownedRelationship xsi:type=\"sysml:TypeFeaturing\" ns1:id=\"1418aba2-f74b-55d8-ae24-bc9aa0735120\" elementId=\"1418aba2-f74b-55d8-ae24-bc9aa0735120\" isImplied=\"true\" featureOfType=\"fad2d755-ba0f-5c26-93f5-348332124d5c\">\n                    <featuringType href=\"Base.kermlx#d5b4e7df-e644-5f2f-b95e-cf6f1f6c076d\" />\n                  </ownedRelationship>\n                </ownedRelatedElement>\n              "
+        },
+        "featuring_types": [
+          {
+            "id": "d5b4e7df-e644-5f2f-b95e-cf6f1f6c076d",
+            "path": "Base::Anything",
+            "kind": "Classifier",
+            "file": "Base.kermlx"
+          }
+        ],
+        "pilot_source": "pilot/FeatureAdapter.java",
+        "pilot_sha256": "131c2452554814e0a8bf96abc788f4388c894eadcea9acc55dc32f1f9abe1455",
+        "pilot_method": "addOwnedCrossFeatureTypeFeaturing",
+        "pilot_binary_domain_is_cartesian_product": false
+      },
+      "issue_associated_resolution": {
+        "searched": false
+      },
+      "covered_by_profile": false,
+      "authorized_correction": false,
+      "independent_local_reproduction": true,
+      "execution_required": false,
+      "acceptance_block": "The literal formal rule rejects the corroborated binary domain. The exact authorized KERML11-1 diff does not change this different constraint; selecting the alternative needs a separate authority decision."
+    },
+    {
+      "id": "KLCV10-F-004",
+      "issue": {
+        "key": "KERML11-75",
+        "title": "OCL for importedMemberships is incorrect",
+        "status": "open",
+        "url": "https://issues.omg.org/issues/KERML11-75",
+        "anchor": "issue-57246",
+        "text": "OCL for importedMemberships is incorrect Key: KERML11-75 Status: open Source: Model Driven Solutions ( Mr. Ed Seidewitz ) Summary: In 8.3.2.4.5 Namespace, the description of the operation importedMemberships is: Derive the importedMemberships of this Namespace as the importedMembership of all ownedImports , excluding those Imports whose importOwningNamespace is in the excluded set, and excluding Memberships that have distinguisibility collisions with each other or with any ownedMembership . However, the OCL does not seem to cover the part about the exclusion of \" Memberships that have distinguisibility collisions with each other or with any ownedMembership \". Reported: KerML 1.0b4 —\n                                    Thu, 24 Jul 2025 22:59 GMT Updated: Thu, 24 Jul 2025 22:59 GMT",
+        "updated": "Thu, 24 Jul 2025 22:59 GMT"
+      },
+      "formal": [
+        {
+          "kind": "ownedOperation",
+          "owner": "Package",
+          "name": "importedMemberships",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Packages-Package-importedMemberships_Namespace",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "name": "importedMemberships"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Packages-Package-importedMemberships_Namespace-unnamed1-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "self.oclAsType(Namespace).importedMemberships(excluded)-> select(m | self.includeAsMember(m.memberElement))",
+              "language": "OCL2.0",
+              "name": ""
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Kernel-Packages-Package-importedMemberships_Namespace-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>Exclude <code>Elements</code> that do not meet all the <code>filterConditions</code>.</p> "
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace\" ns0:type=\"uml:Operation\" name=\"importedMemberships\">\n            <bodyCondition ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"self.oclAsType(Namespace).importedMemberships(excluded)-&gt; select(m | self.includeAsMember(m.memberElement))\" language=\"OCL2.0\" name=\"\" />\n            </bodyCondition>\n            <ownedComment ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Exclude &lt;code&gt;Elements&lt;/code&gt; that do not meet all the &lt;code&gt;filterConditions&lt;/code&gt;.&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Kernel-Packages-Package-importedMemberships_Namespace\" />\n            </ownedComment>\n            <ownedParameter ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace-\" ns0:type=\"uml:Parameter\" name=\"\">\n              <lowerValue ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Kernel-Packages-Package-importedMemberships_Namespace--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Kernel-Packages-Package-importedMemberships_Namespace-unnamed1\" />\n            <redefinedOperation ns0:idref=\"Root-Namespaces-Namespace-importedMemberships_Namespace\" />\n          </ownedOperation>\n          "
+        },
+        {
+          "kind": "ownedOperation",
+          "owner": "NamespaceImport",
+          "name": "importedMemberships",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-NamespaceImport-importedMemberships_Namespace",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "name": "importedMemberships"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-NamespaceImport-importedMemberships_Namespace-unnamed1-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "if excluded->includes(importedNamespace) then Sequence{} else importedNamespace.visibleMemberships(excluded, isRecursive, isImportAll)",
+              "language": "OCL2.0",
+              "name": ""
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-NamespaceImport-importedMemberships_Namespace-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>Returns at least the visible <code>Memberships</code> of the <code>importedNamespace</code>. If <code>isRecursive = true</code>, then <code>Memberships</code> are also recursively imported from any <code>ownedMembers</code> of the <code>importedNamespace</code> that are themselves <code>Namespaces</code>.</p> "
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace\" ns0:type=\"uml:Operation\" name=\"importedMemberships\">\n            <bodyCondition ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if excluded-&gt;includes(importedNamespace) then Sequence{} else importedNamespace.visibleMemberships(excluded, isRecursive, isImportAll)\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Returns at least the visible &lt;code&gt;Memberships&lt;/code&gt; of the &lt;code&gt;importedNamespace&lt;/code&gt;. If &lt;code&gt;isRecursive = true&lt;/code&gt;, then &lt;code&gt;Memberships&lt;/code&gt; are also recursively imported from any &lt;code&gt;ownedMembers&lt;/code&gt; of the &lt;code&gt;importedNamespace&lt;/code&gt; that are themselves &lt;code&gt;Namespaces&lt;/code&gt;.&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Root-Namespaces-NamespaceImport-importedMemberships_Namespace-unnamed1\" />\n            <redefinedOperation ns0:idref=\"Root-Namespaces-Import-importedMemberships_Namespace\" />\n          </ownedOperation>\n          "
+        },
+        {
+          "kind": "ownedOperation",
+          "owner": "MembershipImport",
+          "name": "importedMemberships",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-MembershipImport-importedMemberships_Namespace",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "name": "importedMemberships"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-MembershipImport-importedMemberships_Namespace-unnamed1-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "if not isRecursive or     not importedElement.oclIsKindOf(Namespace) or    excluded->includes(importedElement) then Sequence{importedMembership} else importedElement.oclAsType(Namespace).         visibleMemberships(excluded, true, importAll)->         prepend(importedMembership) endif",
+              "language": "OCL2.0",
+              "name": ""
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-MembershipImport-importedMemberships_Namespace-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>Returns at least the <code>importedMembership</code>. If <code>isRecursive = true</code> and the <code>memberElement</code> of the <code>importedMembership</code> is a <code>Namespace</code>, then <code>Memberships</code> are also recursively imported from that <code>Namespace</code>.</p> "
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace\" ns0:type=\"uml:Operation\" name=\"importedMemberships\">\n            <bodyCondition ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if not isRecursive or     not importedElement.oclIsKindOf(Namespace) or    excluded-&gt;includes(importedElement) then Sequence{importedMembership} else importedElement.oclAsType(Namespace).         visibleMemberships(excluded, true, importAll)-&gt;         prepend(importedMembership) endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n            </bodyCondition>\n            <ownedComment ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Returns at least the &lt;code&gt;importedMembership&lt;/code&gt;. If &lt;code&gt;isRecursive = true&lt;/code&gt; and the &lt;code&gt;memberElement&lt;/code&gt; of the &lt;code&gt;importedMembership&lt;/code&gt; is a &lt;code&gt;Namespace&lt;/code&gt;, then &lt;code&gt;Memberships&lt;/code&gt; are also recursively imported from that &lt;code&gt;Namespace&lt;/code&gt;.&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Root-Namespaces-MembershipImport-importedMemberships_Namespace-unnamed1\" />\n            <redefinedOperation ns0:idref=\"Root-Namespaces-Import-importedMemberships_Namespace\" />\n          </ownedOperation>\n          "
+        },
+        {
+          "kind": "ownedOperation",
+          "owner": "Import",
+          "name": "importedMemberships",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Import-importedMemberships_Namespace",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "isAbstract": "true",
+            "name": "importedMemberships"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Import-importedMemberships_Namespace-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>Returns Memberships that are to become <code>importedMemberships</code> of the <code>importOwningNamespace</code>. (The <code>excluded</code> parameter is used to handle the possibility of circular Import Relationships.)</p> "
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Import-importedMemberships_Namespace\" ns0:type=\"uml:Operation\" isAbstract=\"true\" name=\"importedMemberships\">\n            <ownedComment ns0:id=\"Root-Namespaces-Import-importedMemberships_Namespace-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Returns Memberships that are to become &lt;code&gt;importedMemberships&lt;/code&gt; of the &lt;code&gt;importOwningNamespace&lt;/code&gt;. (The &lt;code&gt;excluded&lt;/code&gt; parameter is used to handle the possibility of circular Import Relationships.)&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Import-importedMemberships_Namespace\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-Import-importedMemberships_Namespace-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Root-Namespaces-Import-importedMemberships_Namespace-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Root-Namespaces-Import-importedMemberships_Namespace-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Import-importedMemberships_Namespace-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Root-Namespaces-Import-importedMemberships_Namespace--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Root-Namespaces-Import-importedMemberships_Namespace--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n          </ownedOperation>\n          "
+        },
+        {
+          "kind": "ownedOperation",
+          "owner": "Namespace",
+          "name": "importedMemberships",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-importedMemberships_Namespace",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Operation",
+            "name": "importedMemberships"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-importedMemberships_Namespace-unnamed1-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "ownedImport.importedMemberships(excluded->including(self))",
+              "language": "OCL2.0",
+              "name": ""
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-importedMemberships_Namespace-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>Derive the imported <code>Memberships</code> of this <code>Namespace</code> as the <code>importedMembership</code> of all <code>ownedImports</code>, excluding those Imports whose <code>importOwningNamespace</code> is in the <code>excluded</code> set, and excluding <code>Memberships</code> that have distinguisibility collisions with each other or with any <code>ownedMembership</code>.</p> "
+            }
+          ],
+          "xml": "<ownedOperation xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace\" ns0:type=\"uml:Operation\" name=\"importedMemberships\">\n            <bodyCondition ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-unnamed1\" ns0:type=\"uml:Constraint\" name=\"unnamed1\">\n              <specification ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-unnamed1-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"ownedImport.importedMemberships(excluded-&gt;including(self))\" language=\"OCL2.0\" name=\"\" />\n            </bodyCondition>\n            <ownedComment ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;Derive the imported &lt;code&gt;Memberships&lt;/code&gt; of this &lt;code&gt;Namespace&lt;/code&gt; as the &lt;code&gt;importedMembership&lt;/code&gt; of all &lt;code&gt;ownedImports&lt;/code&gt;, excluding those Imports whose &lt;code&gt;importOwningNamespace&lt;/code&gt; is in the &lt;code&gt;excluded&lt;/code&gt; set, and excluding &lt;code&gt;Memberships&lt;/code&gt; that have distinguisibility collisions with each other or with any &lt;code&gt;ownedMembership&lt;/code&gt;.&lt;/p&gt; \">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Namespace-importedMemberships_Namespace\" />\n</ownedComment>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-excluded\" ns0:type=\"uml:Parameter\" name=\"excluded\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-excluded-lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Namespace\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-excluded-upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedParameter ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace-\" ns0:type=\"uml:Parameter\" isOrdered=\"true\" name=\"\">\n              <lowerValue ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace--lowerValue\" ns0:type=\"uml:LiteralInteger\" name=\"\" />\n              <type ns0:idref=\"Root-Namespaces-Membership\" />\n              <upperValue ns0:id=\"Root-Namespaces-Namespace-importedMemberships_Namespace--upperValue\" ns0:type=\"uml:LiteralUnlimitedNatural\" name=\"\" value=\"-1\" />\n            </ownedParameter>\n            <ownedRule ns0:idref=\"Root-Namespaces-Namespace-importedMemberships_Namespace-unnamed1\" />\n          </ownedOperation>\n          "
+        },
+        {
+          "kind": "ownedRule",
+          "owner": "Namespace",
+          "name": "deriveNamespaceImportedMembership",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceImportedMembership",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+            "name": "deriveNamespaceImportedMembership"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceImportedMembership-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>The <code>importedMemberships</code> of a <code>Namespace</code> are derived using the <code>importedMemberships()</code> operation, with no initially <code>excluded</code> <code>Namespaces</code>.</p>"
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceImportedMembership-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "importedMembership = importedMemberships(Set{})",
+              "language": "OCL2.0",
+              "name": ""
+            }
+          ],
+          "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceImportedMembership\" ns0:type=\"uml:Constraint\" name=\"deriveNamespaceImportedMembership\">\n            <constrainedElement ns0:idref=\"Root-Namespaces-Namespace\" />\n            <ownedComment ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceImportedMembership-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;importedMemberships&lt;/code&gt; of a &lt;code&gt;Namespace&lt;/code&gt; are derived using the &lt;code&gt;importedMemberships()&lt;/code&gt; operation, with no initially &lt;code&gt;excluded&lt;/code&gt; &lt;code&gt;Namespaces&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Namespace-deriveNamespaceImportedMembership\" />\n</ownedComment>\n            <specification ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceImportedMembership-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"importedMembership = importedMemberships(Set{})\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+        },
+        {
+          "kind": "ownedRule",
+          "owner": "Namespace",
+          "name": "deriveNamespaceMembers",
+          "attributes": {
+            "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceMembers",
+            "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+            "name": "deriveNamespaceMembers"
+          },
+          "bodies": [
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceMembers-_comment.0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+              "body": "<p>The <code>members</code> of a <code>Namespace</code> are the <code>memberElements</code> of all its <code>memberships</code>.</p>"
+            },
+            {
+              "{http://www.omg.org/spec/XMI/20161101}id": "Root-Namespaces-Namespace-deriveNamespaceMembers-specification0",
+              "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+              "body": "member = membership.memberElement",
+              "language": "OCL2.0",
+              "name": ""
+            }
+          ],
+          "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceMembers\" ns0:type=\"uml:Constraint\" name=\"deriveNamespaceMembers\">\n            <constrainedElement ns0:idref=\"Root-Namespaces-Namespace\" />\n            <ownedComment ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceMembers-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;The &lt;code&gt;members&lt;/code&gt; of a &lt;code&gt;Namespace&lt;/code&gt; are the &lt;code&gt;memberElements&lt;/code&gt; of all its &lt;code&gt;memberships&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Root-Namespaces-Namespace-deriveNamespaceMembers\" />\n</ownedComment>\n            <specification ns0:id=\"Root-Namespaces-Namespace-deriveNamespaceMembers-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"member = membership.memberElement\" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+        }
+      ],
+      "pinned_witnesses": [
+        {
+          "id": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+          "path": "VectorFunctions",
+          "kind": "NamespaceImport",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 478, end: 515 }, syntax_node: Some(SyntaxNodeId(24128265204410674977592721617206707192)) }",
+            "range": [
+              478,
+              515
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "private import NumericalFunctions::*;"
+          }
+        },
+        {
+          "id": "af1c7087-4df1-5d23-99b8-b6b26ea7b527",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 481, end: 620 }, syntax_node: Some(SyntaxNodeId(282850657325706413526179535052765971882)) }",
+            "range": [
+              481,
+              620
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '+' specializes ScalarFunctions::'+' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+          }
+        },
+        {
+          "id": "c9091cb6-b2b8-5947-b148-a8f1de83bf40",
+          "path": "NumericalFunctions::+",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 481, end: 620 }, syntax_node: Some(SyntaxNodeId(176491977823884710472796215837903265136)) }",
+            "range": [
+              481,
+              620
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '+' specializes ScalarFunctions::'+' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+          }
+        },
+        {
+          "id": "4e2b74da-d952-59d1-981e-e8f30271548a",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 928, end: 1314 }, syntax_node: Some(SyntaxNodeId(291243066751959704807691606468225741912)) }",
+            "range": [
+              928,
+              1314
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function '+' specializes DataFunctions::'+' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the sum of two VectorValues. With one argument, returns that VectorValue.\n\t\t */\n\t\t \n\t \tin v: VectorValue[1]; \n\t \tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv zeroAddition { w == null or isZeroVector(w) implies u == w }\n\t\tinv commutivity { w != null implies u == w + v }\n\t}"
+          }
+        },
+        {
+          "id": "44fa1bd7-5b4f-53a8-abd5-b41057bf8e57",
+          "path": "VectorFunctions::+",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 928, end: 1314 }, syntax_node: Some(SyntaxNodeId(262898604474878730169897631526952486139)) }",
+            "range": [
+              928,
+              1314
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function '+' specializes DataFunctions::'+' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the sum of two VectorValues. With one argument, returns that VectorValue.\n\t\t */\n\t\t \n\t \tin v: VectorValue[1]; \n\t \tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv zeroAddition { w == null or isZeroVector(w) implies u == w }\n\t\tinv commutivity { w != null implies u == w + v }\n\t}"
+          }
+        },
+        {
+          "id": "a41c305d-fd90-5822-afe2-2a399b7666cd",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 622, end: 761 }, syntax_node: Some(SyntaxNodeId(29814011261590539083410980634193701520)) }",
+            "range": [
+              622,
+              761
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '-' specializes ScalarFunctions::'-' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+          }
+        },
+        {
+          "id": "a7f94d5b-7e62-50d1-9a5d-865f91fbf9c5",
+          "path": "NumericalFunctions::-",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 622, end: 761 }, syntax_node: Some(SyntaxNodeId(9842805701781815230407703551151272655)) }",
+            "range": [
+              622,
+              761
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '-' specializes ScalarFunctions::'-' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+          }
+        },
+        {
+          "id": "96a0c4f1-09f4-5571-b866-199a190f2035",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1318, end: 1826 }, syntax_node: Some(SyntaxNodeId(282438272423975978177669903186767934032)) }",
+            "range": [
+              1318,
+              1826
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function '-' specializes DataFunctions::'-' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the difference of two VectorValues. With one arguments, returns the inverse\n\t\t * of the given VectorValue, that is, the VectorValue that, when added to the original VectorValue, results in\n\t\t * the zeroVector.\n\t\t */\n\t \n\t\tin v: VectorValue[1]; \n\t\tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv negation { w == null implies isZeroVector(v + u) }\n\t\tinv difference { w != null implies v + u == w }\n\t}"
+          }
+        },
+        {
+          "id": "bf6bbf44-968f-5428-a055-0517ad65e027",
+          "path": "VectorFunctions::-",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1318, end: 1826 }, syntax_node: Some(SyntaxNodeId(61806847914459429782553789090840425084)) }",
+            "range": [
+              1318,
+              1826
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function '-' specializes DataFunctions::'-' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the difference of two VectorValues. With one arguments, returns the inverse\n\t\t * of the given VectorValue, that is, the VectorValue that, when added to the original VectorValue, results in\n\t\t * the zeroVector.\n\t\t */\n\t \n\t\tin v: VectorValue[1]; \n\t\tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv negation { w == null implies isZeroVector(v + u) }\n\t\tinv difference { w != null implies v + u == w }\n\t}"
+          }
+        },
+        {
+          "id": "5426c2d1-1e9f-5737-82b4-b303b8aafb6f",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 763, end: 899 }, syntax_node: Some(SyntaxNodeId(247685722275115722428540710106639227370)) }",
+            "range": [
+              763,
+              899
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '*' specializes ScalarFunctions::'*' { in x: NumericalValue[1]; in y: NumericalValue[1]; return : NumericalValue[1]; }"
+          }
+        },
+        {
+          "id": "590d4f85-d42a-5b93-924d-68ebea5f3257",
+          "path": "NumericalFunctions::*",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 763, end: 899 }, syntax_node: Some(SyntaxNodeId(48831945329038869822082060355517108664)) }",
+            "range": [
+              763,
+              899
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function '*' specializes ScalarFunctions::'*' { in x: NumericalValue[1]; in y: NumericalValue[1]; return : NumericalValue[1]; }"
+          }
+        },
+        {
+          "id": "8366a01b-1f99-54fd-875c-1bf301929fb5",
+          "path": "VectorFunctions",
+          "kind": "Membership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 2966, end: 2997 }, syntax_node: Some(SyntaxNodeId(200489674563154524688885915936817519221)) }",
+            "range": [
+              2966,
+              2997
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "alias '*' for scalarVectorMult;"
+          }
+        },
+        {
+          "id": "967a2bab-e4c6-593d-93a4-53e4313d8bc9",
+          "path": "VectorFunctions::scalarVectorMult",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 2607, end: 2964 }, syntax_node: Some(SyntaxNodeId(90865668154349941762038236485831844146)) }",
+            "range": [
+              2607,
+              2964
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function scalarVectorMult specializes DataFunctions::'*' {\n\t\tdoc\n\t\t/*\n\t\t * Scalar product of a NumericalValue and a NumericalVectorValue.\n\t\t */\n\t \n\t\tin x: NumericalValue[1]; \n\t\tin v: NumericalVectorValue[1];\n\t\treturn w: NumericalVectorValue[1];\n\t\tinv scaling { norm(w) == x * norm(v) }\n\t\tinv zeroLength { isZeroVector(w) implies isZero(norm(w))}\n\t}"
+          }
+        },
+        {
+          "id": "0c7c5b60-4293-503b-83ac-9a28dbd1ea11",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2265, end: 2349 }, syntax_node: Some(SyntaxNodeId(81194072104973068336700086484390484047)) }",
+            "range": [
+              2265,
+              2349
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function sum { in collection: ScalarValue[0..*]; return : ScalarValue[1]; }"
+          }
+        },
+        {
+          "id": "715b5164-fbb8-54f5-8b4f-15f12328e328",
+          "path": "NumericalFunctions::sum",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2265, end: 2349 }, syntax_node: Some(SyntaxNodeId(158125193898809302909917932280489756937)) }",
+            "range": [
+              2265,
+              2349
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "abstract function sum { in collection: ScalarValue[0..*]; return : ScalarValue[1]; }"
+          }
+        },
+        {
+          "id": "6a5ea5d7-e51a-5074-b68b-8d696e178e2a",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7821, end: 7957 }, syntax_node: Some(SyntaxNodeId(184670573524233408577954262195805630332)) }",
+            "range": [
+              7821,
+              7957
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "function sum { \n\t\tin coll: CartesianThreeVectorValue[*];\n\t\treturn : CartesianThreeVectorValue[1] = sum0(coll, cartesian3DZeroVector);\n\t}"
+          }
+        },
+        {
+          "id": "5639bd0e-47f3-555c-9e61-e346aa0f2e2f",
+          "path": "VectorFunctions::sum",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7821, end: 7957 }, syntax_node: Some(SyntaxNodeId(220681100671919019061758194252571512335)) }",
+            "range": [
+              7821,
+              7957
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "function sum { \n\t\tin coll: CartesianThreeVectorValue[*];\n\t\treturn : CartesianThreeVectorValue[1] = sum0(coll, cartesian3DZeroVector);\n\t}"
+          }
+        },
+        {
+          "id": "9573c8e2-9fee-5ff8-bdfa-efbe7ebff837",
+          "path": "NumericalFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2444, end: 2614 }, syntax_node: Some(SyntaxNodeId(78593412927192742678350010708382950409)) }",
+            "range": [
+              2444,
+              2614
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "function sum0 { in collection: NumericalValue[0..*]; in zero: ScalarValue[1]; \n \t\tinv { isZero(zero) }\t\t\n        return : ScalarValue = collection->reduce '+' ?? zero;\n\t}"
+          }
+        },
+        {
+          "id": "6443586a-9d2c-5bc6-9d48-84e4505d0614",
+          "path": "NumericalFunctions::sum0",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/NumericalFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2444, end: 2614 }, syntax_node: Some(SyntaxNodeId(246475518329795609549970669250154241218)) }",
+            "range": [
+              2444,
+              2614
+            ],
+            "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+            "text": "function sum0 { in collection: NumericalValue[0..*]; in zero: ScalarValue[1]; \n \t\tinv { isZero(zero) }\t\t\n        return : ScalarValue = collection->reduce '+' ?? zero;\n\t}"
+          }
+        },
+        {
+          "id": "dc816ee8-fa65-5160-9ada-87ed3aa3f7c2",
+          "path": "VectorFunctions",
+          "kind": "OwningMembership",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1830, end: 2149 }, syntax_node: Some(SyntaxNodeId(51192635262677591411409218240600672145)) }",
+            "range": [
+              1830,
+              2149
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function sum0 {\n\t\tdoc\n\t\t/*\n\t\t * Return the sum of a collection of VectorValues. If the collection is empty, return a given zero vector.\n\t\t */\n\t \n\t\tin coll: VectorValue[*] nonunique; \n\t\tin zero: VectorValue[1]; \n\t\tinv precondition { isZeroVector(zero) }\n\t\treturn s: VectorValue[1] = coll->reduce '+' ?? zero;\n\t}"
+          }
+        },
+        {
+          "id": "18e0c80a-0440-5151-8ef7-22ab3a597187",
+          "path": "VectorFunctions::sum0",
+          "kind": "Function",
+          "source": {
+            "document": "Kernel Function Library/VectorFunctions.kerml",
+            "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1830, end: 2149 }, syntax_node: Some(SyntaxNodeId(250269064484722991546211941635945575287)) }",
+            "range": [
+              1830,
+              2149
+            ],
+            "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+            "text": "abstract function sum0 {\n\t\tdoc\n\t\t/*\n\t\t * Return the sum of a collection of VectorValues. If the collection is empty, return a given zero vector.\n\t\t */\n\t \n\t\tin coll: VectorValue[*] nonunique; \n\t\tin zero: VectorValue[1]; \n\t\tinv precondition { isZeroVector(zero) }\n\t\treturn s: VectorValue[1] = coll->reduce '+' ?? zero;\n\t}"
+          }
+        }
+      ],
+      "complete_local_structural_facts": {
+        "namespace": {
+          "id": "e010ab46-f249-5732-a2c0-9a55ecb18dcd",
+          "path": "VectorFunctions"
+        },
+        "imported_namespace": {
+          "id": "4b988144-1ac2-5762-9ff4-29ea1b9f726a",
+          "path": "NumericalFunctions"
+        },
+        "independent_packet": "verification/kerml-semantic-closure-v10/import-authority.json",
+        "independent_packet_sha256": "bfeb96d7b961fc1d3bb6833ae5b4f95ed1a6df38da8427094e99445ce6f57aa7",
+        "collisions": [
+          {
+            "namespace": "VectorFunctions",
+            "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+            "imported_membership": "af1c7087-4df1-5d23-99b8-b6b26ea7b527",
+            "imported": "NumericalFunctions::+",
+            "local_membership": "4e2b74da-d952-59d1-981e-e8f30271548a",
+            "local": "VectorFunctions::+",
+            "names": [
+              "+"
+            ],
+            "facts": {
+              "imported_membership": {
+                "id": "af1c7087-4df1-5d23-99b8-b6b26ea7b527",
+                "path": "NumericalFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 481, end: 620 }, syntax_node: Some(SyntaxNodeId(282850657325706413526179535052765971882)) }",
+                  "range": [
+                    481,
+                    620
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "abstract function '+' specializes ScalarFunctions::'+' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+                }
+              },
+              "imported_member": {
+                "id": "c9091cb6-b2b8-5947-b148-a8f1de83bf40",
+                "path": "NumericalFunctions::+",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 481, end: 620 }, syntax_node: Some(SyntaxNodeId(176491977823884710472796215837903265136)) }",
+                  "range": [
+                    481,
+                    620
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "abstract function '+' specializes ScalarFunctions::'+' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+                }
+              },
+              "local_membership": {
+                "id": "4e2b74da-d952-59d1-981e-e8f30271548a",
+                "path": "VectorFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 928, end: 1314 }, syntax_node: Some(SyntaxNodeId(291243066751959704807691606468225741912)) }",
+                  "range": [
+                    928,
+                    1314
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "abstract function '+' specializes DataFunctions::'+' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the sum of two VectorValues. With one argument, returns that VectorValue.\n\t\t */\n\t\t \n\t \tin v: VectorValue[1]; \n\t \tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv zeroAddition { w == null or isZeroVector(w) implies u == w }\n\t\tinv commutivity { w != null implies u == w + v }\n\t}"
+                }
+              },
+              "local_member": {
+                "id": "44fa1bd7-5b4f-53a8-abd5-b41057bf8e57",
+                "path": "VectorFunctions::+",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 928, end: 1314 }, syntax_node: Some(SyntaxNodeId(262898604474878730169897631526952486139)) }",
+                  "range": [
+                    928,
+                    1314
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "abstract function '+' specializes DataFunctions::'+' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the sum of two VectorValues. With one argument, returns that VectorValue.\n\t\t */\n\t\t \n\t \tin v: VectorValue[1]; \n\t \tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv zeroAddition { w == null or isZeroVector(w) implies u == w }\n\t\tinv commutivity { w != null implies u == w + v }\n\t}"
+                }
+              },
+              "imported_visibility": "public",
+              "same_metaclass": true,
+              "is_distinguishable": false,
+              "literal_includes_imported_membership": true,
+              "prose_excludes_imported_membership": true
+            }
+          },
+          {
+            "namespace": "VectorFunctions",
+            "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+            "imported_membership": "a41c305d-fd90-5822-afe2-2a399b7666cd",
+            "imported": "NumericalFunctions::-",
+            "local_membership": "96a0c4f1-09f4-5571-b866-199a190f2035",
+            "local": "VectorFunctions::-",
+            "names": [
+              "-"
+            ],
+            "facts": {
+              "imported_membership": {
+                "id": "a41c305d-fd90-5822-afe2-2a399b7666cd",
+                "path": "NumericalFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 622, end: 761 }, syntax_node: Some(SyntaxNodeId(29814011261590539083410980634193701520)) }",
+                  "range": [
+                    622,
+                    761
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "abstract function '-' specializes ScalarFunctions::'-' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+                }
+              },
+              "imported_member": {
+                "id": "a7f94d5b-7e62-50d1-9a5d-865f91fbf9c5",
+                "path": "NumericalFunctions::-",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 622, end: 761 }, syntax_node: Some(SyntaxNodeId(9842805701781815230407703551151272655)) }",
+                  "range": [
+                    622,
+                    761
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "abstract function '-' specializes ScalarFunctions::'-' { in x: NumericalValue[1]; in y: NumericalValue[0..1]; return : NumericalValue[1]; }"
+                }
+              },
+              "local_membership": {
+                "id": "96a0c4f1-09f4-5571-b866-199a190f2035",
+                "path": "VectorFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1318, end: 1826 }, syntax_node: Some(SyntaxNodeId(282438272423975978177669903186767934032)) }",
+                  "range": [
+                    1318,
+                    1826
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "abstract function '-' specializes DataFunctions::'-' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the difference of two VectorValues. With one arguments, returns the inverse\n\t\t * of the given VectorValue, that is, the VectorValue that, when added to the original VectorValue, results in\n\t\t * the zeroVector.\n\t\t */\n\t \n\t\tin v: VectorValue[1]; \n\t\tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv negation { w == null implies isZeroVector(v + u) }\n\t\tinv difference { w != null implies v + u == w }\n\t}"
+                }
+              },
+              "local_member": {
+                "id": "bf6bbf44-968f-5428-a055-0517ad65e027",
+                "path": "VectorFunctions::-",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1318, end: 1826 }, syntax_node: Some(SyntaxNodeId(61806847914459429782553789090840425084)) }",
+                  "range": [
+                    1318,
+                    1826
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "abstract function '-' specializes DataFunctions::'-' {\n\t\tdoc\n\t\t/*\n\t\t * With two arguments, returns the difference of two VectorValues. With one arguments, returns the inverse\n\t\t * of the given VectorValue, that is, the VectorValue that, when added to the original VectorValue, results in\n\t\t * the zeroVector.\n\t\t */\n\t \n\t\tin v: VectorValue[1]; \n\t\tin w: VectorValue[0..1]; \n\t\treturn u: VectorValue[1];\n\t\tinv negation { w == null implies isZeroVector(v + u) }\n\t\tinv difference { w != null implies v + u == w }\n\t}"
+                }
+              },
+              "imported_visibility": "public",
+              "same_metaclass": true,
+              "is_distinguishable": false,
+              "literal_includes_imported_membership": true,
+              "prose_excludes_imported_membership": true
+            }
+          },
+          {
+            "namespace": "VectorFunctions",
+            "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+            "imported_membership": "5426c2d1-1e9f-5737-82b4-b303b8aafb6f",
+            "imported": "NumericalFunctions::*",
+            "local_membership": "8366a01b-1f99-54fd-875c-1bf301929fb5",
+            "local": "VectorFunctions::scalarVectorMult",
+            "names": [
+              "*"
+            ],
+            "facts": {
+              "imported_membership": {
+                "id": "5426c2d1-1e9f-5737-82b4-b303b8aafb6f",
+                "path": "NumericalFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 763, end: 899 }, syntax_node: Some(SyntaxNodeId(247685722275115722428540710106639227370)) }",
+                  "range": [
+                    763,
+                    899
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "abstract function '*' specializes ScalarFunctions::'*' { in x: NumericalValue[1]; in y: NumericalValue[1]; return : NumericalValue[1]; }"
+                }
+              },
+              "imported_member": {
+                "id": "590d4f85-d42a-5b93-924d-68ebea5f3257",
+                "path": "NumericalFunctions::*",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 763, end: 899 }, syntax_node: Some(SyntaxNodeId(48831945329038869822082060355517108664)) }",
+                  "range": [
+                    763,
+                    899
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "abstract function '*' specializes ScalarFunctions::'*' { in x: NumericalValue[1]; in y: NumericalValue[1]; return : NumericalValue[1]; }"
+                }
+              },
+              "local_membership": {
+                "id": "8366a01b-1f99-54fd-875c-1bf301929fb5",
+                "path": "VectorFunctions",
+                "kind": "Membership",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 2966, end: 2997 }, syntax_node: Some(SyntaxNodeId(200489674563154524688885915936817519221)) }",
+                  "range": [
+                    2966,
+                    2997
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "alias '*' for scalarVectorMult;"
+                }
+              },
+              "local_member": {
+                "id": "967a2bab-e4c6-593d-93a4-53e4313d8bc9",
+                "path": "VectorFunctions::scalarVectorMult",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 2607, end: 2964 }, syntax_node: Some(SyntaxNodeId(90865668154349941762038236485831844146)) }",
+                  "range": [
+                    2607,
+                    2964
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "abstract function scalarVectorMult specializes DataFunctions::'*' {\n\t\tdoc\n\t\t/*\n\t\t * Scalar product of a NumericalValue and a NumericalVectorValue.\n\t\t */\n\t \n\t\tin x: NumericalValue[1]; \n\t\tin v: NumericalVectorValue[1];\n\t\treturn w: NumericalVectorValue[1];\n\t\tinv scaling { norm(w) == x * norm(v) }\n\t\tinv zeroLength { isZeroVector(w) implies isZero(norm(w))}\n\t}"
+                }
+              },
+              "imported_visibility": "public",
+              "same_metaclass": true,
+              "is_distinguishable": false,
+              "literal_includes_imported_membership": true,
+              "prose_excludes_imported_membership": true
+            }
+          },
+          {
+            "namespace": "VectorFunctions",
+            "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+            "imported_membership": "0c7c5b60-4293-503b-83ac-9a28dbd1ea11",
+            "imported": "NumericalFunctions::sum",
+            "local_membership": "6a5ea5d7-e51a-5074-b68b-8d696e178e2a",
+            "local": "VectorFunctions::sum",
+            "names": [
+              "sum"
+            ],
+            "facts": {
+              "imported_membership": {
+                "id": "0c7c5b60-4293-503b-83ac-9a28dbd1ea11",
+                "path": "NumericalFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2265, end: 2349 }, syntax_node: Some(SyntaxNodeId(81194072104973068336700086484390484047)) }",
+                  "range": [
+                    2265,
+                    2349
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "abstract function sum { in collection: ScalarValue[0..*]; return : ScalarValue[1]; }"
+                }
+              },
+              "imported_member": {
+                "id": "715b5164-fbb8-54f5-8b4f-15f12328e328",
+                "path": "NumericalFunctions::sum",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2265, end: 2349 }, syntax_node: Some(SyntaxNodeId(158125193898809302909917932280489756937)) }",
+                  "range": [
+                    2265,
+                    2349
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "abstract function sum { in collection: ScalarValue[0..*]; return : ScalarValue[1]; }"
+                }
+              },
+              "local_membership": {
+                "id": "6a5ea5d7-e51a-5074-b68b-8d696e178e2a",
+                "path": "VectorFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7821, end: 7957 }, syntax_node: Some(SyntaxNodeId(184670573524233408577954262195805630332)) }",
+                  "range": [
+                    7821,
+                    7957
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "function sum { \n\t\tin coll: CartesianThreeVectorValue[*];\n\t\treturn : CartesianThreeVectorValue[1] = sum0(coll, cartesian3DZeroVector);\n\t}"
+                }
+              },
+              "local_member": {
+                "id": "5639bd0e-47f3-555c-9e61-e346aa0f2e2f",
+                "path": "VectorFunctions::sum",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7821, end: 7957 }, syntax_node: Some(SyntaxNodeId(220681100671919019061758194252571512335)) }",
+                  "range": [
+                    7821,
+                    7957
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "function sum { \n\t\tin coll: CartesianThreeVectorValue[*];\n\t\treturn : CartesianThreeVectorValue[1] = sum0(coll, cartesian3DZeroVector);\n\t}"
+                }
+              },
+              "imported_visibility": "public",
+              "same_metaclass": true,
+              "is_distinguishable": false,
+              "literal_includes_imported_membership": true,
+              "prose_excludes_imported_membership": true
+            }
+          },
+          {
+            "namespace": "VectorFunctions",
+            "import_": "9b5d1105-58f0-5d10-9a95-c926f8707ba7",
+            "imported_membership": "9573c8e2-9fee-5ff8-bdfa-efbe7ebff837",
+            "imported": "NumericalFunctions::sum0",
+            "local_membership": "dc816ee8-fa65-5160-9ada-87ed3aa3f7c2",
+            "local": "VectorFunctions::sum0",
+            "names": [
+              "sum0"
+            ],
+            "facts": {
+              "imported_membership": {
+                "id": "9573c8e2-9fee-5ff8-bdfa-efbe7ebff837",
+                "path": "NumericalFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2444, end: 2614 }, syntax_node: Some(SyntaxNodeId(78593412927192742678350010708382950409)) }",
+                  "range": [
+                    2444,
+                    2614
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "function sum0 { in collection: NumericalValue[0..*]; in zero: ScalarValue[1]; \n \t\tinv { isZero(zero) }\t\t\n        return : ScalarValue = collection->reduce '+' ?? zero;\n\t}"
+                }
+              },
+              "imported_member": {
+                "id": "6443586a-9d2c-5bc6-9d48-84e4505d0614",
+                "path": "NumericalFunctions::sum0",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/NumericalFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(99348799575795287175279311425026149737), revision: SourceRevisionId(214071084086662704765376057191374008744), range: ByteRange { start: 2444, end: 2614 }, syntax_node: Some(SyntaxNodeId(246475518329795609549970669250154241218)) }",
+                  "range": [
+                    2444,
+                    2614
+                  ],
+                  "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+                  "text": "function sum0 { in collection: NumericalValue[0..*]; in zero: ScalarValue[1]; \n \t\tinv { isZero(zero) }\t\t\n        return : ScalarValue = collection->reduce '+' ?? zero;\n\t}"
+                }
+              },
+              "local_membership": {
+                "id": "dc816ee8-fa65-5160-9ada-87ed3aa3f7c2",
+                "path": "VectorFunctions",
+                "kind": "OwningMembership",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1830, end: 2149 }, syntax_node: Some(SyntaxNodeId(51192635262677591411409218240600672145)) }",
+                  "range": [
+                    1830,
+                    2149
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "abstract function sum0 {\n\t\tdoc\n\t\t/*\n\t\t * Return the sum of a collection of VectorValues. If the collection is empty, return a given zero vector.\n\t\t */\n\t \n\t\tin coll: VectorValue[*] nonunique; \n\t\tin zero: VectorValue[1]; \n\t\tinv precondition { isZeroVector(zero) }\n\t\treturn s: VectorValue[1] = coll->reduce '+' ?? zero;\n\t}"
+                }
+              },
+              "local_member": {
+                "id": "18e0c80a-0440-5151-8ef7-22ab3a597187",
+                "path": "VectorFunctions::sum0",
+                "kind": "Function",
+                "source": {
+                  "document": "Kernel Function Library/VectorFunctions.kerml",
+                  "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 1830, end: 2149 }, syntax_node: Some(SyntaxNodeId(250269064484722991546211941635945575287)) }",
+                  "range": [
+                    1830,
+                    2149
+                  ],
+                  "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+                  "text": "abstract function sum0 {\n\t\tdoc\n\t\t/*\n\t\t * Return the sum of a collection of VectorValues. If the collection is empty, return a given zero vector.\n\t\t */\n\t \n\t\tin coll: VectorValue[*] nonunique; \n\t\tin zero: VectorValue[1]; \n\t\tinv precondition { isZeroVector(zero) }\n\t\treturn s: VectorValue[1] = coll->reduce '+' ?? zero;\n\t}"
+                }
+              },
+              "imported_visibility": "public",
+              "same_metaclass": true,
+              "is_distinguishable": false,
+              "literal_includes_imported_membership": true,
+              "prose_excludes_imported_membership": true
+            }
+          }
+        ]
+      },
+      "published_result": "The literal Namespace::importedMemberships OCL includes five direct public NumericalFunctions memberships imported into VectorFunctions. Each collides with a local same-metaclass membership.",
+      "alternative_results": [
+        "The published prose excludes imported memberships that collide with owned memberships, removing these five identities. The two published descriptions disagree; v7 does not authorize choosing a correction."
+      ],
+      "reference_behavior": {
+        "import_": {
+          "file": "VectorFunctions.kermlx",
+          "id": "371b70c4-647f-5a0c-879d-7f41f7b95e46",
+          "kind": "NamespaceImport",
+          "path": "VectorFunctions",
+          "xml": "<ownedRelationship xmlns:ns1=\"http://www.omg.org/XMI\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"sysml:NamespaceImport\" ns1:id=\"371b70c4-647f-5a0c-879d-7f41f7b95e46\" elementId=\"371b70c4-647f-5a0c-879d-7f41f7b95e46\">\n        <importedNamespace href=\"NumericalFunctions.kermlx#cdf129df-3833-52cb-ae4b-3b49743b6632\" />\n      </ownedRelationship>\n      "
+        },
+        "witnesses": [
+          {
+            "name": "+",
+            "local_membership": {
+              "id": "8aadbd26-0c92-5510-af67-a4074e2d6221",
+              "path": "VectorFunctions",
+              "kind": "OwningMembership",
+              "file": "VectorFunctions.kermlx"
+            },
+            "local_member": {
+              "id": "28ef1c83-e88a-54fc-b9b0-145d270d5ab5",
+              "path": "VectorFunctions::+",
+              "kind": "Function",
+              "file": "VectorFunctions.kermlx"
+            },
+            "imported_membership": {
+              "id": "7099f6b3-54aa-5de8-8680-9abc13d6531f",
+              "path": "NumericalFunctions",
+              "kind": "OwningMembership",
+              "file": "NumericalFunctions.kermlx"
+            },
+            "imported_member": {
+              "id": "a10c48ed-7b31-5077-8640-36732311cc1c",
+              "path": "NumericalFunctions::+",
+              "kind": "Function",
+              "file": "NumericalFunctions.kermlx"
+            }
+          },
+          {
+            "name": "-",
+            "local_membership": {
+              "id": "515f9244-687b-5377-9d83-1bd088675367",
+              "path": "VectorFunctions",
+              "kind": "OwningMembership",
+              "file": "VectorFunctions.kermlx"
+            },
+            "local_member": {
+              "id": "7f21e908-159f-5a86-83a8-b37e67c07d86",
+              "path": "VectorFunctions::-",
+              "kind": "Function",
+              "file": "VectorFunctions.kermlx"
+            },
+            "imported_membership": {
+              "id": "66347f36-692f-5f5d-a150-750e4efcd005",
+              "path": "NumericalFunctions",
+              "kind": "OwningMembership",
+              "file": "NumericalFunctions.kermlx"
+            },
+            "imported_member": {
+              "id": "8963f906-5a1c-5097-9590-c60d3a7ca32b",
+              "path": "NumericalFunctions::-",
+              "kind": "Function",
+              "file": "NumericalFunctions.kermlx"
+            }
+          },
+          {
+            "name": "*",
+            "local_membership": {
+              "id": "2f791551-7b79-5a08-ae29-f063ae079f00",
+              "path": "VectorFunctions",
+              "kind": "Membership",
+              "file": "VectorFunctions.kermlx"
+            },
+            "local_member": {
+              "id": "74c40384-559c-50ef-915a-e0ff8929d0af",
+              "path": "VectorFunctions::scalarVectorMult",
+              "kind": "Function",
+              "file": "VectorFunctions.kermlx"
+            },
+            "imported_membership": {
+              "id": "dfbe226c-ea52-57f8-b521-18f6b6b3f6ef",
+              "path": "NumericalFunctions",
+              "kind": "OwningMembership",
+              "file": "NumericalFunctions.kermlx"
+            },
+            "imported_member": {
+              "id": "f3b47cf2-5d97-582d-aea3-2dae03419536",
+              "path": "NumericalFunctions::*",
+              "kind": "Function",
+              "file": "NumericalFunctions.kermlx"
+            }
+          },
+          {
+            "name": "sum",
+            "local_membership": {
+              "id": "2e1c4d36-2cae-5e32-8e74-0222a9437a26",
+              "path": "VectorFunctions",
+              "kind": "OwningMembership",
+              "file": "VectorFunctions.kermlx"
+            },
+            "local_member": {
+              "id": "424373a5-09fe-5c9a-aba2-e4109af53b2d",
+              "path": "VectorFunctions::sum",
+              "kind": "Function",
+              "file": "VectorFunctions.kermlx"
+            },
+            "imported_membership": {
+              "id": "cf0cfc98-f5a1-59e2-92bf-359a8f155d68",
+              "path": "NumericalFunctions",
+              "kind": "OwningMembership",
+              "file": "NumericalFunctions.kermlx"
+            },
+            "imported_member": {
+              "id": "6d745ea3-e265-5ddd-aa6c-b3fe29dc4272",
+              "path": "NumericalFunctions::sum",
+              "kind": "Function",
+              "file": "NumericalFunctions.kermlx"
+            }
+          },
+          {
+            "name": "sum0",
+            "local_membership": {
+              "id": "cf7a5be2-0e46-51b5-855d-4eaa263a51bc",
+              "path": "VectorFunctions",
+              "kind": "OwningMembership",
+              "file": "VectorFunctions.kermlx"
+            },
+            "local_member": {
+              "id": "b2da962d-9a57-559d-8041-64598a572523",
+              "path": "VectorFunctions::sum0",
+              "kind": "Function",
+              "file": "VectorFunctions.kermlx"
+            },
+            "imported_membership": {
+              "id": "4e8ef7cf-2fed-5d47-a39a-9e2f0051a431",
+              "path": "NumericalFunctions",
+              "kind": "OwningMembership",
+              "file": "NumericalFunctions.kermlx"
+            },
+            "imported_member": {
+              "id": "3165fc20-d93a-5cd6-ba28-967c80741f36",
+              "path": "NumericalFunctions::sum0",
+              "kind": "Function",
+              "file": "NumericalFunctions.kermlx"
+            }
+          }
+        ],
+        "serialized_derived_import_membership": false,
+        "behavior": "Reference XMI retains all five colliding source pairs. Pinned current pilot NamespaceAdapter delegates to NamespaceImportAdapter, which appends every visible membership without a distinguishability filter; this corroborates the literal OCL result, not the conflicting prose.",
+        "pilot_sources": {
+          "pilot/NamespaceAdapter.java": "bed12509fe1d53f695296144cded354d1af799624d247912d2f3736062febc56",
+          "pilot/NamespaceUtil.java": "e411c4c1517fb895f99336d3714d595a94b9ef261180316f517c83014714ffce",
+          "pilot/ImportAdapter.java": "041572a1bc27cbd2b285dfb9f02dabafebd8703e685936a08abacb5f230fa3e6",
+          "pilot/NamespaceImportAdapter.java": "44990f28d076927662e22aca191fa1d8c8d243da9b43ad9e7a0ec8ececf28a58"
+        }
+      },
+      "issue_associated_resolution": {
+        "searched": true,
+        "source": "verification/kerml-semantic-closure-v10/resolution/search-KERML11-75.json",
+        "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+        "commits": [],
+        "interpretation": "Issue-associated commit search, not proof of OMG adoption; no result is not proof that no unlabelled commit exists."
+      },
+      "covered_by_profile": false,
+      "authorized_correction": false,
+      "independent_local_reproduction": true,
+      "execution_required": false,
+      "acceptance_block": "The same five imported Membership identities must be included by the OCL and excluded by its prose. The contradiction is proved from direct ownership, explicit names, visibility and metaclass conformance without incomplete inherited lookup or execution. Strict publication requires a separate authority decision."
+    }
+  ],
+  "register_scope": "All independently proven conflicts from this traversal. This is not a claim that incomplete structural applicability analyses are closed.",
+  "unauthorized_corrections_applied": false
+}

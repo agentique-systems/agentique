@@ -1,0 +1,75 @@
+{
+  "format": "agentique-v10-expanded-selector-verification/1",
+  "audit_sha256": "56c84afe35a60a8e1a774780b4dd812bc4cdb09fd2cd12eb3c9680a031804a8b",
+  "source_verification_sha256": "c43323161557d3eb4b2793f6aea95f3550ff3dd74bbdae88ec30555222a0af39",
+  "pilot_commit": "553cf8205c19241c9127ab264f8372f5b58d3895",
+  "canonical_expanded_witnesses": [
+    {
+      "feature": "706e1af5-3ad7-5d49-afcd-54cf8d9f1530",
+      "path": "Occurrences::Occurrence::incomingTransfersToSelf::target",
+      "selected": null,
+      "original_order_preserved": true,
+      "exclusions": [
+        {
+          "member": "5266def9-9f1a-5da6-a051-dfe9fabc0502",
+          "member_metaclass": "FeatureReferenceExpression",
+          "membership": "a1f80ea6-95c4-5d26-aecc-149af1dcca6f",
+          "membership_metaclass": "FeatureValue",
+          "exclusion_reasons": [
+            "FeatureValue"
+          ]
+        },
+        {
+          "member": "4aa68a6f-e781-5c42-bc78-3a2609c9dc55",
+          "member_metaclass": "BindingConnector",
+          "membership": "96a60b4f-ff2d-5536-8d0b-2cf27a42a308",
+          "membership_metaclass": "OwningMembership",
+          "exclusion_reasons": [
+            "BindingConnector"
+          ]
+        }
+      ],
+      "value_expressions": [
+        "5266def9-9f1a-5da6-a051-dfe9fabc0502"
+      ],
+      "binding_connectors": [
+        "4aa68a6f-e781-5c42-bc78-3a2609c9dc55"
+      ]
+    },
+    {
+      "feature": "22d6ec41-46ca-5bb7-bacf-9a782cf32353",
+      "path": "Occurrences::Occurrence::outgoingTransfersFromSelf::source",
+      "selected": null,
+      "original_order_preserved": true,
+      "exclusions": [
+        {
+          "member": "578c42a7-a082-5c3b-8775-55b2cf589e1a",
+          "member_metaclass": "FeatureReferenceExpression",
+          "membership": "6773f403-eddf-5f3f-89fd-3b68bf255de2",
+          "membership_metaclass": "FeatureValue",
+          "exclusion_reasons": [
+            "FeatureValue"
+          ]
+        },
+        {
+          "member": "3edad3ee-585c-54fd-bb57-0c8bd5cb7b50",
+          "member_metaclass": "BindingConnector",
+          "membership": "47311c32-9c89-52a1-8953-fbd48310e947",
+          "membership_metaclass": "OwningMembership",
+          "exclusion_reasons": [
+            "BindingConnector"
+          ]
+        }
+      ],
+      "value_expressions": [
+        "578c42a7-a082-5c3b-8775-55b2cf589e1a"
+      ],
+      "binding_connectors": [
+        "3edad3ee-585c-54fd-bb57-0c8bd5cb7b50"
+      ]
+    }
+  ],
+  "all_comparisons_passed": true,
+  "semantic_publication_accepted": false,
+  "scope": "Both exact expanded Occurrences witnesses. The separate source verifier covers all source Features and the eight-profile matrix."
+}

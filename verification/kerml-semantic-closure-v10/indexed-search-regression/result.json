@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kernel",
+    "--test",
+    "foundation_v3"
+  ],
+  "started": "2026-09-20T14:29:11.812784+00:00",
+  "duration_seconds": 6.25,
+  "exit_code": 0,
+  "output": "output.txt"
+}

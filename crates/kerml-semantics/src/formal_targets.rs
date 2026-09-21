@@ -428,12 +428,12 @@ impl KerMlQueries<'_> {
         }
         let mut owner_matches = self.is(owner, class);
         if !owner_matches && self.is(owner, c::FEATURE) {
-            let types = self.direct_feature_types(owner);
+            let types = self.feature_types(owner);
             owner_matches = types.value.iter().any(|&t| self.is(t, class));
             out.merge(types);
             if !owner_matches {
-                // A negative direct-typing answer does not establish the full
-                // derived Feature::type closure through subsetting and chains.
+                // A negative canonical typing answer does not establish closure
+                // of still-unproduced implicit relationships.
                 out.problem(
                     Completeness::Incomplete,
                     "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",

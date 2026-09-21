@@ -164,7 +164,7 @@ fn all_profiles_end_owner_matrix_preserves_flags_and_explains_disposition() {
                         }));
                     }
                     assert_eq!(
-                        answer.fact_origins[&FactKey::Property {
+                        *answer.fact_origins[&FactKey::Property {
                             element: id(2),
                             property: p::FEATURE_IS_END
                         }],

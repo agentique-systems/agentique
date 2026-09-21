@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-09-20T11:58:21.062482+00:00",
+  "duration_seconds": 2.9839999999385327,
+  "exit_code": 0,
+  "output": "output.txt"
+}

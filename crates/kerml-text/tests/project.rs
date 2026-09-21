@@ -25,6 +25,49 @@ fn named(project: &SourceProject, name: &str) -> ElementId {
 }
 
 #[test]
+fn v7_authored_metadata_retains_exact_correction_identity_across_edits() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V7;
+    let mut project = SourceProject::with_profile(profile).unwrap();
+    let first = project
+        .apply(
+            project.current().revision(),
+            [add(
+                "authored.kerml",
+                "feature Base { feature signal; } feature Specific :> Base;",
+            )],
+        )
+        .unwrap();
+    assert!(
+        first.is_complete_slice(),
+        "{:?}",
+        first.semantic_diagnostics()
+    );
+    let context = first.queries().context().clone();
+    assert_eq!(context.baseline_profile_id, profile.id());
+    assert_eq!(
+        context.owned_cross_feature_manifest_digest,
+        profile.owned_cross_feature_manifest_sha256()
+    );
+    let next = project
+        .apply(
+            first.revision(),
+            [add("more.kerml", "feature Third :> Specific;")],
+        )
+        .unwrap();
+    assert!(next.is_complete_slice());
+    assert_eq!(
+        next.queries().context().owned_cross_feature_manifest_digest,
+        context.owned_cross_feature_manifest_digest
+    );
+    assert_ne!(next.queries().context().revision, context.revision);
+    assert_eq!(first.queries().context(), &context);
+    assert_eq!(
+        agq_kerml::BaselineProfile::OPERATIONAL,
+        agq_kerml::BaselineProfile::OPERATIONAL_V2
+    );
+}
+
+#[test]
 fn authored_redefinition_profile_matrix() {
     use agq_kerml::BaselineProfile as P;
     let source = "feature Quartz { feature segments; } feature Cobalt { feature signal; feature interval : Quartz :> Quartz::segments { feature capture redefines signal; } }";

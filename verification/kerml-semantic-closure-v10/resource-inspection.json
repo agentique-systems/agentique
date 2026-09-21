@@ -1,0 +1,9 @@
+{
+  "format": "agentique-v10-resource-inspection/1",
+  "source": "verification/kerml-semantic-closure-v10/resource-stack-sample.cpp",
+  "source_sha256": "3be6b54631bb3e0563b0ea720022e8bff001b1e05b1df3074d65a584f9d2097a",
+  "executable_sha256": "e686cc14faeeba1abe67dcbda28cca20574c42c2e5d514c57e270703b977b9be",
+  "method": "Win32 read-only stack walk of the verified audit process; the sampled thread is suspended briefly and resumed by a scope guard. No semantic state is changed.",
+  "result": "The sample is within lookup_relationship_target and lookup_member, with BTree collection cloning/allocation on the stack. It establishes the active phase, not progress counts or semantic correctness.",
+  "capture": "resource-stack-sample/result.json"
+}

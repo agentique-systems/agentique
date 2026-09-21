@@ -1,0 +1,64 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.93s
+     Running tests\cross_features_v10.rs (target\debug\deps\cross_features_v10-8703f59f4ae0b6a5.exe)
+
+running 6 tests
+test cross_subsetting_uses_second_chain_feature_and_keeps_operations_separate ... ok
+test no_eligible_member_means_none_and_cross_derivation_does_not_manufacture_one ... ok
+test incomplete_owned_membership_population_never_selects_a_candidate ... ok
+test immutable_readers_and_batch_partitions_preserve_complete_cross_answers ... ok
+test produced_value_infrastructure_does_not_become_an_owned_cross_feature ... ok
+test owned_cross_feature_eight_profile_matrix_uses_membership_order_and_metaclass_conformance ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.29s
+
+     Running tests\foundation.rs (target\debug\deps\foundation-2caa248dd47c5657.exe)
+
+running 27 tests
+test chains_diamonds_alternative_proofs_and_determinism ... ok
+test feature_aliases_do_not_silently_bypass_inheritance_filtering ... ok
+test implied_specializations_are_an_answer_affecting_option ... ok
+test conjugation_without_original_type_is_not_a_complete_empty_result ... ok
+test metamodel_mutation_is_rejected_even_with_same_release_id ... ok
+test explicit_computation_failures_propagate_completeness_and_search_evidence ... ok
+test malformed_memberships_and_bad_query_subjects_are_not_empty_successes ... ok
+test association_inverse_is_unique_atomic_and_rebuilt_after_edits ... ok
+test creation_order_does_not_change_content_identity_or_proofs ... ok
+test empty_lookup_depends_on_namespace_and_nonmatching_names ... ok
+test adding_redefinition_invalidates_effective_feature_evidence ... ok
+test nonowning_memberships_and_empty_namespace_lookup ... ok
+test overlay_proofs_retain_recursive_kernel_evidence ... ok
+test ownership_cycles_are_invalid_even_beyond_the_query_root ... ok
+test ownership_membership_order_and_no_copying ... ok
+test private_membership_is_direct_but_not_inherited ... ok
+test redefinitions_on_intermediate_types_and_diamonds_suppress_transitively ... ok
+test sibling_redefinitions_of_a_common_base_follow_second_removal_condition ... ok
+test context_binds_options_library_content_and_overlay_content ... ok
+test qualified_resolution_filters_private_members_and_retains_proofs ... ok
+test specialization_cycles_are_finite_but_cyclic_inheritance_is_explicitly_incomplete ... ok
+test subsetting_does_not_remove_an_inherited_feature ... ok
+test typed_upcasts_include_typing_subsetting_and_redefinition ... ok
+test negative_incoming_dependency_catches_creation_and_retargeting ... ok
+test working_reference_scopes_are_semantic_inputs_and_block_lexical_guesses ... ok
+test full_sysml_and_unrelated_extensions_preserve_kerml_answers_and_change_context_identity ... ok
+test large_sparse_graph_keeps_linear_proof_size_and_does_not_recurse ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.14s
+
+     Running tests\library_authority_conflict.rs (target\debug\deps\library_authority_conflict-d5c75796d52e9030.exe)
+
+running 3 tests
+test correction_fact_evidence_retains_entry_library_profile_and_output_identity ... ok
+test positional_common_ends_and_results_suppress_both_inherited_memberships ... ok
+test two_explicit_type_paths_require_a_common_redefinition_before_publication ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s
+
+     Running tests\redefinition_end_v4.rs (target\debug\deps\redefinition_end_v4-61b4d931f9e4bec3.exe)
+
+running 2 tests
+test unresolved_endpoint_does_not_pass_end_conformance ... ok
+test all_profiles_end_owner_matrix_preserves_flags_and_explains_disposition ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 25.07s
+

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "git",
+    "cat-file",
+    "blob",
+    "59abd9801d59de025bf7e346464a32848047fd80:verification/standards-integrity.json"
+  ],
+  "exit_code": 0,
+  "restored_path": "verification/standards-integrity.json",
+  "preserved_new_run": "verification/kerml-semantic-closure-v10/latest-standards-integrity.json",
+  "new_run_sha256": "428c42fe95350bc53521d10c499273f3db24e1fbb71e4c185e13850740898815",
+  "base_and_restored_sha256": "7b98e51e07a969eebfc7510e4b659b6d4698d21b446f64c38356e6a7c1b3c86d",
+  "reason": "The standalone standards check rewrote its historical output; preserve this run under v10 and restore the exact original evidence."
+}

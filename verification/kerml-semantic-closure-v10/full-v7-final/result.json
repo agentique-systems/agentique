@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--target-dir",
+    "target/kerml-v10-final",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "library_publication_audit",
+    "--",
+    "--output=verification/kerml-semantic-closure-v10/full-v7-final.json"
+  ],
+  "started": "2026-09-20T12:04:58.193146+00:00",
+  "duration_seconds": 1506.4839999999385,
+  "exit_code": 0,
+  "output": "output.txt"
+}

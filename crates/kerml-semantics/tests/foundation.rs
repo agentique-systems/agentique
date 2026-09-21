@@ -733,7 +733,7 @@ fn overlay_proofs_retain_recursive_kernel_evidence() {
     assert_eq!(r.value, vec![A]);
     assert_proofs(&r);
     assert!(matches!(
-        r.fact_origins[&FactKey::Element(key.element_id())],
+        r.fact_origins[&FactKey::Element(key.element_id())].as_ref(),
         Origin::Derived(_)
     ));
     assert!(r.positive_dependencies.contains(&FactKey::Element(A)));

@@ -32,6 +32,10 @@ pub const OPERATIONAL_RESULT_DOMAIN_V6_MANIFEST: &str =
 /// Only the KERML11-8 implied reference-result role.
 pub const OPERATIONAL_REFERENCE_BINDING_V6_MANIFEST: &str =
     include_str!("../../../standards/kerml-1.0-operational-reference-binding-errata-v6.json");
+/// Reviewed KERML11-1 selector; inherited manifests remain immutable.
+pub const OPERATIONAL_OWNED_CROSS_FEATURE_V7_MANIFEST: &str =
+    include_str!("../../../standards/kerml-1.0-operational-owned-cross-feature-errata-v7.json");
+const REVIEWED_V7_SHA256: &str = "57676586b516124929fad739ff06498980ef9bbeefbfcc2f4e1ce8bb4a0eb3fe";
 const REVIEWED_V6_SHA256: &str = "4e9e06f8c22ac187d7a53fb2a7bdef9abba36ef374f5402adaa504b7407cf859";
 const REVIEWED_RESULT_V6_SHA256: &str =
     "e901987dce4e2b05de3ecd09a2644128343d47d2e84a147f022b6d326898d5fc";
@@ -66,6 +70,8 @@ pub enum OperationalErrataProfile {
     ReviewedV5,
     /// V5 plus KERML11-145 and the narrow KERML11-8 reference-binding role.
     ReviewedV6,
+    /// V6 plus exactly the reviewed KERML11-1 owned-cross-feature selector.
+    ReviewedV7,
 }
 
 /// Language interpretation authority. This is part of semantic context identity.
@@ -84,6 +90,22 @@ impl BaselineProfile {
     /// Default authority for usable generation-2 KerML model construction.
     pub const OPERATIONAL: Self = Self::OPERATIONAL_V2;
 
+    /// Explicit v7 selector; availability does not establish library acceptance.
+    pub const OPERATIONAL_V7: Self = Self::OperationalKerMl10 {
+        errata_profile: OperationalErrataProfile::ReviewedV7,
+    };
+
+    /// Whether the reviewed KERML11-1 selection rules apply.
+    pub const fn corrects_owned_cross_feature(self) -> bool {
+        matches!(self, Self::OPERATIONAL_V7)
+    }
+
+    /// Independent correction identity for the owned-cross-feature operation.
+    pub fn owned_cross_feature_manifest_sha256(self) -> Option<[u8; 32]> {
+        self.corrects_owned_cross_feature()
+            .then(|| Sha256::digest(OPERATIONAL_OWNED_CROSS_FEATURE_V7_MANIFEST).into())
+    }
+
     /// Reviewed v6 structural semantics; availability is not publication acceptance.
     pub const OPERATIONAL_V6: Self = Self::OperationalKerMl10 {
         errata_profile: OperationalErrataProfile::ReviewedV6,
@@ -91,11 +113,11 @@ impl BaselineProfile {
 
     /// Whether the five reviewed contextual-result rules apply.
     pub const fn corrects_result_domains(self) -> bool {
-        matches!(self, Self::OPERATIONAL_V6)
+        matches!(self, Self::OPERATIONAL_V6 | Self::OPERATIONAL_V7)
     }
     /// Whether the reviewed reference-result connector role has its narrow exception.
     pub const fn corrects_reference_binding(self) -> bool {
-        matches!(self, Self::OPERATIONAL_V6)
+        matches!(self, Self::OPERATIONAL_V6 | Self::OPERATIONAL_V7)
     }
     /// Independent identity of the result-domain correction family.
     pub fn result_domain_manifest_sha256(self) -> Option<[u8; 32]> {
@@ -115,7 +137,10 @@ impl BaselineProfile {
 
     /// Whether the six reviewed formal-target replacements apply.
     pub const fn corrects_formal_constraint_targets(self) -> bool {
-        matches!(self, Self::OPERATIONAL_V5 | Self::OPERATIONAL_V6)
+        matches!(
+            self,
+            Self::OPERATIONAL_V5 | Self::OPERATIONAL_V6 | Self::OPERATIONAL_V7
+        )
     }
 
     /// Explicit validation semantic erratum; does not itself establish publication.
@@ -127,7 +152,10 @@ impl BaselineProfile {
     pub const fn corrects_redefinition_end_conformance(self) -> bool {
         matches!(
             self,
-            Self::OPERATIONAL_V4 | Self::OPERATIONAL_V5 | Self::OPERATIONAL_V6
+            Self::OPERATIONAL_V4
+                | Self::OPERATIONAL_V5
+                | Self::OPERATIONAL_V6
+                | Self::OPERATIONAL_V7
         )
     }
 
@@ -139,6 +167,7 @@ impl BaselineProfile {
                 | Self::OPERATIONAL_V4
                 | Self::OPERATIONAL_V5
                 | Self::OPERATIONAL_V6
+                | Self::OPERATIONAL_V7
         )
     }
 
@@ -148,7 +177,10 @@ impl BaselineProfile {
         correction == self.id()
             || (matches!(
                 self,
-                Self::OPERATIONAL_V4 | Self::OPERATIONAL_V5 | Self::OPERATIONAL_V6
+                Self::OPERATIONAL_V4
+                    | Self::OPERATIONAL_V5
+                    | Self::OPERATIONAL_V6
+                    | Self::OPERATIONAL_V7
             ) && correction == Self::OPERATIONAL_V3.id())
     }
 
@@ -166,6 +198,7 @@ impl BaselineProfile {
                 | Self::OPERATIONAL_V4
                 | Self::OPERATIONAL_V5
                 | Self::OPERATIONAL_V6
+                | Self::OPERATIONAL_V7
         )
     }
 
@@ -201,6 +234,9 @@ impl BaselineProfile {
             Self::OperationalKerMl10 {
                 errata_profile: OperationalErrataProfile::ReviewedV6,
             } => "agentique-kerml-1.0-operational/6",
+            Self::OperationalKerMl10 {
+                errata_profile: OperationalErrataProfile::ReviewedV7,
+            } => "agentique-kerml-1.0-operational/7",
         }
     }
 
@@ -226,6 +262,9 @@ impl BaselineProfile {
             Self::OperationalKerMl10 {
                 errata_profile: OperationalErrataProfile::ReviewedV6,
             } => Some(Sha256::digest(OPERATIONAL_PROFILE_V6_MANIFEST).into()),
+            Self::OperationalKerMl10 {
+                errata_profile: OperationalErrataProfile::ReviewedV7,
+            } => Some(Sha256::digest(OPERATIONAL_OWNED_CROSS_FEATURE_V7_MANIFEST).into()),
         }
     }
 }
@@ -278,7 +317,8 @@ pub fn apply_operational_errata(
         | OperationalErrataProfile::ReviewedV3
         | OperationalErrataProfile::ReviewedV4
         | OperationalErrataProfile::ReviewedV5
-        | OperationalErrataProfile::ReviewedV6 => {
+        | OperationalErrataProfile::ReviewedV6
+        | OperationalErrataProfile::ReviewedV7 => {
             let digest: [u8; 32] = Sha256::digest(OPERATIONAL_ERRATA_V2_MANIFEST).into();
             if digest != REVIEWED_V2_SHA256 {
                 return Err(ProfileError::UnreviewedManifest);
@@ -291,6 +331,7 @@ pub fn apply_operational_errata(
             | OperationalErrataProfile::ReviewedV4
             | OperationalErrataProfile::ReviewedV5
             | OperationalErrataProfile::ReviewedV6
+            | OperationalErrataProfile::ReviewedV7
     ) && format!(
         "{:x}",
         Sha256::digest(OPERATIONAL_LIBRARY_ERRATA_V3_MANIFEST)
@@ -303,6 +344,7 @@ pub fn apply_operational_errata(
         OperationalErrataProfile::ReviewedV4
             | OperationalErrataProfile::ReviewedV5
             | OperationalErrataProfile::ReviewedV6
+            | OperationalErrataProfile::ReviewedV7
     ) && format!(
         "{:x}",
         Sha256::digest(OPERATIONAL_VALIDATION_ERRATA_V4_MANIFEST)
@@ -312,7 +354,9 @@ pub fn apply_operational_errata(
     }
     if matches!(
         profile,
-        OperationalErrataProfile::ReviewedV5 | OperationalErrataProfile::ReviewedV6
+        OperationalErrataProfile::ReviewedV5
+            | OperationalErrataProfile::ReviewedV6
+            | OperationalErrataProfile::ReviewedV7
     ) && format!(
         "{:x}",
         Sha256::digest(OPERATIONAL_FORMAL_TARGET_ERRATA_V5_MANIFEST)
@@ -320,7 +364,10 @@ pub fn apply_operational_errata(
     {
         return Err(ProfileError::UnreviewedManifest);
     }
-    if profile == OperationalErrataProfile::ReviewedV6 {
+    if matches!(
+        profile,
+        OperationalErrataProfile::ReviewedV6 | OperationalErrataProfile::ReviewedV7
+    ) {
         for (manifest, expected) in [
             (OPERATIONAL_PROFILE_V6_MANIFEST, REVIEWED_V6_SHA256),
             (
@@ -336,6 +383,14 @@ pub fn apply_operational_errata(
                 return Err(ProfileError::UnreviewedManifest);
             }
         }
+    }
+    if profile == OperationalErrataProfile::ReviewedV7
+        && format!(
+            "{:x}",
+            Sha256::digest(OPERATIONAL_OWNED_CROSS_FEATURE_V7_MANIFEST)
+        ) != REVIEWED_V7_SHA256
+    {
+        return Err(ProfileError::UnreviewedManifest);
     }
     let review_digest: [u8; 32] = Sha256::digest(OPERATIONAL_ERRATA_MANIFEST).into();
     if review_digest != REVIEWED_MANIFEST_SHA256 {

@@ -46,7 +46,7 @@ fn correction_fact_evidence_retains_entry_library_profile_and_output_identity() 
         element: id(2),
         property: p::ELEMENT_DECLARED_NAME,
     };
-    assert_eq!(answer.fact_origins[&fact], Origin::Declared(correction));
+    assert_eq!(*answer.fact_origins[&fact], Origin::Declared(correction));
     assert!(answer.positive_dependencies.contains(&fact));
     assert!(
         answer

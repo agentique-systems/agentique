@@ -1,0 +1,1 @@
+Independently traced all 15 reference-binding context findings to multiplicity bounds and both Triggers parameter-redefinition paths; no waiver or correction applied.

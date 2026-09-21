@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v10/sweep.py"
+  ],
+  "started": "2026-09-20T12:33:29.432248+00:00",
+  "duration_seconds": 11.530999999959022,
+  "exit_code": 0,
+  "output": "output.txt"
+}

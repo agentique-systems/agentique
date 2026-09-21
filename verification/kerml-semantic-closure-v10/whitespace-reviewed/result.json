@@ -1,0 +1,11 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--check"
+  ],
+  "started": "2026-09-20T13:39:46.641124+00:00",
+  "duration_seconds": 0.06299999996554106,
+  "exit_code": 0,
+  "output": "output.txt"
+}

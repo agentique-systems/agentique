@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--test",
+    "initial_values_v10",
+    "--test",
+    "result_producers_v9"
+  ],
+  "started": "2026-09-20T15:35:00.583467+00:00",
+  "duration_seconds": 0.18700000003445894,
+  "exit_code": 101,
+  "output": "output.txt"
+}

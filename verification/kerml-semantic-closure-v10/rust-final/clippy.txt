@@ -1,0 +1,21 @@
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+    Checking agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+    Checking agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+    Checking agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+error: called `unwrap` on `expected` after checking its variant with `is_some`
+   --> crates\kerml-semantics\tests\cross_features_v10.rs:156:50
+    |
+151 |             if expected.is_some() {
+    |             --------------------- help: try: `if let Some(<item>) = expected`
+...
+156 |                 assert!(q.is_owned_cross_feature(expected.unwrap()).value);
+    |                                                  ^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#unnecessary_unwrap
+    = note: `-D clippy::unnecessary-unwrap` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unnecessary_unwrap)]`
+
+error: could not compile `agq-kerml-semantics` (test "cross_features_v10") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

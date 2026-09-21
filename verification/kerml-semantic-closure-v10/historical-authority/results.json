@@ -1,0 +1,42 @@
+[
+  {
+    "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-four-models.py",
+    "started": "2026-09-20T12:08:21.099Z",
+    "durationMs": 3961,
+    "exitCode": 0,
+    "signal": null,
+    "log": "four-models.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-authority-stop.py",
+    "started": "2026-09-20T12:08:25.062Z",
+    "durationMs": 830,
+    "exitCode": 0,
+    "signal": null,
+    "log": "authority-stop.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-patch.py",
+    "started": "2026-09-20T12:08:25.895Z",
+    "durationMs": 9787,
+    "exitCode": 0,
+    "signal": null,
+    "log": "patch-diff.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/verify-source-assertions.py",
+    "started": "2026-09-20T12:08:35.781Z",
+    "durationMs": 1191,
+    "exitCode": 0,
+    "signal": null,
+    "log": "source-assertions.txt"
+  },
+  {
+    "command": "python -X utf8 verification/kerml-library-content-errata-publication-v5/preservation.py",
+    "started": "2026-09-20T12:08:36.979Z",
+    "durationMs": 2087,
+    "exitCode": 1,
+    "signal": null,
+    "log": "preservation.txt"
+  }
+]

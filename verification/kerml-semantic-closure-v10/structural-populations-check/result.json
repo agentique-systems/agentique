@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "-X",
+    "utf8",
+    "verification/kerml-semantic-closure-v10/structural-populations.py",
+    "--check"
+  ],
+  "started": "2026-09-20T13:39:06.025815+00:00",
+  "duration_seconds": 2.25,
+  "exit_code": 0,
+  "output": "output.txt"
+}

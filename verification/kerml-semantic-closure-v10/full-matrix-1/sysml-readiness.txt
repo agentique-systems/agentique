@@ -1,0 +1,40 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.66s
+     Running `target\debug\metamodel-gen.exe --baseline sysml-2.0 --require-runtime --check`
+Full audit finding ["E"]: "subsetted-property-name" Core-Features-A_ownedRedefinition_owningFeature-owningFeature
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Associations-A_targetType_targetAssociation-targetAssociation
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity
+Full audit finding ["E"]: "subsetted-property-name" Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Core-Features-A_ownedRedefinition_owningFeature-owningFeature
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Associations-A_targetType_targetAssociation-targetAssociation
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/KerML/20250201/KerML.xmi#Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-AnalysisCases-A_resultExpression_analysisCaseDefintion-analysisCaseDefintion
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_nestedConnection_connectionOwningUsage-connectionOwningUsage
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-DefinitionAndUsage-A_ownedConnection_connectionOwningDefinition-connectionOwningDefinition
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Requirements-A_stakeholderParameter_stakholderOwiningRequirementDefinition-stakholderOwiningRequirementDefinition
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Requirements-A_stakeholderParameter_stakholderOwiningRequirementDefinition-stakholderOwiningRequirementDefinition
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Cases-A_ownedObjectiveRequirement_owningObjectiveMembership-owningObjectiveMembership
+Full audit finding ["E"]: "metamodel-diagnostic" https://www.omg.org/spec/SysML/20250201/SysML.xmi#Systems-Flows-A_flowDefinition_definedFlow-definedFlow
+Conformance "error" "SubsettedPropertyNames" "Core-Features-A_ownedRedefinition_owningFeature-owningFeature" ({"evidence":"docs/adr/0008-property-subsetting-cycle-semantics.md","kind":"reviewed-baseline-anomaly"})
+Conformance "error" "SubsettedPropertyNames" "Kernel-Multiplicities-A_upperBound_multiplicity-multiplicity" ({"evidence":"docs/language-core-foundation-review.md","kind":"reviewed-baseline-anomaly"})
+Conformance "error" "SubsettedPropertyNames" "Systems-DefinitionAndUsage-A_analysisCaseOwningUsage_nestedAnalysisCase-analysisCaseOwningUsage" ({"evidence":"docs/adr/0008-property-subsetting-cycle-semantics.md","kind":"reviewed-baseline-anomaly"})
+Conformance "error" "SubsettedPropertyNames" "Kernel-Associations-A_targetType_targetAssociation-targetAssociation" ({"evidence":"docs/adr/0008-property-subsetting-cycle-semantics.md","kind":"reviewed-baseline-anomaly"})
+Conformance "error" "SubsettedPropertyNames" "Kernel-Multiplicities-A_lowerBound_multiplicity-multiplicity" ({"evidence":"docs/language-core-foundation-review.md","kind":"reviewed-baseline-anomaly"})
+Conformance "error" "SubsettingContext" "Systems-AnalysisCases-A_resultExpression_analysisCaseDefintion-analysisCaseDefintion" ({"kind":"unreviewed"})
+Conformance "error" "SubsettingContext" "Systems-DefinitionAndUsage-A_nestedConnection_connectionOwningUsage-connectionOwningUsage" ({"kind":"unreviewed"})
+Conformance "error" "SubsettingContext" "Systems-DefinitionAndUsage-A_ownedConnection_connectionOwningDefinition-connectionOwningDefinition" ({"kind":"unreviewed"})
+Conformance "error" "SubsettingContract" "Systems-Requirements-A_stakeholderParameter_stakholderOwiningRequirementDefinition-stakholderOwiningRequirementDefinition" ({"kind":"unreviewed"})
+Conformance "error" "SubsettingContract" "Systems-Requirements-A_stakeholderParameter_stakholderOwiningRequirementDefinition-stakholderOwiningRequirementDefinition" ({"kind":"unreviewed"})
+Conformance "error" "SubsettingContract" "Systems-Cases-A_ownedObjectiveRequirement_owningObjectiveMembership-owningObjectiveMembership" ({"kind":"unreviewed"})
+Conformance "error" "RedefinitionContext" "Systems-Flows-A_flowDefinition_definedFlow-definedFlow" ({"evidence":"docs/adr/0011-structural-registration-vs-metamodel-conformance.md","kind":"reviewed-baseline-anomaly"})
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/metamodel.json (6888525 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/full-audit.json (1022899 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/full.golden.json (5886927 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\standards/generated/sysml-2.0/runtime-closure-audit.json (18967 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/sysml/src/generated/complete.rs (834660 bytes).
+Current: C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen\../..\crates/sysml/src/generated/typed_views.rs (3135938 bytes).

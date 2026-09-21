@@ -1,0 +1,1 @@
+All 334 other audited inputs are unchanged; exactly the v7 identity-list normalization and its four regression assertions were added. The blocker register gained only independently proved KLCV10-F-004; the audit reads this register after validation.

@@ -1,0 +1,644 @@
+{
+  "format": "agentique-independent-owned-cross-feature-verification/1",
+  "corpus_archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2",
+  "rust_report_sha256": "9ba99d9017b2fef90de7e5333f63633785a544f69170b855a80cc3aca1431c38",
+  "feature_count": 11632,
+  "selected_count": 152,
+  "synthetic_cases": 120,
+  "profiles": [
+    "agentique-kerml-1.0-operational/1",
+    "agentique-kerml-1.0-operational/2",
+    "agentique-kerml-1.0-operational/3",
+    "agentique-kerml-1.0-operational/4",
+    "agentique-kerml-1.0-operational/5",
+    "agentique-kerml-1.0-operational/6",
+    "agentique-kerml-1.0-operational/7",
+    "omg-kerml-1.0-published/1"
+  ],
+  "selected": [
+    {
+      "feature": "07940d09-f623-55ea-ba5c-edaf78de5c54",
+      "cross_feature": "63f2ffc3-05ba-54e8-bc50-51f543a7d290"
+    },
+    {
+      "feature": "07d619ab-5ccc-51cd-a095-f342ddf98d32",
+      "cross_feature": "b75868ff-f1c6-5185-9685-415d93d89186"
+    },
+    {
+      "feature": "08fb6dfb-d5bc-56bf-a834-2836ed3fb265",
+      "cross_feature": "bbb995a7-8e89-5386-99ca-2e39481866ff"
+    },
+    {
+      "feature": "094b9265-9562-5935-bde9-2225a223c368",
+      "cross_feature": "aaa7ec1f-ef0c-552a-9ae6-9e9b547aff3b"
+    },
+    {
+      "feature": "0a8b60c5-6984-5f94-8c85-0fdf190f052f",
+      "cross_feature": "0a8f6b1d-b452-587b-bff3-be767ca4693f"
+    },
+    {
+      "feature": "0b6baa8a-1369-5881-9b27-fa26822f8140",
+      "cross_feature": "34bcc82f-39c5-5800-a4b5-d0256069a62f"
+    },
+    {
+      "feature": "0c73be9e-10ae-5fbf-85e2-19614614bee5",
+      "cross_feature": "0a924d8f-449d-555c-bca8-1c1d4f63f6bb"
+    },
+    {
+      "feature": "0dab809a-f879-5e65-932a-0a0fd7aa1542",
+      "cross_feature": "c86cdd9c-c07b-598a-bc71-49706059a045"
+    },
+    {
+      "feature": "0e1cc541-21b3-56f1-8917-77bceedee1f4",
+      "cross_feature": "aa54a282-c462-5915-825c-1bccc944fcb8"
+    },
+    {
+      "feature": "0f9b9b3e-813c-57aa-91f1-b44d73d27370",
+      "cross_feature": "1cb6efdd-bebd-5228-85ce-ce34ad517e7e"
+    },
+    {
+      "feature": "10c53b6e-64db-58bb-b369-729db795b21d",
+      "cross_feature": "caa96604-6120-5c69-8d8d-7f2141de08ef"
+    },
+    {
+      "feature": "11ccd6fd-3e66-5990-bc04-35580a074a7d",
+      "cross_feature": "7cfa55f1-01da-58fc-a2f2-5cdfee993dbf"
+    },
+    {
+      "feature": "14a7683e-1453-5d63-b038-89d887d8a3ae",
+      "cross_feature": "2ee3b5ac-7c78-5691-bb74-96d7e3c48166"
+    },
+    {
+      "feature": "178694a2-5268-5509-96b5-9011cdda276e",
+      "cross_feature": "bbd84ab0-c93f-5916-89cd-da7e43f47b9b"
+    },
+    {
+      "feature": "18038588-bbd0-5407-b939-b01e6c5ee5b4",
+      "cross_feature": "d13b5a5f-7102-5626-bc65-3ee472612f23"
+    },
+    {
+      "feature": "18b056d4-3ac9-5ae8-af93-69c9eec8504a",
+      "cross_feature": "37a8d3a8-db07-597f-9554-5667c646fcf5"
+    },
+    {
+      "feature": "19e92e27-aab3-541f-94c9-83ae0163b74a",
+      "cross_feature": "dbc9f378-d36d-523b-9c78-0e509b3fa6dc"
+    },
+    {
+      "feature": "1ff2f78a-093a-58c8-b5fc-fffe4a6bb4e2",
+      "cross_feature": "2a82bded-7748-54d6-b7bd-06b0cec976cb"
+    },
+    {
+      "feature": "202de889-1ecc-5cd2-8f30-6fe4aa953d37",
+      "cross_feature": "c79ca7e9-5cca-5680-8d16-b2b26f3394da"
+    },
+    {
+      "feature": "208af822-4ccd-5a3b-baa2-8badc1dd4717",
+      "cross_feature": "3f921753-17d0-509a-8c4d-1e87dfa32066"
+    },
+    {
+      "feature": "20a368c1-8d6d-551f-8a27-cdc931d87101",
+      "cross_feature": "37c5f55a-3113-5f89-9718-c5ea1c8fb585"
+    },
+    {
+      "feature": "232f25a1-ba17-5a61-b61e-bde2951a5a79",
+      "cross_feature": "338bb1e2-2670-56b2-aa16-885d6c2d8f4f"
+    },
+    {
+      "feature": "244f1d1f-7050-5a5d-97cd-bc1f2a9892f2",
+      "cross_feature": "03c1457b-ca4b-5769-98e7-ae538cd869e6"
+    },
+    {
+      "feature": "2518677b-6c09-582e-8af2-c8eab2406f01",
+      "cross_feature": "6ef756a5-ac78-5c70-80c6-8948ce07c3d7"
+    },
+    {
+      "feature": "26360a05-ec80-5144-be5a-f5a8726bc03e",
+      "cross_feature": "d08dffec-8826-59e1-a721-ccbc1a18be4d"
+    },
+    {
+      "feature": "2b40cff8-b50e-5b6e-8c93-3ba39062efae",
+      "cross_feature": "5cdfc215-1fc0-5fe1-8e1a-b5764230c704"
+    },
+    {
+      "feature": "2c088a51-6e6d-5a33-8ca2-ba5f1e5858fa",
+      "cross_feature": "9a755d32-103b-5eac-a70b-108319f46669"
+    },
+    {
+      "feature": "2c46ccb4-1a0a-53bf-bb0e-af33f89e572e",
+      "cross_feature": "735eb745-6e7d-5ae9-a182-29e51b173549"
+    },
+    {
+      "feature": "2d9d03e3-f3e9-5541-83b8-b1d2cde692e2",
+      "cross_feature": "0217d77d-779d-51b9-8e3f-b395be4f3d3a"
+    },
+    {
+      "feature": "2de039d3-09e0-5add-bb72-518bf408cc2a",
+      "cross_feature": "8d54a7cc-a016-5e19-aecf-a06d8413a323"
+    },
+    {
+      "feature": "2e0d9163-5896-5fe8-9e7d-af779c63b601",
+      "cross_feature": "c2e3bef6-165a-5c6d-8929-10b722b2187b"
+    },
+    {
+      "feature": "2ecb85a3-cee5-5382-b107-92edb57c117f",
+      "cross_feature": "88c8ee71-b198-5a42-a2d1-7eb9bbac5c59"
+    },
+    {
+      "feature": "30245657-3bb6-5b6f-aaec-285ef3f57947",
+      "cross_feature": "813f1230-dfc0-59fd-8af3-0ab965e7d571"
+    },
+    {
+      "feature": "3153f267-18d3-5f17-8e29-8f7145d25c0f",
+      "cross_feature": "a084efa6-b8fd-5a50-8172-59189e108403"
+    },
+    {
+      "feature": "32ca55ad-843a-5838-b18a-896e9d339c77",
+      "cross_feature": "25850d82-fadd-5df5-ac6a-bdeb55ac9554"
+    },
+    {
+      "feature": "34c422fc-7611-56bf-be15-ad12ba964221",
+      "cross_feature": "aaa741d7-adae-52a3-933b-50e529aeccf5"
+    },
+    {
+      "feature": "3552ec34-5d27-57ce-9679-6b5d0befb8e9",
+      "cross_feature": "5e69d698-78ce-587c-adf4-4c838afad6d0"
+    },
+    {
+      "feature": "356827e0-5594-5228-98cd-e36096c69e9b",
+      "cross_feature": "03a34a56-d4f7-5dfc-9b59-05bb6315648e"
+    },
+    {
+      "feature": "35adb40b-4743-5da7-b987-b5ab41faacd0",
+      "cross_feature": "9dd9be81-5dbf-5723-8a39-df820a1e2e7f"
+    },
+    {
+      "feature": "3617c500-cc3a-5e71-9ad6-d6cd83e6dee4",
+      "cross_feature": "8fe6d887-7e97-58ac-89cd-911f0e32358d"
+    },
+    {
+      "feature": "368306e6-32b7-5a4b-b04b-b7327955fe1e",
+      "cross_feature": "6f036012-1c28-53ef-81db-4da4adf0c9ff"
+    },
+    {
+      "feature": "3920b451-9578-54ae-ad29-75f39c61290e",
+      "cross_feature": "baa69a75-5df9-54e9-b99d-80bafbd4efb6"
+    },
+    {
+      "feature": "3aa395e3-70cf-512c-9076-6e86b3a45799",
+      "cross_feature": "cbf3972b-4ca9-5c3e-98f6-0e574d9ba997"
+    },
+    {
+      "feature": "3b67e91b-04b8-5c2b-9067-d2be4e4ae649",
+      "cross_feature": "7b3f5847-abd9-5ca5-9f63-39bcf267bdca"
+    },
+    {
+      "feature": "3d000647-7f4c-5adb-883c-42237d8552f0",
+      "cross_feature": "14fe1ab1-6e76-541d-adec-5cbabd694a71"
+    },
+    {
+      "feature": "3d463cdb-e8a1-5ee7-b040-75d8c96d1bf6",
+      "cross_feature": "b169c665-9216-5f59-8280-77d2d67c5d67"
+    },
+    {
+      "feature": "407a523a-492f-5193-bc6b-e904af18655c",
+      "cross_feature": "8e27f0af-2f88-5203-aef8-117641318a91"
+    },
+    {
+      "feature": "410e4ced-2eb9-5148-83c3-5e8f5b350b39",
+      "cross_feature": "4a7dd6c7-df07-5b28-ae89-995f842800d3"
+    },
+    {
+      "feature": "42a85b83-530d-562b-8988-2f653c5eb218",
+      "cross_feature": "38019295-9004-50d0-988c-3590e616af88"
+    },
+    {
+      "feature": "44b81b73-9da1-5885-93c9-b178ab942b1a",
+      "cross_feature": "becb3024-1154-5f79-ac3c-91318105b162"
+    },
+    {
+      "feature": "44f44d65-d698-5fd8-ae26-c49d7432c965",
+      "cross_feature": "752c65b3-26fd-5339-99df-20bb2a5cfcd6"
+    },
+    {
+      "feature": "4db37021-1c52-5c14-ae76-3abfb17220fa",
+      "cross_feature": "11787093-a510-560c-899b-b186419b3e2f"
+    },
+    {
+      "feature": "4deb8648-3e90-50df-895c-b1c04021b28e",
+      "cross_feature": "07f739ed-fcbb-50e9-80e5-90f6cf226950"
+    },
+    {
+      "feature": "4e09ef04-bb93-5f08-9d15-76360905ea23",
+      "cross_feature": "3e263e34-184d-504e-93aa-191feb33a0c7"
+    },
+    {
+      "feature": "4f387fb5-f07f-5373-804e-0bbd736e5f42",
+      "cross_feature": "42b065c6-31f0-5bbc-ba23-3bbf30114f0a"
+    },
+    {
+      "feature": "52407204-2665-54a4-8dcd-511948f07974",
+      "cross_feature": "a6eee81c-fd45-58a9-bac0-3d3f460a3508"
+    },
+    {
+      "feature": "5318af52-8625-5531-8407-9ea4fa6e0cdc",
+      "cross_feature": "1fa6574f-eeb9-5422-8344-2b0047ef25ba"
+    },
+    {
+      "feature": "546f6adf-d8f5-52e2-8e13-0a260bf121e7",
+      "cross_feature": "7572d97a-06ec-555f-a3a1-6dbf90c354e1"
+    },
+    {
+      "feature": "54cafabf-2e7a-54bb-a31b-058d9e5f34d4",
+      "cross_feature": "201ae1d3-8851-5157-bc68-e45bd6a7f749"
+    },
+    {
+      "feature": "55b02a47-144b-593a-b2e2-704bac59882f",
+      "cross_feature": "d4b75ad1-73dd-54aa-ad52-eedc09bdf177"
+    },
+    {
+      "feature": "574c2656-afcf-5919-9c04-5c70a9ebc31f",
+      "cross_feature": "88507ddd-b52e-50c3-831c-5d464799593e"
+    },
+    {
+      "feature": "59282326-3cf2-5807-a06f-93f0b26728a8",
+      "cross_feature": "31a77a8a-7330-5469-ab22-18702cb7da06"
+    },
+    {
+      "feature": "5933d6de-d3b0-5259-aa2c-202465f78419",
+      "cross_feature": "dbc2d4e3-ff44-539d-b9ad-3b07aa652308"
+    },
+    {
+      "feature": "5a033447-85d1-542d-aeba-dc569372a24c",
+      "cross_feature": "a9957e3a-78b4-52aa-af94-727bce55a420"
+    },
+    {
+      "feature": "5acb165d-056b-55d9-96cc-363f248afdf4",
+      "cross_feature": "355263fc-6c8b-520f-a1ea-77208d853faa"
+    },
+    {
+      "feature": "5cd7357f-31d1-56a7-84ad-0275b2d92e3c",
+      "cross_feature": "972b5bd1-c66c-5885-bb9d-b956de2b897f"
+    },
+    {
+      "feature": "64f7fec1-08c3-5cd2-a979-4cdf3a732023",
+      "cross_feature": "d4b7083b-a10a-589b-bd7b-ff9008b76d75"
+    },
+    {
+      "feature": "665b81bb-f356-5c1b-8b3d-edda75eff365",
+      "cross_feature": "9cd0b4fd-bfb1-533b-b974-c6089e30c528"
+    },
+    {
+      "feature": "66d26744-1523-527d-9d87-f37cf9758a6a",
+      "cross_feature": "b2ed214f-7947-52e8-a18d-fd299f8f364f"
+    },
+    {
+      "feature": "6730d9b8-02f8-5191-b003-6a8a7bd40010",
+      "cross_feature": "e0cc71af-ac19-5c34-a589-ea2d427ba30f"
+    },
+    {
+      "feature": "6a58f865-695e-5879-8003-07b0f58bd052",
+      "cross_feature": "eb990a1c-beb8-56b5-8526-42ed004b727f"
+    },
+    {
+      "feature": "6a841449-8dc4-5b35-ab7f-cfe5c32ea93b",
+      "cross_feature": "7e8a6819-cbcd-5f2f-abf7-231431c5c680"
+    },
+    {
+      "feature": "6b36c54f-af8d-5254-aa11-0a087a478991",
+      "cross_feature": "b6fe941f-55aa-56cc-a002-36429556573b"
+    },
+    {
+      "feature": "6d6b902c-f189-5a47-af26-bfc7f6b4f2d7",
+      "cross_feature": "56b9c660-6259-5fca-9ce1-85ea94714d67"
+    },
+    {
+      "feature": "6d734d16-61bd-56fe-968a-cb128a060e95",
+      "cross_feature": "45dae009-eca8-5f27-aef6-8b9ba62560c0"
+    },
+    {
+      "feature": "6f791407-2e53-5f8f-8e72-8fd017c2bfa4",
+      "cross_feature": "bc803a3a-d181-5626-865c-a861db689557"
+    },
+    {
+      "feature": "708cb9ce-3122-5ba0-8658-3821a8b0f151",
+      "cross_feature": "ee82ab23-a6a9-5abf-bf7f-d340a6563a06"
+    },
+    {
+      "feature": "7109b4e5-b40d-52fa-a4f2-8143bd2b5bc0",
+      "cross_feature": "516bba05-d461-5b85-a697-871a908c4d13"
+    },
+    {
+      "feature": "71f46f5d-b2a1-57b5-889f-dc8fa1cc0791",
+      "cross_feature": "3436f7b4-768c-592e-ae3b-ac92cc4354a3"
+    },
+    {
+      "feature": "75b5e571-d0a7-508e-8bb8-fc19fe8130bd",
+      "cross_feature": "23330452-d2d4-5af0-990f-a9fd3ffcf297"
+    },
+    {
+      "feature": "76f81d27-557d-5afe-827a-e4214b300d47",
+      "cross_feature": "4c6fd051-4047-59a6-8f1c-bdf3c50bd402"
+    },
+    {
+      "feature": "770be091-ee9f-5350-85b8-6746df2a7370",
+      "cross_feature": "4e99ad5c-3215-54d3-a48b-bc02f4089003"
+    },
+    {
+      "feature": "7924c6b9-d569-5b27-966a-c4e4e7eb47f2",
+      "cross_feature": "03660223-be8f-59d2-a6cc-c62266281ba3"
+    },
+    {
+      "feature": "79913db5-b30c-5efa-a1ad-35d8f2977bc6",
+      "cross_feature": "3b295a6f-10c7-50a9-88d3-2953541628d2"
+    },
+    {
+      "feature": "7d39eba6-0ddc-56c9-8d88-afafdbe297d8",
+      "cross_feature": "8d86c8c4-50ac-526b-b626-5cf1ba54a1ff"
+    },
+    {
+      "feature": "7d625b70-ac8f-50f1-8382-d9796eaa5463",
+      "cross_feature": "f20e75c3-2828-56d4-b6aa-be2f4f675b81"
+    },
+    {
+      "feature": "84bfd87f-700c-5d1b-9d1f-fbeee93b524d",
+      "cross_feature": "1c238c92-6b1e-5e04-b3b3-867e5c92c915"
+    },
+    {
+      "feature": "860b15a0-b185-51db-a872-82e8b9e24427",
+      "cross_feature": "f6ddea00-46d4-5099-8bff-05a75cf3ccfd"
+    },
+    {
+      "feature": "8914a3d7-012e-5f7b-b6d1-a9fe4317dbfa",
+      "cross_feature": "f562701d-146f-5b1b-b901-1d3e42c044dc"
+    },
+    {
+      "feature": "89b1ed85-32d9-57fc-8b3a-e6c44ae97ebb",
+      "cross_feature": "5fb29cd7-15aa-5ac3-882b-eb589aa57adc"
+    },
+    {
+      "feature": "8f8e8307-a8b5-5e35-b876-a541e77fa30a",
+      "cross_feature": "ae823898-2b4e-575e-bb74-2e2561248fe0"
+    },
+    {
+      "feature": "907c863c-1b87-55d2-87f3-262ae5e8d390",
+      "cross_feature": "458dfb33-7edf-54b1-b5da-8c9b9a6757c9"
+    },
+    {
+      "feature": "907cf999-a782-5de8-8f9b-9299b40d700d",
+      "cross_feature": "6e2de5c9-f3ac-5395-b0be-2541f4338f80"
+    },
+    {
+      "feature": "90c8afcd-15f9-5e44-b1d9-6cb24e0fb43a",
+      "cross_feature": "a7adc813-b3f1-5f91-ac87-8a1ba5151b5f"
+    },
+    {
+      "feature": "9563696e-e64f-5b96-b8df-7fd6a9d7fdfe",
+      "cross_feature": "1651879a-0d13-578f-a028-060c75b4f4d9"
+    },
+    {
+      "feature": "96960e77-d7e9-5372-a858-dd0026570fef",
+      "cross_feature": "bcf017c6-acd6-5f83-b6d8-699c1fac1f46"
+    },
+    {
+      "feature": "9b1b8599-9a13-57fe-9b33-46151710f94b",
+      "cross_feature": "082dbbad-47aa-5914-a778-d8b9a62ca339"
+    },
+    {
+      "feature": "9fc95f7a-41ad-52b6-b7f6-77201f019d4a",
+      "cross_feature": "7b01b738-7972-5d31-b676-feb0efa552c3"
+    },
+    {
+      "feature": "a019d563-33ef-55d1-bdd3-1c1178b68351",
+      "cross_feature": "851f3105-368d-5208-b490-3bc222820dbb"
+    },
+    {
+      "feature": "a07f80be-c87f-5b6a-8cf6-bb5b92bfb7cb",
+      "cross_feature": "e3acf456-c5d9-5335-bcf3-e6c9a98fb1ca"
+    },
+    {
+      "feature": "a0b94a63-329c-553e-b916-9c9734a63e03",
+      "cross_feature": "5b133462-617c-5571-ae25-01a3814ea355"
+    },
+    {
+      "feature": "a1a7d6c3-56fb-5a40-a1b2-c9a3dd024a09",
+      "cross_feature": "0a34ca8d-4610-5da2-9734-c3da4206e9c2"
+    },
+    {
+      "feature": "a1d3e88b-6471-5d57-b8cc-5a5fdf4a6eaf",
+      "cross_feature": "9dc109c4-c164-5068-9ad1-014881ffbce6"
+    },
+    {
+      "feature": "a1f2ed56-8a85-563e-8776-fbe70ce288be",
+      "cross_feature": "602c7fe7-777e-5ad2-983b-7f819131aaac"
+    },
+    {
+      "feature": "a794a7fe-f31a-5c84-8ca1-b53ac97bcfde",
+      "cross_feature": "b1848a26-83fa-5fe1-834c-44b05072b004"
+    },
+    {
+      "feature": "a87f6775-3171-5bb1-a827-2fd90d356405",
+      "cross_feature": "97632a51-c0bb-52e4-bb83-29407785535c"
+    },
+    {
+      "feature": "a9defa70-dea3-5b94-bd54-2caa229ffe6b",
+      "cross_feature": "1352894a-73a2-503e-8be4-e3da0e6d56f9"
+    },
+    {
+      "feature": "a9eed560-388a-5a02-bcc1-936da1c4cdf6",
+      "cross_feature": "413aa723-3ca3-59c6-9478-762d26c04e40"
+    },
+    {
+      "feature": "ab0538e2-c5c2-5152-b0f6-ed69bddff702",
+      "cross_feature": "dce0419c-fa0c-5dd9-bf03-14935af27815"
+    },
+    {
+      "feature": "ac4124a4-e9aa-59e7-b84a-923a861c76ee",
+      "cross_feature": "83bd04fe-b0b1-515f-8423-f9cf4bf9883a"
+    },
+    {
+      "feature": "ad0e45bd-fb22-5b4b-be47-c404c5e73ce2",
+      "cross_feature": "dc9bc192-4baf-5175-ad04-398f0ccdacfd"
+    },
+    {
+      "feature": "b25a992f-fd9b-5c2f-9c6f-2b8855f5acf8",
+      "cross_feature": "eefc97ef-76bf-5138-b1a9-fef998613ef8"
+    },
+    {
+      "feature": "b54f8808-803b-5bbf-9625-ec1e0f582376",
+      "cross_feature": "949f87a1-08c3-5ff4-bed8-cbfba83051f2"
+    },
+    {
+      "feature": "b6f309a8-4d11-5e4b-b18a-6ce93f7bdb78",
+      "cross_feature": "dee38d5b-ace3-586e-90c0-e4aaf2ebc7dc"
+    },
+    {
+      "feature": "b8a4de25-a0dc-5bd8-b9f8-a90ed9e9e4f4",
+      "cross_feature": "9f9bae59-fa25-5d3e-b1f0-78c9a91a8142"
+    },
+    {
+      "feature": "b8de1922-6f30-5cff-a849-60d8a0b0d8f7",
+      "cross_feature": "85e52934-4a48-50a6-b396-f1c3b746985e"
+    },
+    {
+      "feature": "bc51d575-51c5-5e6b-87ed-02d69fa72e42",
+      "cross_feature": "338c3f92-3d41-584b-9f90-64cf20f62c29"
+    },
+    {
+      "feature": "bdf06eb7-daa0-5981-8bae-3fe4a6954ac2",
+      "cross_feature": "e9a912f5-20a8-599d-9918-5d24cc2c79bf"
+    },
+    {
+      "feature": "c46bbf28-28f9-5d77-b2e1-eb32acf7a2ca",
+      "cross_feature": "da1133b9-cec3-5735-865f-29ebcc8f9020"
+    },
+    {
+      "feature": "c5a0afbd-28cb-5f57-8fd4-ffe34eb6e6d4",
+      "cross_feature": "a3ef8bf2-a235-58c2-87b6-eb0997260b2f"
+    },
+    {
+      "feature": "c634caef-fecc-54a4-b943-ed31c8caf315",
+      "cross_feature": "a778f1a9-fb3e-5d27-8972-a887385c6ca9"
+    },
+    {
+      "feature": "c79bc3d4-6a2b-562c-aa2f-0dc7ea0c1321",
+      "cross_feature": "4434583e-9a1a-569c-a38c-757bde231b51"
+    },
+    {
+      "feature": "ca850797-4b62-581b-afc0-5ee03272bd19",
+      "cross_feature": "d6e575e2-30ed-588f-8e3a-0a0541c4e100"
+    },
+    {
+      "feature": "cb18c721-86f5-547f-8738-ace802592069",
+      "cross_feature": "b70a2b67-0932-5fe9-acc7-7ce2d17ff620"
+    },
+    {
+      "feature": "d00ab74d-7032-5627-bf24-ef59a7375384",
+      "cross_feature": "41d4cf76-1ccc-5b4e-88ce-0268c38de010"
+    },
+    {
+      "feature": "d079b92f-0501-53fe-b0e9-ba71369ad22f",
+      "cross_feature": "0ab61c77-9b8b-54f0-84d4-c0015dec0b90"
+    },
+    {
+      "feature": "d0ef027a-3036-5f81-85dc-a0629c88ac67",
+      "cross_feature": "fda11a5b-2aee-5d23-bfb2-654b136e0211"
+    },
+    {
+      "feature": "d7f58ab7-9d4e-5220-927a-0b98388fea0c",
+      "cross_feature": "8905b4c3-5df0-5659-ac18-8411371bc303"
+    },
+    {
+      "feature": "db5720ab-1761-5638-96ac-1ea1159d5574",
+      "cross_feature": "20212d7b-685b-57bd-8d8f-e9f04f4f337e"
+    },
+    {
+      "feature": "dbe41028-1d5a-5a31-9703-8004dd5f5174",
+      "cross_feature": "2cb1d763-3dca-5003-99d2-4edf2af5c41e"
+    },
+    {
+      "feature": "dc1ba3b2-e991-5b7d-ae2d-835a477e112a",
+      "cross_feature": "91187b0f-bdd5-5197-b7c4-aedecc034f82"
+    },
+    {
+      "feature": "def5f766-456c-57a7-9cba-f8ee7974264a",
+      "cross_feature": "ef43efd8-9a7f-553f-aa70-c7f6fee10d1d"
+    },
+    {
+      "feature": "e18d6dd3-fb49-5b32-b7d2-54c090529eae",
+      "cross_feature": "71d1f5ee-6a2c-5ed1-bed0-799d978c8aea"
+    },
+    {
+      "feature": "e197af7e-f27f-5987-acd6-91d7c5332ffe",
+      "cross_feature": "26615649-2ddc-5104-b251-89f12b352ed0"
+    },
+    {
+      "feature": "e34fe62b-cad9-56c1-b91e-327f22d682e0",
+      "cross_feature": "f4faf809-ab01-58d5-9e53-b10e71948197"
+    },
+    {
+      "feature": "e7468d90-b236-5a5b-bb6f-6a0e05ff44f8",
+      "cross_feature": "f709bece-5da4-5435-babb-6a3badeea355"
+    },
+    {
+      "feature": "e8b08cf1-2046-5f2b-84af-6cb112312501",
+      "cross_feature": "90ed2d77-b996-503a-87f3-b24b12f16722"
+    },
+    {
+      "feature": "e9d2894e-ab2e-5365-a61d-7f027813c53b",
+      "cross_feature": "920f5d4e-7c49-5bab-8250-ad139d711cd0"
+    },
+    {
+      "feature": "ea8c5f11-0414-599b-9ced-6f1ebe2de40a",
+      "cross_feature": "ce51f70d-a68d-5b62-95bf-5435e274d35a"
+    },
+    {
+      "feature": "eb845955-f5d6-54e0-99ab-bada61490884",
+      "cross_feature": "efa9bcc9-b42a-52d2-9d27-66c46821a296"
+    },
+    {
+      "feature": "eda62522-2a0b-52f4-90a7-539f285e748a",
+      "cross_feature": "264ea450-daf1-5d24-9333-9aad12f94be5"
+    },
+    {
+      "feature": "eeadd88b-7c81-5bb7-86fc-2eab2ae10c67",
+      "cross_feature": "a597ba62-0d10-51e4-a61c-1303270debbb"
+    },
+    {
+      "feature": "f0024cff-2afc-556d-9ea7-daceb4284842",
+      "cross_feature": "a699e5a7-eea7-5260-a7a7-248a8b47fada"
+    },
+    {
+      "feature": "f2bd680c-a76f-5f2f-8a70-8e0d3096cc49",
+      "cross_feature": "b73e30e3-3ef5-5a89-900e-f33ca9015739"
+    },
+    {
+      "feature": "f41b79fd-2424-5a71-a59f-c6e71a14b5ee",
+      "cross_feature": "f0fed7b0-13b9-53aa-9bd0-00e7b7cc8d98"
+    },
+    {
+      "feature": "f42b81d2-934d-52fc-a953-1d1fdf20f46a",
+      "cross_feature": "810fb702-435f-5f00-b138-c6c32aa85d28"
+    },
+    {
+      "feature": "f6143141-b6f9-5348-b5aa-2e7120c0ab47",
+      "cross_feature": "5e3473bd-017e-5161-8a2f-8cddb46634cf"
+    },
+    {
+      "feature": "f6f875ec-f037-525a-b31a-dc32ede4fe1a",
+      "cross_feature": "36355364-dc12-5548-9be5-5ccf12669bd1"
+    },
+    {
+      "feature": "f8c7dc2c-b9d0-58ec-b91b-5a996e0f0179",
+      "cross_feature": "d4cbd807-1805-5123-81b6-032c29768078"
+    },
+    {
+      "feature": "f967a778-655d-5ab8-9aa2-ff27c431fdf0",
+      "cross_feature": "e3711fd0-cd34-51a3-b1c2-17ce2007aec7"
+    },
+    {
+      "feature": "fa395983-325c-548a-9868-42994a2d16f7",
+      "cross_feature": "e40b3d29-7533-5733-8756-2542beefb22d"
+    },
+    {
+      "feature": "ff8bdc06-dded-5e20-b08c-fd39f2a17776",
+      "cross_feature": "86f1bc40-48fe-591f-90d1-97f0203df346"
+    }
+  ],
+  "witnesses": [
+    {
+      "path": "Occurrences::Occurrence::incomingTransfersToSelf::target",
+      "feature": "706e1af5-3ad7-5d49-afcd-54cf8d9f1530",
+      "published_through_v6": "5266def9-9f1a-5da6-a051-dfe9fabc0502",
+      "v7": null
+    },
+    {
+      "path": "Occurrences::Occurrence::outgoingTransfersFromSelf::source",
+      "feature": "22d6ec41-46ca-5bb7-bacf-9a782cf32353",
+      "published_through_v6": "578c42a7-a082-5c3b-8775-55b2cf589e1a",
+      "v7": null
+    }
+  ],
+  "all_exact_order_and_identity_comparisons_passed": true,
+  "scope": "Local selection over full pinned corpus and synthetic matrix; full implied structural expansion is a separate gate."
+}

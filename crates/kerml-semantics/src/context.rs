@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/16";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/17";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -36,6 +36,8 @@ pub struct SemanticContextId {
     pub result_domain_manifest_digest: Option<[u8; 32]>,
     /// Independent reviewed KERML11-8 manifest identity.
     pub reference_binding_manifest_digest: Option<[u8; 32]>,
+    /// Independent reviewed KERML11-1 manifest identity.
+    pub owned_cross_feature_manifest_digest: Option<[u8; 32]>,
     pub descriptor_digest: [u8; 32],
     pub rule_set_version: &'static str,
     pub pinned_libraries: BTreeSet<LibraryPin>,
@@ -74,6 +76,14 @@ pub enum ContextError {
 }
 
 impl<'m> SemanticContext<'m> {
+    /// Share the same immutable input and complete identity with a fresh query
+    /// evaluator. This does not rebind, revalidate or change any evidence scope.
+    pub fn fork(&self) -> Self {
+        Self {
+            model: self.model,
+            id: self.id.clone(),
+        }
+    }
     /// Attach bindings only after validating them against this exact canonical view.
     pub fn with_standard_bindings(
         mut self,
@@ -351,6 +361,7 @@ impl<'m> SemanticContext<'m> {
                 errata_manifest_digest: profile.errata_manifest_sha256(),
                 result_domain_manifest_digest: profile.result_domain_manifest_sha256(),
                 reference_binding_manifest_digest: profile.reference_binding_manifest_sha256(),
+                owned_cross_feature_manifest_digest: profile.owned_cross_feature_manifest_sha256(),
                 descriptor_digest: Sha256::digest(descriptors.as_bytes()).into(),
                 rule_set_version: RULE_SET_VERSION,
                 pinned_libraries,

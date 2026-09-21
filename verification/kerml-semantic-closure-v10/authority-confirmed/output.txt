@@ -1,0 +1,1 @@
+Verified exact Git object/delta/test, current selector, 36 reference blobs, formal/preliminary rules, and both ordered Occurrences witnesses.

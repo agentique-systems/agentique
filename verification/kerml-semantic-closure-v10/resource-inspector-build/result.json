@@ -1,0 +1,12 @@
+{
+  "command": [
+    "cmd",
+    "/d",
+    "/c",
+    ".cache/v10-build-stack.cmd"
+  ],
+  "started": "2026-09-20T13:51:50.013773+00:00",
+  "duration_seconds": 0.015999999945051968,
+  "exit_code": 1,
+  "output": "output.txt"
+}

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-09-20T14:29:09.4606345Z",
+  "pid": 10696,
+  "executable": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\release\\examples\\library_publication_audit.exe",
+  "cpu_seconds": 489.4375,
+  "private_bytes": 642281472,
+  "reason": "Restart before expansion to replace a proven per-fact full search-map scan with direct kernel lookup. Shared provenance passed the complete required matrix. No semantic result is inferred from the interrupted prefix.",
+  "completed": false
+}

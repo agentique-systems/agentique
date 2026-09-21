@@ -1,0 +1,282 @@
+[
+  {
+    "path": "issues/KerML-all.html",
+    "url": "https://issues.omg.org/issues/spec/KerML?view=ALL",
+    "resolved_url": "https://issues.omg.org/issues/spec/KerML?view=ALL",
+    "retrieved_at": "2026-09-20T10:56:13.748387+00:00",
+    "sha256": "397135e041c43f3841be685397e5a6e053ecd2bbfa70e672dbae28c50ea95699",
+    "bytes": 1966571
+  },
+  {
+    "path": "issues/KERML11-145.html",
+    "url": "https://issues.omg.org/issues/KERML11-145",
+    "resolved_url": "https://issues.omg.org/issues/KERML11-145",
+    "retrieved_at": "2026-09-20T10:56:14.560387+00:00",
+    "sha256": "4aa14a5aef78de23d31517ad655a6123711f08f34296e7761aee4ce6e8bb55e6",
+    "bytes": 12403
+  },
+  {
+    "path": "issues/KERML11-8.html",
+    "url": "https://issues.omg.org/issues/KERML11-8",
+    "resolved_url": "https://issues.omg.org/issues/KERML11-8",
+    "retrieved_at": "2026-09-20T10:56:15.360614+00:00",
+    "sha256": "42cc963c302aecb4f8c54ce58a1ae2d93a22d9fc54eabf51eeba57e3e71480e3",
+    "bytes": 11422
+  },
+  {
+    "path": "issues/KERML11-1.html",
+    "url": "https://issues.omg.org/issues/KERML11-1",
+    "resolved_url": "https://issues.omg.org/issues/KERML11-1",
+    "retrieved_at": "2026-09-20T10:56:16.168124+00:00",
+    "sha256": "b17ccf0bfef9927dbc40f994e8830080f607fd9f6a6d44e7617876d92e78e0e7",
+    "bytes": 11160
+  },
+  {
+    "path": "resolution/commit.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/553cf8205c19241c9127ab264f8372f5b58d3895",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/553cf8205c19241c9127ab264f8372f5b58d3895",
+    "retrieved_at": "2026-09-20T10:56:16.426700+00:00",
+    "sha256": "2a2badae8c710b9b95f99554c16e71b5efea853aa535ef835fa313221cb08b05",
+    "bytes": 9652
+  },
+  {
+    "path": "resolution/commit.patch",
+    "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/553cf8205c19241c9127ab264f8372f5b58d3895.patch",
+    "resolved_url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/553cf8205c19241c9127ab264f8372f5b58d3895.patch",
+    "retrieved_at": "2026-09-20T10:56:16.763969+00:00",
+    "sha256": "8e7f75193a99a5b92853e2c769c0402c60ea697fa2fbee1722df31cdb71c1e3c",
+    "bytes": 5274
+  },
+  {
+    "path": "resolution/git-commit.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/git/commits/553cf8205c19241c9127ab264f8372f5b58d3895",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/git/commits/553cf8205c19241c9127ab264f8372f5b58d3895",
+    "retrieved_at": "2026-09-20T10:56:16.994485+00:00",
+    "sha256": "2f34094599bdc167393e87d0696f521b9bceb03939f024b0095b9709deec829b",
+    "bytes": 1338
+  },
+  {
+    "path": "resolution/before/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/c1a76cebcff41f7a4bd105e48f8aaccbc446d835/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/c1a76cebcff41f7a4bd105e48f8aaccbc446d835/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "retrieved_at": "2026-09-20T10:56:17.269484+00:00",
+    "sha256": "310bf6efe078e51dde9b2cb2172650651eb3c5a5b2ebb3ef1e9ce2fc842aaa08",
+    "bytes": 18365
+  },
+  {
+    "path": "resolution/after/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/553cf8205c19241c9127ab264f8372f5b58d3895/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/553cf8205c19241c9127ab264f8372f5b58d3895/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "retrieved_at": "2026-09-20T10:56:17.538484+00:00",
+    "sha256": "28f4ae7608faa27f103975fbe659042b8bdf08a5486f3649f527de467c6a293e",
+    "bytes": 18506
+  },
+  {
+    "path": "resolution/after/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/553cf8205c19241c9127ab264f8372f5b58d3895/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/553cf8205c19241c9127ab264f8372f5b58d3895/org.omg.sysml.logic/src/test/java/org/omg/sysml/logic/KERML11_Ballot3_Tests.java",
+    "retrieved_at": "2026-09-20T10:56:17.771070+00:00",
+    "sha256": "f223477de2ad6690de87e8baca354552e55d89c48356f405cde9c712eaab36bf",
+    "bytes": 2749
+  },
+  {
+    "path": "pilot-head.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/master",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Pilot-Implementation/commits/master",
+    "retrieved_at": "2026-09-20T10:56:18.189070+00:00",
+    "sha256": "bc99f0936aad57df0db256fa2972177de11f44348b199befe5bbcca6c97488c5",
+    "bytes": 69731
+  },
+  {
+    "path": "pilot/FeatureAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureAdapter.java",
+    "retrieved_at": "2026-09-20T10:56:18.432516+00:00",
+    "sha256": "131c2452554814e0a8bf96abc788f4388c894eadcea9acc55dc32f1f9abe1455",
+    "bytes": 32558
+  },
+  {
+    "path": "pilot/ExpressionAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/ExpressionAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/ExpressionAdapter.java",
+    "retrieved_at": "2026-09-20T10:56:18.644440+00:00",
+    "sha256": "435d8f22006137d91f793d4a20be3c88e72a017db838bf1b1d7da654672d7141",
+    "bytes": 4666
+  },
+  {
+    "path": "pilot/FunctionAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FunctionAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FunctionAdapter.java",
+    "retrieved_at": "2026-09-20T10:56:18.863080+00:00",
+    "sha256": "00517af0c2cd1e43efc2e40c0ec66277161ec2f16dd79750c03406c584fde577",
+    "bytes": 1379
+  },
+  {
+    "path": "pilot/TypeAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/TypeAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/TypeAdapter.java",
+    "retrieved_at": "2026-09-20T10:56:19.075081+00:00",
+    "sha256": "bbf1fb1376477df59297dfc1a3696362bd468229e6ec0c5fe9bac76a6817b500",
+    "bytes": 22075
+  },
+  {
+    "path": "pilot/IndexExpressionAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/IndexExpressionAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/IndexExpressionAdapter.java",
+    "retrieved_at": "2026-09-20T10:56:19.292079+00:00",
+    "sha256": "2060230fb7fa2e03c88257bf440dd65a45c767681cb81956e9473db5f8380fe7",
+    "bytes": 2329
+  },
+  {
+    "path": "pilot/SelectExpressionAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/SelectExpressionAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/SelectExpressionAdapter.java",
+    "retrieved_at": "2026-09-20T10:56:19.519078+00:00",
+    "sha256": "35d1b930dc073fc2dd4dd1d716d6fe6544d7b5b635898e902d6df8138f96d88f",
+    "bytes": 1965
+  },
+  {
+    "path": "pilot/FeatureReferenceExpressionAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureReferenceExpressionAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureReferenceExpressionAdapter.java",
+    "retrieved_at": "2026-09-20T10:56:19.744079+00:00",
+    "sha256": "d9562ad218b83ed6897fdb5cdc2a967224ec7236fabf6b18bd41bde00d51a885",
+    "bytes": 3293
+  },
+  {
+    "path": "pilot/KerMLValidator.xtend",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/validation/KerMLValidator.xtend",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.kerml.xtext/src/org/omg/kerml/xtext/validation/KerMLValidator.xtend",
+    "retrieved_at": "2026-09-20T10:56:20.008080+00:00",
+    "sha256": "c4ecd82b5e426c9e49073b1f20c245e6c8be8d8feba74fe778126cf688aaf688",
+    "bytes": 77474
+  },
+  {
+    "path": "pilot/FeatureChainExpressionAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureChainExpressionAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureChainExpressionAdapter.java",
+    "retrieved_at": "2026-09-20T10:56:20.217078+00:00",
+    "sha256": "e11d6510d610e459d8584bdd91d2e43c0464b6197fd6d51c834b6503c30b597e",
+    "bytes": 3844
+  },
+  {
+    "path": "pilot/FeatureUtil.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+    "retrieved_at": "2026-09-20T10:56:20.440079+00:00",
+    "sha256": "332080c8e258a9e27feacb71d963a7d9d51425f9802e42c9e0ade2d18d7f7780",
+    "bytes": 18545
+  },
+  {
+    "path": "release-head.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits/master",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/commits/master",
+    "retrieved_at": "2026-09-20T10:56:21.256225+00:00",
+    "sha256": "5e8d765bbe0172f0ce34263526069fae57db355327322319ebb4c08a5a65ee49",
+    "bytes": 34566
+  },
+  {
+    "path": "release-tree.json",
+    "url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/fb97b754f29588b8e9c7a35f370880cd15eb29e7?recursive=1",
+    "resolved_url": "https://api.github.com/repos/Systems-Modeling/SysML-v2-Release/git/trees/fb97b754f29588b8e9c7a35f370880cd15eb29e7?recursive=1",
+    "retrieved_at": "2026-09-20T10:56:21.620225+00:00",
+    "sha256": "3c158a86c9086688226c287126f2e3d0afef269ec2141fcad445435ba3c72569",
+    "bytes": 489280
+  },
+  {
+    "path": "preliminary/KerML.pdf",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/doc/1-Kernel_Modeling_Language.pdf",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Release/fb97b754f29588b8e9c7a35f370880cd15eb29e7/doc/1-Kernel_Modeling_Language.pdf",
+    "retrieved_at": "2026-09-20T10:56:22.090224+00:00",
+    "sha256": "e8b7f33d9dac1a3fdd4eaa64b052608a989b92c580de91fdadb7038d33df99af",
+    "bytes": 1844440
+  },
+  {
+    "path": "resolution/search-KERML11-2.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-2%22&per_page=100",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-2%22&per_page=100",
+    "retrieved_at": "2026-09-20T11:25:13.338980+00:00",
+    "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+    "bytes": 55
+  },
+  {
+    "path": "resolution/search-KERML11-3.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-3%22&per_page=100",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-3%22&per_page=100",
+    "retrieved_at": "2026-09-20T11:25:13.649977+00:00",
+    "sha256": "232f03bc89612b39d7207a906a626cfa5532fe06e1dba9fc9e40a7dd1c62b26b",
+    "bytes": 18021
+  },
+  {
+    "path": "resolution/search-KERML11-4.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-4%22&per_page=100",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-4%22&per_page=100",
+    "retrieved_at": "2026-09-20T11:25:13.908977+00:00",
+    "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+    "bytes": 55
+  },
+  {
+    "path": "resolution/search-KERML11-69.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-69%22&per_page=100",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-69%22&per_page=100",
+    "retrieved_at": "2026-09-20T11:25:14.190977+00:00",
+    "sha256": "bdfe5edf64089cd2e2d4999a2678b00c95ed331bd0184471f7cc525c63642016",
+    "bytes": 8921
+  },
+  {
+    "path": "resolution/search-KERML11-78.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-78%22&per_page=100",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-78%22&per_page=100",
+    "retrieved_at": "2026-09-20T11:25:14.504976+00:00",
+    "sha256": "35052937d637a6080ad328d9c75eac2b696c704c7213e875eaa4dc2cb755494a",
+    "bytes": 18177
+  },
+  {
+    "path": "resolution/search-KERML11-90.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-90%22&per_page=100",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+%22KERML11-90%22&per_page=100",
+    "retrieved_at": "2026-09-20T11:25:14.763979+00:00",
+    "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+    "bytes": 55
+  },
+  {
+    "path": "pilot/NamespaceAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/NamespaceAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/NamespaceAdapter.java",
+    "retrieved_at": "2026-09-20T16:41:00.273383+00:00",
+    "sha256": "bed12509fe1d53f695296144cded354d1af799624d247912d2f3736062febc56",
+    "bytes": 5826
+  },
+  {
+    "path": "pilot/NamespaceUtil.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/NamespaceUtil.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/NamespaceUtil.java",
+    "retrieved_at": "2026-09-20T16:41:00.493232+00:00",
+    "sha256": "e411c4c1517fb895f99336d3714d595a94b9ef261180316f517c83014714ffce",
+    "bytes": 7686
+  },
+  {
+    "path": "resolution/search-KERML11-75.json",
+    "url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+KERML11-75&per_page=100",
+    "resolved_url": "https://api.github.com/search/commits?q=repo%3ASystems-Modeling%2FSysML-v2-Pilot-Implementation+KERML11-75&per_page=100",
+    "retrieved_at": "2026-09-20T16:41:00.782230+00:00",
+    "sha256": "4af480b8ee5b87b369a76c49bd22c9a783908272ebffbe97898f8ab0f0772a5f",
+    "bytes": 55
+  },
+  {
+    "path": "pilot/ImportAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/ImportAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/ImportAdapter.java",
+    "retrieved_at": "2026-09-20T16:41:26.306603+00:00",
+    "sha256": "041572a1bc27cbd2b285dfb9f02dabafebd8703e685936a08abacb5f230fa3e6",
+    "bytes": 1507
+  },
+  {
+    "path": "pilot/NamespaceImportAdapter.java",
+    "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/NamespaceImportAdapter.java",
+    "resolved_url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/NamespaceImportAdapter.java",
+    "retrieved_at": "2026-09-20T16:41:41.849274+00:00",
+    "sha256": "44990f28d076927662e22aca191fa1d8c8d243da9b43ad9e7a0ec8ececf28a58",
+    "bytes": 2066
+  }
+]

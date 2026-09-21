@@ -1,0 +1,3848 @@
+{
+  "authority_scope": "Agentique operational errata profile; exact published descriptors remain separately accessible",
+  "baseline_profile": "agentique-kerml-1.0-operational/7",
+  "binding_count": 23,
+  "binding_version": "agq-kerml-bindings/2",
+  "documents": [
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 291,
+      "canonical_relationship_count": 164,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              3150,
+              3189
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 34,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "5ea4648e-f29c-577e-b00c-09df3442524c",
+      "exact_source_preservation": true,
+      "file": "Kernel Data Type Library/Collections.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 97,
+          "checkFeatureSubobjectSpecialization": 97,
+          "checkFeatureSuboccurrenceSpecialization": 97,
+          "checkStepEnclosedPerformanceSpecialization": 97,
+          "checkStepOwnedPerformanceSpecialization": 97,
+          "checkStepSubperformanceSpecialization": 97,
+          "validateDataTypeSpecialization": 11,
+          "validateElementIsImpliedIncluded": 291,
+          "validateExpressionResultExpressionMembership": 34,
+          "validateExpressionResultParameterMembership": 34,
+          "validateFeatureChainingFeatureNotOne": 97,
+          "validateFeatureChainingFeaturesNotSelf": 97,
+          "validateFeatureConstantIsVariable": 97,
+          "validateFeatureEndIsConstant": 97,
+          "validateFeatureEndNoDirection": 97,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 97,
+          "validateFeatureOwnedCrossSubsetting": 97,
+          "validateFeatureOwnedReferenceSubsetting": 97,
+          "validateFeaturePortionNotVariable": 97,
+          "validateFeatureReferenceExpressionReferentIsFeature": 6,
+          "validateFeatureReferenceExpressionResult": 6,
+          "validateNamespaceDistinguishibility": 110,
+          "validateParameterMembershipOwningType": 40,
+          "validateParameterMembershipParameterDirection": 40,
+          "validateRedefinitionEndConformance": 6,
+          "validateResultExpressionMembershipOwningType": 1,
+          "validateReturnParameterMembershipOwningType": 33,
+          "validateSubsettingConstantConformance": 6,
+          "validateSubsettingUniquenessConformance": 6,
+          "validateTypeAtMostOneConjugator": 108,
+          "validateTypeDifferencingTypesNotSelf": 108,
+          "validateTypeIntersectingTypesNotSelf": 108,
+          "validateTypeOwnedDifferencingNotOne": 108,
+          "validateTypeOwnedIntersectingNotOne": 108,
+          "validateTypeOwnedMultiplicity": 108,
+          "validateTypeOwnedUnioningNotOne": 108,
+          "validateTypeUnioningTypesNotSelf": 108
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "19e20130-43ab-5fe6-9f75-f86caec6d743",
+      "mismatched_endpoint_count": 0,
+      "query_count": 1027,
+      "recovery_count": 0,
+      "reference_count": 38,
+      "resolution_status": "complete",
+      "sha256": "8d8359beb4c4613ded0abb780a890ccafa0a4aaa720a22334f602ca38301b92e",
+      "source_coverage_percent": 100,
+      "source_revision_id": "6123528d-25ea-5ae9-a2c5-8f0d98a7b1d9",
+      "syntax_nodes": 784,
+      "syntax_status": "parsed",
+      "tokens": 489,
+      "unevaluated_expression_count": 34,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 39,
+      "canonical_relationship_count": 25,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 0,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "963e008b-f05c-5723-a389-d5dc968ec98e",
+      "exact_source_preservation": true,
+      "file": "Kernel Data Type Library/ScalarValues.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "validateDataTypeSpecialization": 11,
+          "validateElementIsImpliedIncluded": 39,
+          "validateNamespaceDistinguishibility": 13,
+          "validateTypeAtMostOneConjugator": 11,
+          "validateTypeDifferencingTypesNotSelf": 11,
+          "validateTypeIntersectingTypesNotSelf": 11,
+          "validateTypeOwnedDifferencingNotOne": 11,
+          "validateTypeOwnedIntersectingNotOne": 11,
+          "validateTypeOwnedMultiplicity": 11,
+          "validateTypeOwnedUnioningNotOne": 11,
+          "validateTypeUnioningTypesNotSelf": 11
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "19e20130-43ab-5fe6-9f75-f86caec6d743",
+      "mismatched_endpoint_count": 0,
+      "query_count": 96,
+      "recovery_count": 0,
+      "reference_count": 12,
+      "resolution_status": "complete",
+      "sha256": "4db25ce00dd170fd67261f6e7e21a2616bda15d233579dc5fb3193aaf61fa5a5",
+      "source_coverage_percent": 100,
+      "source_revision_id": "8eb30012-e31a-5dcb-8d2d-87f378436658",
+      "syntax_nodes": 191,
+      "syntax_status": "parsed",
+      "tokens": 130,
+      "unevaluated_expression_count": 0,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 66,
+      "canonical_relationship_count": 42,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 3,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "94cc230b-1b20-5e71-9e35-301bb21ce7f1",
+      "exact_source_preservation": true,
+      "file": "Kernel Data Type Library/VectorValues.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 11,
+          "checkFeatureSubobjectSpecialization": 11,
+          "checkFeatureSuboccurrenceSpecialization": 11,
+          "checkStepEnclosedPerformanceSpecialization": 11,
+          "checkStepOwnedPerformanceSpecialization": 11,
+          "checkStepSubperformanceSpecialization": 11,
+          "validateDataTypeSpecialization": 5,
+          "validateElementIsImpliedIncluded": 66,
+          "validateExpressionResultExpressionMembership": 3,
+          "validateExpressionResultParameterMembership": 3,
+          "validateFeatureChainingFeatureNotOne": 11,
+          "validateFeatureChainingFeaturesNotSelf": 11,
+          "validateFeatureConstantIsVariable": 11,
+          "validateFeatureEndIsConstant": 11,
+          "validateFeatureEndNoDirection": 11,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 11,
+          "validateFeatureOwnedCrossSubsetting": 11,
+          "validateFeatureOwnedReferenceSubsetting": 11,
+          "validateFeaturePortionNotVariable": 11,
+          "validateNamespaceDistinguishibility": 18,
+          "validateParameterMembershipOwningType": 3,
+          "validateParameterMembershipParameterDirection": 3,
+          "validateRedefinitionEndConformance": 4,
+          "validateReturnParameterMembershipOwningType": 3,
+          "validateSubsettingConstantConformance": 4,
+          "validateSubsettingUniquenessConformance": 4,
+          "validateTypeAtMostOneConjugator": 16,
+          "validateTypeDifferencingTypesNotSelf": 16,
+          "validateTypeIntersectingTypesNotSelf": 16,
+          "validateTypeOwnedDifferencingNotOne": 16,
+          "validateTypeOwnedIntersectingNotOne": 16,
+          "validateTypeOwnedMultiplicity": 16,
+          "validateTypeOwnedUnioningNotOne": 16,
+          "validateTypeUnioningTypesNotSelf": 16
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "19e20130-43ab-5fe6-9f75-f86caec6d743",
+      "mismatched_endpoint_count": 0,
+      "query_count": 170,
+      "recovery_count": 0,
+      "reference_count": 19,
+      "resolution_status": "complete",
+      "sha256": "7b22f8867e1cf46ac6a8226175db4405f6c29f047b3d6ad54a044fef3ce683dc",
+      "source_coverage_percent": 100,
+      "source_revision_id": "2f8fe50c-931c-54da-b8ca-371055fa5db4",
+      "syntax_nodes": 267,
+      "syntax_status": "parsed",
+      "tokens": 187,
+      "unevaluated_expression_count": 3,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 520,
+      "canonical_relationship_count": 284,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 84,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "44f799bb-64d1-574e-8bb9-1e62ceffc189",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/BaseFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 218,
+          "checkFeatureSubobjectSpecialization": 218,
+          "checkFeatureSuboccurrenceSpecialization": 218,
+          "checkStepEnclosedPerformanceSpecialization": 218,
+          "checkStepOwnedPerformanceSpecialization": 218,
+          "checkStepSubperformanceSpecialization": 218,
+          "validateBehaviorSpecialization": 15,
+          "validateClassSpecialization": 15,
+          "validateElementIsImpliedIncluded": 520,
+          "validateExpressionResultExpressionMembership": 69,
+          "validateExpressionResultParameterMembership": 69,
+          "validateFeatureChainingFeatureNotOne": 218,
+          "validateFeatureChainingFeaturesNotSelf": 218,
+          "validateFeatureConstantIsVariable": 218,
+          "validateFeatureEndIsConstant": 218,
+          "validateFeatureEndNoDirection": 218,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 218,
+          "validateFeatureOwnedCrossSubsetting": 218,
+          "validateFeatureOwnedReferenceSubsetting": 218,
+          "validateFeaturePortionNotVariable": 218,
+          "validateFeatureReferenceExpressionReferentIsFeature": 4,
+          "validateFeatureReferenceExpressionResult": 4,
+          "validateFunctionResultExpressionMembership": 15,
+          "validateFunctionResultParameterMembership": 15,
+          "validateNamespaceDistinguishibility": 235,
+          "validateParameterMembershipOwningType": 90,
+          "validateParameterMembershipParameterDirection": 90,
+          "validateReturnParameterMembershipOwningType": 84,
+          "validateTypeAtMostOneConjugator": 233,
+          "validateTypeDifferencingTypesNotSelf": 233,
+          "validateTypeIntersectingTypesNotSelf": 233,
+          "validateTypeOwnedDifferencingNotOne": 233,
+          "validateTypeOwnedIntersectingNotOne": 233,
+          "validateTypeOwnedMultiplicity": 233,
+          "validateTypeOwnedUnioningNotOne": 233,
+          "validateTypeUnioningTypesNotSelf": 233
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2123,
+      "recovery_count": 0,
+      "reference_count": 49,
+      "resolution_status": "complete",
+      "sha256": "c7700f36c786ff25796eb37d321a7a85f5f67b785e08a548c1cf4cd207c8b27f",
+      "source_coverage_percent": 100,
+      "source_revision_id": "724351d3-f15a-5224-9fbe-90d356a11cd9",
+      "syntax_nodes": 1345,
+      "syntax_status": "parsed",
+      "tokens": 718,
+      "unevaluated_expression_count": 84,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 196,
+      "canonical_relationship_count": 110,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 27,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "cce8cfde-ddbf-5e08-91aa-b0d18a25aa10",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/BooleanFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 76,
+          "checkFeatureSubobjectSpecialization": 76,
+          "checkFeatureSuboccurrenceSpecialization": 76,
+          "checkStepEnclosedPerformanceSpecialization": 76,
+          "checkStepOwnedPerformanceSpecialization": 76,
+          "checkStepSubperformanceSpecialization": 76,
+          "validateBehaviorSpecialization": 7,
+          "validateClassSpecialization": 7,
+          "validateElementIsImpliedIncluded": 196,
+          "validateExpressionResultExpressionMembership": 20,
+          "validateExpressionResultParameterMembership": 20,
+          "validateFeatureChainingFeatureNotOne": 76,
+          "validateFeatureChainingFeaturesNotSelf": 76,
+          "validateFeatureConstantIsVariable": 76,
+          "validateFeatureEndIsConstant": 76,
+          "validateFeatureEndNoDirection": 76,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 76,
+          "validateFeatureOwnedCrossSubsetting": 76,
+          "validateFeatureOwnedReferenceSubsetting": 76,
+          "validateFeaturePortionNotVariable": 76,
+          "validateFunctionResultExpressionMembership": 7,
+          "validateFunctionResultParameterMembership": 7,
+          "validateNamespaceDistinguishibility": 85,
+          "validateParameterMembershipOwningType": 27,
+          "validateParameterMembershipParameterDirection": 27,
+          "validateReturnParameterMembershipOwningType": 27,
+          "validateTypeAtMostOneConjugator": 83,
+          "validateTypeDifferencingTypesNotSelf": 83,
+          "validateTypeIntersectingTypesNotSelf": 83,
+          "validateTypeOwnedDifferencingNotOne": 83,
+          "validateTypeOwnedIntersectingNotOne": 83,
+          "validateTypeOwnedMultiplicity": 83,
+          "validateTypeOwnedUnioningNotOne": 83,
+          "validateTypeUnioningTypesNotSelf": 83
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 765,
+      "recovery_count": 0,
+      "reference_count": 25,
+      "resolution_status": "complete",
+      "sha256": "f836553db8e0ab1fb782043090198bdcd33ab6f168773e099fa2e192646ecc46",
+      "source_coverage_percent": 100,
+      "source_revision_id": "54737768-87fe-5b85-a02c-0ce65ee9d6a8",
+      "syntax_nodes": 580,
+      "syntax_status": "parsed",
+      "tokens": 312,
+      "unevaluated_expression_count": 27,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 918,
+      "canonical_relationship_count": 510,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              1869,
+              1877
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 144,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "f0ac7ee0-3bfc-5612-95f5-55b90a0d192f",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/CollectionFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 393,
+          "checkFeatureSubobjectSpecialization": 393,
+          "checkFeatureSuboccurrenceSpecialization": 393,
+          "checkStepEnclosedPerformanceSpecialization": 393,
+          "checkStepOwnedPerformanceSpecialization": 393,
+          "checkStepSubperformanceSpecialization": 393,
+          "validateBehaviorSpecialization": 12,
+          "validateClassSpecialization": 12,
+          "validateElementIsImpliedIncluded": 918,
+          "validateExpressionResultExpressionMembership": 132,
+          "validateExpressionResultParameterMembership": 132,
+          "validateFeatureChainingFeatureNotOne": 393,
+          "validateFeatureChainingFeaturesNotSelf": 393,
+          "validateFeatureConstantIsVariable": 393,
+          "validateFeatureEndIsConstant": 393,
+          "validateFeatureEndNoDirection": 393,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 393,
+          "validateFeatureOwnedCrossSubsetting": 393,
+          "validateFeatureOwnedReferenceSubsetting": 393,
+          "validateFeaturePortionNotVariable": 393,
+          "validateFeatureReferenceExpressionReferentIsFeature": 41,
+          "validateFeatureReferenceExpressionResult": 41,
+          "validateFunctionResultExpressionMembership": 12,
+          "validateFunctionResultParameterMembership": 12,
+          "validateNamespaceDistinguishibility": 407,
+          "validateParameterMembershipOwningType": 205,
+          "validateParameterMembershipParameterDirection": 205,
+          "validateResultExpressionMembershipOwningType": 2,
+          "validateReturnParameterMembershipOwningType": 143,
+          "validateTypeAtMostOneConjugator": 405,
+          "validateTypeDifferencingTypesNotSelf": 405,
+          "validateTypeIntersectingTypesNotSelf": 405,
+          "validateTypeOwnedDifferencingNotOne": 405,
+          "validateTypeOwnedIntersectingNotOne": 405,
+          "validateTypeOwnedMultiplicity": 405,
+          "validateTypeOwnedUnioningNotOne": 405,
+          "validateTypeUnioningTypesNotSelf": 405
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 3731,
+      "recovery_count": 0,
+      "reference_count": 103,
+      "resolution_status": "complete",
+      "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+      "source_coverage_percent": 100,
+      "source_revision_id": "5f59aa26-5fd8-5032-ae38-9031f09860fb",
+      "syntax_nodes": 1956,
+      "syntax_status": "parsed",
+      "tokens": 789,
+      "unevaluated_expression_count": 144,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 712,
+      "canonical_relationship_count": 394,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 106,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "b703fd93-ee4f-5106-a368-781522382be4",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/ComplexFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 296,
+          "checkFeatureSubobjectSpecialization": 296,
+          "checkFeatureSuboccurrenceSpecialization": 296,
+          "checkStepEnclosedPerformanceSpecialization": 296,
+          "checkStepOwnedPerformanceSpecialization": 296,
+          "checkStepSubperformanceSpecialization": 296,
+          "validateBehaviorSpecialization": 19,
+          "validateClassSpecialization": 19,
+          "validateElementIsImpliedIncluded": 712,
+          "validateExpressionResultExpressionMembership": 87,
+          "validateExpressionResultParameterMembership": 87,
+          "validateFeatureChainingFeatureNotOne": 296,
+          "validateFeatureChainingFeaturesNotSelf": 296,
+          "validateFeatureConstantIsVariable": 296,
+          "validateFeatureEndIsConstant": 296,
+          "validateFeatureEndNoDirection": 296,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 296,
+          "validateFeatureOwnedCrossSubsetting": 296,
+          "validateFeatureOwnedReferenceSubsetting": 296,
+          "validateFeaturePortionNotVariable": 296,
+          "validateFeatureReferenceExpressionReferentIsFeature": 8,
+          "validateFeatureReferenceExpressionResult": 8,
+          "validateFunctionResultExpressionMembership": 19,
+          "validateFunctionResultParameterMembership": 19,
+          "validateNamespaceDistinguishibility": 317,
+          "validateParameterMembershipOwningType": 130,
+          "validateParameterMembershipParameterDirection": 130,
+          "validateReturnParameterMembershipOwningType": 106,
+          "validateTypeAtMostOneConjugator": 315,
+          "validateTypeDifferencingTypesNotSelf": 315,
+          "validateTypeIntersectingTypesNotSelf": 315,
+          "validateTypeOwnedDifferencingNotOne": 315,
+          "validateTypeOwnedIntersectingNotOne": 315,
+          "validateTypeOwnedMultiplicity": 315,
+          "validateTypeOwnedUnioningNotOne": 315,
+          "validateTypeUnioningTypesNotSelf": 315
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2881,
+      "recovery_count": 0,
+      "reference_count": 77,
+      "resolution_status": "complete",
+      "sha256": "cdb8ab38b5937f3716d66e2c71d6811d2ae7df08c1704f4dce7a815be1c01563",
+      "source_coverage_percent": 100,
+      "source_revision_id": "6fbd46b7-aacb-5bfe-a180-9a7d56b745ec",
+      "syntax_nodes": 1856,
+      "syntax_status": "parsed",
+      "tokens": 888,
+      "unevaluated_expression_count": 106,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 1070,
+      "canonical_relationship_count": 579,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 182,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "c94a050e-18a5-55ca-bb9f-8dd5edfd73a2",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/ControlFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 471,
+          "checkFeatureSubobjectSpecialization": 471,
+          "checkFeatureSuboccurrenceSpecialization": 471,
+          "checkStepEnclosedPerformanceSpecialization": 471,
+          "checkStepOwnedPerformanceSpecialization": 471,
+          "checkStepSubperformanceSpecialization": 471,
+          "validateBehaviorSpecialization": 17,
+          "validateClassSpecialization": 17,
+          "validateElementIsImpliedIncluded": 1070,
+          "validateExpressionResultExpressionMembership": 165,
+          "validateExpressionResultParameterMembership": 165,
+          "validateFeatureChainingFeatureNotOne": 471,
+          "validateFeatureChainingFeaturesNotSelf": 471,
+          "validateFeatureConstantIsVariable": 471,
+          "validateFeatureEndIsConstant": 471,
+          "validateFeatureEndNoDirection": 471,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 471,
+          "validateFeatureOwnedCrossSubsetting": 471,
+          "validateFeatureOwnedReferenceSubsetting": 471,
+          "validateFeaturePortionNotVariable": 471,
+          "validateFeatureReferenceExpressionReferentIsFeature": 18,
+          "validateFeatureReferenceExpressionResult": 18,
+          "validateFunctionResultExpressionMembership": 17,
+          "validateFunctionResultParameterMembership": 17,
+          "validateNamespaceDistinguishibility": 490,
+          "validateParameterMembershipOwningType": 199,
+          "validateParameterMembershipParameterDirection": 199,
+          "validateResultExpressionMembershipOwningType": 6,
+          "validateReturnParameterMembershipOwningType": 181,
+          "validateTypeAtMostOneConjugator": 488,
+          "validateTypeDifferencingTypesNotSelf": 488,
+          "validateTypeIntersectingTypesNotSelf": 488,
+          "validateTypeOwnedDifferencingNotOne": 488,
+          "validateTypeOwnedIntersectingNotOne": 488,
+          "validateTypeOwnedMultiplicity": 488,
+          "validateTypeOwnedUnioningNotOne": 488,
+          "validateTypeUnioningTypesNotSelf": 488
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 4454,
+      "recovery_count": 0,
+      "reference_count": 89,
+      "resolution_status": "complete",
+      "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+      "source_coverage_percent": 100,
+      "source_revision_id": "60d7482f-6bee-5bc4-b569-f5860428b79f",
+      "syntax_nodes": 2483,
+      "syntax_status": "parsed",
+      "tokens": 1297,
+      "unevaluated_expression_count": 182,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 647,
+      "canonical_relationship_count": 357,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 92,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "479e60ce-ba5b-57fb-bf65-e91c6a963362",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/DataFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 266,
+          "checkFeatureSubobjectSpecialization": 266,
+          "checkFeatureSuboccurrenceSpecialization": 266,
+          "checkStepEnclosedPerformanceSpecialization": 266,
+          "checkStepOwnedPerformanceSpecialization": 266,
+          "checkStepSubperformanceSpecialization": 266,
+          "validateBehaviorSpecialization": 21,
+          "validateClassSpecialization": 21,
+          "validateElementIsImpliedIncluded": 647,
+          "validateExpressionResultExpressionMembership": 71,
+          "validateExpressionResultParameterMembership": 71,
+          "validateFeatureChainingFeatureNotOne": 266,
+          "validateFeatureChainingFeaturesNotSelf": 266,
+          "validateFeatureConstantIsVariable": 266,
+          "validateFeatureEndIsConstant": 266,
+          "validateFeatureEndNoDirection": 266,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 266,
+          "validateFeatureOwnedCrossSubsetting": 266,
+          "validateFeatureOwnedReferenceSubsetting": 266,
+          "validateFeaturePortionNotVariable": 266,
+          "validateFeatureReferenceExpressionReferentIsFeature": 2,
+          "validateFeatureReferenceExpressionResult": 2,
+          "validateFunctionResultExpressionMembership": 21,
+          "validateFunctionResultParameterMembership": 21,
+          "validateNamespaceDistinguishibility": 289,
+          "validateParameterMembershipOwningType": 94,
+          "validateParameterMembershipParameterDirection": 94,
+          "validateReturnParameterMembershipOwningType": 92,
+          "validateTypeAtMostOneConjugator": 287,
+          "validateTypeDifferencingTypesNotSelf": 287,
+          "validateTypeIntersectingTypesNotSelf": 287,
+          "validateTypeOwnedDifferencingNotOne": 287,
+          "validateTypeOwnedIntersectingNotOne": 287,
+          "validateTypeOwnedMultiplicity": 287,
+          "validateTypeOwnedUnioningNotOne": 287,
+          "validateTypeUnioningTypesNotSelf": 287
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2616,
+      "recovery_count": 0,
+      "reference_count": 68,
+      "resolution_status": "complete",
+      "sha256": "896b81cd660948084efd0ee9ebc9125a1588b1e2d360bdebb03430d0317b7b5b",
+      "source_coverage_percent": 100,
+      "source_revision_id": "e5697eb6-0a8e-5c78-9c89-e7d55dd3c5c3",
+      "syntax_nodes": 1856,
+      "syntax_status": "parsed",
+      "tokens": 935,
+      "unevaluated_expression_count": 92,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 644,
+      "canonical_relationship_count": 362,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 91,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "03e75094-2ba8-5a83-b3a1-afaff4fcc75e",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/IntegerFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 258,
+          "checkFeatureSubobjectSpecialization": 258,
+          "checkFeatureSuboccurrenceSpecialization": 258,
+          "checkStepEnclosedPerformanceSpecialization": 258,
+          "checkStepOwnedPerformanceSpecialization": 258,
+          "checkStepSubperformanceSpecialization": 258,
+          "validateBehaviorSpecialization": 21,
+          "validateClassSpecialization": 21,
+          "validateElementIsImpliedIncluded": 644,
+          "validateExpressionResultExpressionMembership": 70,
+          "validateExpressionResultParameterMembership": 70,
+          "validateFeatureChainingFeatureNotOne": 258,
+          "validateFeatureChainingFeaturesNotSelf": 258,
+          "validateFeatureConstantIsVariable": 258,
+          "validateFeatureEndIsConstant": 258,
+          "validateFeatureEndNoDirection": 258,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 258,
+          "validateFeatureOwnedCrossSubsetting": 258,
+          "validateFeatureOwnedReferenceSubsetting": 258,
+          "validateFeaturePortionNotVariable": 258,
+          "validateFeatureReferenceExpressionReferentIsFeature": 2,
+          "validateFeatureReferenceExpressionResult": 2,
+          "validateFunctionResultExpressionMembership": 21,
+          "validateFunctionResultParameterMembership": 21,
+          "validateNamespaceDistinguishibility": 281,
+          "validateParameterMembershipOwningType": 95,
+          "validateParameterMembershipParameterDirection": 95,
+          "validateReturnParameterMembershipOwningType": 91,
+          "validateTypeAtMostOneConjugator": 279,
+          "validateTypeDifferencingTypesNotSelf": 279,
+          "validateTypeIntersectingTypesNotSelf": 279,
+          "validateTypeOwnedDifferencingNotOne": 279,
+          "validateTypeOwnedIntersectingNotOne": 279,
+          "validateTypeOwnedMultiplicity": 279,
+          "validateTypeOwnedUnioningNotOne": 279,
+          "validateTypeUnioningTypesNotSelf": 279
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2557,
+      "recovery_count": 0,
+      "reference_count": 81,
+      "resolution_status": "complete",
+      "sha256": "3da7c23ee95290d768dae67e75287122d5512d054c0f9ca57b78a8aab81ee309",
+      "source_coverage_percent": 100,
+      "source_revision_id": "ef2022bc-c4af-57c3-89b7-cb517c17d995",
+      "syntax_nodes": 1845,
+      "syntax_status": "parsed",
+      "tokens": 951,
+      "unevaluated_expression_count": 91,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 389,
+      "canonical_relationship_count": 219,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 53,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "40e5880e-4055-5a56-9bee-50339a934d2a",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/NaturalFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 154,
+          "checkFeatureSubobjectSpecialization": 154,
+          "checkFeatureSuboccurrenceSpecialization": 154,
+          "checkStepEnclosedPerformanceSpecialization": 154,
+          "checkStepOwnedPerformanceSpecialization": 154,
+          "checkStepSubperformanceSpecialization": 154,
+          "validateBehaviorSpecialization": 13,
+          "validateClassSpecialization": 13,
+          "validateElementIsImpliedIncluded": 389,
+          "validateExpressionResultExpressionMembership": 40,
+          "validateExpressionResultParameterMembership": 40,
+          "validateFeatureChainingFeatureNotOne": 154,
+          "validateFeatureChainingFeaturesNotSelf": 154,
+          "validateFeatureConstantIsVariable": 154,
+          "validateFeatureEndIsConstant": 154,
+          "validateFeatureEndNoDirection": 154,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 154,
+          "validateFeatureOwnedCrossSubsetting": 154,
+          "validateFeatureOwnedReferenceSubsetting": 154,
+          "validateFeaturePortionNotVariable": 154,
+          "validateFunctionResultExpressionMembership": 13,
+          "validateFunctionResultParameterMembership": 13,
+          "validateNamespaceDistinguishibility": 169,
+          "validateParameterMembershipOwningType": 53,
+          "validateParameterMembershipParameterDirection": 53,
+          "validateReturnParameterMembershipOwningType": 53,
+          "validateTypeAtMostOneConjugator": 167,
+          "validateTypeDifferencingTypesNotSelf": 167,
+          "validateTypeIntersectingTypesNotSelf": 167,
+          "validateTypeOwnedDifferencingNotOne": 167,
+          "validateTypeOwnedIntersectingNotOne": 167,
+          "validateTypeOwnedMultiplicity": 167,
+          "validateTypeOwnedUnioningNotOne": 167,
+          "validateTypeUnioningTypesNotSelf": 167
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 1534,
+      "recovery_count": 0,
+      "reference_count": 50,
+      "resolution_status": "complete",
+      "sha256": "f83daf1bbcf124fb9c535273c3c536d08424031991013f2f6c563706afde92ae",
+      "source_coverage_percent": 100,
+      "source_revision_id": "4d1aa1e9-3436-5f72-b835-e6e8ff5d7de0",
+      "syntax_nodes": 1149,
+      "syntax_status": "parsed",
+      "tokens": 600,
+      "unevaluated_expression_count": 53,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 663,
+      "canonical_relationship_count": 372,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              2526,
+              2546
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              2699,
+              2718
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 97,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "4abde1ff-74aa-5258-8226-478cb4204d69",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/NumericalFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 268,
+          "checkFeatureSubobjectSpecialization": 268,
+          "checkFeatureSuboccurrenceSpecialization": 268,
+          "checkStepEnclosedPerformanceSpecialization": 268,
+          "checkStepOwnedPerformanceSpecialization": 268,
+          "checkStepSubperformanceSpecialization": 268,
+          "validateBehaviorSpecialization": 20,
+          "validateClassSpecialization": 20,
+          "validateElementIsImpliedIncluded": 663,
+          "validateExpressionResultExpressionMembership": 77,
+          "validateExpressionResultParameterMembership": 77,
+          "validateFeatureChainingFeatureNotOne": 268,
+          "validateFeatureChainingFeaturesNotSelf": 268,
+          "validateFeatureConstantIsVariable": 268,
+          "validateFeatureEndIsConstant": 268,
+          "validateFeatureEndNoDirection": 268,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 268,
+          "validateFeatureOwnedCrossSubsetting": 268,
+          "validateFeatureOwnedReferenceSubsetting": 268,
+          "validateFeaturePortionNotVariable": 268,
+          "validateFeatureReferenceExpressionReferentIsFeature": 10,
+          "validateFeatureReferenceExpressionResult": 10,
+          "validateFunctionResultExpressionMembership": 20,
+          "validateFunctionResultParameterMembership": 20,
+          "validateNamespaceDistinguishibility": 290,
+          "validateParameterMembershipOwningType": 103,
+          "validateParameterMembershipParameterDirection": 103,
+          "validateResultExpressionMembershipOwningType": 2,
+          "validateReturnParameterMembershipOwningType": 95,
+          "validateTypeAtMostOneConjugator": 288,
+          "validateTypeDifferencingTypesNotSelf": 288,
+          "validateTypeIntersectingTypesNotSelf": 288,
+          "validateTypeOwnedDifferencingNotOne": 288,
+          "validateTypeOwnedIntersectingNotOne": 288,
+          "validateTypeOwnedMultiplicity": 288,
+          "validateTypeOwnedUnioningNotOne": 288,
+          "validateTypeUnioningTypesNotSelf": 288
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2641,
+      "recovery_count": 0,
+      "reference_count": 82,
+      "resolution_status": "complete",
+      "sha256": "ac1f12fc2880a2017a2d4caa6e8f839e0b6bc72b92b154a3db13b14fdd0caa93",
+      "source_coverage_percent": 100,
+      "source_revision_id": "a10c9752-c9b8-59de-be5e-27fc9ee831a8",
+      "syntax_nodes": 1845,
+      "syntax_status": "parsed",
+      "tokens": 936,
+      "unevaluated_expression_count": 97,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 527,
+      "canonical_relationship_count": 307,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 66,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "ac877498-e84f-5b6e-8007-760e663ca5fc",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/OccurrenceFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 206,
+          "checkFeatureSubobjectSpecialization": 206,
+          "checkFeatureSuboccurrenceSpecialization": 206,
+          "checkStepEnclosedPerformanceSpecialization": 206,
+          "checkStepOwnedPerformanceSpecialization": 206,
+          "checkStepSubperformanceSpecialization": 206,
+          "validateBehaviorSpecialization": 8,
+          "validateClassSpecialization": 8,
+          "validateElementIsImpliedIncluded": 527,
+          "validateEndFeatureMembershipIsEnd": 10,
+          "validateExpressionResultExpressionMembership": 60,
+          "validateExpressionResultParameterMembership": 60,
+          "validateFeatureChainingFeatureNotOne": 206,
+          "validateFeatureChainingFeaturesNotSelf": 206,
+          "validateFeatureConstantIsVariable": 206,
+          "validateFeatureEndIsConstant": 206,
+          "validateFeatureEndNoDirection": 206,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 206,
+          "validateFeatureOwnedCrossSubsetting": 206,
+          "validateFeatureOwnedReferenceSubsetting": 206,
+          "validateFeaturePortionNotVariable": 206,
+          "validateFeatureReferenceExpressionReferentIsFeature": 20,
+          "validateFeatureReferenceExpressionResult": 20,
+          "validateFunctionResultExpressionMembership": 6,
+          "validateFunctionResultParameterMembership": 6,
+          "validateNamespaceDistinguishibility": 216,
+          "validateParameterMembershipOwningType": 74,
+          "validateParameterMembershipParameterDirection": 74,
+          "validateReturnParameterMembershipOwningType": 66,
+          "validateSubsettingConstantConformance": 10,
+          "validateSubsettingUniquenessConformance": 10,
+          "validateTypeAtMostOneConjugator": 214,
+          "validateTypeDifferencingTypesNotSelf": 214,
+          "validateTypeIntersectingTypesNotSelf": 214,
+          "validateTypeOwnedDifferencingNotOne": 214,
+          "validateTypeOwnedIntersectingNotOne": 214,
+          "validateTypeOwnedMultiplicity": 214,
+          "validateTypeOwnedUnioningNotOne": 214,
+          "validateTypeUnioningTypesNotSelf": 214
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2011,
+      "recovery_count": 0,
+      "reference_count": 78,
+      "resolution_status": "complete",
+      "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+      "source_coverage_percent": 100,
+      "source_revision_id": "317934a5-74f7-51a0-8bc9-5f6dac68e76f",
+      "syntax_nodes": 1507,
+      "syntax_status": "parsed",
+      "tokens": 802,
+      "unevaluated_expression_count": 66,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 746,
+      "canonical_relationship_count": 418,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 106,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "efd4186c-60ae-506d-a160-e1b3df452631",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/RationalFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 300,
+          "checkFeatureSubobjectSpecialization": 300,
+          "checkFeatureSuboccurrenceSpecialization": 300,
+          "checkStepEnclosedPerformanceSpecialization": 300,
+          "checkStepOwnedPerformanceSpecialization": 300,
+          "checkStepSubperformanceSpecialization": 300,
+          "validateBehaviorSpecialization": 25,
+          "validateClassSpecialization": 25,
+          "validateElementIsImpliedIncluded": 746,
+          "validateExpressionResultExpressionMembership": 81,
+          "validateExpressionResultParameterMembership": 81,
+          "validateFeatureChainingFeatureNotOne": 300,
+          "validateFeatureChainingFeaturesNotSelf": 300,
+          "validateFeatureConstantIsVariable": 300,
+          "validateFeatureEndIsConstant": 300,
+          "validateFeatureEndNoDirection": 300,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 300,
+          "validateFeatureOwnedCrossSubsetting": 300,
+          "validateFeatureOwnedReferenceSubsetting": 300,
+          "validateFeaturePortionNotVariable": 300,
+          "validateFeatureReferenceExpressionReferentIsFeature": 2,
+          "validateFeatureReferenceExpressionResult": 2,
+          "validateFunctionResultExpressionMembership": 25,
+          "validateFunctionResultParameterMembership": 25,
+          "validateNamespaceDistinguishibility": 327,
+          "validateParameterMembershipOwningType": 114,
+          "validateParameterMembershipParameterDirection": 114,
+          "validateReturnParameterMembershipOwningType": 106,
+          "validateTypeAtMostOneConjugator": 325,
+          "validateTypeDifferencingTypesNotSelf": 325,
+          "validateTypeIntersectingTypesNotSelf": 325,
+          "validateTypeOwnedDifferencingNotOne": 325,
+          "validateTypeOwnedIntersectingNotOne": 325,
+          "validateTypeOwnedMultiplicity": 325,
+          "validateTypeOwnedUnioningNotOne": 325,
+          "validateTypeUnioningTypesNotSelf": 325
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2973,
+      "recovery_count": 0,
+      "reference_count": 91,
+      "resolution_status": "complete",
+      "sha256": "a7ef0870a5282f5dc489ab85ef424b66cd8909f5f52b2efe5f14ed1765afc768",
+      "source_coverage_percent": 100,
+      "source_revision_id": "26b29f71-3b50-5dc4-8824-d0bb7e812d85",
+      "syntax_nodes": 2130,
+      "syntax_status": "parsed",
+      "tokens": 1074,
+      "unevaluated_expression_count": 106,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 724,
+      "canonical_relationship_count": 407,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 104,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "2ff587d5-e37a-59f5-8301-f5486ba8a959",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/RealFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 288,
+          "checkFeatureSubobjectSpecialization": 288,
+          "checkFeatureSuboccurrenceSpecialization": 288,
+          "checkStepEnclosedPerformanceSpecialization": 288,
+          "checkStepOwnedPerformanceSpecialization": 288,
+          "checkStepSubperformanceSpecialization": 288,
+          "validateBehaviorSpecialization": 26,
+          "validateClassSpecialization": 26,
+          "validateElementIsImpliedIncluded": 724,
+          "validateExpressionResultExpressionMembership": 78,
+          "validateExpressionResultParameterMembership": 78,
+          "validateFeatureChainingFeatureNotOne": 288,
+          "validateFeatureChainingFeaturesNotSelf": 288,
+          "validateFeatureConstantIsVariable": 288,
+          "validateFeatureEndIsConstant": 288,
+          "validateFeatureEndNoDirection": 288,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 288,
+          "validateFeatureOwnedCrossSubsetting": 288,
+          "validateFeatureOwnedReferenceSubsetting": 288,
+          "validateFeaturePortionNotVariable": 288,
+          "validateFeatureReferenceExpressionReferentIsFeature": 3,
+          "validateFeatureReferenceExpressionResult": 3,
+          "validateFunctionResultExpressionMembership": 26,
+          "validateFunctionResultParameterMembership": 26,
+          "validateNamespaceDistinguishibility": 316,
+          "validateParameterMembershipOwningType": 108,
+          "validateParameterMembershipParameterDirection": 108,
+          "validateReturnParameterMembershipOwningType": 104,
+          "validateTypeAtMostOneConjugator": 314,
+          "validateTypeDifferencingTypesNotSelf": 314,
+          "validateTypeIntersectingTypesNotSelf": 314,
+          "validateTypeOwnedDifferencingNotOne": 314,
+          "validateTypeOwnedIntersectingNotOne": 314,
+          "validateTypeOwnedMultiplicity": 314,
+          "validateTypeOwnedUnioningNotOne": 314,
+          "validateTypeUnioningTypesNotSelf": 314
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2872,
+      "recovery_count": 0,
+      "reference_count": 91,
+      "resolution_status": "complete",
+      "sha256": "4b469aafc18d801ae733734066d3e43aa767c44a89e912cf60772933ab568a76",
+      "source_coverage_percent": 100,
+      "source_revision_id": "70375057-271b-5425-a284-6aa793e4b912",
+      "syntax_nodes": 2112,
+      "syntax_status": "parsed",
+      "tokens": 1084,
+      "unevaluated_expression_count": 104,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 570,
+      "canonical_relationship_count": 322,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 77,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "1a0d8289-3c21-5e23-99da-e24b8392d40c",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/ScalarFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 226,
+          "checkFeatureSubobjectSpecialization": 226,
+          "checkFeatureSuboccurrenceSpecialization": 226,
+          "checkStepEnclosedPerformanceSpecialization": 226,
+          "checkStepOwnedPerformanceSpecialization": 226,
+          "checkStepSubperformanceSpecialization": 226,
+          "validateBehaviorSpecialization": 19,
+          "validateClassSpecialization": 19,
+          "validateElementIsImpliedIncluded": 570,
+          "validateExpressionResultExpressionMembership": 58,
+          "validateExpressionResultParameterMembership": 58,
+          "validateFeatureChainingFeatureNotOne": 226,
+          "validateFeatureChainingFeaturesNotSelf": 226,
+          "validateFeatureConstantIsVariable": 226,
+          "validateFeatureEndIsConstant": 226,
+          "validateFeatureEndNoDirection": 226,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 226,
+          "validateFeatureOwnedCrossSubsetting": 226,
+          "validateFeatureOwnedReferenceSubsetting": 226,
+          "validateFeaturePortionNotVariable": 226,
+          "validateFunctionResultExpressionMembership": 19,
+          "validateFunctionResultParameterMembership": 19,
+          "validateNamespaceDistinguishibility": 247,
+          "validateParameterMembershipOwningType": 77,
+          "validateParameterMembershipParameterDirection": 77,
+          "validateReturnParameterMembershipOwningType": 77,
+          "validateTypeAtMostOneConjugator": 245,
+          "validateTypeDifferencingTypesNotSelf": 245,
+          "validateTypeIntersectingTypesNotSelf": 245,
+          "validateTypeOwnedDifferencingNotOne": 245,
+          "validateTypeOwnedIntersectingNotOne": 245,
+          "validateTypeOwnedMultiplicity": 245,
+          "validateTypeOwnedUnioningNotOne": 245,
+          "validateTypeUnioningTypesNotSelf": 245
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2249,
+      "recovery_count": 0,
+      "reference_count": 75,
+      "resolution_status": "complete",
+      "sha256": "3a6baf3962079a395304f0a811f3b58da09f18f91aaf76ceef5f81ebeae7a258",
+      "source_coverage_percent": 100,
+      "source_revision_id": "92bf8498-c881-59ca-a234-dcfe182d5054",
+      "syntax_nodes": 1693,
+      "syntax_status": "parsed",
+      "tokens": 920,
+      "unevaluated_expression_count": 77,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 1882,
+      "canonical_relationship_count": 1039,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 298,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "38b033af-3831-5be6-a78b-19165b1ffe88",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/SequenceFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 821,
+          "checkFeatureSubobjectSpecialization": 821,
+          "checkFeatureSuboccurrenceSpecialization": 821,
+          "checkStepEnclosedPerformanceSpecialization": 821,
+          "checkStepOwnedPerformanceSpecialization": 821,
+          "checkStepSubperformanceSpecialization": 821,
+          "validateBehaviorSpecialization": 23,
+          "validateClassSpecialization": 23,
+          "validateElementIsImpliedIncluded": 1882,
+          "validateEndFeatureMembershipIsEnd": 8,
+          "validateExpressionResultExpressionMembership": 279,
+          "validateExpressionResultParameterMembership": 279,
+          "validateFeatureChainingFeatureNotOne": 821,
+          "validateFeatureChainingFeaturesNotSelf": 821,
+          "validateFeatureConstantIsVariable": 821,
+          "validateFeatureEndIsConstant": 821,
+          "validateFeatureEndNoDirection": 821,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 821,
+          "validateFeatureOwnedCrossSubsetting": 821,
+          "validateFeatureOwnedReferenceSubsetting": 821,
+          "validateFeaturePortionNotVariable": 821,
+          "validateFeatureReferenceExpressionReferentIsFeature": 82,
+          "validateFeatureReferenceExpressionResult": 82,
+          "validateFunctionResultExpressionMembership": 19,
+          "validateFunctionResultParameterMembership": 19,
+          "validateNamespaceDistinguishibility": 846,
+          "validateParameterMembershipOwningType": 400,
+          "validateParameterMembershipParameterDirection": 400,
+          "validateRedefinitionEndConformance": 4,
+          "validateResultExpressionMembershipOwningType": 8,
+          "validateReturnParameterMembershipOwningType": 298,
+          "validateSubsettingConstantConformance": 12,
+          "validateSubsettingUniquenessConformance": 12,
+          "validateTypeAtMostOneConjugator": 844,
+          "validateTypeDifferencingTypesNotSelf": 844,
+          "validateTypeIntersectingTypesNotSelf": 844,
+          "validateTypeOwnedDifferencingNotOne": 844,
+          "validateTypeOwnedIntersectingNotOne": 844,
+          "validateTypeOwnedMultiplicity": 844,
+          "validateTypeOwnedUnioningNotOne": 844,
+          "validateTypeUnioningTypesNotSelf": 844
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 7746,
+      "recovery_count": 0,
+      "reference_count": 189,
+      "resolution_status": "complete",
+      "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+      "source_coverage_percent": 100,
+      "source_revision_id": "bdf933a7-38ca-5eb1-bd3b-93df0cdf8cb0",
+      "syntax_nodes": 4080,
+      "syntax_status": "parsed",
+      "tokens": 1699,
+      "unevaluated_expression_count": 298,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 278,
+      "canonical_relationship_count": 156,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 38,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "ed34044d-8c11-592f-a621-bbb15f579959",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/StringFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 110,
+          "checkFeatureSubobjectSpecialization": 110,
+          "checkFeatureSuboccurrenceSpecialization": 110,
+          "checkStepEnclosedPerformanceSpecialization": 110,
+          "checkStepOwnedPerformanceSpecialization": 110,
+          "checkStepSubperformanceSpecialization": 110,
+          "validateBehaviorSpecialization": 9,
+          "validateClassSpecialization": 9,
+          "validateElementIsImpliedIncluded": 278,
+          "validateExpressionResultExpressionMembership": 29,
+          "validateExpressionResultParameterMembership": 29,
+          "validateFeatureChainingFeatureNotOne": 110,
+          "validateFeatureChainingFeaturesNotSelf": 110,
+          "validateFeatureConstantIsVariable": 110,
+          "validateFeatureEndIsConstant": 110,
+          "validateFeatureEndNoDirection": 110,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 110,
+          "validateFeatureOwnedCrossSubsetting": 110,
+          "validateFeatureOwnedReferenceSubsetting": 110,
+          "validateFeaturePortionNotVariable": 110,
+          "validateFeatureReferenceExpressionReferentIsFeature": 1,
+          "validateFeatureReferenceExpressionResult": 1,
+          "validateFunctionResultExpressionMembership": 9,
+          "validateFunctionResultParameterMembership": 9,
+          "validateNamespaceDistinguishibility": 121,
+          "validateParameterMembershipOwningType": 38,
+          "validateParameterMembershipParameterDirection": 38,
+          "validateReturnParameterMembershipOwningType": 38,
+          "validateTypeAtMostOneConjugator": 119,
+          "validateTypeDifferencingTypesNotSelf": 119,
+          "validateTypeIntersectingTypesNotSelf": 119,
+          "validateTypeOwnedDifferencingNotOne": 119,
+          "validateTypeOwnedIntersectingNotOne": 119,
+          "validateTypeOwnedMultiplicity": 119,
+          "validateTypeOwnedUnioningNotOne": 119,
+          "validateTypeUnioningTypesNotSelf": 119
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 1095,
+      "recovery_count": 0,
+      "reference_count": 35,
+      "resolution_status": "complete",
+      "sha256": "b3bbcad2251f9152f4b730754ad172e9a4e52d61fbdb9bdf55b968d92fcaa831",
+      "source_coverage_percent": 100,
+      "source_revision_id": "9dfef113-ce97-5c87-a999-79e7fc6c5975",
+      "syntax_nodes": 820,
+      "syntax_status": "parsed",
+      "tokens": 421,
+      "unevaluated_expression_count": 38,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 380,
+      "canonical_relationship_count": 208,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 59,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "1f9c1504-fa52-57ed-8aee-65fc3d194614",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/TrigFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 159,
+          "checkFeatureSubobjectSpecialization": 159,
+          "checkFeatureSuboccurrenceSpecialization": 159,
+          "checkStepEnclosedPerformanceSpecialization": 159,
+          "checkStepOwnedPerformanceSpecialization": 159,
+          "checkStepSubperformanceSpecialization": 159,
+          "validateBehaviorSpecialization": 9,
+          "validateClassSpecialization": 9,
+          "validateDataTypeSpecialization": 1,
+          "validateElementIsImpliedIncluded": 380,
+          "validateExpressionResultExpressionMembership": 50,
+          "validateExpressionResultParameterMembership": 50,
+          "validateFeatureChainingFeatureNotOne": 159,
+          "validateFeatureChainingFeaturesNotSelf": 159,
+          "validateFeatureConstantIsVariable": 159,
+          "validateFeatureEndIsConstant": 159,
+          "validateFeatureEndNoDirection": 159,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 159,
+          "validateFeatureOwnedCrossSubsetting": 159,
+          "validateFeatureOwnedReferenceSubsetting": 159,
+          "validateFeaturePortionNotVariable": 159,
+          "validateFeatureReferenceExpressionReferentIsFeature": 11,
+          "validateFeatureReferenceExpressionResult": 11,
+          "validateFunctionResultExpressionMembership": 9,
+          "validateFunctionResultParameterMembership": 9,
+          "validateNamespaceDistinguishibility": 171,
+          "validateParameterMembershipOwningType": 85,
+          "validateParameterMembershipParameterDirection": 85,
+          "validateResultExpressionMembershipOwningType": 2,
+          "validateReturnParameterMembershipOwningType": 57,
+          "validateTypeAtMostOneConjugator": 169,
+          "validateTypeDifferencingTypesNotSelf": 169,
+          "validateTypeIntersectingTypesNotSelf": 169,
+          "validateTypeOwnedDifferencingNotOne": 169,
+          "validateTypeOwnedIntersectingNotOne": 169,
+          "validateTypeOwnedMultiplicity": 169,
+          "validateTypeOwnedUnioningNotOne": 169,
+          "validateTypeUnioningTypesNotSelf": 169
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 1545,
+      "recovery_count": 0,
+      "reference_count": 37,
+      "resolution_status": "complete",
+      "sha256": "04af7eb3aa5be68c60bab85097b870b3a2540e646079c642d44b6a47150b0ce1",
+      "source_coverage_percent": 100,
+      "source_revision_id": "b333cd21-ac27-5f27-8b6b-d95700669ce2",
+      "syntax_nodes": 962,
+      "syntax_status": "parsed",
+      "tokens": 407,
+      "unevaluated_expression_count": 59,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 2378,
+      "canonical_relationship_count": 1317,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [
+            {
+              "code": "KQ_AMBIGUOUS_IMPLIED_NAME",
+              "message": "Required implied redefinitions admit distinct effective names: {{\"result\"}, {\"u\"}}; KerML 1.0 8.4.2 and namingFeature do not prescribe their mutual insertion order",
+              "subject": "2e381a08-3ad4-530e-b59f-e1b349515814"
+            }
+          ],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 378,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "b30b74b4-4805-5068-9f0a-4cf5b0a5e270",
+      "exact_source_preservation": true,
+      "file": "Kernel Function Library/VectorFunctions.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 1019,
+          "checkFeatureSubobjectSpecialization": 1019,
+          "checkFeatureSuboccurrenceSpecialization": 1019,
+          "checkStepEnclosedPerformanceSpecialization": 1019,
+          "checkStepOwnedPerformanceSpecialization": 1019,
+          "checkStepSubperformanceSpecialization": 1019,
+          "validateBehaviorSpecialization": 22,
+          "validateClassSpecialization": 22,
+          "validateElementIsImpliedIncluded": 2378,
+          "validateExpressionResultExpressionMembership": 356,
+          "validateExpressionResultParameterMembership": 356,
+          "validateFeatureChainingFeatureNotOne": 1019,
+          "validateFeatureChainingFeaturesNotSelf": 1019,
+          "validateFeatureConstantIsVariable": 1019,
+          "validateFeatureEndIsConstant": 1019,
+          "validateFeatureEndNoDirection": 1019,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 1019,
+          "validateFeatureOwnedCrossSubsetting": 1019,
+          "validateFeatureOwnedReferenceSubsetting": 1019,
+          "validateFeaturePortionNotVariable": 1019,
+          "validateFeatureReferenceExpressionReferentIsFeature": 120,
+          "validateFeatureReferenceExpressionResult": 120,
+          "validateFunctionResultExpressionMembership": 22,
+          "validateFunctionResultParameterMembership": 22,
+          "validateNamespaceDistinguishibility": 1043,
+          "validateParameterMembershipOwningType": 539,
+          "validateParameterMembershipParameterDirection": 539,
+          "validateRedefinitionEndConformance": 6,
+          "validateResultExpressionMembershipOwningType": 23,
+          "validateReturnParameterMembershipOwningType": 361,
+          "validateSubsettingConstantConformance": 6,
+          "validateSubsettingUniquenessConformance": 6,
+          "validateTypeAtMostOneConjugator": 1041,
+          "validateTypeDifferencingTypesNotSelf": 1041,
+          "validateTypeIntersectingTypesNotSelf": 1041,
+          "validateTypeOwnedDifferencingNotOne": 1041,
+          "validateTypeOwnedIntersectingNotOne": 1041,
+          "validateTypeOwnedMultiplicity": 1041,
+          "validateTypeOwnedUnioningNotOne": 1041,
+          "validateTypeUnioningTypesNotSelf": 1041
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 3,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "0ae35d47-050d-504c-a7a6-c48073400003",
+      "mismatched_endpoint_count": 0,
+      "query_count": 9623,
+      "recovery_count": 0,
+      "reference_count": 255,
+      "resolution_status": "complete",
+      "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+      "source_coverage_percent": 100,
+      "source_revision_id": "26e7c948-ff2d-5e07-b118-668b38ffbe0b",
+      "syntax_nodes": 5180,
+      "syntax_status": "parsed",
+      "tokens": 1954,
+      "unevaluated_expression_count": 378,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 138,
+      "canonical_relationship_count": 75,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 16,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "e2cc3fe6-8ab4-546a-9f75-b3cc47a5208c",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Base.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 47,
+          "checkFeatureSubobjectSpecialization": 47,
+          "checkFeatureSuboccurrenceSpecialization": 47,
+          "checkStepEnclosedPerformanceSpecialization": 47,
+          "checkStepOwnedPerformanceSpecialization": 47,
+          "checkStepSubperformanceSpecialization": 47,
+          "validateDataTypeSpecialization": 1,
+          "validateElementIsImpliedIncluded": 138,
+          "validateExpressionResultExpressionMembership": 16,
+          "validateExpressionResultParameterMembership": 16,
+          "validateFeatureChainingFeatureNotOne": 47,
+          "validateFeatureChainingFeaturesNotSelf": 47,
+          "validateFeatureConstantIsVariable": 47,
+          "validateFeatureEndIsConstant": 47,
+          "validateFeatureEndNoDirection": 47,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 47,
+          "validateFeatureOwnedCrossSubsetting": 47,
+          "validateFeatureOwnedReferenceSubsetting": 47,
+          "validateFeaturePortionNotVariable": 47,
+          "validateNamespaceDistinguishibility": 51,
+          "validateParameterMembershipOwningType": 16,
+          "validateParameterMembershipParameterDirection": 16,
+          "validateRedefinitionEndConformance": 1,
+          "validateReturnParameterMembershipOwningType": 16,
+          "validateSubsettingConstantConformance": 4,
+          "validateSubsettingUniquenessConformance": 4,
+          "validateTypeAtMostOneConjugator": 49,
+          "validateTypeDifferencingTypesNotSelf": 49,
+          "validateTypeIntersectingTypesNotSelf": 49,
+          "validateTypeOwnedDifferencingNotOne": 49,
+          "validateTypeOwnedIntersectingNotOne": 49,
+          "validateTypeOwnedMultiplicity": 49,
+          "validateTypeOwnedUnioningNotOne": 49,
+          "validateTypeUnioningTypesNotSelf": 49
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 479,
+      "recovery_count": 0,
+      "reference_count": 13,
+      "resolution_status": "complete",
+      "sha256": "56df84cda67f62c63d4e79e2786fc26046cfa361a958c4fcf0843d32a5707e09",
+      "source_coverage_percent": 100,
+      "source_revision_id": "a725e616-d38d-5d44-ad34-e020203ff4c2",
+      "syntax_nodes": 383,
+      "syntax_status": "parsed",
+      "tokens": 261,
+      "unevaluated_expression_count": 16,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 512,
+      "canonical_relationship_count": 290,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 71,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "56c86fee-9d49-5177-a14c-e2070b93e7ff",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Clocks.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 199,
+          "checkFeatureSubobjectSpecialization": 199,
+          "checkFeatureSuboccurrenceSpecialization": 199,
+          "checkStepEnclosedPerformanceSpecialization": 199,
+          "checkStepOwnedPerformanceSpecialization": 199,
+          "checkStepSubperformanceSpecialization": 199,
+          "validateBehaviorSpecialization": 4,
+          "validateClassSpecialization": 7,
+          "validateElementIsImpliedIncluded": 512,
+          "validateExpressionResultExpressionMembership": 67,
+          "validateExpressionResultParameterMembership": 67,
+          "validateFeatureChainingFeatureNotOne": 199,
+          "validateFeatureChainingFeaturesNotSelf": 199,
+          "validateFeatureConstantIsVariable": 199,
+          "validateFeatureEndIsConstant": 199,
+          "validateFeatureEndNoDirection": 199,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 199,
+          "validateFeatureOwnedCrossSubsetting": 199,
+          "validateFeatureOwnedReferenceSubsetting": 199,
+          "validateFeaturePortionNotVariable": 199,
+          "validateFeatureReferenceExpressionReferentIsFeature": 24,
+          "validateFeatureReferenceExpressionResult": 24,
+          "validateFunctionResultExpressionMembership": 4,
+          "validateFunctionResultParameterMembership": 4,
+          "validateNamespaceDistinguishibility": 208,
+          "validateParameterMembershipOwningType": 103,
+          "validateParameterMembershipParameterDirection": 103,
+          "validateRedefinitionEndConformance": 2,
+          "validateResultExpressionMembershipOwningType": 7,
+          "validateReturnParameterMembershipOwningType": 67,
+          "validateStructureSpecialization": 3,
+          "validateSubsettingConstantConformance": 2,
+          "validateSubsettingUniquenessConformance": 2,
+          "validateTypeAtMostOneConjugator": 206,
+          "validateTypeDifferencingTypesNotSelf": 206,
+          "validateTypeIntersectingTypesNotSelf": 206,
+          "validateTypeOwnedDifferencingNotOne": 206,
+          "validateTypeOwnedIntersectingNotOne": 206,
+          "validateTypeOwnedMultiplicity": 206,
+          "validateTypeOwnedUnioningNotOne": 206,
+          "validateTypeUnioningTypesNotSelf": 206
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 1942,
+      "recovery_count": 0,
+      "reference_count": 69,
+      "resolution_status": "complete",
+      "sha256": "960ac0884935e308beea55c78ed11b6946c37a386eb7958ef2c913aa275ae4c7",
+      "source_coverage_percent": 100,
+      "source_revision_id": "698fd1c3-0a39-581f-a664-5e8b5143f519",
+      "syntax_nodes": 1258,
+      "syntax_status": "parsed",
+      "tokens": 560,
+      "unevaluated_expression_count": 71,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 546,
+      "canonical_relationship_count": 314,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              2638,
+              2680
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              3012,
+              3058
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              3457,
+              3503
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              4438,
+              4491
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 62,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "840f040a-99aa-5eb4-b3fe-22830f6643e5",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/ControlPerformances.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 221,
+          "checkFeatureSubobjectSpecialization": 221,
+          "checkFeatureSuboccurrenceSpecialization": 221,
+          "checkStepEnclosedPerformanceSpecialization": 221,
+          "checkStepOwnedPerformanceSpecialization": 221,
+          "checkStepSubperformanceSpecialization": 221,
+          "validateBehaviorSpecialization": 7,
+          "validateClassSpecialization": 7,
+          "validateElementIsImpliedIncluded": 546,
+          "validateEndFeatureMembershipIsEnd": 16,
+          "validateExpressionResultExpressionMembership": 62,
+          "validateExpressionResultParameterMembership": 62,
+          "validateFeatureChainingFeatureNotOne": 221,
+          "validateFeatureChainingFeaturesNotSelf": 221,
+          "validateFeatureConstantIsVariable": 221,
+          "validateFeatureEndIsConstant": 221,
+          "validateFeatureEndNoDirection": 221,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 221,
+          "validateFeatureOwnedCrossSubsetting": 221,
+          "validateFeatureOwnedReferenceSubsetting": 221,
+          "validateFeaturePortionNotVariable": 221,
+          "validateFeatureReferenceExpressionReferentIsFeature": 5,
+          "validateFeatureReferenceExpressionResult": 5,
+          "validateNamespaceDistinguishibility": 230,
+          "validateParameterMembershipOwningType": 75,
+          "validateParameterMembershipParameterDirection": 75,
+          "validateRedefinitionEndConformance": 6,
+          "validateResultExpressionMembershipOwningType": 4,
+          "validateReturnParameterMembershipOwningType": 58,
+          "validateSubsettingConstantConformance": 24,
+          "validateSubsettingUniquenessConformance": 24,
+          "validateTypeAtMostOneConjugator": 228,
+          "validateTypeDifferencingTypesNotSelf": 228,
+          "validateTypeIntersectingTypesNotSelf": 228,
+          "validateTypeOwnedDifferencingNotOne": 228,
+          "validateTypeOwnedIntersectingNotOne": 228,
+          "validateTypeOwnedMultiplicity": 228,
+          "validateTypeOwnedUnioningNotOne": 228,
+          "validateTypeUnioningTypesNotSelf": 228
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2130,
+      "recovery_count": 0,
+      "reference_count": 67,
+      "resolution_status": "complete",
+      "sha256": "31385be7dca94bd0538f011d5c8f7925626d54f96970769f0fdb28b2186a9a03",
+      "source_coverage_percent": 100,
+      "source_revision_id": "28214229-7720-5575-a5af-26149e39ca7c",
+      "syntax_nodes": 1244,
+      "syntax_status": "parsed",
+      "tokens": 645,
+      "unevaluated_expression_count": 62,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 646,
+      "canonical_relationship_count": 395,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              4331,
+              4376
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              7223,
+              7286
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 58,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "5bc48069-6f4d-51d0-9bd5-548ea09ba511",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/FeatureReferencingPerformances.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 239,
+          "checkFeatureSubobjectSpecialization": 239,
+          "checkFeatureSuboccurrenceSpecialization": 239,
+          "checkStepEnclosedPerformanceSpecialization": 239,
+          "checkStepOwnedPerformanceSpecialization": 239,
+          "checkStepSubperformanceSpecialization": 239,
+          "validateBehaviorSpecialization": 8,
+          "validateClassSpecialization": 8,
+          "validateElementIsImpliedIncluded": 646,
+          "validateEndFeatureMembershipIsEnd": 20,
+          "validateExpressionResultExpressionMembership": 57,
+          "validateExpressionResultParameterMembership": 57,
+          "validateFeatureChainingFeatureNotOne": 239,
+          "validateFeatureChainingFeaturesNotSelf": 239,
+          "validateFeatureConstantIsVariable": 239,
+          "validateFeatureEndIsConstant": 239,
+          "validateFeatureEndNoDirection": 239,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 239,
+          "validateFeatureOwnedCrossSubsetting": 239,
+          "validateFeatureOwnedReferenceSubsetting": 239,
+          "validateFeaturePortionNotVariable": 239,
+          "validateFeatureReferenceExpressionReferentIsFeature": 6,
+          "validateFeatureReferenceExpressionResult": 6,
+          "validateFunctionResultExpressionMembership": 1,
+          "validateFunctionResultParameterMembership": 1,
+          "validateNamespaceDistinguishibility": 249,
+          "validateParameterMembershipOwningType": 63,
+          "validateParameterMembershipParameterDirection": 63,
+          "validateRedefinitionEndConformance": 20,
+          "validateResultExpressionMembershipOwningType": 2,
+          "validateReturnParameterMembershipOwningType": 54,
+          "validateSubsettingConstantConformance": 44,
+          "validateSubsettingUniquenessConformance": 44,
+          "validateTypeAtMostOneConjugator": 247,
+          "validateTypeDifferencingTypesNotSelf": 247,
+          "validateTypeIntersectingTypesNotSelf": 247,
+          "validateTypeOwnedDifferencingNotOne": 247,
+          "validateTypeOwnedIntersectingNotOne": 247,
+          "validateTypeOwnedMultiplicity": 247,
+          "validateTypeOwnedUnioningNotOne": 247,
+          "validateTypeUnioningTypesNotSelf": 247
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2361,
+      "recovery_count": 0,
+      "reference_count": 124,
+      "resolution_status": "complete",
+      "sha256": "7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e",
+      "source_coverage_percent": 100,
+      "source_revision_id": "6ecdaae3-3b1f-564a-8441-42a8524f5eba",
+      "syntax_nodes": 1811,
+      "syntax_status": "parsed",
+      "tokens": 1072,
+      "unevaluated_expression_count": 58,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 3232,
+      "canonical_relationship_count": 1858,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 426,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "2a03ffc1-1cbe-567e-baa8-8cbdb71229fc",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/KerML.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 1284,
+          "checkFeatureSubobjectSpecialization": 1284,
+          "checkFeatureSuboccurrenceSpecialization": 1284,
+          "checkStepEnclosedPerformanceSpecialization": 1284,
+          "checkStepOwnedPerformanceSpecialization": 1284,
+          "checkStepSubperformanceSpecialization": 1284,
+          "validateClassSpecialization": 82,
+          "validateDataTypeSpecialization": 2,
+          "validateElementIsImpliedIncluded": 3232,
+          "validateExpressionResultExpressionMembership": 426,
+          "validateExpressionResultParameterMembership": 426,
+          "validateFeatureChainingFeatureNotOne": 1284,
+          "validateFeatureChainingFeaturesNotSelf": 1284,
+          "validateFeatureConstantIsVariable": 1284,
+          "validateFeatureEndIsConstant": 1284,
+          "validateFeatureEndNoDirection": 1284,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 1284,
+          "validateFeatureOwnedCrossSubsetting": 1284,
+          "validateFeatureOwnedReferenceSubsetting": 1284,
+          "validateFeaturePortionNotVariable": 1284,
+          "validateNamespaceDistinguishibility": 1373,
+          "validateParameterMembershipOwningType": 426,
+          "validateParameterMembershipParameterDirection": 426,
+          "validateRedefinitionEndConformance": 78,
+          "validateReturnParameterMembershipOwningType": 426,
+          "validateStructureSpecialization": 82,
+          "validateSubsettingConstantConformance": 177,
+          "validateSubsettingUniquenessConformance": 177,
+          "validateTypeAtMostOneConjugator": 1368,
+          "validateTypeDifferencingTypesNotSelf": 1368,
+          "validateTypeIntersectingTypesNotSelf": 1368,
+          "validateTypeOwnedDifferencingNotOne": 1368,
+          "validateTypeOwnedIntersectingNotOne": 1368,
+          "validateTypeOwnedMultiplicity": 1368,
+          "validateTypeOwnedUnioningNotOne": 1368,
+          "validateTypeUnioningTypesNotSelf": 1368
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 12645,
+      "recovery_count": 0,
+      "reference_count": 485,
+      "resolution_status": "complete",
+      "sha256": "8fdf4b7416e981c895cd74b75dc14b18091d13cbcaff7cdded6f9c23e2483d58",
+      "source_coverage_percent": 100,
+      "source_revision_id": "02c7f4f1-8283-5191-b51c-b3fbed4afd4e",
+      "syntax_nodes": 8744,
+      "syntax_status": "parsed",
+      "tokens": 5644,
+      "unevaluated_expression_count": 426,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 145,
+      "canonical_relationship_count": 91,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 12,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "d2644cca-61b5-5826-9f13-cb7b540aefc2",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Links.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 45,
+          "checkFeatureSubobjectSpecialization": 45,
+          "checkFeatureSuboccurrenceSpecialization": 45,
+          "checkStepEnclosedPerformanceSpecialization": 45,
+          "checkStepOwnedPerformanceSpecialization": 45,
+          "checkStepSubperformanceSpecialization": 45,
+          "validateAssociationStructureIntersection": 3,
+          "validateElementIsImpliedIncluded": 145,
+          "validateExpressionResultExpressionMembership": 12,
+          "validateExpressionResultParameterMembership": 12,
+          "validateFeatureChainingFeatureNotOne": 45,
+          "validateFeatureChainingFeaturesNotSelf": 45,
+          "validateFeatureConstantIsVariable": 45,
+          "validateFeatureEndIsConstant": 45,
+          "validateFeatureEndNoDirection": 45,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 45,
+          "validateFeatureOwnedCrossSubsetting": 45,
+          "validateFeatureOwnedReferenceSubsetting": 45,
+          "validateFeaturePortionNotVariable": 45,
+          "validateNamespaceDistinguishibility": 50,
+          "validateParameterMembershipOwningType": 12,
+          "validateParameterMembershipParameterDirection": 12,
+          "validateRedefinitionEndConformance": 7,
+          "validateReturnParameterMembershipOwningType": 12,
+          "validateSubsettingConstantConformance": 15,
+          "validateSubsettingUniquenessConformance": 15,
+          "validateTypeAtMostOneConjugator": 48,
+          "validateTypeDifferencingTypesNotSelf": 48,
+          "validateTypeIntersectingTypesNotSelf": 48,
+          "validateTypeOwnedDifferencingNotOne": 48,
+          "validateTypeOwnedIntersectingNotOne": 48,
+          "validateTypeOwnedMultiplicity": 48,
+          "validateTypeOwnedUnioningNotOne": 48,
+          "validateTypeUnioningTypesNotSelf": 48
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 477,
+      "recovery_count": 0,
+      "reference_count": 32,
+      "resolution_status": "complete",
+      "sha256": "dcf3c002717cb91f8e16f1890fdf5526f4e178ada898a189621c7d0c24b5ddc0",
+      "source_coverage_percent": 100,
+      "source_revision_id": "6652d2e2-6db3-5454-b2cc-be6e3983a035",
+      "syntax_nodes": 504,
+      "syntax_status": "parsed",
+      "tokens": 333,
+      "unevaluated_expression_count": 12,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 77,
+      "canonical_relationship_count": 45,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 6,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "dfa02f6c-1048-56c8-9ea8-8ffba377bcec",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Metaobjects.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 21,
+          "checkFeatureSubobjectSpecialization": 21,
+          "checkFeatureSuboccurrenceSpecialization": 21,
+          "checkStepEnclosedPerformanceSpecialization": 21,
+          "checkStepOwnedPerformanceSpecialization": 21,
+          "checkStepSubperformanceSpecialization": 21,
+          "validateClassSpecialization": 2,
+          "validateElementIsImpliedIncluded": 77,
+          "validateExpressionResultExpressionMembership": 6,
+          "validateExpressionResultParameterMembership": 6,
+          "validateFeatureChainingFeatureNotOne": 21,
+          "validateFeatureChainingFeaturesNotSelf": 21,
+          "validateFeatureConstantIsVariable": 21,
+          "validateFeatureEndIsConstant": 21,
+          "validateFeatureEndNoDirection": 21,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 21,
+          "validateFeatureOwnedCrossSubsetting": 21,
+          "validateFeatureOwnedReferenceSubsetting": 21,
+          "validateFeaturePortionNotVariable": 21,
+          "validateNamespaceDistinguishibility": 25,
+          "validateParameterMembershipOwningType": 6,
+          "validateParameterMembershipParameterDirection": 6,
+          "validateRedefinitionEndConformance": 2,
+          "validateReturnParameterMembershipOwningType": 6,
+          "validateStructureSpecialization": 2,
+          "validateSubsettingConstantConformance": 3,
+          "validateSubsettingUniquenessConformance": 3,
+          "validateTypeAtMostOneConjugator": 23,
+          "validateTypeDifferencingTypesNotSelf": 23,
+          "validateTypeIntersectingTypesNotSelf": 23,
+          "validateTypeOwnedDifferencingNotOne": 23,
+          "validateTypeOwnedIntersectingNotOne": 23,
+          "validateTypeOwnedMultiplicity": 23,
+          "validateTypeOwnedUnioningNotOne": 23,
+          "validateTypeUnioningTypesNotSelf": 23
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 236,
+      "recovery_count": 0,
+      "reference_count": 14,
+      "resolution_status": "complete",
+      "sha256": "983dbd85a4b183d8859326ee512fc59d991fb98a115e009e72fad21d1f9d1685",
+      "source_coverage_percent": 100,
+      "source_revision_id": "73f01c2a-0fa2-517e-812a-a86f47f5fa0c",
+      "syntax_nodes": 266,
+      "syntax_status": "parsed",
+      "tokens": 186,
+      "unevaluated_expression_count": 6,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 770,
+      "canonical_relationship_count": 458,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              3815,
+              3855
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              5039,
+              5127
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              5404,
+              5469
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              5473,
+              5569
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              5776,
+              5827
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              5831,
+              5913
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 100,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "ba00efce-196d-5065-bf42-c08f875c8dd2",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Objects.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 282,
+          "checkFeatureSubobjectSpecialization": 282,
+          "checkFeatureSuboccurrenceSpecialization": 282,
+          "checkStepEnclosedPerformanceSpecialization": 282,
+          "checkStepOwnedPerformanceSpecialization": 282,
+          "checkStepSubperformanceSpecialization": 282,
+          "validateAssociationStructureIntersection": 2,
+          "validateClassSpecialization": 11,
+          "validateElementIsImpliedIncluded": 770,
+          "validateExpressionResultExpressionMembership": 100,
+          "validateExpressionResultParameterMembership": 100,
+          "validateFeatureChainingFeatureNotOne": 282,
+          "validateFeatureChainingFeaturesNotSelf": 282,
+          "validateFeatureConstantIsVariable": 282,
+          "validateFeatureEndIsConstant": 282,
+          "validateFeatureEndNoDirection": 282,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 282,
+          "validateFeatureOwnedCrossSubsetting": 282,
+          "validateFeatureOwnedReferenceSubsetting": 282,
+          "validateFeaturePortionNotVariable": 282,
+          "validateFeatureReferenceExpressionReferentIsFeature": 28,
+          "validateFeatureReferenceExpressionResult": 28,
+          "validateNamespaceDistinguishibility": 295,
+          "validateParameterMembershipOwningType": 131,
+          "validateParameterMembershipParameterDirection": 131,
+          "validateRedefinitionEndConformance": 18,
+          "validateResultExpressionMembershipOwningType": 6,
+          "validateReturnParameterMembershipOwningType": 94,
+          "validateStructureSpecialization": 11,
+          "validateSubsettingConstantConformance": 39,
+          "validateSubsettingUniquenessConformance": 39,
+          "validateTypeAtMostOneConjugator": 293,
+          "validateTypeDifferencingTypesNotSelf": 293,
+          "validateTypeIntersectingTypesNotSelf": 293,
+          "validateTypeOwnedDifferencingNotOne": 293,
+          "validateTypeOwnedIntersectingNotOne": 293,
+          "validateTypeOwnedMultiplicity": 293,
+          "validateTypeOwnedUnioningNotOne": 293,
+          "validateTypeUnioningTypesNotSelf": 293
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2801,
+      "recovery_count": 0,
+      "reference_count": 122,
+      "resolution_status": "complete",
+      "sha256": "2b2b33dc326bd188cb8d2400aaf73cfa2546baf9d3872cfe32aa2aa51b512e0f",
+      "source_coverage_percent": 100,
+      "source_revision_id": "46ba4cdd-b4d2-5ea0-a9df-f17a0980ba72",
+      "syntax_nodes": 1919,
+      "syntax_status": "parsed",
+      "tokens": 1038,
+      "unevaluated_expression_count": 100,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 436,
+      "canonical_relationship_count": 254,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [
+            {
+              "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+              "message": "Effective owner typing is required to establish this antecedent",
+              "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+            },
+            {
+              "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+              "message": "Effective owner typing is required to establish this antecedent",
+              "subject": "7916664e-cad0-5522-91de-764b9b87abea"
+            }
+          ],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+          },
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "7916664e-cad0-5522-91de-764b9b87abea"
+          }
+        ],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 49,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "9e497777-c074-5985-914f-b3ec40c07a51",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Observation.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 163,
+          "checkFeatureSubobjectSpecialization": 163,
+          "checkFeatureSuboccurrenceSpecialization": 163,
+          "checkStepEnclosedPerformanceSpecialization": 163,
+          "checkStepOwnedPerformanceSpecialization": 163,
+          "checkStepSubperformanceSpecialization": 163,
+          "validateBehaviorSpecialization": 2,
+          "validateClassSpecialization": 5,
+          "validateElementIsImpliedIncluded": 436,
+          "validateEndFeatureMembershipIsEnd": 2,
+          "validateExpressionResultExpressionMembership": 49,
+          "validateExpressionResultParameterMembership": 49,
+          "validateFeatureChainingFeatureNotOne": 163,
+          "validateFeatureChainingFeaturesNotSelf": 163,
+          "validateFeatureConstantIsVariable": 163,
+          "validateFeatureEndIsConstant": 163,
+          "validateFeatureEndNoDirection": 163,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 163,
+          "validateFeatureOwnedCrossSubsetting": 163,
+          "validateFeatureOwnedReferenceSubsetting": 163,
+          "validateFeaturePortionNotVariable": 163,
+          "validateFeatureReferenceExpressionReferentIsFeature": 17,
+          "validateFeatureReferenceExpressionResult": 17,
+          "validateNamespaceDistinguishibility": 170,
+          "validateParameterMembershipOwningType": 61,
+          "validateParameterMembershipParameterDirection": 61,
+          "validateRedefinitionEndConformance": 10,
+          "validateResultExpressionMembershipOwningType": 2,
+          "validateReturnParameterMembershipOwningType": 46,
+          "validateStructureSpecialization": 3,
+          "validateSubsettingConstantConformance": 13,
+          "validateSubsettingUniquenessConformance": 13,
+          "validateTypeAtMostOneConjugator": 168,
+          "validateTypeDifferencingTypesNotSelf": 168,
+          "validateTypeIntersectingTypesNotSelf": 168,
+          "validateTypeOwnedDifferencingNotOne": 168,
+          "validateTypeOwnedIntersectingNotOne": 168,
+          "validateTypeOwnedMultiplicity": 168,
+          "validateTypeOwnedUnioningNotOne": 168,
+          "validateTypeUnioningTypesNotSelf": 168
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 28,
+      "incomplete_reference_count": 10,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 1604,
+      "recovery_count": 0,
+      "reference_count": 71,
+      "resolution_status": "incomplete",
+      "sha256": "603aecde2ef64d519c1bfc89bfc52f5315c05a36aa0cf86174badba5b371ddbf",
+      "source_coverage_percent": 100,
+      "source_revision_id": "f8473c09-fe96-5f0e-84bf-69b75e8cf324",
+      "syntax_nodes": 1309,
+      "syntax_status": "parsed",
+      "tokens": 723,
+      "unevaluated_expression_count": 49,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 4060,
+      "canonical_relationship_count": 2441,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [
+            {
+              "code": "KQ_CONSTRUCTION_OBLIGATION",
+              "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+              "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8"
+            },
+            {
+              "code": "KQ_CONSTRUCTION_OBLIGATION",
+              "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+              "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0"
+            },
+            {
+              "code": "KQ_CONSTRUCTION_OBLIGATION",
+              "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+              "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce"
+            },
+            {
+              "code": "KQ_CONSTRUCTION_OBLIGATION",
+              "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+              "subject": "c97c4841-b8ab-510f-b968-fc1423d577da"
+            },
+            {
+              "code": "KQ_EVIDENCE",
+              "message": "MissingRequired { element: ElementId(118303703782503689993501325105459409336), property: PropertyId(265518105109923055411423219294112123986) }",
+              "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8"
+            },
+            {
+              "code": "KQ_EVIDENCE",
+              "message": "MissingRequired { element: ElementId(136612936141172075344667242495288826864), property: PropertyId(265518105109923055411423219294112123986) }",
+              "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0"
+            },
+            {
+              "code": "KQ_EVIDENCE",
+              "message": "MissingRequired { element: ElementId(225646662370126335970712112687688131790), property: PropertyId(265518105109923055411423219294112123986) }",
+              "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce"
+            },
+            {
+              "code": "KQ_EVIDENCE",
+              "message": "MissingRequired { element: ElementId(267820137503700786351083541682787284954), property: PropertyId(265518105109923055411423219294112123986) }",
+              "subject": "c97c4841-b8ab-510f-b968-fc1423d577da"
+            },
+            {
+              "code": "KQ_REDEFINITION_ENDPOINT",
+              "message": "End conformance requires both canonical endpoints",
+              "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8"
+            },
+            {
+              "code": "KQ_REDEFINITION_ENDPOINT",
+              "message": "End conformance requires both canonical endpoints",
+              "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0"
+            },
+            {
+              "code": "KQ_REDEFINITION_ENDPOINT",
+              "message": "End conformance requires both canonical endpoints",
+              "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce"
+            },
+            {
+              "code": "KQ_REDEFINITION_ENDPOINT",
+              "message": "End conformance requires both canonical endpoints",
+              "subject": "c97c4841-b8ab-510f-b968-fc1423d577da"
+            }
+          ],
+          "structural_obligations": [
+            {
+              "actual": 0,
+              "code": "KLS_STRUCTURAL_OBLIGATION",
+              "element": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8",
+              "property": "redefinedFeature",
+              "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+              "provenance": "Declared(StandardLibrary { library: LibraryId(311171416397086604043708172772662354806) })",
+              "range": [
+                29454,
+                29460
+              ],
+              "required_lower": 1
+            },
+            {
+              "actual": 0,
+              "code": "KLS_STRUCTURAL_OBLIGATION",
+              "element": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0",
+              "property": "redefinedFeature",
+              "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+              "provenance": "Declared(StandardLibrary { library: LibraryId(311171416397086604043708172772662354806) })",
+              "range": [
+                30717,
+                30745
+              ],
+              "required_lower": 1
+            },
+            {
+              "actual": 0,
+              "code": "KLS_STRUCTURAL_OBLIGATION",
+              "element": "a9c1f765-65fb-5277-ad24-92680ffb24ce",
+              "property": "redefinedFeature",
+              "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+              "provenance": "Declared(StandardLibrary { library: LibraryId(311171416397086604043708172772662354806) })",
+              "range": [
+                29336,
+                29342
+              ],
+              "required_lower": 1
+            },
+            {
+              "actual": 0,
+              "code": "KLS_STRUCTURAL_OBLIGATION",
+              "element": "c97c4841-b8ab-510f-b968-fc1423d577da",
+              "property": "redefinedFeature",
+              "property_id": "c7c0ed4b-fe49-572e-80d8-2537bc910c52",
+              "provenance": "Declared(StandardLibrary { library: LibraryId(311171416397086604043708172772662354806) })",
+              "range": [
+                30520,
+                30548
+              ],
+              "required_lower": 1
+            }
+          ],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              3288,
+              3345
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              9950,
+              10012
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              10328,
+              10360
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              10882,
+              11004
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              12468,
+              12548
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              13140,
+              13261
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              14805,
+              14898
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              15536,
+              15628
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              18615,
+              18664
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              18669,
+              18747
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              19403,
+              19499
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              20341,
+              20388
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              20393,
+              20469
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              20713,
+              20762
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              20773,
+              20878
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              20882,
+              20945
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              22071,
+              22151
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              22807,
+              22870
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              2538,
+              2548
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              2775,
+              2785
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              3303,
+              3313
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              3332,
+              3342
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              11296,
+              11306
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              13163,
+              13173
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              13205,
+              13215
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              13239,
+              13249
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              20818,
+              20828
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              22842,
+              22852
+            ]
+          }
+        ],
+        "resolution": [
+          {
+            "code": "KLS_UNRESOLVED",
+            "message": "target at bytes 29454..29460; expression context: false",
+            "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8"
+          },
+          {
+            "code": "KLS_UNRESOLVED",
+            "message": "HappensWhile::thatOccurrence at bytes 30717..30745; expression context: false",
+            "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0"
+          },
+          {
+            "code": "KLS_UNRESOLVED",
+            "message": "source at bytes 29336..29342; expression context: false",
+            "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce"
+          },
+          {
+            "code": "KLS_UNRESOLVED",
+            "message": "HappensWhile::thisOccurrence at bytes 30520..30548; expression context: false",
+            "subject": "c97c4841-b8ab-510f-b968-fc1423d577da"
+          },
+          {
+            "code": "KQ_CONSTRUCTION_OBLIGATION",
+            "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+            "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8"
+          },
+          {
+            "code": "KQ_CONSTRUCTION_OBLIGATION",
+            "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+            "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0"
+          },
+          {
+            "code": "KQ_CONSTRUCTION_OBLIGATION",
+            "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+            "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce"
+          },
+          {
+            "code": "KQ_CONSTRUCTION_OBLIGATION",
+            "message": "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction",
+            "subject": "c97c4841-b8ab-510f-b968-fc1423d577da"
+          },
+          {
+            "code": "KQ_EVIDENCE",
+            "message": "MissingRequired { element: ElementId(118303703782503689993501325105459409336), property: PropertyId(265518105109923055411423219294112123986) }",
+            "subject": "590076ed-b5b7-56e3-be72-3a5f3a68b1b8"
+          },
+          {
+            "code": "KQ_EVIDENCE",
+            "message": "MissingRequired { element: ElementId(136612936141172075344667242495288826864), property: PropertyId(265518105109923055411423219294112123986) }",
+            "subject": "66c6b1c7-81f2-5ebf-b006-45fac1fc5bf0"
+          },
+          {
+            "code": "KQ_EVIDENCE",
+            "message": "MissingRequired { element: ElementId(225646662370126335970712112687688131790), property: PropertyId(265518105109923055411423219294112123986) }",
+            "subject": "a9c1f765-65fb-5277-ad24-92680ffb24ce"
+          },
+          {
+            "code": "KQ_EVIDENCE",
+            "message": "MissingRequired { element: ElementId(267820137503700786351083541682787284954), property: PropertyId(265518105109923055411423219294112123986) }",
+            "subject": "c97c4841-b8ab-510f-b968-fc1423d577da"
+          }
+        ],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 446,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "4a1cd77b-18ab-5c14-ac40-1edbc22d8d48",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Occurrences.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 1548,
+          "checkFeatureSubobjectSpecialization": 1548,
+          "checkFeatureSuboccurrenceSpecialization": 1548,
+          "checkStepEnclosedPerformanceSpecialization": 1548,
+          "checkStepOwnedPerformanceSpecialization": 1548,
+          "checkStepSubperformanceSpecialization": 1548,
+          "validateAssociationStructureIntersection": 21,
+          "validateBehaviorSpecialization": 1,
+          "validateClassSpecialization": 3,
+          "validateElementIsImpliedIncluded": 4060,
+          "validateEndFeatureMembershipIsEnd": 56,
+          "validateExpressionResultExpressionMembership": 445,
+          "validateExpressionResultParameterMembership": 445,
+          "validateFeatureChainingFeatureNotOne": 1548,
+          "validateFeatureChainingFeaturesNotSelf": 1548,
+          "validateFeatureConstantIsVariable": 1548,
+          "validateFeatureEndIsConstant": 1548,
+          "validateFeatureEndNoDirection": 1548,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 1548,
+          "validateFeatureOwnedCrossSubsetting": 1548,
+          "validateFeatureOwnedReferenceSubsetting": 1548,
+          "validateFeaturePortionNotVariable": 1548,
+          "validateFeatureReferenceExpressionReferentIsFeature": 73,
+          "validateFeatureReferenceExpressionResult": 73,
+          "validateFunctionResultExpressionMembership": 1,
+          "validateFunctionResultParameterMembership": 1,
+          "validateNamespaceDistinguishibility": 1574,
+          "validateParameterMembershipOwningType": 541,
+          "validateParameterMembershipParameterDirection": 541,
+          "validateRedefinitionEndConformance": 81,
+          "validateResultExpressionMembershipOwningType": 18,
+          "validateReturnParameterMembershipOwningType": 428,
+          "validateSubsettingConstantConformance": 264,
+          "validateSubsettingUniquenessConformance": 264,
+          "validateTypeAtMostOneConjugator": 1572,
+          "validateTypeDifferencingTypesNotSelf": 1572,
+          "validateTypeIntersectingTypesNotSelf": 1572,
+          "validateTypeOwnedDifferencingNotOne": 1572,
+          "validateTypeOwnedIntersectingNotOne": 1572,
+          "validateTypeOwnedMultiplicity": 1572,
+          "validateTypeOwnedUnioningNotOne": 1572,
+          "validateTypeUnioningTypesNotSelf": 1572
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 87,
+      "incomplete_reference_count": 54,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 15018,
+      "recovery_count": 0,
+      "reference_count": 725,
+      "resolution_status": "incomplete",
+      "sha256": "86eb744dac67093312fefb32d0d5858138197376d492ded4d144426226a0b0bb",
+      "source_coverage_percent": 100,
+      "source_revision_id": "5f2e42fe-8adb-52a7-974a-a54cbac87e51",
+      "syntax_nodes": 10581,
+      "syntax_status": "parsed",
+      "tokens": 5542,
+      "unevaluated_expression_count": 446,
+      "unresolved_count": 4,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 611,
+      "canonical_relationship_count": 368,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              2059,
+              2070
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              2545,
+              2556
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 79,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "e2ac0120-58d3-527a-9d9a-e141038aa999",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Performances.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 202,
+          "checkFeatureSubobjectSpecialization": 202,
+          "checkFeatureSuboccurrenceSpecialization": 202,
+          "checkStepEnclosedPerformanceSpecialization": 202,
+          "checkStepOwnedPerformanceSpecialization": 202,
+          "checkStepSubperformanceSpecialization": 202,
+          "validateAssociationStructureIntersection": 2,
+          "validateBehaviorSpecialization": 10,
+          "validateClassSpecialization": 10,
+          "validateElementIsImpliedIncluded": 611,
+          "validateEndFeatureMembershipIsEnd": 6,
+          "validateExpressionResultExpressionMembership": 70,
+          "validateExpressionResultParameterMembership": 70,
+          "validateFeatureChainingFeatureNotOne": 202,
+          "validateFeatureChainingFeaturesNotSelf": 202,
+          "validateFeatureConstantIsVariable": 202,
+          "validateFeatureEndIsConstant": 202,
+          "validateFeatureEndNoDirection": 202,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 202,
+          "validateFeatureOwnedCrossSubsetting": 202,
+          "validateFeatureOwnedReferenceSubsetting": 202,
+          "validateFeaturePortionNotVariable": 202,
+          "validateFeatureReferenceExpressionReferentIsFeature": 4,
+          "validateFeatureReferenceExpressionResult": 4,
+          "validateFunctionResultExpressionMembership": 9,
+          "validateFunctionResultParameterMembership": 9,
+          "validateNamespaceDistinguishibility": 216,
+          "validateParameterMembershipOwningType": 72,
+          "validateParameterMembershipParameterDirection": 72,
+          "validateRedefinitionEndConformance": 9,
+          "validateReturnParameterMembershipOwningType": 68,
+          "validateSubsettingConstantConformance": 38,
+          "validateSubsettingUniquenessConformance": 38,
+          "validateTypeAtMostOneConjugator": 214,
+          "validateTypeDifferencingTypesNotSelf": 214,
+          "validateTypeIntersectingTypesNotSelf": 214,
+          "validateTypeOwnedDifferencingNotOne": 214,
+          "validateTypeOwnedIntersectingNotOne": 214,
+          "validateTypeOwnedMultiplicity": 214,
+          "validateTypeOwnedUnioningNotOne": 214,
+          "validateTypeUnioningTypesNotSelf": 214
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2087,
+      "recovery_count": 0,
+      "reference_count": 116,
+      "resolution_status": "complete",
+      "sha256": "fd965e184b300737a192530de0c800cdbee236cb6220612f370400da21dfb327",
+      "source_coverage_percent": 100,
+      "source_revision_id": "39eaf608-5fd2-5784-92ad-894cd3570e86",
+      "syntax_nodes": 1875,
+      "syntax_status": "parsed",
+      "tokens": 1193,
+      "unevaluated_expression_count": 79,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 1007,
+      "canonical_relationship_count": 570,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              2374,
+              2379
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 140,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "1b2c0d3b-d225-5fb0-af67-698b794f5e80",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/SpatialFrames.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 408,
+          "checkFeatureSubobjectSpecialization": 408,
+          "checkFeatureSuboccurrenceSpecialization": 408,
+          "checkStepEnclosedPerformanceSpecialization": 408,
+          "checkStepOwnedPerformanceSpecialization": 408,
+          "checkStepSubperformanceSpecialization": 408,
+          "validateBehaviorSpecialization": 8,
+          "validateClassSpecialization": 11,
+          "validateElementIsImpliedIncluded": 1007,
+          "validateExpressionResultExpressionMembership": 132,
+          "validateExpressionResultParameterMembership": 132,
+          "validateFeatureChainingFeatureNotOne": 408,
+          "validateFeatureChainingFeaturesNotSelf": 408,
+          "validateFeatureConstantIsVariable": 408,
+          "validateFeatureEndIsConstant": 408,
+          "validateFeatureEndNoDirection": 408,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 408,
+          "validateFeatureOwnedCrossSubsetting": 408,
+          "validateFeatureOwnedReferenceSubsetting": 408,
+          "validateFeaturePortionNotVariable": 408,
+          "validateFeatureReferenceExpressionReferentIsFeature": 50,
+          "validateFeatureReferenceExpressionResult": 50,
+          "validateFunctionResultExpressionMembership": 8,
+          "validateFunctionResultParameterMembership": 8,
+          "validateNamespaceDistinguishibility": 421,
+          "validateParameterMembershipOwningType": 197,
+          "validateParameterMembershipParameterDirection": 197,
+          "validateResultExpressionMembershipOwningType": 4,
+          "validateReturnParameterMembershipOwningType": 137,
+          "validateStructureSpecialization": 3,
+          "validateTypeAtMostOneConjugator": 419,
+          "validateTypeDifferencingTypesNotSelf": 419,
+          "validateTypeIntersectingTypesNotSelf": 419,
+          "validateTypeOwnedDifferencingNotOne": 419,
+          "validateTypeOwnedIntersectingNotOne": 419,
+          "validateTypeOwnedMultiplicity": 419,
+          "validateTypeOwnedUnioningNotOne": 419,
+          "validateTypeUnioningTypesNotSelf": 419
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 3920,
+      "recovery_count": 0,
+      "reference_count": 134,
+      "resolution_status": "complete",
+      "sha256": "2a7790ebc2afacbd64eb781567906921e38eff385c917be03b090b8289353de7",
+      "source_coverage_percent": 100,
+      "source_revision_id": "97c0a433-39b1-5c6b-a170-bfe12ac8aee4",
+      "syntax_nodes": 2411,
+      "syntax_status": "parsed",
+      "tokens": 1054,
+      "unevaluated_expression_count": 140,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 1387,
+      "canonical_relationship_count": 793,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              1649,
+              1697
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              2395,
+              2458
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              2464,
+              2847
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              3431,
+              3640
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              4211,
+              4278
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              4658,
+              4777
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              2281,
+              2297
+            ]
+          },
+          {
+            "authority": "KerML 1.0 pp.95-96; validateExpressionResultParameterMembership; ADR 0013",
+            "code": "KLS_CAST_RESULT_DEFAULT",
+            "interpretation": "Typed result satisfies the appended empty-result default; both syntax productions retained",
+            "range": [
+              4721,
+              4737
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 185,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "696b61fc-f740-5530-8062-6eedb34218ca",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/StatePerformances.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 590,
+          "checkFeatureSubobjectSpecialization": 590,
+          "checkFeatureSuboccurrenceSpecialization": 590,
+          "checkStepEnclosedPerformanceSpecialization": 590,
+          "checkStepOwnedPerformanceSpecialization": 590,
+          "checkStepSubperformanceSpecialization": 590,
+          "validateBehaviorSpecialization": 4,
+          "validateClassSpecialization": 4,
+          "validateElementIsImpliedIncluded": 1387,
+          "validateEndFeatureMembershipIsEnd": 18,
+          "validateExpressionResultExpressionMembership": 183,
+          "validateExpressionResultParameterMembership": 183,
+          "validateFeatureChainingFeatureNotOne": 590,
+          "validateFeatureChainingFeaturesNotSelf": 590,
+          "validateFeatureConstantIsVariable": 590,
+          "validateFeatureEndIsConstant": 590,
+          "validateFeatureEndNoDirection": 590,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 590,
+          "validateFeatureOwnedCrossSubsetting": 590,
+          "validateFeatureOwnedReferenceSubsetting": 590,
+          "validateFeaturePortionNotVariable": 590,
+          "validateFeatureReferenceExpressionReferentIsFeature": 62,
+          "validateFeatureReferenceExpressionResult": 62,
+          "validateFunctionResultExpressionMembership": 2,
+          "validateFunctionResultParameterMembership": 2,
+          "validateNamespaceDistinguishibility": 596,
+          "validateParameterMembershipOwningType": 273,
+          "validateParameterMembershipParameterDirection": 273,
+          "validateRedefinitionEndConformance": 8,
+          "validateResultExpressionMembershipOwningType": 12,
+          "validateReturnParameterMembershipOwningType": 179,
+          "validateSubsettingConstantConformance": 34,
+          "validateSubsettingUniquenessConformance": 34,
+          "validateTypeAtMostOneConjugator": 594,
+          "validateTypeDifferencingTypesNotSelf": 594,
+          "validateTypeIntersectingTypesNotSelf": 594,
+          "validateTypeOwnedDifferencingNotOne": 594,
+          "validateTypeOwnedIntersectingNotOne": 594,
+          "validateTypeOwnedMultiplicity": 594,
+          "validateTypeOwnedUnioningNotOne": 594,
+          "validateTypeUnioningTypesNotSelf": 594
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 5539,
+      "recovery_count": 0,
+      "reference_count": 182,
+      "resolution_status": "complete",
+      "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+      "source_coverage_percent": 100,
+      "source_revision_id": "e5a72145-ad62-5984-b22f-1b1f1a648102",
+      "syntax_nodes": 2897,
+      "syntax_status": "parsed",
+      "tokens": 1194,
+      "unevaluated_expression_count": 185,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 975,
+      "canonical_relationship_count": 601,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              4601,
+              4662
+            ]
+          },
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              4981,
+              5043
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 98,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "bf0ba3e5-5122-5afc-8738-e79d43981419",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Transfers.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 360,
+          "checkFeatureSubobjectSpecialization": 360,
+          "checkFeatureSuboccurrenceSpecialization": 360,
+          "checkStepEnclosedPerformanceSpecialization": 360,
+          "checkStepOwnedPerformanceSpecialization": 360,
+          "checkStepSubperformanceSpecialization": 360,
+          "validateAssociationStructureIntersection": 5,
+          "validateBehaviorSpecialization": 7,
+          "validateClassSpecialization": 7,
+          "validateElementIsImpliedIncluded": 975,
+          "validateEndFeatureMembershipIsEnd": 22,
+          "validateExpressionResultExpressionMembership": 98,
+          "validateExpressionResultParameterMembership": 98,
+          "validateFeatureChainingFeatureNotOne": 360,
+          "validateFeatureChainingFeaturesNotSelf": 360,
+          "validateFeatureConstantIsVariable": 360,
+          "validateFeatureEndIsConstant": 360,
+          "validateFeatureEndNoDirection": 360,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 360,
+          "validateFeatureOwnedCrossSubsetting": 360,
+          "validateFeatureOwnedReferenceSubsetting": 360,
+          "validateFeaturePortionNotVariable": 360,
+          "validateFeatureReferenceExpressionReferentIsFeature": 24,
+          "validateFeatureReferenceExpressionResult": 24,
+          "validateNamespaceDistinguishibility": 369,
+          "validateParameterMembershipOwningType": 108,
+          "validateParameterMembershipParameterDirection": 108,
+          "validateRedefinitionEndConformance": 36,
+          "validateResultExpressionMembershipOwningType": 2,
+          "validateReturnParameterMembershipOwningType": 96,
+          "validateSubsettingConstantConformance": 76,
+          "validateSubsettingUniquenessConformance": 76,
+          "validateTypeAtMostOneConjugator": 367,
+          "validateTypeDifferencingTypesNotSelf": 367,
+          "validateTypeIntersectingTypesNotSelf": 367,
+          "validateTypeOwnedDifferencingNotOne": 367,
+          "validateTypeOwnedIntersectingNotOne": 367,
+          "validateTypeOwnedMultiplicity": 367,
+          "validateTypeOwnedUnioningNotOne": 367,
+          "validateTypeUnioningTypesNotSelf": 367
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 3532,
+      "recovery_count": 0,
+      "reference_count": 182,
+      "resolution_status": "complete",
+      "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+      "source_coverage_percent": 100,
+      "source_revision_id": "610a4d41-d4cd-5931-a6ac-a2b64d3a9121",
+      "syntax_nodes": 2625,
+      "syntax_status": "parsed",
+      "tokens": 1535,
+      "unevaluated_expression_count": 98,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 563,
+      "canonical_relationship_count": 327,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [
+          {
+            "authority": "KerML 1.0 8.2.5.7.4 requires FeatureDeclaration; 7.4.8.5 page 57 and pinned libraries use anonymous invariants (ADR 0013)",
+            "code": "KG_ANONYMOUS_INVARIANT",
+            "range": [
+              2543,
+              2578
+            ]
+          }
+        ],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 65,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "1a5607ea-4d01-512f-9f16-985cf56dbd13",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/TransitionPerformances.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 242,
+          "checkFeatureSubobjectSpecialization": 242,
+          "checkFeatureSuboccurrenceSpecialization": 242,
+          "checkStepEnclosedPerformanceSpecialization": 242,
+          "checkStepOwnedPerformanceSpecialization": 242,
+          "checkStepSubperformanceSpecialization": 242,
+          "validateAssociationStructureIntersection": 1,
+          "validateBehaviorSpecialization": 2,
+          "validateClassSpecialization": 3,
+          "validateElementIsImpliedIncluded": 563,
+          "validateEndFeatureMembershipIsEnd": 22,
+          "validateExpressionResultExpressionMembership": 65,
+          "validateExpressionResultParameterMembership": 65,
+          "validateFeatureChainingFeatureNotOne": 242,
+          "validateFeatureChainingFeaturesNotSelf": 242,
+          "validateFeatureConstantIsVariable": 242,
+          "validateFeatureEndIsConstant": 242,
+          "validateFeatureEndNoDirection": 242,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 242,
+          "validateFeatureOwnedCrossSubsetting": 242,
+          "validateFeatureOwnedReferenceSubsetting": 242,
+          "validateFeaturePortionNotVariable": 242,
+          "validateFeatureReferenceExpressionReferentIsFeature": 13,
+          "validateFeatureReferenceExpressionResult": 13,
+          "validateNamespaceDistinguishibility": 247,
+          "validateParameterMembershipOwningType": 67,
+          "validateParameterMembershipParameterDirection": 67,
+          "validateRedefinitionEndConformance": 2,
+          "validateResultExpressionMembershipOwningType": 1,
+          "validateReturnParameterMembershipOwningType": 62,
+          "validateStructureSpecialization": 1,
+          "validateSubsettingConstantConformance": 28,
+          "validateSubsettingUniquenessConformance": 28,
+          "validateTypeAtMostOneConjugator": 245,
+          "validateTypeDifferencingTypesNotSelf": 245,
+          "validateTypeIntersectingTypesNotSelf": 245,
+          "validateTypeOwnedDifferencingNotOne": 245,
+          "validateTypeOwnedIntersectingNotOne": 245,
+          "validateTypeOwnedMultiplicity": 245,
+          "validateTypeOwnedUnioningNotOne": 245,
+          "validateTypeUnioningTypesNotSelf": 245
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 0,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 2274,
+      "recovery_count": 0,
+      "reference_count": 68,
+      "resolution_status": "complete",
+      "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+      "source_coverage_percent": 100,
+      "source_revision_id": "dcc8f10c-4dda-5d49-8ad8-8ba1cae1ebd0",
+      "syntax_nodes": 1177,
+      "syntax_status": "parsed",
+      "tokens": 647,
+      "unevaluated_expression_count": 65,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    },
+    {
+      "KerML_semantic_status": "incomplete",
+      "ambiguous_count": 0,
+      "canonical_element_count": 395,
+      "canonical_relationship_count": 223,
+      "count_scope": "unpublished ordinary kernel construction; not an accepted Snapshot",
+      "diagnostics_by_category": {
+        "KerML_semantic": {
+          "query_diagnostics": [
+            {
+              "code": "validateNamespaceDistinguishibility",
+              "message": "Name \"signal\" identifies comparable members 28971587-d46f-5a87-989a-e83ee4f87fa9 and bd7f230d-14ac-52e2-9342-c94a13c80fc1 through memberships 148b03fa-d657-5895-9a98-58d7d72385be and 5296c57a-0be4-59b6-be1f-665fe74029a6",
+              "subject": "4a74747a-c385-5a89-89c8-be2fadaa9ecb"
+            },
+            {
+              "code": "validateNamespaceDistinguishibility",
+              "message": "Name \"signal\" identifies comparable members bd7f230d-14ac-52e2-9342-c94a13c80fc1 and 56339403-976c-5381-8f78-18e15777f41b through memberships 5296c57a-0be4-59b6-be1f-665fe74029a6 and 778b6d60-cb70-51cb-b052-8a548caefa7d",
+              "subject": "518b9181-2fd8-5bfa-953c-3292058bc119"
+            }
+          ],
+          "structural_obligations": [],
+          "validation_scope": "Direct feature/specialization/typing/subsetting/redefinition queries on all applicable elements; transitive specialization/effective features on classifiers. Remaining language constraints not evaluated."
+        },
+        "published_source_anomaly": [],
+        "resolution": [],
+        "syntax": [],
+        "unevaluated_expression_function_semantics": {
+          "code": "KLS_EVALUATION_UNSUPPORTED",
+          "count": 49,
+          "scope": "All expression/function execution; structural references are still checked separately"
+        }
+      },
+      "document_id": "b0c9187f-452e-5fc1-9225-ce9263726034",
+      "exact_source_preservation": true,
+      "file": "Kernel Semantic Library/Triggers.kerml",
+      "full_KerML_constraint_validation": {
+        "evaluated_constraints": {
+          "checkFeaturePortionSpecialization": 144,
+          "checkFeatureSubobjectSpecialization": 144,
+          "checkFeatureSuboccurrenceSpecialization": 144,
+          "checkStepEnclosedPerformanceSpecialization": 144,
+          "checkStepOwnedPerformanceSpecialization": 144,
+          "checkStepSubperformanceSpecialization": 144,
+          "validateBehaviorSpecialization": 3,
+          "validateClassSpecialization": 4,
+          "validateElementIsImpliedIncluded": 395,
+          "validateExpressionResultExpressionMembership": 46,
+          "validateExpressionResultParameterMembership": 46,
+          "validateFeatureChainingFeatureNotOne": 144,
+          "validateFeatureChainingFeaturesNotSelf": 144,
+          "validateFeatureConstantIsVariable": 144,
+          "validateFeatureEndIsConstant": 144,
+          "validateFeatureEndNoDirection": 144,
+          "validateFeatureEndNotDerivedAbstractCompositeOrPortion": 144,
+          "validateFeatureOwnedCrossSubsetting": 144,
+          "validateFeatureOwnedReferenceSubsetting": 144,
+          "validateFeaturePortionNotVariable": 144,
+          "validateFeatureReferenceExpressionReferentIsFeature": 21,
+          "validateFeatureReferenceExpressionResult": 21,
+          "validateFunctionResultExpressionMembership": 3,
+          "validateFunctionResultParameterMembership": 3,
+          "validateNamespaceDistinguishibility": 150,
+          "validateParameterMembershipOwningType": 62,
+          "validateParameterMembershipParameterDirection": 62,
+          "validateRedefinitionEndConformance": 1,
+          "validateResultExpressionMembershipOwningType": 1,
+          "validateReturnParameterMembershipOwningType": 47,
+          "validateStructureSpecialization": 1,
+          "validateSubsettingConstantConformance": 3,
+          "validateSubsettingUniquenessConformance": 3,
+          "validateTypeAtMostOneConjugator": 148,
+          "validateTypeDifferencingTypesNotSelf": 148,
+          "validateTypeIntersectingTypesNotSelf": 148,
+          "validateTypeOwnedDifferencingNotOne": 148,
+          "validateTypeOwnedIntersectingNotOne": 148,
+          "validateTypeOwnedMultiplicity": 148,
+          "validateTypeOwnedUnioningNotOne": 148,
+          "validateTypeUnioningTypesNotSelf": 148
+        },
+        "remaining_scope": "Additional structural, derived and implied relationship constraints remain mandatory before acceptance",
+        "status": "incomplete"
+      },
+      "incomplete_query_count": 0,
+      "incomplete_reference_count": 0,
+      "invalid_query_count": 2,
+      "library_id": "ea196f53-7c8f-5648-ac40-fd76b770a376",
+      "mismatched_endpoint_count": 0,
+      "query_count": 1425,
+      "recovery_count": 0,
+      "reference_count": 52,
+      "resolution_status": "complete",
+      "sha256": "124cad3625935e078d1363e6100ee12537ca9c51445a18108e056db8b4885609",
+      "source_coverage_percent": 100,
+      "source_revision_id": "4388d884-ea25-5f25-8a87-45d4eaf9710a",
+      "syntax_nodes": 1113,
+      "syntax_status": "parsed",
+      "tokens": 592,
+      "unevaluated_expression_count": 49,
+      "unresolved_count": 0,
+      "unsupported_syntax": 0
+    }
+  ],
+  "format": "agentique-kerml-library-semantic-quality/1",
+  "library_graph_digest": [
+    128,
+    180,
+    133,
+    130,
+    137,
+    134,
+    100,
+    33,
+    171,
+    161,
+    174,
+    136,
+    3,
+    225,
+    237,
+    240,
+    55,
+    87,
+    219,
+    225,
+    188,
+    195,
+    39,
+    233,
+    45,
+    112,
+    12,
+    76,
+    73,
+    49,
+    10,
+    57
+  ],
+  "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "published_snapshot": false,
+  "query_cache_batch_size": 128,
+  "rule_version": "agq-kerml-query/17",
+  "scope": "Complete pinned three-library KerML corpus. Structural semantic publication required; execution excluded. Unevaluated validation scopes are explicit.",
+  "semantic_quality_gate_passed": false,
+  "structural_obligation_count": 4
+}

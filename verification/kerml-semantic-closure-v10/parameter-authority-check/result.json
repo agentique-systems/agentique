@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python",
+    "-B",
+    "verification/kerml-semantic-closure-v10/parameter-position-authority.py",
+    "--check"
+  ],
+  "started": "2026-09-20T16:16:50.773387+00:00",
+  "duration_seconds": 3.672000000020489,
+  "exit_code": 0,
+  "output": "output.txt"
+}

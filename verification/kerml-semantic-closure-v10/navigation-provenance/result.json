@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--lib",
+    "projected_crossed_feature_dependencies_materialize_as_canonical_link_facts"
+  ],
+  "started": "2026-09-20T12:21:02.822498+00:00",
+  "duration_seconds": 4.437000000034459,
+  "exit_code": 101,
+  "output": "output.txt"
+}

@@ -1,0 +1,316 @@
+{
+  "format": "agentique-v10-parameter-position-authority/1",
+  "issue": {
+    "key": "KERML11-79",
+    "title": "TransitionPerformance::accept is incorrect",
+    "status": "open",
+    "url": "https://issues.omg.org/issues/KERML11-79",
+    "anchor": "issue-57375",
+    "text": "TransitionPerformance::accept is incorrect Key: KERML11-79 Status: open Source: Model Driven Solutions ( Mr. Ed Seidewitz ) Summary: In the Kernel Semantic Library model TransitionPerformances , the behavior TransitionPerformance has a step accept that subsets Transfers::acceptPerformances , which is typed by Transfers::AcceptPerformance . The step accept explicitly redefines the receiver parameter from AcceptPerformance . However, receiver is the second parameter of AcceptPerformance , but step does not redefine the first parameter payload . Therefore, accept::receiver also has an implied redefinition of payload , which is not intended. The reason receiver is redefined is to bind with a feature value. However, this prevents the parameter from being redefined and rebound in further specializations. Unfortunately, this is exactly what happens in a SysML transition whose accepter has a via part. Reported: KerML 1.0b4 —\n                                    Tue, 5 Aug 2025 22:52 GMT Updated: Tue, 21 Apr 2026 01:22 GMT",
+    "updated": "Tue, 21 Apr 2026 01:22 GMT",
+    "linked_constraints": [
+      "checkFeatureParameterRedefinition"
+    ],
+    "disposition": "RetainedForStructuralOrExecutionScopeReview",
+    "earliest_authorized_profile": null,
+    "pending_proof": "Exact accept::receiver witness retained; explicit and positional redefinition interactions require complete parameter closure."
+  },
+  "source_archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2",
+  "descriptor_identity_map_sha256": "d6044238255a86121c0678a2758c499d5c2b4684f22ca2ff3088701d2aaff83b",
+  "source_refinement_audit_sha256": "ab886d3b3f9a83706a7648d0824c594be6b6e41124d98a229df0fffd2f025f4a",
+  "formal": [
+    {
+      "kind": "ownedRule",
+      "owner": "Redefinition",
+      "name": "validateRedefinitionDirectionConformance",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Redefinition-validateRedefinitionDirectionConformance",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "validateRedefinitionDirectionConformance"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Redefinition-validateRedefinitionDirectionConformance-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If the <code>redefinedFeature</code> of a <code>Redefinition</code> has a direction of <code>in</code> or <code>out</code> (relative to any <code>featuringType</code> of the <code>redefiningFeature</code> or the <code>owningType</code>, if the <code>redefiningFeature</code> has <code>isVariable = true</code>), then the <code>redefiningFeature</code> must have the same <code>direction</code>. If the <code>redefinedFeature</code> has a direction of <code>inout</code>, then the <code>redefiningFeature</code> must have a non-null <code>direction</code>. (Note: the direction of the <code>redefinedFeature</code> relative to a <code>featuringType</code> of the <code>redefiningFeature</code> is the direction it would have if it had been inherited and not redefined.)</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Redefinition-validateRedefinitionDirectionConformance-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "let featuringTypes : Sequence(Type) =     if redefiningFeature.isVariable then Sequence{redefiningFeature.owningType}     else redefiningFeature.featuringType     endif in featuringTypes->forAll(t |     let direction : FeatureDirectionKind = t.directionOf(redefinedFeature) in     ((direction = FeatureDirectionKind::_'in' or        direction = FeatureDirectionKind::out) implies          redefiningFeature.direction = direction)     and      (direction = FeatureDirectionKind::inout implies         redefiningFeature.direction <> null))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Redefinition-validateRedefinitionDirectionConformance\" ns0:type=\"uml:Constraint\" name=\"validateRedefinitionDirectionConformance\">\n            <constrainedElement ns0:idref=\"Core-Features-Redefinition\" />\n            <ownedComment ns0:id=\"Core-Features-Redefinition-validateRedefinitionDirectionConformance-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If the &lt;code&gt;redefinedFeature&lt;/code&gt; of a &lt;code&gt;Redefinition&lt;/code&gt; has a direction of &lt;code&gt;in&lt;/code&gt; or &lt;code&gt;out&lt;/code&gt; (relative to any &lt;code&gt;featuringType&lt;/code&gt; of the &lt;code&gt;redefiningFeature&lt;/code&gt; or the &lt;code&gt;owningType&lt;/code&gt;, if the &lt;code&gt;redefiningFeature&lt;/code&gt; has &lt;code&gt;isVariable = true&lt;/code&gt;), then the &lt;code&gt;redefiningFeature&lt;/code&gt; must have the same &lt;code&gt;direction&lt;/code&gt;. If the &lt;code&gt;redefinedFeature&lt;/code&gt; has a direction of &lt;code&gt;inout&lt;/code&gt;, then the &lt;code&gt;redefiningFeature&lt;/code&gt; must have a non-null &lt;code&gt;direction&lt;/code&gt;. (Note: the direction of the &lt;code&gt;redefinedFeature&lt;/code&gt; relative to a &lt;code&gt;featuringType&lt;/code&gt; of the &lt;code&gt;redefiningFeature&lt;/code&gt; is the direction it would have if it had been inherited and not redefined.)&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Redefinition-validateRedefinitionDirectionConformance\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Redefinition-validateRedefinitionDirectionConformance-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"let featuringTypes : Sequence(Type) =     if redefiningFeature.isVariable then Sequence{redefiningFeature.owningType}     else redefiningFeature.featuringType     endif in featuringTypes-&gt;forAll(t |     let direction : FeatureDirectionKind = t.directionOf(redefinedFeature) in     ((direction = FeatureDirectionKind::_'in' or        direction = FeatureDirectionKind::out) implies          redefiningFeature.direction = direction)     and      (direction = FeatureDirectionKind::inout implies         redefiningFeature.direction &lt;&gt; null))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n        "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "checkFeatureParameterRedefinition",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureParameterRedefinition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFeatureParameterRedefinition"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureParameterRedefinition-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Feature</code> is a <code>parameter</code> of an <code>owningType</code> that is a <code>Behavior</code> or <code>Step</code>, but <em>not</em> </p> <ul>     <li>A <code>result</code> <code>parameter</code></li>     <li>A <code>parameter</code> of an <code>InvocationExpression</code>, with at least one non-implied <code>ownedRedefinition</code></li> </ul> <p>then, for each direct supertype of its <code>owningType</code> that is also a <code>Behavior</code> or <code>Step</code>, it must redefine the <code>parameter</code> at the same position, if any.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureParameterRedefinition-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "owningType <> null and not owningFeatureMembership.     oclIsKindOf(ReturnParameterMembership) and (owningType.oclIsKindOf(Behavior) or  owningType.oclIsKindOf(Step) and     (owningType.oclIsKindOf(InvocationExpression) implies       not ownedRedefinition->exists(not isImplied))  implies     let i : Integer =         owningType.ownedFeature->select(direction <> null)->             reject(owningFeatureMembership.                 oclIsKindOf(ReturnParameterMembership))->             indexOf(self) in     owningType.ownedSpecialization.general->         forAll(supertype |             let ownedParameters : Sequence(Feature) =                 supertype.ownedFeature->select(direction <> null)->                      reject(owningFeatureMembership.                          oclIsKindOf(ReturnParameterMembership)) in             ownedParameters->size() >= i implies                 redefines(ownedParameters->at(i))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureParameterRedefinition\" ns0:type=\"uml:Constraint\" name=\"checkFeatureParameterRedefinition\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureParameterRedefinition-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; is a &lt;code&gt;parameter&lt;/code&gt; of an &lt;code&gt;owningType&lt;/code&gt; that is a &lt;code&gt;Behavior&lt;/code&gt; or &lt;code&gt;Step&lt;/code&gt;, but &lt;em&gt;not&lt;/em&gt; &lt;/p&gt; &lt;ul&gt;     &lt;li&gt;A &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt;&lt;/li&gt;     &lt;li&gt;A &lt;code&gt;parameter&lt;/code&gt; of an &lt;code&gt;InvocationExpression&lt;/code&gt;, with at least one non-implied &lt;code&gt;ownedRedefinition&lt;/code&gt;&lt;/li&gt; &lt;/ul&gt; &lt;p&gt;then, for each direct supertype of its &lt;code&gt;owningType&lt;/code&gt; that is also a &lt;code&gt;Behavior&lt;/code&gt; or &lt;code&gt;Step&lt;/code&gt;, it must redefine the &lt;code&gt;parameter&lt;/code&gt; at the same position, if any.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureParameterRedefinition\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureParameterRedefinition-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningType &lt;&gt; null and not owningFeatureMembership.     oclIsKindOf(ReturnParameterMembership) and (owningType.oclIsKindOf(Behavior) or  owningType.oclIsKindOf(Step) and     (owningType.oclIsKindOf(InvocationExpression) implies       not ownedRedefinition-&gt;exists(not isImplied))  implies     let i : Integer =         owningType.ownedFeature-&gt;select(direction &lt;&gt; null)-&gt;             reject(owningFeatureMembership.                 oclIsKindOf(ReturnParameterMembership))-&gt;             indexOf(self) in     owningType.ownedSpecialization.general-&gt;         forAll(supertype |             let ownedParameters : Sequence(Feature) =                 supertype.ownedFeature-&gt;select(direction &lt;&gt; null)-&gt;                      reject(owningFeatureMembership.                          oclIsKindOf(ReturnParameterMembership)) in             ownedParameters-&gt;size() &gt;= i implies                 redefines(ownedParameters-&gt;at(i))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    }
+  ],
+  "owner": {
+    "id": "3da361d2-987f-50e0-ba03-7eb4dd5ecaca",
+    "path": "TransitionPerformances::TransitionPerformance::accept",
+    "kind": "Step",
+    "source": {
+      "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+      "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1674, end: 1869 }, syntax_node: Some(SyntaxNodeId(192829237199880656046971300439802205360)) }",
+      "range": [
+        1674,
+        1869
+      ],
+      "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+      "text": "step accept: AcceptPerformance[accNum] subsets timeEnclosedOccurrences, acceptPerformances {\n\t\t\tin feature redefines receiver = triggerTarget;\n\t\t\tfeature redefines acceptedTransfer = trigger;\n\t\t}"
+    }
+  },
+  "direct_general": {
+    "id": "dfc075fc-39ba-5afb-b529-50798e2c2eac",
+    "path": "Transfers::AcceptPerformance",
+    "kind": "Behavior",
+    "source": {
+      "document": "Kernel Semantic Library/Transfers.kerml",
+      "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 9797, end: 10361 }, syntax_node: Some(SyntaxNodeId(4546976520929062195577617874791094459)) }",
+      "range": [
+        9797,
+        10361
+      ],
+      "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+      "text": "behavior AcceptPerformance specializes Performance {\n        doc\n        /*\n         * AcceptPerformance is a performance that requires an incomingTransferToSelf\n         * of a desigated receiver Occurrence, providing its payload as output.\n         */\n        inout feature payload[0..*];\n        in feature receiver: Occurrence[1] default this;\n        feature acceptedTransfer: MessageTransfer[1] subsets receiver.incomingTransfersToSelf;\n        succession acceptedTransfer then self.endShot;\n        \n        binding payload = acceptedTransfer.payload;\n    }"
+    }
+  },
+  "canonical_endpoint_cross_checks": {
+    "typing": {
+      "candidates": [
+        "dfc075fc-39ba-5afb-b529-50798e2c2eac"
+      ],
+      "completeness": "Complete",
+      "diagnostics": [],
+      "name": [
+        "AcceptPerformance"
+      ],
+      "relationship": "4fda8fdd-799f-5b40-b0d3-360cd503c0fb"
+    },
+    "explicit_redefinition": {
+      "candidates": [
+        "04b776b6-a02e-5e0c-8240-0f013b5999e2"
+      ],
+      "completeness": "Complete",
+      "diagnostics": [],
+      "name": [
+        "receiver"
+      ],
+      "relationship": "c50707fb-9b4e-5521-a123-4de70999e015"
+    }
+  },
+  "local_owned_parameter_sequence": [
+    {
+      "membership": {
+        "id": "bd1ea854-58ff-5d47-8bc7-875eec48f0ce",
+        "path": "TransitionPerformances::TransitionPerformance::accept",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1770, end: 1816 }, syntax_node: Some(SyntaxNodeId(82791721303933561426526728124606217190)) }",
+          "range": [
+            1770,
+            1816
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "in feature redefines receiver = triggerTarget;"
+        }
+      },
+      "feature": {
+        "id": "5547e6fa-9148-5520-baf4-40c856495620",
+        "path": "TransitionPerformances::TransitionPerformance::accept",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1770, end: 1816 }, syntax_node: Some(SyntaxNodeId(68445375619386677122788281579454778142)) }",
+          "range": [
+            1770,
+            1816
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "in feature redefines receiver = triggerTarget;"
+        }
+      }
+    }
+  ],
+  "general_owned_parameter_sequence": [
+    {
+      "membership": {
+        "id": "bf86d7ae-3cf1-5386-a504-1139214394cd",
+        "path": "Transfers::AcceptPerformance",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 10059, end: 10087 }, syntax_node: Some(SyntaxNodeId(21558725462084199594511126072887014667)) }",
+          "range": [
+            10059,
+            10087
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "inout feature payload[0..*];"
+        }
+      },
+      "feature": {
+        "id": "8893c873-cd12-56d7-9485-dcc27ac7e963",
+        "path": "Transfers::AcceptPerformance::payload",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 10059, end: 10087 }, syntax_node: Some(SyntaxNodeId(325791243021812745365201687426843169479)) }",
+          "range": [
+            10059,
+            10087
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "inout feature payload[0..*];"
+        }
+      }
+    },
+    {
+      "membership": {
+        "id": "4af0fc9a-6aec-5c1d-913b-8e3889374163",
+        "path": "Transfers::AcceptPerformance",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 10096, end: 10144 }, syntax_node: Some(SyntaxNodeId(29250859619537137628042749123518888805)) }",
+          "range": [
+            10096,
+            10144
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "in feature receiver: Occurrence[1] default this;"
+        }
+      },
+      "feature": {
+        "id": "04b776b6-a02e-5e0c-8240-0f013b5999e2",
+        "path": "Transfers::AcceptPerformance::receiver",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 10096, end: 10144 }, syntax_node: Some(SyntaxNodeId(105011658329587358150363236322076670467)) }",
+          "range": [
+            10096,
+            10144
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "in feature receiver: Occurrence[1] default this;"
+        }
+      }
+    }
+  ],
+  "zero_based_local_position": 0,
+  "explicit_target": {
+    "id": "04b776b6-a02e-5e0c-8240-0f013b5999e2",
+    "path": "Transfers::AcceptPerformance::receiver",
+    "kind": "Feature",
+    "source": {
+      "document": "Kernel Semantic Library/Transfers.kerml",
+      "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 10096, end: 10144 }, syntax_node: Some(SyntaxNodeId(105011658329587358150363236322076670467)) }",
+      "range": [
+        10096,
+        10144
+      ],
+      "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+      "text": "in feature receiver: Occurrence[1] default this;"
+    }
+  },
+  "published_additional_positional_target": {
+    "id": "8893c873-cd12-56d7-9485-dcc27ac7e963",
+    "path": "Transfers::AcceptPerformance::payload",
+    "kind": "Feature",
+    "source": {
+      "document": "Kernel Semantic Library/Transfers.kerml",
+      "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 10059, end: 10087 }, syntax_node: Some(SyntaxNodeId(325791243021812745365201687426843169479)) }",
+      "range": [
+        10059,
+        10087
+      ],
+      "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+      "text": "inout feature payload[0..*];"
+    }
+  },
+  "direction_checks": [
+    {
+      "target": {
+        "id": "8893c873-cd12-56d7-9485-dcc27ac7e963",
+        "path": "Transfers::AcceptPerformance::payload",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 10059, end: 10087 }, syntax_node: Some(SyntaxNodeId(325791243021812745365201687426843169479)) }",
+          "range": [
+            10059,
+            10087
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "inout feature payload[0..*];"
+        }
+      },
+      "target_direction": "inout",
+      "redefining_direction": "in",
+      "direction_predicate_satisfied": true
+    },
+    {
+      "target": {
+        "id": "04b776b6-a02e-5e0c-8240-0f013b5999e2",
+        "path": "Transfers::AcceptPerformance::receiver",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 10096, end: 10144 }, syntax_node: Some(SyntaxNodeId(105011658329587358150363236322076670467)) }",
+          "range": [
+            10096,
+            10144
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "in feature receiver: Occurrence[1] default this;"
+        }
+      },
+      "target_direction": "in",
+      "redefining_direction": "in",
+      "direction_predicate_satisfied": true
+    }
+  ],
+  "reference": {
+    "owner": {
+      "id": "d07aaaa4-7233-534c-976b-5189e405fc36",
+      "path": "TransitionPerformances::TransitionPerformance::accept",
+      "kind": "Step",
+      "file": "TransitionPerformances.kermlx"
+    },
+    "owned_parameters": [],
+    "source_change_adopted": false
+  },
+  "issue_antecedent_exercised": true,
+  "local_positional_requirement_proven": true,
+  "independently_proven_additional_authority_conflict": false,
+  "full_structural_conformance_proven": false,
+  "correction_applied": false,
+  "conclusion": "The exact pinned first local parameter explicitly redefines receiver and is also required to redefine payload at position one. Direction conformance permits both redefinitions. This reproduces the issue's unintended positional consequence; that consequence alone is not a contradiction between the two checked structural rules. Complete dependent typing/domain/suppression validation is still required, and KLCV10-F-002 already blocks the accept multiplicity domain."
+}

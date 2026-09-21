@@ -131,7 +131,7 @@ impl KerMlQueries<'_> {
     // Required library bases before 8.4.2 redundancy suppression. Keeping this
     // separate lets redundancy traverse implied parent bases without recursive
     // cache calls or assuming the source's proposed edge.
-    fn required_library_bases(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
+    pub(crate) fn required_library_bases(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
         use StandardRole as R;
         let mut out = self.result(vec![]);
         let formal = self.formal_constraint_specializations(source);
@@ -143,30 +143,10 @@ impl KerMlQueries<'_> {
         out.search_dependencies
             .insert(SearchDependency::StandardLibraries);
         self.fact(&mut out, agq_kernel::provenance::FactKey::Element(source));
+        let unconditional = self.metaclass_library_bases(source);
+        out.value.extend(unconditional.value.iter().copied());
+        out.merge(unconditional);
         let mut roles = vec![];
-        for (class, role) in [
-            (c::TYPE, R::Anything),
-            (c::DATA_TYPE, R::DataValue),
-            (c::CLASS, R::Occurrence),
-            (c::STRUCTURE, R::Object),
-            (c::ASSOCIATION, R::Link),
-            (c::METACLASS, R::Metaobject),
-            (c::BEHAVIOR, R::Performance),
-            (c::FUNCTION, R::Evaluation),
-            (c::PREDICATE, R::BooleanEvaluation),
-            (c::FEATURE, R::Things),
-            (c::STEP, R::Performances),
-            (c::EXPRESSION, R::Evaluations),
-            (c::BOOLEAN_EXPRESSION, R::BooleanEvaluations),
-            (c::MULTIPLICITY, R::Naturals),
-            (c::METADATA_FEATURE, R::Metaobjects),
-            (c::CONNECTOR, R::Links),
-            (c::BINDING_CONNECTOR, R::SelfLinks),
-        ] {
-            if self.is(source, class) {
-                roles.push(role);
-            }
-        }
         if self.is(source, c::INVARIANT) {
             roles.push(
                 if matches!(
@@ -207,6 +187,49 @@ impl KerMlQueries<'_> {
                 .map(|role| bindings.get(role))
                 .filter(|&target| target != source),
         );
+        out.value.sort();
+        out.value.dedup();
+        out
+    }
+
+    /// Unconditional library implications of metaclass conformance. Keeping
+    /// these separate avoids circularly testing an owner-typing antecedent
+    /// before applying the mandatory Step/Expression base that supplies typing.
+    pub(crate) fn metaclass_library_bases(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
+        use StandardRole as R;
+        let mut out = self.result(vec![]);
+        let Some(bindings) = &self.context().standard_bindings else {
+            return out;
+        };
+        out.search_dependencies
+            .insert(SearchDependency::StandardLibraries);
+        self.fact(&mut out, agq_kernel::provenance::FactKey::Element(source));
+        for (class, role) in [
+            (c::TYPE, R::Anything),
+            (c::DATA_TYPE, R::DataValue),
+            (c::CLASS, R::Occurrence),
+            (c::STRUCTURE, R::Object),
+            (c::ASSOCIATION, R::Link),
+            (c::METACLASS, R::Metaobject),
+            (c::BEHAVIOR, R::Performance),
+            (c::FUNCTION, R::Evaluation),
+            (c::PREDICATE, R::BooleanEvaluation),
+            (c::FEATURE, R::Things),
+            (c::STEP, R::Performances),
+            (c::EXPRESSION, R::Evaluations),
+            (c::BOOLEAN_EXPRESSION, R::BooleanEvaluations),
+            (c::MULTIPLICITY, R::Naturals),
+            (c::METADATA_FEATURE, R::Metaobjects),
+            (c::CONNECTOR, R::Links),
+            (c::BINDING_CONNECTOR, R::SelfLinks),
+        ] {
+            if self.is(source, class) {
+                let target = bindings.get(role);
+                if target != source {
+                    out.value.push(target);
+                }
+            }
+        }
         out.value.sort();
         out.value.dedup();
         out

@@ -1,0 +1,2026 @@
+{
+  "format": "agentique-v10-remaining-structural-investigations/1",
+  "source_audit": {
+    "path": "verification/kerml-semantic-closure-v10/full-v7-publication.json",
+    "sha256": "0bc4f33991cec0b126b2c5a9d511eff88a1bb7ccc52493618c2c4c55fb1a5256"
+  },
+  "source_archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2",
+  "formal": [
+    {
+      "kind": "ownedRule",
+      "owner": "Multiplicity",
+      "name": "checkMultiplicityTypeFeaturing",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkMultiplicityTypeFeaturing"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If the <code>owningType</code> of a <code>Multiplicity</code> is a <code>Feature</code>, then the <code>Multiplicity</code> must have the same <code>featuringTypes</code> as that <code>Feature</code>. Otherwise, it must have no <code>featuringTypes</code> (meaning that it is implicitly featured by the base <code>Classifier</code> <em><code>Anything</code></em>).</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "if owningType <> null and owningType.oclIsKindOf(Feature) then     featuringType =          owningType.oclAsType(Feature).featuringType else     featuringType->isEmpty() endif",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Types-Multiplicity-checkMultiplicityTypeFeaturing\" ns0:type=\"uml:Constraint\" name=\"checkMultiplicityTypeFeaturing\">\n            <constrainedElement ns0:idref=\"Core-Types-Multiplicity\" />\n            <ownedComment ns0:id=\"Core-Types-Multiplicity-checkMultiplicityTypeFeaturing-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If the &lt;code&gt;owningType&lt;/code&gt; of a &lt;code&gt;Multiplicity&lt;/code&gt; is a &lt;code&gt;Feature&lt;/code&gt;, then the &lt;code&gt;Multiplicity&lt;/code&gt; must have the same &lt;code&gt;featuringTypes&lt;/code&gt; as that &lt;code&gt;Feature&lt;/code&gt;. Otherwise, it must have no &lt;code&gt;featuringTypes&lt;/code&gt; (meaning that it is implicitly featured by the base &lt;code&gt;Classifier&lt;/code&gt; &lt;em&gt;&lt;code&gt;Anything&lt;/code&gt;&lt;/em&gt;).&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Types-Multiplicity-checkMultiplicityTypeFeaturing\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Types-Multiplicity-checkMultiplicityTypeFeaturing-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"if owningType &lt;&gt; null and owningType.oclIsKindOf(Feature) then     featuringType =          owningType.oclAsType(Feature).featuringType else     featuringType-&gt;isEmpty() endif\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "checkFeatureParameterRedefinition",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureParameterRedefinition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFeatureParameterRedefinition"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureParameterRedefinition-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Feature</code> is a <code>parameter</code> of an <code>owningType</code> that is a <code>Behavior</code> or <code>Step</code>, but <em>not</em> </p> <ul>     <li>A <code>result</code> <code>parameter</code></li>     <li>A <code>parameter</code> of an <code>InvocationExpression</code>, with at least one non-implied <code>ownedRedefinition</code></li> </ul> <p>then, for each direct supertype of its <code>owningType</code> that is also a <code>Behavior</code> or <code>Step</code>, it must redefine the <code>parameter</code> at the same position, if any.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureParameterRedefinition-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "owningType <> null and not owningFeatureMembership.     oclIsKindOf(ReturnParameterMembership) and (owningType.oclIsKindOf(Behavior) or  owningType.oclIsKindOf(Step) and     (owningType.oclIsKindOf(InvocationExpression) implies       not ownedRedefinition->exists(not isImplied))  implies     let i : Integer =         owningType.ownedFeature->select(direction <> null)->             reject(owningFeatureMembership.                 oclIsKindOf(ReturnParameterMembership))->             indexOf(self) in     owningType.ownedSpecialization.general->         forAll(supertype |             let ownedParameters : Sequence(Feature) =                 supertype.ownedFeature->select(direction <> null)->                      reject(owningFeatureMembership.                          oclIsKindOf(ReturnParameterMembership)) in             ownedParameters->size() >= i implies                 redefines(ownedParameters->at(i))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureParameterRedefinition\" ns0:type=\"uml:Constraint\" name=\"checkFeatureParameterRedefinition\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureParameterRedefinition-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; is a &lt;code&gt;parameter&lt;/code&gt; of an &lt;code&gt;owningType&lt;/code&gt; that is a &lt;code&gt;Behavior&lt;/code&gt; or &lt;code&gt;Step&lt;/code&gt;, but &lt;em&gt;not&lt;/em&gt; &lt;/p&gt; &lt;ul&gt;     &lt;li&gt;A &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt;&lt;/li&gt;     &lt;li&gt;A &lt;code&gt;parameter&lt;/code&gt; of an &lt;code&gt;InvocationExpression&lt;/code&gt;, with at least one non-implied &lt;code&gt;ownedRedefinition&lt;/code&gt;&lt;/li&gt; &lt;/ul&gt; &lt;p&gt;then, for each direct supertype of its &lt;code&gt;owningType&lt;/code&gt; that is also a &lt;code&gt;Behavior&lt;/code&gt; or &lt;code&gt;Step&lt;/code&gt;, it must redefine the &lt;code&gt;parameter&lt;/code&gt; at the same position, if any.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureParameterRedefinition\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureParameterRedefinition-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningType &lt;&gt; null and not owningFeatureMembership.     oclIsKindOf(ReturnParameterMembership) and (owningType.oclIsKindOf(Behavior) or  owningType.oclIsKindOf(Step) and     (owningType.oclIsKindOf(InvocationExpression) implies       not ownedRedefinition-&gt;exists(not isImplied))  implies     let i : Integer =         owningType.ownedFeature-&gt;select(direction &lt;&gt; null)-&gt;             reject(owningFeatureMembership.                 oclIsKindOf(ReturnParameterMembership))-&gt;             indexOf(self) in     owningType.ownedSpecialization.general-&gt;         forAll(supertype |             let ownedParameters : Sequence(Feature) =                 supertype.ownedFeature-&gt;select(direction &lt;&gt; null)-&gt;                      reject(owningFeatureMembership.                          oclIsKindOf(ReturnParameterMembership)) in             ownedParameters-&gt;size() &gt;= i implies                 redefines(ownedParameters-&gt;at(i))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "checkFeatureEndRedefinition",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureEndRedefinition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFeatureEndRedefinition"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureEndRedefinition-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Feature</code> has <code>isEnd = true</code> and an <code>owningType</code> that is not empty, then, for each direct supertype of its <code>owningType</code>, it must redefine the <code>endFeature</code> at the same position, if any.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureEndRedefinition-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "isEnd and owningType <> null implies     let i : Integer =          owningType.ownedEndFeature->indexOf(self) in     owningType.ownedSpecialization.general->         forAll(supertype |              supertype.endFeature->size() >= i implies                 redefines(supertype.endFeature->at(i))",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureEndRedefinition\" ns0:type=\"uml:Constraint\" name=\"checkFeatureEndRedefinition\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureEndRedefinition-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; has &lt;code&gt;isEnd = true&lt;/code&gt; and an &lt;code&gt;owningType&lt;/code&gt; that is not empty, then, for each direct supertype of its &lt;code&gt;owningType&lt;/code&gt;, it must redefine the &lt;code&gt;endFeature&lt;/code&gt; at the same position, if any.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureEndRedefinition\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureEndRedefinition-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"isEnd and owningType &lt;&gt; null implies     let i : Integer =          owningType.ownedEndFeature-&gt;indexOf(self) in     owningType.ownedSpecialization.general-&gt;         forAll(supertype |              supertype.endFeature-&gt;size() &gt;= i implies                 redefines(supertype.endFeature-&gt;at(i))\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "validateFeatureMultiplicityDomain",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureMultiplicityDomain",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "validateFeatureMultiplicityDomain"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureMultiplicityDomain-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Feature</code> has a <code>multiplicity</code>, then the <code>featuringTypes</code> of the <code>multiplicity</code> must be the same as those of the <code>Feature</code> itself.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-validateFeatureMultiplicityDomain-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "multiplicity <> null implies multiplicity.featuringType = featuringType ",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-validateFeatureMultiplicityDomain\" ns0:type=\"uml:Constraint\" name=\"validateFeatureMultiplicityDomain\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-validateFeatureMultiplicityDomain-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; has a &lt;code&gt;multiplicity&lt;/code&gt;, then the &lt;code&gt;featuringTypes&lt;/code&gt; of the &lt;code&gt;multiplicity&lt;/code&gt; must be the same as those of the &lt;code&gt;Feature&lt;/code&gt; itself.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-validateFeatureMultiplicityDomain\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-validateFeatureMultiplicityDomain-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"multiplicity &lt;&gt; null implies multiplicity.featuringType = featuringType \" language=\"OCL2.0\" name=\"\" />\n          </ownedRule>\n          "
+    },
+    {
+      "kind": "ownedRule",
+      "owner": "Feature",
+      "name": "checkFeatureResultRedefinition",
+      "attributes": {
+        "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureResultRedefinition",
+        "{http://www.omg.org/spec/XMI/20161101}type": "uml:Constraint",
+        "name": "checkFeatureResultRedefinition"
+      },
+      "bodies": [
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureResultRedefinition-_comment.0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:Comment",
+          "body": "<p>If a <code>Feature</code> is a <code>result</code> <code>parameter</code> of an <code>owningType</code> that is a <code>Function</code> or <code>Expression</code>, then, for each direct supertype of its <code>owningType</code> that is also a <code>Function</code> or <code>Expression</code>, it must redefine the <code>result</code> <code>parameter</code>.</p>"
+        },
+        {
+          "{http://www.omg.org/spec/XMI/20161101}id": "Core-Features-Feature-checkFeatureResultRedefinition-specification0",
+          "{http://www.omg.org/spec/XMI/20161101}type": "uml:OpaqueExpression",
+          "body": "owningType <> null and (owningType.oclIsKindOf(Function) and     self = owningType.oclAsType(Function).result or  owningType.oclIsKindOf(Expression) and     self = owningType.oclAsType(Expression).result) implies     owningType.ownedSpecialization.general->         select(oclIsKindOf(Function) or oclIsKindOf(Expression))->         forAll(supertype |             redefines(                 if superType.oclIsKindOf(Function) then                     superType.oclAsType(Function).result                 else                     superType.oclAsType(Expression).result                 endif)",
+          "language": "OCL2.0",
+          "name": ""
+        }
+      ],
+      "xml": "<ownedRule xmlns:ns0=\"http://www.omg.org/spec/XMI/20161101\" ns0:id=\"Core-Features-Feature-checkFeatureResultRedefinition\" ns0:type=\"uml:Constraint\" name=\"checkFeatureResultRedefinition\">\n            <constrainedElement ns0:idref=\"Core-Features-Feature\" />\n            <ownedComment ns0:id=\"Core-Features-Feature-checkFeatureResultRedefinition-_comment.0\" ns0:type=\"uml:Comment\" body=\"&lt;p&gt;If a &lt;code&gt;Feature&lt;/code&gt; is a &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt; of an &lt;code&gt;owningType&lt;/code&gt; that is a &lt;code&gt;Function&lt;/code&gt; or &lt;code&gt;Expression&lt;/code&gt;, then, for each direct supertype of its &lt;code&gt;owningType&lt;/code&gt; that is also a &lt;code&gt;Function&lt;/code&gt; or &lt;code&gt;Expression&lt;/code&gt;, it must redefine the &lt;code&gt;result&lt;/code&gt; &lt;code&gt;parameter&lt;/code&gt;.&lt;/p&gt;\">\n              <annotatedElement ns0:idref=\"Core-Features-Feature-checkFeatureResultRedefinition\" />\n</ownedComment>\n            <specification ns0:id=\"Core-Features-Feature-checkFeatureResultRedefinition-specification0\" ns0:type=\"uml:OpaqueExpression\" body=\"owningType &lt;&gt; null and (owningType.oclIsKindOf(Function) and     self = owningType.oclAsType(Function).result or  owningType.oclIsKindOf(Expression) and     self = owningType.oclAsType(Expression).result) implies     owningType.ownedSpecialization.general-&gt;         select(oclIsKindOf(Function) or oclIsKindOf(Expression))-&gt;         forAll(supertype |             redefines(                 if superType.oclIsKindOf(Function) then                     superType.oclAsType(Function).result                 else                     superType.oclAsType(Expression).result                 endif)\" language=\"OCL2.0\" name=\"\">\n</specification>\n          </ownedRule>\n          "
+    }
+  ],
+  "reference_binding_contexts": [
+    {
+      "expression": {
+        "id": "2796afaf-1633-553e-acc3-dc1ad28f0f54",
+        "path": "Transfers::FlowTransfer::targetInputLink",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3680, end: 3690 }, syntax_node: Some(SyntaxNodeId(162349049650614652626338519626676508650)) }",
+          "range": [
+            3680,
+            3690
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "bound_membership": {
+        "id": "b1587355-8a9c-5454-be9f-efeca486c277",
+        "path": "Transfers::FlowTransfer::targetInputLink",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3680, end: 3690 }, syntax_node: Some(SyntaxNodeId(206780119388792204786134386776567951098)) }",
+          "range": [
+            3680,
+            3690
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "multiplicity": {
+        "id": "54bb619f-b5fb-5451-a262-3d95027b9121",
+        "path": "Transfers::FlowTransfer::targetInputLink",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3679, end: 3691 }, syntax_node: Some(SyntaxNodeId(81900533786835247562767308881829254281)) }",
+          "range": [
+            3679,
+            3691
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "b88716fb-66ec-55eb-9adf-f08cc8846a23",
+        "path": "Transfers::FlowTransfer::targetInputLink",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3679, end: 3691 }, syntax_node: Some(SyntaxNodeId(97246851930205928151251992400006152421)) }",
+          "range": [
+            3679,
+            3691
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature": {
+        "id": "ad60beb8-f90e-512d-8431-bede11d35908",
+        "path": "Transfers::FlowTransfer::targetInputLink",
+        "kind": "Connector",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3636, end: 3989 }, syntax_node: Some(SyntaxNodeId(271298172789314541483170014826989969689)) }",
+          "range": [
+            3636,
+            3989
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "connector targetInputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The input of the payload to the targetInput.\n             */\n        \n            end [1] feature transferTarget references target;\n            end [payloadNum] feature transferPayload references payload subsets transferTarget.targetInput;\n        }"
+        }
+      },
+      "feature_membership": {
+        "id": "fbacd5d7-bd3f-572f-8646-3c45a93d93e7",
+        "path": "Transfers::FlowTransfer",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3636, end: 3989 }, syntax_node: Some(SyntaxNodeId(94666691499094335457289384561649283604)) }",
+          "range": [
+            3636,
+            3989
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "connector targetInputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The input of the payload to the targetInput.\n             */\n        \n            end [1] feature transferTarget references target;\n            end [payloadNum] feature transferPayload references payload subsets transferTarget.targetInput;\n        }"
+        }
+      },
+      "feature_owner": {
+        "id": "e0cf76f3-1318-5ada-96d3-178d5642239e",
+        "path": "Transfers::FlowTransfer",
+        "kind": "Interaction",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 2363, end: 5337 }, syntax_node: Some(SyntaxNodeId(26170005412800495707504819251161964821)) }",
+          "range": [
+            2363,
+            5337
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "interaction FlowTransfer specializes Transfer disjoint from MessageTransfer {\n        doc\n        /*\n         * A FlowTransfer is a Transfer identifying an output feature of the source from which\n         * to pick up a payload and an input feature of the target to which to drop it off. They can\n         * start when the payload is available at the source and move or copy it to the target.\n         */\n         \n        feature isMove: Boolean[1] default true {\n            doc\n            /*\n             * If isMove is true, then the entire payload leaves the source at the start\n             * of the transfer.\n             */\n        }\n        \n        feature isPush: Boolean[1] default true {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payload is available\n             * at the source.\n             */\n        }\n        \n        connector sourceOutputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The output of the payloads from the sourceOutput.\n             */\n        \n            end [1] feature transferSource references source;\n            end [payloadNum] feature transferPayload references payload subsets transferSource.sourceOutput;\n        }\n        \n        connector targetInputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The input of the payload to the targetInput.\n             */\n        \n            end [1] feature transferTarget references target;\n            end [payloadNum] feature transferPayload references payload subsets transferTarget.targetInput;\n        }\n        \n        private connector sending: HappensDuring[payloadNum] from [1] startShot to [payloadNum] sourceOutputLink {\n          doc\n            /*\n             * The start of the transfer happens during the output of each of the payloads from the\n             * source. \n             */\n        }\n        \n        private connector moving: HappensWhile[0..*] from [0..*] sourceOutputLink.endShot to [0..1] startShot {\n            doc\n            /*\n             * If isMove is true, then all payloads leave the source at the start\n             * of the transfer.\n             */\n        }\n        private inv { isMove implies size(moving) == size(sourceOutputLink) }\n        \n        private connector pushing: HappensWhile[0..*] from [0..*] sourceOutputLink.startShot to [0..1] startShot {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payloads are available\n             * at the source.\n             */\n        }\n        private inv { isPush implies size(pushing) == size(sourceOutputLink) }\n        \n        private connector delivering: HappensWhile[payloadNum] from [payloadNum] targetInputLink.startShot to [1] endShot {\n            doc\n            /*\n             * The input of each of the payloads to the target starts at the end of the transfer.\n             */\n        }\n    }"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "31120298-7b2b-565d-930b-8e29dde9ee75",
+        "path": "TransitionPerformances::NonStateTransitionPerformance::triggerAfter",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 2243, end: 2248 }, syntax_node: Some(SyntaxNodeId(184369465996305168233972400240471411809)) }",
+          "range": [
+            2243,
+            2248
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "taNum"
+        }
+      },
+      "bound_membership": {
+        "id": "81fbb2b7-797b-5ef1-9056-087a277b7d23",
+        "path": "TransitionPerformances::NonStateTransitionPerformance::triggerAfter",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 2243, end: 2248 }, syntax_node: Some(SyntaxNodeId(46906762933144790421214712077585397190)) }",
+          "range": [
+            2243,
+            2248
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "taNum"
+        }
+      },
+      "multiplicity": {
+        "id": "f823409b-5a3b-53fe-9702-a5d55b064fee",
+        "path": "TransitionPerformances::NonStateTransitionPerformance::triggerAfter",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 2242, end: 2249 }, syntax_node: Some(SyntaxNodeId(139362963377666506256191516688199903119)) }",
+          "range": [
+            2242,
+            2249
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[taNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "2e70f081-cbe6-5ec8-bb10-8cc425d48c02",
+        "path": "TransitionPerformances::NonStateTransitionPerformance::triggerAfter",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 2242, end: 2249 }, syntax_node: Some(SyntaxNodeId(63797913414559510245259430272988781879)) }",
+          "range": [
+            2242,
+            2249
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[taNum]"
+        }
+      },
+      "feature": {
+        "id": "1f366104-1c7d-5b68-a124-e12e6f946357",
+        "path": "TransitionPerformances::NonStateTransitionPerformance::triggerAfter",
+        "kind": "Succession",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 2218, end: 2309 }, syntax_node: Some(SyntaxNodeId(208897579159252795572183813283095493888)) }",
+          "range": [
+            2218,
+            2309
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "succession triggerAfter [taNum] first [0..1] transitionLinkSource then [*] trigger.endShot;"
+        }
+      },
+      "feature_membership": {
+        "id": "9177d495-3437-5057-b755-202dbe51473e",
+        "path": "TransitionPerformances::NonStateTransitionPerformance",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 2210, end: 2309 }, syntax_node: Some(SyntaxNodeId(320763860163607208779544471656828549145)) }",
+          "range": [
+            2210,
+            2309
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "private succession triggerAfter [taNum] first [0..1] transitionLinkSource then [*] trigger.endShot;"
+        }
+      },
+      "feature_owner": {
+        "id": "254b448a-a11a-5932-9209-da467dfdec00",
+        "path": "TransitionPerformances::NonStateTransitionPerformance",
+        "kind": "Behavior",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1930, end: 2396 }, syntax_node: Some(SyntaxNodeId(245534229872302816017432716960637481121)) }",
+          "range": [
+            1930,
+            2396
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "behavior NonStateTransitionPerformance specializes TransitionPerformance {\n\t\tfeature isTriggerAfter: Boolean default true;\n\t\tprivate succession [1] transitionLinkSource then [1] Performance::self;\n\t\tprivate feature taNum: Natural [1] = if isTriggerAfter ? size(trigger) else 0;\n\t\tprivate succession triggerAfter [taNum] first [0..1] transitionLinkSource then [*] trigger.endShot;\n\t\t\t\t\n\t\tprivate succession all [*] guard then [0..1] transitionLink.laterOccurrence;\n\t}"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "3f630d5e-a2f0-5bdb-a20e-33d03f0970d3",
+        "path": "Transfers::Transfer::instant",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 1813, end: 1823 }, syntax_node: Some(SyntaxNodeId(52683421721594913543498462221014885360)) }",
+          "range": [
+            1813,
+            1823
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "instantNum"
+        }
+      },
+      "bound_membership": {
+        "id": "11aca3c6-0036-5d35-be4e-85254c0cb26d",
+        "path": "Transfers::Transfer::instant",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 1813, end: 1823 }, syntax_node: Some(SyntaxNodeId(72349991742950590769087447167531304384)) }",
+          "range": [
+            1813,
+            1823
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "instantNum"
+        }
+      },
+      "multiplicity": {
+        "id": "d3f8aa3e-ce08-5dc0-aff7-08d63825678e",
+        "path": "Transfers::Transfer::instant",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 1812, end: 1824 }, syntax_node: Some(SyntaxNodeId(121908208229460667279728268186568079130)) }",
+          "range": [
+            1812,
+            1824
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[instantNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "fdb488c2-c1da-52a5-81b7-01d268752dcb",
+        "path": "Transfers::Transfer::instant",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 1812, end: 1824 }, syntax_node: Some(SyntaxNodeId(108005612475580206382385215266763223402)) }",
+          "range": [
+            1812,
+            1824
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[instantNum]"
+        }
+      },
+      "feature": {
+        "id": "053762b7-fb29-5e1e-873c-f251a416c759",
+        "path": "Transfers::Transfer::instant",
+        "kind": "BindingConnector",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 1797, end: 2021 }, syntax_node: Some(SyntaxNodeId(187737222545378582510016811933874151113)) }",
+          "range": [
+            1797,
+            2021
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "binding instant[instantNum] of [0..1] startShot = [0..1] endShot {\n            doc\n            /*\n             * If isInstant is true, then the start and end of the transfer happen at the same time.\n             */\n        }"
+        }
+      },
+      "feature_membership": {
+        "id": "381ea46a-0c56-5e84-9676-c96ff043abc8",
+        "path": "Transfers::Transfer",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 1789, end: 2021 }, syntax_node: Some(SyntaxNodeId(87394850966441168555898285651208535464)) }",
+          "range": [
+            1789,
+            2021
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "private binding instant[instantNum] of [0..1] startShot = [0..1] endShot {\n            doc\n            /*\n             * If isInstant is true, then the start and end of the transfer happen at the same time.\n             */\n        }"
+        }
+      },
+      "feature_owner": {
+        "id": "f2e1538f-6db9-5c8a-a34b-61e56011eb42",
+        "path": "Transfers::Transfer",
+        "kind": "Interaction",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 507, end: 2027 }, syntax_node: Some(SyntaxNodeId(231238373842981383437935966627639780090)) }",
+          "range": [
+            507,
+            2027
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "interaction Transfer specializes Performance, BinaryLink {\n        doc\n        /*\n         * A Transfer represents the transfer of a payload from the source of the interaction \n         * to the target of the interaction.\n         */\n    \n        end feature source: Occurrence redefines BinaryLink::source {\n            doc\n            /*\n             * The entity whose output is the source of the payload to be transferred.\n             */\n        \n            feature sourceOutput: Anything[0..*];\n        }\n        \n        end feature target: Occurrence redefines BinaryLink::target {\n            doc\n            /*\n             * The entity whose input is the target of the payload to be transferred.\n             */\n        \n            feature targetInput: Anything[0..*];\n        }\n        \n        feature isInstant: Boolean[1] {\n            doc\n            /*\n             * If isInstance is true, then the transfer is instantaneous.\n             */\n        }\n        \n        feature payload: Anything[1..*] {\n            doc\n            /*\n             * The things that are to be transferred.\n             */\n        }\n        \n        feature payloadNum: Natural [1] = size(payload);\n        \n        private instantNum: Natural[1] = if isInstant? 1 else 0;\n        private binding instant[instantNum] of [0..1] startShot = [0..1] endShot {\n            doc\n            /*\n             * If isInstant is true, then the start and end of the transfer happen at the same time.\n             */\n        }\n    }"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "4941cca2-d407-5336-b93e-29f97ebb742c",
+        "path": "Transfers::FlowTransfer::targetInputLink::transferPayload",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3889, end: 3899 }, syntax_node: Some(SyntaxNodeId(298389249303577539811263968531561254854)) }",
+          "range": [
+            3889,
+            3899
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "bound_membership": {
+        "id": "d9160a4c-1651-586e-8558-df574a97a83d",
+        "path": "Transfers::FlowTransfer::targetInputLink::transferPayload",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3889, end: 3899 }, syntax_node: Some(SyntaxNodeId(217769700176131175087127388230933164589)) }",
+          "range": [
+            3889,
+            3899
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "multiplicity": {
+        "id": "85ec27ef-3704-56aa-831d-f1d25f503ff7",
+        "path": "Transfers::FlowTransfer::targetInputLink::transferPayload",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3888, end: 3900 }, syntax_node: Some(SyntaxNodeId(83701931050957561990748840704099002718)) }",
+          "range": [
+            3888,
+            3900
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "84e383e2-2e94-5177-bf4e-100e87b24ad2",
+        "path": "Transfers::FlowTransfer::targetInputLink::transferPayload",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3888, end: 3900 }, syntax_node: Some(SyntaxNodeId(117959416959479643125299555397075833092)) }",
+          "range": [
+            3888,
+            3900
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature": {
+        "id": "d4b7083b-a10a-589b-bd7b-ff9008b76d75",
+        "path": "Transfers::FlowTransfer::targetInputLink::transferPayload",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3888, end: 3900 }, syntax_node: Some(SyntaxNodeId(203555444883100722190820484226964423444)) }",
+          "range": [
+            3888,
+            3900
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature_membership": {
+        "id": "ddec1d95-18b1-55e3-809b-380d908bebe7",
+        "path": "Transfers::FlowTransfer::targetInputLink::transferPayload",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3888, end: 3900 }, syntax_node: Some(SyntaxNodeId(164570007148692220877439983255263497920)) }",
+          "range": [
+            3888,
+            3900
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature_owner": {
+        "id": "64f7fec1-08c3-5cd2-a979-4cdf3a732023",
+        "path": "Transfers::FlowTransfer::targetInputLink::transferPayload",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3884, end: 3979 }, syntax_node: Some(SyntaxNodeId(86466425994004092513091463273948732684)) }",
+          "range": [
+            3884,
+            3979
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "end [payloadNum] feature transferPayload references payload subsets transferTarget.targetInput;"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": false,
+      "owned_cross_feature": true,
+      "root_cause": "Cross-feature multiplicity/bound domain also needs the pending KERML11-3 analysis; no alternative domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "50044d97-d809-516d-9065-8d3dfb48efb9",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4083, end: 4093 }, syntax_node: Some(SyntaxNodeId(292413340404678959969050502628614270619)) }",
+          "range": [
+            4083,
+            4093
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "bound_membership": {
+        "id": "bbd4d92b-e591-55ad-a502-d8a676704261",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4083, end: 4093 }, syntax_node: Some(SyntaxNodeId(182134472518163837120755736994528546053)) }",
+          "range": [
+            4083,
+            4093
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "multiplicity": {
+        "id": "d02cd3b6-11fb-5c44-b84c-28399be19d1d",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4082, end: 4094 }, syntax_node: Some(SyntaxNodeId(131423847294150963716892619765933502471)) }",
+          "range": [
+            4082,
+            4094
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "cd7fd8de-a9f3-5be0-8e75-bc5809428c03",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4082, end: 4094 }, syntax_node: Some(SyntaxNodeId(309056106610785440888524369329103917986)) }",
+          "range": [
+            4082,
+            4094
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature": {
+        "id": "88507ddd-b52e-50c3-831c-5d464799593e",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4082, end: 4094 }, syntax_node: Some(SyntaxNodeId(198927447035055701097931356243446129041)) }",
+          "range": [
+            4082,
+            4094
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature_membership": {
+        "id": "413890e4-42ea-5415-be11-8d4c6b4c7540",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4082, end: 4094 }, syntax_node: Some(SyntaxNodeId(17820621494705714573526804902449325732)) }",
+          "range": [
+            4082,
+            4094
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature_owner": {
+        "id": "574c2656-afcf-5919-9c04-5c70a9ebc31f",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4082, end: 4111 }, syntax_node: Some(SyntaxNodeId(75354240668576488799955030272661496739)) }",
+          "range": [
+            4082,
+            4111
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum] sourceOutputLink"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": false,
+      "owned_cross_feature": true,
+      "root_cause": "Cross-feature multiplicity/bound domain also needs the pending KERML11-3 analysis; no alternative domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "50637f8c-972e-5951-8aac-e4ca6627d385",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5104, end: 5114 }, syntax_node: Some(SyntaxNodeId(242794958224271149419711249736008763123)) }",
+          "range": [
+            5104,
+            5114
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "bound_membership": {
+        "id": "8705bf08-15b6-580b-b630-d1422d6e4b48",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5104, end: 5114 }, syntax_node: Some(SyntaxNodeId(233660961278938158942684475286445002276)) }",
+          "range": [
+            5104,
+            5114
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "multiplicity": {
+        "id": "df7063d8-1566-546d-85df-cca8bc0fa499",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5103, end: 5115 }, syntax_node: Some(SyntaxNodeId(293067535009715491438339529855724870691)) }",
+          "range": [
+            5103,
+            5115
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "64a15299-4363-596f-9c14-4d0511fa171b",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5103, end: 5115 }, syntax_node: Some(SyntaxNodeId(171011344669122059375072754423854224534)) }",
+          "range": [
+            5103,
+            5115
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature": {
+        "id": "a6bcc524-def3-5711-9ad9-653c6de35bbe",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "Connector",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5069, end: 5331 }, syntax_node: Some(SyntaxNodeId(33687315692386299899431990740957387097)) }",
+          "range": [
+            5069,
+            5331
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "connector delivering: HappensWhile[payloadNum] from [payloadNum] targetInputLink.startShot to [1] endShot {\n            doc\n            /*\n             * The input of each of the payloads to the target starts at the end of the transfer.\n             */\n        }"
+        }
+      },
+      "feature_membership": {
+        "id": "a921ecbe-fe44-5339-82be-b46565140651",
+        "path": "Transfers::FlowTransfer",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5061, end: 5331 }, syntax_node: Some(SyntaxNodeId(325833391277058207295513483020870564571)) }",
+          "range": [
+            5061,
+            5331
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "private connector delivering: HappensWhile[payloadNum] from [payloadNum] targetInputLink.startShot to [1] endShot {\n            doc\n            /*\n             * The input of each of the payloads to the target starts at the end of the transfer.\n             */\n        }"
+        }
+      },
+      "feature_owner": {
+        "id": "e0cf76f3-1318-5ada-96d3-178d5642239e",
+        "path": "Transfers::FlowTransfer",
+        "kind": "Interaction",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 2363, end: 5337 }, syntax_node: Some(SyntaxNodeId(26170005412800495707504819251161964821)) }",
+          "range": [
+            2363,
+            5337
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "interaction FlowTransfer specializes Transfer disjoint from MessageTransfer {\n        doc\n        /*\n         * A FlowTransfer is a Transfer identifying an output feature of the source from which\n         * to pick up a payload and an input feature of the target to which to drop it off. They can\n         * start when the payload is available at the source and move or copy it to the target.\n         */\n         \n        feature isMove: Boolean[1] default true {\n            doc\n            /*\n             * If isMove is true, then the entire payload leaves the source at the start\n             * of the transfer.\n             */\n        }\n        \n        feature isPush: Boolean[1] default true {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payload is available\n             * at the source.\n             */\n        }\n        \n        connector sourceOutputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The output of the payloads from the sourceOutput.\n             */\n        \n            end [1] feature transferSource references source;\n            end [payloadNum] feature transferPayload references payload subsets transferSource.sourceOutput;\n        }\n        \n        connector targetInputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The input of the payload to the targetInput.\n             */\n        \n            end [1] feature transferTarget references target;\n            end [payloadNum] feature transferPayload references payload subsets transferTarget.targetInput;\n        }\n        \n        private connector sending: HappensDuring[payloadNum] from [1] startShot to [payloadNum] sourceOutputLink {\n          doc\n            /*\n             * The start of the transfer happens during the output of each of the payloads from the\n             * source. \n             */\n        }\n        \n        private connector moving: HappensWhile[0..*] from [0..*] sourceOutputLink.endShot to [0..1] startShot {\n            doc\n            /*\n             * If isMove is true, then all payloads leave the source at the start\n             * of the transfer.\n             */\n        }\n        private inv { isMove implies size(moving) == size(sourceOutputLink) }\n        \n        private connector pushing: HappensWhile[0..*] from [0..*] sourceOutputLink.startShot to [0..1] startShot {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payloads are available\n             * at the source.\n             */\n        }\n        private inv { isPush implies size(pushing) == size(sourceOutputLink) }\n        \n        private connector delivering: HappensWhile[payloadNum] from [payloadNum] targetInputLink.startShot to [1] endShot {\n            doc\n            /*\n             * The input of each of the payloads to the target starts at the end of the transfer.\n             */\n        }\n    }"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "5100fa35-67c5-51c5-9769-ed5a68ffc0e9",
+        "path": "Transfers::FlowTransfer::sourceOutputLink",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3303, end: 3313 }, syntax_node: Some(SyntaxNodeId(155074344840930544593980863746791162059)) }",
+          "range": [
+            3303,
+            3313
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "bound_membership": {
+        "id": "778f7c9d-ab4e-529f-8d26-5ab00f985a07",
+        "path": "Transfers::FlowTransfer::sourceOutputLink",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3303, end: 3313 }, syntax_node: Some(SyntaxNodeId(19115940269113435508494053494543641677)) }",
+          "range": [
+            3303,
+            3313
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "multiplicity": {
+        "id": "fdeff36c-c5b0-5d4f-8b81-da0a54d4344e",
+        "path": "Transfers::FlowTransfer::sourceOutputLink",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3302, end: 3314 }, syntax_node: Some(SyntaxNodeId(171886883195796119795476828789532908824)) }",
+          "range": [
+            3302,
+            3314
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "b4fa4c0f-b5ee-54e6-af60-26b311503845",
+        "path": "Transfers::FlowTransfer::sourceOutputLink",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3302, end: 3314 }, syntax_node: Some(SyntaxNodeId(95303237773238569253236074002711755423)) }",
+          "range": [
+            3302,
+            3314
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature": {
+        "id": "d3e31f77-fb8d-51ae-b1e0-9d7a1f610577",
+        "path": "Transfers::FlowTransfer::sourceOutputLink",
+        "kind": "Connector",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3258, end: 3618 }, syntax_node: Some(SyntaxNodeId(162266088742685231991967388805841687095)) }",
+          "range": [
+            3258,
+            3618
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "connector sourceOutputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The output of the payloads from the sourceOutput.\n             */\n        \n            end [1] feature transferSource references source;\n            end [payloadNum] feature transferPayload references payload subsets transferSource.sourceOutput;\n        }"
+        }
+      },
+      "feature_membership": {
+        "id": "3f3079c4-9a8e-5f3e-abb8-44eaf51c5313",
+        "path": "Transfers::FlowTransfer",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3258, end: 3618 }, syntax_node: Some(SyntaxNodeId(248676932597096602628277829488580791762)) }",
+          "range": [
+            3258,
+            3618
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "connector sourceOutputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The output of the payloads from the sourceOutput.\n             */\n        \n            end [1] feature transferSource references source;\n            end [payloadNum] feature transferPayload references payload subsets transferSource.sourceOutput;\n        }"
+        }
+      },
+      "feature_owner": {
+        "id": "e0cf76f3-1318-5ada-96d3-178d5642239e",
+        "path": "Transfers::FlowTransfer",
+        "kind": "Interaction",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 2363, end: 5337 }, syntax_node: Some(SyntaxNodeId(26170005412800495707504819251161964821)) }",
+          "range": [
+            2363,
+            5337
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "interaction FlowTransfer specializes Transfer disjoint from MessageTransfer {\n        doc\n        /*\n         * A FlowTransfer is a Transfer identifying an output feature of the source from which\n         * to pick up a payload and an input feature of the target to which to drop it off. They can\n         * start when the payload is available at the source and move or copy it to the target.\n         */\n         \n        feature isMove: Boolean[1] default true {\n            doc\n            /*\n             * If isMove is true, then the entire payload leaves the source at the start\n             * of the transfer.\n             */\n        }\n        \n        feature isPush: Boolean[1] default true {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payload is available\n             * at the source.\n             */\n        }\n        \n        connector sourceOutputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The output of the payloads from the sourceOutput.\n             */\n        \n            end [1] feature transferSource references source;\n            end [payloadNum] feature transferPayload references payload subsets transferSource.sourceOutput;\n        }\n        \n        connector targetInputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The input of the payload to the targetInput.\n             */\n        \n            end [1] feature transferTarget references target;\n            end [payloadNum] feature transferPayload references payload subsets transferTarget.targetInput;\n        }\n        \n        private connector sending: HappensDuring[payloadNum] from [1] startShot to [payloadNum] sourceOutputLink {\n          doc\n            /*\n             * The start of the transfer happens during the output of each of the payloads from the\n             * source. \n             */\n        }\n        \n        private connector moving: HappensWhile[0..*] from [0..*] sourceOutputLink.endShot to [0..1] startShot {\n            doc\n            /*\n             * If isMove is true, then all payloads leave the source at the start\n             * of the transfer.\n             */\n        }\n        private inv { isMove implies size(moving) == size(sourceOutputLink) }\n        \n        private connector pushing: HappensWhile[0..*] from [0..*] sourceOutputLink.startShot to [0..1] startShot {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payloads are available\n             * at the source.\n             */\n        }\n        private inv { isPush implies size(pushing) == size(sourceOutputLink) }\n        \n        private connector delivering: HappensWhile[payloadNum] from [payloadNum] targetInputLink.startShot to [1] endShot {\n            doc\n            /*\n             * The input of each of the payloads to the target starts at the end of the transfer.\n             */\n        }\n    }"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "78e497fe-fe02-543f-9dad-4281b6f1f7dd",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5122, end: 5132 }, syntax_node: Some(SyntaxNodeId(309453907225891063877472277040961423081)) }",
+          "range": [
+            5122,
+            5132
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "bound_membership": {
+        "id": "55b44935-a378-5858-b00e-59be9e913f2e",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5122, end: 5132 }, syntax_node: Some(SyntaxNodeId(126553865146838745978210202258792584437)) }",
+          "range": [
+            5122,
+            5132
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "multiplicity": {
+        "id": "84b1c3d3-6690-5dcc-a80f-4cdfb8f84677",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5121, end: 5133 }, syntax_node: Some(SyntaxNodeId(117407305018471448091134008886232558698)) }",
+          "range": [
+            5121,
+            5133
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "c55d6720-448d-564c-83e7-32d28aa19f9f",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5121, end: 5133 }, syntax_node: Some(SyntaxNodeId(252342362981946984790525198226852809594)) }",
+          "range": [
+            5121,
+            5133
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature": {
+        "id": "6e2de5c9-f3ac-5395-b0be-2541f4338f80",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5121, end: 5133 }, syntax_node: Some(SyntaxNodeId(137554816393682238327099120168997718662)) }",
+          "range": [
+            5121,
+            5133
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature_membership": {
+        "id": "9142a175-5504-5ae4-9373-5f8ea9c002fd",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5121, end: 5133 }, syntax_node: Some(SyntaxNodeId(105964187285184106457488379704573800645)) }",
+          "range": [
+            5121,
+            5133
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature_owner": {
+        "id": "907cf999-a782-5de8-8f9b-9299b40d700d",
+        "path": "Transfers::FlowTransfer::delivering",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 5121, end: 5159 }, syntax_node: Some(SyntaxNodeId(156062147436959842254709160954908718257)) }",
+          "range": [
+            5121,
+            5159
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum] targetInputLink.startShot"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": false,
+      "owned_cross_feature": true,
+      "root_cause": "Cross-feature multiplicity/bound domain also needs the pending KERML11-3 analysis; no alternative domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "8e97e6b9-8756-59d5-a889-25e008001a89",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4048, end: 4058 }, syntax_node: Some(SyntaxNodeId(289497423976413477789291286821006829)) }",
+          "range": [
+            4048,
+            4058
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "bound_membership": {
+        "id": "01eeea28-d547-5557-9c72-b79353691c40",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4048, end: 4058 }, syntax_node: Some(SyntaxNodeId(122558124021008004764918321529913207170)) }",
+          "range": [
+            4048,
+            4058
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "multiplicity": {
+        "id": "f6f33a65-98a4-50f3-8dd4-a43cb84354b5",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4047, end: 4059 }, syntax_node: Some(SyntaxNodeId(191680217575524964754090690517216437088)) }",
+          "range": [
+            4047,
+            4059
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "84c95887-376b-5f26-adbe-8a84f7ec620c",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4047, end: 4059 }, syntax_node: Some(SyntaxNodeId(126345666183494491785918033060492081934)) }",
+          "range": [
+            4047,
+            4059
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature": {
+        "id": "c9de7850-38c9-55df-8725-b1fe04bc2a46",
+        "path": "Transfers::FlowTransfer::sending",
+        "kind": "Connector",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4015, end: 4292 }, syntax_node: Some(SyntaxNodeId(75392759814881975637331100715811569592)) }",
+          "range": [
+            4015,
+            4292
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "connector sending: HappensDuring[payloadNum] from [1] startShot to [payloadNum] sourceOutputLink {\n          doc\n            /*\n             * The start of the transfer happens during the output of each of the payloads from the\n             * source. \n             */\n        }"
+        }
+      },
+      "feature_membership": {
+        "id": "4517a7ae-9401-50b7-bc79-82627c9e67ab",
+        "path": "Transfers::FlowTransfer",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 4007, end: 4292 }, syntax_node: Some(SyntaxNodeId(265903239551554561699219304981250763083)) }",
+          "range": [
+            4007,
+            4292
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "private connector sending: HappensDuring[payloadNum] from [1] startShot to [payloadNum] sourceOutputLink {\n          doc\n            /*\n             * The start of the transfer happens during the output of each of the payloads from the\n             * source. \n             */\n        }"
+        }
+      },
+      "feature_owner": {
+        "id": "e0cf76f3-1318-5ada-96d3-178d5642239e",
+        "path": "Transfers::FlowTransfer",
+        "kind": "Interaction",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 2363, end: 5337 }, syntax_node: Some(SyntaxNodeId(26170005412800495707504819251161964821)) }",
+          "range": [
+            2363,
+            5337
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "interaction FlowTransfer specializes Transfer disjoint from MessageTransfer {\n        doc\n        /*\n         * A FlowTransfer is a Transfer identifying an output feature of the source from which\n         * to pick up a payload and an input feature of the target to which to drop it off. They can\n         * start when the payload is available at the source and move or copy it to the target.\n         */\n         \n        feature isMove: Boolean[1] default true {\n            doc\n            /*\n             * If isMove is true, then the entire payload leaves the source at the start\n             * of the transfer.\n             */\n        }\n        \n        feature isPush: Boolean[1] default true {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payload is available\n             * at the source.\n             */\n        }\n        \n        connector sourceOutputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The output of the payloads from the sourceOutput.\n             */\n        \n            end [1] feature transferSource references source;\n            end [payloadNum] feature transferPayload references payload subsets transferSource.sourceOutput;\n        }\n        \n        connector targetInputLink: BinaryLinkObject[payloadNum] {\n            doc\n            /*\n             * The input of the payload to the targetInput.\n             */\n        \n            end [1] feature transferTarget references target;\n            end [payloadNum] feature transferPayload references payload subsets transferTarget.targetInput;\n        }\n        \n        private connector sending: HappensDuring[payloadNum] from [1] startShot to [payloadNum] sourceOutputLink {\n          doc\n            /*\n             * The start of the transfer happens during the output of each of the payloads from the\n             * source. \n             */\n        }\n        \n        private connector moving: HappensWhile[0..*] from [0..*] sourceOutputLink.endShot to [0..1] startShot {\n            doc\n            /*\n             * If isMove is true, then all payloads leave the source at the start\n             * of the transfer.\n             */\n        }\n        private inv { isMove implies size(moving) == size(sourceOutputLink) }\n        \n        private connector pushing: HappensWhile[0..*] from [0..*] sourceOutputLink.startShot to [0..1] startShot {\n            doc\n            /*\n             * If isPush is true, then the transfer begins when the payloads are available\n             * at the source.\n             */\n        }\n        private inv { isPush implies size(pushing) == size(sourceOutputLink) }\n        \n        private connector delivering: HappensWhile[payloadNum] from [payloadNum] targetInputLink.startShot to [1] endShot {\n            doc\n            /*\n             * The input of each of the payloads to the target starts at the end of the transfer.\n             */\n        }\n    }"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "ae67a31f-e263-55af-9549-b901fe8ec89e",
+        "path": "Transfers::FlowTransfer::sourceOutputLink::transferPayload",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3517, end: 3527 }, syntax_node: Some(SyntaxNodeId(215436892265101595782651580380133392546)) }",
+          "range": [
+            3517,
+            3527
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "bound_membership": {
+        "id": "97634211-5809-52da-8ce9-9fa760e81c74",
+        "path": "Transfers::FlowTransfer::sourceOutputLink::transferPayload",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3517, end: 3527 }, syntax_node: Some(SyntaxNodeId(243362399405944039900724532045757092169)) }",
+          "range": [
+            3517,
+            3527
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "payloadNum"
+        }
+      },
+      "multiplicity": {
+        "id": "1d85edd6-bcfe-5e2c-b5c5-447807866e72",
+        "path": "Transfers::FlowTransfer::sourceOutputLink::transferPayload",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3516, end: 3528 }, syntax_node: Some(SyntaxNodeId(264786879197798315476241619749201666888)) }",
+          "range": [
+            3516,
+            3528
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "18efd745-8564-5d26-8c18-ff1e747d2e57",
+        "path": "Transfers::FlowTransfer::sourceOutputLink::transferPayload",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3516, end: 3528 }, syntax_node: Some(SyntaxNodeId(75669733382859932542646898920514704551)) }",
+          "range": [
+            3516,
+            3528
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature": {
+        "id": "6ef756a5-ac78-5c70-80c6-8948ce07c3d7",
+        "path": "Transfers::FlowTransfer::sourceOutputLink::transferPayload",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3516, end: 3528 }, syntax_node: Some(SyntaxNodeId(203752836360064922760120589785032180617)) }",
+          "range": [
+            3516,
+            3528
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature_membership": {
+        "id": "45dde366-d608-51ce-b04f-4d0207b9ace6",
+        "path": "Transfers::FlowTransfer::sourceOutputLink::transferPayload",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3516, end: 3528 }, syntax_node: Some(SyntaxNodeId(1814408925425723288725972625572275142)) }",
+          "range": [
+            3516,
+            3528
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "[payloadNum]"
+        }
+      },
+      "feature_owner": {
+        "id": "2518677b-6c09-582e-8af2-c8eab2406f01",
+        "path": "Transfers::FlowTransfer::sourceOutputLink::transferPayload",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/Transfers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(253942986661487244762056001554660987929), revision: SourceRevisionId(128988605520951305635422919100005519649), range: ByteRange { start: 3512, end: 3608 }, syntax_node: Some(SyntaxNodeId(111313148481051583932807904229457397285)) }",
+          "range": [
+            3512,
+            3608
+          ],
+          "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+          "text": "end [payloadNum] feature transferPayload references payload subsets transferSource.sourceOutput;"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": false,
+      "owned_cross_feature": true,
+      "root_cause": "Cross-feature multiplicity/bound domain also needs the pending KERML11-3 analysis; no alternative domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "aff98c9d-e1be-50cb-be0d-38afe58d1bfa",
+        "path": "CollectionFunctions::array#::indexes",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1986, end: 1987 }, syntax_node: Some(SyntaxNodeId(128605762981219124549807220537908253678)) }",
+          "range": [
+            1986,
+            1987
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "n"
+        }
+      },
+      "bound_membership": {
+        "id": "c65a11e0-b499-5608-952c-dadd997b054e",
+        "path": "CollectionFunctions::array#::indexes",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1986, end: 1987 }, syntax_node: Some(SyntaxNodeId(91473670384479341557857368400586569442)) }",
+          "range": [
+            1986,
+            1987
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "n"
+        }
+      },
+      "multiplicity": {
+        "id": "e7cef827-66ff-5a61-aaa2-c909dcd184ca",
+        "path": "CollectionFunctions::array#::indexes",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1985, end: 1988 }, syntax_node: Some(SyntaxNodeId(66684040775208849591101490885960174443)) }",
+          "range": [
+            1985,
+            1988
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "[n]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "b5e6f885-1e46-562c-865f-4867365c1aa8",
+        "path": "CollectionFunctions::array#::indexes",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1985, end: 1988 }, syntax_node: Some(SyntaxNodeId(158300960981658655952168192217386954016)) }",
+          "range": [
+            1985,
+            1988
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "[n]"
+        }
+      },
+      "feature": {
+        "id": "9728dce0-017f-5d89-bd45-80a30d34f4ee",
+        "path": "CollectionFunctions::array#::indexes",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1965, end: 2007 }, syntax_node: Some(SyntaxNodeId(202480798169553654168585971495852933250)) }",
+          "range": [
+            1965,
+            2007
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "in indexes: Positive[n] ordered nonunique;"
+        }
+      },
+      "feature_membership": {
+        "id": "c4565c91-5247-53e9-9874-a09428720d9e",
+        "path": "CollectionFunctions::array#",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1965, end: 2007 }, syntax_node: Some(SyntaxNodeId(224643557249800798696639788840920469242)) }",
+          "range": [
+            1965,
+            2007
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "in indexes: Positive[n] ordered nonunique;"
+        }
+      },
+      "feature_owner": {
+        "id": "ea4328b1-8922-5130-934d-03b55eb05e0a",
+        "path": "CollectionFunctions::array#",
+        "kind": "Function",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1896, end: 2454 }, syntax_node: Some(SyntaxNodeId(62643883448775218882698440871515289677)) }",
+          "range": [
+            1896,
+            2454
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "function 'array#' specializes BaseFunctions::'#' { in arr: Array[1]; in indexes: Positive[n] ordered nonunique;\t\t\n\t\tprivate feature n : Natural[1] = arr.rank;\n\t\t\n\t\t// Assumes row-major ordering for elements.\n\t\tprivate function index { in arr: Array[1]; in i : Natural; in indexes : Positive[1..*];\n\t\t\tif i <= 1? indexes#(1) else arr.dimensions#(i) * (index(arr, i-1, indexes) - 1) + indexes#(i)\n\t\t}\n\t\t\n\t\treturn : Anything[0..1] =\n\t\t\tif n == 0 or (1..n)->exists {in i; indexes#(i) > arr.dimensions#(i)}? null \n\t\t\telse arr.elements#(index(arr, n, indexes));\n\t}"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "ba5a05e4-79ce-57e2-bf90-fa6113147a1e",
+        "path": "StatePerformances::StateTransitionPerformance::linkTriggerDuring",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5188, end: 5193 }, syntax_node: Some(SyntaxNodeId(35918823915963846857051445798829078652)) }",
+          "range": [
+            5188,
+            5193
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "tdNum"
+        }
+      },
+      "bound_membership": {
+        "id": "432bb4bd-3f79-54eb-8c44-95cc631a53f6",
+        "path": "StatePerformances::StateTransitionPerformance::linkTriggerDuring",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5188, end: 5193 }, syntax_node: Some(SyntaxNodeId(123854439297220153715905035820155129925)) }",
+          "range": [
+            5188,
+            5193
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "tdNum"
+        }
+      },
+      "multiplicity": {
+        "id": "05c9e0e5-02ff-56bd-97d5-d1ff7046fb84",
+        "path": "StatePerformances::StateTransitionPerformance::linkTriggerDuring",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5187, end: 5194 }, syntax_node: Some(SyntaxNodeId(32486956544150936032362437950732172663)) }",
+          "range": [
+            5187,
+            5194
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "[tdNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "5e11521f-4a0b-57cb-a4bd-d063f10c1ea9",
+        "path": "StatePerformances::StateTransitionPerformance::linkTriggerDuring",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5187, end: 5194 }, syntax_node: Some(SyntaxNodeId(322895622195052292344027332869510884253)) }",
+          "range": [
+            5187,
+            5194
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "[tdNum]"
+        }
+      },
+      "feature": {
+        "id": "bf5baa11-2dd9-592b-a5fd-0f1ac1759643",
+        "path": "StatePerformances::StateTransitionPerformance::linkTriggerDuring",
+        "kind": "Connector",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5145, end: 5251 }, syntax_node: Some(SyntaxNodeId(297950597419977274486608919026559588518)) }",
+          "range": [
+            5145,
+            5251
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "connector linkTriggerDuring: HappensDuring[tdNum] from [*] trigger.endShot to [0..1] transitionLinkSource;"
+        }
+      },
+      "feature_membership": {
+        "id": "e9f7773b-8646-5177-80c7-3d19db07458d",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5137, end: 5251 }, syntax_node: Some(SyntaxNodeId(56912701461095230532873254554019110041)) }",
+          "range": [
+            5137,
+            5251
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "private connector linkTriggerDuring: HappensDuring[tdNum] from [*] trigger.endShot to [0..1] transitionLinkSource;"
+        }
+      },
+      "feature_owner": {
+        "id": "791f5ee4-0bb4-559d-9e46-4448e7a8e9dd",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "Behavior",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 4098, end: 5454 }, syntax_node: Some(SyntaxNodeId(249439951150041163072038666776005603499)) }",
+          "range": [
+            4098,
+            5454
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "behavior StateTransitionPerformance specializes TransitionPerformance {\n\t\tfeature isTriggerDuring: Boolean[1];\n\t\tinv { not transitionLinkSource.isTriggerDuring | isTriggerDuring  }\n\n\t\tin feature transitionLinkSource: StatePerformance redefines TransitionPerformance::transitionLinkSource {\n\t\t\tfeature redefines accepted;\n\t\t\tfeature redefines StatePerformance::acceptable;\n\t\t}\n\t\tprivate succession [*] transitionLinkSource.nonDoMiddle then [1] Performance::self;\n\n\t\tprivate feature transitionLinkTarget [0..1] : Occurrence = transitionLink.laterOccurrence {\n\t\t\tinv { (that istype StatePerformance) implies\n\t\t\t      (that as StatePerformance).incomingTransitionTrigger == trigger }\n\t\t}\n\t\t\n\t\tfeature acceptable: Transfer [*] subsets transitionLinkSource.acceptable, triggerTarget.incomingTransfersToSelf;\n\n\t\tfeature trigger redefines TransitionPerformance::trigger subsets acceptable, transitionLinkSource.accepted {\n\t\t\tfeature redefines endShot;\n\t\t}\n\t\t\n\t\tprivate feature tdNum: Natural [1] = if not isTriggerDuring ? 0 else size(trigger);\n\t\tprivate connector linkTriggerDuring: HappensDuring[tdNum] from [*] trigger.endShot to [0..1] transitionLinkSource;\n\t\t\n\t\tprivate succession all [*] acceptable then [*] guard;\n\t\tprivate succession [*] guard then [1] transitionLinkSource.exit;\n\n\t\tprivate succession [accNum] accept then [1] transitionLinkSource.exit;\n\t}"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "bbbdfce1-62c9-5194-b443-08b839aaff3f",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5401, end: 5407 }, syntax_node: Some(SyntaxNodeId(18589067354486117990910171607931089301)) }",
+          "range": [
+            5401,
+            5407
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "accNum"
+        }
+      },
+      "bound_membership": {
+        "id": "813e2b38-5333-5c45-9b78-f6a6432114a4",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5401, end: 5407 }, syntax_node: Some(SyntaxNodeId(177867315173639241014936729284491704325)) }",
+          "range": [
+            5401,
+            5407
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "accNum"
+        }
+      },
+      "multiplicity": {
+        "id": "441f786b-a202-5495-b0a4-ffaff7526ae9",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5400, end: 5408 }, syntax_node: Some(SyntaxNodeId(102919228544511825371731445195605107428)) }",
+          "range": [
+            5400,
+            5408
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "[accNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "c2370fe2-1cd6-56fa-8d08-bf19c4f3a087",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5400, end: 5408 }, syntax_node: Some(SyntaxNodeId(160622270606146398344250343984589892573)) }",
+          "range": [
+            5400,
+            5408
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "[accNum]"
+        }
+      },
+      "feature": {
+        "id": "1c238c92-6b1e-5e04-b3b3-867e5c92c915",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5400, end: 5408 }, syntax_node: Some(SyntaxNodeId(237545555978772241812271460823613904607)) }",
+          "range": [
+            5400,
+            5408
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "[accNum]"
+        }
+      },
+      "feature_membership": {
+        "id": "916d9033-544a-583a-94f4-6f16b1b5f0ef",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5400, end: 5408 }, syntax_node: Some(SyntaxNodeId(161255400803610288244023567535598403525)) }",
+          "range": [
+            5400,
+            5408
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "[accNum]"
+        }
+      },
+      "feature_owner": {
+        "id": "84bfd87f-700c-5d1b-9d1f-fbeee93b524d",
+        "path": "StatePerformances::StateTransitionPerformance",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/StatePerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(140126502757028471991970107144982894794), revision: SourceRevisionId(305260999450040989266141328464654139650), range: ByteRange { start: 5400, end: 5415 }, syntax_node: Some(SyntaxNodeId(339333687613820006853134971900855040310)) }",
+          "range": [
+            5400,
+            5415
+          ],
+          "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+          "text": "[accNum] accept"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": false,
+      "owned_cross_feature": true,
+      "root_cause": "Cross-feature multiplicity/bound domain also needs the pending KERML11-3 analysis; no alternative domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "e2704e2f-b5ad-5683-8816-6c714127a1fd",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1908, end: 1914 }, syntax_node: Some(SyntaxNodeId(18312691805306604200833176729579639825)) }",
+          "range": [
+            1908,
+            1914
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "accNum"
+        }
+      },
+      "bound_membership": {
+        "id": "9e60f313-5166-54da-b3d0-c4caa33a11b9",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1908, end: 1914 }, syntax_node: Some(SyntaxNodeId(195393568802073538994444806585774941579)) }",
+          "range": [
+            1908,
+            1914
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "accNum"
+        }
+      },
+      "multiplicity": {
+        "id": "fe034c11-b82f-51df-a6db-46aca23778d5",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1907, end: 1915 }, syntax_node: Some(SyntaxNodeId(284855437262583471055554735761445308270)) }",
+          "range": [
+            1907,
+            1915
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[accNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "e8ddc064-e614-5d4e-a25b-83a07b83c8e1",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1907, end: 1915 }, syntax_node: Some(SyntaxNodeId(119049237658009569015460268594059247002)) }",
+          "range": [
+            1907,
+            1915
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[accNum]"
+        }
+      },
+      "feature": {
+        "id": "becb3024-1154-5f79-ac3c-91318105b162",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1907, end: 1915 }, syntax_node: Some(SyntaxNodeId(137163356933231890740163940165530771256)) }",
+          "range": [
+            1907,
+            1915
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[accNum]"
+        }
+      },
+      "feature_membership": {
+        "id": "2559bee5-866f-5c8f-9778-d1515aa26b33",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1907, end: 1915 }, syntax_node: Some(SyntaxNodeId(169940433129863553872325647643088102190)) }",
+          "range": [
+            1907,
+            1915
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[accNum]"
+        }
+      },
+      "feature_owner": {
+        "id": "44b81b73-9da1-5885-93c9-b178ab942b1a",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1907, end: 1922 }, syntax_node: Some(SyntaxNodeId(285016433570669010878769793060134574042)) }",
+          "range": [
+            1907,
+            1922
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[accNum] accept"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": false,
+      "owned_cross_feature": true,
+      "root_cause": "Cross-feature multiplicity/bound domain also needs the pending KERML11-3 analysis; no alternative domain is silently selected."
+    },
+    {
+      "expression": {
+        "id": "f0a910e0-17c9-5bd6-8ad0-9ae0933dee80",
+        "path": "TransitionPerformances::TransitionPerformance::accept",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1705, end: 1711 }, syntax_node: Some(SyntaxNodeId(310615215487610511871904969428364576305)) }",
+          "range": [
+            1705,
+            1711
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "accNum"
+        }
+      },
+      "bound_membership": {
+        "id": "7c85b1f2-fa87-5442-ab83-984b93f47047",
+        "path": "TransitionPerformances::TransitionPerformance::accept",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1705, end: 1711 }, syntax_node: Some(SyntaxNodeId(142784087998943306750187103874662272342)) }",
+          "range": [
+            1705,
+            1711
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "accNum"
+        }
+      },
+      "multiplicity": {
+        "id": "df7baea9-d442-51cd-b66f-73ded21ab117",
+        "path": "TransitionPerformances::TransitionPerformance::accept",
+        "kind": "MultiplicityRange",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1704, end: 1712 }, syntax_node: Some(SyntaxNodeId(7680831542113813807298268358790864760)) }",
+          "range": [
+            1704,
+            1712
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[accNum]"
+        }
+      },
+      "multiplicity_membership": {
+        "id": "b58903e8-9e31-5b0c-8829-77826ddf24dc",
+        "path": "TransitionPerformances::TransitionPerformance::accept",
+        "kind": "OwningMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1704, end: 1712 }, syntax_node: Some(SyntaxNodeId(333386723001649887837544736782616823234)) }",
+          "range": [
+            1704,
+            1712
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "[accNum]"
+        }
+      },
+      "feature": {
+        "id": "3da361d2-987f-50e0-ba03-7eb4dd5ecaca",
+        "path": "TransitionPerformances::TransitionPerformance::accept",
+        "kind": "Step",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1674, end: 1869 }, syntax_node: Some(SyntaxNodeId(192829237199880656046971300439802205360)) }",
+          "range": [
+            1674,
+            1869
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "step accept: AcceptPerformance[accNum] subsets timeEnclosedOccurrences, acceptPerformances {\n\t\t\tin feature redefines receiver = triggerTarget;\n\t\t\tfeature redefines acceptedTransfer = trigger;\n\t\t}"
+        }
+      },
+      "feature_membership": {
+        "id": "379a7aff-e3f3-5144-b41f-d8d1ebdfe37c",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "FeatureMembership",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 1674, end: 1869 }, syntax_node: Some(SyntaxNodeId(319583537636916682558355519312666972876)) }",
+          "range": [
+            1674,
+            1869
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "step accept: AcceptPerformance[accNum] subsets timeEnclosedOccurrences, acceptPerformances {\n\t\t\tin feature redefines receiver = triggerTarget;\n\t\t\tfeature redefines acceptedTransfer = trigger;\n\t\t}"
+        }
+      },
+      "feature_owner": {
+        "id": "d955516b-44ea-5113-8f24-f40677870d07",
+        "path": "TransitionPerformances::TransitionPerformance",
+        "kind": "Behavior",
+        "source": {
+          "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+          "origin": "SourceOrigin { document: DocumentId(35006625960330999843309357024779549971), revision: SourceRevisionId(293473507479935219909907558746516745168), range: ByteRange { start: 770, end: 1926 }, syntax_node: Some(SyntaxNodeId(22364001266214919218705072564219404305)) }",
+          "range": [
+            770,
+            1926
+          ],
+          "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+          "text": "abstract behavior TransitionPerformance {\n\t\tin feature transitionLinkSource: Performance[1];\n\t\t\n\t\tfeature trigger: MessageTransfer[*];\n\t\tbool guard[*] subsets enclosedPerformances;\n\t\tstep effect[*] subsets enclosedPerformances;\n\n\t\tfeature triggerTarget : Occurrence [1] default this;\n\t\tfeature transitionLink: HappensBefore[0..1];\n\t\t\n\t\tprivate binding [0..1] transitionLink.earlierOccurrence = [1] transitionLinkSource;\n\t\tprivate succession [1] transitionLinkSource then [*] effect;\n\t\tprivate succession [*] effect then [1] transitionLink.laterOccurrence;\n\t\t\n\t\tprivate connector [0..1] transitionLink to [1..*] trigger;\n\t\tprivate connector all guardConstraint: TPCGuardConstraint[*] \n\t\t\tfrom [0..1] transitionLink to [*] guard;\n\t\t\t\n\t\tprivate succession all [*] trigger then [*] guard;\n\t\tprivate succession all [*] guard then [*] effect;\n\n\t\tfeature accNum: Natural [1] = if isEmpty(trigger) ? 0 else 1;\n\t\tstep accept: AcceptPerformance[accNum] subsets timeEnclosedOccurrences, acceptPerformances {\n\t\t\tin feature redefines receiver = triggerTarget;\n\t\t\tfeature redefines acceptedTransfer = trigger;\n\t\t}\n\n\t\tprivate succession [*] guard then [accNum] accept;\n\t}"
+        }
+      },
+      "feature_is_variable": false,
+      "ordinary_owned_feature": true,
+      "owned_cross_feature": false,
+      "root_cause": "KERML11-4: multiplicity domain is disputed; no containing-owner domain is silently selected."
+    }
+  ],
+  "context_groups": {
+    "ordinary_multiplicity": 9,
+    "cross_multiplicity": 6
+  },
+  "triggers": [
+    {
+      "pinned": {
+        "id": "4a74747a-c385-5a89-89c8-be2fadaa9ecb",
+        "path": "Triggers::TriggerAt",
+        "kind": "Step",
+        "source": {
+          "document": "Kernel Semantic Library/Triggers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(234988275787928349397009333443716341812), revision: SourceRevisionId(89768819621406612556587270078115442954), range: ByteRange { start: 3141, end: 3233 }, syntax_node: Some(SyntaxNodeId(80587157046541656550454444931689054813)) }",
+          "range": [
+            3141,
+            3233
+          ],
+          "sha256": "124cad3625935e078d1363e6100ee12537ca9c51445a18108e056db8b4885609",
+          "text": "step :> monitor.startObservation {\n\t\t\tin observer = receiver;\n\t\t\tin signal = timeSignal;\n\t\t}"
+        }
+      },
+      "reference": {
+        "id": "92ce02d8-d5db-5e3f-b785-c7cd20f0d1b5",
+        "path": "Triggers::TriggerAt",
+        "kind": "Step",
+        "file": "Triggers.kermlx"
+      },
+      "direct_generals": [
+        {
+          "type": {
+            "id": "64d36ae3-24cc-5120-8830-eacc8dd44c4d",
+            "path": "Triggers::TriggerAt",
+            "kind": "Feature",
+            "file": "Triggers.kermlx"
+          },
+          "owned_parameters": [],
+          "chain": [
+            {
+              "id": "1cf04a24-5b36-5f4e-bf92-7c0fa42a94d0",
+              "path": "Triggers::TriggerAt::monitor",
+              "kind": "Feature",
+              "file": "Triggers.kermlx"
+            },
+            {
+              "id": "18d19b9b-8803-5fa7-8e05-ae2a60f2ce4d",
+              "path": "Observation::ChangeMonitor::startObservation",
+              "kind": "Step",
+              "file": "Observation.kermlx"
+            }
+          ],
+          "terminal_owned_parameters": [
+            {
+              "id": "1fd872ff-e892-531b-ada7-897c10ce812e",
+              "path": "Observation::ChangeMonitor::startObservation::observer",
+              "kind": "Feature",
+              "file": "Observation.kermlx"
+            },
+            {
+              "id": "486665ec-d4fa-59c2-8a6e-a1c70c58be55",
+              "path": "Observation::ChangeMonitor::startObservation::signal",
+              "kind": "Feature",
+              "file": "Observation.kermlx"
+            }
+          ]
+        },
+        {
+          "type": {
+            "id": "d2f2efc4-b3fe-5807-85bc-416fbebb05f0",
+            "path": "Performances::Performance::enclosedPerformances",
+            "kind": "Step",
+            "file": "Performances.kermlx"
+          },
+          "owned_parameters": [],
+          "chain": [],
+          "terminal_owned_parameters": []
+        }
+      ],
+      "parameters": [
+        {
+          "parameter": {
+            "id": "2a29fb85-4ad4-50b0-ad46-de7336ae8b93",
+            "path": "Triggers::TriggerAt::observer",
+            "kind": "Feature",
+            "file": "Triggers.kermlx"
+          },
+          "redefined": [
+            {
+              "id": "1fd872ff-e892-531b-ada7-897c10ce812e",
+              "path": "Observation::ChangeMonitor::startObservation::observer",
+              "kind": "Feature",
+              "file": "Observation.kermlx"
+            }
+          ]
+        },
+        {
+          "parameter": {
+            "id": "f981999c-a1eb-5e64-9c1c-774c6e440d3b",
+            "path": "Triggers::TriggerAt::signal",
+            "kind": "Feature",
+            "file": "Triggers.kermlx"
+          },
+          "redefined": [
+            {
+              "id": "486665ec-d4fa-59c2-8a6e-a1c70c58be55",
+              "path": "Observation::ChangeMonitor::startObservation::signal",
+              "kind": "Feature",
+              "file": "Observation.kermlx"
+            }
+          ]
+        }
+      ],
+      "conclusion": "Current reference parameters redefine the chain-terminal parameters. Published checkFeatureParameterRedefinition selects direct-general owned parameters; the pilot selects all parameters. The ordinary canonical parameter/chain closure remains unfinished. This trace alone is not a new source/library erratum or an authority waiver."
+    },
+    {
+      "pinned": {
+        "id": "518b9181-2fd8-5bfa-953c-3292058bc119",
+        "path": "Triggers::TriggerWhen",
+        "kind": "Step",
+        "source": {
+          "document": "Kernel Semantic Library/Triggers.kerml",
+          "origin": "SourceOrigin { document: DocumentId(234988275787928349397009333443716341812), revision: SourceRevisionId(89768819621406612556587270078115442954), range: ByteRange { start: 1915, end: 2009 }, syntax_node: Some(SyntaxNodeId(248543040010102635473781046950819480641)) }",
+          "range": [
+            1915,
+            2009
+          ],
+          "sha256": "124cad3625935e078d1363e6100ee12537ca9c51445a18108e056db8b4885609",
+          "text": "step :> monitor.startObservation {\n\t\t\tin observer = receiver;\n\t\t\tin signal = changeSignal;\n\t\t}"
+        }
+      },
+      "reference": {
+        "id": "1456a5c9-51eb-5539-b949-63a8d729b824",
+        "path": "Triggers::TriggerWhen",
+        "kind": "Step",
+        "file": "Triggers.kermlx"
+      },
+      "direct_generals": [
+        {
+          "type": {
+            "id": "c4b0d17f-932e-5f68-988b-cb95e2d656f0",
+            "path": "Triggers::TriggerWhen",
+            "kind": "Feature",
+            "file": "Triggers.kermlx"
+          },
+          "owned_parameters": [],
+          "chain": [
+            {
+              "id": "1cf6131b-96e6-52c1-ae8e-c31c7949170b",
+              "path": "Triggers::TriggerWhen::monitor",
+              "kind": "Feature",
+              "file": "Triggers.kermlx"
+            },
+            {
+              "id": "18d19b9b-8803-5fa7-8e05-ae2a60f2ce4d",
+              "path": "Observation::ChangeMonitor::startObservation",
+              "kind": "Step",
+              "file": "Observation.kermlx"
+            }
+          ],
+          "terminal_owned_parameters": [
+            {
+              "id": "1fd872ff-e892-531b-ada7-897c10ce812e",
+              "path": "Observation::ChangeMonitor::startObservation::observer",
+              "kind": "Feature",
+              "file": "Observation.kermlx"
+            },
+            {
+              "id": "486665ec-d4fa-59c2-8a6e-a1c70c58be55",
+              "path": "Observation::ChangeMonitor::startObservation::signal",
+              "kind": "Feature",
+              "file": "Observation.kermlx"
+            }
+          ]
+        },
+        {
+          "type": {
+            "id": "d2f2efc4-b3fe-5807-85bc-416fbebb05f0",
+            "path": "Performances::Performance::enclosedPerformances",
+            "kind": "Step",
+            "file": "Performances.kermlx"
+          },
+          "owned_parameters": [],
+          "chain": [],
+          "terminal_owned_parameters": []
+        }
+      ],
+      "parameters": [
+        {
+          "parameter": {
+            "id": "033ecebd-de41-538d-a468-712c9b51a201",
+            "path": "Triggers::TriggerWhen::observer",
+            "kind": "Feature",
+            "file": "Triggers.kermlx"
+          },
+          "redefined": [
+            {
+              "id": "1fd872ff-e892-531b-ada7-897c10ce812e",
+              "path": "Observation::ChangeMonitor::startObservation::observer",
+              "kind": "Feature",
+              "file": "Observation.kermlx"
+            }
+          ]
+        },
+        {
+          "parameter": {
+            "id": "23d5ef24-76fd-539d-a024-d8bd0ca58dae",
+            "path": "Triggers::TriggerWhen::signal",
+            "kind": "Feature",
+            "file": "Triggers.kermlx"
+          },
+          "redefined": [
+            {
+              "id": "486665ec-d4fa-59c2-8a6e-a1c70c58be55",
+              "path": "Observation::ChangeMonitor::startObservation::signal",
+              "kind": "Feature",
+              "file": "Observation.kermlx"
+            }
+          ]
+        }
+      ],
+      "conclusion": "Current reference parameters redefine the chain-terminal parameters. Published checkFeatureParameterRedefinition selects direct-general owned parameters; the pilot selects all parameters. The ordinary canonical parameter/chain closure remains unfinished. This trace alone is not a new source/library erratum or an authority waiver."
+    }
+  ],
+  "ordinary_positional_closure_complete": false,
+  "additional_corrections_applied": false
+}

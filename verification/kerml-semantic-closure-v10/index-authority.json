@@ -1,0 +1,2806 @@
+{
+  "format": "agentique-v10-pinned-index-authority/1",
+  "issue": "KERML11-69",
+  "source_archive_sha256": "0227806310e41743828cf3c12da792c3948d98d9c18a405b5bb181d30043a9d2",
+  "source_refinement_audit_sha256": "ab886d3b3f9a83706a7648d0824c594be6b6e41124d98a229df0fffd2f025f4a",
+  "normative_xmi_sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+  "source_index_expressions": 23,
+  "positive_guard_agreement_proofs": 7,
+  "remaining_negative_closure_proofs": 16,
+  "witnesses": [
+    {
+      "expression": {
+        "id": "05f38251-f730-5bfe-983a-9a0ca7d6c059",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7386, end: 7391 }, syntax_node: Some(SyntaxNodeId(25098359642688635417649198809875880456)) }",
+          "range": [
+            7386,
+            7391
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "b987d30d-30c4-530e-a250-3d3ee4848b92",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7386, end: 7387 }, syntax_node: Some(SyntaxNodeId(338125792514479795559851924167497994637)) }",
+          "range": [
+            7386,
+            7387
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "value_membership": {
+        "id": "ca16c153-2361-5aa3-af0e-846c4009e3a7",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7386, end: 7387 }, syntax_node: Some(SyntaxNodeId(103494367435135332996717728096585718408)) }",
+          "range": [
+            7386,
+            7387
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "argument": {
+        "id": "b1f6c64a-9729-56ea-8b2b-0854e807e652",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7386, end: 7387 }, syntax_node: Some(SyntaxNodeId(201598303130637052805092235102134669509)) }",
+          "range": [
+            7386,
+            7387
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "argument_result": {
+        "id": "950cca4e-626f-57d6-b926-44cdefab90f6",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7387, end: 7387 }, syntax_node: Some(SyntaxNodeId(264312616217696279136700412612776104980)) }",
+          "range": [
+            7387,
+            7387
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "d775ab7f-19f3-538d-83ea-e791fa29780d",
+        "path": "VectorFunctions::cartesianInner::v",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7202, end: 7232 }, syntax_node: Some(SyntaxNodeId(83951270105673112703286495680020156520)) }",
+          "range": [
+            7202,
+            7232
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "in v: CartesianVectorValue[1];"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "d775ab7f-19f3-538d-83ea-e791fa29780d"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "v"
+        ],
+        "relationship": "9c8db8a4-f70f-5ed2-8277-cb49c3484d3e"
+      },
+      "explicit_array_path": [
+        {
+          "specific": "d775ab7f-19f3-538d-83ea-e791fa29780d",
+          "relationship": "2ad154a9-9ccc-5f6e-8d5b-07afa246f653",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        }
+      ],
+      "explicit_collection_path": [
+        {
+          "specific": "d775ab7f-19f3-538d-83ea-e791fa29780d",
+          "relationship": "2ad154a9-9ccc-5f6e-8d5b-07afa246f653",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        },
+        {
+          "specific": "90d58d29-9f59-5370-b4de-fbf96458c248",
+          "relationship": "d6191ecb-4ed5-5825-8cd5-03fc3877ed52",
+          "general": "58e67f8c-1b34-5117-b927-27e80a91459e"
+        },
+        {
+          "specific": "58e67f8c-1b34-5117-b927-27e80a91459e",
+          "relationship": "96a00114-18f8-5fad-bfad-2960e4deaeba",
+          "general": "4625fd92-16bd-53a0-8c70-6f6f80815b52"
+        }
+      ],
+      "both_guards_positively_proven": true,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": true
+    },
+    {
+      "expression": {
+        "id": "07716cb3-45fe-576d-bf56-81dd6d81df6c",
+        "path": "VectorFunctions::cartesian3DZeroVector",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 5687, end: 5710 }, syntax_node: Some(SyntaxNodeId(314009401052421472607590868064897708182)) }",
+          "range": [
+            5687,
+            5710
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "cartesianZeroVector#(3)"
+        }
+      },
+      "first_parameter": {
+        "id": "a44a890a-6342-5233-bc72-133d26a53675",
+        "path": "VectorFunctions::cartesian3DZeroVector",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 5687, end: 5706 }, syntax_node: Some(SyntaxNodeId(135401331280319774221620435257066126351)) }",
+          "range": [
+            5687,
+            5706
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "cartesianZeroVector"
+        }
+      },
+      "value_membership": {
+        "id": "c9504bc9-cee0-5a51-a888-e00e7eec593b",
+        "path": "VectorFunctions::cartesian3DZeroVector",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 5687, end: 5706 }, syntax_node: Some(SyntaxNodeId(283969158039572793684623283169766973340)) }",
+          "range": [
+            5687,
+            5706
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "cartesianZeroVector"
+        }
+      },
+      "argument": {
+        "id": "1c957a55-f298-51ae-93f5-7098ccff44cf",
+        "path": "VectorFunctions::cartesian3DZeroVector",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 5687, end: 5706 }, syntax_node: Some(SyntaxNodeId(245615640610128472969635576409326793651)) }",
+          "range": [
+            5687,
+            5706
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "cartesianZeroVector"
+        }
+      },
+      "argument_result": {
+        "id": "7d4713fa-03e1-5e96-b0eb-dceb295e6cb7",
+        "path": "VectorFunctions::cartesian3DZeroVector",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 5706, end: 5706 }, syntax_node: Some(SyntaxNodeId(28207504965070231421654519608193228902)) }",
+          "range": [
+            5706,
+            5706
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "89f1abf4-6954-5881-8dc5-8c7b116075fe",
+        "path": "VectorFunctions::cartesianZeroVector",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 5379, end: 5621 }, syntax_node: Some(SyntaxNodeId(323712193697156605612329742433134948729)) }",
+          "range": [
+            5379,
+            5621
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "feature cartesianZeroVector: CartesianVectorValue[3] =\n\t\t(\n\t\t\tCartesianVectorOf(0.0),\n\t\t\tCartesianVectorOf((0.0, 0.0)),\n\t\t\tCartesianThreeVectorOf((0.0, 0.0, 0.0))\n\t\t) {\n\t\tdoc\n\t\t/*\n\t\t * Cartesian zero vectors of 1, 2 and 3 dimensions.\n\t\t */\n\t}"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "89f1abf4-6954-5881-8dc5-8c7b116075fe"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "cartesianZeroVector"
+        ],
+        "relationship": "11a67d8f-7056-5ec3-a3ce-f47f057c5600"
+      },
+      "explicit_array_path": [
+        {
+          "specific": "89f1abf4-6954-5881-8dc5-8c7b116075fe",
+          "relationship": "5bea6cf4-4d41-5ea2-a1ed-f3959b3df5c3",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        }
+      ],
+      "explicit_collection_path": [
+        {
+          "specific": "89f1abf4-6954-5881-8dc5-8c7b116075fe",
+          "relationship": "5bea6cf4-4d41-5ea2-a1ed-f3959b3df5c3",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        },
+        {
+          "specific": "90d58d29-9f59-5370-b4de-fbf96458c248",
+          "relationship": "d6191ecb-4ed5-5825-8cd5-03fc3877ed52",
+          "general": "58e67f8c-1b34-5117-b927-27e80a91459e"
+        },
+        {
+          "specific": "58e67f8c-1b34-5117-b927-27e80a91459e",
+          "relationship": "96a00114-18f8-5fad-bfad-2960e4deaeba",
+          "general": "4625fd92-16bd-53a0-8c70-6f6f80815b52"
+        }
+      ],
+      "both_guards_positively_proven": true,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": true
+    },
+    {
+      "expression": {
+        "id": "12040354-348e-523f-870b-885d0eb982ab",
+        "path": "SequenceFunctions::subsequence",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3176, end: 3183 }, syntax_node: Some(SyntaxNodeId(144242638292238103106071439989729146346)) }",
+          "range": [
+            3176,
+            3183
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "301be691-50bf-527e-b09e-1b8f67d12ab6",
+        "path": "SequenceFunctions::subsequence",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3176, end: 3179 }, syntax_node: Some(SyntaxNodeId(62105061586762042179048668793933983136)) }",
+          "range": [
+            3176,
+            3179
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "value_membership": {
+        "id": "97f87e9a-8432-59b1-a086-e29478e846a6",
+        "path": "SequenceFunctions::subsequence",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3176, end: 3179 }, syntax_node: Some(SyntaxNodeId(203640893792936631703000427873989438222)) }",
+          "range": [
+            3176,
+            3179
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "argument": {
+        "id": "82d3e94e-cd34-57e6-a62b-83bb5aca4250",
+        "path": "SequenceFunctions::subsequence",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3176, end: 3179 }, syntax_node: Some(SyntaxNodeId(329707212552703186350694964417011708377)) }",
+          "range": [
+            3176,
+            3179
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "argument_result": {
+        "id": "52c7352c-d589-577e-9991-8009a4b02a56",
+        "path": "SequenceFunctions::subsequence",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3179, end: 3179 }, syntax_node: Some(SyntaxNodeId(173951854163071401328358620224417924379)) }",
+          "range": [
+            3179,
+            3179
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "59035583-c5c6-520f-8899-cd5388eb74a5",
+        "path": "SequenceFunctions::subsequence::seq",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 2992, end: 3033 }, syntax_node: Some(SyntaxNodeId(296717524957039648007857070932077344114)) }",
+          "range": [
+            2992,
+            3033
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "in seq: Anything[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "59035583-c5c6-520f-8899-cd5388eb74a5"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "seq"
+        ],
+        "relationship": "95d466b9-ab56-5cf2-b546-c6d7198a5c2e"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "1efe00ce-b146-5ca0-964a-e88cd047a9d9",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2225, end: 2243 }, syntax_node: Some(SyntaxNodeId(314485924507969411805908009710657005751)) }",
+          "range": [
+            2225,
+            2243
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "ab8c118b-fc59-5e22-b1df-3cf3b14ff582",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2225, end: 2239 }, syntax_node: Some(SyntaxNodeId(310788688850901863013503635451407739647)) }",
+          "range": [
+            2225,
+            2239
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions"
+        }
+      },
+      "value_membership": {
+        "id": "a1fc4fe5-b1be-5d23-8dca-ebe7bd87a793",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2225, end: 2239 }, syntax_node: Some(SyntaxNodeId(152935241484125778153515569122546361933)) }",
+          "range": [
+            2225,
+            2239
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions"
+        }
+      },
+      "argument": {
+        "id": "71da7693-9948-578c-8335-93e386900d64",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "FeatureChainExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2225, end: 2239 }, syntax_node: Some(SyntaxNodeId(202303747976496095282808810896546201935)) }",
+          "range": [
+            2225,
+            2239
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions"
+        }
+      },
+      "argument_result": {
+        "id": "1e9f7f96-b350-5e83-9670-5bbc0c37506c",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2225, end: 2239 }, syntax_node: Some(SyntaxNodeId(202303747976496095282808810896546201935)) }",
+          "range": [
+            2225,
+            2239
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions"
+        }
+      },
+      "typing_subject": {
+        "id": "6dceee8b-a237-560f-9ec0-94b09866b783",
+        "path": "Collections::Array::dimensions",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Data Type Library/Collections.kerml",
+          "origin": "SourceOrigin { document: DocumentId(125801007855025623964099874906557272652), revision: SourceRevisionId(129118520321678235914897572888226279897), range: ByteRange { start: 2701, end: 3014 }, syntax_node: Some(SyntaxNodeId(62079878481933618323011320845523141975)) }",
+          "range": [
+            2701,
+            3014
+          ],
+          "sha256": "8d8359beb4c4613ded0abb780a890ccafa0a4aaa720a22334f602ca38301b92e",
+          "text": "feature dimensions: Positive[0..*] ordered nonunique {\n        \tdoc\n       \t\t/* Feature `dimensions` defines the N-dimensional shape of the Array\n             * The alternative name `shape` (as used in many programming languages) is not used as it would interfere with a geometric shape feature.\n \t\t\t */\n        }"
+        }
+      },
+      "semantic_result_edge": "checkFeatureChainExpressionResultSpecialization + Feature::typingFeatures terminal projection",
+      "endpoint_cross_check": {
+        "candidates": [
+          "6dceee8b-a237-560f-9ec0-94b09866b783"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "dimensions"
+        ],
+        "relationship": "636dff5b-c5db-51c2-963e-bd4ff0d86cf0"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "23bbc22a-e559-5836-b790-7f09fc56de42",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6286, end: 6291 }, syntax_node: Some(SyntaxNodeId(72910494836997990797157926893946810848)) }",
+          "range": [
+            6286,
+            6291
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "9a394b58-77c8-5cdb-b14e-b0692cf57010",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6286, end: 6287 }, syntax_node: Some(SyntaxNodeId(294090840710125323531713017632562246660)) }",
+          "range": [
+            6286,
+            6287
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "value_membership": {
+        "id": "35432bb4-7d07-5e2b-ac90-2ae73bad0250",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6286, end: 6287 }, syntax_node: Some(SyntaxNodeId(151936277013544597431376355924092481933)) }",
+          "range": [
+            6286,
+            6287
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "argument": {
+        "id": "d3cb92b9-7cf5-5d3a-8c2b-e8e9d1ea26a3",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6286, end: 6287 }, syntax_node: Some(SyntaxNodeId(255522771003060211355325300669304536964)) }",
+          "range": [
+            6286,
+            6287
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "argument_result": {
+        "id": "f3efc45b-7ce1-5c50-985b-c88c9897e1b9",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6287, end: 6287 }, syntax_node: Some(SyntaxNodeId(286003263096627834201327480942705332427)) }",
+          "range": [
+            6287,
+            6287
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "f0b71730-edad-533a-847f-1477dbfd145d",
+        "path": "VectorFunctions::cartesian+::w",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6045, end: 6078 }, syntax_node: Some(SyntaxNodeId(18068088298207328685743694214563125347)) }",
+          "range": [
+            6045,
+            6078
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "in w: CartesianVectorValue[0..1];"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "f0b71730-edad-533a-847f-1477dbfd145d"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "w"
+        ],
+        "relationship": "e33f5fcb-a4f8-5c22-9646-3cf9014180e9"
+      },
+      "explicit_array_path": [
+        {
+          "specific": "f0b71730-edad-533a-847f-1477dbfd145d",
+          "relationship": "756b1fb6-8a6b-5e91-a5f3-adaa81020394",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        }
+      ],
+      "explicit_collection_path": [
+        {
+          "specific": "f0b71730-edad-533a-847f-1477dbfd145d",
+          "relationship": "756b1fb6-8a6b-5e91-a5f3-adaa81020394",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        },
+        {
+          "specific": "90d58d29-9f59-5370-b4de-fbf96458c248",
+          "relationship": "d6191ecb-4ed5-5825-8cd5-03fc3877ed52",
+          "general": "58e67f8c-1b34-5117-b927-27e80a91459e"
+        },
+        {
+          "specific": "58e67f8c-1b34-5117-b927-27e80a91459e",
+          "relationship": "96a00114-18f8-5fad-bfad-2960e4deaeba",
+          "general": "4625fd92-16bd-53a0-8c70-6f6f80815b52"
+        }
+      ],
+      "both_guards_positively_proven": true,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": true
+    },
+    {
+      "expression": {
+        "id": "2b63dff8-54ed-5b97-b110-b4c4bb6f5972",
+        "path": "ControlFunctions::selectOne",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 2102, end: 2145 }, syntax_node: Some(SyntaxNodeId(72288664096286537920043069895321788669)) }",
+          "range": [
+            2102,
+            2145
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": "collection->select {in x; selector1(x)}#(1)"
+        }
+      },
+      "first_parameter": {
+        "id": "6d94edb2-13b7-518d-8d83-707e04e2f47b",
+        "path": "ControlFunctions::selectOne",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 2102, end: 2141 }, syntax_node: Some(SyntaxNodeId(31936112017915339983660439128964129894)) }",
+          "range": [
+            2102,
+            2141
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": "collection->select {in x; selector1(x)}"
+        }
+      },
+      "value_membership": {
+        "id": "7095e2f8-9763-558b-8196-83d78f576aab",
+        "path": "ControlFunctions::selectOne",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 2102, end: 2141 }, syntax_node: Some(SyntaxNodeId(215928051108237444662200228774436815007)) }",
+          "range": [
+            2102,
+            2141
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": "collection->select {in x; selector1(x)}"
+        }
+      },
+      "argument": {
+        "id": "634a1f07-645a-5fde-8c43-b42be392f47d",
+        "path": "ControlFunctions::selectOne",
+        "kind": "InvocationExpression",
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 2102, end: 2141 }, syntax_node: Some(SyntaxNodeId(164768193666023620588636988648139876041)) }",
+          "range": [
+            2102,
+            2141
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": "collection->select {in x; selector1(x)}"
+        }
+      },
+      "argument_result": {
+        "id": "6d8a38ec-c800-535c-842a-8b09f26d6646",
+        "path": "ControlFunctions::selectOne",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 2141, end: 2141 }, syntax_node: Some(SyntaxNodeId(70119102775189956977186021224724609687)) }",
+          "range": [
+            2141,
+            2141
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "7780bd11-9e5b-5f89-88ea-f4ba5b1fd501",
+        "path": "ControlFunctions::select",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/ControlFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(267559159649169479293091044719327015842), revision: SourceRevisionId(128723695510555066589530158627635640223), range: ByteRange { start: 1882, end: 1917 }, syntax_node: Some(SyntaxNodeId(51487804763829675802206400182794072576)) }",
+          "range": [
+            1882,
+            1917
+          ],
+          "sha256": "bd95a74d3ab9f44cfb1445cbaee8c509d78018feaa1eb408f5d91a6ac969c1b1",
+          "text": ": Anything[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureResultRedefinition on the invoked Function result",
+      "endpoint_cross_check": {
+        "candidates": [
+          "355c98d3-00fc-561b-a4bf-dd6426b054a2"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "select"
+        ],
+        "relationship": "b4ad04c5-21e3-5d12-b28f-6e32821fe12d"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "2d2d4ae3-0e90-5818-966b-f6dc70ff3473",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2208, end: 2219 }, syntax_node: Some(SyntaxNodeId(103520202997281795732826500030433185818)) }",
+          "range": [
+            2208,
+            2219
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes#(1)"
+        }
+      },
+      "first_parameter": {
+        "id": "efe9c33a-fa0c-56f1-ad13-72a65e2e40a1",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2208, end: 2215 }, syntax_node: Some(SyntaxNodeId(83820157569173622238120038796175332498)) }",
+          "range": [
+            2208,
+            2215
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "value_membership": {
+        "id": "d8874c9b-08dd-5a58-a4cc-3b9824db00a9",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2208, end: 2215 }, syntax_node: Some(SyntaxNodeId(140891985915672302597184086263713169895)) }",
+          "range": [
+            2208,
+            2215
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "argument": {
+        "id": "5f8b0743-89a9-53dc-976c-dd9872aa8004",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2208, end: 2215 }, syntax_node: Some(SyntaxNodeId(246094831206977178972515959405282653288)) }",
+          "range": [
+            2208,
+            2215
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "argument_result": {
+        "id": "ed6808b2-32f1-5539-b138-de488d5f9f2e",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2215, end: 2215 }, syntax_node: Some(SyntaxNodeId(45728759089989496952634308628785355124)) }",
+          "range": [
+            2215,
+            2215
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "3bb13d98-104e-5f3a-ac3b-1c95559d794c",
+        "path": "CollectionFunctions::array#::index::indexes",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2165, end: 2193 }, syntax_node: Some(SyntaxNodeId(79613327103528586861262011805272983175)) }",
+          "range": [
+            2165,
+            2193
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "in indexes : Positive[1..*];"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "3bb13d98-104e-5f3a-ac3b-1c95559d794c"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "indexes"
+        ],
+        "relationship": "15a4f99f-560e-5f85-beb4-fafdffa36f7b"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "3aeb2d7e-a671-5673-90e9-0912d524e785",
+        "path": "SequenceFunctions::same",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 903, end: 908 }, syntax_node: Some(SyntaxNodeId(28419561866225828748775005127273154284)) }",
+          "range": [
+            903,
+            908
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "y#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "e111693c-3c0a-5512-b4a3-be3faa7d584b",
+        "path": "SequenceFunctions::same",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 903, end: 904 }, syntax_node: Some(SyntaxNodeId(167848736913250296493653523805908118628)) }",
+          "range": [
+            903,
+            904
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "y"
+        }
+      },
+      "value_membership": {
+        "id": "f1d65e5b-e7f1-5a4e-9e1f-e3ce706030ac",
+        "path": "SequenceFunctions::same",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 903, end: 904 }, syntax_node: Some(SyntaxNodeId(32212991308759856347290191516696793135)) }",
+          "range": [
+            903,
+            904
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "y"
+        }
+      },
+      "argument": {
+        "id": "dd32fe37-d31b-5d4d-bbbb-afa4c67d4d96",
+        "path": "SequenceFunctions::same",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 903, end: 904 }, syntax_node: Some(SyntaxNodeId(243670158285989906436343285256992050541)) }",
+          "range": [
+            903,
+            904
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "y"
+        }
+      },
+      "argument_result": {
+        "id": "baea066c-0a16-559b-8b3f-f8b47ac1ec5b",
+        "path": "SequenceFunctions::same",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 904, end: 904 }, syntax_node: Some(SyntaxNodeId(268798304250591454272031615824491950703)) }",
+          "range": [
+            904,
+            904
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "f7ef2c80-94b9-560b-9136-83dfc1594b5a",
+        "path": "SequenceFunctions::same::y",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 772, end: 811 }, syntax_node: Some(SyntaxNodeId(20021891254990707941360688585740731970)) }",
+          "range": [
+            772,
+            811
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "in y: Anything[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "f7ef2c80-94b9-560b-9136-83dfc1594b5a"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "y"
+        ],
+        "relationship": "2638ee3e-0cbc-5b4d-a6c0-59afde9f6a94"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "4dce2042-3086-5a77-8e3e-32ec7261a92c",
+        "path": "SequenceFunctions::equals",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 695, end: 700 }, syntax_node: Some(SyntaxNodeId(228670236846798078798992997143815617204)) }",
+          "range": [
+            695,
+            700
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "x#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "4e5c88ea-77c4-537d-881d-2dff3efa4af8",
+        "path": "SequenceFunctions::equals",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 695, end: 696 }, syntax_node: Some(SyntaxNodeId(38800179243735403132515529402020968892)) }",
+          "range": [
+            695,
+            696
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "x"
+        }
+      },
+      "value_membership": {
+        "id": "fc60b7db-2d8b-5e72-8f02-d90811438ee7",
+        "path": "SequenceFunctions::equals",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 695, end: 696 }, syntax_node: Some(SyntaxNodeId(244396762475662511968806414711900672593)) }",
+          "range": [
+            695,
+            696
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "x"
+        }
+      },
+      "argument": {
+        "id": "b1f173a0-42b0-5775-9c66-a6d7dc91f0b6",
+        "path": "SequenceFunctions::equals",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 695, end: 696 }, syntax_node: Some(SyntaxNodeId(315488164632474076288706016323503986527)) }",
+          "range": [
+            695,
+            696
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "x"
+        }
+      },
+      "argument_result": {
+        "id": "07df6826-5907-515a-ba1d-08e2a2e519cc",
+        "path": "SequenceFunctions::equals",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 696, end: 696 }, syntax_node: Some(SyntaxNodeId(219088553791941763208250063244599801154)) }",
+          "range": [
+            696,
+            696
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "94cda130-d321-54ba-b296-0e77150c8faa",
+        "path": "SequenceFunctions::equals::x",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 533, end: 572 }, syntax_node: Some(SyntaxNodeId(77717761137705744717233356975000019268)) }",
+          "range": [
+            533,
+            572
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "in x: Anything[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "94cda130-d321-54ba-b296-0e77150c8faa"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "x"
+        ],
+        "relationship": "b196e7bd-8e49-5566-846a-0ff36d266b76"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "6ba1e4f2-fe4d-5d72-97d2-dc8e1de93b93",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7394, end: 7399 }, syntax_node: Some(SyntaxNodeId(218000008869931431821187682015232092723)) }",
+          "range": [
+            7394,
+            7399
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "9827bed4-cd90-5ffc-8fb5-05fff535c2fb",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7394, end: 7395 }, syntax_node: Some(SyntaxNodeId(88960833981414126812867795299211052622)) }",
+          "range": [
+            7394,
+            7395
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "value_membership": {
+        "id": "e31c6d6f-5247-506e-aeef-db775c79c887",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7394, end: 7395 }, syntax_node: Some(SyntaxNodeId(59583730382202087892048900385542737632)) }",
+          "range": [
+            7394,
+            7395
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "argument": {
+        "id": "781eaf06-e0b4-5b4e-90c9-095b088e0031",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7394, end: 7395 }, syntax_node: Some(SyntaxNodeId(60483159320369196086786286179970877843)) }",
+          "range": [
+            7394,
+            7395
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "argument_result": {
+        "id": "823c080b-ac3c-5227-9165-52a0b6cf3159",
+        "path": "VectorFunctions::cartesianInner::x",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7395, end: 7395 }, syntax_node: Some(SyntaxNodeId(52981844314326000499787620592476761286)) }",
+          "range": [
+            7395,
+            7395
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "25f4228e-0c57-548a-abc7-25fd5d3a83a0",
+        "path": "VectorFunctions::cartesianInner::w",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 7236, end: 7267 }, syntax_node: Some(SyntaxNodeId(194167105864984386100374969758798325785)) }",
+          "range": [
+            7236,
+            7267
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "in w : CartesianVectorValue[1];"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "25f4228e-0c57-548a-abc7-25fd5d3a83a0"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "w"
+        ],
+        "relationship": "9479b5d7-c534-53a3-9ba6-95e2460ea9ea"
+      },
+      "explicit_array_path": [
+        {
+          "specific": "25f4228e-0c57-548a-abc7-25fd5d3a83a0",
+          "relationship": "28a280df-725e-5cfe-ae26-2769ff3cc268",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        }
+      ],
+      "explicit_collection_path": [
+        {
+          "specific": "25f4228e-0c57-548a-abc7-25fd5d3a83a0",
+          "relationship": "28a280df-725e-5cfe-ae26-2769ff3cc268",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        },
+        {
+          "specific": "90d58d29-9f59-5370-b4de-fbf96458c248",
+          "relationship": "d6191ecb-4ed5-5825-8cd5-03fc3877ed52",
+          "general": "58e67f8c-1b34-5117-b927-27e80a91459e"
+        },
+        {
+          "specific": "58e67f8c-1b34-5117-b927-27e80a91459e",
+          "relationship": "96a00114-18f8-5fad-bfad-2960e4deaeba",
+          "general": "4625fd92-16bd-53a0-8c70-6f6f80815b52"
+        }
+      ],
+      "both_guards_positively_proven": true,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": true
+    },
+    {
+      "expression": {
+        "id": "72bef7a4-8e18-5a41-b43e-9635cabee624",
+        "path": "OccurrenceFunctions::removeOldAt::oldOcc",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/OccurrenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(229330540224998916823273796533118346748), revision: SourceRevisionId(65761507507489047945774176780648245103), range: ByteRange { start: 3455, end: 3468 }, syntax_node: Some(SyntaxNodeId(166090380832377127475582644002114048395)) }",
+          "range": [
+            3455,
+            3468
+          ],
+          "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+          "text": "group#(index)"
+        }
+      },
+      "first_parameter": {
+        "id": "cd2c5fee-00b6-5ab5-b8ca-af4cd8dd2870",
+        "path": "OccurrenceFunctions::removeOldAt::oldOcc",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/OccurrenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(229330540224998916823273796533118346748), revision: SourceRevisionId(65761507507489047945774176780648245103), range: ByteRange { start: 3455, end: 3460 }, syntax_node: Some(SyntaxNodeId(154982022356526193498284123940478976268)) }",
+          "range": [
+            3455,
+            3460
+          ],
+          "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+          "text": "group"
+        }
+      },
+      "value_membership": {
+        "id": "d6f22c60-06e3-59da-a5fb-c19e59a8be3c",
+        "path": "OccurrenceFunctions::removeOldAt::oldOcc",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/OccurrenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(229330540224998916823273796533118346748), revision: SourceRevisionId(65761507507489047945774176780648245103), range: ByteRange { start: 3455, end: 3460 }, syntax_node: Some(SyntaxNodeId(325727284211173119427358657149140865116)) }",
+          "range": [
+            3455,
+            3460
+          ],
+          "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+          "text": "group"
+        }
+      },
+      "argument": {
+        "id": "3baea0c2-cd03-5216-96f8-ec191c8cf474",
+        "path": "OccurrenceFunctions::removeOldAt::oldOcc",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/OccurrenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(229330540224998916823273796533118346748), revision: SourceRevisionId(65761507507489047945774176780648245103), range: ByteRange { start: 3455, end: 3460 }, syntax_node: Some(SyntaxNodeId(86071191583840681606834171050418837144)) }",
+          "range": [
+            3455,
+            3460
+          ],
+          "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+          "text": "group"
+        }
+      },
+      "argument_result": {
+        "id": "d4d39ef7-8b52-5914-a628-453c6f848e5f",
+        "path": "OccurrenceFunctions::removeOldAt::oldOcc",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/OccurrenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(229330540224998916823273796533118346748), revision: SourceRevisionId(65761507507489047945774176780648245103), range: ByteRange { start: 3460, end: 3460 }, syntax_node: Some(SyntaxNodeId(177006026758020927037318502956146298881)) }",
+          "range": [
+            3460,
+            3460
+          ],
+          "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "8af88780-8f56-5a8c-a322-ce1af9b6e0aa",
+        "path": "OccurrenceFunctions::removeOldAt::group",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/OccurrenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(229330540224998916823273796533118346748), revision: SourceRevisionId(65761507507489047945774176780648245103), range: ByteRange { start: 3351, end: 3399 }, syntax_node: Some(SyntaxNodeId(259920335282767947384271279480268304430)) }",
+          "range": [
+            3351,
+            3399
+          ],
+          "sha256": "4bba1f6ffd309568f12da186a3b10bcf43473be558d91d89cb38f9e1037cd12f",
+          "text": "inout group: Occurrence[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "8af88780-8f56-5a8c-a322-ce1af9b6e0aa"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "group"
+        ],
+        "relationship": "87d3dcd5-b426-516c-b7ed-515564d916da"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "81cb0abd-2efd-5a80-a33c-edff83273521",
+        "path": "SequenceFunctions::equals",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 704, end: 709 }, syntax_node: Some(SyntaxNodeId(176845190313637394116863478424571794792)) }",
+          "range": [
+            704,
+            709
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "y#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "e1f6edc4-5b46-54fd-ac85-472b04ce2494",
+        "path": "SequenceFunctions::equals",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 704, end: 705 }, syntax_node: Some(SyntaxNodeId(65377704269931154504680644455168042679)) }",
+          "range": [
+            704,
+            705
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "y"
+        }
+      },
+      "value_membership": {
+        "id": "b1307778-2eae-52b9-bcf3-528493e1d3c0",
+        "path": "SequenceFunctions::equals",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 704, end: 705 }, syntax_node: Some(SyntaxNodeId(50265249266036099341259793809928591872)) }",
+          "range": [
+            704,
+            705
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "y"
+        }
+      },
+      "argument": {
+        "id": "496e6703-471a-5ebb-83a5-ee8d03f7e42f",
+        "path": "SequenceFunctions::equals",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 704, end: 705 }, syntax_node: Some(SyntaxNodeId(127782039535751775151948911224777201900)) }",
+          "range": [
+            704,
+            705
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "y"
+        }
+      },
+      "argument_result": {
+        "id": "52747064-3db0-54df-b226-f631cd7ed2e7",
+        "path": "SequenceFunctions::equals",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 705, end: 705 }, syntax_node: Some(SyntaxNodeId(107527245431157206165288776539434439237)) }",
+          "range": [
+            705,
+            705
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "66726376-501c-5162-bf95-74ea0db3f384",
+        "path": "SequenceFunctions::equals::y",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 573, end: 612 }, syntax_node: Some(SyntaxNodeId(224097191834161872188347581993159577655)) }",
+          "range": [
+            573,
+            612
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "in y: Anything[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "66726376-501c-5162-bf95-74ea0db3f384"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "y"
+        ],
+        "relationship": "7a39487d-57af-5791-983f-78cee611c60c"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "8540aa6e-997c-57d9-ace4-71983d91d8b4",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6278, end: 6283 }, syntax_node: Some(SyntaxNodeId(321709599850293661984859757175960123844)) }",
+          "range": [
+            6278,
+            6283
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "c74f5792-4092-57c6-a41a-be2da6ebbb3c",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6278, end: 6279 }, syntax_node: Some(SyntaxNodeId(282241620774851923914495685827919609530)) }",
+          "range": [
+            6278,
+            6279
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "value_membership": {
+        "id": "614b7a14-72ee-531e-a200-d79d359a3e72",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6278, end: 6279 }, syntax_node: Some(SyntaxNodeId(132111409390898627614744410142145061497)) }",
+          "range": [
+            6278,
+            6279
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "argument": {
+        "id": "d53bf4d0-f53c-54be-b251-932a76ac6612",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6278, end: 6279 }, syntax_node: Some(SyntaxNodeId(122801025437293484782328176929682544862)) }",
+          "range": [
+            6278,
+            6279
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "argument_result": {
+        "id": "dee7c0d1-35e3-5578-b91a-23b3f63c1805",
+        "path": "VectorFunctions::cartesian+::u",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6279, end: 6279 }, syntax_node: Some(SyntaxNodeId(250836596833886856977794683054093665656)) }",
+          "range": [
+            6279,
+            6279
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "82d671ac-645c-542d-af2a-ecd21c1552e9",
+        "path": "VectorFunctions::cartesian+::v",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6011, end: 6041 }, syntax_node: Some(SyntaxNodeId(81886477497763049122237214588764726595)) }",
+          "range": [
+            6011,
+            6041
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "in v: CartesianVectorValue[1];"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "82d671ac-645c-542d-af2a-ecd21c1552e9"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "v"
+        ],
+        "relationship": "b02a3fd3-67b8-58e8-8021-ce88ec61766f"
+      },
+      "explicit_array_path": [
+        {
+          "specific": "82d671ac-645c-542d-af2a-ecd21c1552e9",
+          "relationship": "d024ab9d-651e-5f5c-a371-84347dbc48b6",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        }
+      ],
+      "explicit_collection_path": [
+        {
+          "specific": "82d671ac-645c-542d-af2a-ecd21c1552e9",
+          "relationship": "d024ab9d-651e-5f5c-a371-84347dbc48b6",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        },
+        {
+          "specific": "90d58d29-9f59-5370-b4de-fbf96458c248",
+          "relationship": "d6191ecb-4ed5-5825-8cd5-03fc3877ed52",
+          "general": "58e67f8c-1b34-5117-b927-27e80a91459e"
+        },
+        {
+          "specific": "58e67f8c-1b34-5117-b927-27e80a91459e",
+          "relationship": "96a00114-18f8-5fad-bfad-2960e4deaeba",
+          "general": "4625fd92-16bd-53a0-8c70-6f6f80815b52"
+        }
+      ],
+      "both_guards_positively_proven": true,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": true
+    },
+    {
+      "expression": {
+        "id": "8a9a6a26-af66-5d9e-92c8-88cb15528c48",
+        "path": "SequenceFunctions::last",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3501, end: 3516 }, syntax_node: Some(SyntaxNodeId(295602198765207723648391269030170760822)) }",
+          "range": [
+            3501,
+            3516
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq#(size(seq))"
+        }
+      },
+      "first_parameter": {
+        "id": "7ba338ec-686e-59e5-a4ae-65bce13965ab",
+        "path": "SequenceFunctions::last",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3501, end: 3504 }, syntax_node: Some(SyntaxNodeId(244383942773412443167418321740231854179)) }",
+          "range": [
+            3501,
+            3504
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "value_membership": {
+        "id": "083409d9-3e8c-54c3-8003-8fbc5c36daa2",
+        "path": "SequenceFunctions::last",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3501, end: 3504 }, syntax_node: Some(SyntaxNodeId(277625346680754700208713493987027518835)) }",
+          "range": [
+            3501,
+            3504
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "argument": {
+        "id": "e75c5650-4439-5628-b22a-03802a940f30",
+        "path": "SequenceFunctions::last",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3501, end: 3504 }, syntax_node: Some(SyntaxNodeId(65056788138615301766990829021718913395)) }",
+          "range": [
+            3501,
+            3504
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "argument_result": {
+        "id": "5791d06a-c0f2-56cd-93ed-3f918186e786",
+        "path": "SequenceFunctions::last",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3504, end: 3504 }, syntax_node: Some(SyntaxNodeId(108262501405137090340211232149367128958)) }",
+          "range": [
+            3504,
+            3504
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "00b16ab0-5e14-50d0-abb4-4ac2bcea264b",
+        "path": "SequenceFunctions::last::seq",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3431, end: 3472 }, syntax_node: Some(SyntaxNodeId(318089676822752909966178052680579585545)) }",
+          "range": [
+            3431,
+            3472
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "in seq: Anything[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "00b16ab0-5e14-50d0-abb4-4ac2bcea264b"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "seq"
+        ],
+        "relationship": "e14dacf0-e794-59b1-a94d-f407b902b11a"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "a41662c8-eb5d-527c-bec5-d10a5b8feb04",
+        "path": "CollectionFunctions::array#",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2364, end: 2375 }, syntax_node: Some(SyntaxNodeId(59794674679185069301889489996508372049)) }",
+          "range": [
+            2364,
+            2375
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "1b7798ad-96ef-5aea-9dbf-3a460f420b70",
+        "path": "CollectionFunctions::array#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2364, end: 2371 }, syntax_node: Some(SyntaxNodeId(227223478306429963713014519564624806711)) }",
+          "range": [
+            2364,
+            2371
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "value_membership": {
+        "id": "7b3f50ed-4930-56c8-87fb-b66f34fe7dd3",
+        "path": "CollectionFunctions::array#",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2364, end: 2371 }, syntax_node: Some(SyntaxNodeId(299080773561617783661794694056079939598)) }",
+          "range": [
+            2364,
+            2371
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "argument": {
+        "id": "dd8db469-7670-5be7-9207-a16d899d0c33",
+        "path": "CollectionFunctions::array#",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2364, end: 2371 }, syntax_node: Some(SyntaxNodeId(74019477754221758524487123171994583717)) }",
+          "range": [
+            2364,
+            2371
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "argument_result": {
+        "id": "f29b0e87-d86c-5cbd-b890-07a5eadc456a",
+        "path": "CollectionFunctions::array#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2371, end: 2371 }, syntax_node: Some(SyntaxNodeId(165937462604382601008631664528092552618)) }",
+          "range": [
+            2371,
+            2371
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "9728dce0-017f-5d89-bd45-80a30d34f4ee",
+        "path": "CollectionFunctions::array#::indexes",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1965, end: 2007 }, syntax_node: Some(SyntaxNodeId(202480798169553654168585971495852933250)) }",
+          "range": [
+            1965,
+            2007
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "in indexes: Positive[n] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "9728dce0-017f-5d89-bd45-80a30d34f4ee"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "indexes"
+        ],
+        "relationship": "97f2257b-79b8-5079-bc71-d576776aaf41"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "b9203cce-d1b6-5b57-8134-f5af4caecdea",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6694, end: 6699 }, syntax_node: Some(SyntaxNodeId(164649106025843194769153376277434896005)) }",
+          "range": [
+            6694,
+            6699
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "0e3063c2-6b5d-53d9-a67c-8f64ca4af1b9",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6694, end: 6695 }, syntax_node: Some(SyntaxNodeId(58889569279430549167501962691954981281)) }",
+          "range": [
+            6694,
+            6695
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "value_membership": {
+        "id": "6b2d4d56-8288-5140-9229-d827f99a55d9",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6694, end: 6695 }, syntax_node: Some(SyntaxNodeId(8342813011632294279992343205138074774)) }",
+          "range": [
+            6694,
+            6695
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "argument": {
+        "id": "258a18ae-1702-534e-8bb2-273eac896074",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6694, end: 6695 }, syntax_node: Some(SyntaxNodeId(223565069597993249594865457558011168300)) }",
+          "range": [
+            6694,
+            6695
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "v"
+        }
+      },
+      "argument_result": {
+        "id": "6b829c35-b3d8-5247-9322-63c1017f8e1a",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6695, end: 6695 }, syntax_node: Some(SyntaxNodeId(113772808229831682781539961582174862367)) }",
+          "range": [
+            6695,
+            6695
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "2c2420f0-2083-50e3-98c3-78b8d2cfac61",
+        "path": "VectorFunctions::cartesian-::v",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6348, end: 6378 }, syntax_node: Some(SyntaxNodeId(320888880689557185883191287622997481491)) }",
+          "range": [
+            6348,
+            6378
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "in v: CartesianVectorValue[1];"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "2c2420f0-2083-50e3-98c3-78b8d2cfac61"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "v"
+        ],
+        "relationship": "1e6ab8c3-a65a-551a-9700-8c0f6a214129"
+      },
+      "explicit_array_path": [
+        {
+          "specific": "2c2420f0-2083-50e3-98c3-78b8d2cfac61",
+          "relationship": "54255683-d318-5121-a030-6289a138b0ad",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        }
+      ],
+      "explicit_collection_path": [
+        {
+          "specific": "2c2420f0-2083-50e3-98c3-78b8d2cfac61",
+          "relationship": "54255683-d318-5121-a030-6289a138b0ad",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        },
+        {
+          "specific": "90d58d29-9f59-5370-b4de-fbf96458c248",
+          "relationship": "d6191ecb-4ed5-5825-8cd5-03fc3877ed52",
+          "general": "58e67f8c-1b34-5117-b927-27e80a91459e"
+        },
+        {
+          "specific": "58e67f8c-1b34-5117-b927-27e80a91459e",
+          "relationship": "96a00114-18f8-5fad-bfad-2960e4deaeba",
+          "general": "4625fd92-16bd-53a0-8c70-6f6f80815b52"
+        }
+      ],
+      "both_guards_positively_proven": true,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": true
+    },
+    {
+      "expression": {
+        "id": "be12fb38-a887-5a75-bc51-a2d067276a58",
+        "path": "SequenceFunctions::same",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 893, end: 898 }, syntax_node: Some(SyntaxNodeId(48526166038497549065588981950229429038)) }",
+          "range": [
+            893,
+            898
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "x#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "1e347d1e-74c4-5f2b-90f9-854f1e7c071c",
+        "path": "SequenceFunctions::same",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 893, end: 894 }, syntax_node: Some(SyntaxNodeId(131704698210344431436929962122558240644)) }",
+          "range": [
+            893,
+            894
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "x"
+        }
+      },
+      "value_membership": {
+        "id": "b77d3d05-5b7b-5dd7-b33f-4440dc945a2c",
+        "path": "SequenceFunctions::same",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 893, end: 894 }, syntax_node: Some(SyntaxNodeId(152328262025444599417423735309810899723)) }",
+          "range": [
+            893,
+            894
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "x"
+        }
+      },
+      "argument": {
+        "id": "a53ada59-c5c0-500b-89b7-801724582135",
+        "path": "SequenceFunctions::same",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 893, end: 894 }, syntax_node: Some(SyntaxNodeId(315800182076743517475503070753762288548)) }",
+          "range": [
+            893,
+            894
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "x"
+        }
+      },
+      "argument_result": {
+        "id": "93c8b89d-2c2a-56e6-9771-dabf419d6df3",
+        "path": "SequenceFunctions::same",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 894, end: 894 }, syntax_node: Some(SyntaxNodeId(60755554903837426841233155503042536611)) }",
+          "range": [
+            894,
+            894
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "37341e23-3775-5353-b5d9-34539308c497",
+        "path": "SequenceFunctions::same::x",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 732, end: 771 }, syntax_node: Some(SyntaxNodeId(116689220000962735113050623262787020279)) }",
+          "range": [
+            732,
+            771
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "in x: Anything[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "37341e23-3775-5353-b5d9-34539308c497"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "x"
+        ],
+        "relationship": "50cbef25-7afb-5ea6-8805-f41ef561cdc8"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "cb8156a6-0c36-57b6-8601-3fc90360b2ad",
+        "path": "CollectionFunctions::array#",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2378, end: 2396 }, syntax_node: Some(SyntaxNodeId(136432374728816119675526399910681331729)) }",
+          "range": [
+            2378,
+            2396
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "f4fbdb45-6ae1-5930-86fd-49e912a411d5",
+        "path": "CollectionFunctions::array#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2378, end: 2392 }, syntax_node: Some(SyntaxNodeId(134933241133214013564807812464072722215)) }",
+          "range": [
+            2378,
+            2392
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions"
+        }
+      },
+      "value_membership": {
+        "id": "78456439-6eec-5e4c-96d1-2738492de648",
+        "path": "CollectionFunctions::array#",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2378, end: 2392 }, syntax_node: Some(SyntaxNodeId(149387980590684668806917966079297417152)) }",
+          "range": [
+            2378,
+            2392
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions"
+        }
+      },
+      "argument": {
+        "id": "548996b0-f546-5d85-a8f1-c1c8406cd009",
+        "path": "CollectionFunctions::array#",
+        "kind": "FeatureChainExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2378, end: 2392 }, syntax_node: Some(SyntaxNodeId(275181290786438867344903711049955294638)) }",
+          "range": [
+            2378,
+            2392
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions"
+        }
+      },
+      "argument_result": {
+        "id": "c959319a-71fc-5262-a048-4389848bb6f1",
+        "path": "CollectionFunctions::array#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2378, end: 2392 }, syntax_node: Some(SyntaxNodeId(275181290786438867344903711049955294638)) }",
+          "range": [
+            2378,
+            2392
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.dimensions"
+        }
+      },
+      "typing_subject": {
+        "id": "6dceee8b-a237-560f-9ec0-94b09866b783",
+        "path": "Collections::Array::dimensions",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Data Type Library/Collections.kerml",
+          "origin": "SourceOrigin { document: DocumentId(125801007855025623964099874906557272652), revision: SourceRevisionId(129118520321678235914897572888226279897), range: ByteRange { start: 2701, end: 3014 }, syntax_node: Some(SyntaxNodeId(62079878481933618323011320845523141975)) }",
+          "range": [
+            2701,
+            3014
+          ],
+          "sha256": "8d8359beb4c4613ded0abb780a890ccafa0a4aaa720a22334f602ca38301b92e",
+          "text": "feature dimensions: Positive[0..*] ordered nonunique {\n        \tdoc\n       \t\t/* Feature `dimensions` defines the N-dimensional shape of the Array\n             * The alternative name `shape` (as used in many programming languages) is not used as it would interfere with a geometric shape feature.\n \t\t\t */\n        }"
+        }
+      },
+      "semantic_result_edge": "checkFeatureChainExpressionResultSpecialization + Feature::typingFeatures terminal projection",
+      "endpoint_cross_check": {
+        "candidates": [
+          "6dceee8b-a237-560f-9ec0-94b09866b783"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "dimensions"
+        ],
+        "relationship": "6271e037-14a6-5365-9a4c-59ae15af1df6"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "cef715cf-196f-579b-a37c-d18465288777",
+        "path": "SequenceFunctions::head",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3275, end: 3282 }, syntax_node: Some(SyntaxNodeId(82770827655395748846824880146319782273)) }",
+          "range": [
+            3275,
+            3282
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq#(1)"
+        }
+      },
+      "first_parameter": {
+        "id": "8a5f203c-d0c0-52db-a797-b4eeaae785d3",
+        "path": "SequenceFunctions::head",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3275, end: 3278 }, syntax_node: Some(SyntaxNodeId(86496428492971543755097819325556974528)) }",
+          "range": [
+            3275,
+            3278
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "value_membership": {
+        "id": "59888f59-6450-5187-b161-cd6b5b59e948",
+        "path": "SequenceFunctions::head",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3275, end: 3278 }, syntax_node: Some(SyntaxNodeId(313731921299657972803311935949608076626)) }",
+          "range": [
+            3275,
+            3278
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "argument": {
+        "id": "8f9d401f-833e-52e6-857e-bc0a92d6fc85",
+        "path": "SequenceFunctions::head",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3275, end: 3278 }, syntax_node: Some(SyntaxNodeId(245548376316098052721505998886133648040)) }",
+          "range": [
+            3275,
+            3278
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "seq"
+        }
+      },
+      "argument_result": {
+        "id": "b9ca2407-c20d-5ada-970c-600163d65d6d",
+        "path": "SequenceFunctions::head",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3278, end: 3278 }, syntax_node: Some(SyntaxNodeId(285151104094361796271513051243087199787)) }",
+          "range": [
+            3278,
+            3278
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "879d9c0c-ef01-5158-a7e4-c089909d97c9",
+        "path": "SequenceFunctions::head::seq",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/SequenceFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(75351660296266476682015552488614133384), revision: SourceRevisionId(252518020772693008922375852028732607664), range: ByteRange { start: 3205, end: 3246 }, syntax_node: Some(SyntaxNodeId(67823648029057034064805492499000961337)) }",
+          "range": [
+            3205,
+            3246
+          ],
+          "sha256": "927237bb8156b6e8c9a6c3444999d7da98b58af00d7d2a63c487c9260165265e",
+          "text": "in seq: Anything[0..*] ordered nonunique;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "879d9c0c-ef01-5158-a7e4-c089909d97c9"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "seq"
+        ],
+        "relationship": "bd7e5246-408f-587a-8320-5322c50d6043"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "dbc43473-b3e7-5639-a910-9387d3540cc4",
+        "path": "CollectionFunctions::array#",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2413, end: 2450 }, syntax_node: Some(SyntaxNodeId(182153713183548702974374996064339076601)) }",
+          "range": [
+            2413,
+            2450
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.elements#(index(arr, n, indexes))"
+        }
+      },
+      "first_parameter": {
+        "id": "6e9e9504-b5af-5133-a270-404523756644",
+        "path": "CollectionFunctions::array#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2413, end: 2425 }, syntax_node: Some(SyntaxNodeId(234546500540412358220625171758117005956)) }",
+          "range": [
+            2413,
+            2425
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.elements"
+        }
+      },
+      "value_membership": {
+        "id": "6eef459a-82e1-5672-9a45-1bf98d9f3acc",
+        "path": "CollectionFunctions::array#",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2413, end: 2425 }, syntax_node: Some(SyntaxNodeId(195673506987761042809197479617200899497)) }",
+          "range": [
+            2413,
+            2425
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.elements"
+        }
+      },
+      "argument": {
+        "id": "e638a60e-c18b-5a15-ba30-5ad3f2541872",
+        "path": "CollectionFunctions::array#",
+        "kind": "FeatureChainExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2413, end: 2425 }, syntax_node: Some(SyntaxNodeId(314091021721181596621238603744048012990)) }",
+          "range": [
+            2413,
+            2425
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.elements"
+        }
+      },
+      "argument_result": {
+        "id": "d520a9e0-46de-5412-be23-b269b53b5b2f",
+        "path": "CollectionFunctions::array#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2413, end: 2425 }, syntax_node: Some(SyntaxNodeId(314091021721181596621238603744048012990)) }",
+          "range": [
+            2413,
+            2425
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "arr.elements"
+        }
+      },
+      "typing_subject": {
+        "id": "86eed755-891e-50e9-b508-9000a18aa3b8",
+        "path": "Collections::OrderedCollection::elements",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Data Type Library/Collections.kerml",
+          "origin": "SourceOrigin { document: DocumentId(125801007855025623964099874906557272652), revision: SourceRevisionId(129118520321678235914897572888226279897), range: ByteRange { start: 874, end: 940 }, syntax_node: Some(SyntaxNodeId(8236477423788243861783179945032246565)) }",
+          "range": [
+            874,
+            940
+          ],
+          "sha256": "8d8359beb4c4613ded0abb780a890ccafa0a4aaa720a22334f602ca38301b92e",
+          "text": "feature elements[0..*] ordered nonunique :>> Collection::elements;"
+        }
+      },
+      "semantic_result_edge": "checkFeatureChainExpressionResultSpecialization + Feature::typingFeatures terminal projection",
+      "endpoint_cross_check": {
+        "candidates": [
+          "86eed755-891e-50e9-b508-9000a18aa3b8"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "elements"
+        ],
+        "relationship": "f333238b-712e-5821-837e-37b75ded01e9"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "e7400695-44ec-50ef-94a0-ee91e0ea44a7",
+        "path": "CollectionFunctions::#",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1852, end: 1886 }, syntax_node: Some(SyntaxNodeId(289230405328966952979587758711644468583)) }",
+          "range": [
+            1852,
+            1886
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "(col.elements as Anything)#(index)"
+        }
+      },
+      "first_parameter": {
+        "id": "9dc61ba8-9fb5-5e23-8198-5bba3fd2e381",
+        "path": "CollectionFunctions::#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1852, end: 1878 }, syntax_node: Some(SyntaxNodeId(313904533742613189290705890131742524830)) }",
+          "range": [
+            1852,
+            1878
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "(col.elements as Anything)"
+        }
+      },
+      "value_membership": {
+        "id": "77b1d59d-db30-59b6-8cf3-b38294e5fb33",
+        "path": "CollectionFunctions::#",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1852, end: 1878 }, syntax_node: Some(SyntaxNodeId(3866389629004166173501843337763239889)) }",
+          "range": [
+            1852,
+            1878
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "(col.elements as Anything)"
+        }
+      },
+      "argument": {
+        "id": "664bef5a-518c-5d30-bbdc-c94642b4b120",
+        "path": "CollectionFunctions::#",
+        "kind": "OperatorExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1853, end: 1877 }, syntax_node: Some(SyntaxNodeId(153045577313420993607127881540032887653)) }",
+          "range": [
+            1853,
+            1877
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "col.elements as Anything"
+        }
+      },
+      "argument_result": {
+        "id": "ba4e7717-f600-5c15-85e0-c7c00144238a",
+        "path": "CollectionFunctions::#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1869, end: 1877 }, syntax_node: Some(SyntaxNodeId(23862831149968424360178024834645851781)) }",
+          "range": [
+            1869,
+            1877
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "Anything"
+        }
+      },
+      "typing_subject": {
+        "id": "ba4e7717-f600-5c15-85e0-c7c00144238a",
+        "path": "CollectionFunctions::#",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 1869, end: 1877 }, syntax_node: Some(SyntaxNodeId(23862831149968424360178024834645851781)) }",
+          "range": [
+            1869,
+            1877
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "Anything"
+        }
+      },
+      "semantic_result_edge": "Explicit cast result FeatureTyping",
+      "endpoint_cross_check": null,
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "f88d0d3a-b1b8-5cac-9cdc-62e5740047fd",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2279, end: 2290 }, syntax_node: Some(SyntaxNodeId(188596862799510421921648777953693953963)) }",
+          "range": [
+            2279,
+            2290
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "1d4f64b8-5bd8-5f12-bcc6-e2a3dc06d3fe",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2279, end: 2286 }, syntax_node: Some(SyntaxNodeId(293796550364845530613664612345722163215)) }",
+          "range": [
+            2279,
+            2286
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "value_membership": {
+        "id": "0ef85470-c05c-510f-afeb-5b3a9f251a29",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2279, end: 2286 }, syntax_node: Some(SyntaxNodeId(271974412394701971487121448886777694925)) }",
+          "range": [
+            2279,
+            2286
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "argument": {
+        "id": "57c775e3-0b06-58c2-ac9c-342612c086a5",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2279, end: 2286 }, syntax_node: Some(SyntaxNodeId(101222573839121196663576215588814856488)) }",
+          "range": [
+            2279,
+            2286
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "indexes"
+        }
+      },
+      "argument_result": {
+        "id": "88770c17-93f2-5bff-bd6a-19d3554050f6",
+        "path": "CollectionFunctions::array#::index",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2286, end: 2286 }, syntax_node: Some(SyntaxNodeId(131845041301623695194881796811224846960)) }",
+          "range": [
+            2286,
+            2286
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "3bb13d98-104e-5f3a-ac3b-1c95559d794c",
+        "path": "CollectionFunctions::array#::index::indexes",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/CollectionFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(319910367397330934507072781000635128111), revision: SourceRevisionId(126742225069941986545092101680467042555), range: ByteRange { start: 2165, end: 2193 }, syntax_node: Some(SyntaxNodeId(79613327103528586861262011805272983175)) }",
+          "range": [
+            2165,
+            2193
+          ],
+          "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+          "text": "in indexes : Positive[1..*];"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "3bb13d98-104e-5f3a-ac3b-1c95559d794c"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "indexes"
+        ],
+        "relationship": "4ce4ee28-30cc-55e3-b6b0-7b5ced986653"
+      },
+      "explicit_array_path": null,
+      "explicit_collection_path": null,
+      "both_guards_positively_proven": false,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": false
+    },
+    {
+      "expression": {
+        "id": "ff846d91-8f91-58c6-a7de-77546a785358",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "IndexExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6702, end: 6707 }, syntax_node: Some(SyntaxNodeId(205867443803772261200596615867943105030)) }",
+          "range": [
+            6702,
+            6707
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w#(i)"
+        }
+      },
+      "first_parameter": {
+        "id": "ceba99d1-bda4-5022-8425-4af8eafc7568",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6702, end: 6703 }, syntax_node: Some(SyntaxNodeId(97707760274099874411835812371787267892)) }",
+          "range": [
+            6702,
+            6703
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "value_membership": {
+        "id": "ac66b9ca-474f-5827-9bb5-1cba6eae003b",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "FeatureValue",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6702, end: 6703 }, syntax_node: Some(SyntaxNodeId(42493630761185206074301002076764082676)) }",
+          "range": [
+            6702,
+            6703
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "argument": {
+        "id": "696f59c5-be70-514f-9246-6813825711f6",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "FeatureReferenceExpression",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6702, end: 6703 }, syntax_node: Some(SyntaxNodeId(54600442952330415013583593763567359368)) }",
+          "range": [
+            6702,
+            6703
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "w"
+        }
+      },
+      "argument_result": {
+        "id": "1ce84257-c031-5e6b-84e9-89fff2d6ebfa",
+        "path": "VectorFunctions::cartesian-::u",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6703, end: 6703 }, syntax_node: Some(SyntaxNodeId(81804965301024135023807152614472069500)) }",
+          "range": [
+            6703,
+            6703
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": ""
+        }
+      },
+      "typing_subject": {
+        "id": "f14f9232-bbac-5f4b-bb41-da9d49a12b25",
+        "path": "VectorFunctions::cartesian-::w",
+        "kind": "Feature",
+        "source": {
+          "document": "Kernel Function Library/VectorFunctions.kerml",
+          "origin": "SourceOrigin { document: DocumentId(237991293553816445570520232120243577456), revision: SourceRevisionId(51714166961879906575986044467970817547), range: ByteRange { start: 6382, end: 6415 }, syntax_node: Some(SyntaxNodeId(9672529920233644013040514128750782752)) }",
+          "range": [
+            6382,
+            6415
+          ],
+          "sha256": "9dfdf482bf167ae4765ad0e4d0b0f1f8678410cf0c89fd239232d407b50f2cad",
+          "text": "in w: CartesianVectorValue[0..1];"
+        }
+      },
+      "semantic_result_edge": "checkFeatureReferenceExpressionResultSpecialization",
+      "endpoint_cross_check": {
+        "candidates": [
+          "f14f9232-bbac-5f4b-bb41-da9d49a12b25"
+        ],
+        "completeness": "Complete",
+        "diagnostics": [],
+        "name": [
+          "w"
+        ],
+        "relationship": "2c5fbdf3-8fdf-5604-bfaf-162e676a9b8e"
+      },
+      "explicit_array_path": [
+        {
+          "specific": "f14f9232-bbac-5f4b-bb41-da9d49a12b25",
+          "relationship": "8efd49c1-ee6f-5f71-a246-4c722747f13c",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        }
+      ],
+      "explicit_collection_path": [
+        {
+          "specific": "f14f9232-bbac-5f4b-bb41-da9d49a12b25",
+          "relationship": "8efd49c1-ee6f-5f71-a246-4c722747f13c",
+          "general": "e1803a25-2a9e-5d78-93ac-6392ffe668c7"
+        },
+        {
+          "specific": "e1803a25-2a9e-5d78-93ac-6392ffe668c7",
+          "relationship": "91ddd3ab-ebc7-5760-b557-7a58e2b121ba",
+          "general": "5b5259de-cf63-5fb3-aec6-063e9b02f035"
+        },
+        {
+          "specific": "5b5259de-cf63-5fb3-aec6-063e9b02f035",
+          "relationship": "62542a88-d9ac-5a94-8fa3-1233613e1f65",
+          "general": "90d58d29-9f59-5370-b4de-fbf96458c248"
+        },
+        {
+          "specific": "90d58d29-9f59-5370-b4de-fbf96458c248",
+          "relationship": "d6191ecb-4ed5-5825-8cd5-03fc3877ed52",
+          "general": "58e67f8c-1b34-5117-b927-27e80a91459e"
+        },
+        {
+          "specific": "58e67f8c-1b34-5117-b927-27e80a91459e",
+          "relationship": "96a00114-18f8-5fad-bfad-2960e4deaeba",
+          "general": "4625fd92-16bd-53a0-8c70-6f6f80815b52"
+        }
+      ],
+      "both_guards_positively_proven": true,
+      "complete_negative_implied_type_closure_proven": false,
+      "authority_guard_difference_ruled_out": true
+    }
+  ],
+  "additional_correction_applied": false,
+  "authority_applicability_closed": false,
+  "scope": "All 23 pinned first operands and their ordered ownership/results were examined independently. Seven have explicit specialization paths to both Array and Collection; no additional implied edges can make those positive predicates false. The other sixteen currently have neither path in the reconstructed explicit graph; missing complete implied-typing proof is retained, not converted into a negative semantic answer. Endpoint identities are cross-checked against the source refinement report, not a second complete resolver."
+}
