@@ -350,6 +350,56 @@
       "duration_seconds": 1.56,
       "output": "verification/generated/overnight-convergence/shared-searches-fmt.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "final-diff",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "dcddd6b549033d73b7e1b03f9e2a9ca81e413b79f35064957e537ac0087a40b6",
+      "output_sha256": "8a0caccc3c601bf99759507221146e1b225ca8f43b734b7aeca2b20b1aae0138",
+      "duration_seconds": 0.05,
+      "output": "verification/generated/overnight-convergence/final-diff.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "dcddd6b549033d73b7e1b03f9e2a9ca81e413b79f35064957e537ac0087a40b6",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.59,
+      "output": "verification/generated/overnight-convergence/final-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "milestone-final-diff",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "bdcd35304b6e04823b100931edf7c5b46f730408c66e67a506e998b79112990c",
+      "output_sha256": "6f420e3588ebeae9fef835b640d4fab0c4c54b8222f56cd19ef28a6ff13a5d9e",
+      "duration_seconds": 0.05,
+      "output": "verification/generated/overnight-convergence/milestone-final-diff.log",
+      "environment_overrides": {}
     }
   ]
 }

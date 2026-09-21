@@ -2,6 +2,7 @@
   "format": "agentique-publication-capabilities/2",
   "profile": "agentique-kerml-1.0-operational/8",
   "validator_coverage_is_publication_gate": false,
+  "current_publication_blocker": "Transfers::Transfer::instant[instantNum] has no permitted reference-binding context under the retained v8 multiplicity decision; worklist and independent full scan reproduce the obligation. See verification/summaries/overnight-convergence/README.md.",
   "capabilities": [
     {
       "family": "Namespace/import semantics",
@@ -51,7 +52,7 @@
     {
       "family": "FeatureValue/reference bindings",
       "status": "Incomplete",
-      "evidence": "Focused implementation evidence exists; complete corpus closure remains unproved"
+      "evidence": "Ordinary focused bindings pass, but the real slice and crates/kerml-semantics/tests/publication_v8_bounds.rs demonstrate the remaining symbolic-bound context obligation. This obligation blocks publication under v8."
     },
     {
       "family": "Multiplicity structural representation",

@@ -43,6 +43,12 @@ kernel overlay handoff retains those shared sets. Combining evidence takes the
 exact union without changing any caller's set. Public query iteration still
 returns ordered search contents. Logical entry counts and retained distinct-set
 counts expose the allocation difference without changing semantic identities.
+Private producer/status queries carry these sets through intermediate results
+instead of expanding the same searches at every fact read and subquery merge.
+Persistent producer evidence, dependency read sets and the retained positional
+proofs expand them at their exact contract boundaries. Ordinary public queries
+and the reference full scan remain eager; cache lifetime and semantic identities
+remain tied to their immutable context.
 
 `Snapshot::with_immutable_dependency` starts an independent authored history over
 a shared immutable overlay. Its dependency Element records remain shared across

@@ -155,3 +155,21 @@ Clippy, formatting and diff checks exited 0. Raw logs are
 `multiplicity-reference-context-clippy.log`. A subsequent read-only review
 confirmed the current authority contract permits no lexical-context fallback and
 requested explicit final-overlay diagnostic assertions, added by the lead.
+
+Private query search sharing (`a822ee4`, integrated as `7fd58e3`) carries owned
+immutable sets through producer/status subquery merges and expands at proof or
+read-set boundaries. Ordinary public queries and the full-scan oracle stay eager.
+The three retained positional-redefinition proof families preserve their exact
+search premises. Four focused tests passed in 1.02 seconds after an initial
+fixture attached computation metadata to a declared instead of derived fact;
+correcting the fixture preceded the passing run.
+
+- `cargo test -p agq-kerml-semantics --lib shared_search_tests -- --nocapture`: exit 0, four tests.
+- `cargo test -p agq-kerml-semantics`: exit 0, 173 passed and two ignored, including the dense read index and strengthened symbolic-bound fixture.
+- `cargo clippy -p agq-kerml-semantics -p agq-kernel --all-targets -- -D warnings`: exit 0, 9.99 seconds.
+- Formatting and diff checks: exit 0.
+
+Commands used two jobs, no symbols and no incremental cache; logs remain in the
+worker's ignored `overnight-query-search-sharing/`. A separate read-only review
+checked every direct search consumer, status materialization, positional proof
+premises, cache isolation and content equality/debug output, finding no defect.

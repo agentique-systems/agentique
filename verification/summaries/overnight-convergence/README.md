@@ -25,6 +25,10 @@ integrates commits and owns whole-corpus acceptance.
 - Negative-search evidence is also interned and shared across producer outputs
   and immutable overlays. Exact unions preserve all search keys. Validated empty
   worklist frontiers reuse their input; actual changes still rebuild indexes.
+- Private producer/status subqueries carry shared searches until their proof or
+  read-set boundary. Public query evidence stays eager. Atomic replacement of
+  scheduler read populations now uses dense sorted arrays instead of a second
+  tree per subject.
 - Explicit status-only query outcomes avoid producing an unused explanation
   forest. The ordinary evidence-bearing query API remains available.
 - A sealed synthetic library with all 31 roles exercises two authored projects,
@@ -71,6 +75,16 @@ small changing-context fixtures cover both producer phases and their ordering
 equivalence; this scale shape specifically exercises shared endpoint fan-out,
 crossing occurrences and bounded negative searches.
 
+The final shared-query version passed the unchanged 60k gate in **5.82 seconds**
+in the test body (6.188 seconds monitored wall time), at **977,530,880 peak private
+bytes**. It still produced 24,000 Elements and 8,000 occurrences, evaluated 28,000
+subjects, attempted 140,000 families and considered 744,000 dependency edges.
+The unchanged graph now needs two materializations and one validated empty-frontier
+reuse. Its 664,000 logical search entries retain 256,000 entries in 8,000 shared
+sets. Zero existing-fact reuse is counted in this shape because the second,
+empty frontier no longer rebuilds and recounts earlier facts. The separate
+254.282-second release compilation is excluded from the test-body measurement.
+
 The indexed real `publication_focus` gate passed in 256.609 seconds, with
 1,085,370,368 peak private bytes. From 29,140 declared records it produced 1,338
 Elements and two AssociationOccurrences in three frontiers, evaluating 1,389
@@ -99,6 +113,14 @@ scale gates**, across 105 result summaries, in 304.328 seconds including
 compilation. Peak private memory was 1,025,343,488 bytes, and more than 3.2 GB of
 disk remained free. The ignored semantic scale gate is run separately in release
 mode; this workspace result does not substitute for that performance preflight.
+
+After the final query-sharing and authority-report changes, the semantic package
+passed 173 tests (two scale gates explicitly ignored), and text integration
+passed all 46 tests in 137.157 seconds including compilation, with 1,009,401,856
+peak private bytes. Kernel/semantic all-target Clippy and the subsequent text
+all-target Clippy passed; the latter took 7.031 seconds. The updated coverage and
+authority metadata also passed `npm run standards:check`. Earlier frontend and
+metamodel gates are recorded at their actual tested source identities.
 
 The old `early-sharing` corpus process was already running before this task.
 The lead stopped it at 10,804.95 seconds elapsed, 3,522,764,800 private bytes and
@@ -136,7 +158,7 @@ records that failure alongside the smaller kernel scale success.
 
 Publication is blocked by the concrete symbolic-bound reference witness below.
 No new whole-corpus attempt has been launched. The operational default and
-historical accepted-binding file remain unchanged. KerML conformance coverage
+existing binding manifest remain unchanged. KerML conformance coverage
 remains incomplete and separate. SysML semantic work has not started.
 
 The later A-only result from the A/B fail-fast command (`1393a35`) converged in
@@ -148,6 +170,30 @@ edges, and reused two empty frontiers (five materializations including the empty
 input). The 10,916,786 logical search entries retained 3,885,584 entries in 3,346
 shared sets. This run combines sharing and scope corrections; it is not an
 isolated measurement of either change. B did not run after A failed.
+
+A controlled rerun after private query sharing and dense scheduler read storage
+used the same selection and source identities. It completed in **268.797 seconds**
+at **1,835,253,760 peak private bytes**, exit 1 with no resource stop: 36.0% less
+wall time and 10.3% less peak memory. Every deterministic work counter and the
+final diagnostic set matched the preceding A run. The final report also includes
+the candidate graph digest, an additional reporting step absent from that earlier
+failure report. This remains a failed publication preflight, with capability and
+mandatory-reference audits deferred; faster convergence cannot authorize the
+missing binding. No full-corpus attempt or SysML phase follows from it.
+
+The watchdog's first producer progress samples were at 203.422 and 203.438 seconds
+respectively. The remaining command time fell from 216.547 to 65.359 seconds;
+these sampled intervals include remaining closure work and report generation,
+not a separately timed pure producer benchmark. Source identities, all counters
+and the final diagnostics compared equal (comparison exit 0). The final candidate
+digest is `48f2b4b169e47093bd4d523a42eef39951fde6f5849207f54bf6f2ac453cf6e1`.
+
+Final acceptance gates deliberately remain open: A is incomplete, B stopped after
+A's failure, C–E have not passed, and the full capability/reference audit has not
+run. The retained `publication_focus` pass predates the last allocation changes;
+the final semantic suite, text suite, scale gate and controlled A comparison cover
+those changes. Required workspace, frontend and metamodel checks were run at the
+integration checkpoints recorded above; no new public language crate was created.
 
 The sole final producer diagnostic is `KQ_REFERENCE_CONTEXT` on
 `3f630d5e-a2f0-5bdb-a20e-33d03f0970d3`, the `instantNum` reference at bytes

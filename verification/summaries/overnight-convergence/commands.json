@@ -1518,6 +1518,291 @@
         "min_free_disk_bytes": 1073741824
       },
       "output_sha256": "76e952d27a0b46a18cc9273e99f080ed1552798c2919a27dc1da2df02c2622a8"
+    },
+    {
+      "name": "publication-blocker-standards-check",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "source_commit": "2298bd3c5ecd50b08ad2bffe80ffe8f17bb428eb",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-blocker-standards-check",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 31112,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2543517696,
+      "safety_stop": null,
+      "duration_seconds": 1.047,
+      "peak_rss_bytes": 1585152,
+      "peak_private_bytes": 151539712,
+      "samples": 2,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1073741824,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "04d325a151f077b340b2479654f686a5f8844246f6aba0964c61478dd659ae52"
+    },
+    {
+      "name": "final-text-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text"
+      ],
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/final-text-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 10184,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2506772480,
+      "safety_stop": null,
+      "duration_seconds": 137.157,
+      "peak_rss_bytes": 951017472,
+      "peak_private_bytes": 1009401856,
+      "samples": 138,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "357279421c4e2d324f63d3c16389d5068edd4954e9f3cbfd97e71a00ad17af0f"
+    },
+    {
+      "name": "final-text-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "725ba6b6b957a1f9a1e3b39ad4c9356f5a6f46d8c183ce5bc69af70d4c2fd3fb",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/final-text-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 11812,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2510413824,
+      "safety_stop": null,
+      "duration_seconds": 7.031,
+      "peak_rss_bytes": 371478528,
+      "peak_private_bytes": 458022912,
+      "samples": 8,
+      "limits": {
+        "wall_seconds": 300.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "1b27437eef5a638f28623dbf9242dc6b8b5c525b09c05322c8cdf17bbac8a671"
+    },
+    {
+      "name": "final-semantic-scale-build",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "--no-run"
+      ],
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "725ba6b6b957a1f9a1e3b39ad4c9356f5a6f46d8c183ce5bc69af70d4c2fd3fb",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/final-semantic-scale-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 20312,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2500276224,
+      "safety_stop": null,
+      "duration_seconds": 254.282,
+      "peak_rss_bytes": 1332289536,
+      "peak_private_bytes": 2381529088,
+      "samples": 255,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "2c6a577b24626f934def9c700e908b5fdae165fe91598a821fa00153a319d9d2"
+    },
+    {
+      "name": "final-semantic-scale-sixty-thousand",
+      "command": [
+        "target/release/deps/agq_kerml_semantics-9a6336e6173c6a10.exe",
+        "publication_scale_sixty_thousand_subjects",
+        "--ignored",
+        "--nocapture"
+      ],
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "a390114f62c88893c0ec8fc26d8f3a94fd01aea0d18f5aff7f9b860ed1301a94",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/final-semantic-scale-sixty-thousand",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 3112,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2508075008,
+      "safety_stop": null,
+      "duration_seconds": 6.188,
+      "peak_rss_bytes": 845742080,
+      "peak_private_bytes": 977530880,
+      "samples": 7,
+      "limits": {
+        "wall_seconds": 120.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "c761352eed4b72ea90f50679b995f89c8465c0a69527cc0f1d87eb5667816eb6"
+    },
+    {
+      "name": "final-publication-examples-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "publication_focus",
+        "--example",
+        "canonical_publication"
+      ],
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "a390114f62c88893c0ec8fc26d8f3a94fd01aea0d18f5aff7f9b860ed1301a94",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/final-publication-examples-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 10520,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2501169152,
+      "safety_stop": null,
+      "duration_seconds": 136.141,
+      "peak_rss_bytes": 850345984,
+      "peak_private_bytes": 1648705536,
+      "samples": 137,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "36352ce4e33ac3f2c00af7ce58185b80ab109234e62e6cf6c1a709c5df442271"
+    },
+    {
+      "name": "final-publication-slice-a",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=A",
+        "--fail-fast",
+        "--output=verification/generated/overnight-convergence/slice-final-A.json"
+      ],
+      "source_commit": "7fd58e3e607e1ee2531d80cd51877b44cc699a3a",
+      "working_changes_sha256": "4e7a2831ba3dce4a88301c7ec7133f7eaabf5913909f4525afa79733c1e8ee2a",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "slice (?P<slice>[A-E]) round (?P<round>\\d+): (?P<evaluated>\\d+)/(?P<subjects>\\d+)",
+      "output": "verification/generated/overnight-convergence/final-publication-slice-a",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 14252,
+      "monitor_error": null,
+      "last_progress": {
+        "slice": "A",
+        "round": "5",
+        "evaluated": "988",
+        "subjects": "988"
+      },
+      "minimum_free_disk_bytes": 2506682368,
+      "safety_stop": null,
+      "duration_seconds": 268.797,
+      "peak_rss_bytes": 1571405824,
+      "peak_private_bytes": 1835253760,
+      "samples": 269,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "bd61fcb7d42526517045db7dc8fca3861d985fe4860677a265cc2fe9f99b94e3"
     }
   ]
 }
