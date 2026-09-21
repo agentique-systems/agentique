@@ -1,0 +1,1078 @@
+{
+  "format": "agentique-watchdog-summary/1",
+  "commands": [
+    {
+      "name": "watchdog-tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_watchdog.py",
+        "-v"
+      ],
+      "source_commit": "ed2cf3a9cc086e165c075c591a3892472250e9b7",
+      "working_changes_sha256": "9c648aa3e470eff579448b3a723d0b4ea3e5546e78bc5b2761b8a8914724067a",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "output": "verification/generated/overnight-convergence/watchdog-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "safety_stop": null,
+      "duration_seconds": 2.015,
+      "peak_rss_bytes": 58519552,
+      "peak_private_bytes": 132542464,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 60.0,
+        "private_bytes": 6442450944,
+        "sample_seconds": 1
+      },
+      "output_sha256": "5e737956de69bc302405569def39fc6207b63b0ed34eb591c92303f37a15cbb3",
+      "resource_observation_valid": false,
+      "superseded_reason": "Initial Python launcher failed to retain native descendants in Windows Job; corrected native suspended-launch tests supersede resource observations."
+    },
+    {
+      "name": "kernel-derivation-scale",
+      "command": [
+        "C:/Users/phili/github/agentique-systems/agentique/target/debug/deps/derivation_scale-28431f8fce99aa23.exe",
+        "--exact",
+        "sixty_thousand_subjects_share_proofs_across_three_additive_frontiers",
+        "--nocapture"
+      ],
+      "source_commit": "b1d0632298341a3cc21b737becb57b813e52f022",
+      "working_changes_sha256": "a265fa79d012dfb414cb78fd36773889ffc11d767e62f0bef91ce455c91731e7",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "output": "verification/generated/overnight-convergence/kernel-derivation-scale",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "safety_stop": null,
+      "duration_seconds": 3.86,
+      "peak_rss_bytes": 19222528,
+      "peak_private_bytes": 11190272,
+      "samples": 20,
+      "limits": {
+        "wall_seconds": 120.0,
+        "private_bytes": 1073741824,
+        "sample_seconds": 0.2
+      },
+      "output_sha256": "f8b8854df66a992a61173201f9b285d8f948b61b9ee88c75cd07e92aa5185826",
+      "resource_observation_valid": false,
+      "superseded_reason": "Initial Python launcher failed to retain native descendants in Windows Job; corrected native suspended-launch tests supersede resource observations."
+    },
+    {
+      "name": "kernel-scale-direct-native",
+      "command": [
+        "C:/Users/phili/github/agentique-systems/agentique/target/debug/deps/derivation_scale-28431f8fce99aa23.exe",
+        "--exact",
+        "sixty_thousand_subjects_share_proofs_across_three_additive_frontiers",
+        "--nocapture"
+      ],
+      "source_commit": "6724bd83bbb44d986620d68f5ec797131f9ff888",
+      "working_changes_sha256": "0cc99405e8889175fc6e9d8e21e64b02dce5e0c21965767e857db7d576ce10e1",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "output": "verification/generated/overnight-convergence/kernel-scale-direct-native",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 15900,
+      "monitor_error": null,
+      "safety_stop": null,
+      "duration_seconds": 3.953,
+      "peak_rss_bytes": 196288512,
+      "peak_private_bytes": 190869504,
+      "samples": 38,
+      "limits": {
+        "wall_seconds": 120.0,
+        "private_bytes": 1073741824,
+        "sample_seconds": 0.1
+      },
+      "output_sha256": "08a9f0f284edf01cfde23cb468b6c59b8b6a46b54f4ea1c40993712ed8b2dc17"
+    },
+    {
+      "name": "slice-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication",
+        "--example",
+        "publication_focus"
+      ],
+      "source_commit": "fe6e2016cf052f1f4cceb5e82a581f3676a8c8cf",
+      "working_changes_sha256": "69aad1bc106c954560075427945b83835fef69c54dc58dccab5ce314dd47e837",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "output": "verification/generated/overnight-convergence/slice-release-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 29692,
+      "monitor_error": null,
+      "safety_stop": null,
+      "duration_seconds": 142.141,
+      "peak_rss_bytes": 1229537280,
+      "peak_private_bytes": 1600409600,
+      "samples": 143,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 6442450944,
+        "sample_seconds": 1
+      },
+      "output_sha256": "8d3b8c74fb9061f369d2186c86d86905c181ee25914980f1055299e2d8781da1"
+    },
+    {
+      "name": "publication-focus-worklist",
+      "command": [
+        "target/release/examples/publication_focus.exe",
+        "--staged",
+        "--output=verification/generated/overnight-convergence/focus-worklist-initial.json"
+      ],
+      "source_commit": "1daa31046cba47a00f6c66a4f359b66f0f4e39bc",
+      "working_changes_sha256": "7f368aff33e0bce7a094ef4fd4326e5089d1315024cdeb242499b2bb3e360e56",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "output": "verification/generated/overnight-convergence/publication-focus-worklist",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 14164,
+      "monitor_error": null,
+      "safety_stop": "requested",
+      "duration_seconds": 80.313,
+      "peak_rss_bytes": 759238656,
+      "peak_private_bytes": 782684160,
+      "samples": 81,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "3a11c8c09bbb2efd1bc23c8e2babc76c88f14bf074a3de7ff727d447ee346e1b"
+    },
+    {
+      "name": "preflight-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication",
+        "--example",
+        "publication_focus"
+      ],
+      "source_commit": "254c95606e7565e53bbdb44a9f40bd1f280da603",
+      "working_changes_sha256": "4d386c606ddabbcf2396e18a6553b90ac5a10fc05df9b8d8117d21ac91a4678b",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "output": "verification/generated/overnight-convergence/preflight-release-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 356,
+      "monitor_error": null,
+      "safety_stop": null,
+      "duration_seconds": 60.078,
+      "peak_rss_bytes": 598609920,
+      "peak_private_bytes": 716726272,
+      "samples": 61,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 6442450944,
+        "sample_seconds": 1
+      },
+      "output_sha256": "7e081c51eaaa25f3556a3ffd89f9e3de062988158ac9e0a049e463090ee8c661"
+    },
+    {
+      "name": "slice-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--examples"
+      ],
+      "exit_code": 1,
+      "safety_stop": "manual-monitor-repair",
+      "resource_observation_valid": false,
+      "output": "verification/generated/overnight-convergence/slice-build",
+      "note": "Stopped after native descendants escaped old watchdog. The unbounded first build was replaced with -j 2; both are superseded by slice-release-build with repaired accounting."
+    },
+    {
+      "name": "slice-build-bounded",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication",
+        "--example",
+        "publication_focus"
+      ],
+      "exit_code": 1,
+      "safety_stop": "manual-monitor-repair",
+      "resource_observation_valid": false,
+      "output": "verification/generated/overnight-convergence/slice-build-bounded",
+      "note": "Stopped after native descendants escaped old watchdog. The unbounded first build was replaced with -j 2; both are superseded by slice-release-build with repaired accounting."
+    },
+    {
+      "name": "publication-focus-status",
+      "command": [
+        "target/release/examples/publication_focus.exe",
+        "--staged",
+        "--output=verification/generated/overnight-convergence/focus-status.json"
+      ],
+      "source_commit": "254c95606e7565e53bbdb44a9f40bd1f280da603",
+      "working_changes_sha256": "36ca6df23008dd27880aa36d3ebc0d8c5faa49f96263625d3254944b89553808",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "output": "verification/generated/overnight-convergence/publication-focus-status",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 6356,
+      "monitor_error": null,
+      "safety_stop": "requested",
+      "duration_seconds": 323.484,
+      "peak_rss_bytes": 528683008,
+      "peak_private_bytes": 661950464,
+      "samples": 324,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "36f1cc41b7a18d8ac0c52f694159727421ff0872685a13eeea225c5b5bf2de08"
+    },
+    {
+      "name": "watchdog-final-tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_watchdog.py",
+        "-v"
+      ],
+      "source_commit": "75a09d6cb954835ab01398103d1b7b6794c067cf",
+      "working_changes_sha256": "e4e81cbd34d594945466d445ed095f8c6da54e9188884ffd100632ebe10f7499",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/watchdog-final-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 10816,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 4.047,
+      "peak_rss_bytes": 56008704,
+      "peak_private_bytes": 124633088,
+      "samples": 5,
+      "limits": {
+        "wall_seconds": 60.0,
+        "private_bytes": 6442450944,
+        "sample_seconds": 1
+      },
+      "output_sha256": "ea4d22e137317ceffd3fba1b5f45472c4030e7b48632b8c1181782f9d8239578"
+    },
+    {
+      "name": "semantic-scale",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "publication_scale_sixty_thousand_subjects",
+        "--",
+        "--ignored",
+        "--nocapture"
+      ],
+      "source_commit": "eef60d7ec9f033d54b8bde584ed7bfe7d8f915c3",
+      "working_changes_sha256": "ac8b9e26801b1f8991d1bdccaa2c5edb10c76a6cfbf30e2a4773feae242383a4",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-scale",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 18768,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": "private_memory",
+      "duration_seconds": 326.313,
+      "peak_rss_bytes": 4254416896,
+      "peak_private_bytes": 4309233664,
+      "samples": 327,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "e31bf11fbfb7f235a07d00b3a09bf7b6c94a62949a0794ba6578e2bfe7bbf832"
+    },
+    {
+      "name": "preflight-refinement-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_focus",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication"
+      ],
+      "source_commit": "d8cb9cc8e4745c3aaba83e51577f2d6797506ab5",
+      "working_changes_sha256": "a075b76a04b14676a6d0fa3136facc2e412724411a9332d4191a31771e081ef4",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/preflight-refinement-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 18504,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 60.078,
+      "peak_rss_bytes": 620027904,
+      "peak_private_bytes": 734724096,
+      "samples": 61,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "944fd3cfd2c5dde95ac5d7661b39acc6331d812bbbd9f68b336e1a2dc43190fc"
+    },
+    {
+      "name": "publication-focus-refinement",
+      "command": [
+        "target/release/examples/publication_focus.exe",
+        "--output=verification/generated/overnight-convergence/focused-refinement.json"
+      ],
+      "source_commit": "d8cb9cc8e4745c3aaba83e51577f2d6797506ab5",
+      "working_changes_sha256": "18c1fd59788717cdd183a0b0dc9fcb540af58b90c9321dcaee869564cb415c43",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "refinement (?P<round>\\d+): (?P<evaluated>\\d+)/(?P<references>\\d+)",
+      "output": "verification/generated/overnight-convergence/publication-focus-refinement",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 13948,
+      "monitor_error": null,
+      "last_progress": {
+        "round": "5",
+        "evaluated": "3719",
+        "references": "4000"
+      },
+      "safety_stop": "requested",
+      "duration_seconds": 459.922,
+      "peak_rss_bytes": 3170680832,
+      "peak_private_bytes": 3399475200,
+      "samples": 460,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "f363d94231cb5c56a4df18a0c4f2866f5c88e4bc755cb0fc52a21c777c1381d2"
+    },
+    {
+      "name": "semantic-text-integration",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text"
+      ],
+      "source_commit": "478fb034596deea076a80654f91a3d2fc701f3bf",
+      "working_changes_sha256": "bcd144f1478ea1e86c0b2f5c914d0ff81fabf39f90415a7c627ad600bb208bbf",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-text-integration",
+      "exit_code": 101,
+      "command_exit_code": 101,
+      "command_pid": 11992,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 9.047,
+      "peak_rss_bytes": 636084224,
+      "peak_private_bytes": 730128384,
+      "samples": 10,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "c350d08b1e749a0bacd77de18db8931037366be2bc23b682ec2ab4e012228038"
+    },
+    {
+      "name": "semantic-text-integration-fixed",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text"
+      ],
+      "source_commit": "478fb034596deea076a80654f91a3d2fc701f3bf",
+      "working_changes_sha256": "a144a80b25a4950c027f0ff144765a7893e283933b31a1b983f9aaf44780a4ea",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-text-integration-fixed",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 24940,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 306.297,
+      "peak_rss_bytes": 2087370752,
+      "peak_private_bytes": 1558900736,
+      "samples": 307,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "8911299893481f0be77aa6d6a134c6e7b081e5bfd4bc12631501c0679b75fbb8"
+    },
+    {
+      "name": "semantic-scale-build-final",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "776e0eae79cc5a21b301c59bfa547f5e4f31304091cfaa9ea481045590f576ef",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-scale-build-final",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 29608,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 254.25,
+      "peak_rss_bytes": 1825873920,
+      "peak_private_bytes": 2383736832,
+      "samples": 255,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "d7e2c9927d683357413ad6abdfcf4c5c611995061fbd1e1c5decbd3835a5cbc0"
+    },
+    {
+      "name": "semantic-scale-probe-128",
+      "command": [
+        "target/release/deps/agq_kerml_semantics-9a6336e6173c6a10.exe",
+        "publication_scale_probe",
+        "--ignored",
+        "--nocapture"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "776e0eae79cc5a21b301c59bfa547f5e4f31304091cfaa9ea481045590f576ef",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-scale-probe-128",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 13852,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 1.172,
+      "peak_rss_bytes": 1568768,
+      "peak_private_bytes": 44556288,
+      "samples": 2,
+      "limits": {
+        "wall_seconds": 120.0,
+        "private_bytes": 2147483648,
+        "sample_seconds": 1
+      },
+      "output_sha256": "0d16f40781f6d7502b69136022ac292022a9ff403d2a67c21de7b207a1017aac"
+    },
+    {
+      "name": "semantic-scale-probe-1024",
+      "command": [
+        "target/release/deps/agq_kerml_semantics-9a6336e6173c6a10.exe",
+        "publication_scale_probe",
+        "--ignored",
+        "--nocapture"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "776e0eae79cc5a21b301c59bfa547f5e4f31304091cfaa9ea481045590f576ef",
+      "environment_overrides": {
+        "AGQ_PUBLICATION_SCALE_GROUPS": "1024"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-scale-probe-1024",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 3176,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 2.032,
+      "peak_rss_bytes": 258158592,
+      "peak_private_bytes": 278503424,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 120.0,
+        "private_bytes": 2147483648,
+        "sample_seconds": 1
+      },
+      "output_sha256": "aa89f1e45228686761b0e28f85274f8a0678d8bc466c998b46d0387493b5dcaa"
+    },
+    {
+      "name": "semantic-scale-sixty-thousand-final",
+      "command": [
+        "target/release/deps/agq_kerml_semantics-9a6336e6173c6a10.exe",
+        "publication_scale_sixty_thousand_subjects",
+        "--ignored",
+        "--nocapture"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "776e0eae79cc5a21b301c59bfa547f5e4f31304091cfaa9ea481045590f576ef",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "semantic-scale round=(?P<round>\\d+) evaluated=(?P<evaluated>\\d+)/(?P<subjects>\\d+) proposed=(?P<proposed>\\d+)",
+      "output": "verification/generated/overnight-convergence/semantic-scale-sixty-thousand-final",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 17516,
+      "monitor_error": null,
+      "last_progress": {
+        "round": "1",
+        "evaluated": "16000",
+        "subjects": "16000",
+        "proposed": "0"
+      },
+      "safety_stop": null,
+      "duration_seconds": 7.078,
+      "peak_rss_bytes": 919240704,
+      "peak_private_bytes": 1052094464,
+      "samples": 8,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "c2cfb6d4a4f151defc1febd163441ecafddc4d1318480e46deaa7fae69a05cad"
+    },
+    {
+      "name": "publication-examples-indexed-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_focus",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "776e0eae79cc5a21b301c59bfa547f5e4f31304091cfaa9ea481045590f576ef",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-examples-indexed-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 12104,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 132.141,
+      "peak_rss_bytes": 1137893376,
+      "peak_private_bytes": 1627611136,
+      "samples": 133,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "b2430d502c9848df16bb2ecf63eafe1ae411056973db219bfa5c1d4256be27bf"
+    },
+    {
+      "name": "publication-focus-indexed",
+      "command": [
+        "target/release/examples/publication_focus.exe",
+        "--output=verification/generated/overnight-convergence/focused-indexed.json"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "776e0eae79cc5a21b301c59bfa547f5e4f31304091cfaa9ea481045590f576ef",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "refinement (?P<round>\\d+): (?P<evaluated>\\d+)/(?P<references>\\d+)",
+      "output": "verification/generated/overnight-convergence/publication-focus-indexed",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 12740,
+      "monitor_error": null,
+      "last_progress": {
+        "round": "8",
+        "evaluated": "215",
+        "references": "4000"
+      },
+      "safety_stop": null,
+      "duration_seconds": 256.609,
+      "peak_rss_bytes": 990511104,
+      "peak_private_bytes": 1085370368,
+      "samples": 257,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "a0753bf6abee7b77b5d8f28a81fd607ef0d1e2a8288d1261196b5052280c1330"
+    },
+    {
+      "name": "workspace-clippy-integration",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "d1d63614299018ec6f195def8419655110772bfe298c99123fbb90ba041f045f",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/workspace-clippy-integration",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 28612,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 30.063,
+      "peak_rss_bytes": 678367232,
+      "peak_private_bytes": 825319424,
+      "samples": 31,
+      "limits": {
+        "wall_seconds": 1800.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "185d3532c98afb88923c6500fc36bf9bb3aa0d8fb69174ebdde9062c687624cd"
+    },
+    {
+      "name": "publication-slices-indexed",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=all",
+        "--output=verification/generated/overnight-convergence/slice-indexed-{slice}.json"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "088eb55976a0a4fb68bb1ab88b1c73f7771bceb7dc3c55c0691904cc8faa34f0",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-slices-indexed",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 22064,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": "requested",
+      "duration_seconds": 333.641,
+      "peak_rss_bytes": 3092496384,
+      "peak_private_bytes": 3180486656,
+      "samples": 334,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "9015319421cf2de697a9dfabfe204d886cdc79502983922cf453259d71358a21"
+    },
+    {
+      "name": "frontend-e2e",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "2ca3191a512aa2c39f0dda70e08faba46d67234fcdb8736336818b435327b666",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/frontend-e2e",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 7504,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 56.109,
+      "peak_rss_bytes": 1189888000,
+      "peak_private_bytes": 1060765696,
+      "samples": 57,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "2156ab0631b46cb7ad19aeeb7279e0b16692af51362873218716a54f9b55669b"
+    },
+    {
+      "name": "slice-conflict-diagnostic-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "library_elements"
+      ],
+      "source_commit": "0f151ff8334b5033b7b0bf820bb8c331a05dc4b7",
+      "working_changes_sha256": "7dd270e9dc2b1c5a56666c58d15b73a9750469b6955c1afa96c48b9192fb61af",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/slice-conflict-diagnostic-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 26112,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 43.062,
+      "peak_rss_bytes": 628977664,
+      "peak_private_bytes": 746176512,
+      "samples": 44,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "94054c06376acd1eef9c452a2d7fdf1c493cd20222bf93da414c10afbb17fa90"
+    },
+    {
+      "name": "immutable-ownership-guard",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "immutable_dependencies",
+        "--test",
+        "derived_associations"
+      ],
+      "source_commit": "ae3f02b5d3210638fb59e5b8f2a067bae5c17680",
+      "working_changes_sha256": "7dd270e9dc2b1c5a56666c58d15b73a9750469b6955c1afa96c48b9192fb61af",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/immutable-ownership-guard",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 10600,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 10.047,
+      "peak_rss_bytes": 693686272,
+      "peak_private_bytes": 801132544,
+      "samples": 11,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1
+      },
+      "output_sha256": "13d283cbf9833c6bc8a81d47f2e8e1dfe48bb28c046eee05716b11471492f75c"
+    },
+    {
+      "name": "reference-context-regression-before",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "reference_binding_v9",
+        "reference_binding_waits_for_value_specialization_context",
+        "--",
+        "--exact",
+        "--nocapture"
+      ],
+      "source_commit": "ae3f02b5d3210638fb59e5b8f2a067bae5c17680",
+      "working_changes_sha256": "7dd270e9dc2b1c5a56666c58d15b73a9750469b6955c1afa96c48b9192fb61af",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/reference-context-regression-before",
+      "exit_code": 101,
+      "command_exit_code": 101,
+      "command_pid": 24652,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 26.063,
+      "peak_rss_bytes": 881860608,
+      "peak_private_bytes": 1177268224,
+      "samples": 27,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1
+      },
+      "output_sha256": "eac7ab800fe504c514afcfd6e40fac6a767a3193c7b1934a49a4f1a955135c8b"
+    },
+    {
+      "name": "slice-a-conflict-trace",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=A",
+        "--output=verification/generated/overnight-convergence/slice-a-conflict-trace.json"
+      ],
+      "source_commit": "0f151ff8334b5033b7b0bf820bb8c331a05dc4b7",
+      "working_changes_sha256": "7dd270e9dc2b1c5a56666c58d15b73a9750469b6955c1afa96c48b9192fb61af",
+      "environment_overrides": {
+        "AGQ_TRACE_DERIVATION_CONFLICT": "1"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/slice-a-conflict-trace",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 30564,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 273.375,
+      "peak_rss_bytes": 3088793600,
+      "peak_private_bytes": 3172601856,
+      "samples": 274,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1
+      },
+      "output_sha256": "d82bddba8275d18f9c45a463fec73c4196cb7b502ed3fd11a75e5d5d64b60961"
+    },
+    {
+      "name": "context-conflict-source-inspection",
+      "command": [
+        "target/release/examples/library_elements.exe",
+        "--input=verification/generated/overnight-convergence/context-conflict-identities.json",
+        "--output=verification/generated/overnight-convergence/context-conflict-sources.json"
+      ],
+      "source_commit": "ae3f02b5d3210638fb59e5b8f2a067bae5c17680",
+      "working_changes_sha256": "fe4935be054c414ac4d6870466adb62991cfe55859b3ef56f5c0bac4cbfb80a1",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/context-conflict-source-inspection",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 5148,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 2.125,
+      "peak_rss_bytes": 55930880,
+      "peak_private_bytes": 487989248,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 120.0,
+        "private_bytes": 2147483648,
+        "sample_seconds": 1
+      },
+      "output_sha256": "b46cb4544ddc2a6d9ab7391f79d611da3284bcf9d2c45675f90ae76daa96ab41"
+    },
+    {
+      "name": "authored-edited-publication",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "library::publication::tests"
+      ],
+      "source_commit": "90877b395f6a4f392e045fd7cf36b6246c569233",
+      "working_changes_sha256": "14623e809f407b816a1995fc26e12fb05a3bd87f23acd9042bc4179acc624de3",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/authored-edited-publication",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 18196,
+      "monitor_error": null,
+      "last_progress": null,
+      "safety_stop": null,
+      "duration_seconds": 25.047,
+      "peak_rss_bytes": 712843264,
+      "peak_private_bytes": 891912192,
+      "samples": 26,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1
+      },
+      "output_sha256": "972498260134fabb920648df6ad1c4bf2c6ff803cb33db033dd38785e5cbd7bd"
+    }
+  ]
+}

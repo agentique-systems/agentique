@@ -25,8 +25,11 @@ Incomplete validator coverage alone does not block a canonical semantic graph.
 Operational v8 explicitly resolves the owned-cross featuring-domain and imported
 Membership collision interpretations. Its independent authority manifests extend
 v7 without rewriting earlier profiles. Current publication remains incomplete
-because essential producer and graph closure are not established; see the
-[publication evidence](../verification/kerml-canonical-publication/README.md).
+until the complete corpus passes closure, capability and mandatory-reference
+acceptance. Dependency-driven producer frontiers and bounded reference reuse are
+implemented; scoped success cannot seal a canonical publication. See the current
+[convergence evidence](../verification/summaries/overnight-convergence/README.md)
+and the earlier [publication evidence](../verification/kerml-canonical-publication/README.md).
 New evidence follows [ADR 0021](adr/0021-verification-evidence-policy.md).
 
 The operational errata publication v3 milestone adds explicit published and
@@ -38,12 +41,12 @@ milestone stopped at Gate 7 on the separate
 [KERML11-140 resolution authority conflict](kerml-operational-library-publication-authority-conflict.md).
 No accepted library facade or SysML semantic readiness is claimed.
 
-The [complete structural foundation review](language-core-foundation-review.md)
-is **incomplete**. New full-input audits cover 175 classes and 319 associations;
-they expose Integer/Real domain and association-inheritance gaps as well as the
-Property-context authority question in [ADR 0009](adr/0009-property-redefinition-context.md).
-The earlier blocker records below remain historical. No complete runtime or
-SysML language crate is claimed.
+The initial [structural foundation review](language-core-foundation-review.md)
+exposed Integer/Real domain, association-inheritance and Property-context gaps
+([ADR 0009](adr/0009-property-redefinition-context.md)). Its earlier blockers are
+historical: the structural runtime v3 boundary described below now includes
+`agq-kerml` and `agq-sysml` descriptors and borrowed views. That structural
+registration does not establish SysML textual or semantic support.
 
 Generation 1 is the functioning integrated application described below. Generation 2
 is the standards-driven engine for all new language implementation; it does not yet
@@ -51,9 +54,9 @@ power the application. Compatibility/migration work must name its generation.
 Keep the [v0.1 release coverage](../standards/coverage.json) and requirements intact;
 use [generation-2 status](../standards/v2-coverage.json) for new engine capabilities.
 
-The shared metamodel importer now handles SysML 2.0, but runtime descriptor
-registration is [blocked by published property metadata](sysml-v2-runtime-blocker.md).
-Planned SysML runtime nodes below remain unimplemented.
+The shared importer and runtime descriptors cover the pinned SysML 2.0 graph.
+The [published-property blocker](sysml-v2-runtime-blocker.md) records an earlier
+stage; SysML semantics and textual projects remain the next language phase.
 
 [ADR 0008](adr/0008-property-subsetting-cycle-semantics.md) corrects the former
 combined property-cycle invariant: cyclic subsetting is representable and exact
@@ -69,8 +72,8 @@ language stack before they are shown as implemented components here.
 
 ## Generation 2: language engine under development
 
-Arrows point from a consumer to its dependency. Dashed nodes are planned; they do
-not imply existing SysML support. The generator is maintenance tooling and emits
+Arrows point from a consumer to its dependency. Dashed nodes are planned semantic
+and textual layers. The generator is maintenance tooling and emits
 checked-in descriptors; it is never a runtime or build-script dependency.
 
 ```mermaid
@@ -81,12 +84,12 @@ flowchart BT
   text --> semantics
   text --> kerml
   syntax --> kernel
-  sysml[agq-sysml: planned] --> kerml
+  sysml[agq-sysml: descriptors and views] --> kerml
   sysmlsem[agq-sysml-semantics: planned] --> sysml
   sysmlsem --> semantics
   sysmltext[SysML text: planned] --> sysmlsem
   classDef planned stroke-dasharray: 5 5
-  class sysml,sysmlsem,sysmltext planned
+  class sysmlsem,sysmltext planned
 ```
 
 Canonical data lives in generic immutable kernel records. Borrowed typed views

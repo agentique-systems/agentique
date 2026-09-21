@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -197,7 +198,7 @@ class PosixGroup:
         pass
 
 
-def execute(command, output, wall_seconds, private_bytes, interval, environment):
+def execute(command, output, wall_seconds, private_bytes, interval, environment, progress_pattern=None):
     """Return observations even on failure; failure to monitor terminates the tree."""
     output.mkdir(parents=True, exist_ok=False)
     monitor = WindowsJob() if os.name == "nt" else PosixGroup()
@@ -207,6 +208,8 @@ def execute(command, output, wall_seconds, private_bytes, interval, environment)
     process = None
     monitor_error = None
     command_pid = None
+    progress = None
+    progress_regex = re.compile(progress_pattern) if progress_pattern else None
     try:
         with (output / "output.log").open("w", encoding="utf-8") as log, \
                 (output / "observations.jsonl").open("w", encoding="utf-8") as raw:
@@ -226,6 +229,13 @@ def execute(command, output, wall_seconds, private_bytes, interval, environment)
             while True:
                 elapsed = time.monotonic() - start
                 observation = monitor.sample()
+                if progress_regex:
+                    # Observe a bounded tail, never copy a growing command log.
+                    with (output / "output.log").open("rb") as progress_log:
+                        progress_log.seek(max(0, os.fstat(progress_log.fileno()).st_size - 65536))
+                        for match in progress_regex.finditer(progress_log.read().decode("utf-8", errors="replace")):
+                            progress = match.groupdict() or {"line": match.group(0)}
+                    observation["progress"] = progress
                 peak_rss = max(peak_rss, observation["rss_bytes"])
                 peak_private = max(peak_private, observation["private_bytes"], observation["peak_private_bytes"])
                 samples += 1
@@ -264,6 +274,7 @@ def execute(command, output, wall_seconds, private_bytes, interval, environment)
         "exit_code": 125 if stop == "monitor_error" else 124 if stop else result,
         "command_exit_code": result, "command_pid": command_pid,
         "monitor_error": monitor_error,
+        "last_progress": progress,
         "safety_stop": stop, "duration_seconds": round(time.monotonic() - start, 3),
         "peak_rss_bytes": peak_rss, "peak_private_bytes": peak_private, "samples": samples,
         "limits": {"wall_seconds": wall_seconds, "private_bytes": private_bytes, "sample_seconds": interval},
@@ -277,6 +288,7 @@ def main():
     parser.add_argument("--wall-seconds", type=float, default=600)
     parser.add_argument("--private-mib", type=float, default=6144)
     parser.add_argument("--sample-seconds", type=float, default=1)
+    parser.add_argument("--progress-pattern", help="Optional regex; named groups become sampled progress counters")
     parser.add_argument("--summary", default="verification/summaries/overnight-convergence/commands.json")
     parser.add_argument("--env", action="append", default=[])
     parser.add_argument("command", nargs=argparse.REMAINDER)
@@ -286,6 +298,11 @@ def main():
         parser.error("a command and positive limits are required")
     if Path(args.name).name != args.name or args.name in (".", ".."):
         parser.error("name must be a filename component")
+    if args.progress_pattern:
+        try:
+            re.compile(args.progress_pattern)
+        except re.error as error:
+            parser.error(f"invalid progress regex: {error}")
     summary = ROOT / args.summary
     commit, digest = source_identity(Path(args.summary).as_posix())
     output = ROOT / "verification/generated/overnight-convergence" / args.name
@@ -296,10 +313,11 @@ def main():
     overrides = dict(item.split("=", 1) for item in args.env)
     executable = shutil.which(command[0]) or command[0]
     result = execute([executable, *command[1:]], output, args.wall_seconds,
-                     int(args.private_mib * 1024**2), args.sample_seconds, {**os.environ, **overrides})
+                     int(args.private_mib * 1024**2), args.sample_seconds, {**os.environ, **overrides}, args.progress_pattern)
     record = {"name": args.name, "command": command, "source_commit": commit,
               "working_changes_sha256": digest, "environment_overrides": overrides,
-              "watchdog_python": sys.version.split()[0], "output": output.relative_to(ROOT).as_posix(), **result}
+              "watchdog_python": sys.version.split()[0], "progress_pattern": args.progress_pattern,
+              "output": output.relative_to(ROOT).as_posix(), **result}
     (output / "result.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     summary.parent.mkdir(parents=True, exist_ok=True)
     lock = summary.with_suffix(".lock")

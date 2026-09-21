@@ -41,7 +41,9 @@ per-vertex traversal state, avoiding forward/reverse copies of dense evidence.
 a shared immutable overlay. Its dependency Element records remain shared across
 projects and revisions. Kernel transactions protect dependency records, slots,
 occurrences and inverse ownership edits; they can still create local relationships
-that reference dependency identities. Local derivations retain the dependency's
+that reference dependency identities. Final-candidate validation also rejects new
+local composite slots, occurrence projections or derived navigation that would
+change dependency ownership. Local derivations retain the dependency's
 explanation DAG, including declared evidence beneath extended collections. This
 kernel operation does not certify that a dependency is an accepted language
 publication; that remains the language facade's responsibility.
@@ -54,6 +56,18 @@ a frontier observes the same graph. Contributions merge by semantic identity bef
 the next frontier, so traversal order and batch size cannot select winners.
 The retained reference full scan compares records, occurrences, ownership, proofs,
 query answers, capabilities and semantic digests on fixtures.
+
+Operational v8 closure separates structural implications from context-sensitive
+reference-result and FeatureValue bindings. Valuation subsettings, invocation
+specialization, typing, featuring and contextual chains close first: these can
+change which featuring context is nearest. Only then may the two binding roles
+materialize their selected context. Their OwningMembership infrastructure does
+not add features or source specialization edges to the prior domain population.
+Generated subjects still run normal producers, and dirty context readers still
+re-evaluate; conflicts remain errors. Both worklist and independent full-scan
+closures use this phase boundary. The public one-shot planning API and earlier
+operational profiles retain their existing behavior. A structural fixed point
+alone cannot issue complete publication evidence.
 
 `CompletePublicationOverlay` is issued only after producers answer Complete on an
 unchanged graph and all publication capability queries succeed. Stage-budget
@@ -72,6 +86,38 @@ N outputs sharing M premises require N+M dependency edges rather than N×M.
 Structural validation and navigation indexes are still rebuilt once per frontier;
 this is not an incremental-index implementation. Published snapshots remain
 immutable and atomic validation is unchanged.
+
+Semantic rule set `/23` uses a framed content encoding for model and library
+digests. A shared explanation is hashed once and referenced by its content hash
+from each fact. Addresses only key a local memo and never enter the digest.
+Records, values, ownership order, occurrences, source provenance, unsuccessful
+computations and bounded searches remain part of the identity. This prevents
+digest generation from expanding N copies of an M-premise shared proof.
+
+`KerMlStatusQueries` returns explicitly evidence-free `QueryOutcome` values for
+bulk checks. `QueryOutcomeWithReads` additionally carries `QueryReadSet`, reusing
+the same positive/negative invalidation contract as publication closure. A read
+set is not a proof or publication certificate. Cache reuse requires an unchanged
+query contract and complete reporting of changed records, pending inputs and both
+old and new navigation endpoints. Full explanations remain available through
+`KerMlQueries` against the same canonical graph.
+
+Reference refinement reconstructs ordinary candidates and caches provisional
+reference outcomes against those read dependencies. `QueryInvalidationSet` keeps
+only sorted affected-element keys and the global-search flag after the cache has
+consumed a query's evidence. Equivalence tests check its decisions against the
+full read set. The final mandatory-reference audit still requires Complete,
+exactly one candidate and agreement with the stored canonical endpoint.
+Effective names are memoized only within an immutable query evaluator; forks
+and new revisions begin with fresh traversal caches.
+
+Kernel incoming references have an additional property index containing offsets
+into the existing ordered occurrence vectors. It covers stored slots, association
+occurrences and derived navigation without copying reference records. Language
+queries can select effective source-role properties while keeping the broad
+negative incoming-search dependency. Registry property resolution also uses its
+existing effective-property index without allocating a descriptor vector for
+each read. Neither optimization changes canonical records or iteration order.
 
 `CanonicalKermlStandardLibraries::publish` additionally checks the exact verified
 source construction and every mandatory reference against the closed graph. Its

@@ -485,10 +485,13 @@
     "accepted_bindings_regenerated": false,
     "authored_accepted_library_consumption": false,
     "generation_1_release_obligations": "unchanged",
-    "semantic_rule_set": "agq-kerml-query/21",
-    "derivation_infrastructure": "Generic derived association occurrences, additive stages, ordered inverse navigation and immutable dependency isolation; complete pinned-corpus acceptance remains a separate gate"
+    "semantic_rule_set": "agq-kerml-query/23",
+    "derivation_infrastructure": "Dependency-driven immutable producer frontiers, metaclass applicability, positive and negative query read dependencies, compact status queries, persistent proof sharing, factored cycle validation and consumed additive overlays; complete pinned-corpus acceptance remains a separate gate",
+    "convergence_evidence": "verification/summaries/overnight-convergence/README.md"
   },
   "kerml_publication_convergence": {
+    "historical": true,
+    "superseded_by": "kerml_canonical_publication",
     "status": "incomplete-publication-critical-closure",
     "profile": "agentique-kerml-1.0-operational/7",
     "acceptance_contract": "docs/adr/0022-kerml-publication-vs-conformance.md",

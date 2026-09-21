@@ -1,0 +1,316 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "text-examples-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--examples"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "6724bd83bbb44d986620d68f5ec797131f9ff888",
+      "working_changes_sha256": "aa803ff2ad56992795977d5d999af23300108a90a38dc53b7414552c93981f5e",
+      "output_sha256": "8dc2ae7a074fef72c6a683cf48a3cd30ae7a540e04c6404d3683ae02eef5456b",
+      "duration_seconds": 5.5,
+      "output": "verification/generated/overnight-convergence/text-examples-check.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "authored-sealed-publication",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "library::publication::tests"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "254c95606e7565e53bbdb44a9f40bd1f280da603",
+      "working_changes_sha256": "9f1d469fb2824edc6bc70760e7ecc83faa2d1dd8f360e63263a72bb08657a56f",
+      "output_sha256": "2fe9521657a9f90bb9750844773c7ebfdc6381564a1d0a8d72b8fbfceae9ee83",
+      "duration_seconds": 26.25,
+      "output": "verification/generated/overnight-convergence/authored-sealed-publication.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "authored-sealed-publication-context-fix",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "library::publication::tests"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8df73cd8be47767f76d14d4438742cd1a794d788",
+      "working_changes_sha256": "c6f2478fc3270e1425467cf45b2bc108439176eebc1da672954aa13ea3e3e6eb",
+      "output_sha256": "2b6e12a6c30f242eafba4d10821c85a2cba5eb925eb0453202ce51f3e749a991",
+      "duration_seconds": 14.91,
+      "output": "verification/generated/overnight-convergence/authored-sealed-publication-context-fix.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "text-preflight-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8df73cd8be47767f76d14d4438742cd1a794d788",
+      "working_changes_sha256": "6d72a30765fc6f2e1196a3b56fc71be516476071c296bc01484b1f363cfd27aa",
+      "output_sha256": "7f4aba17f8c46ac5b9a0d3248f77af3ae2471571e12c432f0ca7e20a440d216a",
+      "duration_seconds": 3.0,
+      "output": "verification/generated/overnight-convergence/text-preflight-check.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "npm-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "eef60d7ec9f033d54b8bde584ed7bfe7d8f915c3",
+      "working_changes_sha256": "f7ff09efe49edc6fe24c6f6fb846d9c0d17264c4c718ad4553210a8bead7455e",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.05,
+      "output": "verification/generated/overnight-convergence/npm-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "npm-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "eef60d7ec9f033d54b8bde584ed7bfe7d8f915c3",
+      "working_changes_sha256": "f7ff09efe49edc6fe24c6f6fb846d9c0d17264c4c718ad4553210a8bead7455e",
+      "output_sha256": "5db766d8d3195b122cf70959b891ab6d3875535422d85e81bfb05943da7801f2",
+      "duration_seconds": 2.14,
+      "output": "verification/generated/overnight-convergence/npm-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "npm-test",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "eef60d7ec9f033d54b8bde584ed7bfe7d8f915c3",
+      "working_changes_sha256": "f7ff09efe49edc6fe24c6f6fb846d9c0d17264c4c718ad4553210a8bead7455e",
+      "output_sha256": "610467cd7d5ee588947bb33e68565a4b70e9ba3b278fda9390126d5548100dc2",
+      "duration_seconds": 0.58,
+      "output": "verification/generated/overnight-convergence/npm-test.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "standards-check",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "eef60d7ec9f033d54b8bde584ed7bfe7d8f915c3",
+      "working_changes_sha256": "f7ff09efe49edc6fe24c6f6fb846d9c0d17264c4c718ad4553210a8bead7455e",
+      "output_sha256": "f750a5c0cbbb6f12155af47565b1f352d91e1cf062233d494c7b708accb7234c",
+      "duration_seconds": 0.56,
+      "output": "verification/generated/overnight-convergence/standards-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "fmt-workspace",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "478fb034596deea076a80654f91a3d2fc701f3bf",
+      "working_changes_sha256": "fa949248a0d689cc0f6b0c36b423524eae52be44ba637818f0aa77a2f9c92664",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.73,
+      "output": "verification/generated/overnight-convergence/fmt-workspace.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "fmt-final-integration",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "e13f4687968baaf7881827a42f21fd3822fb96669fe4ea125ea77d5ddbcaeae9",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.56,
+      "output": "verification/generated/overnight-convergence/fmt-final-integration.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "metamodel-all",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "6b7d0070b17100f93d0ee5aabc48b23afaf50822238b2cee21c54d7733f8322c",
+      "output_sha256": "b0ca366fd1c4119a5f31dce8edebea7a81b62c6bc0cc2a54ddd09dc20a937d36",
+      "duration_seconds": 16.33,
+      "output": "verification/generated/overnight-convergence/metamodel-all.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "metamodel-kerml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "08fe1df3a4b2c625443b26fb2be0880fb13ebf555a536ee9c72c33442f0d27d2",
+      "output_sha256": "d9eeedd563882344c1ff1524869ff06692c283e35da54aaa15b1e5f5b8d55d51",
+      "duration_seconds": 1.66,
+      "output": "verification/generated/overnight-convergence/metamodel-kerml-runtime.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "metamodel-sysml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "08fe1df3a4b2c625443b26fb2be0880fb13ebf555a536ee9c72c33442f0d27d2",
+      "output_sha256": "4a4b87fe8189617c6cf4c2689667299712641ad7fca4e5a885618424a4960252",
+      "duration_seconds": 3.42,
+      "output": "verification/generated/overnight-convergence/metamodel-sysml-runtime.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "watchdog-tests-final",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_watchdog.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "cc2a4ea9652aa2e616399cd478fc14ab69ce4e96",
+      "working_changes_sha256": "08fe1df3a4b2c625443b26fb2be0880fb13ebf555a536ee9c72c33442f0d27d2",
+      "output_sha256": "3135f2ee99e4a00d3e244dd11abd9e751a7baaab6d101e87c984824d44ee5d18",
+      "duration_seconds": 3.59,
+      "output": "verification/generated/overnight-convergence/watchdog-tests-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "fmt-context-strata",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "85731dff814eeae7e468156cc4d95add0d712e99",
+      "working_changes_sha256": "bd4a675721c3fcbad2373cf7710c9a90cb3a5736e7fe0f756ff0fdde4a904e96",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.66,
+      "output": "verification/generated/overnight-convergence/fmt-context-strata.log",
+      "environment_overrides": {}
+    }
+  ]
+}

@@ -42,10 +42,10 @@ class WatchdogTests(unittest.TestCase):
             finally:
                 kernel.CloseHandle(handle)
 
-    def run_argv(self, command, wall=10, memory=512 * 1024**2):
+    def run_argv(self, command, wall=10, memory=512 * 1024**2, progress_pattern=None):
         self.sequence += 1
         output = self.directory / f"run-{self.sequence}"
-        result = execute(command, output, wall, memory, 0.025, dict(os.environ))
+        result = execute(command, output, wall, memory, 0.025, dict(os.environ), progress_pattern)
         observations = [json.loads(line) for line in (output / "observations.jsonl").read_text().splitlines()]
         process_ids = [result["command_pid"]] if result["command_pid"] else []
         process_ids.extend(pid for sample in observations for pid in sample["process_ids"])
@@ -62,6 +62,13 @@ class WatchdogTests(unittest.TestCase):
         self.assertEqual(failure["exit_code"], 7)
         self.assertIsNone(failure["safety_stop"])
         self.assertGreater(success["peak_private_bytes"], 0)
+
+    def test_progress_is_observed_without_changing_exit_status(self):
+        result, samples = self.run_command("print('stage 2: 16/32 subjects')",
+            progress_pattern=r"stage (?P<stage>\d+): (?P<done>\d+)/(?P<total>\d+)")
+        self.assertEqual(result["exit_code"], 0)
+        self.assertEqual(result["last_progress"], {"stage": "2", "done": "16", "total": "32"})
+        self.assertEqual(samples[-1]["progress"], result["last_progress"])
 
     def test_wall_limit_terminates_descendants(self):
         result, samples = self.run_command(

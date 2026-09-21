@@ -3215,6 +3215,33 @@
       "environment_overrides": {
         "CARGO_BUILD_JOBS": "2"
       }
+    },
+    {
+      "name": "canonical-publication-gate-early-sharing",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "canonical_publication",
+        "--",
+        "--output=verification/generated/kerml-complete-publication/full-publication-early-sharing.json",
+        "--conformance-output=verification/generated/kerml-complete-publication/full-conformance-early-sharing.json"
+      ],
+      "exit_code": 4294967295,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2e259ff63f94ccf685800cb54835c5cab5363561",
+      "working_changes_sha256": "33ab1559c02cd137628043ba5537279c8eaf316449c5cba478aaf57dcdc55a44",
+      "output_sha256": "509a278d6fdf52e1d46954a8d5f2e54e2f4991b773d6916074f1828f2d63b659",
+      "duration_seconds": 10805.62,
+      "output": "verification/generated/kerml-complete-publication/canonical-publication-gate-early-sharing.log",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2"
+      }
     }
   ]
 }
