@@ -169,6 +169,30 @@ fn staged_collection_extensions_preserve_the_declared_prefix_and_all_contributor
             .contains(&Dependency::Derived(prop(OWNS, SOURCES)))
     );
 }
+
+#[test]
+fn extending_an_earlier_fact_rechecks_cycles_through_retained_proofs() {
+    let snapshot = vertical();
+    let output = key(VEHICLE);
+    let aggregate = prop(OWNS, SOURCES);
+    let mut first = DerivationBuilder::new(snapshot.clone());
+    first.extend_ordered_references(OWNS, SOURCES, vec![VEHICLE], evidence(&[]));
+    first.element(
+        output,
+        PART_DEF,
+        [(NAME, text("depends on earlier aggregate"))],
+        BTreeSet::from([Dependency::Derived(aggregate)]),
+    );
+    let first = first.build().unwrap();
+    let original = first.explain(aggregate).unwrap().clone();
+    let mut second = DerivationBuilder::from_overlay(first.clone());
+    second.extend_ordered_references(OWNS, SOURCES, vec![output.element_id()], evidence(&[]));
+    assert_eq!(
+        second.build().unwrap_err(),
+        DerivationError::DependencyCycle(vec![FactKey::Element(output.element_id()), aggregate])
+    );
+    assert_eq!(first.explain(aggregate), Some(&original));
+}
 fn evidence(dependencies: &[Dependency]) -> Explanation {
     Explanation {
         rule: RULE,

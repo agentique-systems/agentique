@@ -1,6 +1,6 @@
 //! Revision-bound semantic results with explicit evidence. No rule evaluator is built in.
 use crate::association::AssociationOccurrence;
-use crate::model::{Slot, cyclic_nodes_by};
+use crate::model::Slot;
 use crate::provenance::{Dependency, Explanation, ExplanationPool, FactKey, Origin};
 use crate::value::SlotValue;
 use crate::{
@@ -9,6 +9,9 @@ use crate::{
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
+
+mod proof_graph;
+use proof_graph::cyclic_explanations;
 
 /// Validated, immutable derived results and a merged read-only semantic view.
 ///
@@ -673,60 +676,6 @@ impl DerivationBuilder {
             }),
         })
     }
-}
-
-/// A fact points to its shared proof, and each proof points to its derived
-/// dependencies. This factors N outputs sharing M premises into N + M edges,
-/// rather than expanding the same M premises N times during cycle validation.
-fn cyclic_explanations(
-    explanations: &BTreeMap<FactKey, Arc<Explanation>>,
-    pool: &ExplanationPool,
-    changed: &BTreeSet<FactKey>,
-    include_previous: bool,
-) -> Vec<FactKey> {
-    #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-    enum Node {
-        Fact(FactKey),
-        // The least fact identity using a proof is its deterministic local key.
-        Proof(FactKey),
-    }
-    let mut representatives = BTreeMap::new();
-    let mut fact_proofs = BTreeMap::new();
-    let mut proof_dependencies = BTreeMap::new();
-    for (&fact, proof) in explanations {
-        if !include_previous && !changed.contains(&fact) {
-            continue;
-        }
-        let representative = *representatives
-            .entry(Arc::as_ptr(proof) as usize)
-            .or_insert_with(|| {
-                proof_dependencies.insert(
-                    fact,
-                    pool.derived_dependencies(proof)
-                        .iter()
-                        .copied()
-                        .filter(|dependency| include_previous || changed.contains(dependency))
-                        .collect::<Vec<_>>(),
-                );
-                fact
-            });
-        fact_proofs.insert(fact, representative);
-    }
-    cyclic_nodes_by(changed.iter().copied().map(Node::Fact), |node| {
-        let (proof, dependencies): (_, &[FactKey]) = match node {
-            Node::Fact(fact) => (Some(Node::Proof(fact_proofs[fact])), &[]),
-            Node::Proof(proof) => (None, &proof_dependencies[proof]),
-        };
-        proof
-            .into_iter()
-            .chain(dependencies.iter().copied().map(Node::Fact))
-    })
-    .into_iter()
-    .filter_map(|node| match node {
-        Node::Fact(fact) => Some(fact),
-        Node::Proof(_) => None,
-    })
-    .collect()
 }
 
 fn add_reference_dependencies(
