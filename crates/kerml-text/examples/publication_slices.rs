@@ -88,6 +88,7 @@ fn run_slice(
         )?;
         return Ok(());
     }
+    let mut completed_stages = Vec::new();
     let closure = close_result_structure(
         &input.snapshot,
         PublicationClosureOptions {
@@ -106,7 +107,14 @@ fn run_slice(
             println!(
                 "slice {slice} round {}: {} new Elements, {} occurrences; {:?}",
                 stage.stage, stage.added_elements, stage.added_occurrences, stage.completeness
-            )
+            );
+            completed_stages.push(json!({
+                "round":stage.stage, "added_elements":stage.added_elements,
+                "added_occurrences":stage.added_occurrences,
+                "completeness":format!("{:?}",stage.completeness),
+                "counters":publication_metrics::counters(&stage.counters),
+                "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject.to_string(),"message":d.message})).collect::<Vec<_>>(),
+            }));
         },
     );
     let closure = match closure {
@@ -120,6 +128,7 @@ fn run_slice(
                     "subjects":subjects.len(), "source_content_set":sources.content_set_id(),
                     "reference_refinement":input.refinement, "passed":false,
                     "failure_phase":"producer_closure", "failure":error.to_string(),
+                    "stages":completed_stages,
                 }))?,
             )?;
             return Err(error.into());
@@ -235,7 +244,7 @@ fn run_slice(
             "capabilities":counts.into_iter().map(|(family, count)|json!({"family":format!("{family:?}"), "checked_items":count})).collect::<Vec<_>>(),
             "capability_failures":failures, "mandatory_references_checked":references.len(), "reference_failures":reference_failures,
             "validated_standard_roles":input.identity.standard_bindings.as_ref().unwrap().iter().count(),
-            "stages":closure.stages.iter().map(|s|json!({"round":s.stage, "added_elements":s.added_elements, "added_occurrences":s.added_occurrences, "diagnostics":s.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject.to_string(),"message":d.message})).collect::<Vec<_>>()})).collect::<Vec<_>>(),
+            "stages":completed_stages,
         }))?,
     )?;
     if !success {
