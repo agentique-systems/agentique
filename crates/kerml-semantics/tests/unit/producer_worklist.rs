@@ -357,3 +357,74 @@ fn resource_limit_does_not_claim_closure() {
     assert!(!result.converged);
     assert_eq!(result.completeness, Completeness::Incomplete);
 }
+
+/// Explicit workflow scale gate; release runs are invoked under the watchdog.
+#[test]
+#[ignore = "synthetic publication scale gate; run explicitly in release mode"]
+fn publication_scale_sixty_thousand_subjects() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    // Shared Types produce a large incoming-search fan-out. Independent owned
+    // crossings require negative searches, occurrence navigation and later
+    // derived Feature/FeatureChaining subjects without a global corpus rescan.
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::CLASSIFIER);
+    const GROUPS: u128 = 3000;
+    for group in 0..GROUPS {
+        let n = 100 + group * 16;
+        f.create(n, c::ASSOCIATION);
+        for (end, ty, membership, typing) in [(n + 1, 1, n + 3, n + 5), (n + 2, 2, n + 4, n + 6)] {
+            f.create(end, c::FEATURE);
+            f.value(end, p::FEATURE_IS_END, Value::Boolean(true));
+            member(&mut f, n, end, membership, c::END_FEATURE_MEMBERSHIP);
+            relation(
+                &mut f,
+                end,
+                ty,
+                typing,
+                c::FEATURE_TYPING,
+                p::FEATURE_TYPING_TYPE,
+            );
+            f.value(
+                typing,
+                p::FEATURE_TYPING_TYPED_FEATURE,
+                Value::Reference(id(end)),
+            );
+        }
+        f.create(n + 7, c::FEATURE);
+        member(&mut f, n + 1, n + 7, n + 8, c::OWNING_MEMBERSHIP);
+    }
+    for n in 0..(60000 - (GROUPS * 9 + 2)) {
+        f.create(1_000_000 + n, c::PACKAGE);
+    }
+    let snapshot = f.finish();
+    assert_eq!(snapshot.model().len(), 60000);
+    let result = close(&snapshot, None, PublicationClosureOptions::default());
+    eprintln!("semantic-scale {:?}", result.counters);
+    assert!(result.converged, "{:?}", result.stages);
+    assert_eq!(
+        result.completeness,
+        Completeness::Complete,
+        "{:?}",
+        result.stages.last()
+    );
+    assert!(result.counters.new_elements_proposed >= 20000);
+    assert!(result.counters.new_association_occurrences_proposed >= GROUPS as usize);
+    assert!(result.counters.subjects_skipped_by_applicability >= 32998);
+    assert!(result.counters.fixed_point_rounds > 1);
+    assert!(result.counters.existing_proof_sets_reused > 0);
+    assert!(
+        result.counters.subjects_evaluated
+            < snapshot.model().len() * result.counters.fixed_point_rounds
+    );
+    assert!(result.overlay.build_metrics().reused_owned_storage);
+    // Existing public explanations remain inspectable after compact evaluation.
+    for (_, explanation) in result.overlay.facts() {
+        assert!(!explanation.dependencies.is_empty());
+    }
+}

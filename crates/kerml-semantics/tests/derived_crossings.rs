@@ -129,6 +129,16 @@ fn binary_crossing_is_a_canonical_occurrence_with_transitive_derived_query_evide
         answer
             .search_dependencies
             .contains(&SearchDependency::Kernel(
+                agq_kernel::derived::StructuralSearch::Property {
+                    element: id(10),
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                }
+            ))
+    );
+    assert!(
+        !answer
+            .search_dependencies
+            .contains(&SearchDependency::Kernel(
                 agq_kernel::derived::StructuralSearch::Model
             ))
     );

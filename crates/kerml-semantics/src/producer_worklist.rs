@@ -270,24 +270,6 @@ impl DependencyIndex {
         result
     }
 }
-fn changed_elements(
-    before: &ModelView,
-    after: &ModelView,
-    candidates: &BTreeSet<ElementId>,
-) -> BTreeSet<ElementId> {
-    candidates
-        .iter()
-        .copied()
-        .filter(|&id| {
-            before.element(id) != after.element(id)
-                || !before.incoming(id).eq(after.incoming(id))
-                || !before
-                    .incident_associations(id)
-                    .eq(after.incident_associations(id))
-        })
-        .collect()
-}
-
 /// Close structural producers using immutable frontiers and query dependencies.
 /// The context factory must retain identical profile, binding and availability
 /// identities between frontiers; only the supplied overlay may change.
@@ -374,13 +356,8 @@ pub fn close_result_structure(
             for &subject in batch {
                 counters.subjects_evaluated += 1;
                 counters.dirty_reevaluations += usize::from(!seen.insert(subject));
-                counters.producer_families_attempted += applicability[&overlay
-                    .model()
-                    .element(subject)
-                    .expect("worklist subject")
-                    .metaclass()]
-                    .len();
                 let mut part = q.plan_result_structure([subject]);
+                counters.producer_families_attempted += part.producer_families_attempted;
                 index.replace(subject, &part.production, overlay.model(), &mut counters);
                 status.insert(
                     subject,
@@ -399,7 +376,13 @@ pub fn close_result_structure(
                 plan.planned_elements().count(),
             );
         }
-        let candidates = plan.affected_elements();
+        let changed = plan.changed_population();
+        let new_subjects: BTreeSet<_> = changed
+            .iter()
+            .copied()
+            .filter(|id| overlay.model().element(*id).is_none())
+            .collect();
+        counters.existing_derived_facts_reused += plan.existing_elements_reused();
         let completeness = status
             .values()
             .map(|(s, _)| *s)
@@ -409,7 +392,11 @@ pub fn close_result_structure(
             .values()
             .flat_map(|(_, ds)| ds.iter().cloned())
             .collect();
-        let next = plan.materialize_on_overlay(&overlay)?.overlay;
+        let input_elements = overlay.model().len();
+        let input_occurrences = overlay.model().association_occurrences().count();
+        let prepared = plan.prepare_on_overlay(&overlay)?;
+        drop(context);
+        let next = prepared.build_on_overlay(overlay)?;
         let metrics = next.build_metrics();
         counters.existing_derived_facts_reused += metrics.existing_facts_reused;
         counters.new_proof_sets_interned += metrics.proof_sets_interned;
@@ -417,18 +404,18 @@ pub fn close_result_structure(
         counters.dependency_edges_considered += metrics.dependency_edges_considered;
         counters.overlay_materializations += 1;
         counters.fixed_point_rounds += 1;
+        counters.new_elements_proposed += next.model().len() - input_elements;
+        counters.new_association_occurrences_proposed +=
+            next.model().association_occurrences().count() - input_occurrences;
         let record = PublicationStage {
+            counters: counters.clone(),
             stage: round,
-            input_elements: overlay.model().len(),
-            added_elements: next.model().len() - overlay.model().len(),
-            added_occurrences: next.model().association_occurrences().count()
-                - overlay.model().association_occurrences().count(),
+            input_elements,
+            added_elements: next.model().len() - input_elements,
+            added_occurrences: next.model().association_occurrences().count() - input_occurrences,
             completeness,
             diagnostics,
         };
-        counters.new_elements_proposed += record.added_elements;
-        counters.new_association_occurrences_proposed += record.added_occurrences;
-        let changed = changed_elements(overlay.model(), next.model(), &candidates);
         progress(&record);
         stages.push(record);
         if changed.is_empty() {
@@ -436,9 +423,7 @@ pub fn close_result_structure(
             overlay = next;
             break;
         }
-        population.extend(candidates.iter().copied().filter(|id| {
-            overlay.model().element(*id).is_none() && next.model().element(*id).is_some()
-        }));
+        population.extend(new_subjects);
         worklist = match options.strategy {
             PublicationClosureStrategy::Worklist => index
                 .dirty(&changed, &mut counters)

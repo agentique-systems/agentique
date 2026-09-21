@@ -256,6 +256,7 @@ mod navigation_evidence_regression {
             assignments: BTreeSet::new(),
             conflict: None,
             searches: BTreeMap::new(),
+            direct_searches: BTreeSet::new(),
         };
         let mut proof = q.result(());
         q.fact(&mut proof, projected);
@@ -370,6 +371,7 @@ struct Graph<'a> {
     assignments: BTreeSet<(ElementId, PropertyId)>,
     conflict: Option<FactKey>,
     searches: BTreeMap<ElementId, BTreeSet<agq_kernel::derived::StructuralSearch>>,
+    direct_searches: BTreeSet<SearchDependency>,
 }
 impl<'a> Graph<'a> {
     fn return_result(&mut self, expression: ElementId, deps: &BTreeSet<Dependency>) {
@@ -637,6 +639,10 @@ impl<'a> Graph<'a> {
         deps: &BTreeSet<Dependency>,
     ) -> ElementId {
         let (source, target) = participants;
+        self.direct_searches.insert(SearchDependency::PropertySet {
+            element: source,
+            property: p::ELEMENT_OWNED_RELATIONSHIP,
+        });
         // Required structure can already be authored. Preserve that relationship's
         // identity instead of adding a second realization of the same obligation.
         if let Some(owned) = self
@@ -647,6 +653,14 @@ impl<'a> Graph<'a> {
                 let Value::Reference(relationship) = value else {
                     continue;
                 };
+                self.direct_searches
+                    .insert(SearchDependency::Element(*relationship));
+                for property in [endpoints.0, endpoints.1] {
+                    self.direct_searches.insert(SearchDependency::PropertySet {
+                        element: *relationship,
+                        property,
+                    });
+                }
                 let Some(record) = self.model.element(*relationship) else {
                     continue;
                 };
@@ -1297,6 +1311,10 @@ impl<'a> Graph<'a> {
         self.build_with(DerivationBuilder::new(snapshot.clone()))
     }
     fn build_with(self, mut builder: DerivationBuilder) -> Result<DerivedOverlay, DerivationError> {
+        self.enqueue(&mut builder)?;
+        builder.build()
+    }
+    fn enqueue(self, builder: &mut DerivationBuilder) -> Result<(), DerivationError> {
         if let Some(fact) = self.conflict {
             return Err(DerivationError::DuplicateFact(fact));
         }
@@ -1493,7 +1511,7 @@ impl<'a> Graph<'a> {
                 },
             );
         }
-        builder.build()
+        Ok(())
     }
 }
 
@@ -1510,6 +1528,7 @@ pub struct ResultStructure {
 /// Construction inputs can be audited without inventing a valid Snapshot.
 pub struct ResultStructurePlan<'m> {
     graph: Graph<'m>,
+    pub(crate) producer_families_attempted: usize,
     /// Exact input identity, including unresolved construction obligations.
     pub context: SemanticContextId,
     pub production: QueryResult<Vec<ElementId>>,
@@ -1532,18 +1551,16 @@ impl ResultStructurePlan<'_> {
     pub fn planned_elements(&self) -> impl Iterator<Item = ElementId> + '_ {
         self.graph.records.keys().copied()
     }
-    /// Changed producers can only add these records and owner collections.
-    /// The worklist compares their canonical before/after state, including
-    /// occurrence-backed navigation, without scanning the whole model.
-    pub(crate) fn affected_elements(&self) -> BTreeSet<ElementId> {
-        let mut result: BTreeSet<_> = self
-            .graph
-            .records
-            .keys()
-            .copied()
-            .chain(self.graph.attachments.keys().copied())
-            .collect();
-        for record in self.graph.records.values() {
+    /// An exact additive change boundary: existing records are checked and
+    /// reused; only fresh records and ownership extensions can alter navigation.
+    /// References include both participant and occurrence navigation endpoints.
+    pub(crate) fn changed_population(&self) -> BTreeSet<ElementId> {
+        let mut result: BTreeSet<_> = self.graph.attachments.keys().copied().collect();
+        for (&id, record) in &self.graph.records {
+            if self.graph.model.element(id).is_some() {
+                continue;
+            }
+            result.insert(id);
             result.extend(
                 record
                     .slots
@@ -1558,7 +1575,33 @@ impl ResultStructurePlan<'_> {
                     }),
             );
         }
+        for additions in self.graph.attachments.values() {
+            result.extend(additions);
+        }
         result
+    }
+    pub(crate) fn existing_elements_reused(&self) -> usize {
+        self.graph
+            .records
+            .keys()
+            .filter(|id| self.graph.model.element(**id).is_some())
+            .count()
+    }
+    /// Finish all graph reads and release the borrowed input before consuming
+    /// the previous overlay. The worklist is the only caller and supplies the
+    /// exact input checked here to `build_on_overlay` immediately afterward.
+    pub(crate) fn prepare_on_overlay(
+        self,
+        input: &DerivedOverlay,
+    ) -> Result<DerivationBuilder, DerivationError> {
+        if input.base_revision() != self.context.revision
+            || !std::ptr::eq(input.model(), self.graph.model)
+        {
+            return Err(DerivationError::InputContextMismatch);
+        }
+        let mut builder = DerivationBuilder::new(input.declared().clone());
+        self.graph.enqueue(&mut builder)?;
+        Ok(builder)
     }
     /// Merge disjoint subject batches from the identical context. Duplicate
     /// facts must agree exactly, including provenance. Contributions to existing
@@ -1588,6 +1631,10 @@ impl ResultStructurePlan<'_> {
         for (id, searches) in other.graph.searches {
             self.graph.searches.entry(id).or_default().extend(searches);
         }
+        self.graph
+            .direct_searches
+            .extend(other.graph.direct_searches);
+        self.producer_families_attempted += other.producer_families_attempted;
         self.graph.assignments.extend(other.graph.assignments);
         for (owner, additions) in other.graph.attachments {
             self.graph
@@ -1728,9 +1775,11 @@ impl<'m> KerMlQueries<'m> {
             assignments: BTreeSet::new(),
             conflict: None,
             searches: BTreeMap::new(),
+            direct_searches: BTreeSet::new(),
         };
         let mut production = self.result(vec![]);
         let mut contextual_results = vec![];
+        let mut producer_families_attempted = 0;
         for subject in subjects.into_iter().collect::<BTreeSet<_>>() {
             if self.model().element(subject).is_none() {
                 production.problem(
@@ -1744,6 +1793,7 @@ impl<'m> KerMlQueries<'m> {
             if profile == BaselineProfile::OPERATIONAL_V8
                 && self.is(subject, c::INSTANTIATION_EXPRESSION)
             {
+                producer_families_attempted += 1;
                 let mut proof = self.result(());
                 let members = self.memberships(subject);
                 let has_owned_result = members
@@ -1762,6 +1812,7 @@ impl<'m> KerMlQueries<'m> {
                 }
             }
             if profile == BaselineProfile::OPERATIONAL_V8 && self.is(subject, c::FEATURE) {
+                producer_families_attempted += 2;
                 let redefinitions = self.implied_redefinitions(subject);
                 if redefinitions.completeness == Completeness::Complete {
                     for &target in &redefinitions.value {
@@ -1865,6 +1916,7 @@ impl<'m> KerMlQueries<'m> {
                 production.merge(proof);
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
+                producer_families_attempted += 1;
                 let mut proof = self.owned_cross_feature(subject);
                 if let Some(cross) = proof.value {
                     let existing = self.owned_cross_subsetting(subject);
@@ -1929,6 +1981,7 @@ impl<'m> KerMlQueries<'m> {
                 production.merge(proof);
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
+                producer_families_attempted += 1;
                 let mut proof = self.owned_cross_feature_domain(subject);
                 if let Some(domain) = proof.value.clone() {
                     let mut inherited_domains = vec![];
@@ -1966,6 +2019,7 @@ impl<'m> KerMlQueries<'m> {
             if profile == BaselineProfile::OPERATIONAL_V8
                 && self.is(subject, c::INVOCATION_EXPRESSION)
             {
+                producer_families_attempted += 1;
                 let mut proof = self.result(());
                 let instantiated = self.instantiated_type(subject);
                 if let Some(target) = instantiated.value {
@@ -2012,6 +2066,7 @@ impl<'m> KerMlQueries<'m> {
             if profile == BaselineProfile::OPERATIONAL_V8
                 && self.is(subject, c::FEATURE_CHAIN_EXPRESSION)
             {
+                producer_families_attempted += 1;
                 let mut proof = self.result(());
                 let input = self.first_input(subject);
                 let source_target = self.source_target_feature(subject);
@@ -2048,6 +2103,7 @@ impl<'m> KerMlQueries<'m> {
                 production.merge(proof);
             }
             if self.is(subject, c::FEATURE_REFERENCE_EXPRESSION) {
+                producer_families_attempted += 1;
                 let mut proof = self.result(());
                 let referent = self.reference_referent(subject);
                 let target = referent.value;
@@ -2070,6 +2126,7 @@ impl<'m> KerMlQueries<'m> {
                 production.merge(proof);
             }
             if self.is(subject, c::EXPRESSION) || self.is(subject, c::FUNCTION) {
+                producer_families_attempted += 1;
                 let mut proof = self.result(());
                 let members = self.memberships(subject);
                 for &membership in &members.value {
@@ -2124,6 +2181,7 @@ impl<'m> KerMlQueries<'m> {
                 production.merge(proof);
             }
             if self.is(subject, c::FEATURE) {
+                producer_families_attempted += 1;
                 let mut proof = self.result(());
                 let owned = self.owned_relationships(subject);
                 let undirected = self
@@ -2280,6 +2338,7 @@ impl<'m> KerMlQueries<'m> {
                 production.merge(proof);
             }
             if self.is(subject, c::INDEX_EXPRESSION) || self.is(subject, c::SELECT_EXPRESSION) {
+                producer_families_attempted += 1;
                 let mut proof = self.result(());
                 if let Some(argument) = self.argument_expression(&mut proof, subject) {
                     let raw = self.required_structural_result(&mut proof, argument);
@@ -2368,12 +2427,16 @@ impl<'m> KerMlQueries<'m> {
             contextual_results.sort_by_key(|result| result.feature);
             contextual_results.dedup();
         }
+        production
+            .search_dependencies
+            .extend(graph.direct_searches.iter().cloned());
         let searches = crate::producer_worklist::structural_searches(&production);
         for id in graph.records.keys() {
             graph.searches.insert(*id, searches.clone());
         }
         ResultStructurePlan {
             graph,
+            producer_families_attempted,
             context: self.context().clone(),
             production,
             contextual_results,
