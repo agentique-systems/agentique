@@ -52,6 +52,63 @@ fn vehicle_engine_sports_car_without_source_text() {
 }
 
 #[test]
+fn property_incoming_preserves_order_duplicates_and_snapshot_isolation_at_high_fanout() {
+    let base = vertical();
+    let mut changes = base.change_set();
+    for n in (100..4196).rev() {
+        let relationship = ElementId::from_u128(n);
+        changes
+            .create(relationship, SPECIALIZATION, authored())
+            .set(relationship, SPECIFIC, scalar_ref(SPORTS), authored())
+            .set(relationship, GENERAL, scalar_ref(ENGINE), authored())
+            .set(
+                relationship,
+                TARGETS,
+                ordered_refs(&[ENGINE_USE, ENGINE, ENGINE]),
+                authored(),
+            );
+    }
+    let populated = base.apply(&changes).unwrap();
+    assert_incoming_property_index(populated.model());
+    assert_eq!(
+        populated
+            .model()
+            .incoming_for_property(ENGINE, TARGETS)
+            .count(),
+        8192
+    );
+    assert_eq!(
+        populated
+            .model()
+            .incoming_for_property(ENGINE, SPECIFIC)
+            .count(),
+        0
+    );
+    let relationship = ElementId::from_u128(100);
+    let mut changes = populated.change_set();
+    changes
+        .set(relationship, GENERAL, scalar_ref(VEHICLE), authored())
+        .clear(relationship, TARGETS);
+    let updated = populated.apply(&changes).unwrap();
+    assert_incoming_property_index(updated.model());
+    assert_eq!(
+        updated
+            .model()
+            .incoming_for_property(ENGINE, TARGETS)
+            .count(),
+        8190
+    );
+    assert_eq!(
+        populated
+            .model()
+            .incoming_for_property(ENGINE, TARGETS)
+            .count(),
+        8192
+    );
+    assert_incoming_property_index(base.model());
+}
+
+#[test]
 fn renaming_preserves_semantic_identity_and_previous_snapshot() {
     let old = vertical();
     let mut changes = old.change_set();

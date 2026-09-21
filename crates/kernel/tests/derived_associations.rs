@@ -194,6 +194,10 @@ fn canonical_navigation_is_additive_indexed_and_explainable_in_both_directions()
             .any(|r| r.carrier == ReferenceCarrier::AssociationOccurrence(id))
     );
     assert_eq!(model.derived_navigation_results().count(), 0);
+    assert_incoming_property_index(base.model());
+    assert_incoming_property_index(model);
+    let dependency = Snapshot::with_immutable_dependency(Arc::new(overlay));
+    assert_incoming_property_index(dependency.model());
 }
 
 #[test]
@@ -217,6 +221,7 @@ fn derived_opposite_is_computed_from_the_occurrence_without_a_synthetic_slot() {
         Origin::AssociationOccurrences(_)
     ));
     assert_eq!(overlay.model().derived_navigation_results().count(), 0);
+    assert_incoming_property_index(overlay.model());
 }
 
 #[test]

@@ -199,6 +199,8 @@ struct Indexes {
     exact_class: BTreeMap<MetaclassId, BTreeSet<ElementId>>,
     by_supertype: BTreeMap<MetaclassId, BTreeSet<ElementId>>,
     incoming: BTreeMap<ElementId, Vec<ReferenceOccurrence>>,
+    // Offsets preserve the canonical incoming order without copying occurrences.
+    incoming_by_property: BTreeMap<(ElementId, PropertyId), Vec<usize>>,
     outgoing: BTreeMap<ElementId, Vec<ReferenceOccurrence>>,
 }
 
@@ -392,6 +394,15 @@ impl ModelView {
         {
             entries.sort_by_key(|r| (r.source, r.property, r.position, r.target, r.carrier));
         }
+        for (&target, entries) in &indexes.incoming {
+            for (offset, occurrence) in entries.iter().enumerate() {
+                indexes
+                    .incoming_by_property
+                    .entry((target, occurrence.property))
+                    .or_default()
+                    .push(offset);
+            }
+        }
         Ok(Self {
             declared_source: None,
             registry,
@@ -554,6 +565,29 @@ impl ModelView {
     /// References sorted by source, property, then value position.
     pub fn incoming(&self, id: ElementId) -> impl Iterator<Item = &ReferenceOccurrence> {
         self.indexes.incoming.get(&id).into_iter().flatten()
+    }
+    /// References to `target` through exactly `property`, in the same order as
+    /// [`Self::incoming`]. Includes declared slots, association occurrences and
+    /// derived navigation. This index does not resolve inherited property aliases.
+    ///
+    /// Lookup visits only matching references, independent of incoming references
+    /// through other properties. Returned values borrow the ordinary incoming index.
+    pub fn incoming_for_property(
+        &self,
+        target: ElementId,
+        property: PropertyId,
+    ) -> impl Iterator<Item = &ReferenceOccurrence> {
+        let incoming = self
+            .indexes
+            .incoming
+            .get(&target)
+            .map_or(&[][..], Vec::as_slice);
+        self.indexes
+            .incoming_by_property
+            .get(&(target, property))
+            .into_iter()
+            .flatten()
+            .map(move |&offset| &incoming[offset])
     }
     /// References sorted by property, then value position.
     pub fn outgoing(&self, id: ElementId) -> impl Iterator<Item = &ReferenceOccurrence> {

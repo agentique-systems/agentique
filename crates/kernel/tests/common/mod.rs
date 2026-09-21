@@ -259,6 +259,35 @@ pub fn vertical() -> Snapshot {
 pub fn ids(model: &ModelView) -> Vec<ElementId> {
     model.elements().map(ElementRecord::id).collect()
 }
+/// Compare indexed references to the independent filtered population, including
+/// order, duplicate value positions, carrier provenance and borrowed storage.
+pub fn assert_incoming_property_index(model: &ModelView) {
+    for target in model
+        .elements()
+        .map(ElementRecord::id)
+        .chain([ElementId::from_u128(u128::MAX)])
+    {
+        for property in model
+            .registry()
+            .properties()
+            .map(|p| p.id)
+            .chain([PropertyId::from_u128(u128::MAX)])
+        {
+            let expected: Vec<_> = model
+                .incoming(target)
+                .filter(|r| r.property == property)
+                .collect();
+            let actual: Vec<_> = model.incoming_for_property(target, property).collect();
+            assert_eq!(actual, expected, "target={target}, property={property}");
+            assert!(
+                actual
+                    .iter()
+                    .zip(expected)
+                    .all(|(a, b)| std::ptr::eq(*a, b))
+            );
+        }
+    }
+}
 pub fn string_set(values: &[&str]) -> SlotValue {
     SlotValue::Set(
         values

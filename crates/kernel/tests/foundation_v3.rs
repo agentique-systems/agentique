@@ -524,6 +524,10 @@ fn derived_association_results_have_states_and_evidence_without_class_slots() {
         ReferenceCarrier::DerivedNavigation
     );
     assert_eq!(overlay.model().computation_searches().count(), 1);
+    assert_incoming_property_index(snapshot.model());
+    assert_incoming_property_index(overlay.model());
+    let dependency = Snapshot::with_immutable_dependency(Arc::new(overlay.clone()));
+    assert_incoming_property_index(dependency.model());
     for key in [fact, FactKey::Element(ENGINE), FactKey::Element(VEHICLE)] {
         let scanned: Vec<_> = overlay
             .model()

@@ -73,6 +73,9 @@ fn independent_authored_histories_share_records_and_preserve_dependency_provenan
             authored(),
         );
     let a = a.apply(&edit).unwrap();
+    assert_incoming_property_index(library.model());
+    assert_incoming_property_index(a.model());
+    assert_incoming_property_index(b.model());
     assert!(b.model().element(local).is_none());
     assert!(library.model().element(local).is_none());
     for record in library.model().elements() {
@@ -97,6 +100,7 @@ fn independent_authored_histories_share_records_and_preserve_dependency_provenan
         BTreeSet::new(),
     );
     let derived = derived.build().unwrap();
+    assert_incoming_property_index(derived.model());
     assert!(
         derived
             .explain(FactKey::Element(next.element_id()))
