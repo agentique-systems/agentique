@@ -1,2 +1,0 @@
-Visited all 258 constraints, 218 derived/operation members and 410 issue records; registered 4 independently reproduced conflicts. Applicability proof closure remains incomplete.
-Authority gate FAILED: inventory traversal does not close every structural applicability proof.

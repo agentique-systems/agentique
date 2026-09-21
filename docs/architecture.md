@@ -1,5 +1,24 @@
 # Agentique architecture: two generations
 
+Agentique is a Rust-native compiler, semantic database and canonical model engine
+that will underpin language services, modeling and execution. The canonical
+semantic graph is its center:
+
+```text
+KerML / SysML source -> lossless syntax -> linking / resolution
+    -> semantic elaboration -> canonical kernel graph
+    -> queries / validation / APIs / views -> execution IR -> simulation
+```
+
+KerML canonical publication is a prerequisite, not Agentique's end goal. It is
+distinct from KerML conformance completion. Once an immutable canonical KerML
+publication passes its acceptance contract, the next phase is the pinned SysML
+Systems Library textual foundation and `agq-sysml-semantics`, composing KerML
+queries over the same kernel graph. Definition and Usage semantics come before
+Part, Item, Attribute, Port and Connection; modeling and execution follow that
+language foundation. Incomplete validator coverage remains explicit and does not
+justify extending the KerML phase after canonical publication succeeds.
+
 The publication convergence review separates strict kernel validity, canonical
 KerML publication and conformance coverage ([ADR 0022](adr/0022-kerml-publication-vs-conformance.md)).
 Incomplete validator coverage alone does not block a canonical semantic graph.

@@ -1,1 +1,0 @@
-All 23 pinned IndexExpression first operands traced; seven Array/Collection guard agreements positively proved. Sixteen complete negative type-closure proofs remain open; no Collection correction adopted.

@@ -8,4 +8,8 @@
 *.log
 .env
 /verification/generated/
+# ADR 0021: command captures belong in generated storage, not milestone trees.
+/verification/**/input-hashes.json
+/verification/**/output.txt
+/verification/**/result.json
 __pycache__/

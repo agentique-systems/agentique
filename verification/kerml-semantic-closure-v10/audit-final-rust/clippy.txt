@@ -1,7 +1,0 @@
-   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
-    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
-    Checking agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
-    Checking agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
-    Checking agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
-    Checking agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.83s

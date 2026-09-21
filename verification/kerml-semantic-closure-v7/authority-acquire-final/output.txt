@@ -1,3 +1,0 @@
-pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/BehaviorAdapter.java 1196
-pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/DataTypeAdapter.java 1195
-pilot/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/TypeAdapter.java 22075

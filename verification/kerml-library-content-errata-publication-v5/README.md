@@ -1,5 +1,10 @@
 # KerML library-content errata publication v5
 
+Historical raw command captures were pruned from the current tree under ADR 0021.
+The [cleanup report](../summaries/repository-hygiene.md) identifies their archive
+revision. Command-result paths and preservation inventories below describe the
+historical run; retained authority and offline proof inputs remain local.
+
 Operational v3 now applies the reviewed KERML11-76 model corrections in all four
 named libraries. **The library foundation remains incomplete.** Strict semantic
 publication is blocked by the separately reproduced **KLCV5-F-001 / KERML11-68**

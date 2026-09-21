@@ -1,4 +1,0 @@
-   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
-    Finished `release` profile [optimized] target(s) in 3.35s
-     Running `target\release\examples\library_model_audit.exe --v5 --declarations-only --output=verification/kerml-semantic-closure-v8/declarations-v5.json`
-Exported 29140 canonical records

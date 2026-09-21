@@ -1,1 +1,0 @@
-KERML11-79 exact owned parameter order independently reproduced; required extra payload redefinition and compatible directions confirmed. No additional correction or unproved authority blocker introduced.

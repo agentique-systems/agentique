@@ -1,1 +1,0 @@
-KERML11-8: exact raw endpoints retained; only expression-owned result qualifies; FeatureChainExpression excluded; independent truth table passes

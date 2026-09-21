@@ -1,7 +1,0 @@
-    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
-    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
-    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
-    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
-    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
-    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.43s

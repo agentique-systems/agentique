@@ -1,3 +1,0 @@
-{"preserved_original_artifacts": 1319, "unchanged": true, "acquired_artifacts_verified": 160, "v2_algorithm_bytes_unchanged": true, "v3_definition_is_append_only": true, "original_kpar_bytes_unchanged": true, "historical_verification_bytes_unchanged": true, "lossless_generated_exports_verified": 4}
-git diff --check: 0
-{"branch": "semantics/kerml-library-content-errata-publication-v5", "checked_review_links": 39, "implementation_and_review_files": 47, "accepted_semantic_publication": false}

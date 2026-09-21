@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-semantic-closure-v7\authority.py", line 32, in <module>
-    assert tree['sha'] == json.loads((OUT/'pilot-head.json').read_text())['commit']['tree']['sha']
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError

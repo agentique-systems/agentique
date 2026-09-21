@@ -1,1 +1,0 @@
-{"incomplete_reference_count": 453, "by_diagnostic_family": {"KQ_IMPLIED_NAMING_ORDER": 453}, "by_expression_context": {"False": 399, "True": 54}, "incomplete_query_count": 143, "structural_obligation_count": 0, "ordinary_kernel_storage_attempt": {"accepted": true, "base_unchanged": true, "elements": 29140}, "strict_semantic_publication_accepted": false}

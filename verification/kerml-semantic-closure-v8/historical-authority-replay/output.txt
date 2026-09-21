@@ -1,1 +1,0 @@
-KLCV7-F-001 reproduced independently: pinned ControlFunctions::. requires raw result binding; connector featuring check fails; chain changes required identity.

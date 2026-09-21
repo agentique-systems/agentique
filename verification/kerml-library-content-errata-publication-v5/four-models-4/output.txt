@@ -1,1 +1,0 @@
-Verified all 10 reviewed collision patterns across all four named models

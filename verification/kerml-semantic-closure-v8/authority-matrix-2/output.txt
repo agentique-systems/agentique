@@ -1,1 +1,0 @@
-Five distinct KERML11-145 authority records; raw-result pilot differences and separate KERML11-69 guard change retained; no operational implementation asserted.

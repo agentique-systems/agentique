@@ -1,1 +1,0 @@
-{"preserved_original_artifacts": 1319, "unchanged": true, "acquired_artifacts_verified": 160, "v2_algorithm_bytes_unchanged": true, "v3_definition_is_append_only": true, "original_kpar_bytes_unchanged": true, "historical_verification_bytes_unchanged": true, "lossless_generated_exports_verified": 3}

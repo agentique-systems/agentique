@@ -1,6 +1,0 @@
-   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
-error: linking with `link.exe` failed: exit code: 1201
-  |
-  = noteerror: There is not enough space on the disk. (os error 112)
-warning: build failed, waiting for other jobs to finish...
-error: could not compile `agq-metamodel-gen` (bin "metamodel-gen") due to 1 previous error

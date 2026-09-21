@@ -1,2 +1,0 @@
-   Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.50s

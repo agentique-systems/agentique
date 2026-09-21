@@ -1,1 +1,0 @@
-All 335 other audited inputs are unchanged; exactly the v7 identity-list normalization and its four regression assertions were added.

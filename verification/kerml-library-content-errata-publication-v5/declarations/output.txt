@@ -1,9 +1,0 @@
-   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
-   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
-   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
-   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
-   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
-   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.28s
-     Running `target\debug\examples\library_model_audit.exe --declarations-only --output=verification/kerml-library-content-errata-publication-v5/declarations/model.json`
-error: process didn't exit successfully: `target\debug\examples\library_model_audit.exe --declarations-only --output=verification/kerml-library-content-errata-publication-v5/declarations/model.json` (exit code: 0xffffffff)

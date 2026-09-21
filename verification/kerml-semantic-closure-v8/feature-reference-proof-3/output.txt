@@ -1,1 +1,0 @@
-KLCV8-F-001: exact pinned inner FeatureReferenceExpression binding fails domain conformance after result/end/chain/base inference; independent outer KERML11-145 repair does not change it.

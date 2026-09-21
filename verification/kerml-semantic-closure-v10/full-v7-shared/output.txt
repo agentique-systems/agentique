@@ -1,5 +1,0 @@
-refinement 0: 0 endpoints, 4000 obligations
-refinement 1: 2110 endpoints, 1890 obligations
-refinement 2: 3661 endpoints, 339 obligations
-refinement 3: 3838 endpoints, 162 obligations
-refinement 4: 3919 endpoints, 81 obligations

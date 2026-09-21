@@ -1,7 +1,0 @@
-   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
-   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
-   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
-error: could not compile `agq-kerml` (lib)
-
-Caused by:
-  process didn't exit successfully: `C:\Users\phili\.rustup\toolchains\1.92.0-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name agq_kerml --edition=2024 crates\kerml\src\lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C opt-level=3 -C embed-bitcode=no --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values())" -C metadata=2988649dff13ff7e -C extra-filename=-6e2e7b0b8d5545c6 --out-dir C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps -C strip=debuginfo -L dependency=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps --extern agq_kernel=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libagq_kernel-1cec3166dfe81247.rmeta --extern sha2=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libsha2-a6345c30604b4813.rmeta --extern thiserror=C:\Users\phili\github\agentique-systems\agentique\target/kerml-v4\release\deps\libthiserror-d88a1abd98b86a26.rmeta` (exit code: 0xffffffff)

@@ -1,2 +1,0 @@
-Verified actual Git commit object, parent-to-commit diff and all six before/after blobs
-KERML11-68 verified: Git object and diff, formal/preliminary rule, current implied XMI and 220 canonical profile/flag/owner cases

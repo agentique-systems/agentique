@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-semantic-closure-v9\cross-feature-authority.py", line 137, in <module>
-    assert opposite_types==end_types=={m.find('Occurrences::Occurrence')}
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError

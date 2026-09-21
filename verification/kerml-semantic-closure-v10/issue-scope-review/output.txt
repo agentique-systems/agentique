@@ -1,1 +1,0 @@
-Reviewed all 63 additional issue scopes; zero structural constraints deferred; conditional corpus proofs remain open.

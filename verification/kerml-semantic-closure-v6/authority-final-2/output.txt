@@ -1,1 +1,0 @@
-KERML11-68 verified: Git object and diff, formal/preliminary rule, current implied XMI and 220 canonical profile/flag/owner cases

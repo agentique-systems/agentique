@@ -1,2 +1,0 @@
-{"format": "agentique-v7-preservation/1", "unchanged": true, "original_files": 1961, "verified_new_acquisitions": 99, "historical_files_or_indices_rewritten": false}
-Pre-existing acquisition-index discrepancies: 9

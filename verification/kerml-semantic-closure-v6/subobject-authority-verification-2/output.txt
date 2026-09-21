@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-semantic-closure-v6\verify-subobject-authority.py", line 33, in <module>
-    page=next(p for p in artifact['pages'] if 'checkFeatureSubobjectSpecialization' in p['text'] and literal in normalize(p['text']))
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-StopIteration

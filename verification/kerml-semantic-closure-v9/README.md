@@ -1,5 +1,10 @@
 # KerML semantic closure v9
 
+Historical raw command captures were pruned from the current tree under ADR 0021.
+The [cleanup report](../summaries/repository-hygiene.md) identifies their archive
+revision. Command-result paths and preservation inventories below describe the
+historical run; retained authority and offline proof inputs remain local.
+
 **KERML OPERATIONAL LIBRARY FOUNDATION INCOMPLETE — DO NOT PROCEED**
 
 Branch: `semantics/kerml-reference-binding-errata-closure-v9`.

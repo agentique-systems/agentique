@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\phili\github\agentique-systems\agentique\verification\kerml-semantic-closure-v8\feature-reference-authority.py", line 104, in <module>
-    assert set(endpoints(inner)) == {referent, raw}
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError

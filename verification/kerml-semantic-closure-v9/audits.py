@@ -57,7 +57,7 @@ reports={
         fixture_matrix='reference-result-matrices-final/result.json',full_corpus_complete=False,
         reason='Complete corpus expansion remains required after the independently proven cross-feature authority decision.'),
     'positional-redefinition-audit.json':dict(format='agentique-v9-positional-audit/1',
-        existing_tests='full-matrix-1/rust-tests.txt',full_corpus_differential_audit_complete=False,
+        existing_tests='https://github.com/agentique-systems/agentique/blob/ed2cf3a9cc086e165c075c591a3892472250e9b7/verification/kerml-semantic-closure-v9/full-matrix-1/rust-tests.txt',full_corpus_differential_audit_complete=False,
         reference_local_typing_complete=True,authority_proof='cross-feature-authority-conflict.json'),
     'distinguishability-audit.json':dict(format='agentique-v9-distinguishability/1',
         findings=measurement['namespace_distinguishability_findings'],source='baseline-quality.json',
