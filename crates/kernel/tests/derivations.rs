@@ -9,6 +9,91 @@ use std::collections::BTreeSet;
 const RULE: RuleId = RuleId::from_u128(1);
 
 #[test]
+fn pending_changes_cover_every_write_kind_without_claiming_equivalence() {
+    let snapshot = vertical();
+    let mut builders: Vec<_> = (0..4)
+        .map(|_| DerivationBuilder::new(snapshot.clone()))
+        .collect();
+    assert!(builders.iter().all(|b| !b.has_changes()));
+    builders[0].element(key(VEHICLE), PART_DEF, [], BTreeSet::new());
+    builders[1].property(VEHICLE, EFFECTIVE, set_refs(&[]), evidence(&[]));
+    // Empty additions are still a submitted operation, not an equivalence proof.
+    builders[2].extend_ordered_references(OWNS, SOURCES, vec![], evidence(&[]));
+    // Even an invalid occurrence must reach normal validation.
+    builders[3].association_occurrence(
+        key(VEHICLE),
+        AssociationId::from_u128(999),
+        Default::default(),
+        Default::default(),
+        BTreeSet::new(),
+    );
+    assert!(builders.iter().all(DerivationBuilder::has_changes));
+
+    let overlay = DerivationBuilder::new(snapshot.clone()).build().unwrap();
+    assert!(!DerivationBuilder::from_overlay(overlay.clone()).has_changes());
+    let other = DerivationBuilder::new(vertical());
+    assert!(!other.has_changes());
+    assert!(matches!(
+        other.build_on_overlay(overlay.clone()),
+        Err(DerivationError::InputContextMismatch)
+    ));
+    let previous = DerivationBuilder::from_overlay(overlay.clone());
+    assert!(!previous.has_changes());
+    assert!(matches!(
+        previous.build_on_overlay(overlay),
+        Err(DerivationError::InputContextMismatch)
+    ));
+}
+
+#[test]
+fn pending_failure_and_search_metadata_are_writes_even_without_new_records() {
+    let snapshot = vertical();
+    let mut builder = DerivationBuilder::new(snapshot.clone());
+    builder
+        .failure(
+            VEHICLE,
+            EFFECTIVE,
+            ComputationFailure::Invalid {
+                diagnostic: "fixture unsuccessful computation".into(),
+                explanation: evidence(&[]),
+                searches: BTreeSet::new(),
+            },
+        )
+        .unwrap();
+    assert!(builder.has_changes());
+    let failed = builder.build().unwrap();
+    assert!(matches!(
+        failed.model().property_state(VEHICLE, EFFECTIVE).unwrap(),
+        PropertyState::Invalid(_)
+    ));
+
+    let fact = prop(VEHICLE, EFFECTIVE);
+    let search = StructuralSearch::Incoming(ENGINE);
+    let mut builder = DerivationBuilder::from_overlay(failed);
+    assert!(!builder.has_changes());
+    builder.searches(fact, BTreeSet::from([search.clone()]));
+    assert!(builder.has_changes());
+    let searched = builder.build().unwrap();
+    assert_eq!(
+        searched
+            .model()
+            .computation_searches_for(fact)
+            .collect::<Vec<_>>(),
+        vec![&search]
+    );
+
+    // An empty search submission still validates its subject; it cannot silently
+    // disappear just because no search keys would be added.
+    let mut invalid = DerivationBuilder::new(snapshot);
+    invalid.searches(fact, BTreeSet::new());
+    assert!(invalid.has_changes());
+    assert!(matches!(
+        invalid.build(),
+        Err(DerivationError::MissingSearchSubject(subject)) if subject == fact
+    ));
+}
+
+#[test]
 fn shared_input_preserves_identity_evidence_and_caller_allocation() {
     use std::sync::Arc;
     let snapshot = vertical();
