@@ -1,5 +1,11 @@
 # Semantic kernel, second generation
 
+[ADR 0022](adr/0022-kerml-publication-vs-conformance.md) distinguishes a strict
+Snapshot, a canonical KerML publication and a potentially incomplete conformance
+report. `SemanticContext` identifies partial derivation overlays explicitly.
+Partial overlays do not assert complete implied inclusion; callers can still run
+the strict assertion check separately. Kernel validation is unchanged.
+
 [ADR 0009](adr/0009-property-redefinition-context.md) reassesses the Property
 context invariant without changing it. Final UML text and the resolved mixed
 ownership issue do not establish a safe correction for the pinned failing edge.

@@ -213,9 +213,47 @@ impl KerMlQueries<'_> {
         out
     }
 
+    /// Strict check of the model's implied-inclusion assertion, including when
+    /// explicitly requested on a partial overlay. This does not establish closure.
+    pub fn validate_implied_inclusion(&self, element: ElementId) -> QueryResult<()> {
+        let mut out = self.result(());
+        let owned = self.owned_relationships(element);
+        let mut implied = false;
+        for &relationship in &owned.value {
+            implied |= matches!(
+                self.read_value(&mut out, relationship, p::RELATIONSHIP_IS_IMPLIED),
+                Some(Value::Boolean(true))
+            );
+        }
+        let included = matches!(
+            self.read_value(&mut out, element, p::ELEMENT_IS_IMPLIED_INCLUDED),
+            Some(Value::Boolean(true))
+        );
+        if implied && !included {
+            out.problem(
+                Completeness::Invalid,
+                "validateElementIsImpliedIncluded",
+                element,
+                "Implied relationships exist but the model does not assert implied inclusion",
+            );
+        }
+        out.merge(owned);
+        out
+    }
+
+    /// Checks deferred on this input phase, separately from executed rules.
+    pub fn validation_deferred_by_phase(&self) -> Vec<&'static str> {
+        if self.context().derivation_phase == DerivationPhase::PartialDerivationOverlay {
+            vec!["validateElementIsImpliedIncluded"]
+        } else {
+            vec![]
+        }
+    }
+
     /// Local structural constraints whose evidence is independent of value
     /// evaluation. The returned names identify exactly which checks ran.
     /// This is one validation scope, not a claim of complete KerML validation.
+    /// See `validation_deferred_by_phase` for checks requiring a different phase.
     pub fn validate_local_structure(&self, element: ElementId) -> QueryResult<Vec<&'static str>> {
         let mut out = self.result(vec![]);
         if self
@@ -235,24 +273,10 @@ impl KerMlQueries<'_> {
                 );
             }
         };
-        let owned_relationships = self.owned_relationships(element);
-        let mut implied = false;
-        for &relationship in &owned_relationships.value {
-            implied |= matches!(
-                self.read_value(&mut out, relationship, p::RELATIONSHIP_IS_IMPLIED),
-                Some(Value::Boolean(true))
-            );
+        if self.context().derivation_phase != DerivationPhase::PartialDerivationOverlay {
+            out.value.push("validateElementIsImpliedIncluded");
+            out.merge(self.validate_implied_inclusion(element));
         }
-        let included = matches!(
-            self.read_value(&mut out, element, p::ELEMENT_IS_IMPLIED_INCLUDED),
-            Some(Value::Boolean(true))
-        );
-        check(
-            &mut out,
-            "validateElementIsImpliedIncluded",
-            !implied || included,
-        );
-        out.merge(owned_relationships);
         if self.is(element, c::REDEFINITION) {
             out.value.push("validateRedefinitionEndConformance");
             out.merge(self.validate_redefinition_end_conformance(element));

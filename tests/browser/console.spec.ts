@@ -202,7 +202,7 @@ test("Console lifecycle, source navigation, shared context and reviewed Assistan
   await expect(page.locator(".pin")).toContainText("Older than accepted model");
   await page.locator(".topbar").scrollIntoViewIfNeeded();
   await page.screenshot({
-    path: "verification/screenshots/console-desktop.png",
+    path: "verification/generated/screenshots/console-desktop.png",
     fullPage: true,
   });
   const updated = await (
@@ -234,7 +234,7 @@ test("Console lifecycle, source navigation, shared context and reviewed Assistan
   await expect(page.locator(".run-stats")).toContainText("input_exhausted");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({
-    path: "verification/screenshots/console-mobile.png",
+    path: "verification/generated/screenshots/console-mobile.png",
     fullPage: true,
   });
   expect(errors).toEqual([]);

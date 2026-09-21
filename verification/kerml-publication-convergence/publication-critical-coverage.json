@@ -1,0 +1,1841 @@
+{
+  "format": "agentique-publication-relevance/1",
+  "authority": "standards/normative/kerml-1.0/KerML.xmi",
+  "inventory": "verification/kerml-semantic-closure-v10/structural-coverage.json",
+  "inventory_sha256": "f5d91ceb196d322be58cdfd13ff3a29a17a956f1a0dce817f6bdd2c5d72de8ae",
+  "scope": "Rule relevance, not implementation or publication acceptance. No NotApplicableToCorpus claims without evidence.",
+  "rationales": {
+    "1": "Determines or constrains essential relationships, endpoint identity, membership, inheritance, typing, featuring, or structural bounds. Producer/query closure must be proved independently of validator coverage.",
+    "2": "Exact graph impact and alternatives are reviewed per witness in authority-blockers.json.",
+    "3": "Evaluation can select a canonical specialization target. The structural output remains critical; evaluation dependence is not permission to publish an unknown target.",
+    "4": "Projects documentary annotations, text, or an existing member ID; no structural identity, lookup, typing or featuring fact is selected. Canonical source records remain retained.",
+    "5": "Determines model-level evaluability; does not choose canonical structural identities or endpoints. Filter population still requires a separate structural applicability proof.",
+    "6": "Judges flags, category compatibility, value restrictions or conformance of an already determined graph; does not synthesize or select canonical facts. A concrete unusable graph contradiction remains separately blocking.",
+    "7": "Checks the model's completeness assertion. Deferred on a partial staging overlay; explicit strict checking remains available. No source flag is rewritten. Publication producer closure is independently critical.",
+    "8": "Checks Integer/nonnegative values of preserved bound expressions; structural bound identities and order are covered separately by deriveMultiplicityRange* and validateMultiplicityRangeBounds."
+  },
+  "constraints": [
+    {
+      "rule": "checkAssociationBinarySpecialization",
+      "external_id": "Kernel-Associations-Association-checkAssociationBinarySpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkAssociationSpecialization",
+      "external_id": "Kernel-Associations-Association-checkAssociationSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkAssociationStructureBinarySpecialization",
+      "external_id": "Kernel-Associations-AssociationStructure-checkAssociationStructureBinarySpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkAssociationStructureSpecialization",
+      "external_id": "Kernel-Associations-AssociationStructure-checkAssociationStructureSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkBehaviorSpecialization",
+      "external_id": "Kernel-Behaviors-Behavior-checkBehaviorSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkBindingConnectorSpecialization",
+      "external_id": "Kernel-Connectors-BindingConnector-checkBindingConnectorSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkBooleanExpressionSpecialization",
+      "external_id": "Kernel-Functions-BooleanExpression-checkBooleanExpressionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkClassSpecialization",
+      "external_id": "Kernel-Classes-Class-checkClassSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConnectorBinaryObjectSpecialization",
+      "external_id": "Kernel-Connectors-Connector-checkConnectorBinaryObjectSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConnectorBinarySpecialization",
+      "external_id": "Kernel-Connectors-Connector-checkConnectorBinarySpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConnectorObjectSpecialization",
+      "external_id": "Kernel-Connectors-Connector-checkConnectorObjectSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConnectorSpecialization",
+      "external_id": "Kernel-Connectors-Connector-checkConnectorSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConnectorTypeFeaturing",
+      "external_id": "Kernel-Connectors-Connector-checkConnectorTypeFeaturing",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConstructorExpressionResultDefaultValueBindingConnector",
+      "external_id": "Kernel-Expressions-ConstructorExpression-checkConstructorExpressionResultDefaultValueBindingConnector",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConstructorExpressionResultFeatureRedefinition",
+      "external_id": "Kernel-Expressions-ConstructorExpression-checkConstructorExpressionResultFeatureRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConstructorExpressionResultSpecialization",
+      "external_id": "Kernel-Expressions-ConstructorExpression-checkConstructorExpressionResultSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkConstructorExpressionSpecialization",
+      "external_id": "Kernel-Expressions-ConstructorExpression-checkConstructorExpressionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkDataTypeSpecialization",
+      "external_id": "Kernel-DataTypes-DataType-checkDataTypeSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkExpressionResultBindingConnector",
+      "external_id": "Kernel-Functions-Expression-checkExpressionResultBindingConnector",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkExpressionSpecialization",
+      "external_id": "Kernel-Functions-Expression-checkExpressionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkExpressionTypeFeaturing",
+      "external_id": "Kernel-Functions-Expression-checkExpressionTypeFeaturing",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureChainExpressionResultSpecialization",
+      "external_id": "Kernel-Expressions-FeatureChainExpression-checkFeatureChainExpressionResultSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureChainExpressionSourceTargetRedefinition",
+      "external_id": "Kernel-Expressions-FeatureChainExpression-checkFeatureChainExpressionSourceTargetRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureChainExpressionTargetRedefinition",
+      "external_id": "Kernel-Expressions-FeatureChainExpression-checkFeatureChainExpressionTargetRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureCrossingSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureCrossingSpecialization",
+      "relevance": "AuthorityBlocked",
+      "rationale": "2",
+      "authority_conflicts": [
+        "KLCV10-F-001"
+      ]
+    },
+    {
+      "rule": "checkFeatureDataValueSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureDataValueSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureEndRedefinition",
+      "external_id": "Core-Features-Feature-checkFeatureEndRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureEndSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureEndSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureFeatureMembershipTypeFeaturing",
+      "external_id": "Core-Features-Feature-checkFeatureFeatureMembershipTypeFeaturing",
+      "relevance": "AuthorityBlocked",
+      "rationale": "2",
+      "authority_conflicts": [
+        "KLCV10-F-002"
+      ]
+    },
+    {
+      "rule": "checkFeatureFlowFeatureRedefinition",
+      "external_id": "Core-Features-Feature-checkFeatureFlowFeatureRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureObjectSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureObjectSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureOccurrenceSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureOccurrenceSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureOwnedCrossFeatureRedefinitionSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureOwnedCrossFeatureRedefinitionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureOwnedCrossFeatureSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureOwnedCrossFeatureSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureOwnedCrossFeatureTypeFeaturing",
+      "external_id": "Core-Features-Feature-checkFeatureOwnedCrossFeatureTypeFeaturing",
+      "relevance": "AuthorityBlocked",
+      "rationale": "2",
+      "authority_conflicts": [
+        "KLCV10-F-003"
+      ]
+    },
+    {
+      "rule": "checkFeatureParameterRedefinition",
+      "external_id": "Core-Features-Feature-checkFeatureParameterRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeaturePortionSpecialization",
+      "external_id": "Core-Features-Feature-checkFeaturePortionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureReferenceExpressionBindingConnector",
+      "external_id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionBindingConnector",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureReferenceExpressionResultSpecialization",
+      "external_id": "Kernel-Expressions-FeatureReferenceExpression-checkFeatureReferenceExpressionResultSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureResultRedefinition",
+      "external_id": "Core-Features-Feature-checkFeatureResultRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureSubobjectSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureSubobjectSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureSuboccurrenceSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureSuboccurrenceSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureValuationSpecialization",
+      "external_id": "Core-Features-Feature-checkFeatureValuationSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFeatureValueBindingConnector",
+      "external_id": "Kernel-FeatureValues-FeatureValue-checkFeatureValueBindingConnector",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFlowSpecialization",
+      "external_id": "Kernel-Interactions-Flow-checkFlowSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFlowWithEndsSpecialization",
+      "external_id": "Kernel-Interactions-Flow-checkFlowWithEndsSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFunctionResultBindingConnector",
+      "external_id": "Kernel-Functions-Function-checkFunctionResultBindingConnector",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkFunctionSpecialization",
+      "external_id": "Kernel-Functions-Function-checkFunctionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkIndexExpressionResultSpecialization",
+      "external_id": "Kernel-Expressions-IndexExpression-checkIndexExpressionResultSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkInvariantSpecialization",
+      "external_id": "Kernel-Functions-Invariant-checkInvariantSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkInvocationExpressionBehaviorBindingConnector",
+      "external_id": "Kernel-Expressions-InvocationExpression-checkInvocationExpressionBehaviorBindingConnector",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkInvocationExpressionBehaviorResultSpecialization",
+      "external_id": "Kernel-Expressions-InvocationExpression-checkInvocationExpressionBehaviorResultSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkInvocationExpressionDefaultValueBindingConnector",
+      "external_id": "Kernel-Expressions-InvocationExpression-checkInvocationExpressionDefaultValueBindingConnector",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkInvocationExpressionSpecialization",
+      "external_id": "Kernel-Expressions-InvocationExpression-checkInvocationExpressionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkLiteralBooleanSpecialization",
+      "external_id": "Kernel-Expressions-LiteralBoolean-checkLiteralBooleanSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkLiteralExpressionSpecialization",
+      "external_id": "Kernel-Expressions-LiteralExpression-checkLiteralExpressionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkLiteralInfinitySpecialization",
+      "external_id": "Kernel-Expressions-LiteralInfinity-checkLiteralInfinitySpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkLiteralIntegerSpecialization",
+      "external_id": "Kernel-Expressions-LiteralInteger-checkLiteralIntegerSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkLiteralRationalSpecialization",
+      "external_id": "Kernel-Expressions-LiteralRational-checkLiteralRationalSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkLiteralStringSpecialization",
+      "external_id": "Kernel-Expressions-LiteralString-checkLiteralStringSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkMetaclassSpecialization",
+      "external_id": "Kernel-Metadata-Metaclass-checkMetaclassSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkMetadataAccessExpressionSpecialization",
+      "external_id": "Kernel-Expressions-MetadataAccessExpression-checkMetadataAccessExpressionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkMetadataFeatureSemanticSpecialization",
+      "external_id": "Kernel-Metadata-MetadataFeature-checkMetadataFeatureSemanticSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "3",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkMetadataFeatureSpecialization",
+      "external_id": "Kernel-Metadata-MetadataFeature-checkMetadataFeatureSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkMultiplicityRangeExpressionTypeFeaturing",
+      "external_id": "Kernel-Multiplicities-MultiplicityRange-checkMultiplicityRangeExpressionTypeFeaturing",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkMultiplicitySpecialization",
+      "external_id": "Core-Types-Multiplicity-checkMultiplicitySpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkMultiplicityTypeFeaturing",
+      "external_id": "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing",
+      "relevance": "AuthorityBlocked",
+      "rationale": "2",
+      "authority_conflicts": [
+        "KLCV10-F-002"
+      ]
+    },
+    {
+      "rule": "checkNullExpressionSpecialization",
+      "external_id": "Kernel-Expressions-NullExpression-checkNullExpressionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkPayloadFeatureRedefinition",
+      "external_id": "Kernel-Interactions-PayloadFeature-checkPayloadFeatureRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkPredicateSpecialization",
+      "external_id": "Kernel-Functions-Predicate-checkPredicateSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkSelectExpressionResultSpecialization",
+      "external_id": "Kernel-Expressions-SelectExpression-checkSelectExpressionResultSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkStepEnclosedPerformanceSpecialization",
+      "external_id": "Kernel-Behaviors-Step-checkStepEnclosedPerformanceSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkStepOwnedPerformanceSpecialization",
+      "external_id": "Kernel-Behaviors-Step-checkStepOwnedPerformanceSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkStepSpecialization",
+      "external_id": "Kernel-Behaviors-Step-checkStepSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkStepSubperformanceSpecialization",
+      "external_id": "Kernel-Behaviors-Step-checkStepSubperformanceSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkStructureSpecialization",
+      "external_id": "Kernel-Structures-Structure-checkStructureSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkSuccessionFlowSpecialization",
+      "external_id": "Kernel-Interactions-SuccessionFlow-checkSuccessionFlowSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkSuccessionSpecialization",
+      "external_id": "Kernel-Connectors-Succession-checkSuccessionSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "checkTypeSpecialization",
+      "external_id": "Core-Types-Type-checkTypeSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveAnnotatingElementAnnotatedElement",
+      "external_id": "Root-Annotations-AnnotatingElement-deriveAnnotatingElementAnnotatedElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveAnnotatingElementAnnotation",
+      "external_id": "Root-Annotations-AnnotatingElement-deriveAnnotatingElementAnnotation",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveAnnotatingElementOwnedAnnotatingRelationship",
+      "external_id": "Root-Annotations-AnnotatingElement-deriveAnnotatingElementOwnedAnnotatingRelationship",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveAnnotationAnnotatingElement",
+      "external_id": "Root-Annotations-Annotation-deriveAnnotationAnnotatingElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveAnnotationOwnedAnnotatingElement",
+      "external_id": "Root-Annotations-Annotation-deriveAnnotationOwnedAnnotatingElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveAssociationRelatedType",
+      "external_id": "Kernel-Associations-Association-deriveAssociationRelatedType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveAssociationSourceType",
+      "external_id": "Kernel-Associations-Association-deriveAssociationSourceType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveAssociationTargetType",
+      "external_id": "Kernel-Associations-Association-deriveAssociationTargetType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveBehaviorStep",
+      "external_id": "Kernel-Behaviors-Behavior-deriveBehaviorStep",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveClassifierOwnedSubclassification",
+      "external_id": "Core-Classifiers-Classifier-deriveClassifierOwnedSubclassification",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveConnectorDefaultFeaturingType",
+      "external_id": "Kernel-Connectors-Connector-deriveConnectorDefaultFeaturingType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveConnectorRelatedFeature",
+      "external_id": "Kernel-Connectors-Connector-deriveConnectorRelatedFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveConnectorSourceFeature",
+      "external_id": "Kernel-Connectors-Connector-deriveConnectorSourceFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveConnectorTargetFeature",
+      "external_id": "Kernel-Connectors-Connector-deriveConnectorTargetFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveConstructorExpressionArgument",
+      "external_id": "Kernel-Expressions-ConstructorExpression-deriveConstructorExpressionArgument",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementDocumentation",
+      "external_id": "Root-Elements-Element-deriveElementDocumentation",
+      "relevance": "ValidatorOnly",
+      "rationale": "4",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementIsLibraryElement",
+      "external_id": "Root-Elements-Element-deriveElementIsLibraryElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementName",
+      "external_id": "Root-Elements-Element-deriveElementName",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementOwnedAnnotation",
+      "external_id": "Root-Elements-Element-deriveElementOwnedAnnotation",
+      "relevance": "ValidatorOnly",
+      "rationale": "4",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementOwnedElement",
+      "external_id": "Root-Elements-Element-deriveElementOwnedElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementOwner",
+      "external_id": "Root-Elements-Element-deriveElementOwner",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementQualifiedName",
+      "external_id": "Root-Elements-Element-deriveElementQualifiedName",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementShortName",
+      "external_id": "Root-Elements-Element-deriveElementShortName",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveElementTextualRepresentation",
+      "external_id": "Root-Elements-Element-deriveElementTextualRepresentation",
+      "relevance": "ValidatorOnly",
+      "rationale": "4",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveExpressionIsModelLevelEvaluable",
+      "external_id": "Kernel-Functions-Expression-deriveExpressionIsModelLevelEvaluable",
+      "relevance": "ExecutionDependent",
+      "rationale": "5",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveExpressionResult",
+      "external_id": "Kernel-Functions-Expression-deriveExpressionResult",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureChainExpressionTargetFeature",
+      "external_id": "Kernel-Expressions-FeatureChainExpression-deriveFeatureChainExpressionTargetFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureChainingFeature",
+      "external_id": "Core-Features-Feature-deriveFeatureChainingFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureCrossFeature",
+      "external_id": "Core-Features-Feature-deriveFeatureCrossFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureFeatureTarget",
+      "external_id": "Core-Features-Feature-deriveFeatureFeatureTarget",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureFeaturingType",
+      "external_id": "Core-Features-Feature-deriveFeatureFeaturingType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureOwnedCrossSubsetting",
+      "external_id": "Core-Features-Feature-deriveFeatureOwnedCrossSubsetting",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureOwnedFeatureChaining",
+      "external_id": "Core-Features-Feature-deriveFeatureOwnedFeatureChaining",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureOwnedFeatureInverting",
+      "external_id": "Core-Features-Feature-deriveFeatureOwnedFeatureInverting",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureOwnedRedefinition",
+      "external_id": "Core-Features-Feature-deriveFeatureOwnedRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureOwnedReferenceSubsetting",
+      "external_id": "Core-Features-Feature-deriveFeatureOwnedReferenceSubsetting",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureOwnedSubsetting",
+      "external_id": "Core-Features-Feature-deriveFeatureOwnedSubsetting",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureOwnedTypeFeaturing",
+      "external_id": "Core-Features-Feature-deriveFeatureOwnedTypeFeaturing",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureOwnedTyping",
+      "external_id": "Core-Features-Feature-deriveFeatureOwnedTyping",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureReferenceExpressionReferent",
+      "external_id": "Kernel-Expressions-FeatureReferenceExpression-deriveFeatureReferenceExpressionReferent",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFeatureType",
+      "external_id": "Core-Features-Feature-deriveFeatureType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFlowFlowEnd",
+      "external_id": "Kernel-Interactions-Flow-deriveFlowFlowEnd",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFlowPayloadFeature",
+      "external_id": "Kernel-Interactions-Flow-deriveFlowPayloadFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFlowPayloadType",
+      "external_id": "Kernel-Interactions-Flow-deriveFlowPayloadType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFlowSourceOutputFeature",
+      "external_id": "Kernel-Interactions-Flow-deriveFlowSourceOutputFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFlowTargetInputFeature",
+      "external_id": "Kernel-Interactions-Flow-deriveFlowTargetInputFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveFunctionResult",
+      "external_id": "Kernel-Functions-Function-deriveFunctionResult",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveInstantiationExpressionInstantiatedType",
+      "external_id": "Kernel-Expressions-InstantiationExpression-deriveInstantiationExpressionInstantiatedType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveInvocationExpressionArgument",
+      "external_id": "Kernel-Expressions-InvocationExpression-deriveInvocationExpressionArgument",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveLiteralExpressionIsModelLevelEvaluable",
+      "external_id": "Kernel-Expressions-LiteralExpression-deriveLiteralExpressionIsModelLevelEvaluable",
+      "relevance": "ExecutionDependent",
+      "rationale": "5",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveMembershipImportImportedElement",
+      "external_id": "Root-Namespaces-MembershipImport-deriveMembershipImportImportedElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveMembershipMemberElementId",
+      "external_id": "Root-Namespaces-Membership-deriveMembershipMemberElementId",
+      "relevance": "ValidatorOnly",
+      "rationale": "4",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveMetadataAccessExpressionReferencdElement",
+      "external_id": "Kernel-Expressions-MetadataAccessExpression-deriveMetadataAccessExpressionReferencdElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveMetadataFeatureMetaclass",
+      "external_id": "Kernel-Metadata-MetadataFeature-deriveMetadataFeatureMetaclass",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveMultiplicityRangeBound",
+      "external_id": "Kernel-Multiplicities-MultiplicityRange-deriveMultiplicityRangeBound",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveMultiplicityRangeLowerBound",
+      "external_id": "Kernel-Multiplicities-MultiplicityRange-deriveMultiplicityRangeLowerBound",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveMultiplicityRangeUpperBound",
+      "external_id": "Kernel-Multiplicities-MultiplicityRange-deriveMultiplicityRangeUpperBound",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveNamespaceImportImportedElement",
+      "external_id": "Root-Namespaces-NamespaceImport-deriveNamespaceImportImportedElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveNamespaceImportedMembership",
+      "external_id": "Root-Namespaces-Namespace-deriveNamespaceImportedMembership",
+      "relevance": "AuthorityBlocked",
+      "rationale": "2",
+      "authority_conflicts": [
+        "KLCV10-F-004"
+      ]
+    },
+    {
+      "rule": "deriveNamespaceMembers",
+      "external_id": "Root-Namespaces-Namespace-deriveNamespaceMembers",
+      "relevance": "AuthorityBlocked",
+      "rationale": "2",
+      "authority_conflicts": [
+        "KLCV10-F-004"
+      ]
+    },
+    {
+      "rule": "deriveNamespaceOwnedImport",
+      "external_id": "Root-Namespaces-Namespace-deriveNamespaceOwnedImport",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveNamespaceOwnedMember",
+      "external_id": "Root-Namespaces-Namespace-deriveNamespaceOwnedMember",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveNamespaceOwnedMembership",
+      "external_id": "Root-Namespaces-Namespace-deriveNamespaceOwnedMembership",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveOwningMembershipOwnedMemberName",
+      "external_id": "Root-Namespaces-OwningMembership-deriveOwningMembershipOwnedMemberName",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveOwningMembershipOwnedMemberShortName",
+      "external_id": "Root-Namespaces-OwningMembership-deriveOwningMembershipOwnedMemberShortName",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveOwningNamespace",
+      "external_id": "Root-Elements-Element-deriveOwningNamespace",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "derivePackageFilterCondition",
+      "external_id": "Kernel-Packages-Package-derivePackageFilterCondition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveRelationshipRelatedElement",
+      "external_id": "Root-Elements-Relationship-deriveRelationshipRelatedElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveStepBehavior",
+      "external_id": "Kernel-Behaviors-Step-deriveStepBehavior",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeDifferencingType",
+      "external_id": "Core-Types-Type-deriveTypeDifferencingType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeDirectedFeature",
+      "external_id": "Core-Types-Type-deriveTypeDirectedFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeEndFeature",
+      "external_id": "Core-Types-Type-deriveTypeEndFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeFeature",
+      "external_id": "Core-Types-Type-deriveTypeFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeFeatureMembership",
+      "external_id": "Core-Types-Type-deriveTypeFeatureMembership",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeInheritedFeature",
+      "external_id": "Core-Types-Type-deriveTypeInheritedFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeInheritedMembership",
+      "external_id": "Core-Types-Type-deriveTypeInheritedMembership",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeInput",
+      "external_id": "Core-Types-Type-deriveTypeInput",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeIntersectingType",
+      "external_id": "Core-Types-Type-deriveTypeIntersectingType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeMultiplicity",
+      "external_id": "Core-Types-Type-deriveTypeMultiplicity",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOutput",
+      "external_id": "Core-Types-Type-deriveTypeOutput",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedConjugator",
+      "external_id": "Core-Types-Type-deriveTypeOwnedConjugator",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedDifferencing",
+      "external_id": "Core-Types-Type-deriveTypeOwnedDifferencing",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedDisjoining",
+      "external_id": "Core-Types-Type-deriveTypeOwnedDisjoining",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedEndFeature",
+      "external_id": "Core-Types-Type-deriveTypeOwnedEndFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedFeature",
+      "external_id": "Core-Types-Type-deriveTypeOwnedFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedFeatureMembership",
+      "external_id": "Core-Types-Type-deriveTypeOwnedFeatureMembership",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedIntersecting",
+      "external_id": "Core-Types-Type-deriveTypeOwnedIntersecting",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedSpecialization",
+      "external_id": "Core-Types-Type-deriveTypeOwnedSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeOwnedUnioning",
+      "external_id": "Core-Types-Type-deriveTypeOwnedUnioning",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "deriveTypeUnioningType",
+      "external_id": "Core-Types-Type-deriveTypeUnioningType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateAnnotationAnnotatedElementOwnership",
+      "external_id": "Root-Annotations-Annotation-validateAnnotationAnnotatedElementOwnership",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateAnnotationAnnotatingElement",
+      "external_id": "Root-Annotations-Annotation-validateAnnotationAnnotatingElement",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateAssociationBinarySpecialization",
+      "external_id": "Kernel-Associations-Association-validateAssociationBinarySpecialization",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateAssociationEndTypes",
+      "external_id": "Kernel-Associations-Association-validateAssociationEndTypes",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateAssociationRelatedTypes",
+      "external_id": "Kernel-Associations-Association-validateAssociationRelatedTypes",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateAssociationStructureIntersection",
+      "external_id": "Kernel-Associations-Association-validateAssociationStructureIntersection",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateBehaviorSpecialization",
+      "external_id": "Kernel-Behaviors-Behavior-validateBehaviorSpecialization",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateBindingConnectorIsBinary",
+      "external_id": "Kernel-Connectors-BindingConnector-validateBindingConnectorIsBinary",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateClassSpecialization",
+      "external_id": "Kernel-Classes-Class-validateClassSpecialization",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateClassifierMultiplicityDomain",
+      "external_id": "Core-Classifiers-Classifier-validateClassifierMultiplicityDomain",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateCollectExpressionOperator",
+      "external_id": "Kernel-Expressions-CollectExpression-validateCollectExpressionOperator",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateConnectorBinarySpecialization",
+      "external_id": "Kernel-Connectors-Connector-validateConnectorBinarySpecialization",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateConnectorRelatedFeatures",
+      "external_id": "Kernel-Connectors-Connector-validateConnectorRelatedFeatures",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateConstructorExpressionNoDuplicateFeatureRedefinition",
+      "external_id": "Kernel-Expressions-ConstructorExpression-validateConstructorExpressionNoDuplicateFeatureRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateConstructorExpressionOwnedFeatures",
+      "external_id": "Kernel-Expressions-ConstructorExpression-validateConstructorExpressionOwnedFeatures",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateCrossSubsettingCrossedFeature",
+      "external_id": "Core-Features-CrossSubsetting-validateCrossSubsettingCrossedFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateCrossSubsettingCrossingFeature",
+      "external_id": "Core-Features-CrossSubsetting-validateCrossSubsettingCrossingFeature",
+      "relevance": "AuthorityBlocked",
+      "rationale": "2",
+      "authority_conflicts": [
+        "KLCV10-F-001"
+      ]
+    },
+    {
+      "rule": "validateDataTypeSpecialization",
+      "external_id": "Kernel-DataTypes-DataType-validateDataTypeSpecialization",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateElementFilterMembershipConditionIsBoolean",
+      "external_id": "Kernel-Packages-ElementFilterMembership-validateElementFilterMembershipConditionIsBoolean",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateElementFilterMembershipConditionIsModelLevelEvaluable",
+      "external_id": "Kernel-Packages-ElementFilterMembership-validateElementFilterMembershipConditionIsModelLevelEvaluable",
+      "relevance": "ExecutionDependent",
+      "rationale": "5",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateElementIsImpliedIncluded",
+      "external_id": "Root-Elements-Element-validateElementIsImpliedIncluded",
+      "relevance": "ValidatorOnly",
+      "rationale": "7",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateEndFeatureMembershipIsEnd",
+      "external_id": "Core-Features-EndFeatureMembership-validateEndFeatureMembershipIsEnd",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateExpressionResultExpressionMembership",
+      "external_id": "Kernel-Functions-Expression-validateExpressionResultExpressionMembership",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateExpressionResultParameterMembership",
+      "external_id": "Kernel-Functions-Expression-validateExpressionResultParameterMembership",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureChainExpressionConformance",
+      "external_id": "Kernel-Expressions-FeatureChainExpression-validateFeatureChainExpressionConformance",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureChainExpressionOperator",
+      "external_id": "Kernel-Expressions-FeatureChainExpression-validateFeatureChainExpressionOperator",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureChainingFeatureConformance",
+      "external_id": "Core-Features-Feature-validateFeatureChainingFeatureConformance",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureChainingFeatureNotOne",
+      "external_id": "Core-Features-Feature-validateFeatureChainingFeatureNotOne",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureChainingFeaturesNotSelf",
+      "external_id": "Core-Features-Feature-validateFeatureChainingFeaturesNotSelf",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureConstantIsVariable",
+      "external_id": "Core-Features-Feature-validateFeatureConstantIsVariable",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureCrossFeatureSpecialization",
+      "external_id": "Core-Features-Feature-validateFeatureCrossFeatureSpecialization",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureCrossFeatureType",
+      "external_id": "Core-Features-Feature-validateFeatureCrossFeatureType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureEndIsConstant",
+      "external_id": "Core-Features-Feature-validateFeatureEndIsConstant",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureEndMultiplicity",
+      "external_id": "Core-Features-Feature-validateFeatureEndMultiplicity",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureEndNoDirection",
+      "external_id": "Core-Features-Feature-validateFeatureEndNoDirection",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureEndNotDerivedAbstractCompositeOrPortion",
+      "external_id": "Core-Features-Feature-validateFeatureEndNotDerivedAbstractCompositeOrPortion",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureIsVariable",
+      "external_id": "Core-Features-Feature-validateFeatureIsVariable",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureMultiplicityDomain",
+      "external_id": "Core-Features-Feature-validateFeatureMultiplicityDomain",
+      "relevance": "AuthorityBlocked",
+      "rationale": "2",
+      "authority_conflicts": [
+        "KLCV10-F-002"
+      ]
+    },
+    {
+      "rule": "validateFeatureOwnedCrossSubsetting",
+      "external_id": "Core-Features-Feature-validateFeatureOwnedCrossSubsetting",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureOwnedReferenceSubsetting",
+      "external_id": "Core-Features-Feature-validateFeatureOwnedReferenceSubsetting",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeaturePortionNotVariable",
+      "external_id": "Core-Features-Feature-validateFeaturePortionNotVariable",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureReferenceExpressionReferentIsFeature",
+      "external_id": "Kernel-Expressions-FeatureReferenceExpression-validateFeatureReferenceExpressionReferentIsFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureReferenceExpressionResult",
+      "external_id": "Kernel-Expressions-FeatureReferenceExpression-validateFeatureReferenceExpressionResult",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureValueIsInitial",
+      "external_id": "Kernel-FeatureValues-FeatureValue-validateFeatureValueIsInitial",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFeatureValueOverriding",
+      "external_id": "Kernel-FeatureValues-FeatureValue-validateFeatureValueOverriding",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFlowEndIsEnd",
+      "external_id": "Kernel-Interactions-FlowEnd-validateFlowEndIsEnd",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFlowEndNestedFeature",
+      "external_id": "Kernel-Interactions-FlowEnd-validateFlowEndNestedFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFlowEndOwningType",
+      "external_id": "Kernel-Interactions-FlowEnd-validateFlowEndOwningType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFlowPayloadFeature",
+      "external_id": "Kernel-Interactions-Flow-validateFlowPayloadFeature",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFunctionResultExpressionMembership",
+      "external_id": "Kernel-Functions-Function-validateFunctionResultExpressionMembership",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateFunctionResultParameterMembership",
+      "external_id": "Kernel-Functions-Function-validateFunctionResultParameterMembership",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateImportTopLevelVisibility",
+      "external_id": "Root-Namespaces-Import-validateImportTopLevelVisibility",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateIndexExpressionOperator",
+      "external_id": "Kernel-Expressions-IndexExpression-validateIndexExpressionOperator",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateInstantiationExpressionInstantiatedType",
+      "external_id": "Kernel-Expressions-InstantiationExpression-validateInstantiationExpressionInstantiatedType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateInstantiationExpressionResult",
+      "external_id": "Kernel-Expressions-InstantiationExpression-validateInstantiationExpressionResult",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateInvocationExpressionInstantiatedType",
+      "external_id": "Kernel-Expressions-InvocationExpression-validateInvocationExpressionInstantiatedType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateInvocationExpressionNoDuplicateParameterRedefinition",
+      "external_id": "Kernel-Expressions-InvocationExpression-validateInvocationExpressionNoDuplicateParameterRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateInvocationExpressionOwnedFeatures",
+      "external_id": "Kernel-Expressions-InvocationExpression-validateInvocationExpressionOwnedFeatures",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateInvocationExpressionParameterRedefinition",
+      "external_id": "Kernel-Expressions-InvocationExpression-validateInvocationExpressionParameterRedefinition",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateMetadataAccessExpressionReferencedElement",
+      "external_id": "Kernel-Expressions-MetadataAccessExpression-validateMetadataAccessExpressionReferencedElement",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateMetadataFeatureAnnotatedElement",
+      "external_id": "Kernel-Metadata-MetadataFeature-validateMetadataFeatureAnnotatedElement",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateMetadataFeatureBody",
+      "external_id": "Kernel-Metadata-MetadataFeature-validateMetadataFeatureBody",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateMetadataFeatureMetaclass",
+      "external_id": "Kernel-Metadata-MetadataFeature-validateMetadataFeatureMetaclass",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateMetadataFeatureMetaclassNotAbstract",
+      "external_id": "Kernel-Metadata-MetadataFeature-validateMetadataFeatureMetaclassNotAbstract",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateMultiplicityRangeBoundResultTypes",
+      "external_id": "Kernel-Multiplicities-MultiplicityRange-validateMultiplicityRangeBoundResultTypes",
+      "relevance": "ValidatorOnly",
+      "rationale": "8",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateMultiplicityRangeBounds",
+      "external_id": "Kernel-Multiplicities-MultiplicityRange-validateMultiplicityRangeBounds",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateNamespaceDistinguishibility",
+      "external_id": "Root-Namespaces-Namespace-validateNamespaceDistinguishibility",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateParameterMembershipOwningType",
+      "external_id": "Kernel-Behaviors-ParameterMembership-validateParameterMembershipOwningType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateParameterMembershipParameterDirection",
+      "external_id": "Kernel-Behaviors-ParameterMembership-validateParameterMembershipParameterDirection",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateRedefinitionDirectionConformance",
+      "external_id": "Core-Features-Redefinition-validateRedefinitionDirectionConformance",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateRedefinitionEndConformance",
+      "external_id": "Core-Features-Redefinition-validateRedefinitionEndConformance",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateRedefinitionFeaturingTypes",
+      "external_id": "Core-Features-Redefinition-validateRedefinitionFeaturingTypes",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateResultExpressionMembershipOwningType",
+      "external_id": "Kernel-Functions-ResultExpressionMembership-validateResultExpressionMembershipOwningType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateReturnParameterMembershipOwningType",
+      "external_id": "Kernel-Functions-ReturnParameterMembership-validateReturnParameterMembershipOwningType",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateSelectExpressionOperator",
+      "external_id": "Kernel-Expressions-SelectExpression-validateSelectExpressionOperator",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateSpecificationSpecificNotConjugated",
+      "external_id": "Core-Types-Specialization-validateSpecificationSpecificNotConjugated",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateStructureSpecialization",
+      "external_id": "Kernel-Structures-Structure-validateStructureSpecialization",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateSubsettingConstantConformance",
+      "external_id": "Core-Features-Subsetting-validateSubsettingConstantConformance",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateSubsettingFeaturingTypes",
+      "external_id": "Core-Features-Subsetting-validateSubsettingFeaturingTypes",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateSubsettingUniquenessConformance",
+      "external_id": "Core-Features-Subsetting-validateSubsettingUniquenessConformance",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateTypeAtMostOneConjugator",
+      "external_id": "Core-Types-Type-validateTypeAtMostOneConjugator",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateTypeDifferencingTypesNotSelf",
+      "external_id": "Core-Types-Type-validateTypeDifferencingTypesNotSelf",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateTypeIntersectingTypesNotSelf",
+      "external_id": "Core-Types-Type-validateTypeIntersectingTypesNotSelf",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateTypeOwnedDifferencingNotOne",
+      "external_id": "Core-Types-Type-validateTypeOwnedDifferencingNotOne",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateTypeOwnedIntersectingNotOne",
+      "external_id": "Core-Types-Type-validateTypeOwnedIntersectingNotOne",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateTypeOwnedMultiplicity",
+      "external_id": "Core-Types-Type-validateTypeOwnedMultiplicity",
+      "relevance": "PublicationCritical",
+      "rationale": "1",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateTypeOwnedUnioningNotOne",
+      "external_id": "Core-Types-Type-validateTypeOwnedUnioningNotOne",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    },
+    {
+      "rule": "validateTypeUnioningTypesNotSelf",
+      "external_id": "Core-Types-Type-validateTypeUnioningTypesNotSelf",
+      "relevance": "ValidatorOnly",
+      "rationale": "6",
+      "authority_conflicts": []
+    }
+  ]
+}

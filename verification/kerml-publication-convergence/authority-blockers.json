@@ -1,0 +1,40 @@
+{
+  "format": "agentique-authority-publication-impact/1",
+  "profile": "agentique-kerml-1.0-operational/7",
+  "register": "standards/kerml-1.0-operational-authority-blockers.json",
+  "new_corrections_authorized": false,
+  "blockers": [
+    {
+      "id": "KLCV10-F-001",
+      "issue": "KERML11-2",
+      "impact": "ValidationOnlyAuthorityConflict",
+      "deterministic_graph_under_v7": true,
+      "reason": "The source end flag and v7 ownedCrossFeature selector fix the end and authored cross Feature identities. Retain the required crossing and report the failed greater-than-one-end predicate. Removing the source end is not needed to construct that graph and is not authorized.",
+      "remaining_implementation": "Required cross-subsetting producer closure is still critical; this disposition does not certify it."
+    },
+    {
+      "id": "KLCV10-F-002",
+      "issue": "KERML11-4",
+      "impact": "ValidationOnlyAuthorityConflict",
+      "deterministic_graph_under_v7": true,
+      "reason": "The pinned structural check assigns no featuringType when Multiplicity.owningType is null. Its declared owning membership and symbolic bound remain deterministic. The separate validateFeatureMultiplicityDomain predicate rejects that domain; it does not supply another producer. Retain this failure rather than silently substituting owningNamespace.",
+      "remaining_implementation": "Multiplicity bound structure, bound-expression domains and accessibility still need their own closure proof. Evaluating accNum is outside structural publication."
+    },
+    {
+      "id": "KLCV10-F-003",
+      "issue": "UNREPORTED-owned-cross-featuring-otherEnds",
+      "impact": "PublicationBlockingAuthorityConflict",
+      "deterministic_graph_under_v7": false,
+      "reason": "The required cross Feature domain differs: literal excluding(self) retains both ends and requires a Cartesian-product Type; the binary interpretation excludes the owning end and uses the opposite-end Type. This changes essential featuring and required type structure. V7 corrects the selector only and does not decide this domain disagreement.",
+      "required_decision": "An independently justified operational domain interpretation is necessary before cross-feature structural closure can be claimed."
+    },
+    {
+      "id": "KLCV10-F-004",
+      "issue": "KERML11-75",
+      "impact": "PublicationBlockingAuthorityConflict",
+      "deterministic_graph_under_v7": false,
+      "reason": "Namespace::importedMemberships OCL retains colliding imported Membership identities; its prose excludes them. The retained VectorFunctions/NumericalFunctions witnesses have different effective member populations under those definitions. This directly changes namespace lookup. The existing implementation's shadowing choice does not resolve the authority disagreement.",
+      "required_decision": "A reviewed profile interpretation of imported membership collision suppression, with exact membership witnesses, is necessary for canonical namespace closure."
+    }
+  ]
+}

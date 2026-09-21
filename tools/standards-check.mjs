@@ -118,8 +118,9 @@ const report = {
   scope:
     "Original artifact and extracted-entry byte verification; project metadata dependency closure. Whole-library language semantics are not certified by this check.",
 };
+fs.mkdirSync(path.join(root, "verification/generated"), { recursive: true });
 fs.writeFileSync(
-  path.join(root, "verification/standards-integrity.json"),
+  path.join(root, "verification/generated/standards-integrity.json"),
   JSON.stringify(report, null, 2) + "\n",
 );
 console.log(JSON.stringify(report, null, 2));

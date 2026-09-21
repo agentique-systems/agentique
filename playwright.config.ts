@@ -8,7 +8,7 @@ export default defineConfig({
   timeout: 60000,
   reporter: [
     ["list"],
-    ["json", { outputFile: "verification/browser-results.json" }],
+    ["json", { outputFile: "verification/generated/browser-results.json" }],
   ],
   use: {
     baseURL: "http://127.0.0.1:7342",

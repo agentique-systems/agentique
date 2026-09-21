@@ -7,7 +7,7 @@ use agq_kernel::{
 };
 use std::collections::BTreeMap;
 
-pub const BINDING_VERSION: &str = "agq-kerml-bindings/2";
+pub const BINDING_VERSION: &str = "agq-kerml-bindings/3";
 
 /// KerML 1.0 semantic roles, not substitute declarations or OMG-defined IDs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -35,6 +35,7 @@ pub enum StandardRole {
     FalseEvaluations,
     Metaobject,
     Metaobjects,
+    OccurrenceSnapshots,
 }
 impl StandardRole {
     /// Binding contract: full declared path and exact concrete metaclass.
@@ -64,9 +65,10 @@ impl StandardRole {
             FalseEvaluations => (&["Performances", "falseEvaluations"], c::EXPRESSION),
             Metaobject => (&["Metaobjects", "Metaobject"], c::METACLASS),
             Metaobjects => (&["Metaobjects", "metaobjects"], c::FEATURE),
+            OccurrenceSnapshots => (&["Occurrences", "Occurrence", "snapshots"], c::FEATURE),
         }
     }
-    pub const ALL: [Self; 23] = [
+    pub const ALL: [Self; 24] = [
         Self::Anything,
         Self::DataValue,
         Self::Things,
@@ -90,6 +92,7 @@ impl StandardRole {
         Self::FalseEvaluations,
         Self::Metaobject,
         Self::Metaobjects,
+        Self::OccurrenceSnapshots,
     ];
 }
 
@@ -193,8 +196,13 @@ impl StandardKermlBindings {
                     .element(element)
                     .expect("candidate")
                     .metaclass();
+                let prefix_class = if role == StandardRole::OccurrenceSnapshots && index == 1 {
+                    c::CLASS
+                } else {
+                    c::LIBRARY_PACKAGE
+                };
                 if (index + 1 == path.len() && class != expected)
-                    || (index + 1 < path.len() && class != c::LIBRARY_PACKAGE)
+                    || (index + 1 < path.len() && class != prefix_class)
                 {
                     return Err(BindingError::WrongMetaclass(role, element));
                 }

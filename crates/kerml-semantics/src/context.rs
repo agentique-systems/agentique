@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/17";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/18";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -59,6 +59,8 @@ pub struct SemanticContextId {
     /// Exact canonical StandardLibrary records/occurrences, independent of authored
     /// revision changes. None means no validated canonical binding input was attached.
     pub library_graph_digest: Option<[u8; 32]>,
+    /// Phase is part of query identity; a partial overlay cannot claim closure.
+    pub derivation_phase: crate::DerivationPhase,
 }
 
 /// Validated identity bound to an immutable input, never to a caller-provided revision label.
@@ -234,7 +236,9 @@ impl<'m> SemanticContext<'m> {
         options: SemanticOptions,
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
-        Self::bind(overlay.model(), overlay.base_revision(), options, libraries)
+        let mut context = Self::bind(overlay.model(), overlay.base_revision(), options, libraries)?;
+        context.id.derivation_phase = crate::DerivationPhase::PartialDerivationOverlay;
+        Ok(context)
     }
     fn bind(
         model: &'m ModelView,
@@ -374,6 +378,7 @@ impl<'m> SemanticContext<'m> {
                 formal_constraint_targets: None,
                 binding_version: crate::BINDING_VERSION,
                 library_graph_digest: None,
+                derivation_phase: crate::DerivationPhase::Declared,
             },
         })
     }

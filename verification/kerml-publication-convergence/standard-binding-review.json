@@ -1,0 +1,14 @@
+{
+  "format":"agentique-standard-binding-review/1",
+  "scope":"Generation-2 semantic algorithms and library bootstrap; library declaration text and test fixtures are not semantic path lookups.",
+  "entries":[
+    {"location":"crates/kerml-semantics/src/bindings.rs", "classification":"bootstrap-only lookup", "disposition":"Exact public path, metaclass, unique identity and library provenance validated once; algorithms use StandardRole."},
+    {"location":"crates/kerml-semantics/src/formal_targets.rs", "classification":"bootstrap-only lookup", "disposition":"Versioned FormalConstraintId contracts bind reviewed and published paths to canonical IDs; preserve historical authority."},
+    {"location":"crates/kerml-semantics/src/featuring.rs", "classification":"semantic standard role", "paths":["Occurrences::Occurrence::snapshots"], "disposition":"Migrated to StandardRole::OccurrenceSnapshots; no algorithmic qualified-name lookup remains."},
+    {"location":"crates/kerml-semantics/src/result_structure.rs", "classification":"semantic standard role", "paths":["Base::things::that","Occurrences::Occurrence::startShot"], "disposition":"Outstanding typed binding migration; initial FeatureValue producer still performs exact lookup."},
+    {"location":"crates/kerml-semantics/src/result_structure.rs", "classification":"semantic standard role", "paths":["Collections::Array"], "disposition":"Outstanding typed binding migration across library identities; do not pretend the Data Type Library has Semantic Library provenance."},
+    {"location":"crates/kerml-text/src/library/mod.rs", "classification":"bootstrap-only lookup", "disposition":"Selects the pinned Semantic-Library artifact resource to validate library origin; not a semantic declaration-name lookup."}
+  ],
+  "accepted_binding_manifest_regenerated":false,
+  "reason":"Canonical publication is blocked; bindings/3 extends role validation but is not accepted-library publication."
+}

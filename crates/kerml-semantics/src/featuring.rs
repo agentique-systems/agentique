@@ -21,6 +21,69 @@ pub struct ConnectorFeaturing {
 }
 
 impl KerMlQueries<'_> {
+    /// KerML 1.0 Feature::isFeaturingType. Variable Features require the
+    /// canonical snapshots role, or a redefinition featured by their owner.
+    /// This predicate checks a candidate; it never invents a snapshot Feature.
+    pub fn is_featuring_type(&self, feature: ElementId, candidate: ElementId) -> QueryResult<bool> {
+        let mut out = self.result(false);
+        if self
+            .checked::<agq_kerml::views::Feature, _>(&mut out, feature)
+            .is_none()
+            || self
+                .checked::<agq_kerml::views::Type, _>(&mut out, candidate)
+                .is_none()
+        {
+            return out;
+        }
+        let owner = self.owning_type(feature);
+        let owning_type = owner.value;
+        out.merge(owner);
+        let Some(owner) = owning_type else {
+            return out;
+        };
+        match self.read_value(&mut out, feature, p::FEATURE_IS_VARIABLE) {
+            Some(Value::Boolean(false)) => out.value = candidate == owner,
+            Some(Value::Boolean(true)) => {
+                out.search_dependencies
+                    .insert(SearchDependency::StandardLibraries);
+                let Some(bindings) = self.context().standard_bindings.as_ref() else {
+                    out.problem(
+                        Completeness::Incomplete,
+                        "KQ_SNAPSHOT_BINDING",
+                        feature,
+                        "Variable featuring requires validated standard roles",
+                    );
+                    return out;
+                };
+                let snapshots = bindings.get(StandardRole::OccurrenceSnapshots);
+                self.fact(&mut out, FactKey::Element(snapshots));
+                self.fact(
+                    &mut out,
+                    FactKey::Element(bindings.get(StandardRole::Occurrence)),
+                );
+                if owner == bindings.get(StandardRole::Occurrence) {
+                    out.value = candidate == snapshots;
+                } else if self.is(candidate, c::FEATURE) {
+                    let redefined = self.all_redefined_features(candidate);
+                    let is_snapshot = redefined.value.contains(&snapshots);
+                    out.merge(redefined);
+                    if is_snapshot {
+                        let domains = self.featuring_types(candidate);
+                        out.value = domains.value.contains(&owner);
+                        out.merge(domains);
+                    }
+                }
+            }
+            _ => out.problem(
+                Completeness::Incomplete,
+                "KQ_VARIABLE_FEATURING",
+                feature,
+                "Variable flag is not established",
+            ),
+        }
+        out
+    }
+
     /// Reflexive semantic supertype closure, including conjugation and chain terminals.
     pub fn all_supertypes(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
@@ -145,29 +208,14 @@ impl KerMlQueries<'_> {
                         // Occurrence case; no per-feature snapshot type is needed.
                         out.search_dependencies
                             .insert(SearchDependency::StandardLibraries);
-                        let target = self.resolve_reference(
-                            current,
-                            &QualifiedName {
-                                absolute: true,
-                                segments: vec![
-                                    "Occurrences".into(),
-                                    "Occurrence".into(),
-                                    "snapshots".into(),
-                                ],
-                            },
-                            c::FEATURE,
-                        );
-                        if let Resolution::Resolved(snapshot) = target.value {
-                            out.value.push(snapshot);
-                        } else {
-                            out.problem(
-                                Completeness::Incomplete,
-                                "KQ_SNAPSHOT_FEATURING",
-                                current,
-                                "Requires canonical Occurrences::Occurrence::snapshots",
-                            );
-                        }
-                        out.merge(target);
+                        let snapshots = self
+                            .context()
+                            .standard_bindings
+                            .as_ref()
+                            .unwrap()
+                            .get(StandardRole::OccurrenceSnapshots);
+                        self.fact(&mut out, FactKey::Element(snapshots));
+                        out.value.push(snapshots);
                     }
                     _ => out.problem(
                         Completeness::Incomplete,

@@ -472,5 +472,17 @@
     "accepted_bindings_regenerated": false,
     "authored_accepted_library_consumption": false,
     "remaining": "Separate reviewed library-source authority correction; remaining structural/derived/implied constraints and any reported ordinary query obligations; accepted semantic publication, facade, bindings and authored library dependencies. No SysML semantic readiness."
+  },
+  "kerml_publication_convergence": {
+    "status": "incomplete-publication-critical-closure",
+    "profile": "agentique-kerml-1.0-operational/7",
+    "acceptance_contract": "docs/adr/0022-kerml-publication-vs-conformance.md",
+    "evidence_policy": "docs/adr/0021-verification-evidence-policy.md",
+    "evidence": "verification/kerml-publication-convergence/README.md",
+    "canonical_publication": false,
+    "conformance_coverage": "Incomplete",
+    "validator_coverage_is_publication_gate": false,
+    "remaining": "Graph-affecting authority choices, mandatory reference closure, effective membership, essential derived/producer closure, accepted bindings and authored dependency integration.",
+    "generation_1_release_obligations": "unchanged"
   }
 }

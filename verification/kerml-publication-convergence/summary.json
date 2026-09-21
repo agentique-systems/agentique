@@ -1,0 +1,837 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "semantic-stage",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "ddd8d4ba27f14ef28d4efee857f22f0655b29c7d15011e3a4f3d0af810a8e7dd",
+      "output_sha256": "9e96ddf869b38e070edaad3a2cbd9411909cfcaa86cf375b67d851b32791b15b",
+      "duration_seconds": 76.41,
+      "output": "verification/generated/kerml-publication-convergence/semantic-stage.log"
+    },
+    {
+      "name": "variable-domain-stage",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "c14c0972d8c73bea6502caf730bbf9a1e590c706d88ee4d302a30937b670c26e",
+      "output_sha256": "5f08aa69d974efb01c134652548fb5926b2c0051271b6742f7d5dbc099da4514",
+      "duration_seconds": 3.62,
+      "output": "verification/generated/kerml-publication-convergence/variable-domain-stage.log"
+    },
+    {
+      "name": "baseline-corpus",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "library_publication_audit",
+        "--",
+        "--output=verification/generated/kerml-publication-convergence/baseline-corpus.json"
+      ],
+      "exit_code": 4294967295,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "9ca7f1f5453450ec817b277d40197df2ea700d5cd6ff453641592b8402eb034d",
+      "output_sha256": "24635b288b7f33ee74d2268ef185fb3134f1add2385262e38364124482049593",
+      "duration_seconds": 600.66,
+      "output": "verification/generated/kerml-publication-convergence/baseline-corpus.log",
+      "disposition": "Cancelled duplicate baseline refinement; retained expanded audit reused as historical evidence, not a current acceptance measurement."
+    },
+    {
+      "name": "publication-contract-stage",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "publication_contract"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "557dceebc7bcfcd7dc98e2debc7d47723248321bc4211173091f5ed34e7aa251",
+      "output_sha256": "a6d2eea675c864b21ef66f993cff3e4405538f744d1d0e2f4dc82e8db0cfaa87",
+      "duration_seconds": 2.12,
+      "output": "verification/generated/kerml-publication-convergence/publication-contract-stage.log"
+    },
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "3522fc6a07a329f962f7ccfaa23ca29469fb5760338b77542b0818802eb96906",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.36,
+      "output": "verification/generated/kerml-publication-convergence/fmt.log"
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "3522fc6a07a329f962f7ccfaa23ca29469fb5760338b77542b0818802eb96906",
+      "output_sha256": "38d5d7d34b379ed89a2bee469b027f9a554bdd7408bd5c2a67770588eace567a",
+      "duration_seconds": 11.69,
+      "output": "verification/generated/kerml-publication-convergence/clippy.log"
+    },
+    {
+      "name": "npm-standards",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "cc18feef2393ebd64523a94d278f8e93423425ff9df3c9134268ceaca10b9d0d",
+      "output_sha256": "b332f8b7430a53c3474da41ea65d9ad91b18dae539e77f4b08f5722a23279671",
+      "duration_seconds": 0.88,
+      "output": "verification/generated/kerml-publication-convergence/npm-standards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "npm-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "cc18feef2393ebd64523a94d278f8e93423425ff9df3c9134268ceaca10b9d0d",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 1.69,
+      "output": "verification/generated/kerml-publication-convergence/npm-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "npm-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "cc18feef2393ebd64523a94d278f8e93423425ff9df3c9134268ceaca10b9d0d",
+      "output_sha256": "dd3e4e0de8daa99c3c8b7d1c0ed0837ee043b0fdd120debc34db9eb6b415cc23",
+      "duration_seconds": 2.02,
+      "output": "verification/generated/kerml-publication-convergence/npm-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "npm-test",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "cc18feef2393ebd64523a94d278f8e93423425ff9df3c9134268ceaca10b9d0d",
+      "output_sha256": "ec87c2635d597d110e990baceab8916c6f1e41b26cc5b3dda477d9ff9eae863f",
+      "duration_seconds": 0.55,
+      "output": "verification/generated/kerml-publication-convergence/npm-test.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "relevance-inventory",
+      "command": [
+        "python",
+        "verification/kerml-publication-convergence/scripts/classify.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "cc18feef2393ebd64523a94d278f8e93423425ff9df3c9134268ceaca10b9d0d",
+      "output_sha256": "20a6ee7d2f01fd501adb5f6114d7ec580f6ae0a6ad71babab66f86de0c36cfc4",
+      "duration_seconds": 0.2,
+      "output": "verification/generated/kerml-publication-convergence/relevance-inventory.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "authority-witnesses",
+      "command": [
+        "python",
+        "verification/kerml-publication-convergence/scripts/authority.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "cc18feef2393ebd64523a94d278f8e93423425ff9df3c9134268ceaca10b9d0d",
+      "output_sha256": "cfeb1948cd34b323c1bfe87f8d59e6e1bd380b50b7d49f3ae6dd59b63769f532",
+      "duration_seconds": 0.17,
+      "output": "verification/generated/kerml-publication-convergence/authority-witnesses.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "npm-e2e",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "cc18feef2393ebd64523a94d278f8e93423425ff9df3c9134268ceaca10b9d0d",
+      "output_sha256": "d171ff2edddb84d187b617f60f9c6fce63a8a07506deb55e1ac01137c746fe82",
+      "duration_seconds": 73.91,
+      "output": "verification/generated/kerml-publication-convergence/npm-e2e.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "relevance-inventory-final",
+      "command": [
+        "python",
+        "verification/kerml-publication-convergence/scripts/classify.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "6b11667f6a4dcc752733722632496a627415bf1048b51cd62453552a8daa0080",
+      "output_sha256": "20a6ee7d2f01fd501adb5f6114d7ec580f6ae0a6ad71babab66f86de0c36cfc4",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/kerml-publication-convergence/relevance-inventory-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "cargo-test",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "cc18feef2393ebd64523a94d278f8e93423425ff9df3c9134268ceaca10b9d0d",
+      "output_sha256": "153b5f864e6693041a9d38b26b962784b14f60d5049752538e403f519b6b0b33",
+      "duration_seconds": 300.56,
+      "output": "verification/generated/kerml-publication-convergence/cargo-test.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "npm-e2e-policy",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "b9965d0026cec67a3fa7bef029bfcab5e6e251800ffbe31f11001f173a378051",
+      "output_sha256": "dfb31a39b77f63389de47404346263a078c0406f716ce994af99efcd67282e21",
+      "duration_seconds": 48.38,
+      "output": "verification/generated/kerml-publication-convergence/npm-e2e-policy.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "metamodel",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "b9965d0026cec67a3fa7bef029bfcab5e6e251800ffbe31f11001f173a378051",
+      "output_sha256": "ff836ce70bd0f4186df2791521ac6a62ea93335c6805b381ca4cf167c588c37f",
+      "duration_seconds": 8.3,
+      "output": "verification/generated/kerml-publication-convergence/metamodel.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "kerml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "b9965d0026cec67a3fa7bef029bfcab5e6e251800ffbe31f11001f173a378051",
+      "output_sha256": "d9eeedd563882344c1ff1524869ff06692c283e35da54aaa15b1e5f5b8d55d51",
+      "duration_seconds": 1.66,
+      "output": "verification/generated/kerml-publication-convergence/kerml-runtime.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "b9965d0026cec67a3fa7bef029bfcab5e6e251800ffbe31f11001f173a378051",
+      "output_sha256": "b8146bb3946c5c9ceb77567a5f94c2c29786bc052504a4b8f1227a3738d13628",
+      "duration_seconds": 3.45,
+      "output": "verification/generated/kerml-publication-convergence/sysml-runtime.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-standard-libraries",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-metamodel-gen"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "b9965d0026cec67a3fa7bef029bfcab5e6e251800ffbe31f11001f173a378051",
+      "output_sha256": "8980200a4b8be733f2b9d18daa9596eb5cef80c9bef7cdae4bc9d10a1c642373",
+      "duration_seconds": 29.7,
+      "output": "verification/generated/kerml-publication-convergence/rustdoc.log",
+      "environment_overrides": {
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "name": "source-witness-inspection",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "library_elements",
+        "--",
+        "--input=verification/generated/kerml-publication-convergence/subjects.json",
+        "--output=verification/generated/kerml-publication-convergence/subjects-inspected.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "b9965d0026cec67a3fa7bef029bfcab5e6e251800ffbe31f11001f173a378051",
+      "output_sha256": "c01ebf5f2dadbe6b6ea4b2a1effd56013c8ff1adb652c4dde2454c7f58859318",
+      "duration_seconds": 64.33,
+      "output": "verification/generated/kerml-publication-convergence/source-witness-inspection.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "relevance-inventory-reviewed",
+      "command": [
+        "python",
+        "verification/kerml-publication-convergence/scripts/classify.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "3c305208c5924784f679c16191746b8046a9c60982fae2a892fdad50bde6ee76",
+      "output_sha256": "20a6ee7d2f01fd501adb5f6114d7ec580f6ae0a6ad71babab66f86de0c36cfc4",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/kerml-publication-convergence/relevance-inventory-reviewed.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "source-corpus",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "library_publication_audit",
+        "--",
+        "--source-only",
+        "--output=verification/generated/kerml-publication-convergence/source-corpus.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "6005bc330d1da46413736a49928eca51d065169d1a70bf3506c8357b7767ca83",
+      "output_sha256": "9df9a9a6de0beaa8e4079f868f7fae42f68d351818a389ec946983a6dd0c6359",
+      "duration_seconds": 2012.86,
+      "output": "verification/generated/kerml-publication-convergence/source-corpus.log"
+    },
+    {
+      "name": "variable-domain-conservative",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "c40a55c2ee26dd91c2dc63a33c8597c8846b30bf782f5185c12ce6e654b8fd35",
+      "output_sha256": "c76025d865408f9d7c8e0225c26eec88824890b69883c3d51850b3c8f8eef1c5",
+      "duration_seconds": 3.8,
+      "output": "verification/generated/kerml-publication-convergence/variable-domain-conservative.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "fmt-final",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "035f710da888e2b898613981041f89bfde0b6f3a6d5d1227f3e8ac805e1643cd",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.31,
+      "output": "verification/generated/kerml-publication-convergence/fmt-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "clippy-final",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "8ebc4e711d554e6b6e6f3fc653f5cab32393add602be8331d11b20dcd57c7037",
+      "output_sha256": "de70f69cbc783f7ab4ca8d157cdc50de2c5569acfe765d9c9c9cb88a025caac0",
+      "duration_seconds": 2.41,
+      "output": "verification/generated/kerml-publication-convergence/clippy-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "canonical-publication-gate",
+      "command": [
+        "python",
+        "verification/kerml-publication-convergence/scripts/report.py",
+        "publication",
+        "--audit",
+        "verification/generated/kerml-publication-convergence/source-corpus.json"
+      ],
+      "exit_code": 1,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "4edba324e4989e4d9e47218793ab16c33317baad907d7a43c5bb42a8b790edb4",
+      "output_sha256": "58855c10d86265587e5dfbb87302a17c2b113248a21226fdabfb7979b45990e2",
+      "duration_seconds": 0.14,
+      "output": "verification/generated/kerml-publication-convergence/canonical-publication-gate.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "conformance-report",
+      "command": [
+        "python",
+        "verification/kerml-publication-convergence/scripts/report.py",
+        "conformance",
+        "--audit",
+        "verification/generated/kerml-publication-convergence/source-corpus.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "105416bbb00070c857b3d3744ae3898fc046c029a0d5cee4b136dfa171d1c5db",
+      "output_sha256": "2e88f2b69ab4dad9825a55ff3dca650bc875e4975304579ff9153bc5e686bf10",
+      "duration_seconds": 0.14,
+      "output": "verification/generated/kerml-publication-convergence/conformance-report.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "cargo-test-final",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "4edba324e4989e4d9e47218793ab16c33317baad907d7a43c5bb42a8b790edb4",
+      "output_sha256": "9ce0c5d76bf81246dfa3ee4ddc0108ba2276f9fe9056b5c506af34cb41488700",
+      "duration_seconds": 259.48,
+      "output": "verification/generated/kerml-publication-convergence/cargo-test-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "rustdoc-final",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-standard-libraries",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-metamodel-gen"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "9a82b1f63a2133d4c3a3f00da23a06748b7d459c5aa8d5393924ea60c8f0716c",
+      "output_sha256": "7cf2da756f80af94923f812d716351b3a4b56f30ca3da0b5ab2cb497db086524",
+      "duration_seconds": 7.28,
+      "output": "verification/generated/kerml-publication-convergence/rustdoc-final.log",
+      "environment_overrides": {
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "name": "conformance-report-final",
+      "command": [
+        "python",
+        "verification/kerml-publication-convergence/scripts/report.py",
+        "conformance",
+        "--audit",
+        "verification/generated/kerml-publication-convergence/source-corpus.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "f6f2bf71c6b17ecdd204e4c507da54389da39fa9fd60941c50f83afb9d201e5a",
+      "output_sha256": "2e88f2b69ab4dad9825a55ff3dca650bc875e4975304579ff9153bc5e686bf10",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/kerml-publication-convergence/conformance-report-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "canonical-publication-gate-final",
+      "command": [
+        "python",
+        "verification/kerml-publication-convergence/scripts/report.py",
+        "publication",
+        "--audit",
+        "verification/generated/kerml-publication-convergence/source-corpus.json"
+      ],
+      "exit_code": 1,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "952c03bce889514e7720c002127749706d13232f",
+      "working_changes_sha256": "ad8bfc6de3aefd0162b7f17138c6f497ca03c27e899be55919b073d07ed259d4",
+      "output_sha256": "58855c10d86265587e5dfbb87302a17c2b113248a21226fdabfb7979b45990e2",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/kerml-publication-convergence/canonical-publication-gate-final.log",
+      "environment_overrides": {}
+    }
+  ],
+  "publication": {
+    "format": "agentique-canonical-publication-assessment/1",
+    "audit": "verification/generated/kerml-publication-convergence/source-corpus.json",
+    "audit_sha256": "8ed56f00395f83a87ca99bd25e5f0e37ea934a8643175336653cb453ac681566",
+    "profile": "agentique-kerml-1.0-operational/7",
+    "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+    "scope": "SourceSnapshotWithEmptyPartialOverlay",
+    "accepted": false,
+    "blockers": [
+      "KLCV10-F-003",
+      "KLCV10-F-004",
+      "complete-publication-overlay-not-measured",
+      "mandatory-reference-closure",
+      "effective-namespace-ambiguity",
+      "publication-critical-derived-and-producer-closure",
+      "identity_and_provenance_verified",
+      "complete_publication_overlay"
+    ],
+    "sysml_ready": false,
+    "downstream_acceptance": {
+      "accepted_bindings": false,
+      "authored_publication_integration": false
+    },
+    "source_records": 29140,
+    "references": {
+      "required": 4000,
+      "unresolved": 0,
+      "incomplete": 10,
+      "ambiguous": 0,
+      "invalid_references": 0
+    },
+    "reference_findings": [
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+          }
+        ],
+        "name": [
+          "observer"
+        ],
+        "relationship": "74b3de60-7b7b-5793-a48c-be0b28962b67"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+          }
+        ],
+        "name": [
+          "signal"
+        ],
+        "relationship": "dec0ad32-bd32-5e80-ab0a-eeba6ed1b72c"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+          }
+        ],
+        "name": [
+          "thisMonitor"
+        ],
+        "relationship": "6576a9e4-f129-52f9-a8f5-6b20a4f0f4b5"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+          }
+        ],
+        "name": [
+          "observations"
+        ],
+        "relationship": "d7df1235-384d-5ba7-b0bd-59758d1ba54e"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+          }
+        ],
+        "name": [
+          "including"
+        ],
+        "relationship": "27e3950d-0262-535d-b167-ba96ee8a6897"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "49cd7ffb-a510-5515-8ca9-0ea15717ffde"
+          }
+        ],
+        "name": [
+          "observation"
+        ],
+        "relationship": "2781b20d-712a-5166-87fd-7f73836ebfce"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "7916664e-cad0-5522-91de-764b9b87abea"
+          }
+        ],
+        "name": [
+          "thisMonitor"
+        ],
+        "relationship": "e169da6e-5bf3-5261-98a0-5551c5944044"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "7916664e-cad0-5522-91de-764b9b87abea"
+          }
+        ],
+        "name": [
+          "observations"
+        ],
+        "relationship": "74adc8f9-4ec5-5432-a625-27a60d861b97"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "7916664e-cad0-5522-91de-764b9b87abea"
+          }
+        ],
+        "name": [
+          "excluding"
+        ],
+        "relationship": "989f1bd7-b5dc-5a5e-a431-4a9df4518240"
+      },
+      {
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "7916664e-cad0-5522-91de-764b9b87abea"
+          }
+        ],
+        "name": [
+          "observations"
+        ],
+        "relationship": "ebbeceac-ab27-5bba-8a7a-8ff94c90f38e"
+      }
+    ],
+    "effective_namespace_findings": 4,
+    "validator_coverage_is_publication_gate": false
+  },
+  "conformance": {
+    "audit": "verification/generated/kerml-publication-convergence/source-corpus.json",
+    "audit_sha256": "8ed56f00395f83a87ca99bd25e5f0e37ea934a8643175336653cb453ac681566",
+    "profile": "agentique-kerml-1.0-operational/7",
+    "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+    "scope": "SourceSnapshotWithEmptyPartialOverlay",
+    "coverage": "Incomplete",
+    "evaluated_rule_count": 43,
+    "unimplemented_or_not_evaluated_by_relevance": {
+      "PublicationCritical": 177,
+      "AuthorityBlocked": 8,
+      "ValidatorOnly": 27,
+      "ExecutionDependent": 3
+    },
+    "deferred_by_phase": [
+      "validateElementIsImpliedIncluded"
+    ],
+    "diagnostic_counts": {
+      "KQ_AMBIGUOUS_IMPLIED_NAME": 1,
+      "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 2,
+      "KQ_VARIABLE_FEATURING": 212,
+      "validateNamespaceDistinguishibility": 4
+    }
+  },
+  "audit_limitations": [
+    "Source snapshot with an empty partial overlay; no final expanded publication was measured.",
+    "The source audit predates the final conservative refusal to infer contextual snapshot domains from predicate eligibility. Final Rust checks cover that change.",
+    "Conformance report generation success is not conformance success."
+  ]
+}

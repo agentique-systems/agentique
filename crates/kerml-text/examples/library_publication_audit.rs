@@ -36,6 +36,7 @@ impl Checks {
     }
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let source_only = std::env::args().any(|a| a == "--source-only");
     let path = std::env::args()
         .find_map(|a| a.strip_prefix("--output=").map(str::to_owned))
         .ok_or("--output is required")?;
@@ -108,7 +109,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             unresolved += usize::from(answer.value.is_empty());
             ambiguous += usize::from(answer.value.len() > 1);
             if answer.completeness != Completeness::Complete || answer.value.len() != 1 {
-                ref_rows.push(json!({"relationship":r.relationship.to_string(),"name":r.name.segments,"completeness":format!("{:?}",answer.completeness)}));
+                ref_rows.push(json!({"relationship":r.relationship.to_string(),"name":r.name.segments,"completeness":format!("{:?}",answer.completeness),
+                    "diagnostics":answer.diagnostics.iter().map(|d| json!({"code":d.code,"subject":d.subject.to_string(),"message":d.message})).collect::<Vec<_>>() }));
             }
             references.query(answer);
         }
@@ -120,7 +122,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ids: Vec<_> = snapshot.model().elements().map(|r| r.id()).collect();
     let q = KerMlQueries::new(context.fork());
     let mut plan = q.plan_result_structure([]);
-    for (index, batch) in ids.chunks(128).enumerate() {
+    for (index, batch) in ids.chunks(128).enumerate().filter(|_| !source_only) {
         let q = KerMlQueries::new(context.fork());
         plan.merge(q.plan_result_structure(batch.iter().copied()))?;
         if index % 25 == 0 {
@@ -201,7 +203,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }).collect::<Vec<_>>();
                 witness_rows.push(json!({"path":witness["path"],"feature":feature.to_string(),"selected":null,"completeness":"Complete","owned_membership_sequence":sequence}));
             }
-            for (index, batch) in draft.references().chunks(16).enumerate() {
+            for (index, batch) in draft
+                .references()
+                .chunks(16)
+                .enumerate()
+                .filter(|_| !source_only)
+            {
                 let q = KerMlQueries::new(derived_context.fork());
                 for r in batch {
                     let answer = q.lookup_relationship_target(r.relationship, r.property, &r.name);
@@ -279,20 +286,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blockers: serde_json::Value = serde_json::from_slice(&std::fs::read(
         root.join("standards/kerml-1.0-operational-authority-blockers.json"),
     )?)?;
-    let report = json!({"format":"agentique-v7-corpus-publication-audit/1","profile":BaselineProfile::OPERATIONAL_V7.id(),
+    let report = json!({"format":"agentique-v7-corpus-publication-audit/2","profile":BaselineProfile::OPERATIONAL_V7.id(),
         "library_set":sources.content_set_id(),"canonical_records":ids.len(),"kernel_storage_valid":true,
         "required_references":references.count,"unresolved":unresolved,"incomplete":references.incomplete,
         "ambiguous":ambiguous,"invalid_references":references.invalid,"reference_findings":ref_rows,
         "reference_measurement_phase":"refined source Snapshot before expansion",
-        "expanded_references":{"count":expanded_references.count,"unresolved":expanded_unresolved,"incomplete":expanded_references.incomplete,"ambiguous":expanded_ambiguous,"invalid":expanded_references.invalid,"findings":expanded_ref_rows},
+        "expanded_references":if source_only { serde_json::Value::Null } else {json!({"count":expanded_references.count,"unresolved":expanded_unresolved,"incomplete":expanded_references.incomplete,"ambiguous":expanded_ambiguous,"invalid":expanded_references.invalid,"findings":expanded_ref_rows})},
         "expanded_occurrences_witnesses":witness_rows,"validation_batch_size":16,
         "planned_derived_records":planned,"derived_overlay_count":derived_count,"overlay_error":overlay_error,
-        "producer_complete":producer_complete,"producer_diagnostics":producer_diagnostics,
+        "producer_complete":!source_only && producer_complete,"producer_diagnostics":producer_diagnostics,
         "query_count":checks.count,"incomplete_queries":checks.incomplete,"invalid_queries":checks.invalid,
         "distinguishability":distinguishability,"validation_findings":diagnostics,"evaluated_rules":checks.rules,
         "authority_blockers":blockers["blockers"].as_array().unwrap().len(),
         "coverage_closed":false,"semantic_publication_accepted":false,"accepted_snapshot_ids":[],
-        "remaining":"Unimplemented structural producer/validation families and authority applicability proofs remain mandatory. Audit completion does not accept a publication.",
+        "validator_scope":if source_only { "SourceSnapshotWithEmptyPartialOverlay" } else { "PartialDerivationOverlay" },
+        "deferred_by_phase":["validateElementIsImpliedIncluded"],
+        "remaining":"Publication-critical query/producer closure and graph-affecting authority conflicts remain blocking. Validator-only coverage and exhaustive issue applicability are separate from publication (ADR 0022).",
         "execution_implemented":false});
     std::fs::OpenOptions::new()
         .write(true)

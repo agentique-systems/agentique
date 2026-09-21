@@ -3,7 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import { spawn, spawnSync } from "node:child_process";
 import { root, hash } from "./extract.mjs";
-const logDir = path.join(root, "verification/logs");
+const logDir = path.join(root, "verification/generated/logs");
 fs.mkdirSync(logDir, { recursive: true });
 const binary = path.join(
   root,
@@ -162,7 +162,7 @@ async function run(id, executable, args) {
     duration_ms: Date.now() - start,
     exit_code: code,
     result: code === 0 ? "pass" : "fail",
-    output: `verification/logs/${id}.txt`,
+    output: `verification/generated/logs/${id}.txt`,
   });
   fs.writeFileSync(
     path.join(root, "verification/progress.json"),

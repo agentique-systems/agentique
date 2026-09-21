@@ -1,5 +1,13 @@
 # Agentique architecture: two generations
 
+The publication convergence review separates strict kernel validity, canonical
+KerML publication and conformance coverage ([ADR 0022](adr/0022-kerml-publication-vs-conformance.md)).
+Incomplete validator coverage alone does not block a canonical semantic graph.
+Current publication remains incomplete because essential graph closure and two
+graph-affecting authority interpretations remain open; see the
+[convergence evidence](../verification/kerml-publication-convergence/README.md).
+New evidence follows [ADR 0021](adr/0021-verification-evidence-policy.md).
+
 The operational errata publication v3 milestone adds explicit published and
 Agentique operational KerML 1.0 profiles ([ADR 0014](adr/0014-operational-standard-errata-profiles.md)).
 Authored generation-2 KerML and standard-library construction explicitly use the

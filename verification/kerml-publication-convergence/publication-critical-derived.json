@@ -1,0 +1,29 @@
+{
+  "format": "agentique-publication-critical-derived/1",
+  "closure_complete": false,
+  "scope": "Required structural queries; unimplemented documentary and execution operations are not a zero-gap acceptance target.",
+  "operations": [
+    {"family":"Namespace members/importedMembership/aliases/visibility", "implementation":"crates/kerml-semantics/src/namespaces.rs", "closure":"blocked", "gap":"KERML11-75 changes imported Membership identities; Triggers distinguishability and inherited-name closure require current proof."},
+    {"family":"Ownership", "implementation":"crates/kerml-semantics/src/queries.rs", "closure":"implemented", "evidence":"crates/kerml-semantics/tests/foundation.rs"},
+    {"family":"Name/shortName/qualified identity", "implementation":"crates/kerml-semantics/src/naming.rs", "closure":"partial", "gap":"Distinct implied redefinition names remain explicitly incomplete; qualified paths must not become IDs."},
+    {"family":"Type supertypes and effective memberships/features", "implementation":"crates/kerml-semantics/src/inheritance.rs", "closure":"partial", "gap":"Full parameter/result suppression, chain interactions and corpus closure are not proved."},
+    {"family":"Feature type", "implementation":"crates/kerml-semantics/src/typing.rs", "closure":"partial", "gap":"Canonical graph closure is implemented; missing implied relationships can still change negative owner-typing answers."},
+    {"family":"Feature featuringType", "implementation":"crates/kerml-semantics/src/featuring.rs", "closure":"partial", "gap":"Typed snapshots role and general isFeaturingType predicate implemented; missing contextual snapshots remain incomplete."},
+    {"family":"Feature chainingFeature/featureTarget", "implementation":"crates/kerml-semantics/src/structural.rs", "closure":"partial", "gap":"Ordered canonical chain query exists; required producer population is not closed."},
+    {"family":"Feature crossFeature/ownedCrossFeature", "implementation":"crates/kerml-semantics/src/cross_features.rs", "closure":"blocked", "gap":"V7 selector is implemented; SelfLink required cross-feature domain has unresolved authority."},
+    {"family":"FeatureReferenceExpression referent", "implementation":"crates/kerml-semantics/src/result_structure.rs", "closure":"partial", "gap":"Existing referent/result producer requires complete reference and contextual structure."},
+    {"family":"Expression result / Function result", "implementation":"crates/kerml-semantics/src/structural.rs", "closure":"partial", "gap":"Unique structural result query exists; effective inherited result suppression requires corpus closure."},
+    {"family":"Connector relatedFeature/defaultFeaturingType", "implementation":"crates/kerml-semantics/src/featuring.rs", "closure":"partial", "gap":"Access/domain checks exist; complete canonical default-domain production is not proved."},
+    {"family":"Association source/target/related type", "implementation":"crates/kerml-semantics/src/implicit.rs", "closure":"partial", "gap":"Ordered end population exists; complete association-derived projection is not established."},
+    {"family":"Multiplicity structural bounds", "implementation":"crates/kerml-text/src/library/construction.rs", "closure":"partial", "gap":"Bound expression records retained; exact lower/upper/order query closure and domain production need proof, independently of runtime evaluation."}
+  ],
+  "producer_families": [
+    {"family":"Implied base specialization", "representation":"derived query facts in implicit.rs", "closure":"partial"},
+    {"family":"Positional parameter/end/result redefinition", "representation":"identity-preserving query facts in implicit.rs", "closure":"partial"},
+    {"family":"Result and FeatureValue/reference binding", "representation":"identity-bearing records in result_structure.rs", "closure":"partial"},
+    {"family":"Required feature chains", "representation":"ordered canonical relationships and query facts", "closure":"partial"},
+    {"family":"Required TypeFeaturing, including contextual snapshots", "representation":"canonical relationships or evidence-bearing derived facts", "closure":"partial"},
+    {"family":"Required Subsetting/Redefinition", "representation":"query facts unless relationship identity is observable", "closure":"partial"},
+    {"family":"Cross-feature structural relationships", "representation":"identity-bearing relationships where required", "closure":"authority-blocked"}
+  ]
+}
