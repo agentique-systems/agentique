@@ -47,6 +47,13 @@ mandatory-reference/capability audit. `--slice=all` shares immutable declaration
 preparation across those independent runs. With `--output`, use `{slice}` in the
 filename for multiple slices. `--inventory` reports actual dependency populations
 without running producers. Scoped reports cannot seal a publication.
+Comma-separated selections such as `--slice=A,B` share preparation for a bounded
+group. `--fail-fast` stops after its first failed slice so a shared defect can be
+fixed before spending time on the remaining groups.
+Every completed producer frontier is immediately written to an adjacent generated
+`.stages.jsonl` file, preserving diagnostics across watchdog stops. An incomplete
+producer fixed point produces a failed report before capability/reference audits;
+those skipped audits are explicitly marked `not_run`.
 
 Binding regeneration reuses the accepted publication instance:
 `canonical_publication --write-bindings` writes and immediately stale-checks the

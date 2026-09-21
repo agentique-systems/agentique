@@ -61,6 +61,13 @@ the table's test-body timings. All 203 semantic/text package tests passed at the
 preceding integration point; the index changes additionally passed the kernel and
 focused source-role/reference-equivalence suites.
 
+After the producer-phase fix, the same 60k gate passed again: 6.97 seconds in the
+test body (7.172 seconds monitored wall time), 1,050,771,456 peak private bytes,
+and identical deterministic work counters and derived fact counts. Separate
+small changing-context fixtures cover both producer phases and their ordering
+equivalence; this scale shape specifically exercises shared endpoint fan-out,
+crossing occurrences and bounded negative searches.
+
 The indexed real `publication_focus` gate passed in 256.609 seconds, with
 1,085,370,368 peak private bytes. From 29,140 declared records it produced 1,338
 Elements and two AssociationOccurrences in three frontiers, evaluating 1,389
@@ -145,3 +152,12 @@ its selected reference-binding domain from the enclosing Function to the
 InvocationExpression. The conflicting property is
 `TypeFeaturing::featuringType`, not an authority/profile decision. Independent
 small valuation and invocation fixtures exercise this phase dependency.
+
+After the phase correction, slice A closed its structural frontier and no longer
+reported the conflicting TypeFeaturing. Contextual binding frontiers added 4,383
+and 974 Elements, then reached a stable but Incomplete producer result. The
+watchdog stopped the command at its 4 GiB preflight limit: 461.344 seconds,
+4,335,812,608 peak private bytes, exit 124. Slice B did not run, and this is not a
+whole-corpus attempt. Stage diagnostics now stream to ignored storage, and failed
+producer closure skips later audits, so a resource stop cannot erase completed
+frontier diagnostics or trigger unnecessary acceptance work.

@@ -3,7 +3,7 @@ use agq_kerml_semantics::*;
 use agq_kernel::{provenance::Origin, value::Value};
 use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::json;
-use std::{collections::BTreeSet, path::Path};
+use std::{collections::BTreeSet, io::Write, path::Path};
 #[path = "support/publication_input.rs"]
 mod publication_input;
 use publication_input::{PublicationInput, PublicationScopeBoundary};
@@ -100,6 +100,14 @@ fn run_slice(
         return Ok(());
     }
     let mut completed_stages = Vec::new();
+    // Preserve producer diagnostics even when the workflow watchdog terminates
+    // a later frontier or audit. These observations are generated, not accepted
+    // publication evidence.
+    let mut stage_log = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path.with_extension("stages.jsonl"))?;
+    let mut stage_log_error = None;
     let closure = close_result_structure(
         &input.snapshot,
         PublicationClosureOptions {
@@ -123,15 +131,25 @@ fn run_slice(
                 stage.added_occurrences,
                 stage.completeness
             );
-            completed_stages.push(json!({
+            let observation = json!({
                 "round":stage.stage, "stratum":format!("{:?}",stage.stratum), "added_elements":stage.added_elements,
                 "added_occurrences":stage.added_occurrences,
                 "completeness":format!("{:?}",stage.completeness),
                 "counters":publication_metrics::counters(&stage.counters),
                 "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject.to_string(),"message":d.message})).collect::<Vec<_>>(),
-            }));
+            });
+            if let Err(error) =
+                writeln!(stage_log, "{observation}").and_then(|()| stage_log.sync_data())
+            {
+                eprintln!("slice {slice}: cannot persist stage diagnostics: {error}");
+                stage_log_error = Some(error);
+            }
+            completed_stages.push(observation);
         },
     );
+    if let Some(error) = stage_log_error {
+        return Err(error.into());
+    }
     let closure = match closure {
         Ok(closure) => closure,
         Err(error) => {
@@ -149,6 +167,25 @@ fn run_slice(
             return Err(error.into());
         }
     };
+    if !closure.converged || closure.completeness != Completeness::Complete {
+        std::fs::write(
+            &path,
+            serde_json::to_vec_pretty(&json!({
+                "format":"agentique-publication-slice/1", "slice":slice,
+                "seed_documents":documents, "documents":document_counts,
+                "subjects":subjects.len(), "source_content_set":sources.content_set_id(),
+                "reference_refinement":input.refinement, "passed":false,
+                "failure_phase":"producer_closure", "converged":closure.converged,
+                "producer_completeness":format!("{:?}",closure.completeness),
+                "counters":publication_metrics::counters(&closure.counters),
+                "capability_audit":"not_run", "mandatory_reference_audit":"not_run",
+                "stages":completed_stages,
+            }))?,
+        )?;
+        return Err(
+            format!("slice {slice} producer closure is incomplete; audits deferred").into(),
+        );
+    }
     let context = input.context(&closure.overlay)?;
     let audit_subjects: BTreeSet<_> = subjects
         .iter()

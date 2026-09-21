@@ -1188,6 +1188,217 @@
         "min_free_disk_bytes": 1073741824
       },
       "output_sha256": "91bab74d09bd2190688fee1ff7e3e8028392a5e79f51e58e896b029ef287b34f"
+    },
+    {
+      "name": "semantic-scale-strata-build",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "source_commit": "5e58b7b7c51ae6e93062221ae1fd3823ce242da9",
+      "working_changes_sha256": "68236fb71c14133ce4f03aa26df301bc8c0fd8ba8dd2209ff2e33ce09a0c0de5",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-scale-strata-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 12932,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 3234762752,
+      "safety_stop": null,
+      "duration_seconds": 257.266,
+      "peak_rss_bytes": 1784479744,
+      "peak_private_bytes": 2381500416,
+      "samples": 258,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "dc3aa5eeb93696daa099559608955ef71980bb812d78085d0fceaf39092b6656"
+    },
+    {
+      "name": "semantic-scale-strata-sixty-thousand",
+      "command": [
+        "target/release/deps/agq_kerml_semantics-9a6336e6173c6a10.exe",
+        "publication_scale_sixty_thousand_subjects",
+        "--ignored",
+        "--nocapture"
+      ],
+      "source_commit": "6c9ecefbaa18202627d9d8c6c14aa8f285646b1d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-scale-strata-sixty-thousand",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 1976,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 3242119168,
+      "safety_stop": null,
+      "duration_seconds": 7.172,
+      "peak_rss_bytes": 918802432,
+      "peak_private_bytes": 1050771456,
+      "samples": 8,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "ac4208ef7d06c0f57e91da49495a01c4ee589acf9018f355f20f1abf48a1cd8e"
+    },
+    {
+      "name": "publication-strata-examples-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_focus",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication"
+      ],
+      "source_commit": "6c9ecefbaa18202627d9d8c6c14aa8f285646b1d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-strata-examples-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 31704,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 3235561472,
+      "safety_stop": null,
+      "duration_seconds": 134.156,
+      "peak_rss_bytes": 1166196736,
+      "peak_private_bytes": 1606811648,
+      "samples": 135,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "9dafc861e60cc3b8d4b3f280ffd3713da86d6f042ea22af2cc68a1518e10acc5"
+    },
+    {
+      "name": "publication-slice-selection-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices"
+      ],
+      "source_commit": "c74a56b351b5b56d9c8ae36985eeb60600085052",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-slice-selection-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 17120,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 3238764544,
+      "safety_stop": null,
+      "duration_seconds": 10.047,
+      "peak_rss_bytes": 268529664,
+      "peak_private_bytes": 340156416,
+      "samples": 11,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "4cd2256d1110be8c09d8e1d23c002a256d6813ad10a69aee12a9801ba6ae5424"
+    },
+    {
+      "name": "publication-slices-strata-ab",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=A,B",
+        "--fail-fast",
+        "--output=verification/generated/overnight-convergence/slice-strata-{slice}.json"
+      ],
+      "source_commit": "c74a56b351b5b56d9c8ae36985eeb60600085052",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "slice (?P<slice>[A-E]) round (?P<round>\\d+): (?P<evaluated>\\d+)/(?P<subjects>\\d+)",
+      "output": "verification/generated/overnight-convergence/publication-slices-strata-ab",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 21576,
+      "monitor_error": null,
+      "last_progress": {
+        "slice": "A",
+        "round": "5",
+        "evaluated": "1112",
+        "subjects": "1112"
+      },
+      "minimum_free_disk_bytes": 3240382464,
+      "safety_stop": "private_memory",
+      "duration_seconds": 461.344,
+      "peak_rss_bytes": 4002439168,
+      "peak_private_bytes": 4335812608,
+      "samples": 461,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 4294967296,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "2abd83a0fe20f08100f3cab4ad2727408b3ed43a422ac4d9980770873ceee4dd"
     }
   ]
 }
