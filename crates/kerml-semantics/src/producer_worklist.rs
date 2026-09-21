@@ -161,7 +161,9 @@ pub struct PublicationClosure {
 #[derive(Default)]
 struct DependencyIndex {
     readers: BTreeMap<InvalidationKey, BTreeSet<ElementId>>,
-    subjects: BTreeMap<ElementId, BTreeSet<InvalidationKey>>,
+    // A subject's reads are replaced atomically, never mutated in place. Retain
+    // their sorted unique keys densely instead of a second tree per subject.
+    subjects: BTreeMap<ElementId, Box<[InvalidationKey]>>,
     edges: usize,
 }
 impl DependencyIndex {
@@ -183,8 +185,9 @@ impl DependencyIndex {
         keys: BTreeSet<InvalidationKey>,
         counters: &mut PublicationCounters,
     ) {
+        let keys: Box<[_]> = keys.into_iter().collect();
         self.edges += keys.len();
-        if let Some(previous) = self.subjects.insert(subject, keys.clone()) {
+        if let Some(previous) = self.subjects.remove(&subject) {
             self.edges -= previous.len();
             for key in previous {
                 if let Some(readers) = self.readers.get_mut(&key) {
@@ -195,9 +198,10 @@ impl DependencyIndex {
                 }
             }
         }
-        for key in keys {
+        for &key in &keys {
             self.readers.entry(key).or_default().insert(subject);
         }
+        self.subjects.insert(subject, keys);
         counters.active_dependency_subjects = self.subjects.len();
         counters.active_dependency_keys = self.readers.len();
         counters.active_dependency_edges = self.edges;
@@ -569,7 +573,11 @@ mod dependency_index_tests {
             counters.active_dependency_edges
         );
         assert_eq!(
-            index.subjects.values().map(BTreeSet::len).sum::<usize>(),
+            index
+                .subjects
+                .values()
+                .map(|keys| keys.len())
+                .sum::<usize>(),
             counters.active_dependency_edges
         );
         assert_eq!(
