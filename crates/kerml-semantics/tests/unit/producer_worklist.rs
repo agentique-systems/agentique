@@ -258,6 +258,16 @@ fn compare(
     let a = expected_q.audit_expanded_capabilities(population.iter().copied());
     let b = actual_q.audit_publication_capabilities(population.iter().copied());
     assert_eq!(a.checked_items, b.checked_items);
+    assert_eq!(
+        b.checked_items[&PublicationFamily::IdentityProvenance],
+        actual.overlay.facts().count()
+    );
+    if bindings.is_some() {
+        assert_eq!(
+            b.checked_items[&PublicationFamily::StandardBindings],
+            StandardRole::ALL.len()
+        );
+    }
     assert_eq!(a.failures, b.failures);
     for subject in population {
         if actual_q.is(subject, c::FEATURE) {
@@ -374,7 +384,7 @@ fn publication_scale_sixty_thousand_subjects() {
     // derived Feature/FeatureChaining subjects without a global corpus rescan.
     f.create(1, c::CLASSIFIER);
     f.create(2, c::CLASSIFIER);
-    const GROUPS: u128 = 3000;
+    const GROUPS: u128 = 4000;
     for group in 0..GROUPS {
         let n = 100 + group * 16;
         f.create(n, c::ASSOCIATION);
@@ -415,7 +425,9 @@ fn publication_scale_sixty_thousand_subjects() {
     );
     assert!(result.counters.new_elements_proposed >= 20000);
     assert!(result.counters.new_association_occurrences_proposed >= GROUPS as usize);
-    assert!(result.counters.subjects_skipped_by_applicability >= 32998);
+    assert!(
+        result.counters.subjects_skipped_by_applicability >= (60000 - (GROUPS * 9 + 2)) as usize
+    );
     assert!(result.counters.fixed_point_rounds > 1);
     assert!(result.counters.existing_proof_sets_reused > 0);
     assert!(

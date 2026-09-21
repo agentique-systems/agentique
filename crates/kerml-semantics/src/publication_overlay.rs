@@ -276,37 +276,7 @@ impl<'a> CanonicalPublicationBuilder<'a> {
                 checks.failures.values().map(BTreeSet::len).sum(),
             );
         }
-        checks
-            .counts
-            .insert(PublicationFamily::StandardBindings, StandardRole::ALL.len());
-        for (fact, explanation) in overlay.facts() {
-            if crate::result_structure::structural_rule_profile(explanation.rule)
-                != Some(BaselineProfile::OPERATIONAL_V8)
-            {
-                let subject = match fact {
-                    agq_kernel::provenance::FactKey::Element(id) => id,
-                    agq_kernel::provenance::FactKey::Property { element, .. } => element,
-                    agq_kernel::provenance::FactKey::AssociationOccurrence(id) => *overlay
-                        .model()
-                        .association_occurrence(id)
-                        .expect("kernel fact")
-                        .ends()
-                        .values()
-                        .next()
-                        .expect("association ends"),
-                };
-                checks.problem(
-                    PublicationFamily::IdentityProvenance,
-                    subject,
-                    "KQ_PUBLICATION_RULE",
-                    "Unknown publication producer profile",
-                );
-            }
-            *checks
-                .counts
-                .entry(PublicationFamily::IdentityProvenance)
-                .or_default() += 1;
-        }
+        checks.standard_bindings(&KerMlQueries::for_production(context.fork()));
         if !checks.failures.is_empty() {
             return Err(PublicationOverlayError::IncompleteCapabilities(
                 checks.failures,
@@ -338,6 +308,7 @@ impl KerMlQueries<'_> {
         subjects: impl IntoIterator<Item = ElementId>,
     ) -> PublicationCapabilityReport {
         let mut checks = PublicationChecks::default();
+        checks.standard_bindings(self);
         for subject in subjects {
             checks.subject(self, subject);
         }
@@ -354,6 +325,7 @@ impl KerMlQueries<'_> {
     ) -> PublicationCapabilityReport {
         let q = KerMlQueries::for_production(self.context.fork());
         let mut checks = PublicationChecks::default();
+        checks.standard_bindings(&q);
         for subject in subjects {
             checks.subject(&q, subject);
         }
@@ -366,18 +338,62 @@ impl KerMlQueries<'_> {
 }
 
 struct PublicationChecks {
+    provenance_checked: BTreeSet<FactKey>,
     counts: BTreeMap<PublicationFamily, usize>,
     failures: BTreeMap<PublicationFamily, BTreeSet<Diagnostic>>,
 }
 impl Default for PublicationChecks {
     fn default() -> Self {
         Self {
+            provenance_checked: BTreeSet::new(),
             counts: PublicationFamily::ALL.into_iter().map(|f| (f, 0)).collect(),
             failures: BTreeMap::new(),
         }
     }
 }
 impl PublicationChecks {
+    fn standard_bindings(&mut self, q: &KerMlQueries<'_>) {
+        // A scoped audit without a library dependency makes no binding claim.
+        // Attached bindings were validated against this exact semantic context.
+        if q.context().standard_bindings.is_some() {
+            for role in StandardRole::ALL {
+                let answer = q.standard_role(role);
+                self.answer(
+                    PublicationFamily::StandardBindings,
+                    answer.value.unwrap_or(ElementId::from_u128(0)),
+                    answer,
+                );
+            }
+        }
+    }
+    fn provenance(
+        &mut self,
+        q: &KerMlQueries<'_>,
+        fact: FactKey,
+        subject: ElementId,
+        origin: &Origin,
+    ) {
+        let Origin::Derived(explanation) = origin else {
+            return;
+        };
+        if !self.provenance_checked.insert(fact) {
+            return;
+        }
+        *self
+            .counts
+            .entry(PublicationFamily::IdentityProvenance)
+            .or_default() += 1;
+        if crate::result_structure::structural_rule_profile(explanation.rule)
+            != Some(q.context().options.baseline_profile)
+        {
+            self.problem(
+                PublicationFamily::IdentityProvenance,
+                subject,
+                "KQ_PUBLICATION_RULE",
+                "Unknown publication producer profile",
+            );
+        }
+    }
     fn answer<T>(&mut self, family: PublicationFamily, subject: ElementId, answer: QueryResult<T>) {
         *self.counts.entry(family).or_default() += 1;
         if answer.completeness != Completeness::Complete {
@@ -408,6 +424,32 @@ impl PublicationChecks {
     }
     fn subject(&mut self, q: &KerMlQueries<'_>, subject: ElementId) {
         use PublicationFamily as F;
+        if let Some(record) = q.model().element(subject) {
+            self.provenance(q, FactKey::Element(subject), subject, record.origin());
+            for (property, slot) in record.slots() {
+                self.provenance(
+                    q,
+                    FactKey::Property {
+                        element: subject,
+                        property,
+                    },
+                    subject,
+                    slot.origin(),
+                );
+            }
+            for occurrence in q.model().incident_associations(subject) {
+                self.provenance(
+                    q,
+                    FactKey::AssociationOccurrence(occurrence.id()),
+                    *occurrence
+                        .ends()
+                        .values()
+                        .next()
+                        .expect("canonical occurrence"),
+                    occurrence.origin(),
+                );
+            }
+        }
         if q.is(subject, c::NAMESPACE) {
             self.answer(
                 F::NamespaceImports,
