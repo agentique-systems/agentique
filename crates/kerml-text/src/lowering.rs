@@ -21,8 +21,8 @@ pub struct ReferenceAssertion {
     pub name: QualifiedName,
     pub origin: SourceOrigin,
     pub resolution: QueryResult<Resolution>,
-    alias: Option<String>,
-    visibility: agq_kerml_syntax::Visibility,
+    pub(crate) alias: Option<String>,
+    pub(crate) visibility: agq_kerml_syntax::Visibility,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FrontendDiagnosticDomain {
@@ -689,8 +689,16 @@ fn resolve_assertion(
     name: &QualifiedName,
     kind: ReferenceKind,
 ) -> QueryResult<Resolution> {
-    if matches!(kind, ReferenceKind::Alias | ReferenceKind::NamespaceImport) {
-        queries.resolve_name(specific, name, expected(kind), false)
+    if matches!(
+        kind,
+        ReferenceKind::Alias | ReferenceKind::NamespaceImport | ReferenceKind::MembershipImport
+    ) {
+        queries.resolve_name(
+            specific,
+            name,
+            expected(kind),
+            kind == ReferenceKind::MembershipImport,
+        )
     } else if kind == ReferenceKind::Redefinition {
         queries.resolve_redefinition_reference(specific, name)
     } else {
@@ -698,13 +706,17 @@ fn resolve_assertion(
     }
 }
 fn specialization_reference(kind: ReferenceKind) -> bool {
-    !matches!(kind, ReferenceKind::Alias | ReferenceKind::NamespaceImport)
+    !matches!(
+        kind,
+        ReferenceKind::Alias | ReferenceKind::NamespaceImport | ReferenceKind::MembershipImport
+    )
 }
 fn expected(kind: ReferenceKind) -> MetaclassId {
     match kind {
         ReferenceKind::Specialization | ReferenceKind::Typing => c::TYPE,
         ReferenceKind::Alias => c::ELEMENT,
         ReferenceKind::NamespaceImport => c::NAMESPACE,
+        ReferenceKind::MembershipImport => c::MEMBERSHIP,
         _ => c::FEATURE,
     }
 }
@@ -716,6 +728,7 @@ fn relation_class(kind: ReferenceKind) -> MetaclassId {
         ReferenceKind::Redefinition => c::REDEFINITION,
         ReferenceKind::Alias => c::MEMBERSHIP,
         ReferenceKind::NamespaceImport => c::NAMESPACE_IMPORT,
+        ReferenceKind::MembershipImport => c::MEMBERSHIP_IMPORT,
     }
 }
 
@@ -920,7 +933,14 @@ fn add_relationships(
                         &r.origin,
                     );
                 }
-                (p::NAMESPACE_IMPORT_IMPORTED_NAMESPACE, p::IMPORT_VISIBILITY)
+                (
+                    if r.kind == ReferenceKind::MembershipImport {
+                        p::MEMBERSHIP_IMPORT_IMPORTED_MEMBERSHIP
+                    } else {
+                        p::NAMESPACE_IMPORT_IMPORTED_NAMESPACE
+                    },
+                    p::IMPORT_VISIBILITY,
+                )
             };
             builder.visibility(r.relationship, visibility_property, r.visibility, &r.origin);
             builder.reference(r.relationship, target_property, target, &r.origin);
@@ -968,7 +988,7 @@ fn add_relationships(
     }
     builder.finish()
 }
-fn publish(previous: &Snapshot, desired: &Snapshot) -> Result<Snapshot, ModelError> {
+pub(crate) fn publish(previous: &Snapshot, desired: &Snapshot) -> Result<Snapshot, ModelError> {
     let mut changes = previous.change_set();
     for old in previous.model().association_occurrences() {
         if desired.model().association_occurrence(old.id()).is_none() {

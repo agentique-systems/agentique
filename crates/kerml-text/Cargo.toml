@@ -10,6 +10,7 @@ agq-kernel = { path = "../kernel" }
 agq-kerml = { path = "../kerml" }
 agq-kerml-semantics.workspace = true
 agq-kerml-syntax = { path = "../kerml-syntax" }
+agq-sysml = { path = "../sysml" }
 thiserror.workspace = true
 agq-standard-libraries = { path = "../standard-libraries" }
 uuid.workspace = true

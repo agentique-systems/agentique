@@ -12,12 +12,72 @@ use agq_kernel::{
 };
 use agq_standard_libraries::LibraryElementRole;
 use std::sync::Arc;
+#[path = "sysml_construction.rs"]
+mod sysml_construction;
+use sysml_construction::sysml_class;
+
+pub(crate) fn check_supported_sysml(syntax: &production::Document) -> Result<(), LibraryLoadError> {
+    for node in syntax.nodes() {
+        sysml_class(node)?;
+    }
+    Ok(())
+}
 
 struct Record {
     class: MetaclassId,
     origin: DeclaredOrigin,
-    source: SourceOrigin,
+    source: Option<SourceOrigin>,
     slots: BTreeMap<PropertyId, SlotValue>,
+}
+/// Shared canonical construction input. Authored identities follow reconciled
+/// syntax nodes; pinned library identities retain their content/role locators.
+pub(crate) struct SourceInput<'a> {
+    pub syntax: &'a production::Document,
+    pub library: Option<&'a LibraryDocument>,
+    pub sysml: bool,
+}
+impl SourceInput<'_> {
+    fn origin(&self, source: SourceOrigin) -> DeclaredOrigin {
+        self.library.map_or_else(
+            || DeclaredOrigin::Authored {
+                source: Some(source),
+            },
+            LibraryDocument::origin,
+        )
+    }
+    fn element_id(&self, node: Node<'_>, ordinal: u32) -> Result<ElementId, LibraryLoadError> {
+        if let Some(library) = self.library {
+            Ok(library.element_id(
+                node.range(),
+                LibraryElementRole::Canonical {
+                    role: node.kind().name(),
+                    ordinal,
+                },
+            )?)
+        } else {
+            Ok(authored_id(node.id(), node.kind().name()))
+        }
+    }
+    fn owned_id(
+        &self,
+        source: &SourceOrigin,
+        owner: ElementId,
+        role: &str,
+    ) -> Result<ElementId, LibraryLoadError> {
+        if let Some(library) = self.library {
+            Ok(library.owned_element_id(source.range, owner, role)?)
+        } else {
+            Ok(ElementId::from_u128(
+                uuid::Uuid::new_v5(&uuid::Uuid::from_u128(owner.as_u128()), role.as_bytes())
+                    .as_u128(),
+            ))
+        }
+    }
+}
+fn authored_id(syntax: agq_kernel::SyntaxNodeId, role: &str) -> ElementId {
+    ElementId::from_u128(
+        uuid::Uuid::new_v5(&uuid::Uuid::from_u128(syntax.as_u128()), role.as_bytes()).as_u128(),
+    )
 }
 struct Builder {
     profile: agq_kerml::BaselineProfile,
@@ -26,6 +86,7 @@ struct Builder {
     order: Vec<ElementId>,
     references: Vec<PendingLibraryReference>,
     roots: Vec<ElementId>,
+    parents: BTreeMap<ElementId, ElementId>,
 }
 #[derive(Clone, Copy)]
 struct Job<'a> {
@@ -41,17 +102,41 @@ pub(super) fn construct(
     resolved: &BTreeMap<(ElementId, PropertyId), ElementId>,
     profile: agq_kerml::BaselineProfile,
 ) -> Result<LibraryDraft, LibraryLoadError> {
+    let base = Snapshot::new(Arc::new(
+        agq_kerml::registry_for_profile(profile)
+            .map_err(|e| LibraryLoadError::Interpretation(e.to_string()))?,
+    ));
+    let inputs: Vec<_> = inputs
+        .iter()
+        .map(|input| SourceInput {
+            syntax: &input.syntax,
+            library: Some(&input.source),
+            sysml: false,
+        })
+        .collect();
+    construct_on(&inputs, resolved, profile, base, None)
+}
+
+pub(crate) fn construct_on(
+    inputs: &[SourceInput<'_>],
+    resolved: &BTreeMap<(ElementId, PropertyId), ElementId>,
+    profile: agq_kerml::BaselineProfile,
+    base: Snapshot,
+    project_root: Option<(ElementId, DeclaredOrigin)>,
+) -> Result<LibraryDraft, LibraryLoadError> {
     let mut builder = Builder {
         profile,
-        base: Snapshot::new(Arc::new(
-            agq_kerml::registry_for_profile(profile)
-                .map_err(|e| LibraryLoadError::Interpretation(e.to_string()))?,
-        )),
+        base,
         records: BTreeMap::new(),
         order: vec![],
         references: vec![],
         roots: vec![],
+        parents: BTreeMap::new(),
     };
+    if let Some((root, origin)) = &project_root {
+        builder.create(*root, c::NAMESPACE, origin.clone(), None)?;
+        builder.roots.push(*root);
+    }
     for input in inputs {
         let mut ordinals = BTreeMap::<(u64, u64, &'static str), u32>::new();
         let mut jobs: Vec<_> = input
@@ -59,7 +144,7 @@ pub(super) fn construct(
             .roots()
             .map(|node| Job {
                 node,
-                owner: None,
+                owner: project_root.as_ref().map(|(root, _)| *root),
                 target: None,
                 expression: false,
                 inline_chain: false,
@@ -80,7 +165,9 @@ pub(super) fn construct(
             if node.kind() == P::OwnedExpression {
                 job.expression = true;
             }
-            let class = if node.kind() == P::Import {
+            let class = if node.kind() == P::RootNamespace && project_root.is_some() {
+                None
+            } else if node.kind() == P::Import {
                 let declaration = node
                     .child(P::ImportDeclaration)
                     .and_then(|n| n.children().next())
@@ -94,6 +181,8 @@ pub(super) fn construct(
                 || (node.kind() == P::FeatureChain && job.inline_chain)
             {
                 None
+            } else if input.sysml {
+                sysml_class(node)?
             } else {
                 vocabulary::class(node)
             };
@@ -101,15 +190,9 @@ pub(super) fn construct(
                 let ordinal = ordinals
                     .entry((node.range().start(), node.range().end(), node.kind().name()))
                     .or_default();
-                let id = input.source.element_id(
-                    node.range(),
-                    LibraryElementRole::Canonical {
-                        role: node.kind().name(),
-                        ordinal: *ordinal,
-                    },
-                )?;
+                let id = input.element_id(node, *ordinal)?;
                 *ordinal += 1;
-                builder.create(id, class, input.source.origin(), node.origin())?;
+                builder.create(id, class, input.origin(node.origin()), Some(node.origin()))?;
                 if let Some(owner) = job.owner {
                     let owner_class = builder.records[&owner].class;
                     let property = if builder.is_class(owner_class, c::RELATIONSHIP)
@@ -121,6 +204,9 @@ pub(super) fn construct(
                         p::ELEMENT_OWNED_RELATIONSHIP
                     };
                     builder.link(owner, property, id);
+                    if input.sysml && builder.is_class(class, agq_sysml::classes::USAGE) {
+                        builder.usage_composite_default(id, owner)?;
+                    }
                     // 8.2 ConnectorEndMember/FlowEndMember establish an end
                     // even when no explicit "end" token occurs. This applies
                     // only to the newly constructed owned Feature. Reference
@@ -186,8 +272,15 @@ pub(super) fn construct(
                             c::FEATURE,
                         ),
                     ] {
-                        if class == relation
+                        if builder.is_class(class, relation)
                             && builder.is_class(owner_class, source_class)
+                            && builder
+                                .base
+                                .model()
+                                .registry()
+                                .resolve_property(class, source_property)
+                                .map_err(agq_kernel::ModelError::from)?
+                                .is_some_and(|property| !property.derived)
                             && !matches!(
                                 node.kind(),
                                 P::Conjugation
@@ -207,6 +300,9 @@ pub(super) fn construct(
                 job.inline_chain = false;
             }
             if let Some(owner) = job.owner {
+                if input.sysml {
+                    builder.interpret_sysml(node, owner, &mut job)?;
+                }
                 builder.interpret(node, owner, &mut job)?;
             }
             let children: Vec<_> = node.children().collect();
@@ -228,6 +324,7 @@ pub(super) fn construct(
             jobs.extend(next.into_iter().rev());
         }
     }
+    builder.sysml_structural_completion(inputs)?;
     for ((id, property), target) in resolved {
         builder.set(*id, *property, Value::Reference(*target))?;
     }
@@ -260,7 +357,7 @@ impl Builder {
         self.records[&expression].slots.get(&p::ELEMENT_OWNED_RELATIONSHIP)
             .is_some_and(|slot| slot.values().any(|v| matches!(v, Value::Reference(id) if self.is_class(self.records[id].class,c::RETURN_PARAMETER_MEMBERSHIP))))
     }
-    fn expression_results(&mut self, inputs: &[Input]) -> Result<(), LibraryLoadError> {
+    fn expression_results(&mut self, inputs: &[SourceInput<'_>]) -> Result<(), LibraryLoadError> {
         let productions: BTreeMap<_, _> = inputs
             .iter()
             .flat_map(|input| input.syntax.nodes().map(|node| (node.id(), node.kind())))
@@ -277,7 +374,8 @@ impl Builder {
             }
             if self.records[&expression]
                 .source
-                .syntax_node
+                .as_ref()
+                .and_then(|source| source.syntax_node)
                 .and_then(|id| productions.get(&id))
                 .is_some_and(|kind| {
                     matches!(kind, P::Expression | P::BooleanExpression | P::Invariant)
@@ -291,22 +389,28 @@ impl Builder {
             // validateExpressionResultParameterMembership and the result-owning
             // constraints require a result even for abbreviated literal/primary
             // notation. These are structural children, not executable evaluation.
-            let source = self.records[&expression].source.clone();
+            let source = self.records[&expression]
+                .source
+                .clone()
+                .expect("expression source");
             let document = &inputs
                 .iter()
-                .find(|i| i.source.document() == source.document)
-                .expect("source document")
-                .source;
-            let membership =
-                document.owned_element_id(source.range, expression, "result-membership")?;
-            let feature = document.owned_element_id(source.range, expression, "result-feature")?;
+                .find(|i| i.syntax.document() == source.document)
+                .expect("source document");
+            let membership = document.owned_id(&source, expression, "result-membership")?;
+            let feature = document.owned_id(&source, expression, "result-feature")?;
             self.create(
                 membership,
                 c::RETURN_PARAMETER_MEMBERSHIP,
-                document.origin(),
-                source.clone(),
+                document.origin(source.clone()),
+                Some(source.clone()),
             )?;
-            self.create(feature, c::FEATURE, document.origin(), source)?;
+            self.create(
+                feature,
+                c::FEATURE,
+                document.origin(source.clone()),
+                Some(source),
+            )?;
             self.set(membership, p::RELATIONSHIP_IS_IMPLIED, Value::Boolean(true))?;
             self.enumeration(feature, p::FEATURE_DIRECTION, "out")?;
             self.link(expression, p::ELEMENT_OWNED_RELATIONSHIP, membership);
@@ -331,7 +435,7 @@ impl Builder {
         id: ElementId,
         class: MetaclassId,
         origin: DeclaredOrigin,
-        source: SourceOrigin,
+        source: Option<SourceOrigin>,
     ) -> Result<(), LibraryLoadError> {
         if self
             .records
@@ -376,8 +480,9 @@ impl Builder {
                 .base
                 .model()
                 .registry()
-                .is_legal(class, property)
+                .resolve_property(class, property)
                 .expect("property")
+                .is_some_and(|property| !property.derived)
             {
                 self.set(id, property, Value::Boolean(false))?;
             }
@@ -445,6 +550,12 @@ impl Builder {
         self.set(id, property, Value::Enumeration(literal))
     }
     fn link(&mut self, owner: ElementId, property: PropertyId, target: ElementId) {
+        if matches!(
+            property,
+            p::ELEMENT_OWNED_RELATIONSHIP | p::RELATIONSHIP_OWNED_RELATED_ELEMENT
+        ) {
+            self.parents.insert(target, owner);
+        }
         let slot = self
             .records
             .get_mut(&owner)
@@ -729,7 +840,9 @@ impl Builder {
         for id in &self.order {
             let record = &self.records[id];
             changes.create(*id, record.class, record.origin.clone());
-            source_map.insert(FactKey::Element(*id), record.source.clone());
+            if let Some(source) = &record.source {
+                source_map.insert(FactKey::Element(*id), source.clone());
+            }
             for (&property, slot) in &record.slots {
                 if !registry
                     .supports_slot_storage(property)
@@ -764,26 +877,31 @@ impl Builder {
                         BTreeMap::new(),
                         record.origin.clone(),
                     );
-                    source_map.insert(FactKey::AssociationOccurrence(link), record.source.clone());
+                    if let Some(source) = &record.source {
+                        source_map.insert(FactKey::AssociationOccurrence(link), source.clone());
+                    }
                     continue;
                 }
                 let value = slot.clone();
                 changes.set(*id, property, value, record.origin.clone());
-                source_map.insert(
-                    FactKey::Property {
-                        element: *id,
-                        property,
-                    },
-                    reference_sources
-                        .get(&(*id, property))
-                        .copied()
-                        .unwrap_or(&record.source)
-                        .clone(),
-                );
+                if let Some(source) = reference_sources
+                    .get(&(*id, property))
+                    .copied()
+                    .or(record.source.as_ref())
+                {
+                    source_map.insert(
+                        FactKey::Property {
+                            element: *id,
+                            property,
+                        },
+                        source.clone(),
+                    );
+                }
             }
         }
         let candidate = self.base.preview(&changes)?;
         Ok(LibraryDraft {
+            base: self.base,
             profile: self.profile,
             candidate,
             source_map,

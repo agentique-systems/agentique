@@ -3,10 +3,10 @@
 //! Construction is explicitly unpublished until structural references resolve.
 //! It is not a validated standard-library binding or an alternative model store.
 mod binding_manifest;
-mod construction;
+pub(crate) mod construction;
 pub mod corrections;
 mod publication;
-mod refinement;
+pub(crate) mod refinement;
 mod vocabulary;
 pub use publication::*;
 pub use refinement::{ReferenceRefinementRound, ReferenceRefinementStrategy};
@@ -38,6 +38,7 @@ pub type LibrarySourceMap = BTreeMap<FactKey, SourceOrigin>;
 /// An unpublished construction. Callers must not treat this as validated libraries.
 #[derive(Debug)]
 pub struct LibraryDraft {
+    base: Snapshot,
     candidate: agq_kernel::ConstructionView,
     profile: agq_kerml::BaselineProfile,
     source_map: LibrarySourceMap,
@@ -51,11 +52,12 @@ impl LibraryDraft {
     /// semantic producer closure, reference resolution or canonical publication.
     pub fn strict_snapshot(&self) -> Result<Snapshot, LibraryLoadError> {
         use agq_kernel::provenance::Origin;
-        let empty = Snapshot::new(std::sync::Arc::new(
-            self.candidate.model().registry().clone(),
-        ));
+        let empty = self.base.clone();
         let mut changes = empty.change_set();
         for record in self.candidate.model().elements() {
+            if empty.is_dependency_element(record.id()) {
+                continue;
+            }
             let Origin::Declared(origin) = record.origin() else {
                 return Err(LibraryLoadError::Interpretation(
                     "Derived source record".into(),
@@ -72,6 +74,13 @@ impl LibraryDraft {
             }
         }
         for occurrence in self.candidate.model().association_occurrences() {
+            if empty
+                .model()
+                .association_occurrence(occurrence.id())
+                .is_some()
+            {
+                continue;
+            }
             let origin = occurrence.declared_origin().ok_or_else(|| {
                 LibraryLoadError::Interpretation("Derived source occurrence".into())
             })?;

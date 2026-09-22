@@ -177,7 +177,7 @@ fn context_changes(
     !QueryReadSet::context_compatible(previous, current)
 }
 
-pub(super) fn refine(
+pub(crate) fn refine(
     mut construct: impl FnMut(&Endpoints) -> Result<LibraryDraft, LibraryLoadError>,
     mut query: impl for<'m> FnMut(&'m LibraryDraft) -> Result<KerMlStatusQueries<'m>, LibraryLoadError>,
     strategy: ReferenceRefinementStrategy,

@@ -3,6 +3,7 @@
 pub mod library;
 mod lowering;
 mod project;
+pub mod sysml;
 pub use project::*;
 
 pub use agq_kerml_syntax as syntax;

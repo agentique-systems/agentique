@@ -165,6 +165,7 @@ impl Fixture {
         }
         LibraryDraft {
             candidate: self.base.preview(&self.changes).unwrap(),
+            base: self.base,
             profile: BaselineProfile::OPERATIONAL_V8,
             source_map: BTreeMap::new(),
             roots: vec![id(1), id(6)],
