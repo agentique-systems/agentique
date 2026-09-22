@@ -572,7 +572,11 @@ fn negative_incoming_dependency_catches_creation_and_retargeting() {
     assert!(old.value.is_empty());
     assert!(
         old.search_dependencies
-            .contains(&SearchDependency::Incoming { target: A })
+            .contains(&SearchDependency::SourceRelationships {
+                source: A,
+                class: c::SPECIALIZATION,
+                property: p::SPECIALIZATION_SPECIFIC,
+            })
     );
     let mut change = s.change_set();
     change.set(id(20), p::SPECIALIZATION_SPECIFIC, reference(A), origin());
@@ -938,7 +942,11 @@ fn adding_redefinition_invalidates_effective_feature_evidence() {
     assert_eq!(old.value, vec![FA, FB]);
     assert!(
         old.search_dependencies
-            .contains(&SearchDependency::Incoming { target: FB })
+            .contains(&SearchDependency::SourceRelationships {
+                source: FB,
+                class: c::REDEFINITION,
+                property: p::REDEFINITION_REDEFINING_FEATURE,
+            })
     );
     let mut change = s.change_set();
     change.create(id(40), c::REDEFINITION, origin());

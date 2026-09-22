@@ -1,6 +1,42 @@
 use super::*;
 
 #[test]
+fn source_role_precision_survives_persistent_search_transport_and_invalidation() {
+    let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
+    let queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default()).unwrap(),
+    );
+    let source = ElementId::from_u128(1);
+    let class = agq_kerml::classes::FEATURE_TYPING;
+    let property = agq_kerml::properties::FEATURE_TYPING_TYPED_FEATURE;
+    let mut answer = queries.result(());
+    answer
+        .search_dependencies
+        .insert(SearchDependency::SourceRelationships {
+            source,
+            class,
+            property,
+        });
+    let searches = structural_searches(&answer);
+    assert_eq!(
+        searches,
+        BTreeSet::from([StructuralSearch::SourceRelationships {
+            source,
+            class,
+            property,
+        }])
+    );
+    let keys = query_read_keys(&answer, snapshot.model());
+    assert_eq!(keys, BTreeSet::from([InvalidationKey::Incoming(source)]));
+    let persistent_keys: BTreeSet<_> = searches.iter().filter_map(structural_search_key).collect();
+    assert_eq!(persistent_keys, keys);
+    let compact = QueryInvalidationSet::from_keys(keys);
+    assert!(compact.affected_by(&BTreeSet::from([source]), false));
+    assert!(!compact.affected_by(&BTreeSet::from([ElementId::from_u128(99)]), false));
+    assert!(compact.affected_by(&BTreeSet::new(), true));
+}
+
+#[test]
 fn closure_witness_is_invalidated_by_any_graph_delta_but_is_not_a_graph_provider() {
     let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
     let queries = KerMlQueries::new(

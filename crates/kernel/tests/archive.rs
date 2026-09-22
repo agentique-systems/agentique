@@ -53,6 +53,11 @@ fn overlay() -> DerivedOverlay {
     let searches = Arc::new(BTreeSet::from([
         StructuralSearch::Incoming(ENGINE),
         StructuralSearch::Element(ElementId::from_u128(999)),
+        StructuralSearch::SourceRelationships {
+            source: VEHICLE,
+            class: SPECIALIZATION,
+            property: SPECIFIC,
+        },
     ]));
     for output in 1..=40 {
         build.element_with_explanation(

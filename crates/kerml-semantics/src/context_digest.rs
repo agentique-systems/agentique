@@ -129,6 +129,16 @@ impl Encoder {
                     self.id(element.as_u128());
                     self.id(association.as_u128());
                 }
+                StructuralSearch::SourceRelationships {
+                    source,
+                    class,
+                    property,
+                } => {
+                    self.tag(6);
+                    self.id(source.as_u128());
+                    self.id(class.as_u128());
+                    self.id(property.as_u128());
+                }
             }
         }
     }

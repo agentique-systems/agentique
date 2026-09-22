@@ -1024,9 +1024,8 @@ impl<'m> KerMlQueries<'m> {
         {
             return out;
         }
-        out.search_dependencies
-            .insert(SearchDependency::Incoming { target: source });
-        let mut candidates = self.incoming_source_relationships(source, class, source_property);
+        let mut candidates =
+            self.incoming_source_relationships(&mut out, source, class, source_property);
         let owned = self.owned_relationships(source);
         // Owned relationships remain relevant even when their source endpoint
         // has not been computed yet. Ref/CrossSubsetting additionally derive

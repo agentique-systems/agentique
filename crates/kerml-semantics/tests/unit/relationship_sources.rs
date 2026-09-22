@@ -87,7 +87,11 @@ fn source_roles_include_registered_redefinitions_and_cache_only_descriptors() {
     assert!(
         absent
             .search_dependencies
-            .contains(&SearchDependency::Incoming { target: id(1) })
+            .contains(&SearchDependency::SourceRelationships {
+                source: id(1),
+                class: c::SPECIALIZATION,
+                property: p::SPECIALIZATION_SPECIFIC,
+            })
     );
     assert_eq!(q.source_role_cache.lock().unwrap().len(), 2);
     assert!(q.fork().source_role_cache.lock().unwrap().is_empty());

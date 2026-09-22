@@ -1,8 +1,8 @@
 //! Descriptor-bounded source roles for incoming relationship navigation.
 //!
 //! This memo contains descriptor identities only. Query evidence remains owned
-//! by each answer, and callers retain the broad Incoming negative-search key.
-use crate::KerMlQueries;
+//! by each answer and retains the exact descriptor-resolved source-role search.
+use crate::{KerMlQueries, QueryResult, SearchDependency};
 use agq_kernel::{ElementId, MetaclassId, PropertyId};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -43,12 +43,19 @@ impl KerMlQueries<'_> {
     /// Enumerate only actual source endpoint buckets. For example,
     /// FeatureTyping::typedFeature replaces Specialization::specific; its
     /// general Type bucket is never examined by this outgoing query.
-    pub(crate) fn incoming_source_relationships(
+    pub(crate) fn incoming_source_relationships<T>(
         &self,
+        out: &mut QueryResult<T>,
         target: ElementId,
         base: MetaclassId,
         source_property: PropertyId,
     ) -> BTreeSet<ElementId> {
+        out.search_dependencies
+            .insert(SearchDependency::SourceRelationships {
+                source: target,
+                class: base,
+                property: source_property,
+            });
         let roles = self.source_roles(base, source_property);
         let mut relationships = BTreeSet::new();
         for (&property, classes) in roles.iter() {

@@ -43,6 +43,13 @@ pub enum SearchDependency {
     Incoming {
         target: ElementId,
     },
+    /// Relationship population restricted to a descriptor-resolved source role,
+    /// including subtypes and property redefinitions, even when empty.
+    SourceRelationships {
+        source: ElementId,
+        class: MetaclassId,
+        property: PropertyId,
+    },
     /// Owned membership population, including endpoint, visibility and name changes.
     NamespaceMembers {
         namespace: ElementId,

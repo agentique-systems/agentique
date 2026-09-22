@@ -226,6 +226,11 @@ fn status_read_sets_expand_every_search_and_remain_isolated_between_contexts() {
     let searches = BTreeSet::from([
         StructuralSearch::Element(id(991)),
         StructuralSearch::Incoming(id(992)),
+        StructuralSearch::SourceRelationships {
+            source: id(3),
+            class: c::SPECIALIZATION,
+            property: p::SPECIALIZATION_SPECIFIC,
+        },
         StructuralSearch::Property {
             element: id(3),
             property: p::ELEMENT_DECLARED_NAME,

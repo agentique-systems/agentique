@@ -267,11 +267,36 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
     );
     let search = build(None, Some(StructuralSearch::Incoming(id(2))), false);
     let navigation = build(None, None, true);
-    let digests: BTreeSet<_> = [&plain, &extra, &search, &navigation]
-        .into_iter()
-        .map(|overlay| model_digest(overlay.model()))
-        .collect();
-    assert_eq!(digests.len(), 4);
+    let source_search = build(
+        None,
+        Some(StructuralSearch::SourceRelationships {
+            source: id(2),
+            class: NODE,
+            property: REFS,
+        }),
+        false,
+    );
+    let other_source_search = build(
+        None,
+        Some(StructuralSearch::SourceRelationships {
+            source: id(2),
+            class: NODE,
+            property: LEFT,
+        }),
+        false,
+    );
+    let digests: BTreeSet<_> = [
+        &plain,
+        &extra,
+        &search,
+        &navigation,
+        &source_search,
+        &other_source_search,
+    ]
+    .into_iter()
+    .map(|overlay| model_digest(overlay.model()))
+    .collect();
+    assert_eq!(digests.len(), 6);
     let failures = [
         ComputationFailure::Incomplete {
             reason: IncompleteReason::MissingInput,

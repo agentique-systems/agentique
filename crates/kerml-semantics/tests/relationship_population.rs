@@ -53,7 +53,7 @@ fn incoming_general_fanout_is_a_negative_search_not_positive_evidence() {
                 answer
                     .search_dependencies
                     .iter()
-                    .any(|d| matches!(d, SearchDependency::Incoming { .. }))
+                    .any(|d| matches!(d, SearchDependency::SourceRelationships { .. }))
             );
         }
         // FeatureTyping::typedFeature redefines Specialization::specific;
@@ -82,7 +82,11 @@ fn retargeting_a_specific_endpoint_invalidates_its_negative_population() {
     assert!(
         before
             .search_dependencies
-            .contains(&SearchDependency::Incoming { target: id(3) })
+            .contains(&SearchDependency::SourceRelationships {
+                source: id(3),
+                class: c::FEATURE_TYPING,
+                property: p::FEATURE_TYPING_TYPED_FEATURE,
+            })
     );
     let mut changes = snapshot.change_set();
     changes.set(

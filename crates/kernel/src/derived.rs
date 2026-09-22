@@ -865,6 +865,15 @@ pub enum StructuralSearch {
         element: ElementId,
         association: crate::AssociationId,
     },
+    /// Relationships of `class` (including registered subtypes) whose effective
+    /// `property` source role references `source`. Property redefinitions are
+    /// resolved through the immutable descriptor registry. Unlike `Incoming`,
+    /// references through unrelated target roles are outside this population.
+    SourceRelationships {
+        source: ElementId,
+        class: MetaclassId,
+        property: PropertyId,
+    },
 }
 /// Explicit unsuccessful computation; never an empty value.
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -52,9 +52,8 @@ impl KerMlQueries<'_> {
             }
             return out;
         }
-        out.search_dependencies
-            .insert(SearchDependency::Incoming { target: feature });
         let mut relationships = self.incoming_source_relationships(
+            &mut out,
             feature,
             c::SUBSETTING,
             p::SUBSETTING_SUBSETTING_FEATURE,

@@ -22,7 +22,8 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
         StructuralSearch::Element(id)
         | StructuralSearch::Property { element: id, .. }
         | StructuralSearch::Association { element: id, .. } => Some(K::Element(*id)),
-        StructuralSearch::Incoming(id) => Some(K::Incoming(*id)),
+        StructuralSearch::Incoming(id)
+        | StructuralSearch::SourceRelationships { source: id, .. } => Some(K::Incoming(*id)),
         StructuralSearch::Model => Some(K::Global),
         StructuralSearch::DescriptorGraph => None,
     }
@@ -34,6 +35,7 @@ fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKe
         S::Element(id) => [Some(K::Element(*id)), None],
         S::PropertySet { element, .. } => [Some(K::Element(*element)), None],
         S::Incoming { target } => [Some(K::Incoming(*target)), None],
+        S::SourceRelationships { source, .. } => [Some(K::Incoming(*source)), None],
         S::NamespaceMembers { namespace } | S::ImportSet { namespace } => {
             [Some(K::Element(*namespace)), None]
         }
@@ -194,6 +196,17 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
         } else if let SearchDependency::PropertySet { element, property } = search {
             result.insert(StructuralSearch::Property {
                 element: *element,
+                property: *property,
+            });
+        } else if let SearchDependency::SourceRelationships {
+            source,
+            class,
+            property,
+        } = search
+        {
+            result.insert(StructuralSearch::SourceRelationships {
+                source: *source,
+                class: *class,
                 property: *property,
             });
         } else {
