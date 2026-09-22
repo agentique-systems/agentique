@@ -953,6 +953,15 @@ fn transition_acceptance_and_source_specialization_use_structural_memberships() 
 
 #[test]
 fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities() {
+    actions_micro(false);
+}
+
+#[test]
+fn certified_usage_scalar_activates_shared_snapshot_and_value_context_producers() {
+    actions_micro(true);
+}
+
+fn actions_micro(with_variable_value: bool) {
     use agq_kerml_semantics::{
         FormalConstraintId, MemberAccess, PublicationOverlayError, SemanticClosureRequirement,
         close_result_structure_with_extension,
@@ -961,6 +970,27 @@ fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities(
     // They are immutable dependencies in this fixture, never a production receipt.
     let (mut anchors, roles) = corpus_anchor_fixture();
     let (kernel, libraries, mut roots) = may_time_fixture(false, false, false, None);
+    let kernel_queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(
+            &kernel,
+            SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                exclude_implied: true,
+            },
+            BTreeSet::new(),
+        )
+        .unwrap()
+        .with_standard_bindings(&roots, &libraries)
+        .unwrap(),
+    );
+    let occurrence = kernel_queries
+        .standard_role(StandardRole::Occurrence)
+        .value
+        .unwrap();
+    let snapshots = kernel_queries
+        .standard_role(StandardRole::OccurrenceSnapshots)
+        .value
+        .unwrap();
     roots.retain(|root| *root != id(30_000));
     roots.push(id(1));
     for record in kernel.model().elements().filter(|record| {
@@ -987,6 +1017,22 @@ fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities(
             source,
             roles[&StandardSysmlRole::Action],
             relation,
+            kc::FEATURE_TYPING,
+            kp::FEATURE_TYPING_TYPE,
+        );
+    }
+    if with_variable_value {
+        anchors.relation(
+            roles[&StandardSysmlRole::Action],
+            occurrence.as_u128(),
+            245_003,
+            kc::SUBCLASSIFICATION,
+            kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
+        );
+        anchors.relation(
+            snapshots.as_u128(),
+            occurrence.as_u128(),
+            245_004,
             kc::FEATURE_TYPING,
             kp::FEATURE_TYPING_TYPE,
         );
@@ -1036,6 +1082,18 @@ fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities(
     f.value(50_004, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
     f.member(50_003, 50_004, 150_004, kc::FEATURE_MEMBERSHIP);
     f.changes.clear(id(150_004), kp::ELEMENT_DECLARED_NAME);
+    if with_variable_value {
+        f.create(50_005, sc::REFERENCE_USAGE, "variableValue");
+        f.member(50_000, 50_005, 150_005, kc::FEATURE_MEMBERSHIP);
+        f.changes.clear(id(150_005), kp::ELEMENT_DECLARED_NAME);
+        f.create(50_006, kc::EXPRESSION, "valueExpression");
+        f.create(50_007, kc::FEATURE, "valueResult");
+        set_enum(&mut f, 50_007, kp::FEATURE_DIRECTION, "out");
+        f.member(50_006, 50_007, 150_007, kc::RETURN_PARAMETER_MEMBERSHIP);
+        f.member(50_005, 50_006, 150_006, kc::FEATURE_VALUE);
+        f.value(150_006, kp::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(false));
+        f.value(150_006, kp::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
+    }
     let snapshot = f.finish();
     let options = SemanticOptions {
         baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
@@ -1155,6 +1213,43 @@ fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities(
             [id(expected)],
             "{name}"
         );
+    }
+    if with_variable_value {
+        assert_eq!(
+            queries
+                .model()
+                .navigation_slot(id(50_005), agq_sysml::properties::USAGE_MAY_TIME_VARY)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Boolean(true))
+        );
+        let domains = queries.featuring_types(id(50_005));
+        assert_eq!(domains.completeness, Completeness::Complete, "{domains:?}");
+        assert_eq!(domains.value.len(), 1);
+        assert_ne!(
+            domains.value[0],
+            id(50_000),
+            "variable uses a shared snapshot domain"
+        );
+        assert!(certificate.is_closed(id(50_005), SemanticClosureRequirement::ValueContext));
+        let bindings: Vec<_> = queries
+            .model()
+            .instances(kc::BINDING_CONNECTOR, true)
+            .unwrap()
+            .filter(|record| {
+                queries.implied_binding_role(record.id())
+                    == Some(agq_kerml_semantics::ImpliedBindingRole::FeatureValue)
+            })
+            .map(|record| record.id())
+            .collect();
+        assert_eq!(bindings.len(), 1);
+        let binding_domains = queries.featuring_types(bindings[0]);
+        assert_eq!(
+            binding_domains.completeness,
+            Completeness::Complete,
+            "{binding_domains:?}"
+        );
+        assert_eq!(binding_domains.value, domains.value);
     }
     assert!(Arc::ptr_eq(
         closure.overlay.declared().immutable_dependency().unwrap(),
