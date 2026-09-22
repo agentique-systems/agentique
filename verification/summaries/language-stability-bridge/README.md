@@ -30,21 +30,33 @@ Initial closure/rebinding tests and their precise boundary are recorded in
 [closure.md](closure.md). Independent review reproduced unresolved source-provider,
 causal-reader and delayed owning-carrier counterexamples. The corrected producer
 mask propagation passes 53 focused closure tests, including those regressions.
-The corrected eight-document Actions audit finished normally in 795.172 seconds
-(exit 1, no watchdog stop; peak private memory 4,984.4 MiB). All eight documents
-parse and construct. Final selection is 534/534 with zero kernel obligations, but
-only **469/534 mandatory references are Complete**; 65 are Incomplete and every
-other failure category is zero. Producer scheduling converges but remains
-Incomplete: 3 formal owner-type closure, 217 producer closure, 13 value-context
-and 71 variable-featuring diagnostics. This is a failed scoped gate, not Systems
-acceptance. Medium/full publication has not been attempted.
+Both corrected eight-document Actions audits finished normally, with exit 1 and
+no watchdog stop. Each parses/constructs 8/8 documents and selects all 534
+endpoints with zero kernel obligations, but only **469/534 mandatory references
+are Complete**; 65 are Incomplete and every other failure category is zero.
+Producer scheduling converges but remains Incomplete. These are failed scoped
+gates, not Systems acceptance. Medium/full publication has not been attempted.
 
-The final certificate has 8,224 applicable subject/family pairs, 4,122 closed and
-365 explicitly incomplete. Its compact proof is 2,565,702 bytes; optional in-memory
-revalidation reads are separately measured at 307,744,640 bytes. The latter remain
-an optimization target, not part of the compact receipt-size claim. Final-pass
-transport counts are zero because that pass starts a separate predicate regime;
-they do not summarize earlier reconstruction revalidation.
+| Scoped run | Seconds | Peak private MiB | Final diagnostics |
+| --- | ---: | ---: | --- |
+| `actions-provider-closure` | 795.172 | 4,984.4 | 3 owner-type closure, 217 producer closure, 13 value-context, 71 variable featuring |
+| `actions-declared-source` | 1,013.563 | 5,211.5 | 3 owner-type closure, 219 producer closure, 13 value-context, 66 variable featuring |
+
+The latest certificate has 8,239 applicable subject/family pairs, 4,150 closed and
+377 explicitly incomplete. Its compact proof is 2,567,396 bytes; optional in-memory
+revalidation reads are separately measured at 387,384,744 bytes. The latter remain
+an optimization target, not part of the compact receipt-size claim. Two checked
+rebindings retain 940 evaluations and reopen 8,252; the final predicate pass's
+individual zero counts do not summarize earlier reconstruction revalidation.
+The report includes 239 per-subject closure explanations for diagnosis.
+
+Independent review subsequently reproduced same-aggregate/different-original-slot
+certificate aliasing and a mixed current/source read that could miss an append.
+The integrated correction binds opted-in producer contexts and checkpoints to
+original slots and preserves mixed current reads. Historical accepted KerML graph
+identity remains unchanged. Focused regressions, full KerML/SysML package suites,
+Clippy and strict Rustdoc pass; see [closure.md](closure.md). Another corpus run
+waits for a concrete correction to the remaining causal closure failure.
 
 The medium candidate's static dependency closure is 13 documents: Actions,
 Attributes, Calculations, Connections, Constraints, Flows, Interfaces, Items,

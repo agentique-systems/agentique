@@ -441,6 +441,21 @@
         "CARGO_PROFILE_RELEASE_LTO": "false",
         "CARGO_PROFILE_RELEASE_DEBUG": "0"
       }
+    },
+    {
+      "name": "actions-declared-source-locators",
+      "command": [
+        "target/foundation-evidence/debug/examples/sysml_diagnostic_sources.exe",
+        "verification/generated/language-stability-bridge/actions-declared-source/diagnostic-subjects.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Error: Os { code: 2, kind: NotFound, message: \"The system cannot find the file specified.\" }",
+      "source_commit": "bb8798052eb8d0937720127177a723307befc0f8",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "13121bf40bdad8f14172ac8fe8d00f953aaa0b5ea636bb45d65b3b89e80062fa",
+      "duration_seconds": 9.74,
+      "output": "verification/generated/language-stability-bridge/actions-declared-source-locators.log",
+      "environment_overrides": {}
     }
   ]
 }
