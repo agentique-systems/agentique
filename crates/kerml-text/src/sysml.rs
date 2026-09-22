@@ -22,6 +22,8 @@ use agq_standard_libraries::{LibraryLanguage, VerifiedLibrarySet};
 use std::{collections::BTreeSet, sync::Arc};
 mod publication;
 pub use publication::*;
+mod source;
+pub(crate) use source::{AcceptedSourceDependency, lower_accepted_source};
 #[cfg(test)]
 #[path = "sysml_tests.rs"]
 mod tests;
@@ -638,6 +640,7 @@ pub(crate) struct SourceModel {
     references: Vec<ReferenceAssertion>,
     diagnostics: Vec<FrontendDiagnostic>,
     source_map: LibrarySourceMap,
+    effective: Option<Box<source::EffectiveSourceModel>>,
 }
 impl SourceModel {
     pub(crate) fn snapshot(&self) -> &Snapshot {
@@ -656,6 +659,9 @@ impl SourceModel {
         &self.source_map
     }
     pub(crate) fn queries(&self) -> KerMlQueries<'_> {
+        if let Some(effective) = &self.effective {
+            return KerMlQueries::new(effective.context(self.root));
+        }
         KerMlQueries::new(
             self.publication
                 .complete_overlay()
@@ -663,7 +669,23 @@ impl SourceModel {
                 .expect("protected immutable publication"),
         )
     }
+    pub(crate) fn sysml_queries(&self) -> Option<agq_sysml_semantics::SysmlQueries<'_>> {
+        self.effective
+            .as_ref()
+            .map(|effective| effective.queries(self.root))
+    }
+    pub(crate) fn producer_status(&self) -> Option<&source::AuthoredProducerStatus> {
+        self.effective.as_ref().map(|effective| &effective.status)
+    }
+    pub(crate) fn producer_closure(
+        &self,
+    ) -> Option<&Arc<agq_kerml_semantics::ProducerClosureCertificate>> {
+        self.effective
+            .as_ref()
+            .and_then(|effective| effective.certificate.as_ref())
+    }
 }
+pub use source::AuthoredProducerStatus;
 
 fn base(publication: &CanonicalKermlStandardLibraries) -> Result<Snapshot, LibraryLoadError> {
     let registry = Arc::new(
@@ -727,6 +749,26 @@ pub(crate) fn lower_source(
             .project_context(&snapshot, root, BTreeSet::new(), BTreeSet::new())
             .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?,
     );
+    let (references, diagnostics) = source_references(inputs, &draft, root, &q)?;
+    drop(q);
+    Ok(SourceModel {
+        snapshot,
+        root,
+        publication,
+        references,
+        diagnostics,
+        source_map: draft.source_map().clone(),
+        effective: None,
+    })
+}
+
+fn source_references(
+    inputs: &[SourceInput<'_>],
+    draft: &LibraryDraft,
+    root: ElementId,
+    q: &KerMlQueries<'_>,
+) -> Result<(Vec<ReferenceAssertion>, Vec<FrontendDiagnostic>), LibraryLoadError> {
+    let model = q.model();
     let mut references = Vec::new();
     let mut diagnostics = Vec::new();
     for reference in draft.references() {
@@ -742,7 +784,7 @@ pub(crate) fn lower_source(
             })
             .is_some_and(|node| node.kind() == production::Production::AliasMember);
         let (kind, alias, visibility) =
-            reference_metadata(snapshot.model(), reference.relationship, alias_source)?;
+            reference_metadata(model, reference.relationship, alias_source)?;
         let specific = q
             .owning_related_element(reference.relationship)
             .value
@@ -770,13 +812,8 @@ pub(crate) fn lower_source(
             match ids.as_slice() {
                 [] => Resolution::Unresolved,
                 [id] => {
-                    let actual = snapshot
-                        .model()
-                        .element(*id)
-                        .expect("resolved element")
-                        .metaclass();
-                    if snapshot
-                        .model()
+                    let actual = model.element(*id).expect("resolved element").metaclass();
+                    if model
                         .registry()
                         .is_subtype(actual, reference.expected)
                         .unwrap_or(false)
@@ -789,8 +826,7 @@ pub(crate) fn lower_source(
                 _ => Resolution::Ambiguous(ids),
             }
         });
-        let stored = snapshot
-            .model()
+        let stored = model
             .navigation_slot(reference.relationship, reference.property)
             .and_then(|slot| {
                 slot.value().values().find_map(|value| match value {
@@ -820,15 +856,7 @@ pub(crate) fn lower_source(
             visibility,
         });
     }
-    drop(q);
-    Ok(SourceModel {
-        snapshot,
-        root,
-        publication,
-        references,
-        diagnostics,
-        source_map: draft.source_map().clone(),
-    })
+    Ok((references, diagnostics))
 }
 
 fn reference_metadata(
