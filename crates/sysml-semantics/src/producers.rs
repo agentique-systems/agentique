@@ -85,6 +85,35 @@ pub fn sysml_producers_apply(model: &agq_kernel::ModelView, class: MetaclassId) 
         .any(|base| model.registry().is_subtype(class, *base).unwrap_or(false))
 }
 
+/// Finite implemented producer identities for publication provenance auditing.
+/// Formal operations without a materializer are deliberately absent.
+pub fn sysml_producer_rule_ids(profile: SysmlBaselineProfile) -> BTreeSet<RuleId> {
+    BASE_RULES
+        .iter()
+        .map(|(_, rule, _)| *rule)
+        .chain(COMPOSITE_RULES.iter().map(|(_, _, rule, _)| *rule))
+        .chain(OWNED_RULES.iter().map(|(_, _, rule, _)| *rule))
+        .chain(SUBACTION_RULES.iter().map(|(_, rule, _)| *rule))
+        .chain([
+            "checkAcceptActionUsageTriggerActionSpecialization",
+            "checkAcceptActionUsageSpecialization",
+            "checkAcceptActionUsageSubactionSpecialization",
+            "checkStateUsageSubstateSpecialization",
+            "checkStateUsageExclusiveStateSpecialization",
+            "checkTransitionUsageStateSpecialization",
+            "checkTransitionUsageActionSpecialization",
+            "checkOccurrenceUsageSuboccurrenceSpecialization",
+            "checkConnectionDefinitionBinarySpecialization",
+            "checkConnectionUsageBinarySpecialization",
+            "checkInterfaceDefinitionBinarySpecialization",
+            "checkInterfaceUsageBinarySpecialization",
+            "checkFlowUsageFlowSpecialization",
+            "deriveUsageMayTimeVary",
+        ])
+        .map(|rule| profile.rule_id(rule))
+        .collect()
+}
+
 #[derive(Clone, Copy)]
 enum Target {
     Sysml(R),

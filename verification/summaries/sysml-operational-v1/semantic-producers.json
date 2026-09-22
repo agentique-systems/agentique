@@ -131,5 +131,67 @@
         "output": "Generated documentation; finished in 1.60s"
       }
     ]
+  },
+  "publication_facade": {
+    "implementation_inputs_sha256": "5c3a3891baa19e67d205262489bd3dadaba5985109ad39004836188c7f6938c7",
+    "input_hash_scope": "Listed paths and LF-normalized bytes, NUL-separated",
+    "input_paths": [
+      "crates/kerml-text/src/sysml/publication.rs",
+      "crates/sysml-semantics/src/producers.rs",
+      "crates/sysml-semantics/src/producer_tests.rs"
+    ],
+    "integration_dependencies": [
+      "root scheduler6fd9d9d",
+      "context identity0b99e5a",
+      "root context and audit integrationfa8ca71",
+      "Root sysml.rs module declaration/re-export required; temporary local wiring used for focused checks"
+    ],
+    "verified": [
+      "Immutable facade accepts only strict21-document Operational v1 source identity and original StandardLibrary provenance",
+      "Strict declared snapshot plus complete unrestricted combined producer closure; accepted KerML dependency retained by Arc and excluded from scheduled subjects",
+      "Verified algorithmic binding identities frozen into semantic context before closure and revalidated on final overlay",
+      "Mandatory references require Complete unique correctly typed answer exactly matching stored endpoint",
+      "Existing KerML capability audit accepts only a finite implemented SysML producer rule registry; no findings filtered",
+      "Computed mayTimeVary requires exact producer provenance; no missing scalar or declared false fallback accepted",
+      "Exact missing Viewpoint/viewpoints/BinaryConnections diagnostics remain structured publication-blocking authority findings",
+      "Publication identity binds graph digest and complete SysML dependency contract digest"
+    ],
+    "commands": [
+      {
+        "command": "cargo check -p agq-kerml-text",
+        "exit": 1,
+        "output": "Initial compile found nested context Result and full/status query type mismatches; corrected before tests"
+      },
+      {
+        "command": "cargo test -p agq-sysml-semantics",
+        "exit": 0,
+        "output": "36 passed; 0 failed; doc-tests0;2.60s"
+      },
+      {
+        "command": "cargo test -p agq-kerml-text --lib sysml::publication::tests",
+        "exit": 0,
+        "output": "2 passed;0 failed;0.00s"
+      },
+      {
+        "command": "cargo clippy -p agq-kerml-text -p agq-sysml-semantics --all-targets -- -D warnings",
+        "exit": 0,
+        "output": "Finished dev profile2.49s"
+      },
+      {
+        "command": "cargo fmt -p agq-kerml-text -p agq-sysml-semantics -- --check",
+        "exit": 0,
+        "output": "No formatting differences"
+      },
+      {
+        "command": "RUSTDOCFLAGS=-D warnings cargo doc -p agq-kerml-text -p agq-sysml-semantics --no-deps",
+        "exit": 0,
+        "output": "Generated both packages;1.86s"
+      }
+    ],
+    "limitations": [
+      "Full accepted-cache Systems closure and acceptance remain lead gates",
+      "No new publication receipt or accepted facade was created by focused tests",
+      "Authored Systems context attachment and effective closure certificate remain separate integration work"
+    ]
   }
 }

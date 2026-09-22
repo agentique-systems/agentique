@@ -3,6 +3,26 @@ use agq_kerml_semantics::{
     LibrarySetIdentity, SearchDependency, StandardLibraryArtifact, StandardRole,
 };
 
+#[test]
+fn publication_rule_registry_rejects_other_profiles_and_unimplemented_operations() {
+    let operational = sysml_producer_rule_ids(SysmlBaselineProfile::OperationalV1);
+    let published = sysml_producer_rule_ids(SysmlBaselineProfile::Published);
+    assert!(operational.is_disjoint(&published));
+    for rule in [
+        "checkItemUsageSubitemSpecialization",
+        "checkAcceptActionUsageTriggerActionSpecialization",
+        "deriveUsageMayTimeVary",
+    ] {
+        assert!(operational.contains(&SysmlBaselineProfile::OperationalV1.rule_id(rule)));
+    }
+    assert!(!operational.contains(
+        &SysmlBaselineProfile::OperationalV1.rule_id("checkSendActionUsageSpecialization")
+    ));
+    assert!(!operational.contains(
+        &SysmlBaselineProfile::OperationalV1.rule_id("deriveTransitionUsageTriggerAction")
+    ));
+}
+
 fn item_fixture(composite: bool, with_authored_base: bool) -> Fixture {
     let mut f = Fixture::new();
     f.origin = DeclaredOrigin::StandardLibrary {
