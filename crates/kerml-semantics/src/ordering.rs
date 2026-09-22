@@ -9,7 +9,7 @@ impl KerMlQueries<'_> {
     /// Incoming, non-owned specializations are not members of this projection.
     pub fn owned_specialization_targets(&self, ty: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
-        let owned = self.owned_relationships(ty);
+        let owned = self.owned_relationships_of_type(ty, c::SPECIALIZATION);
         for &relationship in &owned.value {
             if !self.is(relationship, c::SPECIALIZATION) {
                 continue;
