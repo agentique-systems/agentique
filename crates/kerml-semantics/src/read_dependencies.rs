@@ -61,6 +61,122 @@ fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKe
     .into_iter()
     .flatten()
 }
+
+// Publication producers are additive: they create implied records and attach
+// relationships, but cannot replace declared identities or write names on an
+// existing declared record (ImpliedGraph::set only addresses created records).
+// This narrower contract must never replace general revision invalidation.
+fn declared_identity(model: &ModelView, element: ElementId) -> bool {
+    model.element(element).is_some_and(|record| {
+        matches!(record.origin(), agq_kernel::provenance::Origin::Declared(_))
+    })
+}
+
+fn fixed_declared_name(
+    model: &ModelView,
+    element: ElementId,
+    property: agq_kernel::PropertyId,
+) -> bool {
+    use agq_kerml::properties as p;
+    declared_identity(model, element)
+        && matches!(
+            property,
+            p::ELEMENT_DECLARED_NAME | p::ELEMENT_DECLARED_SHORT_NAME
+        )
+}
+
+fn publication_search_keys(
+    search: &SearchDependency,
+    model: &ModelView,
+) -> impl Iterator<Item = InvalidationKey> {
+    let fixed = match search {
+        SearchDependency::Element(element) => declared_identity(model, *element),
+        SearchDependency::PropertySet { element, property }
+        | SearchDependency::Kernel(StructuralSearch::Property { element, property }) => {
+            fixed_declared_name(model, *element, *property)
+        }
+        // Kernel Element searches may encode namespace/import/redefinition
+        // population reads. They are NOT native identity-only Element reads.
+        _ => false,
+    };
+    search_keys(search).filter(move |_| !fixed)
+}
+
+pub(crate) fn publication_dependency_keys(
+    dependency: &Dependency,
+    model: &ModelView,
+) -> BTreeSet<InvalidationKey> {
+    let mut keys = BTreeSet::new();
+    let (Dependency::Declared(fact) | Dependency::Derived(fact)) = dependency;
+    match fact {
+        FactKey::Element(element) => {
+            if !matches!(dependency, Dependency::Declared(_)) || !declared_identity(model, *element)
+            {
+                keys.insert(InvalidationKey::Element(*element));
+            }
+        }
+        FactKey::Property { element, property } => {
+            if !matches!(dependency, Dependency::Declared(_))
+                || !fixed_declared_name(model, *element, *property)
+            {
+                keys.insert(InvalidationKey::Element(*element));
+            }
+        }
+        FactKey::AssociationOccurrence(id) => {
+            if let Some(link) = model.association_occurrence(*id) {
+                keys.extend(link.ends().values().copied().map(InvalidationKey::Element));
+            } else {
+                keys.insert(InvalidationKey::Global);
+            }
+        }
+    }
+    keys
+}
+
+pub(crate) fn query_publication_provider_keys<T>(
+    answer: &QueryResult<T>,
+    model: &ModelView,
+) -> BTreeSet<InvalidationKey> {
+    let mut keys: BTreeSet<_> = answer
+        .search_dependencies
+        .iter()
+        .flat_map(|search| publication_search_keys(search, model))
+        .collect();
+    for search in answer.shared_search_dependencies.iter() {
+        keys.extend(publication_search_keys(
+            &SearchDependency::Kernel(search.clone()),
+            model,
+        ));
+    }
+    for dependency in &answer.canonical_dependencies {
+        keys.extend(publication_dependency_keys(dependency, model));
+    }
+    keys
+}
+
+/// Reads that can require additional producers during an additive publication
+/// closure. Declared identity and declared-name observations remain in ordinary
+/// query evidence/invalidation, but cannot be changed by these producers.
+/// Mutable ownership, incoming searches, unknown kernel searches, derived facts
+/// and missing identities remain conservative provider obligations.
+/// This contract is deliberately not usable for arbitrary revision invalidation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PublicationProviderReads {
+    dependencies: QueryInvalidationSet,
+}
+impl PublicationProviderReads {
+    pub(crate) fn from_keys(keys: BTreeSet<InvalidationKey>) -> Self {
+        Self {
+            dependencies: QueryInvalidationSet::from_keys(keys),
+        }
+    }
+    pub fn bounded_elements(&self) -> &[ElementId] {
+        self.dependencies.bounded_elements()
+    }
+    pub fn reads_entire_model(&self) -> bool {
+        self.dependencies.reads_entire_model()
+    }
+}
 /// Translate language-level reads into persistent kernel computation searches.
 /// Context identities (profile, bindings, available roots) are fixed for closure.
 pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<StructuralSearch> {
@@ -195,6 +311,19 @@ impl QueryInvalidationSet {
 }
 
 impl QueryReadSet {
+    /// Provider obligations for the same immutable model used by this query.
+    /// General evidence and revision invalidation retain every original read.
+    pub fn publication_provider_reads(&self, model: &ModelView) -> PublicationProviderReads {
+        let mut keys: BTreeSet<_> = self
+            .search_dependencies
+            .iter()
+            .flat_map(|search| publication_search_keys(search, model))
+            .collect();
+        for dependency in &self.canonical_dependencies {
+            keys.extend(publication_dependency_keys(dependency, model));
+        }
+        PublicationProviderReads::from_keys(keys)
+    }
     pub fn canonical_dependencies(&self) -> &BTreeSet<Dependency> {
         &self.canonical_dependencies
     }

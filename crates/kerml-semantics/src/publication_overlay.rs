@@ -1,5 +1,7 @@
 //! Canonical publication closure, independent of conformance validation coverage.
-use crate::read_dependencies::{InvalidationKey, query_read_keys};
+use crate::read_dependencies::{
+    InvalidationKey, publication_dependency_keys, query_publication_provider_keys, query_read_keys,
+};
 use crate::*;
 use agq_kerml::{BaselineProfile, classes as c};
 use agq_kernel::{
@@ -321,6 +323,9 @@ pub struct PublicationCapabilityReport {
     /// Inputs consulted by capability queries and canonical provenance. Scoped
     /// callers must check their producer population against these dependencies.
     pub read_dependencies: QueryInvalidationSet,
+    /// Producer obligations under additive closure, preserving mutable reads
+    /// without scheduling a declared record solely for its identity or name.
+    pub provider_reads: PublicationProviderReads,
 }
 impl KerMlQueries<'_> {
     #[cfg(test)]
@@ -338,6 +343,7 @@ impl KerMlQueries<'_> {
             checked_items: checks.counts,
             failures: checks.failures,
             read_dependencies: QueryInvalidationSet::from_keys(checks.read_keys.unwrap()),
+            provider_reads: PublicationProviderReads::from_keys(checks.provider_keys.unwrap()),
         }
     }
     /// Audit a selected population for focused publication regressions.
@@ -356,6 +362,7 @@ impl KerMlQueries<'_> {
             checked_items: checks.counts,
             failures: checks.failures,
             read_dependencies: QueryInvalidationSet::from_keys(checks.read_keys.unwrap()),
+            provider_reads: PublicationProviderReads::from_keys(checks.provider_keys.unwrap()),
         }
     }
 }
@@ -367,6 +374,7 @@ struct PublicationChecks<'m> {
     // only avoid rereading a shared premise set; they never enter published data.
     proof_reads_checked: BTreeSet<usize>,
     read_keys: Option<BTreeSet<InvalidationKey>>,
+    provider_keys: Option<BTreeSet<InvalidationKey>>,
     counts: BTreeMap<PublicationFamily, usize>,
     failures: BTreeMap<PublicationFamily, BTreeSet<Diagnostic>>,
 }
@@ -377,6 +385,7 @@ impl<'m> PublicationChecks<'m> {
             provenance_checked: BTreeSet::new(),
             proof_reads_checked: BTreeSet::new(),
             read_keys: capture_reads.then(BTreeSet::new),
+            provider_keys: capture_reads.then(BTreeSet::new),
             counts: PublicationFamily::ALL.into_iter().map(|f| (f, 0)).collect(),
             failures: BTreeMap::new(),
         }
@@ -416,6 +425,9 @@ impl PublicationChecks<'_> {
                 .insert(std::sync::Arc::as_ptr(explanation) as usize)
         {
             for dependency in &explanation.dependencies {
+                if let Some(providers) = &mut self.provider_keys {
+                    providers.extend(publication_dependency_keys(dependency, self.model));
+                }
                 let (Dependency::Declared(fact) | Dependency::Derived(fact)) = dependency;
                 match fact {
                     FactKey::Element(id) | FactKey::Property { element: id, .. } => {
@@ -449,6 +461,9 @@ impl PublicationChecks<'_> {
     fn answer<T>(&mut self, family: PublicationFamily, subject: ElementId, answer: QueryResult<T>) {
         if let Some(keys) = &mut self.read_keys {
             keys.extend(query_read_keys(&answer, self.model));
+        }
+        if let Some(keys) = &mut self.provider_keys {
+            keys.extend(query_publication_provider_keys(&answer, self.model));
         }
         *self.counts.entry(family).or_default() += 1;
         if answer.completeness != Completeness::Complete {
