@@ -212,6 +212,12 @@ impl LibraryDraft {
     ) {
         self.producer_closure = certificate;
     }
+    pub(crate) fn take_semantic_candidate(
+        &mut self,
+    ) -> Option<agq_kernel::derived::ConstructionOverlay> {
+        self.producer_closure = None;
+        self.semantic_candidate.take()
+    }
     pub(crate) fn reference_model(&self) -> &agq_kernel::ModelView {
         self.semantic_candidate
             .as_ref()

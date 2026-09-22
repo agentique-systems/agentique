@@ -6,7 +6,7 @@ use crate::library::{
 use agq_kerml_semantics::{
     Completeness, Diagnostic, KerMlQueries, PublicationClosureOptions, PublicationCounters,
     PublicationFamily, PublicationOverlayError, PublicationStage, SemanticContextId,
-    close_result_structure_with_extension,
+    close_result_structure_on_overlay_with_extension,
 };
 use agq_kerml_syntax::production::SysmlSyntaxProfile;
 use agq_kernel::{
@@ -25,6 +25,10 @@ use agq_sysml_semantics::{
 };
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, sync::Arc};
+
+#[path = "publication_cache.rs"]
+mod cache;
+pub use cache::SystemsPublicationCacheError;
 
 /// Publication capabilities, not the complete set of SysML validation rules.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -171,11 +175,11 @@ impl PublicationInputs {
     }
 }
 impl CanonicalSysmlSystemsLibrary {
-    /// Revalidate declared storage and rerun the combined scheduler on new local
-    /// records only. Neither an earlier construction closure nor a caller's
-    /// restricted subject list can establish publication acceptance.
+    /// Revalidate strict storage and rerun the combined scheduler on all local
+    /// records, including existing generated outputs. Neither an earlier
+    /// construction result nor a restricted population establishes acceptance.
     pub fn publish(
-        candidate: SystemsLibraryCandidate,
+        mut candidate: SystemsLibraryCandidate,
         sources: &VerifiedLibrarySet,
         options: PublicationClosureOptions,
         batch_progress: impl FnMut(usize, usize, usize, usize),
@@ -243,8 +247,17 @@ impl CanonicalSysmlSystemsLibrary {
             }
         };
         drop(candidate_queries);
-        // Consuming the candidate here releases both its ConstructionView and
-        // ConstructionOverlay before allocating the strict producer frontier.
+        // Strictly revalidate the exact existing graph, retaining derived
+        // provenance and the protected dependency. The fresh strict scheduler
+        // still evaluates every family under its final bindings and contract.
+        let initial_overlay = match candidate.draft.take_semantic_candidate() {
+            Some(overlay) => overlay
+                .revalidate(declared.clone())
+                .map_err(PublicationOverlayError::from)?,
+            None => agq_kernel::derived::DerivationBuilder::new(declared.clone())
+                .build()
+                .map_err(PublicationOverlayError::from)?,
+        };
         let inputs = PublicationInputs::consume(candidate);
         contract.standard_bindings = producer_bindings.targets().clone();
         let contract_digest = contract.context_identity_digest();
@@ -256,8 +269,8 @@ impl CanonicalSysmlSystemsLibrary {
             .collect();
         let extension =
             SysmlProducerExtension::new(profile, producer_bindings.clone(), roots.clone());
-        let closure = close_result_structure_with_extension(
-            &declared,
+        let closure = close_result_structure_on_overlay_with_extension(
+            initial_overlay,
             options,
             |overlay| {
                 inputs

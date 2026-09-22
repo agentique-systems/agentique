@@ -55,10 +55,10 @@ fn contribute(
     result: SysmlProducerResult,
     plan: &mut ResultStructurePlan<'_>,
 ) -> Result<(), DerivationError> {
-    plan.record_producer_evaluation(
+    plan.record_producer_evaluation_evidence(
         subject,
         agq_kerml_semantics::ProducerFamilyId::new(result.rule),
-        result.evidence.completeness,
+        &result.evidence,
     );
     plan.observe_evidence(result.evidence.clone())?;
     for relationship in result.relationships {

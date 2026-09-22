@@ -105,6 +105,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         },
         |stage| {
+            let mut diagnostic_counts = BTreeMap::<&str, usize>::new();
+            for diagnostic in &stage.diagnostics {
+                *diagnostic_counts.entry(diagnostic.code).or_default() += 1;
+            }
             last_producer_stage = Some(json!({
                 "stage":stage.stage,"stratum":format!("{:?}",stage.stratum),
                 "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
@@ -117,7 +121,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 stage.added_elements,
                 stage.completeness,
                 stage.diagnostics.len()
-            )
+            );
+            if !diagnostic_counts.is_empty() {
+                println!("Systems: producer diagnostics={diagnostic_counts:?}");
+            }
         },
     );
     let candidate = match preparation {
@@ -305,6 +312,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             report["semantic_digest"] = json!(publication.semantic_digest());
             report["accepted_bindings"] = json!(publication.bindings().targets().len());
             report["publication_gate"] = audit_report(publication.audit());
+            // Preserve the already accepted graph before this process exits.
+            // Receipt files are outputs here, not trusted restoration inputs.
+            let directory = output.parent().ok_or("output parent")?;
+            std::fs::create_dir_all(directory)?;
+            let cache_path = directory.join("canonical.publication.zip");
+            let mut cache = std::fs::File::create(&cache_path)?;
+            let receipt = publication.write_cache(&mut cache, &sources)?;
+            cache.sync_all()?;
+            write_report(&directory.join("accepted-publication.json"), &receipt)?;
+            write_report(
+                &directory.join("standard-bindings.json"),
+                &publication.binding_manifest(&sources)?,
+            )?;
+            report["exported_cache"] = json!(cache_path);
         }
         Err(agq_kerml_text::sysml::SystemsPublicationError::Rejected(audit)) => {
             report["publication_gate"] = audit_report(&audit);

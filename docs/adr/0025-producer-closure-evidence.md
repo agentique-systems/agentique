@@ -17,6 +17,12 @@ its graph and interpretation contract still match. An incomplete evaluation
 cannot certify the effects that family may change. Producers outside a scoped
 population remain obligations; accepted immutable dependencies are not replayed.
 
+Producer dependencies are transitive. For example, an unfinished scalar writer
+can invalidate a currently complete typing producer that read that scalar. The
+typing result remains open until that upstream writer closes. The certificate
+uses per-family semantic reads and potential effects to retain this obligation;
+checking only the typing producer's latest return status is insufficient.
+
 `ProducerClosureCertificate` is an immutable sidecar with a private issuing
 boundary. It binds model, registry and context-contract digests and stores compact
 subject/family states and closed requirement masks. It is not a canonical model
