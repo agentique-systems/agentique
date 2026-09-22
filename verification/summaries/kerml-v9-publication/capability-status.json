@@ -6,8 +6,8 @@
   "publication_blocking_authority_conflicts": 0,
   "slices": {
     "A": "Complete",
-    "B": "running",
-    "C": "not_run",
+    "B": "Complete",
+    "C": "running",
     "D": "not_run",
     "E": "not_run"
   },
@@ -95,6 +95,30 @@
       "slice_seconds": 817.2653021,
       "report": "verification/generated/kerml-v9-publication/slices/slice-A.json",
       "report_sha256": "43d3521aa84c98b41ba8099ab4c2dde1a4762e401acfc91075c034d121d27d5a",
+      "resource_stop": false
+    },
+    {
+      "slice": "B",
+      "attempt": 1,
+      "result": "Complete",
+      "producer_closure": "Complete",
+      "capability_findings": 0,
+      "mandatory_references_checked": 1636,
+      "mandatory_reference_failures": 0,
+      "boundary_complete": true,
+      "scope_attempts": 3,
+      "subjects": 11229,
+      "audited_subjects": 21658,
+      "preparation_seconds": 203.3144738,
+      "slice_seconds": 887.5477062,
+      "report": "verification/generated/kerml-v9-publication/slices/slice-B.json",
+      "report_sha256": "cbb93b46c75036b19012bf6d9469f2bf5a2661c45354660f38b74ef58c9ef6a8",
+      "resource_stop": false
+    },
+    {
+      "slice": "C",
+      "result": "NotRun",
+      "failure": "Basename suffix collision with other *Performances.kerml documents; failed before producer closure",
       "resource_stop": false
     }
   ]

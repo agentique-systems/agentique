@@ -802,6 +802,67 @@
         "CARGO_INCREMENTAL": "0",
         "CARGO_BUILD_JOBS": "2"
       }
+    },
+    {
+      "name": "v9-slices-provider-contract",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=all",
+        "--output=verification/generated/kerml-v9-publication/slices/slice-{slice}.json"
+      ],
+      "source_commit": "1ad26a6baea3303521c0b2088e576201b5954b56",
+      "working_changes_sha256": "e12c5c67afbff58cb9cad070bd5d3601df04ca0aad098d02e74b1f2f79ea8b2c",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-slices-provider-contract",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 7692,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 1284984832,
+      "safety_stop": null,
+      "duration_seconds": 1910.125,
+      "peak_rss_bytes": 1887371264,
+      "peak_private_bytes": 2220003328,
+      "samples": 1909,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 3670016000,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "008b771bc434a673208984dadb7ddb9858f2fb5331415a88abfc0058a716ed85"
+    },
+    {
+      "name": "v9-cde-and-canonical-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "6581a4ce0ad969661f48ce1a9038ba32420543a7",
+      "working_changes_sha256": "6caac86874d65c27495c784c78ccd976e077e05b5566e284e0164027b9755a34",
+      "output_sha256": "6c56cb7ac3ab6c9c21b10f3079ab7812c196e1c1886fa4c71cffda9859c6a220",
+      "duration_seconds": 61.89,
+      "output": "verification/generated/kerml-v9-publication/v9-cde-and-canonical-release-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0"
+      }
     }
   ]
 }

@@ -36,6 +36,29 @@ larger work than the previous controlled gate: scope expansion and complete
 capability/reference audits are included. Peak private memory through A was
 2,212,048,896 bytes, below twice the earlier controlled 1.75 GiB observation.
 The unchanged synthetic gate below separately checks producer performance.
+For the closest real-slice comparison, the old 268.80-second run included about
+203.44 seconds of preparation and stopped after roughly 65.36 seconds of closure
+and reporting, before capability/reference audits. The new first scope used
+69.32 seconds for closure and boundary inspection after 203.31 seconds of
+preparation. The longer total reflects two larger scope attempts and audits;
+it is not evidence of a threefold producer slowdown. The historical failed
+measurement remains in the overnight-convergence record.
+
+B also passed: 11,229 scoped declarations, 21,658 audited subjects and 1,636
+Complete mandatory references, with no findings or missing providers. Its three
+scope attempts took 887.55 seconds. The combined A/B run stopped at the
+next preflight error, without a resource stop: C's basename selector incorrectly
+matched `Performances.kerml` against other `*Performances.kerml` filenames.
+No C producer work or whole-corpus publication attempt occurred in that run.
+
+A subsequent focused review corrected explicit bound-context assertions that
+could mask a conflicting Multiplicity context. Independent iterative walks now
+reconcile those assertions; 16 focused checks pass, including historical v8,
+cycle handling and complete query-result/evidence equality when no explicit
+assertion exists. [bound-context-checks.json](bound-context-checks.json) proves
+zero applicability in the exact canonical corpus and enumerates all producer
+sites, so the existing A/B results remain applicable. Its larger population
+includes one already retained v3 correction in addition to the source inventory.
 
 [connector-related-checks.json](connector-related-checks.json) records the exact
 published rule and focused checks. [scale-checks.json](scale-checks.json) records
