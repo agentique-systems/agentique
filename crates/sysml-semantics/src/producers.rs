@@ -1642,7 +1642,7 @@ fn usage_may_time_vary(
             evidence
                 .merge_evidence(queries.producer_closure(
                     subject,
-                    agq_kerml_semantics::SemanticClosureRequirement::EffectiveMembership,
+                    agq_kerml_semantics::SemanticClosureRequirement::EffectiveOwnership,
                 ))
                 .expect("same producer context");
         }

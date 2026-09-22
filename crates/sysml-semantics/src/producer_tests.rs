@@ -953,15 +953,20 @@ fn transition_acceptance_and_source_specialization_use_structural_memberships() 
 
 #[test]
 fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities() {
-    actions_micro(false);
+    actions_micro(false, false);
 }
 
 #[test]
 fn certified_usage_scalar_activates_shared_snapshot_and_value_context_producers() {
-    actions_micro(true);
+    actions_micro(true, false);
 }
 
-fn actions_micro(with_variable_value: bool) {
+#[test]
+fn root_usage_absent_owner_closes_with_combined_producers() {
+    actions_micro(false, true);
+}
+
+fn actions_micro(with_variable_value: bool, with_root_usage: bool) {
     use agq_kerml_semantics::{
         FormalConstraintId, MemberAccess, PublicationOverlayError, SemanticClosureRequirement,
         close_result_structure_with_extension,
@@ -1082,6 +1087,9 @@ fn actions_micro(with_variable_value: bool) {
     f.value(50_004, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
     f.member(50_003, 50_004, 150_004, kc::FEATURE_MEMBERSHIP);
     f.changes.clear(id(150_004), kp::ELEMENT_DECLARED_NAME);
+    if with_root_usage {
+        f.create(50_008, sc::REFERENCE_USAGE, "rootReference");
+    }
     if with_variable_value {
         f.create(50_005, sc::REFERENCE_USAGE, "variableValue");
         f.member(50_000, 50_005, 150_005, kc::FEATURE_MEMBERSHIP);
@@ -1168,6 +1176,35 @@ fn actions_micro(with_variable_value: bool) {
         .with_producer_closure(certificate.clone())
         .unwrap();
     let queries = KerMlQueries::new(context);
+    if with_root_usage {
+        let owner = queries.owning_type(id(50_008));
+        assert_eq!(owner.completeness, Completeness::Complete, "{owner:?}");
+        assert_eq!(owner.value, None);
+        let scalar = plan_sysml_may_time_vary(
+            &queries,
+            SysmlBaselineProfile::OPERATIONAL_V2,
+            &StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+            &roots,
+            id(50_008),
+        );
+        assert_eq!(
+            scalar.evidence.completeness,
+            Completeness::Complete,
+            "{scalar:?}"
+        );
+        assert_eq!(
+            queries
+                .model()
+                .navigation_slot(id(50_008), agq_sysml::properties::USAGE_MAY_TIME_VARY)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Boolean(false))
+        );
+        assert!(certificate.is_closed(id(50_008), SemanticClosureRequirement::EffectiveOwnership));
+        assert!(scalar.evidence.search_dependencies.iter().any(|dependency| matches!(dependency,
+            SearchDependency::ProducerClosure { subject, requirement: SemanticClosureRequirement::EffectiveOwnership, .. } if *subject == id(50_008)
+        )));
+    }
     let final_plan = plan_sysml_producers(
         &queries,
         SysmlBaselineProfile::OPERATIONAL_V2,
