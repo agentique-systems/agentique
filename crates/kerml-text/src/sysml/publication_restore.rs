@@ -192,6 +192,17 @@ fn check_interpretation(
     accepted_kerml: &CanonicalKermlStandardLibraries,
     contract: &SysmlDependencyContract,
 ) -> Result<(), SystemsPublicationCacheError> {
+    if receipt.entry_names().collect::<BTreeSet<_>>() != ENTRIES.into_iter().collect() {
+        return Err(SystemsPublicationCacheError::Mismatch(
+            "receipt archive entries",
+        ));
+    }
+    check_receipt_documents(
+        receipt.publication_format(),
+        receipt.source_content_set(),
+        receipt.identity(),
+        receipt.binding_manifest(),
+    )?;
     if receipt.source_content_set() != sources.content_set_id()
         || accepted_kerml.source_content_set() != sources.content_set_id()
         || accepted_kerml.semantic_digest() != contract.kerml_publication_digest
@@ -236,6 +247,42 @@ fn check_interpretation(
     ] {
         if receipt.identity()[field] != expected {
             return Err(SystemsPublicationCacheError::Mismatch(field));
+        }
+    }
+    Ok(())
+}
+
+// The lower semantic layer authenticates an opaque catalogue envelope. SysML
+// owns the schema and cross-document interpretation of this accepted facade.
+fn check_receipt_documents(
+    format: &str,
+    source_content_set: &str,
+    identity: &Value,
+    bindings: &Value,
+) -> Result<(), SystemsPublicationCacheError> {
+    if format != "agq-sysml-accepted-publication/1"
+        || bindings["format"] != "agq-sysml-accepted-bindings/1"
+        || bindings["source_content_set"] != source_content_set
+    {
+        return Err(SystemsPublicationCacheError::Mismatch(
+            "receipt document schema",
+        ));
+    }
+    for (receipt_field, binding_field) in [
+        ("publication_digest", "accepted_systems_digest"),
+        ("semantic_digest", "semantic_digest"),
+        ("accepted_kerml_digest", "accepted_kerml_digest"),
+        ("systems_kpar", "systems_kpar"),
+        ("systems_source_content_set", "systems_source_content_set"),
+        ("operational_profile", "operational_profile"),
+        ("rule_set", "rule_set"),
+        ("producer_registry_digest", "producer_registry_digest"),
+        ("producer_closure_digest", "producer_closure_digest"),
+    ] {
+        if identity[receipt_field].is_null() || identity[receipt_field] != bindings[binding_field] {
+            return Err(SystemsPublicationCacheError::Mismatch(
+                "receipt binding identity",
+            ));
         }
     }
     Ok(())
@@ -461,6 +508,79 @@ fn entry_digest<R: Read + Seek>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn receipt_documents() -> (Value, Value) {
+        let identity = json!({
+            "publication_digest":[1], "semantic_digest":[2],
+            "accepted_kerml_digest":[3], "systems_kpar":"fixture-kpar",
+            "systems_source_content_set":[4], "operational_profile":"fixture-profile",
+            "rule_set":"fixture-rules", "producer_registry_digest":[5],
+            "producer_closure_digest":[6],
+        });
+        let mut bindings = identity.clone();
+        let bindings_map = bindings.as_object_mut().unwrap();
+        bindings_map.remove("publication_digest");
+        bindings_map.insert(
+            "accepted_systems_digest".into(),
+            identity["publication_digest"].clone(),
+        );
+        bindings_map.insert("format".into(), json!("agq-sysml-accepted-bindings/1"));
+        bindings_map.insert("source_content_set".into(), json!("fixture-sources"));
+        (identity, bindings)
+    }
+
+    #[test]
+    fn systems_receipt_schema_rejects_missing_or_mismatched_fields() {
+        const FORMAT: &str = "agq-sysml-accepted-publication/1";
+        let (identity, bindings) = receipt_documents();
+        check_receipt_documents(FORMAT, "fixture-sources", &identity, &bindings).unwrap();
+        assert!(
+            check_receipt_documents("other-format", "fixture-sources", &identity, &bindings)
+                .is_err()
+        );
+        assert!(check_receipt_documents(FORMAT, "other-sources", &identity, &bindings).is_err());
+        for field in bindings.as_object().unwrap().keys() {
+            let mut missing = bindings.clone();
+            missing.as_object_mut().unwrap().remove(field);
+            assert!(
+                check_receipt_documents(FORMAT, "fixture-sources", &identity, &missing).is_err(),
+                "missing binding field {field}"
+            );
+            let mut changed = bindings.clone();
+            changed[field] = json!("changed");
+            assert!(
+                check_receipt_documents(FORMAT, "fixture-sources", &identity, &changed).is_err(),
+                "changed binding field {field}"
+            );
+        }
+        for field in identity.as_object().unwrap().keys() {
+            let mut missing = identity.clone();
+            missing.as_object_mut().unwrap().remove(field);
+            assert!(
+                check_receipt_documents(FORMAT, "fixture-sources", &missing, &bindings).is_err(),
+                "missing receipt field {field}"
+            );
+            let mut changed = identity.clone();
+            changed[field] = json!("changed");
+            assert!(
+                check_receipt_documents(FORMAT, "fixture-sources", &changed, &bindings).is_err(),
+                "changed receipt field {field}"
+            );
+            let mut absent_both = bindings.clone();
+            absent_both
+                .as_object_mut()
+                .unwrap()
+                .remove(if field == "publication_digest" {
+                    "accepted_systems_digest"
+                } else {
+                    field
+                });
+            assert!(
+                check_receipt_documents(FORMAT, "fixture-sources", &missing, &absent_both).is_err(),
+                "matching omissions {field} must not count as identity agreement"
+            );
+        }
+    }
 
     fn archive(names: &[&str]) -> Vec<u8> {
         let mut writer = ZipWriter::new(Cursor::new(vec![]));

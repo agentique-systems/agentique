@@ -17,6 +17,10 @@ An opaque capability selects an entry from a finite compiled catalog containing
 only independently checked-in accepted receipt and binding documents. Catalog
 entries contain data, with no dependency on SysML implementation crates. Add the
 Systems entry only from the actual accepted export; do not add a placeholder.
+The expected receipt-format label is private catalogue data. The lower layer
+authenticates the generic envelope, opaque binding payload and closure context;
+it does not interpret SysML schema fields. The SysML facade checks its receipt
+and binding formats, cross-document identities and exact archive population.
 
 ```rust,ignore
 pub struct TrustedPublicationReceipt { /* private authenticated documents */ }

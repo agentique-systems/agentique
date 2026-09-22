@@ -1,5 +1,5 @@
 //! Exact producer evidence restoration under independently compiled authority.
-//! The catalogue is intentionally empty until a Systems publication is accepted.
+//! Language facades interpret their own authenticated receipt and binding fields.
 use crate::{ProducerClosureCertificate, ProducerRegistry, SemanticContext};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -10,6 +10,7 @@ use std::{
 
 struct CatalogueEntry<'a> {
     id: &'static str,
+    receipt_format: &'static str,
     receipt: &'a str,
     bindings: &'a str,
 }
@@ -65,33 +66,12 @@ impl TrustedPublicationReceipt {
     fn from_catalogue(entry: &CatalogueEntry<'_>) -> Result<Self, TrustedPublicationError> {
         let receipt: Value = serde_json::from_str(entry.receipt)?;
         let bindings: Value = serde_json::from_str(entry.bindings)?;
-        if receipt["format"] != "agq-sysml-accepted-publication/1"
+        if receipt["format"] != entry.receipt_format
             || receipt["status"] != "accepted"
-            || bindings["format"] != "agq-sysml-accepted-bindings/1"
             || receipt["binding_manifest_sha256"] != json!(digest_json(&bindings)?)
             || receipt["source_content_set"].as_str().is_none()
-            || receipt["source_content_set"] != bindings["source_content_set"]
         {
             return Err(TrustedPublicationError::Mismatch("catalogue documents"));
-        }
-        for (receipt_field, binding_field) in [
-            ("publication_digest", "accepted_systems_digest"),
-            ("semantic_digest", "semantic_digest"),
-            ("accepted_kerml_digest", "accepted_kerml_digest"),
-            ("systems_kpar", "systems_kpar"),
-            ("systems_source_content_set", "systems_source_content_set"),
-            ("operational_profile", "operational_profile"),
-            ("rule_set", "rule_set"),
-            ("producer_registry_digest", "producer_registry_digest"),
-            ("producer_closure_digest", "producer_closure_digest"),
-        ] {
-            if receipt["identity"][receipt_field].is_null()
-                || receipt["identity"][receipt_field] != bindings[binding_field]
-            {
-                return Err(TrustedPublicationError::Mismatch(
-                    "catalogue binding identity",
-                ));
-            }
         }
         let result = Self {
             id: entry.id,
@@ -104,12 +84,12 @@ impl TrustedPublicationReceipt {
                 .ok_or(TrustedPublicationError::Mismatch(
                     "catalogue archive entries",
                 ))?;
-        if entries.len() != 3 {
+        if entries.is_empty() {
             return Err(TrustedPublicationError::Mismatch(
                 "catalogue archive entries",
             ));
         }
-        for name in ["facade.json", "closure.json", "kernel.jsonl"] {
+        for name in entries.keys() {
             result.entry_bytes(name)?;
             let _: [u8; 32] =
                 serde_json::from_value(result.receipt["entries"][name]["sha256"].clone())?;
@@ -120,6 +100,18 @@ impl TrustedPublicationReceipt {
     /// Catalogue selection, independent of caller-supplied cache labels.
     pub fn id(&self) -> &'static str {
         self.id
+    }
+    /// Authenticated format label. Only the consuming language facade interprets it.
+    pub fn publication_format(&self) -> &str {
+        self.receipt["format"].as_str().expect("checked catalogue")
+    }
+    /// Authenticated archive population, without prescribing a language container.
+    pub fn entry_names(&self) -> impl Iterator<Item = &str> {
+        self.receipt["entries"]
+            .as_object()
+            .expect("checked catalogue")
+            .keys()
+            .map(String::as_str)
     }
     /// Authenticated, immutable publication identity fields.
     pub fn identity(&self) -> &Value {
@@ -221,42 +213,60 @@ mod tests {
         let bytes = serde_json::to_vec(&certificate.receipt_value()).unwrap();
         let digest: [u8; 32] = Sha256::digest(&bytes).into();
         let identity = json!({
-            "publication_digest":vec![1u8;32], "semantic_digest":context.id().model_digest,
-            "accepted_kerml_digest":vec![2u8;32], "systems_kpar":"fixture",
-            "systems_source_content_set":vec![3u8;32], "operational_profile":"fixture",
-            "rule_set":"fixture", "producer_registry_digest":registry.digest(),
+            "semantic_digest":context.id().model_digest,
+            "producer_registry_digest":registry.digest(),
             "producer_closure_digest":certificate.digest(),
             "producer_context_contract_digest":context.id().closure_contract_digest(),
         });
         let bindings = json!({
-            "format":"agq-sysml-accepted-bindings/1", "source_content_set":"fixture",
-            "accepted_systems_digest":identity["publication_digest"],
-            "semantic_digest":identity["semantic_digest"],
-            "accepted_kerml_digest":identity["accepted_kerml_digest"],
-            "systems_kpar":identity["systems_kpar"],
-            "systems_source_content_set":identity["systems_source_content_set"],
-            "operational_profile":"fixture", "rule_set":"fixture",
-            "producer_registry_digest":registry.digest(),
-            "producer_closure_digest":certificate.digest(),
+            "fixture_anchors":[{"label":"independent language payload"}],
         });
         let receipt = json!({
-            "format":"agq-sysml-accepted-publication/1", "status":"accepted",
+            "format":"fixture-publication/1", "status":"accepted",
             "source_content_set":"fixture", "binding_manifest_sha256":digest_json(&bindings).unwrap(),
             "identity":identity, "entries":{
                 "closure.json":{"bytes":bytes.len(),"sha256":digest},
-                "facade.json":{"bytes":0,"sha256":vec![0u8;32]},
-                "kernel.jsonl":{"bytes":0,"sha256":vec![0u8;32]},
             },
         });
         let receipt_text = receipt.to_string();
         let bindings_text = bindings.to_string();
         let trusted = TrustedPublicationReceipt::from_catalogue(&CatalogueEntry {
             id: "private-unit-fixture",
+            receipt_format: "fixture-publication/1",
             receipt: &receipt_text,
             bindings: &bindings_text,
         })
         .unwrap();
         (trusted, bytes)
+    }
+
+    #[test]
+    fn catalogue_authenticates_generic_envelope_and_opaque_binding_payload() {
+        let snapshot = Snapshot::new(Arc::new(agq_kerml::registry().unwrap()));
+        let registry = ProducerRegistry::new([]).unwrap();
+        let context =
+            SemanticContext::for_snapshot(&snapshot, SemanticOptions::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(registry.digest())
+                .unwrap();
+        let (receipt, _) = fixture_receipt(&context, &registry);
+        assert_eq!(receipt.publication_format(), "fixture-publication/1");
+        assert!(receipt.binding_manifest()["format"].is_null());
+        assert_eq!(
+            receipt.entry_names().collect::<Vec<_>>(),
+            vec!["closure.json"]
+        );
+        let receipt_text = receipt.receipt.to_string();
+        let bindings_text = receipt.bindings.to_string();
+        assert!(
+            TrustedPublicationReceipt::from_catalogue(&CatalogueEntry {
+                id: "private-unit-fixture",
+                receipt_format: "different-publication/1",
+                receipt: &receipt_text,
+                bindings: &bindings_text,
+            })
+            .is_err()
+        );
     }
 
     #[test]
@@ -365,6 +375,7 @@ mod tests {
         assert!(
             TrustedPublicationReceipt::from_catalogue(&CatalogueEntry {
                 id: "private-unit-fixture",
+                receipt_format: "fixture-publication/1",
                 receipt: &receipt_text,
                 bindings: &binding_text,
             })
