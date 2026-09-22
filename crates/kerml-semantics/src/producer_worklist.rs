@@ -16,6 +16,11 @@ use frontier::ProducerFrontier;
 /// and positive/negative read index as KerML. Contributions must carry their
 /// actual query evidence and stable rule/output identities.
 pub trait PublicationProducerExtension {
+    /// Complete immutable potential-effect registry. A legacy extension with
+    /// no descriptors remains usable but cannot establish closure evidence.
+    fn descriptors(&self) -> Vec<ProducerDescriptor> {
+        vec![]
+    }
     fn applies(&self, model: &ModelView, class: MetaclassId) -> bool;
     /// Whether to establish structurally dependent scalar predicates before
     /// context-sensitive bindings. Later dirty reads still reevaluate them;
@@ -63,6 +68,124 @@ pub enum ProducerFamily {
     IndexSelectResult,
 }
 impl ProducerFamily {
+    pub const fn id(self) -> ProducerFamilyId {
+        ProducerFamilyId::new(match self {
+            Self::OwnedInstantiationResult => "KerML.OwnedInstantiationResult",
+            Self::PositionalRedefinition => "KerML.PositionalRedefinition",
+            Self::VariableFeaturing => "KerML.VariableFeaturing",
+            Self::OwnedCrossing => "KerML.OwnedCrossing",
+            Self::CrossDomain => "KerML.CrossDomain",
+            Self::Invocation => "KerML.Invocation",
+            Self::FeatureChainExpression => "KerML.FeatureChainExpression",
+            Self::FeatureReferenceExpression => "KerML.FeatureReferenceExpression",
+            Self::ExpressionResult => "KerML.ExpressionResult",
+            Self::FeatureValue => "KerML.FeatureValue",
+            Self::IndexSelectResult => "KerML.IndexSelectResult",
+        })
+    }
+    pub fn descriptor(self, profile: BaselineProfile) -> ProducerDescriptor {
+        use ProducerEffect as E;
+        let (classes, effects): (Vec<_>, Vec<_>) = match self {
+            Self::OwnedInstantiationResult => (
+                vec![c::INSTANTIATION_EXPRESSION],
+                vec![E::Membership, E::ResultStructure],
+            ),
+            Self::PositionalRedefinition => (vec![c::FEATURE], vec![E::Redefinition]),
+            // Snapshot creation changes the owning Type's member population;
+            // its new snapshot's redefinition cannot retype the owning Type.
+            Self::VariableFeaturing => (
+                vec![c::FEATURE],
+                vec![E::Featuring, E::Membership, E::ResultStructure],
+            ),
+            Self::OwnedCrossing => (
+                vec![c::FEATURE],
+                vec![E::FeatureChain, E::Subsetting, E::ResultStructure],
+            ),
+            Self::CrossDomain => (
+                vec![c::FEATURE],
+                vec![
+                    E::Typing,
+                    E::Subsetting,
+                    E::Featuring,
+                    E::FeatureChain,
+                    E::ResultStructure,
+                ],
+            ),
+            Self::Invocation => (
+                vec![c::INVOCATION_EXPRESSION],
+                vec![E::Specialization, E::ValueBinding, E::ConnectorStructure],
+            ),
+            Self::FeatureChainExpression => (
+                vec![c::FEATURE_CHAIN_EXPRESSION],
+                vec![
+                    E::Specialization,
+                    E::Redefinition,
+                    E::FeatureChain,
+                    E::ResultStructure,
+                ],
+            ),
+            Self::FeatureReferenceExpression => (
+                vec![c::FEATURE_REFERENCE_EXPRESSION],
+                vec![E::ValueBinding, E::ConnectorStructure],
+            ),
+            Self::ExpressionResult => (
+                vec![c::EXPRESSION, c::FUNCTION],
+                vec![
+                    E::Membership,
+                    E::FeatureChain,
+                    E::ValueBinding,
+                    E::ResultStructure,
+                    E::ConnectorStructure,
+                ],
+            ),
+            Self::FeatureValue => (
+                vec![c::FEATURE],
+                vec![
+                    E::Subsetting,
+                    E::FeatureChain,
+                    E::Featuring,
+                    E::Membership,
+                    E::ValueBinding,
+                    E::ResultStructure,
+                    E::ConnectorStructure,
+                ],
+            ),
+            Self::IndexSelectResult => (
+                vec![c::INDEX_EXPRESSION, c::SELECT_EXPRESSION],
+                vec![
+                    E::Subsetting,
+                    E::FeatureChain,
+                    E::Membership,
+                    E::ResultStructure,
+                ],
+            ),
+        };
+        let enabled = match self {
+            Self::OwnedInstantiationResult
+            | Self::PositionalRedefinition
+            | Self::VariableFeaturing
+            | Self::Invocation
+            | Self::FeatureChainExpression => profile.supports_publication_producers(),
+            Self::OwnedCrossing | Self::CrossDomain => profile.corrects_owned_cross_domain(),
+            _ => true,
+        };
+        let mut descriptor = ProducerDescriptor::new(
+            self.id(),
+            effects,
+            if enabled {
+                ProducerApplicability::Subtypes(classes)
+            } else {
+                ProducerApplicability::Never
+            },
+        );
+        if self == Self::FeatureReferenceExpression {
+            descriptor.minimum_stratum = ResultStructureStratum::ContextualBindings;
+        }
+        if self == Self::VariableFeaturing {
+            descriptor.scope = ProducerEffectScope::Model;
+        }
+        descriptor
+    }
     pub const ALL: [Self; 11] = [
         Self::OwnedInstantiationResult,
         Self::PositionalRedefinition,
@@ -146,6 +269,13 @@ impl Default for PublicationClosureOptions {
 /// the external watchdog; none of these counters participates in acceptance.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PublicationCounters {
+    pub families_registered: usize,
+    pub applicable_subject_family_pairs: usize,
+    pub closed_producer_pairs: usize,
+    pub closed_producer_effects: usize,
+    pub incomplete_producer_pairs: usize,
+    pub certificate_bytes: usize,
+    pub certificate_build_micros: u128,
     pub declared_subjects: usize,
     pub subjects_considered: usize,
     pub subjects_evaluated: usize,
@@ -188,6 +318,8 @@ pub struct PublicationClosure<Overlay = DerivedOverlay> {
     pub counters: PublicationCounters,
     pub completeness: Completeness,
     pub converged: bool,
+    /// Exact final frontier, even when only some effect requirements closed.
+    pub certificate: Option<std::sync::Arc<ProducerClosureCertificate>>,
     /// Bounded model population read by the latest evaluation of each producer.
     /// Scoped callers can audit their boundary without rerunning producers.
     pub producer_reads: QueryInvalidationSet,
@@ -327,7 +459,9 @@ pub fn close_construction_structure_with_extension(
 fn close_frontiers<Overlay: ProducerFrontier>(
     input: &Overlay::Input,
     options: PublicationClosureOptions,
-    mut context: impl for<'m> FnMut(&'m Overlay) -> Result<SemanticContext<'m>, PublicationOverlayError>,
+    mut context_factory: impl for<'m> FnMut(
+        &'m Overlay,
+    ) -> Result<SemanticContext<'m>, PublicationOverlayError>,
     extension: &impl PublicationProducerExtension,
     mut batch_progress: impl FnMut(usize, usize, usize, usize),
     mut progress: impl FnMut(&PublicationStage),
@@ -361,10 +495,36 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     let mut applicability = BTreeMap::<MetaclassId, Vec<ProducerFamily>>::new();
     let mut identity: Option<SemanticContextId> = None;
     let mut converged = false;
+    let mut registry: Option<ProducerRegistry> = None;
+    let mut evaluations = crate::producer_closure::ProducerEvaluationTable::default();
+    let mut certificate: Option<std::sync::Arc<ProducerClosureCertificate>> = None;
+    let extension_descriptors = extension.descriptors();
+    let mut unregistered_extension = false;
     let mut stratum = ResultStructureStratum::Structural;
     let mut deferred_bindings = BTreeSet::new();
     for round in 0..options.max_rounds {
-        let context = context(&overlay)?;
+        let mut current_context = context_factory(&overlay)?;
+        let registry = registry.get_or_insert_with(|| {
+            let descriptors = ProducerFamily::ALL
+                .into_iter()
+                .map(|f| f.descriptor(current_context.id().options.baseline_profile))
+                .chain(extension_descriptors.iter().cloned());
+            ProducerRegistry::new(descriptors).expect("producer family identities must be unique")
+        });
+        counters.families_registered = registry.descriptors().len();
+        current_context = current_context
+            .with_producer_registry_digest(registry.digest())
+            .map_err(PublicationOverlayError::Context)?;
+        if let Some(witness) = &certificate {
+            if witness.compatible_context(current_context.id()) {
+                current_context = current_context
+                    .with_producer_closure(witness.clone())
+                    .map_err(PublicationOverlayError::Context)?;
+            } else {
+                certificate = None;
+            }
+        }
+        let context = current_context;
         if let Some(previous) = &identity {
             // Compare all immutable inputs; only graph digest and derivation
             // phase naturally change as the additive overlay grows.
@@ -372,6 +532,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             current.model_digest = previous.model_digest;
             current.derivation_phase = previous.derivation_phase;
             current.library_graph_digest = previous.library_graph_digest;
+            current.producer_closure_digest = previous.producer_closure_digest;
             // Missing lower bounds are mutable construction frontier state,
             // not a change of semantic authority. Their participants join the
             // dirty population after each materialization below.
@@ -416,6 +577,9 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 );
                 continue;
             };
+            evaluations.pending(subject, overlay.model(), registry);
+            unregistered_extension |= extension_descriptors.is_empty()
+                && extension.applies(overlay.model(), record.metaclass());
             let families = applicability.entry(record.metaclass()).or_insert_with(|| {
                 ProducerFamily::ALL
                     .into_iter()
@@ -483,6 +647,8 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                         ),
                     );
                 }
+                evaluations.record(&part.producer_evaluations, registry);
+                part.producer_evaluations.clear();
                 part.discard_aggregate_proof();
                 plan.merge(part)?;
             } else {
@@ -509,6 +675,8 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                             part.production.diagnostics.clone(),
                         ),
                     );
+                    evaluations.record(&part.producer_evaluations, registry);
+                    part.producer_evaluations.clear();
                     part.discard_aggregate_proof();
                     plan.merge(part)?;
                 }
@@ -610,6 +778,44 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         progress(&record);
         stages.push(record);
         if stable {
+            if !unregistered_extension {
+                let started = std::time::Instant::now();
+                let next_context = context_factory(&next)?
+                    .with_producer_registry_digest(registry.digest())
+                    .map_err(PublicationOverlayError::Context)?;
+                let issued = std::sync::Arc::new(ProducerClosureCertificate::issue(
+                    next.model(),
+                    next_context.id(),
+                    registry,
+                    &evaluations,
+                    |id| Overlay::is_dependency_element(input, id),
+                ));
+                counters.applicable_subject_family_pairs = issued.applicable_pairs();
+                counters.closed_producer_pairs = issued.closed_pairs();
+                counters.closed_producer_effects = issued.closed_effects();
+                counters.incomplete_producer_pairs = issued.incomplete_pairs();
+                counters.certificate_bytes = issued.storage_bytes();
+                counters.certificate_build_micros += started.elapsed().as_micros();
+                let changed_witness = certificate
+                    .as_ref()
+                    .is_none_or(|old| old.digest() != issued.digest());
+                certificate = Some(issued);
+                if changed_witness
+                    && status
+                        .values()
+                        .any(|(state, _)| *state != Completeness::Complete)
+                {
+                    worklist = status
+                        .iter()
+                        .filter_map(|(&id, (state, _))| {
+                            (*state != Completeness::Complete).then_some(id)
+                        })
+                        .collect();
+                    counters.dirty_subjects_enqueued += worklist.len();
+                    overlay = next;
+                    continue;
+                }
+            }
             if stratum == ResultStructureStratum::Structural && extension.has_stable_properties() {
                 stratum = ResultStructureStratum::StableProperties;
                 worklist = population.clone();
@@ -639,6 +845,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             overlay = next;
             break;
         }
+        certificate = None;
         population.extend(new_subjects);
         worklist = match options.strategy {
             PublicationClosureStrategy::Worklist => index
@@ -665,6 +872,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         stages,
         counters,
         converged,
+        certificate,
         producer_reads: QueryInvalidationSet::from_keys(
             index.subjects.into_values().flatten().collect(),
         ),

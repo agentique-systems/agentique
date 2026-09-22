@@ -18,7 +18,7 @@ mod contributions;
 /// Publication closes positive structural implications before choosing nearest
 /// featuring contexts. The second stratum still runs all ordinary producers on
 /// newly generated subjects and rejects any conflicting context reassignment.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ResultStructureStratum {
     Structural,
     /// Extension predicates whose negative antecedents require structural
@@ -1648,6 +1648,7 @@ pub struct ConstructionResultStructure {
 pub struct ResultStructurePlan<'m> {
     graph: Graph<'m>,
     pub(crate) producer_families_attempted: usize,
+    pub(crate) producer_evaluations: Vec<(ElementId, ProducerFamilyId, Completeness)>,
     pub(crate) deferred_bindings: BTreeSet<ElementId>,
     /// Exact input identity, including unresolved construction obligations.
     pub context: SemanticContextId,
@@ -1655,6 +1656,18 @@ pub struct ResultStructurePlan<'m> {
     pub contextual_results: Vec<ContextualResult>,
 }
 impl ResultStructurePlan<'_> {
+    /// Record one extension family's complete evaluation, including a false
+    /// dynamic antecedent. The scheduler authenticates this against the registry.
+    pub fn record_producer_evaluation(
+        &mut self,
+        subject: ElementId,
+        family: ProducerFamilyId,
+        completeness: Completeness,
+    ) {
+        self.producer_evaluations
+            .push((subject, family, completeness));
+    }
+
     /// Publication batches retain canonical per-fact evidence in the graph.
     /// Release the redundant aggregate query proof before the kernel allocates
     /// the merged overlay. This internal status is never returned as a query.
@@ -1816,6 +1829,7 @@ impl ResultStructurePlan<'_> {
             .direct_searches
             .extend(other.graph.direct_searches);
         self.producer_families_attempted += other.producer_families_attempted;
+        self.producer_evaluations.extend(other.producer_evaluations);
         self.deferred_bindings.extend(other.deferred_bindings);
         self.graph.assignments.extend(other.graph.assignments);
         for (owner, additions) in other.graph.attachments {
@@ -1986,6 +2000,7 @@ impl<'m> KerMlQueries<'m> {
         let mut aggregate = self.result(vec![]);
         let mut contextual_results = vec![];
         let mut producer_families_attempted = 0;
+        let mut producer_evaluations = vec![];
         let mut deferred_bindings = BTreeSet::new();
         for subject in subjects.into_iter().collect::<BTreeSet<_>>() {
             let mut production = self.result(vec![]);
@@ -2016,10 +2031,20 @@ impl<'m> KerMlQueries<'m> {
                         proof.problem(Completeness::Incomplete, "KQ_RESULT_STAGE", subject,
                             "Owned result was staged; dependent producers require the next overlay stage");
                     }
+                    producer_evaluations.push((
+                        subject,
+                        ProducerFamily::OwnedInstantiationResult.id(),
+                        proof.completeness,
+                    ));
                     production.merge(proof);
                     graph.finish_subject(&mut production, &mut aggregate);
                     continue;
                 }
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::OwnedInstantiationResult.id(),
+                    proof.completeness,
+                ));
             }
             if profile.supports_publication_producers() && self.is(subject, c::FEATURE) {
                 producer_families_attempted += 2;
@@ -2055,6 +2080,11 @@ impl<'m> KerMlQueries<'m> {
                         }
                     }
                 }
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::PositionalRedefinition.id(),
+                    redefinitions.completeness,
+                ));
                 production.merge(redefinitions);
                 let mut proof = self.result(());
                 if matches!(
@@ -2123,6 +2153,11 @@ impl<'m> KerMlQueries<'m> {
                     }
                     proof.merge(owner);
                 }
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::VariableFeaturing.id(),
+                    proof.completeness,
+                ));
                 production.merge(proof);
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
@@ -2188,6 +2223,11 @@ impl<'m> KerMlQueries<'m> {
                         proof.merge(owner);
                     }
                 }
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::OwnedCrossing.id(),
+                    proof.completeness,
+                ));
                 production.merge(proof);
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
@@ -2224,6 +2264,11 @@ impl<'m> KerMlQueries<'m> {
                         }
                     }
                 }
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::CrossDomain.id(),
+                    proof.completeness,
+                ));
                 production.merge(proof);
             }
             if profile.supports_publication_producers()
@@ -2271,6 +2316,11 @@ impl<'m> KerMlQueries<'m> {
                 } else {
                     proof.merge(instantiated);
                 }
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::Invocation.id(),
+                    proof.completeness,
+                ));
                 production.merge(proof);
             }
             if profile.supports_publication_producers()
@@ -2310,6 +2360,11 @@ impl<'m> KerMlQueries<'m> {
                     proof.problem(Completeness::Incomplete, "KQ_FEATURE_CHAIN_STRUCTURE", subject,
                         "The chain expression requires a source input, target Feature and owned result");
                 }
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::FeatureChainExpression.id(),
+                    proof.completeness,
+                ));
                 production.merge(proof);
             }
             if self.is(subject, c::FEATURE_REFERENCE_EXPRESSION) {
@@ -2336,6 +2391,11 @@ impl<'m> KerMlQueries<'m> {
                             ));
                         }
                     }
+                    producer_evaluations.push((
+                        subject,
+                        ProducerFamily::FeatureReferenceExpression.id(),
+                        proof.completeness,
+                    ));
                     production.merge(proof);
                 }
             }
@@ -2392,6 +2452,11 @@ impl<'m> KerMlQueries<'m> {
                     }
                 }
                 proof.merge(members);
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::ExpressionResult.id(),
+                    proof.completeness,
+                ));
                 production.merge(proof);
             }
             if self.is(subject, c::FEATURE) {
@@ -2557,6 +2622,11 @@ impl<'m> KerMlQueries<'m> {
                     }
                 }
                 proof.merge(owned);
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::FeatureValue.id(),
+                    proof.completeness,
+                ));
                 production.merge(proof);
             }
             if self.is(subject, c::INDEX_EXPRESSION) || self.is(subject, c::SELECT_EXPRESSION) {
@@ -2636,6 +2706,11 @@ impl<'m> KerMlQueries<'m> {
                         }
                     }
                 }
+                producer_evaluations.push((
+                    subject,
+                    ProducerFamily::IndexSelectResult.id(),
+                    proof.completeness,
+                ));
                 production.merge(proof);
             }
             graph.finish_subject(&mut production, &mut aggregate);
@@ -2654,6 +2729,7 @@ impl<'m> KerMlQueries<'m> {
         ResultStructurePlan {
             graph,
             producer_families_attempted,
+            producer_evaluations,
             deferred_bindings,
             context: self.context().clone(),
             production,

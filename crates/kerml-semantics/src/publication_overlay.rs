@@ -222,6 +222,7 @@ impl CompletePublicationOverlay {
             model: self.overlay.model(),
             id: self.context.clone(),
             naming_extension: None,
+            producer_closure: None,
         })
     }
 }
