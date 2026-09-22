@@ -1,0 +1,20 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "v9-authority-capture",
+      "command": [
+        "python",
+        "verification/generated/kerml-v9-publication/capture_authority.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "2d8f0258c74b6e4ff8d44cc868a891162904d372c71d63421a11ed0570f77a3a",
+      "duration_seconds": 1.91,
+      "output": "verification/generated/kerml-v9-publication/v9-authority-capture.log",
+      "environment_overrides": {}
+    }
+  ]
+}

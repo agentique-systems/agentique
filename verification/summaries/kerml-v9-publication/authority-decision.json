@@ -1,0 +1,159 @@
+{
+  "format": "agentique-publication-authority-decisions/1",
+  "profile": "agentique-kerml-1.0-operational/9",
+  "authority": "Explicit milestone authorization for exactly KERML11-4 and KERML11-3; Agentique operational interpretation.",
+  "historical_register": "verification/kerml-canonical-publication/authority-decisions.json",
+  "normative_artifact": {
+    "path": "standards/normative/kerml-1.0/KerML.xmi",
+    "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+    "baseline": "KerML 1.0"
+  },
+  "pinned_formal_rules": [
+    {
+      "name": "checkMultiplicityRangeExpressionTypeFeaturing",
+      "xmi_id": "Kernel-Multiplicities-MultiplicityRange-checkMultiplicityRangeExpressionTypeFeaturing",
+      "description": "<p>The <code>bounds</code> of a <code>MultiplicityRange</code> must have the same <code>featuringTypes</code> as the <code>MultiplicityRange</code>.</p>",
+      "ocl": "bound->forAll(b | b.featuringType = self.featuringType)"
+    },
+    {
+      "name": "checkMultiplicityTypeFeaturing",
+      "xmi_id": "Core-Types-Multiplicity-checkMultiplicityTypeFeaturing",
+      "description": "<p>If the <code>owningType</code> of a <code>Multiplicity</code> is a <code>Feature</code>, then the <code>Multiplicity</code> must have the same <code>featuringTypes</code> as that <code>Feature</code>. Otherwise, it must have no <code>featuringTypes</code> (meaning that it is implicitly featured by the base <code>Classifier</code> <em><code>Anything</code></em>).</p>",
+      "ocl": "if owningType <> null and owningType.oclIsKindOf(Feature) then     featuringType =          owningType.oclAsType(Feature).featuringType else     featuringType->isEmpty() endif"
+    }
+  ],
+  "current_issues": [
+    {
+      "key": "KERML11-4",
+      "url": "https://issues.omg.org/issues/KERML11-4",
+      "retrieved": "2026-09-22",
+      "status_displayed": "open",
+      "current_text_summary": "Multiplicity ownership does not use FeatureMembership, so owningType is null. The issue proposes owningNamespace in both the description and OCL.",
+      "raw_html_sha256": "b28b26fa5b0fc86f7643ef8aa71801635c660e43b950d543f388d0b24f37dd11"
+    },
+    {
+      "key": "KERML11-3",
+      "url": "https://issues.omg.org/issues/KERML11-3",
+      "retrieved": "2026-09-22",
+      "status_displayed": "open",
+      "current_text_summary": "A cross Feature has the opposite end or Cartesian domain. Its multiplicity bound must instead resolve names in the containing Association or Connector through the owning end Feature domain.",
+      "raw_html_sha256": "6533030c2a0ddec5f97aa0f4470364779801251857e983a39cb9ec7cfba60bbd"
+    }
+  ],
+  "reference_implementation": {
+    "repository": "Systems-Modeling/SysML-v2-Pilot-Implementation",
+    "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+    "commit_date": "2026-09-12T20:52:27Z",
+    "behavior": {
+      "MultiplicityAdapter.java": {
+        "lines": [
+          61,
+          69
+        ],
+        "behavior": "doTransform invokes inherited addImplicitFeaturingTypesIfNecessary.",
+        "sha256": "9287e87f4b6561f9f0c8a2c1dd38619e8695193a7f3fc8487834b52062eab875",
+        "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/blob/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/MultiplicityAdapter.java"
+      },
+      "FeatureAdapter.java": {
+        "lines": [
+          796,
+          803
+        ],
+        "behavior": "The owningNamespace, when a Feature, supplies implicit featuring types.",
+        "sha256": "131c2452554814e0a8bf96abc788f4388c894eadcea9acc55dc32f1f9abe1455",
+        "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/blob/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureAdapter.java"
+      },
+      "ExpressionAdapter.java": {
+        "lines": [
+          105,
+          124
+        ],
+        "behavior": "MultiplicityRange bounds on an owned cross Feature receive the owning end Feature featuring types. The v9 interpretation applies this same domain consistently to the MultiplicityRange and its bound Expressions.",
+        "sha256": "435d8f22006137d91f793d4a20be3c88e72a017db838bf1b1d7da654672d7141",
+        "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/blob/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/ExpressionAdapter.java"
+      }
+    }
+  },
+  "ballot_corroboration": {
+    "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/releases/tag/2026-07",
+    "finding": "Release notes identify KERML11-3 among resolutions approved on KerML 1.1 RTF Ballot 3.",
+    "baseline_effect": "None; published KerML 1.0 bytes and descriptors remain pinned."
+  },
+  "pinned_corpus_witnesses": [
+    "Transfers::Transfer::instant[instantNum]",
+    "Transfers::FlowTransfer targetInputLink[payloadNum]",
+    "Transfers::FlowTransfer transferPayload[payloadNum]",
+    "TransitionPerformances triggerAfter[taNum]"
+  ],
+  "historical_behavior": "Published through v8 keep owningType and the retained null/empty domain, including the v8 instantNum Incomplete fixture.",
+  "operational_v9_behavior": "One semantic ownership-context query; bound Expressions share the MultiplicityRange domain; propagate incomplete ownership and featuring queries; no lexical fallback or bound evaluation.",
+  "decisions": [
+    {
+      "id": "KLCV10-F-001",
+      "issue": "KERML11-2",
+      "prior_impact": "ValidationOnlyAuthorityConflict",
+      "impact": "ValidationOnlyAuthorityConflict",
+      "evidence": [
+        "verification/kerml-publication-convergence/authority-blockers.json",
+        "crates/kerml-semantics/tests/publication_v8_cross_domains.rs"
+      ],
+      "conformance_disposition": "Retain the validation-only conflict; a known unary end population is determinate without inventing an opposite end"
+    },
+    {
+      "id": "KLCV10-F-002",
+      "issue": "KERML11-4",
+      "prior_impact": "PublicationBlockingAuthorityConflict",
+      "impact": "CoveredByOperationalV9",
+      "evidence": [
+        "verification/kerml-publication-convergence/authority-blockers.json",
+        "crates/kerml-semantics/tests/publication_v8_bounds.rs",
+        "verification/summaries/overnight-convergence/README.md"
+      ],
+      "conformance_disposition": "Agentique operational interpretation explicitly authorized for v9; not an adopted KerML 1.0 correction.",
+      "publication_disposition": "Use owningNamespace. Ordinary Feature-owned multiplicities and their bounds inherit that Feature domain; non-Feature owners contribute no domain.",
+      "history": [
+        {
+          "prior_impact": "ValidationOnlyAuthorityConflict",
+          "impact": "PublicationBlockingAuthorityConflict",
+          "conformance_disposition": "Retain the conflicting multiplicity checks without changing the selected v8 graph interpretation",
+          "publication_disposition": "Transfers::Transfer::instant[instantNum] requires a reference-result binding. The retained empty multiplicity and bound-expression domains provide no permitted direct or indirect featuring context for its outer Feature referent. Worklist and independent full-scan fixtures converge Incomplete. No replacement domain or successor profile is adopted."
+        }
+      ]
+    },
+    {
+      "id": "KLCV10-F-003",
+      "issue": "UNREPORTED-owned-cross-featuring-otherEnds",
+      "prior_impact": "PublicationBlockingAuthorityConflict",
+      "impact": "CoveredByOperationalV8",
+      "evidence": [
+        "crates/kerml-semantics/tests/publication_v8_cross_domains.rs",
+        "crates/kerml-text/examples/publication_focus.rs"
+      ],
+      "conformance_disposition": "Versioned project-authorized operational interpretation; not a claim about literal OCL"
+    },
+    {
+      "id": "KLCV10-F-004",
+      "issue": "KERML11-75",
+      "prior_impact": "PublicationBlockingAuthorityConflict",
+      "impact": "CoveredByOperationalV8",
+      "evidence": [
+        "crates/kerml-semantics/tests/publication_v8_imports.rs",
+        "crates/kerml-text/examples/publication_focus.rs"
+      ],
+      "conformance_disposition": "Versioned project-authorized operational interpretation; not a claim about literal OCL"
+    },
+    {
+      "id": "AGQ-KERML10-V9-CROSS-MULTIPLICITY",
+      "issue": "KERML11-3",
+      "prior_impact": "AdjacentAuthorityCorrection",
+      "impact": "CoveredByOperationalV9",
+      "conformance_disposition": "KerML 1.1 RTF Ballot 3 approval is corroboration only, outside the published KerML 1.0 baseline.",
+      "publication_disposition": "An owned cross Feature multiplicity and its bound Expressions receive the featuring domain of the owning end Feature.",
+      "evidence": [
+        "docs/adr/0023-operational-multiplicity-context-v9.md"
+      ]
+    }
+  ],
+  "publication_blocking_authority_conflicts": 0,
+  "publication_acceptance": "Separate producer, capability, mandatory reference, complete overlay, and canonical library facade gates; authority coverage alone cannot accept publication."
+}
