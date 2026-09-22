@@ -1,0 +1,23 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "publication-tooling-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
+      "working_changes_sha256": "97f74b2970e31f154d6a9074626c27fbc50ee7b15a5b574434088b1dfda7930f",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.27,
+      "output": "verification/generated/kerml-v9-publication/publication-tooling-format.log",
+      "environment_overrides": {}
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 //! Acceptance regressions over the same publication instance as the release gate.
-use agq_kerml::{BaselineProfile, properties as p};
+use agq_kerml::{BaselineProfile, classes as c, properties as p};
 use agq_kerml_semantics::{
     Completeness, QualifiedName, QueryResult, Resolution, SemanticContext, SemanticOptions,
     StandardRole,
@@ -64,7 +64,7 @@ pub fn verify(
         project.standard_libraries().unwrap(),
         second.standard_libraries().unwrap()
     ));
-    assert_eq!(project.baseline_profile(), BaselineProfile::OPERATIONAL_V8);
+    assert_eq!(project.baseline_profile(), BaselineProfile::OPERATIONAL_V9);
     let first = project.apply(
         project.current().revision(),
         [add(
@@ -200,12 +200,43 @@ pub fn verify(
             .iter()
             .collect::<Vec<_>>()
     );
+    // Every authored context exposes accepted canonical chain identity and order.
+    // This is a library-consumption regression; authored chain syntax remains a
+    // separate frontend capability.
+    let model = publication.overlay().model();
+    let chain_owners: std::collections::BTreeSet<_> = model
+        .instances(c::FEATURE_CHAINING, true)?
+        .filter_map(|relationship| {
+            publication
+                .queries()
+                .owning_related_element(relationship.id())
+                .value
+        })
+        .collect();
+    assert!(
+        !chain_owners.is_empty(),
+        "accepted corpus includes feature chains"
+    );
+    for owner in chain_owners {
+        let expected = complete_value(publication.queries().chaining_features(owner))?;
+        assert!(!expected.is_empty());
+        for revision in [&first, &next, &independent] {
+            assert_eq!(
+                complete_value(revision.queries().chaining_features(owner))?,
+                expected
+            );
+            assert!(std::ptr::eq(
+                model.element(owner).unwrap(),
+                revision.snapshot().model().element(owner).unwrap()
+            ));
+        }
+    }
     // A dependency cannot be rebound under an earlier interpretation authority.
     assert!(
         SemanticContext::for_snapshot(
             next.snapshot(),
             SemanticOptions {
-                baseline_profile: BaselineProfile::OPERATIONAL_V7,
+                baseline_profile: BaselineProfile::OPERATIONAL_V8,
                 ..Default::default()
             },
             publication.library_set().pins.clone()
@@ -256,7 +287,7 @@ pub fn verify(
         );
     }
     println!(
-        "Authored publication consumption passed: import, alias, specialization, typing, subsetting, redefinition, visibility, shadowing, profile, stable IDs, shared immutable publication"
+        "Authored publication consumption passed: import, alias, specialization, typing, subsetting, redefinition, visibility, shadowing, profile, feature chains, stable IDs, shared immutable publication"
     );
     Ok(())
 }

@@ -16,6 +16,14 @@ impl CanonicalKermlStandardLibraries {
                 "Binding sources do not identify this accepted publication".into(),
             ));
         }
+        let library_set_identity = json!({
+            "artifacts": self.library_set().artifacts.iter().map(|(artifact,id)|json!({
+                "artifact":artifact.resource(), "library":id.to_string(),
+            })).collect::<Vec<_>>(),
+            "pins": self.library_set().pins.iter().map(|pin|json!({
+                "resource":pin.name, "sha256":pin.sha256,
+            })).collect::<Vec<_>>(),
+        });
         let mut entries = Vec::new();
         for (role, target) in self.bindings().iter() {
             let (path, metaclass) = role.specification();
@@ -42,11 +50,23 @@ impl CanonicalKermlStandardLibraries {
                     "Accepted source identity mismatch for {role:?}"
                 )));
             }
+            let actual_metaclass = self
+                .overlay()
+                .model()
+                .element(target)
+                .expect("validated bound element")
+                .metaclass();
             entries.push(json!({
                 "semantic_role": format!("{role:?}"),
+                "operational_profile": self.profile().id(),
+                "canonical_publication_digest": self.semantic_digest(),
+                "library_set_identity": library_set_identity,
                 "library": self.bindings().bound(role).library.to_string(),
                 "artifact": role.library_artifact().resource(),
                 "qualified_path": path,
+                "metaclass": actual_metaclass.to_string(),
+                "metaclass_name": self.overlay().model().registry().class(actual_metaclass)
+                    .map_err(agq_kernel::ModelError::from)?.name,
                 "expected_metaclass": metaclass.to_string(),
                 "expected_metaclass_name": self.overlay().model().registry().class(metaclass)
                     .map_err(agq_kernel::ModelError::from)?.name,
@@ -61,7 +81,7 @@ impl CanonicalKermlStandardLibraries {
             }));
         }
         Ok(json!({
-            "format": "agq-kerml-accepted-bindings/1",
+            "format": "agq-kerml-accepted-bindings/2",
             "binding_contract": agq_kerml_semantics::BINDING_VERSION,
             "identity_authority": "Agentique content- and role-qualified IDs; not OMG-assigned semantic IDs",
             "scope": "Accepted canonical KerML publication",
@@ -69,6 +89,7 @@ impl CanonicalKermlStandardLibraries {
             "rule_set": self.context().rule_set_version,
             "source_content_set": self.source_content_set(),
             "semantic_publication_digest": self.semantic_digest(),
+            "library_set_identity": library_set_identity,
             "library_set": self.library_set().artifacts.iter().map(|(artifact, id)| json!({
                 "artifact": artifact.resource(), "library": id.to_string(),
             })).collect::<Vec<_>>(),

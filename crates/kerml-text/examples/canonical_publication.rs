@@ -8,10 +8,14 @@ use serde_json::json;
 use std::{collections::BTreeSet, io::Write, path::Path, sync::Arc};
 #[path = "support/authored_publication.rs"]
 mod authored_publication;
+#[path = "support/multiplicity_inventory.rs"]
+mod multiplicity_inventory;
 #[path = "support/publication_authority.rs"]
 mod publication_authority;
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
+#[path = "support/publication_preflight.rs"]
+mod publication_preflight;
 #[path = "support/publication_refinement.rs"]
 mod publication_refinement;
 
@@ -38,6 +42,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Publication authority gate failed".into());
     }
     let (draft, refinement) = publication_refinement::prepare(&sources)?;
+    let slice_evidence = std::env::args()
+        .find_map(|a| a.strip_prefix("--slice-evidence=").map(str::to_owned))
+        .ok_or(
+            "--slice-evidence=<directory containing slice-A.json through slice-E.json> is required",
+        )?;
+    publication_preflight::check(
+        &root.join(slice_evidence),
+        &publication_preflight::identity(
+            draft.queries(&sources)?.context(),
+            sources.content_set_id(),
+        ),
+    )?;
     let construction_obligations = draft.candidate().obligations().len();
     let mut stages = vec![];
     let mut stage_log = std::fs::OpenOptions::new()
@@ -95,7 +111,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::fs::write(
                 &path,
                 serde_json::to_vec_pretty(
-                    &json!({"format":"agq-kerml-complete-publication/1","profile":BaselineProfile::OPERATIONAL_V8.id(),"input_set":sources.content_set_id(),"overlay":"Incomplete","kernel_construction_obligations":construction_obligations,"publication_blocking_authority_conflicts":blockers,"stages":stages,"failure":format!("{error:?}"),"reference_failures": match &error { CanonicalPublicationError::References(failures) => failures.iter().map(|f| json!({"relationship":f.relationship.to_string(),"completeness":format!("{:?}",f.completeness),"candidates":f.candidates,"canonical_endpoint_valid":f.canonical_endpoint_valid})).collect::<Vec<_>>(), _ => vec![] }}),
+                    &json!({"format":"agq-kerml-complete-publication/1","profile":BaselineProfile::OPERATIONAL_V9.id(),"input_set":sources.content_set_id(),"overlay":"Incomplete","kernel_construction_obligations":construction_obligations,"publication_blocking_authority_conflicts":blockers,"stages":stages,"failure":format!("{error:?}"),"reference_failures": match &error { CanonicalPublicationError::References(failures) => failures.iter().map(|f| json!({"relationship":f.relationship.to_string(),"completeness":format!("{:?}",f.completeness),"candidates":f.candidates,"canonical_endpoint_valid":f.canonical_endpoint_valid})).collect::<Vec<_>>(), _ => vec![] }}),
                 )?,
             )?;
             return Err(error.into());
@@ -120,19 +136,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let complete = publication.complete_overlay();
     let model = publication.overlay().model();
+    let mut bounds = multiplicity_inventory::collect(
+        model,
+        &publication.queries(),
+        publication.source_map(),
+        &sources,
+        None,
+        true,
+    )?;
+    bounds["historical_population"] =
+        multiplicity_inventory::historical_population(&bounds, &root)?;
+    let bound_population_complete =
+        bounds["complete"] == true && bounds["historical_population"]["complete"] == true;
     let authored = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         authored_publication::verify(publication.clone())
     }))
     .unwrap_or_else(|_| {
         Err("Authored publication regression assertion failed; see raw output".into())
     });
-    let accepted = authored.is_ok();
+    let accepted = authored.is_ok() && bound_population_complete;
     std::fs::write(
         &path,
         serde_json::to_vec_pretty(&json!({
-            "format":"agq-kerml-complete-publication/1", "profile":BaselineProfile::OPERATIONAL_V8.id(),
+            "format":"agq-kerml-complete-publication/1", "profile":BaselineProfile::OPERATIONAL_V9.id(),
             "input_set":sources.content_set_id(), "overlay":"CompletePublicationOverlay", "accepted_overlay_and_references":true,
             "reference_refinement":refinement,
+            "multiplicity_bounds":bounds,
             "kernel_construction_obligations":0,"publication_blocking_authority_conflicts":blockers,
             "mandatory_references":{"total":publication.mandatory_reference_count(),"unresolved":0,"incomplete":0,"ambiguous":0,"invalid":0,"stored_endpoint_mismatch":0},
             "reference_findings":[],"canonical_facade_accepted":true,"authored_consumption_verified":accepted,"authored_failure":authored.as_ref().err().map(|e| format!("{e}")),"stages":stages,"source_elements":publication.snapshot().model().len(),"expanded_elements":model.len(),"derived_facts":complete.overlay().facts().count(),
@@ -197,9 +226,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )?,
         )?;
     }
-    if !accepted {
-        return Err(authored.unwrap_err());
+    authored?;
+    if !bound_population_complete {
+        return Err(
+            "Multiplicity reference population did not pass its complete structural audit".into(),
+        );
     }
-    println!("Complete publication overlay and mandatory reference gates passed");
+    println!("KERML CANONICAL LIBRARY PUBLICATION COMPLETE");
     Ok(())
 }

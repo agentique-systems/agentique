@@ -31,7 +31,7 @@ struct Fixture {
 impl Fixture {
     fn new() -> Self {
         let base = Snapshot::new(Arc::new(
-            agq_kerml::registry_for_profile(BaselineProfile::OPERATIONAL_V8).unwrap(),
+            agq_kerml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
         ));
         Self {
             changes: base.change_set(),
@@ -522,7 +522,7 @@ fn authored_revisions_and_parallel_readers_preserve_the_dependency_and_its_expla
 fn publication_profile_and_dependency_identity_cannot_be_rebound_by_an_authored_project() {
     let publication = synthetic_publication();
     let project = SourceProject::with_standard_libraries(publication.clone()).unwrap();
-    assert_eq!(project.baseline_profile(), BaselineProfile::OPERATIONAL_V8);
+    assert_eq!(project.baseline_profile(), BaselineProfile::OPERATIONAL_V9);
     assert_eq!(
         project.current().queries().context().baseline_profile_id,
         publication.context().baseline_profile_id
@@ -538,7 +538,7 @@ fn publication_profile_and_dependency_identity_cannot_be_rebound_by_an_authored_
         ),
         Err(ContextError::CorrectionProfileMismatch(_))
     ));
-    let unrelated = SourceProject::with_profile(BaselineProfile::OPERATIONAL_V8).unwrap();
+    let unrelated = SourceProject::with_profile(BaselineProfile::OPERATIONAL_V9).unwrap();
     assert!(matches!(
         publication.complete_overlay().project_context(
             unrelated.current().snapshot(),

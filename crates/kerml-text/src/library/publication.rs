@@ -31,7 +31,7 @@ pub enum CanonicalPublicationError {
     Overlay(#[from] PublicationOverlayError),
     #[error("{} mandatory references failed canonical publication", .0.len())]
     References(Vec<PublicationReferenceFailure>),
-    #[error("canonical publication requires Operational v8")]
+    #[error("canonical publication requires Operational v9")]
     Profile,
 }
 
@@ -58,7 +58,7 @@ impl CanonicalKermlStandardLibraries {
         mut reference_progress: impl FnMut(usize, usize),
         capability_progress: impl FnMut(usize, usize, usize),
     ) -> Result<Self, CanonicalPublicationError> {
-        if draft.baseline_profile() != BaselineProfile::OPERATIONAL_V8 {
+        if draft.baseline_profile() != BaselineProfile::OPERATIONAL_V9 {
             return Err(CanonicalPublicationError::Profile);
         }
         let original = draft.queries(sources)?.context().clone();
@@ -157,7 +157,7 @@ impl CanonicalKermlStandardLibraries {
         self.complete.context()
     }
     pub fn profile(&self) -> BaselineProfile {
-        BaselineProfile::OPERATIONAL_V8
+        BaselineProfile::OPERATIONAL_V9
     }
     pub fn bindings(&self) -> &StandardKermlBindings {
         self.context()

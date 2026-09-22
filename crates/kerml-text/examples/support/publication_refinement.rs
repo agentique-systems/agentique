@@ -12,7 +12,7 @@ pub fn prepare(
     let mut rounds = Vec::new();
     let draft = refine_declarations_with_report(
         sources,
-        BaselineProfile::OPERATIONAL_V8,
+        BaselineProfile::OPERATIONAL_V9,
         ReferenceRefinementStrategy::DependencyDriven,
         |r| {
             println!(

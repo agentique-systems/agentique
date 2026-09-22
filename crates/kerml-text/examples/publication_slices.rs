@@ -3,10 +3,12 @@ use agq_kerml_semantics::*;
 use agq_kernel::{provenance::Origin, value::Value};
 use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::json;
-use std::{collections::BTreeSet, io::Write, path::Path};
+use std::{collections::BTreeSet, io::Write, path::Path, time::Instant};
 #[path = "support/publication_input.rs"]
 mod publication_input;
 use publication_input::{PublicationInput, PublicationScopeBoundary};
+#[path = "support/multiplicity_inventory.rs"]
+mod multiplicity_inventory;
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
 
@@ -27,21 +29,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         return Err("Select distinct slice labels A through E".into());
     }
-    let fail_fast = std::env::args().any(|a| a == "--fail-fast");
+    let preparation_start = Instant::now();
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
     let input = PublicationInput::load(&sources)?;
-    let mut failed = false;
+    let preparation_seconds = preparation_start.elapsed().as_secs_f64();
+    println!("Shared publication preparation: {preparation_seconds:.3}s");
     for slice in slices {
-        if let Err(error) = run_slice(&root, &sources, &input, slice) {
+        if let Err(error) = run_slice(&root, &sources, &input, slice, preparation_seconds) {
             eprintln!("slice {slice}: {error}");
-            failed = true;
-            if fail_fast {
-                break;
-            }
+            return Err(error);
         }
-    }
-    if failed {
-        return Err("one or more independent slices failed".into());
     }
     Ok(())
 }
@@ -51,7 +48,9 @@ fn run_slice(
     sources: &VerifiedLibrarySet,
     input: &PublicationInput,
     slice: &str,
+    preparation_seconds: f64,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let slice_start = Instant::now();
     let documents: &[&str] = match slice {
         "A" => &["Base.kerml", "Objects.kerml", "Links.kerml"],
         "B" => &["Occurrences.kerml", "Transfers.kerml"],
@@ -83,7 +82,7 @@ fn run_slice(
                 .map(|p| p.replace("{slice}", slice))
         })
         .unwrap_or_else(|| {
-            format!("verification/generated/overnight-convergence/slice-{slice}.json")
+            format!("verification/generated/kerml-v9-publication/slice-{slice}.json")
         });
     let path = root.join(output);
     if path.exists() {
@@ -156,7 +155,12 @@ fn run_slice(
             std::fs::write(
                 &path,
                 serde_json::to_vec_pretty(&json!({
-                    "format":"agentique-publication-slice/1", "slice":slice,
+                    "format":"agentique-publication-slice/2", "slice":slice,
+                    "preparation_seconds":preparation_seconds, "slice_seconds":slice_start.elapsed().as_secs_f64(),
+                    "profile":input.identity.baseline_profile_id,
+                    "input_identity":{"profile":input.identity.baseline_profile_id, "rule_set":input.identity.rule_set_version,
+                        "source_content_set":sources.content_set_id(), "descriptor_digest":input.identity.descriptor_digest,
+                        "declared_graph_digest":input.identity.model_digest},
                     "seed_documents":documents, "documents":document_counts,
                     "subjects":subjects.len(), "source_content_set":sources.content_set_id(),
                     "reference_refinement":input.refinement, "passed":false,
@@ -172,7 +176,12 @@ fn run_slice(
         std::fs::write(
             &path,
             serde_json::to_vec_pretty(&json!({
-                "format":"agentique-publication-slice/1", "slice":slice,
+                "format":"agentique-publication-slice/2", "slice":slice,
+                    "preparation_seconds":preparation_seconds, "slice_seconds":slice_start.elapsed().as_secs_f64(),
+                    "profile":input.identity.baseline_profile_id,
+                    "input_identity":{"profile":input.identity.baseline_profile_id, "rule_set":input.identity.rule_set_version,
+                        "source_content_set":sources.content_set_id(), "descriptor_digest":input.identity.descriptor_digest,
+                        "declared_graph_digest":input.identity.model_digest},
                 "seed_documents":documents, "documents":document_counts,
                 "subjects":subjects.len(), "source_content_set":sources.content_set_id(),
                 "reference_refinement":input.refinement, "passed":false,
@@ -276,7 +285,17 @@ fn run_slice(
             }
         }
     }
-    let success = closure.converged
+    let mut bounds = multiplicity_inventory::collect(
+        model,
+        &KerMlQueries::new(context.fork()),
+        input.draft.source_map(),
+        sources,
+        Some(&subjects),
+        true,
+    )?;
+    bounds["historical_population"] = multiplicity_inventory::historical_population(&bounds, root)?;
+    let success = bounds["complete"] == true
+        && closure.converged
         && closure.completeness == Completeness::Complete
         && scope_boundary.is_complete()
         && failures.is_empty()
@@ -284,7 +303,12 @@ fn run_slice(
     std::fs::write(
         path,
         serde_json::to_vec_pretty(&json!({
-            "format":"agentique-publication-slice/1", "slice":slice, "seed_documents":documents,
+            "format":"agentique-publication-slice/2", "slice":slice,
+                    "preparation_seconds":preparation_seconds, "slice_seconds":slice_start.elapsed().as_secs_f64(),
+                    "profile":input.identity.baseline_profile_id,
+                    "input_identity":{"profile":input.identity.baseline_profile_id, "rule_set":input.identity.rule_set_version,
+                        "source_content_set":sources.content_set_id(), "descriptor_digest":input.identity.descriptor_digest,
+                        "declared_graph_digest":input.identity.model_digest}, "seed_documents":documents,
             "reference_refinement":input.refinement,
             "scope":"Scoped structural and semantic-owner closure; graph, producer, capability and reference read boundaries audited",
             "scope_boundary":{"complete":scope_boundary.is_complete(),
@@ -297,10 +321,16 @@ fn run_slice(
             "counters":publication_metrics::counters(&closure.counters), "semantic_digest":context.id().model_digest,
             "capabilities":counts.into_iter().map(|(family, count)|json!({"family":format!("{family:?}"), "checked_items":count})).collect::<Vec<_>>(),
             "capability_failures":failures, "mandatory_references_checked":references.len(), "reference_failures":reference_failures,
+            "multiplicity_bounds":bounds,
             "validated_standard_roles":input.identity.standard_bindings.as_ref().unwrap().iter().count(),
+            "resource_stop":false,
             "stages":completed_stages,
         }))?,
     )?;
+    println!(
+        "slice {slice}: passed={success}, elapsed={:.3}s (shared preparation {preparation_seconds:.3}s)",
+        slice_start.elapsed().as_secs_f64()
+    );
     if !success {
         return Err(format!("slice {slice} has incomplete publication obligations").into());
     }

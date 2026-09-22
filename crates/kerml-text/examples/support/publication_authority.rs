@@ -7,9 +7,9 @@ pub fn conflicts(
     root: &Path,
 ) -> Result<BTreeMap<String, AuthorityImpact>, Box<dyn std::error::Error>> {
     let record: serde_json::Value = serde_json::from_slice(&std::fs::read(
-        root.join("verification/kerml-canonical-publication/authority-decisions.json"),
+        root.join("verification/summaries/kerml-v9-publication/authority-decision.json"),
     )?)?;
-    if record["profile"] != BaselineProfile::OPERATIONAL_V8.id() {
+    if record["profile"] != BaselineProfile::OPERATIONAL_V9.id() {
         return Err("Publication authority profile mismatch".into());
     }
     let mut conflicts = BTreeMap::new();
@@ -24,7 +24,7 @@ pub fn conflicts(
             Some("ValidationOnlyAuthorityConflict") => {
                 AuthorityImpact::ValidationOnlyAuthorityConflict
             }
-            Some("CoveredByOperationalV8") => continue,
+            Some("CoveredByOperationalV8" | "CoveredByOperationalV9") => continue,
             _ => return Err("Unknown publication authority impact".into()),
         };
         let issue = decision["issue"].as_str().ok_or("authority issue")?;

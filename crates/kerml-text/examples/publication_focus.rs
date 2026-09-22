@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let context = SemanticContext::for_snapshot(
         &snapshot,
         SemanticOptions {
-            baseline_profile: BaselineProfile::OPERATIONAL_V8,
+            baseline_profile: BaselineProfile::OPERATIONAL_V9,
             ..Default::default()
         },
         original.pinned_libraries.clone(),
@@ -409,7 +409,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::write(
         path,
         serde_json::to_vec_pretty(&json!({
-            "profile":BaselineProfile::OPERATIONAL_V8.id(), "verified_input_set":sources.content_set_id(),
+            "profile":BaselineProfile::OPERATIONAL_V9.id(), "verified_input_set":sources.content_set_id(),
             "reference_refinement":refinement,
             "library_set":original.standard_bindings.as_ref().unwrap().library_set().artifacts.iter().map(|(artifact, library)|
                 json!({"artifact":artifact.resource(), "library":library.to_string()})).collect::<Vec<_>>(),
