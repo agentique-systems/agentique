@@ -736,8 +736,19 @@ fn transition_acceptance_and_source_specialization_use_structural_memberships() 
                 StandardSysmlRole::AcceptActions,
             )
         };
+        // `TransitionAction::accepter` is reached through the semantic
+        // specialization of the nested trigger AcceptActionUsage.  This is a
+        // canonical relationship, rather than a source-path alias: inherited
+        // feature lookup subsequently retains the library accepter identity.
+        let accept_specialization = result(&accept, rule);
         assert_eq!(
-            result(&accept, rule).relationships[0].general,
+            accept_specialization.evidence.completeness,
+            Completeness::Complete
+        );
+        assert_eq!(accept_specialization.relationships.len(), 1);
+        assert_eq!(accept_specialization.relationships[0].specific, id(3003));
+        assert_eq!(
+            accept_specialization.relationships[0].general,
             id(roles[&target])
         );
         let transition = queries.producer_plan(&[id(1)], id(3001));
