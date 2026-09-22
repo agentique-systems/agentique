@@ -20,7 +20,8 @@ semantic result. Peak private memory was 4,515.0 MiB. No final reference audit w
 produced, and provisional endpoint selections are not Complete reference counts.
 The full-publication attempt budget is unused.
 
-The integrated text package passed 36 tests, including exact 21-document declared
+The integrated packages passed 134 KerML semantic library tests (two existing
+profiling probes ignored) and 36 text tests, including exact 21-document declared
 construction, all 1,327 source assertions, publication rejection gates, immutable
 KerML sharing, and four self-model tests. The self-model result is still current-
 graph structural acceptance; see [its separate record](../agentique-self-model/README.md).
@@ -29,8 +30,21 @@ Initial closure/rebinding tests and their precise boundary are recorded in
 [closure.md](closure.md). Independent review reproduced unresolved source-provider,
 causal-reader and delayed owning-carrier counterexamples. The corrected producer
 mask propagation passes 53 focused closure tests, including those regressions.
-The next gate is the exact eight-document Actions audit; no Systems acceptance or
-language-readiness claim follows from the focused tests.
+The corrected eight-document Actions audit finished normally in 795.172 seconds
+(exit 1, no watchdog stop; peak private memory 4,984.4 MiB). All eight documents
+parse and construct. Final selection is 534/534 with zero kernel obligations, but
+only **469/534 mandatory references are Complete**; 65 are Incomplete and every
+other failure category is zero. Producer scheduling converges but remains
+Incomplete: 3 formal owner-type closure, 217 producer closure, 13 value-context
+and 71 variable-featuring diagnostics. This is a failed scoped gate, not Systems
+acceptance. Medium/full publication has not been attempted.
+
+The final certificate has 8,224 applicable subject/family pairs, 4,122 closed and
+365 explicitly incomplete. Its compact proof is 2,565,702 bytes; optional in-memory
+revalidation reads are separately measured at 307,744,640 bytes. The latter remain
+an optimization target, not part of the compact receipt-size claim. Final-pass
+transport counts are zero because that pass starts a separate predicate regime;
+they do not summarize earlier reconstruction revalidation.
 
 The medium candidate's static dependency closure is 13 documents: Actions,
 Attributes, Calculations, Connections, Constraints, Flows, Interfaces, Items,
