@@ -155,6 +155,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("invalid", 0),
         ("endpoint_mismatch", 0),
     ]);
+    let mut document_counts = BTreeMap::<_, BTreeMap<&str, usize>>::new();
     let mut failures = vec![];
     for (index, batch) in draft.references().chunks(32).enumerate() {
         let q = queries.fork().status_queries();
@@ -207,6 +208,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Completeness::Complete => "complete",
             };
             *counts.get_mut(status).expect("counter") += 1;
+            *document_counts
+                .entry(reference.origin.document)
+                .or_default()
+                .entry(status)
+                .or_default() += 1;
             if status != "complete" {
                 failures.push(json!({"name":reference.name.segments, "relationship":reference.relationship,"property":reference.property,"document":reference.origin.document,"range":reference.origin.range,"status":status,"targets":targets,"stored":stored,"diagnostics":answer.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>() }));
             }
@@ -240,6 +246,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .filter(|d| d.construction_gap.is_none())
         .count();
     let obligations = draft.candidate().obligations().len();
+    let authority_conflicts = candidate
+        .production()
+        .map(|production| production.authority_conflicts())
+        .unwrap_or_default();
+    let documents: Vec<_> = candidate.documents().iter().map(|document| {
+        let reference_counts = document_counts.get(&document.document).cloned().unwrap_or_default();
+        let reference_total: usize = reference_counts.values().sum();
+        json!({
+            "path":document.path,"document":document.document,"sha256":document.source_sha256,
+            "profile":document.profile.id(),"parsed":document.parsed,"byte_exact":document.byte_exact,
+            "recovery_count":document.recovery_count,"production_count":document.production_count,
+            "construction_gap":document.construction_gap,
+            "mandatory_references":{"total":reference_total,"counts":reference_counts},
+        })
+    }).collect();
     let mut report = json!({
         "format":"agq-sysml-systems-publication-audit/1",
         "scope":paths,
@@ -266,7 +287,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "local_elements":model.elements().filter(|r|accepted.overlay().model().element(r.id()).is_none()).count(),
         "mandatory_references":{"total":draft.references().len(),"counts":counts,"failures":failures},
         "authority_targets":authority,
-        "documents":candidate.documents().iter().map(|d|json!({"path":d.path,"document":d.document,"sha256":d.source_sha256,"profile":d.profile.id(),"parsed":d.parsed,"byte_exact":d.byte_exact,"recovery_count":d.recovery_count,"production_count":d.production_count,"construction_gap":d.construction_gap})).collect::<Vec<_>>(),
+        "authority_conflicts":authority_conflicts.iter().map(|conflict|json!({
+            "rule":conflict.rule,"subject":conflict.subject,
+            "formal_target":conflict.formal_target,"original_declaration":conflict.original_declaration,
+        })).collect::<Vec<_>>(),
+        "documents":documents,
         "construction_producers":candidate.production().map(|production|json!({"final_predicates":production.final_predicates,"completeness":format!("{:?}",production.completeness),"converged":production.converged,"rounds":production.counters.fixed_point_rounds,"subjects_evaluated":production.counters.subjects_evaluated,"derived_elements":production.counters.new_elements_proposed,"closure_counters":closure_counters(&production.counters),"diagnostics":production.stages.last().map(|stage|stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>())})), "publication_accepted":false,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
     });
@@ -278,7 +303,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     && production.converged
                     && production.completeness == Completeness::Complete
             })
-            && failures.is_empty();
+            && failures.is_empty()
+            && authority_conflicts.is_empty();
         report["scoped_preflight_passed"] = json!(passed);
         report["publication_attempted"] = json!(false);
         write_report(&output, &report)?;

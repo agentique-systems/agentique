@@ -64,6 +64,13 @@ pub struct SystemsConstructionProduction {
     pub stages: Vec<agq_kerml_semantics::PublicationStage>,
     pub counters: agq_kerml_semantics::PublicationCounters,
 }
+impl SystemsConstructionProduction {
+    /// Known pinned authority conflicts on the final frontier. Transient
+    /// diagnostics from earlier frontiers do not establish a current conflict.
+    pub fn authority_conflicts(&self) -> Vec<SystemsAuthorityConflict> {
+        publication::final_authority_conflicts(&self.stages)
+    }
+}
 impl SystemsLibraryCandidate {
     pub fn draft(&self) -> &LibraryDraft {
         &self.draft

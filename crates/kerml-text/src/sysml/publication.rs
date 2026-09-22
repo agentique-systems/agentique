@@ -1008,7 +1008,9 @@ fn authority_conflict(
     })
 }
 
-fn final_authority_conflicts(stages: &[PublicationStage]) -> Vec<SystemsAuthorityConflict> {
+pub(super) fn final_authority_conflicts(
+    stages: &[PublicationStage],
+) -> Vec<SystemsAuthorityConflict> {
     stages
         .last()
         .into_iter()
