@@ -426,6 +426,49 @@ fn may_time_fixture(
         f.member(owner, next, next + 100_000, kc::RETURN_PARAMETER_MEMBERSHIP);
         next += 1;
     }
+    // Keep formal target authority independent of the 31 algorithmic bindings.
+    // The Actions closure fixture exercises these additional exact paths too.
+    for rule in agq_kerml_semantics::FormalConstraintId::ALL {
+        let artifact = StandardLibraryArtifact::Semantic;
+        f.origin = DeclaredOrigin::StandardLibrary {
+            library: libraries.artifacts[&artifact],
+        };
+        let contract = rule.target();
+        let segments = rule.effective_path(agq_kerml::BaselineProfile::OPERATIONAL_V9);
+        let classes = [
+            kc::LIBRARY_PACKAGE,
+            contract.owner_metaclass,
+            contract.target_metaclass,
+        ];
+        let mut owner = roots_by_artifact[&artifact];
+        for index in 0..segments.len() {
+            let key = (
+                artifact,
+                segments[..=index]
+                    .iter()
+                    .map(|segment| (*segment).to_owned())
+                    .collect(),
+            );
+            if let Some(&existing) = paths.get(&key) {
+                owner = existing;
+                continue;
+            }
+            f.create(next, classes[index], segments[index]);
+            f.member(
+                owner,
+                next,
+                next + 100_000,
+                if index == 2 {
+                    kc::FEATURE_MEMBERSHIP
+                } else {
+                    kc::OWNING_MEMBERSHIP
+                },
+            );
+            paths.insert(key, next);
+            owner = next;
+            next += 1;
+        }
+    }
     let semantic = StandardLibraryArtifact::Semantic;
     f.origin = DeclaredOrigin::StandardLibrary {
         library: libraries.artifacts[&semantic],
@@ -895,6 +938,217 @@ fn transition_acceptance_and_source_specialization_use_structural_memberships() 
                 .is_empty()
         );
     }
+}
+
+#[test]
+fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities() {
+    use agq_kerml_semantics::{
+        FormalConstraintId, MemberAccess, PublicationOverlayError, SemanticClosureRequirement,
+        close_result_structure_with_extension,
+    };
+    // Synthetic anchors isolate the scheduler/query contract from the corpus.
+    // They are immutable dependencies in this fixture, never a production receipt.
+    let (mut anchors, roles) = corpus_anchor_fixture();
+    let (kernel, libraries, mut roots) = may_time_fixture(false, false, false, None);
+    roots.retain(|root| *root != id(30_000));
+    roots.push(id(1));
+    for record in kernel.model().elements().filter(|record| {
+        matches!(record.origin(), agq_kernel::provenance::Origin::Declared(DeclaredOrigin::StandardLibrary { library }) if libraries.artifacts.values().any(|candidate| candidate == library))
+    }) {
+        let agq_kernel::provenance::Origin::Declared(origin) = record.origin() else { unreachable!() };
+        anchors.changes.create(record.id(), record.metaclass(), origin.clone());
+        for (property, slot) in record.slots() {
+            anchors.changes.set(record.id(), property, slot.value().clone(), origin.clone());
+        }
+    }
+    anchors.origin = DeclaredOrigin::StandardLibrary {
+        library: SystemsLibraryIdentity::LIBRARY,
+    };
+    let accepter = roles[&StandardSysmlRole::TransitionAccepter];
+    anchors.create(45_001, sc::REFERENCE_USAGE, "acceptedMessage");
+    set_enum(&mut anchors, 45_001, kp::FEATURE_DIRECTION, "in");
+    anchors.member(accepter, 45_001, 145_001, kc::PARAMETER_MEMBERSHIP);
+    for (source, relation) in [
+        (roles[&StandardSysmlRole::Actions], 245_001),
+        (accepter, 245_002),
+    ] {
+        anchors.relation(
+            source,
+            roles[&StandardSysmlRole::Action],
+            relation,
+            kc::FEATURE_TYPING,
+            kp::FEATURE_TYPING_TYPE,
+        );
+    }
+    let anchors = anchors.finish();
+    let mut names = anchors.change_set();
+    for membership in anchors.model().instances(kc::MEMBERSHIP, true).unwrap() {
+        names.clear(membership.id(), kp::ELEMENT_DECLARED_NAME);
+    }
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(anchors.apply(&names).unwrap())
+            .build()
+            .unwrap(),
+    );
+    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+        origin: origin(),
+    };
+    f.create(50_000, sc::TRANSITION_USAGE, "transition");
+    for parameter in [50_001, 50_002] {
+        f.create(parameter, sc::REFERENCE_USAGE, "");
+        f.changes.clear(id(parameter), kp::ELEMENT_DECLARED_NAME);
+        set_enum(&mut f, parameter, kp::FEATURE_DIRECTION, "in");
+        f.member(
+            50_000,
+            parameter,
+            parameter + 100_000,
+            kc::PARAMETER_MEMBERSHIP,
+        );
+        f.changes
+            .clear(id(parameter + 100_000), kp::ELEMENT_DECLARED_NAME);
+    }
+    f.create(50_003, sc::ACCEPT_ACTION_USAGE, "accepter");
+    f.value(50_003, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    f.member(50_000, 50_003, 150_003, sc::TRANSITION_FEATURE_MEMBERSHIP);
+    f.changes.clear(id(150_003), kp::ELEMENT_DECLARED_NAME);
+    set_enum(
+        &mut f,
+        150_003,
+        agq_sysml::properties::TRANSITION_FEATURE_MEMBERSHIP_KIND,
+        "trigger",
+    );
+    f.create(50_004, kc::STEP, "nestedAction");
+    f.value(50_004, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    f.member(50_003, 50_004, 150_004, kc::FEATURE_MEMBERSHIP);
+    f.changes.clear(id(150_004), kp::ELEMENT_DECLARED_NAME);
+    let snapshot = f.finish();
+    let options = SemanticOptions {
+        baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+        ..Default::default()
+    };
+    let bindings = StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32]));
+    let extension = SysmlProducerExtension::new(
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        bindings,
+        roots.clone(),
+    );
+    fn make_context<'m>(
+        overlay: &'m agq_kernel::derived::DerivedOverlay,
+        options: &SemanticOptions,
+        roots: &[ElementId],
+        libraries: &LibrarySetIdentity,
+    ) -> Result<SemanticContext<'m>, PublicationOverlayError> {
+        SemanticContext::for_overlay(overlay, options.clone(), BTreeSet::new())
+            .unwrap()
+            .with_standard_bindings(roots, libraries)
+            .unwrap()
+            .with_formal_constraint_targets(
+                roots,
+                libraries.artifacts[&StandardLibraryArtifact::Semantic],
+            )
+            .with_naming_extension(
+                SYSML_SEMANTIC_CONTEXT_DOMAIN,
+                [47; 32],
+                Arc::new(SysmlNamingExtension),
+            )
+            .map_err(PublicationOverlayError::Context)
+    }
+    let initial = agq_kernel::derived::DerivationBuilder::new(snapshot.clone())
+        .build()
+        .unwrap();
+    let initial_queries =
+        KerMlQueries::new(make_context(&initial, &options, &roots, &libraries).unwrap());
+    assert_eq!(
+        initial_queries
+            .formal_constraint_applies(
+                FormalConstraintId::StepOwnedPerformanceSpecialization,
+                id(50_004)
+            )
+            .completeness,
+        Completeness::Incomplete
+    );
+    let closure = close_result_structure_with_extension(
+        &snapshot,
+        Default::default(),
+        |overlay| make_context(overlay, &options, &roots, &libraries),
+        &extension,
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(closure.converged, "{:?}", closure.stages);
+    assert_eq!(
+        closure.completeness,
+        Completeness::Complete,
+        "{:?}",
+        closure.stages.last()
+    );
+    let certificate = closure
+        .certificate
+        .as_ref()
+        .expect("scheduler-issued closure")
+        .clone();
+    let context = make_context(&closure.overlay, &options, &roots, &libraries)
+        .unwrap()
+        .with_producer_registry_digest(certificate.registry_digest())
+        .unwrap()
+        .with_producer_closure(certificate.clone())
+        .unwrap();
+    let queries = KerMlQueries::new(context);
+    let final_plan = plan_sysml_producers(
+        &queries,
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        &StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+        &roots,
+        id(50_003),
+    );
+    assert_eq!(final_plan.completeness(), Completeness::Complete);
+    assert!(certificate.is_closed(id(50_003), SemanticClosureRequirement::EffectiveTyping));
+    let negative = queries.formal_constraint_applies(
+        FormalConstraintId::StepOwnedPerformanceSpecialization,
+        id(50_004),
+    );
+    assert_eq!(
+        negative.completeness,
+        Completeness::Complete,
+        "{negative:?}"
+    );
+    assert!(!negative.value);
+    assert!(
+        negative
+            .search_dependencies
+            .iter()
+            .any(|dependency| matches!(dependency, SearchDependency::ProducerClosure { .. }))
+    );
+    for (owner, name, expected) in [
+        (50_000, "accepter", 50_003),
+        (50_000, "acceptedMessage", 50_002),
+        (50_003, "acceptedMessage", 45_001),
+    ] {
+        let result = queries.lookup_member(id(owner), name, MemberAccess::All);
+        assert_eq!(
+            result.completeness,
+            Completeness::Complete,
+            "{name}: {result:?}"
+        );
+        assert_eq!(
+            result
+                .value
+                .iter()
+                .map(|member| member.element)
+                .collect::<Vec<_>>(),
+            [id(expected)],
+            "{name}"
+        );
+    }
+    assert!(Arc::ptr_eq(
+        closure.overlay.declared().immutable_dependency().unwrap(),
+        &dependency
+    ));
 }
 
 #[test]

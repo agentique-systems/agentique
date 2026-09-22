@@ -1242,11 +1242,20 @@ impl Evaluator<'_, '_> {
             .merge_evidence(target)
             .expect("same producer context");
         let ancestors = self.queries.all_supertypes(subject);
-        let already_satisfied = general.is_some_and(|id| ancestors.value.contains(&id));
-        result
-            .evidence
-            .merge_evidence(ancestors)
-            .expect("same producer context");
+        let reflexive = general == Some(subject);
+        let already_satisfied = reflexive
+            || (ancestors.completeness == Completeness::Complete
+                && general.is_some_and(|id| ancestors.value.contains(&id)));
+        if already_satisfied && !reflexive {
+            result
+                .evidence
+                .merge_evidence(ancestors)
+                .expect("same producer context");
+        }
+        // Exhaustive ancestor absence is only a redundancy optimization. The
+        // rule's positive antecedents and exact target already prove its edge.
+        // Waiting for negative closure here would make that closure depend on
+        // the very edge this family is responsible for producing.
         if !already_satisfied
             && result.evidence.completeness == Completeness::Complete
             && let Some(general) = general
