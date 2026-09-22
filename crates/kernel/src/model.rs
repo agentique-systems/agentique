@@ -630,6 +630,22 @@ impl ModelView {
             .slot(property)
             .or_else(|| self.indexes.inverse_slots.get(&(element, property)))
     }
+    /// Original submitted stored slot, before additive derived extensions.
+    /// This is not the current aggregate value or an inverse projection. The
+    /// result is absent for derived-only storage and preserves the original
+    /// declared origin. Callers resolve property aliases before this lookup.
+    pub fn declared_slot(&self, element: ElementId, property: PropertyId) -> Option<&Slot> {
+        match self
+            .element(element)
+            .and_then(|record| record.slot(property))
+        {
+            Some(slot) if matches!(slot.origin(), Origin::Declared(_)) => Some(slot),
+            _ => self
+                .declared_source
+                .as_ref()
+                .and_then(|source| source.model().declared_slot(element, property)),
+        }
+    }
     /// Original submitted evidence, even when an overlay extends the same slot.
     /// Association projections are not independent declared facts; inspect their
     /// canonical occurrences instead. No inferred origin is reported as declared.

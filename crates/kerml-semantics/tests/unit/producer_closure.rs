@@ -2870,3 +2870,90 @@ fn namespace_proof_transport_retains_names_visibility_aliases_and_import_flags()
         snapshot.model()
     )));
 }
+
+#[test]
+fn filtered_declared_ownership_keeps_original_proof_after_unrelated_append() {
+    use crate::producer_closure::{ProducerRead, producer_reads};
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::CLASSIFIER);
+    f.create(3, c::SUBCLASSIFICATION);
+    f.value(3, p::SUBCLASSIFICATION_SUBCLASSIFIER, Value::Reference(id(1)));
+    f.value(3, p::SUBCLASSIFICATION_SUPERCLASSIFIER, Value::Reference(id(2)));
+    f.own(1, 3);
+    f.create(5, c::FEATURE);
+    member(&mut f, 1, 5, 4, c::FEATURE_MEMBERSHIP);
+    // The later membership already exists, but is not originally owned by 1.
+    f.owned
+        .get_mut(&id(1))
+        .unwrap()
+        .retain(|value| *value != Value::Reference(id(4)));
+    let snapshot = f.finish();
+    let fact = FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    };
+    let requirement = SemanticClosureRequirement::EffectiveTyping;
+    let search = StructuralSearch::ProducerClosure {
+        subject: id(2),
+        requirement: requirement.contract_id().into(),
+    };
+    let mut builder = DerivationBuilder::new(snapshot);
+    builder.extend_ordered_references(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        vec![id(4)],
+        agq_kernel::provenance::Explanation {
+            rule: RuleId::from_u128(99721),
+            dependencies: BTreeSet::new(),
+        },
+    );
+    builder.searches(fact, BTreeSet::from([search]));
+    let overlay = builder.build().unwrap();
+    for production in [false, true] {
+        let context =
+            SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap();
+        let q = if production {
+            KerMlQueries::for_production(context)
+        } else {
+            KerMlQueries::new(context)
+        };
+        let selected = q.owned_relationships_of_type(id(1), c::SPECIALIZATION);
+        assert_eq!(selected.value, vec![id(3)]);
+        assert_eq!(selected.completeness, Completeness::Complete);
+        assert!(selected.positive_dependencies.contains(&fact));
+        assert!(
+            selected
+                .canonical_dependencies
+                .contains(&Dependency::Declared(fact))
+        );
+        assert!(
+            !producer_reads(&selected, overlay.model())
+                .contains(&ProducerRead::Requirement(id(2), requirement))
+        );
+        if !production {
+            assert!(selected.declared_fact_origins.contains_key(&fact));
+            assert!(matches!(
+                selected.fact_origins[&fact].as_ref(),
+                Origin::Declared(_)
+            ));
+        }
+        for later in [
+            q.owned_relationships_of_type(id(1), c::FEATURE_MEMBERSHIP),
+            q.owned_relationships_of_type(id(1), c::RELATIONSHIP),
+            q.owned_relationships(id(1)),
+        ] {
+            assert!(later.value.contains(&id(4)));
+            assert!(
+                later
+                    .canonical_dependencies
+                    .contains(&Dependency::Derived(fact))
+            );
+            assert!(
+                producer_reads(&later, overlay.model())
+                    .contains(&ProducerRead::Requirement(id(2), requirement))
+            );
+        }
+    }
+}

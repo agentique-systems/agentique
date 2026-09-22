@@ -508,6 +508,57 @@ impl<'m> KerMlQueries<'m> {
         })
     }
 
+    /// Positive support for a selected reference population. The caller retains
+    /// its precise current-population search separately. An original declared
+    /// slot can prove selected entries without importing unrelated append proofs;
+    /// any later entry requires the full current aggregate evidence instead.
+    pub(crate) fn selected_reference_fact<T>(
+        &self,
+        out: &mut QueryResult<T>,
+        element: ElementId,
+        property: PropertyId,
+        selected: &[ElementId],
+    ) -> Option<FactKey> {
+        if selected.is_empty() {
+            return None;
+        }
+        let property = self
+            .model()
+            .element(element)
+            .and_then(|record| {
+                self.model()
+                    .registry()
+                    .resolve_property(record.metaclass(), property)
+                    .ok()
+                    .flatten()
+            })
+            .map_or(property, |descriptor| descriptor.id);
+        let fact = FactKey::Property { element, property };
+        if let Some(slot) = self.model().declared_slot(element, property)
+            && selected.iter().all(|selected| {
+                slot.value()
+                    .values()
+                    .any(|value| *value == Value::Reference(*selected))
+            })
+            && let Origin::Declared(origin) = slot.origin()
+        {
+            out.canonical_dependencies
+                .insert(Dependency::Declared(fact));
+            out.positive_dependencies.insert(fact);
+            if !self.producer_evidence {
+                out.declared_fact_origins
+                    .entry(fact)
+                    .or_insert_with(|| Arc::new(origin.clone()));
+                out.fact_origins
+                    .entry(fact)
+                    .or_insert_with(|| Arc::new(Origin::Declared(origin.clone())));
+            }
+        } else {
+            self.fact(out, fact);
+        }
+        Some(fact)
+    }
+
     /// Ordered directly owned relationship identities, preserving canonical order.
     pub fn owned_relationships(&self, element: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
@@ -589,22 +640,12 @@ impl<'m> KerMlQueries<'m> {
                 .filter(|&target| self.is(target, class))
                 .filter(|&target| !excluded.iter().any(|&class| self.is(target, class)))
                 .collect();
-            if !values.is_empty() {
-                let property = self
-                    .model()
-                    .registry()
-                    .resolve_property(
-                        self.model()
-                            .element(element)
-                            .expect("checked element")
-                            .metaclass(),
-                        p::ELEMENT_OWNED_RELATIONSHIP,
-                    )
-                    .ok()
-                    .flatten()
-                    .map_or(p::ELEMENT_OWNED_RELATIONSHIP, |descriptor| descriptor.id);
-                let fact = FactKey::Property { element, property };
-                self.fact(&mut out, fact);
+            if let Some(fact) = self.selected_reference_fact(
+                &mut out,
+                element,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                &values,
+            ) {
                 evidence.push(Evidence::Fact(fact));
             }
             for target in values {
