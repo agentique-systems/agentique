@@ -213,6 +213,8 @@ fn perform_constraint_and_variant_naming_follow_their_distinct_published_targets
         (9, sc::ACTION_USAGE, ""),
         (10, sc::ACTION_USAGE, "variation"),
         (11, sc::PERFORM_ACTION_USAGE, ""),
+        (12, sc::PERFORM_ACTION_USAGE, ""),
+        (13, kc::FEATURE, "nonOccurrence"),
     ] {
         f.create(n, class, name);
         if name.is_empty() {
@@ -235,7 +237,7 @@ fn perform_constraint_and_variant_naming_follow_their_distinct_published_targets
             Value::Reference(id(target)),
         );
     }
-    for (subject, target, relation) in [(2, 4, 302), (6, 8, 306), (9, 4, 309)] {
+    for (subject, target, relation) in [(2, 4, 302), (6, 8, 306), (9, 4, 309), (12, 13, 312)] {
         f.create(relation, kc::REFERENCE_SUBSETTING, "");
         f.owned
             .entry(id(subject))
@@ -262,4 +264,7 @@ fn perform_constraint_and_variant_naming_follow_their_distinct_published_targets
         current_sysml_naming_source(queries.kerml(), id(11)).value,
         None
     );
+    let non_occurrence = current_sysml_naming_source(queries.kerml(), id(12));
+    assert_eq!(non_occurrence.completeness, Completeness::Complete);
+    assert_eq!(non_occurrence.value, Some(None));
 }

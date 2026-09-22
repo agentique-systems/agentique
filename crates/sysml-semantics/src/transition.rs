@@ -211,7 +211,9 @@ pub fn current_sysml_naming_source(
         if let Some(referenced) = referenced {
             let performed = referenced.and_then(|referenced| {
                 let target = q.feature_target(referenced);
-                let performed = target.value;
+                let performed = target
+                    .value
+                    .filter(|&feature| is(q, feature, sc::OCCURRENCE_USAGE));
                 merge(&mut out, target);
                 performed
             });
