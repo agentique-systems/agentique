@@ -1140,6 +1140,8 @@ fn publication_identity(
         "systems_source_content_set":dependencies.systems_library.source_content_set,
         "bindings":bindings,
         "semantic_digest":context.model_digest,
+        "producer_registry_digest":context.producer_registry_digest,
+        "producer_closure_digest":context.producer_closure_digest,
     });
     SystemsPublicationIdentity {
         dependencies,
