@@ -690,6 +690,11 @@ fn read(
     if !reader.fill_buf()?.is_empty() {
         return Err(ArchiveError::Invalid("trailing content"));
     }
+    // Canonical records now retain every referenced proof/search allocation.
+    // Release decoding tables and their cached proof adjacency before rebuilding
+    // indexes and validating the complete graph, avoiding two retained pools.
+    drop(restorer);
+    drop(line);
     if let Some(snapshot) = snapshot {
         let mut model = ModelView::build(registry, records, links, navigation)?;
         model.statuses = failures;
