@@ -37,5 +37,14 @@ command and output identity are in the producer-closure summary. A separate real
 additive-ownership regression established and repaired missing Ownership effects
 in all six closure requirement masks; its generic matrix passed 38 tests.
 
-Neither issue is a grammar or normative authority conflict. No medium or full
-Systems publication attempt has run; the full-publication attempt budget is unused.
+The updated bounded run at `a8359d8` passed the earlier structural rejection and
+reached later producer strata. It was stopped at the user's wrap-up request after
+639.282 seconds, with peak private memory 4,670.0 MiB. The watchdog records exit
+124 and `safety_stop: requested`; no resource ceiling was reached. The latest
+reference observation selected 518 of 534 endpoints with 16 kernel obligations.
+No final reference audit/report was produced, so no Actions Complete count is
+established. The final integrated KerML package separately passed 285 tests,
+with two existing probes ignored.
+
+Neither repaired issue is a grammar or normative authority conflict. No medium or
+full Systems publication attempt has run; the full-attempt budget remains unused.

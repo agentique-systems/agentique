@@ -1312,6 +1312,55 @@
         "CARGO_PROFILE_RELEASE_LTO": "false",
         "CARGO_PROFILE_RELEASE_DEBUG": "0"
       }
+    },
+    {
+      "name": "integrated-closure-kerml-package",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a8359d83dadc4a9ea522a54ac19bd4aeaed298de",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "1229f67c5acf3c67aaad6143408430ef0d4b4ed7b8b1819208e76fd377aa784a",
+      "duration_seconds": 147.58,
+      "output": "verification/generated/producer-closure-certificate/integrated-closure-kerml-package.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "wrap-up-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d1f50146ad4234726d18cbf8343b735d91a410be",
+      "working_changes_sha256": "9398b8dca554486da4eea0ff7f3bd9739a8c0adc7fc61c62ee745bb7bbed4d0e",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.11,
+      "output": "verification/generated/producer-closure-certificate/wrap-up-format.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }
