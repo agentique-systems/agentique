@@ -1,6 +1,6 @@
 //! Revision-bound semantic results with explicit evidence. No rule evaluator is built in.
 use crate::association::AssociationOccurrence;
-use crate::model::Slot;
+use crate::model::{DerivationInput, Slot};
 use crate::provenance::{Dependency, Explanation, ExplanationPool, FactKey, Origin};
 use crate::value::SlotValue;
 use crate::{
@@ -11,6 +11,8 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 
 mod archive_restore;
+mod construction;
+pub use construction::{ConstructionDerivationBuilder, ConstructionOverlay};
 mod proof_graph;
 mod search_sets;
 use proof_graph::cyclic_explanations;
@@ -27,8 +29,9 @@ pub struct DerivedOverlay {
 }
 #[derive(Debug)]
 struct OverlayData {
-    declared: Snapshot,
+    declared: DerivationInput,
     model: ModelView,
+    obligations: Vec<crate::ConstructionObligation>,
     explanations: BTreeMap<FactKey, Arc<Explanation>>,
     evidence_pool: ExplanationPool,
     search_pool: StructuralSearchPool,
@@ -61,7 +64,7 @@ pub struct DerivationBuildMetrics {
 impl DerivedOverlay {
     /// Original declared revision, without any inferred slots or elements.
     pub fn declared(&self) -> &Snapshot {
-        &self.inner.declared
+        self.inner.declared.strict()
     }
     /// Declared input revision. This is not an identity for the overlay: different
     /// rule sets/results can be built over the same revision.
@@ -109,9 +112,10 @@ struct OccurrenceInput {
 
 /// Explicit candidate construction; `build` validates the entire result atomically.
 #[derive(Debug)]
-pub struct DerivationBuilder {
-    declared: Snapshot,
-    previous: Option<DerivedOverlay>,
+pub struct DerivationBuilder<Input = Snapshot> {
+    declared: DerivationInput,
+    previous: Option<Arc<OverlayData>>,
+    input_kind: std::marker::PhantomData<Input>,
     elements: Vec<ElementInput>,
     occurrences: Vec<OccurrenceInput>,
     properties: Vec<(ElementId, PropertyId, SlotValue, Explanation)>,
@@ -123,9 +127,33 @@ pub struct DerivationBuilder {
 impl DerivationBuilder {
     /// Begin a new overlay pinned to this snapshot; no earlier results are reused.
     pub fn new(declared: Snapshot) -> Self {
+        Self::with_input(DerivationInput::Strict(declared))
+    }
+    /// Add a later producer stage to the exact same strict declared revision.
+    pub fn from_overlay(previous: DerivedOverlay) -> Self {
+        let mut builder = Self::with_input(previous.inner.declared.clone());
+        builder.previous = Some(previous.inner);
+        builder
+    }
+    /// Finish a prepared batch after releasing its borrowed input queries.
+    pub fn build_on_overlay(
+        mut self,
+        previous: DerivedOverlay,
+    ) -> Result<DerivedOverlay, DerivationError> {
+        self.attach_previous(previous.inner)?;
+        self.build()
+    }
+    /// Validate every structural bound, dependency and acyclic explanation.
+    pub fn build(self) -> Result<DerivedOverlay, DerivationError> {
+        self.build_inner().map(|inner| DerivedOverlay { inner })
+    }
+}
+impl<Input> DerivationBuilder<Input> {
+    fn with_input(declared: DerivationInput) -> Self {
         Self {
             declared,
             previous: None,
+            input_kind: std::marker::PhantomData,
             elements: Vec::new(),
             occurrences: Vec::new(),
             properties: Vec::new(),
@@ -135,13 +163,14 @@ impl DerivationBuilder {
             search_pool: StructuralSearchPool::default(),
         }
     }
-    /// Add a later producer stage to the same immutable declared revision.
-    /// Existing facts and evidence are retained; this is never a rebase. The
-    /// original overlay remains unchanged if the combined candidate is rejected.
-    pub fn from_overlay(previous: DerivedOverlay) -> Self {
-        let mut builder = Self::new(previous.declared().clone());
-        builder.previous = Some(previous);
-        builder
+    fn attach_previous(&mut self, previous: Arc<OverlayData>) -> Result<(), DerivationError> {
+        if self.previous.is_some()
+            || !std::ptr::eq(self.declared.model(), previous.declared.model())
+        {
+            return Err(DerivationError::InputContextMismatch);
+        }
+        self.previous = Some(previous);
+        Ok(())
     }
     /// Whether this batch contains any pending write, including failure or search
     /// metadata. An inherited overlay alone is not a pending write.
@@ -300,27 +329,11 @@ impl DerivationBuilder {
         self.failures.insert((element, property), failure);
         Ok(self)
     }
-    /// Finish a prepared batch after releasing its borrowed input queries. The
-    /// exact declared snapshot must match. Consuming an unshared input transfers
-    /// its accumulated maps and proof pool instead of cloning the whole stage.
-    pub fn build_on_overlay(
-        mut self,
-        previous: DerivedOverlay,
-    ) -> Result<DerivedOverlay, DerivationError> {
-        if self.previous.is_some()
-            || !std::ptr::eq(self.declared.model(), previous.declared().model())
-        {
-            return Err(DerivationError::InputContextMismatch);
-        }
-        self.previous = Some(previous);
-        self.build()
-    }
-    /// Validate structural constraints, dependencies and acyclic explanations.
-    pub fn build(mut self) -> Result<DerivedOverlay, DerivationError> {
+    fn build_inner(mut self) -> Result<Arc<OverlayData>, DerivationError> {
         let registry = self.declared.model().registry.clone();
         let (parts, mut explanations, mut evidence_pool, mut search_pool, reused_owned_storage) =
             match self.previous.take() {
-                Some(previous) => match Arc::try_unwrap(previous.inner) {
+                Some(previous) => match Arc::try_unwrap(previous) {
                     Ok(previous) => (
                         previous.model.into_derivation_parts(),
                         previous.explanations,
@@ -607,7 +620,9 @@ impl DerivationBuilder {
             explanations.insert(key, explanation);
             changed_facts.insert(key);
         }
-        let mut model = ModelView::build(registry, records, links, derived_navigation)?;
+        let (mut model, obligations) =
+            self.declared
+                .build_model(registry, records, links, derived_navigation)?;
         self.declared.check_dependency_ownership(&model)?;
         model.declared_source = Some(self.declared.clone());
         model.statuses = parts.statuses;
@@ -733,16 +748,15 @@ impl DerivationBuilder {
         metrics.retained_search_entries = final_search_pool.entries;
         metrics.search_sets_interned = final_search_pool.interned - initial_search_pool.interned;
         metrics.search_sets_reused = final_search_pool.reused - initial_search_pool.reused;
-        Ok(DerivedOverlay {
-            inner: Arc::new(OverlayData {
-                declared: self.declared,
-                model,
-                explanations,
-                evidence_pool,
-                search_pool,
-                build_metrics: metrics,
-            }),
-        })
+        Ok(Arc::new(OverlayData {
+            declared: self.declared,
+            model,
+            obligations,
+            explanations,
+            evidence_pool,
+            search_pool,
+            build_metrics: metrics,
+        }))
     }
 }
 
@@ -764,7 +778,7 @@ fn merge_searches(
 }
 
 fn add_reference_dependencies(
-    snapshot: &Snapshot,
+    snapshot: &DerivationInput,
     value: &SlotValue,
     dependencies: &mut BTreeSet<Dependency>,
 ) {

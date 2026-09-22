@@ -185,7 +185,7 @@ impl DerivedOverlay {
         if !cycle.is_empty() {
             return Err(DerivationError::DependencyCycle(cycle).into());
         }
-        model.declared_source = Some(declared.clone());
+        model.declared_source = Some(DerivationInput::Strict(declared.clone()));
         // Reconstruction work is distinct from producer accounting; language
         // receipt metadata may retain the original deterministic counters.
         let build_metrics = DerivationBuildMetrics {
@@ -199,8 +199,9 @@ impl DerivedOverlay {
         };
         Ok(Self {
             inner: Arc::new(OverlayData {
-                declared,
+                declared: DerivationInput::Strict(declared),
                 model,
+                obligations: vec![],
                 explanations,
                 evidence_pool,
                 search_pool,

@@ -12,6 +12,10 @@ use crate::{
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+#[path = "derivation_input.rs"]
+mod derivation_input;
+pub(crate) use derivation_input::DerivationInput;
+
 type StagedRecords = (
     BTreeMap<ElementId, Arc<ElementRecord>>,
     BTreeSet<ElementId>,
@@ -31,6 +35,9 @@ pub struct ConstructionObligation {
 /// An immutable, unpublished candidate. This type cannot be used as a Snapshot.
 #[derive(Clone, Debug)]
 pub struct ConstructionView {
+    base: Snapshot,
+    used_ids: BTreeSet<ElementId>,
+    used_links: BTreeSet<AssociationOccurrenceId>,
     revision: RevisionId,
     model: ModelView,
     obligations: Vec<ConstructionObligation>,
@@ -48,6 +55,10 @@ impl ConstructionView {
     /// Missing required values, sorted by element and property identity.
     pub fn obligations(&self) -> &[ConstructionObligation] {
         &self.obligations
+    }
+    /// Whether the identity belongs to the protected immutable dependency.
+    pub fn is_dependency_element(&self, element: ElementId) -> bool {
+        self.base.is_dependency_element(element)
     }
     /// The protected dependency retained by the snapshot that produced this
     /// candidate. Preview validates dependency writes and ownership atomically.
@@ -217,7 +228,7 @@ struct Indexes {
 /// Iteration is deterministic. Maps and storage handles are not public contracts.
 #[derive(Clone, Debug)]
 pub struct ModelView {
-    pub(crate) declared_source: Option<Snapshot>,
+    pub(crate) declared_source: Option<DerivationInput>,
     pub(crate) registry: Arc<MetamodelRegistry>,
     pub(crate) records: BTreeMap<ElementId, Arc<ElementRecord>>,
     indexes: Indexes,
@@ -789,7 +800,7 @@ impl Snapshot {
     /// This does not publish a snapshot, reserve identities, or mutate the base.
     /// Publication still requires `apply` to pass every structural invariant.
     pub fn preview(&self, changes: &ChangeSet) -> Result<ConstructionView, ModelError> {
-        let (records, _, links, _) = self.stage(changes)?;
+        let (records, used_ids, links, used_links) = self.stage(changes)?;
         let mut validation = Validation {
             deficits: Some(BTreeMap::new()),
         };
@@ -805,6 +816,9 @@ impl Snapshot {
         model.declared_source = self.model().declared_source.clone();
         model.searches = self.model().searches.clone();
         Ok(ConstructionView {
+            base: self.clone(),
+            used_ids,
+            used_links,
             revision: changes.revision,
             model,
             dependency: self.inner.dependency.clone(),
