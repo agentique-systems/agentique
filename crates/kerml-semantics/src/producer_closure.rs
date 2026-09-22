@@ -523,6 +523,33 @@ impl ProducerEvaluationTable {
                     .map(|(_, reads)| reads.as_ref());
                 if let Some(reads) = reads {
                     for read in reads {
+                        // Protected dependency records and their ownership
+                        // collections cannot change. Arbitrary inverse/source
+                        // relationship searches remain open: local carriers
+                        // may refer to a dependency without writing its record.
+                        let fixed =
+                            match read {
+                                ProducerRead::Any(id)
+                                | ProducerRead::Structural(id)
+                                | ProducerRead::Owned(id, _) => immutable(*id),
+                                ProducerRead::Property(id, property) => {
+                                    immutable(*id)
+                                        && model
+                                            .registry()
+                                            .inverse_storage(*property)
+                                            .is_ok_and(|inverse| inverse.is_none())
+                                }
+                                ProducerRead::Source(id, _, property) => immutable(*id)
+                                    && [
+                                        agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP,
+                                        agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                                    ]
+                                    .contains(property),
+                                _ => false,
+                            };
+                        if fixed {
+                            continue;
+                        }
                         match read {
                             ProducerRead::Global => global.push(pair),
                             ProducerRead::Inverse => inverse.push(pair),
