@@ -2,9 +2,9 @@
   "format": "agentique-foundation-milestone/1",
   "base_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
   "branch": "foundation/kerml-v9-to-sysml-semantics",
-  "status": "all-slices-complete-ready-for-full-publication",
+  "status": "canonical-publication-accepted-postchecks-running",
   "profile": "agentique-kerml-1.0-operational/9",
-  "operational_default": "agentique-kerml-1.0-operational/2",
+  "operational_default": "agentique-kerml-1.0-operational/9",
   "rule_set": "agq-kerml-query/26",
   "authorized_interpretations": [
     "KERML11-4",
@@ -16,9 +16,9 @@
     "ordinary": 9,
     "owned_cross": 6
   },
-  "full_publication_attempts": 0,
-  "accepted_publication": false,
-  "accepted_bindings_regenerated": false,
+  "full_publication_attempts": 1,
+  "accepted_publication": true,
+  "accepted_bindings_regenerated": true,
   "sysml_production_phase": "not_started",
   "conformance_coverage": "incomplete",
   "workspace_verification": {

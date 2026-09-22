@@ -7,18 +7,25 @@ The initial worktree was clean. Implementation branch:
 This milestone adds exactly the two project-authorized multiplicity context
 interpretations in [ADR 0023](../../../docs/adr/0023-operational-multiplicity-context-v9.md).
 Published through v8 remain historical profiles. The default operational alias
-remains frozen until canonical publication acceptance.
+now selects v9 following canonical publication acceptance.
 
 [authority-decision.json](authority-decision.json) records exact pinned formal
 rules, current issue and immutable reference implementation identities, corpus
 witnesses, and retained historical findings. Its zero authority blocker count
 does not assert producer closure or publication acceptance.
 
-Implementation and acceptance are in progress. A–E slices have passed in order,
+Canonical KerML publication is accepted. A–E slices passed in order,
 with matching source/descriptor/rule identities, Complete producer closure,
 zero capability/reference findings and closed dependency boundaries. Their union
 completes all 15 retained symbolic multiplicity references. No slice hit a
-resource stop. The single whole-corpus attempt is next (90 minutes, 6 GiB private memory).
+resource stop. The single whole-corpus attempt completed producer closure and
+checked all 61,718 subjects with zero capability findings. All 4,000 mandatory
+references are Complete, with zero unresolved, incomplete, ambiguous, invalid
+or mismatched endpoints. The complete overlay and canonical facade are sealed.
+The 31-role version-2 binding manifest and trusted receipt are saved, together
+with the ignored 540,739,848-byte publication cache. Post-publication symbolic
+inventory and authored integration checks are still running under the same
+90-minute / 6-GiB monitor; this does not rerun producer closure.
 Conformance coverage is incomplete and independent of publication acceptance.
 
 | Slice | Scoped declarations | Audited subjects | Complete mandatory references | Slice seconds |
@@ -42,7 +49,7 @@ producer population omitted dependencies discovered by the final graph and
 queries. The published Connector related-feature projection now filters absent
 references; this adds no operational correction. Slices expand discovered
 providers and restart from the declared graph, with a recorded development cap.
-Acceptance requires rerunning the preflight after both fixes.
+The later accepted preflights include both fixes.
 
 The third A preflight passed under query rule set `/26`: 11,227 declared scope
 subjects, 21,656 audited subjects, 1,629 Complete mandatory references, zero

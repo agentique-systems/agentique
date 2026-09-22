@@ -297,6 +297,9 @@ under v8. [ADR 0023](adr/0023-operational-multiplicity-context-v9.md) and the
 define the boundary.
 
 The default `OPERATIONAL` alias was intentionally frozen at v2 while successive
-profiles lacked an accepted complete canonical library publication. It may move
-to v9 only after that acceptance; a passing local fixture or scoped producer
-closure does not satisfy this gate.
+profiles lacked an accepted complete canonical library publication. It now selects
+v9 after whole-corpus acceptance: all publication capabilities and 4,000 mandatory
+references are Complete, with no blocking authority conflicts. Local fixtures and
+scoped closure were insufficient for this decision. Explicit Published and v1–v9
+selection remain available; `BaselineProfile::default()` still selects Published.
+Immutable earlier manifests retain the default recorded when they were created.

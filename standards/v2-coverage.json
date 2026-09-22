@@ -2,6 +2,8 @@
   "format": "agentique-generation-2-coverage/1",
   "generation": 2,
   "kerml_standard_library_bootstrap": {
+    "historical": true,
+    "superseded_by": "kerml_canonical_publication",
     "result": "incomplete-do-not-proceed",
     "review": "docs/kerml-standard-library-foundation-review.md",
     "evidence": "verification/kerml-standard-library-bootstrap-v1/README.md",
@@ -474,21 +476,24 @@
     "remaining": "Separate reviewed library-source authority correction; remaining structural/derived/implied constraints and any reported ordinary query obligations; accepted semantic publication, facade, bindings and authored library dependencies. No SysML semantic readiness."
   },
   "kerml_canonical_publication": {
-    "status": "v9-focused-complete-corpus-preflight-pending",
+    "status": "canonical-publication-accepted-postchecks-running",
     "profile": "agentique-kerml-1.0-operational/9",
     "evidence": "verification/summaries/kerml-v9-publication/README.md",
     "capabilities": "verification/summaries/kerml-v9-publication/capability-status.json",
     "authority_decisions": "verification/summaries/kerml-v9-publication/authority-decision.json",
-    "canonical_publication": false,
+    "canonical_publication": true,
     "conformance_coverage": "Incomplete",
     "validator_coverage_is_publication_gate": false,
-    "accepted_bindings_regenerated": false,
+    "accepted_bindings_regenerated": true,
     "authored_accepted_library_consumption": false,
-    "publication_blocker": "Operational v9 corrects ordinary and owned-cross multiplicity context under explicit project authority. Complete A-E slices and whole-corpus acceptance remain required.",
+    "publication_blocker": null,
+    "operational_default": "agentique-kerml-1.0-operational/9",
+    "mandatory_references": { "total": 4000, "unresolved": 0, "incomplete": 0, "ambiguous": 0, "invalid": 0, "endpoint_mismatch": 0 },
+    "post_publication_checks": "Authored integration running; accepted cache and 31-role binding manifest saved",
     "historical_v8_blocker": "The retained v8 multiplicity domain leaves Transfers::Transfer::instant[instantNum] without a permitted reference-binding context; worklist and independent full-scan fixtures agree. Published through v8 remain unchanged.",
     "generation_1_release_obligations": "unchanged",
     "semantic_rule_set": "agq-kerml-query/26",
-    "derivation_infrastructure": "Dependency-driven immutable producer frontiers, metaclass applicability, positive and negative query read dependencies, compact status queries, persistent proof and search-set sharing, factored cycle validation, consumed additive overlays and validated empty-frontier reuse; complete pinned-corpus acceptance remains a separate gate",
+    "derivation_infrastructure": "Dependency-driven immutable producer frontiers, metaclass applicability, positive and negative query read dependencies, compact status queries, persistent proof and search-set sharing, factored cycle validation, consumed additive overlays and validated empty-frontier reuse; all five scoped preflights and one whole-corpus acceptance passed",
     "convergence_evidence": "verification/summaries/overnight-convergence/README.md"
   },
   "kerml_publication_convergence": {

@@ -62,7 +62,8 @@ kernel operation does not certify that a dependency is an accepted language
 publication; that remains the language facade's responsibility.
 
 The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
-under Operational v8. A metaclass applicability index excludes unrelated records;
+under Operational v9 by default, with explicit historical profile selection.
+A metaclass applicability index excludes unrelated records;
 subsequent immutable frontiers schedule only new subjects and readers invalidated
 by canonical positive or bounded negative search dependencies. Every producer in
 a frontier observes the same graph. Contributions merge by semantic identity before
@@ -193,8 +194,11 @@ imports are excluded symmetrically after deduplication.
 artifact and retains a `LibrarySetIdentity`. `CollectionsArray` is anchored in
 the Data Type Library; `ThingsThat` and `OccurrenceStartShot` are Semantic Library
 roles. These construction bindings do not establish an accepted publication.
-The [capability matrix](../verification/kerml-complete-publication/capability-status.json)
-records remaining closure obligations separately from conformance coverage.
+The [current capability matrix](../verification/summaries/kerml-v9-publication/capability-status.json)
+records whole-corpus publication and integration results separately from
+incomplete conformance coverage. V9 centralizes ordinary and owned-cross
+multiplicity featuring context, including every bound Expression; the exact
+operational authority is retained in [ADR 0023](adr/0023-operational-multiplicity-context-v9.md).
 
 [ADR 0009](adr/0009-property-redefinition-context.md) reassesses the Property
 context invariant without changing it. Final UML text and the resolved mixed

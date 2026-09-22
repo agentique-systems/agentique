@@ -24,16 +24,18 @@ KerML publication and conformance coverage ([ADR 0022](adr/0022-kerml-publicatio
 Incomplete validator coverage alone does not block a canonical semantic graph.
 Operational v8 explicitly resolves the owned-cross featuring-domain and imported
 Membership collision interpretations. Its independent authority manifests extend
-v7 without rewriting earlier profiles. Current publication remains incomplete
-until the complete corpus passes closure, capability and mandatory-reference
-acceptance. Dependency-driven producer frontiers and bounded reference reuse are
-implemented; scoped success cannot seal a canonical publication. A symbolic
+v7 without rewriting earlier profiles. Operational v9 has passed whole-corpus
+producer closure, all publication capabilities and all 4,000 mandatory references,
+with no blocking authority conflicts. Dependency-driven producer frontiers and
+bounded reference reuse remain the publication architecture; scoped success alone
+cannot seal a canonical publication. A symbolic
 multiplicity-bound reference demonstrated a publication-blocking consequence
 of the retained v8 domain decision. Operational v9 adds exactly the authorized
 KERML11-4 owning-Namespace and KERML11-3 cross-multiplicity interpretations.
-Published through v8 retain their semantics. V9 must independently pass the
-canonical publication gates before changing the default or enabling SysML
-semantics; see [ADR 0023](adr/0023-operational-multiplicity-context-v9.md) and the
+Published through v8 retain their semantics. Accepted canonical publication
+permits advancing the operational default to v9. Accepted bindings and authored
+integration finish the substrate before SysML production work begins; see
+[ADR 0023](adr/0023-operational-multiplicity-context-v9.md) and the
 [v9 evidence](../verification/summaries/kerml-v9-publication/README.md).
 See the historical
 [convergence evidence](../verification/summaries/overnight-convergence/README.md)
@@ -47,7 +49,8 @@ operational profile; legacy descriptor/registry APIs retain published metadata.
 The reviewed KERML11-81 deletion is independently verified. That historical
 milestone stopped at Gate 7 on the separate
 [KERML11-140 resolution authority conflict](kerml-operational-library-publication-authority-conflict.md).
-No accepted library facade or SysML semantic readiness is claimed.
+That historical milestone did not accept a library facade; the v9 result above
+supersedes its publication status without rewriting its authority findings.
 
 The initial [structural foundation review](language-core-foundation-review.md)
 exposed Integer/Real domain, association-inheritance and Property-context gaps
