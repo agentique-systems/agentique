@@ -1741,6 +1741,7 @@ impl ResultStructurePlan<'_> {
                 }) {
                     let permitted = descriptors.iter().any(|&(subject, descriptor)| {
                         descriptor.effects.contains(&ProducerEffect::Ownership)
+                            && descriptor.affects_subject(model, child)
                             && (descriptor.scope == ProducerEffectScope::Model
                                 || (descriptor.scope != ProducerEffectScope::OwnedDescendants
                                     && subject == child)
@@ -1913,6 +1914,7 @@ impl ResultStructurePlan<'_> {
                         .is_none_or(|classes| classes.contains(&record.class))
                     && ((fresh && descriptor.fresh_effects.contains(&effect))
                         || (descriptor.effects.contains(&effect)
+                            && (fresh || descriptor.affects_subject(model, source))
                             && (fresh
                                 || descriptor.scope == ProducerEffectScope::Model
                                 || (descriptor.scope != ProducerEffectScope::OwnedDescendants

@@ -1811,6 +1811,123 @@ fn reference_scalar_writes_reopen_cross_subject_queries_and_requirement_masks() 
 }
 
 #[test]
+fn semantic_target_bounds_exclude_carriers_from_current_and_future_effects() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let mut f = Fixture::new();
+    f.create(1, c::FEATURE);
+    f.create(2, c::CLASSIFIER);
+    member(&mut f, 2, 1, 3, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    for bounded in [false, true] {
+        let mut writer = ProducerDescriptor::new(
+            ACTIVATE,
+            [ProducerEffect::Membership],
+            ProducerApplicability::Subtypes(vec![c::FEATURE]),
+        );
+        writer.scope = ProducerEffectScope::SubjectAndOwners;
+        if bounded {
+            writer.effect_targets = Some(BTreeSet::from([c::TYPE]));
+        }
+        let registry = ProducerRegistry::new([
+            writer,
+            ProducerDescriptor::new(
+                TYPE,
+                [ProducerEffect::Typing],
+                ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+            ),
+        ])
+        .unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        for (read, carrier) in [
+            (
+                ProducerRead::Property(id(3), p::RELATIONSHIP_OWNED_RELATED_ELEMENT),
+                true,
+            ),
+            (
+                ProducerRead::Property(id(2), p::ELEMENT_OWNED_RELATIONSHIP),
+                false,
+            ),
+        ] {
+            let mut table = ProducerEvaluationTable::default();
+            for record in snapshot.model().elements() {
+                table.pending(record.id(), snapshot.model(), &registry);
+            }
+            table
+                .record(
+                    &[
+                        (id(1), ACTIVATE, Completeness::Incomplete),
+                        (id(2), TYPE, Completeness::Complete),
+                    ],
+                    &registry,
+                )
+                .unwrap();
+            table.record_reads(&[(id(2), TYPE, vec![read].into())], &registry);
+            let certificate = ProducerClosureCertificate::issue(
+                snapshot.model(),
+                context.id(),
+                &registry,
+                &table,
+                |_| false,
+            );
+            assert_eq!(
+                certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
+                Some(if bounded && carrier {
+                    ProducerEvaluationState::EvaluatedComplete
+                } else {
+                    ProducerEvaluationState::Pending
+                })
+            );
+        }
+    }
+}
+
+#[test]
+fn semantic_target_bound_audits_existing_source_not_new_relationship_class() {
+    for class in [c::CLASSIFIER, c::PACKAGE] {
+        let mut f = Fixture::new();
+        f.create(1, class);
+        let snapshot = f.finish();
+        let q = KerMlQueries::new(
+            SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+        );
+        let mut descriptor = ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::Membership],
+            ProducerApplicability::Any,
+        );
+        descriptor.effect_targets = Some(BTreeSet::from([c::TYPE]));
+        let registry = ProducerRegistry::new([descriptor]).unwrap();
+        let mut plan = q.plan_result_structure([]);
+        let key = |n| DerivationKey {
+            subject: id(1),
+            rule: RuleId::from_u128(99870),
+            output: OutputKey::from_u128(n),
+        };
+        let evidence = q.canonical_fact_evidence(FactKey::Element(id(1)));
+        plan.add_derived_element(key(1), c::FEATURE, BTreeMap::new(), None, &evidence)
+            .unwrap();
+        plan.add_derived_element(
+            key(2),
+            c::FEATURE_MEMBERSHIP,
+            BTreeMap::from([(
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                SlotValue::Ordered(vec![Value::Reference(key(1).element_id())]),
+            )]),
+            Some(id(1)),
+            &evidence,
+        )
+        .unwrap();
+        assert_eq!(
+            plan.validate_declared_effects(&[id(1)], &registry).is_ok(),
+            class == c::CLASSIFIER
+        );
+    }
+}
+
+#[test]
 fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
     use crate::producer_closure::ProducerEvaluationTable;
     let mut f = Fixture::new();

@@ -310,6 +310,11 @@ pub struct ProducerDescriptor {
     /// `None` is unconstrained. Existing scalar producer capabilities can reopen
     /// Parameter/End exclusions on newly created members.
     pub feature_populations: Option<BTreeSet<crate::FeaturePopulationKind>>,
+    /// Metaclass roots of existing semantic subjects that these effects may
+    /// change, including subtypes. This bounds semantic sources, not newly
+    /// emitted relationship records. `None` leaves the target unrestricted.
+    /// Fresh-subject effects have their separate contract above.
+    pub effect_targets: Option<BTreeSet<MetaclassId>>,
     pub applicability: ProducerApplicability,
     pub scope: ProducerEffectScope,
     pub minimum_stratum: ResultStructureStratum,
@@ -326,6 +331,7 @@ impl ProducerDescriptor {
             fresh_effects: BTreeSet::new(),
             relationship_classes: None,
             feature_populations: None,
+            effect_targets: None,
             applicability,
             scope: ProducerEffectScope::SubjectAndOwned,
             minimum_stratum: ResultStructureStratum::Structural,
@@ -337,6 +343,18 @@ impl ProducerDescriptor {
                 .effects
                 .iter()
                 .any(|effect| !matches!(effect, ProducerEffect::Scalar(_)))
+    }
+    pub(crate) fn affects_subject(&self, model: &ModelView, subject: ElementId) -> bool {
+        self.effect_targets.as_ref().is_none_or(|classes| {
+            model.element(subject).is_none_or(|record| {
+                classes.iter().any(|&class| {
+                    model
+                        .registry()
+                        .is_subtype(record.metaclass(), class)
+                        .unwrap_or(true)
+                })
+            })
+        })
     }
 }
 
@@ -1379,6 +1397,21 @@ pub(crate) fn descriptor_changes_read(
     model: &ModelView,
     mutable_feature_populations: &BTreeSet<crate::FeaturePopulationKind>,
 ) -> bool {
+    let target = match read {
+        ProducerRead::Property(subject, _)
+        | ProducerRead::Structural(subject)
+        | ProducerRead::Source(subject, _, _)
+        | ProducerRead::Owned(subject, _)
+        | ProducerRead::FeaturePopulation(subject, _)
+        | ProducerRead::Any(subject)
+        | ProducerRead::Requirement(subject, _) => Some(*subject),
+        ProducerRead::Global | ProducerRead::Inverse => None,
+    };
+    if !reference_scalar(effect, model)
+        && target.is_some_and(|subject| !descriptor.affects_subject(model, subject))
+    {
+        return false;
+    }
     if !effect_changes_read(effect, read, model) {
         return false;
     }

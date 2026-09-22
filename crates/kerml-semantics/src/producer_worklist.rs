@@ -221,6 +221,9 @@ impl ProducerFamily {
         .into_iter()
         .collect();
         if self == Self::VariableFeaturing {
+            // Existing effects concern the variable Feature and its owning
+            // Type, never intermediate membership carrier records.
+            descriptor.effect_targets = Some(BTreeSet::from([c::TYPE]));
             descriptor.feature_populations = Some(BTreeSet::new());
             descriptor.relationship_classes = Some(
                 [c::TYPE_FEATURING, c::FEATURE_MEMBERSHIP, c::REDEFINITION]
