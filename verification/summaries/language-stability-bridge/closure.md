@@ -151,3 +151,17 @@ unnecessary typing premise is introduced to format an explanation.
 | `cargo test --locked --offline -p agq-sysml-semantics` | Initial layering adaptation lost the fixture ownership append map: 59 passed/3 failed. Restored original ownership before adding fixture relationships; final 62 passed/0 failed, 45.05 seconds; doc tests passed | 101, then 0 |
 | `cargo clippy --locked --offline -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings | 0 |
 | `cargo fmt --all -- --check` | No output | 0 |
+
+Final source-binding verification at `7120fb7`:
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics` | KerML 145 unit tests and all integration suites passed, 2 scale probes ignored; SysML 62 passed in 48.67 seconds; both doc-test suites passed. Includes exact optional publication receipt restoration and original-slot dependent archive restoration | 0 |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib mixed_declared_and_current_fact_reads_remain_current_before_first_append -- --nocapture` | Both merge orders and ordinary/producer evaluation modes passed; persistent current-property evidence asserted | 0 |
+| `cargo clippy --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings | 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --no-deps` | Both public semantic APIs documented without warnings | 0 |
+| `cargo fmt --all -- --check` | No output | 0 |
+
+Raw package output is ignored at
+`verification/generated/language-stability-bridge/declared-source-binding-package-tests.log`.
+Actual Systems publication and language-readiness acceptance remain separate gates.
