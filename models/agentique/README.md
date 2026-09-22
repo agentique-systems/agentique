@@ -44,3 +44,9 @@ producer closure, all mandatory references, effective architecture queries,
 independent programmatic equivalence, shared standard and syntax objects, and
 three immutable edit revisions with parallel readers. The test remains explicitly
 ignored in routine unit tests until those accepted artifacts are available.
+
+The same gate loads the small `crates/kerml-text/tests/fixtures/agentique-cases.sysml`
+fixture to require Complete case/verification-case subjects, actors, objectives
+and result parameters. Explicit redefinitions preserve the accepted standard
+defaults' identities. This remains structural inspection; no case is executed and
+no modeled requirement is declared verified.

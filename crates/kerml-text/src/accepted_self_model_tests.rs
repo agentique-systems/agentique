@@ -8,6 +8,61 @@ use agq_sysml_semantics::{
 };
 use std::{collections::BTreeMap, fs::File, path::Path};
 
+const CASES: &str = include_str!("../tests/fixtures/agentique-cases.sysml");
+
+#[test]
+fn case_acceptance_fixture_uses_real_frontend_and_explicit_standard_redefinitions() {
+    let syntax = production::parse_sysml_with_profile(
+        production::SysmlSyntaxProfile::OperationalV2,
+        DocumentId::from_u128(960_001),
+        SourceRevisionId::from_u128(960_002),
+        CASES,
+        Default::default(),
+    )
+    .unwrap();
+    assert!(syntax.is_complete(), "{:?}", syntax.diagnostics());
+    let draft = lower(&syntax);
+    // Only the accepted-cache gate supplies these standard namespaces. This
+    // frontend test deliberately retains the unresolved standard endpoints.
+    assert!(!draft.candidate().obligations().is_empty());
+    let model = draft.candidate().model();
+    for (name, class) in [
+        ("ReviewCase", s::CASE_DEFINITION),
+        ("VerifyRevision", s::VERIFICATION_CASE_DEFINITION),
+        ("plannedReview", s::CASE_USAGE),
+        ("plannedVerification", s::VERIFICATION_CASE_USAGE),
+        ("reviewer", s::PART_USAGE),
+        ("verifier", s::PART_USAGE),
+        ("preservation", s::REQUIREMENT_USAGE),
+        ("verificationObjective", s::REQUIREMENT_USAGE),
+    ] {
+        assert_eq!(
+            model.element(named(model, name)).unwrap().metaclass(),
+            class
+        );
+    }
+    let query = KerMlQueries::new(
+        SemanticContext::for_construction(draft.candidate(), options(), BTreeSet::new()).unwrap(),
+    );
+    for (name, class) in [
+        ("reviewWorkspace", s::SUBJECT_MEMBERSHIP),
+        ("verifiedWorkspace", s::SUBJECT_MEMBERSHIP),
+        ("reviewer", s::ACTOR_MEMBERSHIP),
+        ("verifier", s::ACTOR_MEMBERSHIP),
+        ("preservation", s::OBJECTIVE_MEMBERSHIP),
+        ("verificationObjective", s::OBJECTIVE_MEMBERSHIP),
+        ("reviewResult", c::RETURN_PARAMETER_MEMBERSHIP),
+        ("verdict", c::RETURN_PARAMETER_MEMBERSHIP),
+    ] {
+        let membership = query.owning_relationship(named(model, name)).value.unwrap();
+        assert_eq!(
+            model.element(membership).unwrap().metaclass(),
+            class,
+            "{name}"
+        );
+    }
+}
+
 fn complete<T: std::fmt::Debug>(answer: &SysmlQueryResult<T>) {
     assert_eq!(answer.completeness(), Completeness::Complete, "{answer:?}");
 }
@@ -172,6 +227,18 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
         (
             "ports",
             q.effective_ports(authored_named(q.model(), "IncrementalWorkspace")),
+        ),
+        (
+            "nested",
+            q.effective_nested_usages(authored_named(q.model(), "workspaceQuery")),
+        ),
+        (
+            "subparts",
+            q.effective_subparts(authored_named(q.model(), "ModelingPlatform")),
+        ),
+        (
+            "subitems",
+            q.effective_subitems(authored_named(q.model(), "ModelingPlatform")),
         ),
         (
             "attribute",
@@ -345,6 +412,116 @@ fn programmatic_equivalence(
     ));
 }
 
+fn accepted_case_roles(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
+    let mut project =
+        SourceProject::with_accepted_sysml_standard_libraries(accepted.clone()).unwrap();
+    let revision = project
+        .apply(
+            project.current().revision(),
+            [ProjectChange::Add {
+                path: "WorkspaceAcceptance.sysml".into(),
+                language: SourceLanguage::SysMl,
+                source: CASES.into(),
+            }],
+        )
+        .unwrap();
+    let status = revision.producer_status().unwrap();
+    assert!(status.converged, "{status:?}");
+    assert_eq!(status.completeness, Completeness::Complete, "{status:?}");
+    assert!(
+        revision.is_complete_slice(),
+        "{:?}",
+        revision.semantic_diagnostics()
+    );
+    for reference in revision.references() {
+        assert_eq!(
+            reference.resolution.completeness,
+            Completeness::Complete,
+            "{reference:?}"
+        );
+        assert!(
+            matches!(reference.resolution.value, Resolution::Resolved(_)),
+            "{reference:?}"
+        );
+    }
+    let q = revision.sysml_queries().unwrap();
+    for (definition, usage, role, subject, actor, objective, result) in [
+        (
+            "ReviewCase",
+            "plannedReview",
+            StandardSysmlRole::Case,
+            "reviewWorkspace",
+            "reviewer",
+            "preservation",
+            "reviewResult",
+        ),
+        (
+            "VerifyRevision",
+            "plannedVerification",
+            StandardSysmlRole::VerificationCase,
+            "verifiedWorkspace",
+            "verifier",
+            "verificationObjective",
+            "verdict",
+        ),
+    ] {
+        let parents = q.effective_supertypes(authored_named(q.model(), definition));
+        complete(&parents);
+        assert!(
+            parents
+                .value()
+                .contains(&accepted.bindings().targets()[&role])
+        );
+        for owner in [definition, usage] {
+            for (member_role, member) in [
+                (RequirementCaseRole::Subject, subject),
+                (RequirementCaseRole::Actor, actor),
+                (RequirementCaseRole::Objective, objective),
+            ] {
+                let answer =
+                    q.requirement_case_features(authored_named(q.model(), owner), member_role);
+                complete(&answer);
+                assert_eq!(
+                    answer.value(),
+                    &[authored_named(q.model(), member)],
+                    "{owner} {member_role:?}"
+                );
+            }
+            let answer = q.effective_return_parameters(authored_named(q.model(), owner));
+            complete(&answer);
+            assert_eq!(
+                answer.value(),
+                &[authored_named(q.model(), result)],
+                "{owner} return"
+            );
+        }
+    }
+    let cases = q.effective_usages_of_kind(
+        authored_named(q.model(), "ReviewPlan"),
+        agq_sysml_semantics::UsageKind::Case,
+    );
+    complete(&cases);
+    assert!(
+        cases
+            .value()
+            .contains(&authored_named(q.model(), "plannedReview"))
+    );
+    assert!(
+        cases
+            .value()
+            .contains(&authored_named(q.model(), "plannedVerification"))
+    );
+    let verifications = q.effective_usages_of_kind(
+        authored_named(q.model(), "ReviewPlan"),
+        agq_sysml_semantics::UsageKind::VerificationCase,
+    );
+    complete(&verifications);
+    assert_eq!(
+        verifications.value(),
+        &[authored_named(q.model(), "plannedVerification")]
+    );
+}
+
 fn insert(
     project: &mut SourceProject,
     document: DocumentId,
@@ -406,6 +583,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     architecture_invariants(&r1.sysml_queries().unwrap());
     let original = rich_summary(&r1.sysml_queries().unwrap());
     programmatic_equivalence(&accepted, &r1);
+    accepted_case_roles(&accepted);
     let document = r1.document_at("ModelingPlatform.sysml").unwrap().id();
     let retained_query = authored_named(r1.semantic_model(), "workspaceQuery");
     let r2 = insert(

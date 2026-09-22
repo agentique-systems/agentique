@@ -21,8 +21,8 @@ harness compiles but has not run against an accepted Systems receipt.
 | G4 parameters/subactions | `effective_parameters`, `effective_return_parameters`, `effective_subactions` | Canonical parameter/result separation and nested composite subactions; closed Actions micro exercises parameter-dependent payload structure. Held authored fixture has typed in/out action parameters. |
 | G4 entry/do/exit and transition actions | `state_actions`, `transition_features` | Canonical membership-kind evidence and domain checks; closed Actions micro checks transition trigger. State/transition APIs deliberately return plural **owned** membership-role projections; they do not choose an arbitrary singular result or execute it. |
 | G4 AcceptAction accepter/message | `transition_features(Trigger)` composed with `accept_action_payload_parameter` | Closed real-scheduler Actions micro retains the accepter and payload's original IDs. The API exposes structural parameter identity, not a runtime message value. |
-| G5 requirements/constraints/cases/verification cases | `effective_usages_of_kind` with `UsageKind::{Requirement, Constraint, Case, VerificationCase}` | Canonical all-family selector; new verification-case inheritance test checks subtype selection. Held rich authored model includes a requirement and constraint. Positive accepted Cases/VerificationCases still needs the separately held G5 fixture. |
-| G5 subjects/actors/objectives/results | `requirement_case_features(Subject/Actor/Objective)`, `effective_return_parameters` | Canonical role tests and new inherited verification-case test preserve original actor/objective/result identities while replacing the subject by redefinition. Held H checks requirement subject; accepted-positive actor/objective/result coverage remains pending the separate G5 fixture. |
+| G5 requirements/constraints/cases/verification cases | `effective_usages_of_kind` with `UsageKind::{Requirement, Constraint, Case, VerificationCase}` | Canonical all-family selector; new verification-case inheritance test checks subtype selection. Held rich authored model includes a requirement and constraint. Separate held `accepted_case_roles` checks actual Case/VerificationCase standard bases and populations. |
+| G5 subjects/actors/objectives/results | `requirement_case_features(Subject/Actor/Objective)`, `effective_return_parameters` | Canonical role tests and new inherited verification-case test preserve original actor/objective/result identities while replacing the subject by redefinition. Held `accepted_case_roles` requires complete roles/results on both authored definitions and their typed usages, with explicit redefinition of the accepted library defaults. |
 
 Canonical tests are in [structural_query_tests.rs](../../../crates/sysml-semantics/src/structural_query_tests.rs),
 [projection_tests.rs](../../../crates/sysml-semantics/src/projection_tests.rs),
@@ -48,3 +48,11 @@ the real closed variation regression does not become Complete through quiescence
 Focused validation of this review's three additional tests (same low-disk profile
 as adjacent summaries): `cargo test -p agq-sysml-semantics structural_query_tests`
 exited 0 with 7 passing tests. They modify no producer machinery or public APIs.
+
+The separately held [G5 source fixture](../../../crates/kerml-text/tests/fixtures/agentique-cases.sysml)
+also passes `cargo test -p agq-kerml-text --lib case_acceptance_fixture` (exit 0,
+one test). This is actual Operational v2 parse/construction evidence for case,
+verification, actor, objective and result memberships, deliberately retaining
+unresolved standard paths when no standards are supplied. It does not discharge
+the accepted positive gate. The held rich equivalence summary also now covers
+effective nested usages and composite subitem/subpart populations.
