@@ -87,6 +87,14 @@ pub enum SearchDependency {
         owner: ElementId,
         class: MetaclassId,
     },
+    /// Direct owned relationships in `class`, excluding every registered subtype
+    /// of any class in `excluded`. Empty exclusions preserve the full population.
+    /// Unknown class identities cannot establish a negative selection result.
+    OwnedRelationshipsExcluding {
+        owner: ElementId,
+        class: MetaclassId,
+        excluded: BTreeSet<MetaclassId>,
+    },
     /// Direct owned member population selected by an exact structural projection.
     /// Canonical carrier facts remain proof support; this records the population
     /// whose future changes can alter the projected result, including absence.

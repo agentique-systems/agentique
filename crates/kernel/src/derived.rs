@@ -901,6 +901,15 @@ pub enum StructuralSearch {
         owner: ElementId,
         contract: String,
     },
+    /// Direct owned relationships in `class`, including registered subtypes,
+    /// except the subtype populations rooted at `excluded`. The immutable
+    /// descriptor registry gives these language-neutral class identities their
+    /// meaning; unknown descriptors must be handled conservatively.
+    OwnedRelationshipsExcluding {
+        owner: ElementId,
+        class: MetaclassId,
+        excluded: BTreeSet<MetaclassId>,
+    },
 }
 /// Explicit unsuccessful computation; never an empty value.
 #[derive(Clone, Debug, PartialEq, Eq)]

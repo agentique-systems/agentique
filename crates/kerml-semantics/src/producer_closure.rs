@@ -54,6 +54,9 @@ pub(crate) fn producer_reads<T>(
         K::OwnedRelationships { owner, class } => {
             result.insert(ProducerRead::Owned(*owner, *class));
         }
+        K::OwnedRelationshipsExcluding { .. } => {
+            result.insert(ProducerRead::Global);
+        }
         K::OwnedMemberProjection { owner, contract } => {
             result.insert(
                 crate::FeaturePopulationKind::from_contract_id(contract)
@@ -102,6 +105,9 @@ pub(crate) fn producer_reads<T>(
             }
             S::OwnedRelationships { owner, class } => {
                 result.insert(ProducerRead::Owned(*owner, *class));
+            }
+            S::OwnedRelationshipsExcluding { .. } => {
+                result.insert(ProducerRead::Global);
             }
             S::StructuralFeaturePopulation { owner, kind } => {
                 result.insert(ProducerRead::FeaturePopulation(*owner, *kind));

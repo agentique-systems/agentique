@@ -161,6 +161,19 @@ impl Encoder {
                     self.id(owner.as_u128());
                     self.text(contract);
                 }
+                StructuralSearch::OwnedRelationshipsExcluding {
+                    owner,
+                    class,
+                    excluded,
+                } => {
+                    self.tag(11);
+                    self.id(owner.as_u128());
+                    self.id(class.as_u128());
+                    self.count(excluded.len());
+                    for class in excluded {
+                        self.id(class.as_u128());
+                    }
+                }
             }
         }
     }

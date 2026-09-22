@@ -71,6 +71,11 @@ fn overlay() -> DerivedOverlay {
             owner: VEHICLE,
             contract: "fixture-owned-member-projection/1".into(),
         },
+        StructuralSearch::OwnedRelationshipsExcluding {
+            owner: VEHICLE,
+            class: SPECIALIZATION,
+            excluded: BTreeSet::from([PART_DEF, MetaclassId::from_u128(999)]),
+        },
     ]));
     for output in 1..=40 {
         build.element_with_explanation(

@@ -22,6 +22,7 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
         StructuralSearch::Element(id)
         | StructuralSearch::ElementIdentity(id)
         | StructuralSearch::OwnedRelationships { owner: id, .. }
+        | StructuralSearch::OwnedRelationshipsExcluding { owner: id, .. }
         | StructuralSearch::Property { element: id, .. }
         | StructuralSearch::Association { element: id, .. } => Some(K::Element(*id)),
         StructuralSearch::Incoming(id)
@@ -43,7 +44,9 @@ fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKe
         S::PropertySet { element, .. } => [Some(K::Element(*element)), None],
         S::Incoming { target } => [Some(K::Incoming(*target)), None],
         S::SourceRelationships { source, .. } => [Some(K::Incoming(*source)), None],
-        S::OwnedRelationships { owner, .. } | S::StructuralFeaturePopulation { owner, .. } => {
+        S::OwnedRelationships { owner, .. }
+        | S::OwnedRelationshipsExcluding { owner, .. }
+        | S::StructuralFeaturePopulation { owner, .. } => {
             [Some(K::Element(*owner)), None]
         }
         S::NamespaceMembers { namespace } | S::ImportSet { namespace } => {
@@ -239,6 +242,17 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
             result.insert(StructuralSearch::OwnedRelationships {
                 owner: *owner,
                 class: *class,
+            });
+        } else if let SearchDependency::OwnedRelationshipsExcluding {
+            owner,
+            class,
+            excluded,
+        } = search
+        {
+            result.insert(StructuralSearch::OwnedRelationshipsExcluding {
+                owner: *owner,
+                class: *class,
+                excluded: excluded.clone(),
             });
         } else if let SearchDependency::StructuralFeaturePopulation { owner, kind } = search {
             result.insert(StructuralSearch::OwnedMemberProjection {
