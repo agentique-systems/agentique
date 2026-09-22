@@ -324,3 +324,190 @@ fn connector_and_interface_end_order_and_typed_domains_retain_closure_evidence()
         Completeness::Invalid
     );
 }
+
+#[test]
+fn nested_usage_populations_compose_typing_redefinition_and_composite_filters() {
+    let mut f = Fixture::new();
+    f.create(1, sc::PART_DEFINITION, "BaseAssembly");
+    f.create(2, sc::PART_DEFINITION, "SpecializedAssembly");
+    f.relation(
+        2,
+        1,
+        102,
+        kc::SUBCLASSIFICATION,
+        kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
+    );
+    f.create(3, sc::PART_USAGE, "instance");
+    f.relation(3, 2, 103, kc::FEATURE_TYPING, kp::FEATURE_TYPING_TYPE);
+    for (subject, owner, class, composite) in [
+        (10, 1, sc::PART_USAGE, true),
+        (11, 1, sc::ITEM_USAGE, true),
+        (12, 2, sc::PART_USAGE, true),
+        (13, 3, sc::PART_USAGE, false),
+        (14, 3, sc::ACTION_USAGE, true),
+    ] {
+        f.create(subject, class, &format!("child{subject}"));
+        f.member(owner, subject, 200 + subject, kc::FEATURE_MEMBERSHIP);
+        f.value(subject, kp::FEATURE_IS_COMPOSITE, Value::Boolean(composite));
+    }
+    f.relation(
+        12,
+        10,
+        112,
+        kc::REDEFINITION,
+        kp::REDEFINITION_REDEFINED_FEATURE,
+    );
+    let snapshot = f.finish();
+    let query = q(&snapshot);
+    assert_eq!(query.nested_usages(id(3)).value(), &[id(13), id(14)]);
+    for (answer, expected) in [
+        (
+            query.effective_nested_usages(id(3)),
+            vec![id(11), id(12), id(13), id(14)],
+        ),
+        (query.effective_subitems(id(3)), vec![id(11), id(12)]),
+        (query.effective_subparts(id(3)), vec![id(12)]),
+        (query.effective_subactions(id(3)), vec![id(14)]),
+    ] {
+        assert_eq!(
+            answer.value().iter().copied().collect::<BTreeSet<_>>(),
+            expected.into_iter().collect()
+        );
+        assert_eq!(answer.completeness(), Completeness::Incomplete);
+        for subject in [1, 2, 3] {
+            assert!(has_closure_read(&answer, id(subject)));
+        }
+        assert!(
+            !answer.value().contains(&id(10)),
+            "redefined original is suppressed without copying the inherited replacement"
+        );
+    }
+    for answer in [
+        query.effective_subsetted_features(id(12)),
+        query.effective_redefined_features(id(12)),
+    ] {
+        assert_eq!(answer.value(), &[id(10)]);
+        assert_eq!(answer.completeness(), Completeness::Incomplete);
+        assert!(has_closure_read(&answer, id(12)));
+    }
+    assert_eq!(
+        query.effective_nested_usages(id(1)).completeness(),
+        Completeness::Invalid
+    );
+}
+
+#[test]
+fn connector_as_usage_supports_binding_and_succession_without_narrowing_to_connection_usage() {
+    let mut f = Fixture::new();
+    f.create(1, sc::BINDING_CONNECTOR_AS_USAGE, "binding");
+    f.create(2, sc::SUCCESSION_AS_USAGE, "succession");
+    for endpoint in [81, 82] {
+        f.create(endpoint, sc::REFERENCE_USAGE, "endpoint");
+    }
+    for (owner, ends) in [(1, [(12, 82), (11, 81)]), (2, [(22, 82), (21, 81)])] {
+        for (end, endpoint) in ends {
+            f.create(end, sc::REFERENCE_USAGE, "end");
+            f.value(end, kp::FEATURE_IS_END, Value::Boolean(true));
+            f.member(owner, end, end + 100, kc::END_FEATURE_MEMBERSHIP);
+            f.create(end + 200, kc::REFERENCE_SUBSETTING, "reference");
+            f.owned
+                .entry(id(end))
+                .or_default()
+                .push(Value::Reference(id(end + 200)));
+            f.value(
+                end + 200,
+                kp::REFERENCE_SUBSETTING_REFERENCED_FEATURE,
+                Value::Reference(id(endpoint)),
+            );
+        }
+    }
+    let snapshot = f.finish();
+    let query = q(&snapshot);
+    for (owner, ends) in [(1, vec![id(12), id(11)]), (2, vec![id(22), id(21)])] {
+        let actual_ends = query.effective_connection_ends(id(owner));
+        assert_eq!(actual_ends.value(), &ends);
+        assert_eq!(actual_ends.completeness(), Completeness::Incomplete);
+        let related = query.effective_connection_related_features(id(owner));
+        assert_eq!(related.value(), &[id(82), id(81)]);
+        assert_eq!(related.completeness(), Completeness::Incomplete);
+        assert!(related.rejected_targets.is_empty());
+        assert!(has_closure_read(&related, id(owner)));
+        assert_eq!(
+            query.effective_interface_ends(id(owner)).completeness(),
+            Completeness::Invalid
+        );
+    }
+}
+
+#[test]
+fn verification_cases_inherit_membership_roles_and_redefine_subject_without_copies() {
+    let mut f = Fixture::new();
+    f.create(1, sc::CASE_DEFINITION, "BaseCase");
+    f.create(2, sc::VERIFICATION_CASE_DEFINITION, "Verification");
+    f.relation(
+        2,
+        1,
+        102,
+        kc::SUBCLASSIFICATION,
+        kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
+    );
+    for (subject, class, membership) in [
+        (11, sc::REFERENCE_USAGE, sc::SUBJECT_MEMBERSHIP),
+        (12, sc::PART_USAGE, sc::ACTOR_MEMBERSHIP),
+        (13, sc::REQUIREMENT_USAGE, sc::OBJECTIVE_MEMBERSHIP),
+        (14, sc::REFERENCE_USAGE, kc::RETURN_PARAMETER_MEMBERSHIP),
+    ] {
+        f.create(subject, class, &format!("role{subject}"));
+        f.member(1, subject, 200 + subject, membership);
+    }
+    enumeration(&mut f, 14, kp::FEATURE_DIRECTION, "out");
+    f.create(31, sc::REFERENCE_USAGE, "specificSubject");
+    f.member(2, 31, 231, sc::SUBJECT_MEMBERSHIP);
+    f.relation(
+        31,
+        11,
+        131,
+        kc::REDEFINITION,
+        kp::REDEFINITION_REDEFINED_FEATURE,
+    );
+    f.create(4, sc::PART_DEFINITION, "CaseHost");
+    for (subject, class, definition) in
+        [(5, sc::CASE_USAGE, 1), (6, sc::VERIFICATION_CASE_USAGE, 2)]
+    {
+        f.create(subject, class, "case");
+        f.member(4, subject, 200 + subject, kc::FEATURE_MEMBERSHIP);
+        f.relation(
+            subject,
+            definition,
+            100 + subject,
+            kc::FEATURE_TYPING,
+            kp::FEATURE_TYPING_TYPE,
+        );
+    }
+    let snapshot = f.finish();
+    let query = q(&snapshot);
+    for (role, expected) in [
+        (RequirementCaseRole::Subject, 31),
+        (RequirementCaseRole::Actor, 12),
+        (RequirementCaseRole::Objective, 13),
+    ] {
+        let answer = query.requirement_case_features(id(2), role);
+        assert_eq!(answer.value(), &[id(expected)]);
+        assert_eq!(answer.completeness(), Completeness::Incomplete);
+        assert!(has_closure_read(&answer, id(1)));
+        assert!(has_closure_read(&answer, id(2)));
+    }
+    let returns = query.effective_return_parameters(id(2));
+    assert_eq!(returns.value(), &[id(14)]);
+    assert_eq!(returns.completeness(), Completeness::Incomplete);
+    assert_eq!(
+        query.owned_usages_of_kind(id(4), UsageKind::Case).value(),
+        &[id(5), id(6)]
+    );
+    assert_eq!(
+        query
+            .effective_usages_of_kind(id(4), UsageKind::VerificationCase)
+            .value(),
+        &[id(6)]
+    );
+}
