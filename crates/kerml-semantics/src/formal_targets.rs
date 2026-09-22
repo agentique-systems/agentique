@@ -438,6 +438,12 @@ impl KerMlQueries<'_> {
         let owning_type = owner.value;
         out.merge(owner);
         let Some(owner) = owning_type else {
+            // An existing unowned FeatureMembership can be attached by a later
+            // producer. Absence is an exhaustive formal premise, even when the
+            // current graph's ownership navigation itself is complete.
+            out.merge(
+                self.producer_closure(feature, SemanticClosureRequirement::EffectiveOwnership),
+            );
             return out;
         };
         if matches!(

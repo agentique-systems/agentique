@@ -673,6 +673,153 @@ fn ownership_attachment_changes_queries_and_keeps_all_requirements_open() {
 }
 
 #[test]
+fn formal_owner_absence_requires_a_witness_until_delayed_attachment() {
+    use crate::producer_closure::ProducerEvaluationTable;
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.value(1, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    f.create(2, c::BEHAVIOR);
+    f.create(3, c::FEATURE_MEMBERSHIP);
+    f.changes.set(
+        id(3),
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        SlotValue::Ordered(vec![Value::Reference(id(1))]),
+        origin(),
+    );
+    let snapshot = f.finish();
+    let rule = FormalConstraintId::StepSubperformanceSpecialization;
+    let mut writer = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Ownership],
+        ProducerApplicability::Any,
+    );
+    writer.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let before = KerMlQueries::new(context.fork());
+    let absent = before.formal_constraint_applies(rule, id(1));
+    assert!(!absent.value);
+    assert_eq!(absent.completeness, Completeness::Incomplete);
+    assert!(
+        absent
+            .search_dependencies
+            .contains(&SearchDependency::ProducerClosure {
+                subject: id(1),
+                requirement: SemanticClosureRequirement::EffectiveOwnership,
+                certificate_digest: None,
+            })
+    );
+
+    let mut table = ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        table.pending(record.id(), snapshot.model(), &registry);
+    }
+    let issue = |table: &ProducerEvaluationTable| {
+        Arc::new(ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            table,
+            |_| false,
+        ))
+    };
+    let pending = issue(&table);
+    let q = KerMlQueries::new(
+        context
+            .fork()
+            .with_producer_closure(pending.clone())
+            .unwrap(),
+    );
+    let absent = q.formal_constraint_applies(rule, id(1));
+    assert!(!absent.value);
+    assert_eq!(absent.completeness, Completeness::Incomplete);
+    assert!(
+        absent
+            .search_dependencies
+            .contains(&SearchDependency::ProducerClosure {
+                subject: id(1),
+                requirement: SemanticClosureRequirement::EffectiveOwnership,
+                certificate_digest: Some(pending.digest()),
+            })
+    );
+
+    for record in snapshot.model().elements() {
+        table
+            .record(
+                &[(record.id(), ACTIVATE, Completeness::Complete)],
+                &registry,
+            )
+            .unwrap();
+        table.record_reads(&[(record.id(), ACTIVATE, Vec::new().into())], &registry);
+    }
+    let closed = issue(&table);
+    let q = KerMlQueries::new(
+        context
+            .fork()
+            .with_producer_closure(closed.clone())
+            .unwrap(),
+    );
+    let absent = q.formal_constraint_applies(rule, id(1));
+    assert!(!absent.value);
+    assert_eq!(absent.completeness, Completeness::Complete);
+    assert_eq!(q.negative_queries_certified(), 1);
+
+    let mut builder = agq_kernel::derived::DerivationBuilder::new(snapshot.clone());
+    builder.extend_ordered_references(
+        id(2),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        vec![id(3)],
+        agq_kernel::provenance::Explanation {
+            rule: RuleId::from_u128(99874),
+            dependencies: BTreeSet::from([Dependency::Declared(FactKey::Element(id(3)))]),
+        },
+    );
+    let attached = builder.build().unwrap();
+    let after_context =
+        SemanticContext::for_overlay(&attached, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+    assert!(matches!(
+        after_context.fork().with_producer_closure(closed),
+        Err(ContextError::ProducerClosureMismatch)
+    ));
+    let positive = KerMlQueries::new(after_context).formal_constraint_applies(rule, id(1));
+    assert!(positive.value);
+    assert_eq!(positive.completeness, Completeness::Complete);
+    assert!(
+        !positive
+            .search_dependencies
+            .iter()
+            .any(|search| matches!(search, SearchDependency::ProducerClosure { .. }))
+    );
+
+    let mut edit = snapshot.change_set();
+    edit.set(
+        id(1),
+        p::FEATURE_IS_COMPOSITE,
+        SlotValue::Scalar(Value::Boolean(false)),
+        origin(),
+    );
+    let noncomposite = snapshot.apply(&edit).unwrap();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&noncomposite, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let false_flag = q.formal_constraint_applies(rule, id(1));
+    assert!(!false_flag.value);
+    assert_eq!(false_flag.completeness, Completeness::Complete);
+    assert!(
+        !false_flag
+            .search_dependencies
+            .iter()
+            .any(|search| matches!(search, SearchDependency::ProducerClosure { .. }))
+    );
+}
+
+#[test]
 fn fresh_relationship_does_not_exempt_an_existing_semantic_source() {
     let snapshot = fixture();
     let q = KerMlQueries::new(
