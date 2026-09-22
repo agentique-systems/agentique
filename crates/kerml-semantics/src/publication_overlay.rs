@@ -447,8 +447,20 @@ impl KerMlQueries<'_> {
         &self,
         subjects: impl IntoIterator<Item = ElementId>,
     ) -> PublicationCapabilityReport {
+        self.audit_publication_capabilities_with_rules(subjects, [])
+    }
+    /// Audit a combined language population with an explicit finite registry
+    /// of extension producer rules. This only recognizes their provenance;
+    /// all ordinary capability, dependency and completeness checks still run.
+    /// The report cannot promote an overlay to an accepted publication.
+    pub fn audit_publication_capabilities_with_rules(
+        &self,
+        subjects: impl IntoIterator<Item = ElementId>,
+        extension_rules: impl IntoIterator<Item = agq_kernel::RuleId>,
+    ) -> PublicationCapabilityReport {
         let q = KerMlQueries::for_production(self.context.fork());
         let mut checks = PublicationChecks::new(self.model(), true);
+        checks.extension_rules.extend(extension_rules);
         checks.standard_bindings(&q);
         for subject in subjects {
             checks.subject(&q, subject);
@@ -465,6 +477,7 @@ impl KerMlQueries<'_> {
 
 struct PublicationChecks<'m> {
     model: &'m ModelView,
+    extension_rules: BTreeSet<agq_kernel::RuleId>,
     provenance_checked: BTreeSet<FactKey>,
     // Borrowed immutable proof allocations stay alive with the model. Addresses
     // only avoid rereading a shared premise set; they never enter published data.
@@ -478,6 +491,7 @@ impl<'m> PublicationChecks<'m> {
     fn new(model: &'m ModelView, capture_reads: bool) -> Self {
         Self {
             model,
+            extension_rules: BTreeSet::new(),
             provenance_checked: BTreeSet::new(),
             proof_reads_checked: BTreeSet::new(),
             read_keys: capture_reads.then(BTreeSet::new),
@@ -545,6 +559,7 @@ impl PublicationChecks<'_> {
             .or_default() += 1;
         if crate::result_structure::structural_rule_profile(explanation.rule)
             != Some(q.context().options.baseline_profile)
+            && !self.extension_rules.contains(&explanation.rule)
         {
             self.problem(
                 PublicationFamily::IdentityProvenance,

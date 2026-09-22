@@ -48,6 +48,7 @@ pub struct SystemsLibraryCandidate {
     source_content_set: String,
     syntax_profile: production::SysmlSyntaxProfile,
     production: Option<SystemsConstructionProduction>,
+    dependency_contract: agq_sysml_semantics::SysmlDependencyContract,
 }
 
 /// Unpublished combined worklist result, separate from canonical acceptance.
@@ -77,6 +78,9 @@ impl SystemsLibraryCandidate {
     pub fn production(&self) -> Option<&SystemsConstructionProduction> {
         self.production.as_ref()
     }
+    pub fn dependency_contract(&self) -> &agq_sysml_semantics::SysmlDependencyContract {
+        &self.dependency_contract
+    }
     /// Source/graph construction completeness only; SysML producers are separate.
     pub fn construction_complete(&self) -> bool {
         self.documents.iter().all(|document| {
@@ -95,7 +99,12 @@ impl SystemsLibraryCandidate {
         } else {
             self.draft.roots().iter().copied().collect()
         };
-        systems_candidate_queries(&self.draft, &self.publication, pending)
+        systems_candidate_queries(
+            &self.draft,
+            &self.publication,
+            pending,
+            &self.dependency_contract,
+        )
     }
 }
 
@@ -157,6 +166,33 @@ pub fn prepare_systems_library_with_semantic_progress(
         ));
     }
     let mut parsed = Vec::new();
+    let semantic_profile = match profile {
+        production::SysmlSyntaxProfile::Published => {
+            agq_sysml_semantics::SysmlBaselineProfile::Published
+        }
+        production::SysmlSyntaxProfile::OperationalV1 => {
+            agq_sysml_semantics::SysmlBaselineProfile::OperationalV1
+        }
+    };
+    let candidate_bindings = agq_sysml_semantics::StandardSysmlBindings::unbound(
+        agq_sysml_semantics::SystemsLibraryIdentity::pinned(
+            agq_sysml_semantics::SystemsLibraryIdentity::SOURCE_CONTENT_SET,
+        ),
+    );
+    let dependency_contract = agq_sysml_semantics::SysmlDependencyContract::checked_in_for_profile(
+        &candidate_bindings,
+        semantic_profile,
+    )
+    .map_err(|error| LibraryLoadError::Interpretation(error.to_string()))?;
+    if dependency_contract.kerml_publication_digest != publication.semantic_digest()
+        || dependency_contract.kerml_profile != publication.profile().id()
+        || dependency_contract.kerml_source_content_set != sources.content_set_id()
+    {
+        return Err(LibraryLoadError::Interpretation(
+            "Systems interpretation requires the exact accepted KerML Operational v9 publication"
+                .into(),
+        ));
+    }
     let mut documents = Vec::new();
     let base = base(&publication)?;
     // Syntax support is independent of reference endpoints. Probe each document
@@ -244,18 +280,10 @@ pub fn prepare_systems_library_with_semantic_progress(
             } else {
                 draft.roots().iter().copied().collect()
             };
-            Ok(KerMlQueries::new(
-                publication
-                    .complete_overlay()
-                    .project_construction_context(
-                        draft.candidate(),
-                        draft.roots(),
-                        BTreeSet::new(),
-                        pending,
-                    )
-                    .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?,
+            Ok(
+                systems_candidate_queries(draft, &publication, pending, &dependency_contract)?
+                    .status_queries(),
             )
-            .status_queries())
         },
         ReferenceRefinementStrategy::DependencyDriven,
         &mut progress,
@@ -300,14 +328,9 @@ pub fn prepare_systems_library_with_semantic_progress(
                     .chain(publication.roots())
                     .copied()
                     .collect();
-                let bindings = agq_sysml_semantics::StandardSysmlBindings::unbound(
-                    agq_sysml_semantics::SystemsLibraryIdentity::pinned(
-                        agq_sysml_semantics::SystemsLibraryIdentity::SOURCE_CONTENT_SET,
-                    ),
-                );
                 let extension = agq_sysml_semantics::SysmlProducerExtension::new(
-                    agq_sysml_semantics::SysmlBaselineProfile::OperationalV1,
-                    bindings,
+                    semantic_profile,
+                    candidate_bindings.clone(),
                     roots,
                 );
                 let closure = agq_kerml_semantics::close_construction_structure_with_extension(
@@ -322,6 +345,12 @@ pub fn prepare_systems_library_with_semantic_progress(
                                 BTreeSet::new(),
                                 BTreeSet::new(),
                             )
+                            .and_then(|context| {
+                                context.with_semantic_extension_identity(
+                                    agq_sysml_semantics::SYSML_SEMANTIC_CONTEXT_DOMAIN,
+                                    dependency_contract.context_identity_digest(),
+                                )
+                            })
                             .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
                     },
                     &extension,
@@ -343,10 +372,13 @@ pub fn prepare_systems_library_with_semantic_progress(
                 Ok(current)
             },
             |current| {
-                Ok(
-                    systems_candidate_queries(current, &publication, BTreeSet::new())?
-                        .status_queries(),
-                )
+                Ok(systems_candidate_queries(
+                    current,
+                    &publication,
+                    BTreeSet::new(),
+                    &dependency_contract,
+                )?
+                .status_queries())
             },
             ReferenceRefinementStrategy::DependencyDriven,
             progress,
@@ -359,6 +391,7 @@ pub fn prepare_systems_library_with_semantic_progress(
         source_content_set: sources.content_set_id().into(),
         syntax_profile: profile,
         production,
+        dependency_contract,
     })
 }
 
@@ -366,6 +399,7 @@ fn systems_candidate_queries<'m>(
     draft: &'m LibraryDraft,
     publication: &CanonicalKermlStandardLibraries,
     pending: BTreeSet<ElementId>,
+    dependency_contract: &agq_sysml_semantics::SysmlDependencyContract,
 ) -> Result<KerMlQueries<'m>, LibraryLoadError> {
     let context = if let Some(overlay) = draft.semantic_candidate() {
         publication
@@ -379,6 +413,12 @@ fn systems_candidate_queries<'m>(
             pending,
         )
     }
+    .and_then(|context| {
+        context.with_semantic_extension_identity(
+            agq_sysml_semantics::SYSML_SEMANTIC_CONTEXT_DOMAIN,
+            dependency_contract.context_identity_digest(),
+        )
+    })
     .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
     Ok(KerMlQueries::new(context))
 }

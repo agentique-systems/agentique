@@ -8,16 +8,16 @@
 
 mod bindings;
 mod context;
-mod producer_extension;
 mod context_identity;
+mod producer_extension;
 mod producers;
 mod profile;
 mod queries;
 
 pub use bindings::*;
 pub use context::*;
-pub use producer_extension::*;
 pub use context_identity::*;
+pub use producer_extension::*;
 pub use producers::*;
 pub use profile::*;
 pub use queries::*;
