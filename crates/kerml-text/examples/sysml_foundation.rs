@@ -204,9 +204,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         queries.kerml().direct_feature_types(ids[3]).value,
         vec![ids[0]]
     );
-    assert_eq!(
-        queries.kerml().effective_features(ids[2]).value,
-        vec![ids[3]]
+    let all_features = queries.kerml().effective_features(ids[2]);
+    assert_eq!(all_features.completeness, Completeness::Complete);
+    assert!(
+        all_features.value.contains(&ids[3]),
+        "KerML inheritance includes the original authored usage alongside library Features"
     );
     assert_eq!(
         queries.context().dependencies.kerml_publication_digest,
