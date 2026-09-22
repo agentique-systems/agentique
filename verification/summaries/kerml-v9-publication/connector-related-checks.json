@@ -1,0 +1,50 @@
+{
+  "format": "agentique-concise-verification/1",
+  "timestamp_utc": "2026-09-22T06:30:19.497411+00:00",
+  "base_commit": "08d4ea7993a05a4cfeaff64e30e008173ecf3b2d",
+  "source_sha256": {
+    "crates/kerml-semantics/src/connector_structure.rs": "37e1c25f327181b493cf7a93518f9e779f32ec16f22d771d79866eb16a274fd1",
+    "crates/kerml-semantics/src/context.rs": "43bdcdeb8d76536e2d384aa1e7f0e25ed3705b9063be1d6c3465ab975dcfda05",
+    "crates/kerml-semantics/src/publication_overlay.rs": "e4af329e2919d905b465d3ae3b23b4fc4f1e82812d8df6136f9daa48d2023491",
+    "crates/kerml-semantics/src/structural.rs": "b7489ea509637c108aa2bed622bf899f27dff38700c0f0d41c2a67c0ee2fcd6a",
+    "crates/kerml-semantics/tests/connector_related_features.rs": "8f79e88c2d56cfe7e6ced708b4a06d2f15eba49647f1716aca882dfa608e69d7"
+  },
+  "source_set_sha256": "6f097bab04f5c36687202217627328427ec3d8fa2150b69e32c2be6396f0f9ff",
+  "finding": "V9 capability audit incorrectly applied the strict binding endpoint contract to abstract Flow end Features with determinate absent ReferenceSubsettings. Published deriveConnectorRelatedFeature filters absent references. No additional authority interpretation or erratum was adopted.",
+  "authority": {
+    "artifact": "standards/normative/kerml-1.0/KerML.xmi",
+    "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466",
+    "xmi_id": "Kernel-Connectors-Connector-deriveConnectorRelatedFeature",
+    "ocl": "relatedFeature = connectorEnd.ownedReferenceSubsetting-> select(s | s <> null).subsettedFeature",
+    "related_feature_metadata": {
+      "lower": 0,
+      "upper": "*",
+      "ordered": true,
+      "unique": false
+    }
+  },
+  "implementation": "Reusable connector_related_features and connector_related_structure projections; v9 capability auditing consumes the published projection. Historical connector_endpoints, connector_structure and binding checks retain their strict contract. No new validator query.",
+  "environment": {
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "commands": [
+    {
+      "command": "cargo test --locked --offline -j 2 -p agq-kerml-semantics --test connector_related_features --test connector_publication --test multiplicity_context_v9",
+      "exit_code": 0,
+      "output": "connector_related_features: 6 passed; connector_publication: 2 passed; multiplicity_context_v9: 9 passed; 0 failed"
+    },
+    {
+      "command": "cargo clippy --locked --offline -j 2 -p agq-kerml-semantics --lib --test connector_related_features -- -D warnings",
+      "exit_code": 0,
+      "output": "Finished dev profile [unoptimized] target(s) in 1.37s"
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "output": ""
+    }
+  ]
+}

@@ -556,11 +556,15 @@ impl PublicationChecks<'_> {
             self.answer(F::CrossFeatures, subject, selected);
         }
         if q.is(subject, c::CONNECTOR) {
-            self.answer(
-                F::ConnectorsAssociations,
-                subject,
-                q.connector_structure(subject),
-            );
+            // V9 publication uses the exact published relatedFeature projection.
+            // Keep historical strict endpoint queries and audits reproducible.
+            let structure =
+                if q.context().options.baseline_profile == BaselineProfile::OPERATIONAL_V9 {
+                    q.connector_related_structure(subject)
+                } else {
+                    q.connector_structure(subject)
+                };
+            self.answer(F::ConnectorsAssociations, subject, structure);
         }
         if q.is(subject, c::ASSOCIATION) {
             self.answer(

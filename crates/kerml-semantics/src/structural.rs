@@ -97,7 +97,7 @@ impl KerMlQueries<'_> {
     // membership, but an explicit failed computation remains authoritative input.
     fn multiplicity_owning_namespace(&self, element: ElementId) -> QueryResult<Option<ElementId>> {
         let mut out = self.result(None);
-        if self.namespace_projection_failure(&mut out, element, p::ELEMENT_OWNING_NAMESPACE) {
+        if self.query_projection_failure(&mut out, element, p::ELEMENT_OWNING_NAMESPACE) {
             return out;
         }
         let relationship = self.owning_relationship(element);
@@ -108,7 +108,7 @@ impl KerMlQueries<'_> {
         let Some(membership) = membership else {
             return out;
         };
-        if self.namespace_projection_failure(
+        if self.query_projection_failure(
             &mut out,
             membership,
             p::MEMBERSHIP_MEMBERSHIP_OWNING_NAMESPACE,
@@ -123,7 +123,7 @@ impl KerMlQueries<'_> {
         out
     }
 
-    fn namespace_projection_failure<T>(
+    pub(crate) fn query_projection_failure<T>(
         &self,
         out: &mut QueryResult<T>,
         element: ElementId,
