@@ -263,6 +263,12 @@ pub enum MetamodelError {
     /// Redefinition must follow strict context ancestry; subsetting is independent.
     #[error("cyclic property redefinition involving {0:?}")]
     PropertyCycle(Vec<PropertyId>),
+    /// A dependency registry may be extended, but its existing contracts are immutable.
+    #[error("registry extension changes {descriptor:?}: {contract}")]
+    IncompatibleExtension {
+        descriptor: DescriptorId,
+        contract: &'static str,
+    },
 }
 
 /// Finite contributor graph, not computed union values. Consumers must depend on
@@ -292,6 +298,105 @@ pub struct MetamodelRegistry {
     effective: BTreeMap<MetaclassId, BTreeSet<PropertyId>>,
 }
 impl MetamodelRegistry {
+    /// Require this registry to preserve every existing descriptor, source and
+    /// effective storage contract of `base`. New classes may redefine inherited
+    /// properties in their own contexts; existing class contexts cannot change.
+    /// This structural check does not confer language publication acceptance.
+    pub fn require_extension_of(&self, base: &Self) -> Result<(), MetamodelError> {
+        macro_rules! preserve {
+            ($field:ident, $kind:ident) => {
+                for (&id, value) in &base.$field {
+                    let descriptor = DescriptorId::$kind(id);
+                    if self.$field.get(&id) != Some(value) {
+                        return Err(MetamodelError::IncompatibleExtension {
+                            descriptor,
+                            contract: "descriptor removed or replaced",
+                        });
+                    }
+                    if self.sources.get(&descriptor) != base.sources.get(&descriptor) {
+                        return Err(MetamodelError::IncompatibleExtension {
+                            descriptor,
+                            contract: "source identity changed",
+                        });
+                    }
+                }
+            };
+        }
+        preserve!(models, Metamodel);
+        preserve!(classes, Class);
+        preserve!(properties, Property);
+        preserve!(associations, Association);
+        preserve!(enumerations, Enumeration);
+        preserve!(primitives, Primitive);
+        for enumeration in base.enumerations.values() {
+            for &literal in enumeration.literals.keys() {
+                let descriptor = DescriptorId::Literal(literal);
+                if self.sources.get(&descriptor) != base.sources.get(&descriptor) {
+                    return Err(MetamodelError::IncompatibleExtension {
+                        descriptor,
+                        contract: "literal source identity changed",
+                    });
+                }
+            }
+        }
+        for (&descriptor, source) in &base.sources {
+            if self.sources.get(&descriptor) != Some(source) {
+                return Err(MetamodelError::IncompatibleExtension {
+                    descriptor,
+                    contract: "source identity removed or changed",
+                });
+            }
+        }
+        for review in &base.reviews {
+            if self.reviews.binary_search(review).is_err() {
+                return Err(MetamodelError::IncompatibleExtension {
+                    descriptor: review.subject,
+                    contract: "review evidence removed or replaced",
+                });
+            }
+        }
+        for &class in base.classes.keys() {
+            if self.effective.get(&class) != base.effective.get(&class)
+                || self.ancestors.get(&class) != base.ancestors.get(&class)
+                || self.effective_errors.get(&class) != base.effective_errors.get(&class)
+            {
+                return Err(MetamodelError::IncompatibleExtension {
+                    descriptor: DescriptorId::Class(class),
+                    contract: "existing effective class contract changed",
+                });
+            }
+        }
+        for &property in base.properties.keys() {
+            // Effective sets plus exact redefinition closures preserve property
+            // alias resolution, including ambiguous/unsupported outcomes.
+            if self.redefined.get(&property) != base.redefined.get(&property)
+                || self.supports_slot_storage(property) != base.supports_slot_storage(property)
+                || self.scalar_inverse(property) != base.scalar_inverse(property)
+                || self.inverse_storage(property) != base.inverse_storage(property)
+            {
+                return Err(MetamodelError::IncompatibleExtension {
+                    descriptor: DescriptorId::Property(property),
+                    contract: "existing property resolution or storage changed",
+                });
+            }
+        }
+        for &association in base.associations.keys() {
+            if self.effective_association_ends(association)
+                != base.effective_association_ends(association)
+                || self.supports_occurrence_storage(association)
+                    != base.supports_occurrence_storage(association)
+                || self.supports_derived_occurrence_storage(association)
+                    != base.supports_derived_occurrence_storage(association)
+            {
+                return Err(MetamodelError::IncompatibleExtension {
+                    descriptor: DescriptorId::Association(association),
+                    contract: "existing association ends or storage changed",
+                });
+            }
+        }
+        Ok(())
+    }
+
     /// Validate all descriptors together, including forward cross-model references.
     pub fn new(
         models: impl IntoIterator<Item = MetamodelDescriptor>,

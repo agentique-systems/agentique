@@ -16,7 +16,16 @@ pub fn own_descriptors() -> agq_kernel::metamodel::DescriptorSet {
 }
 /// Dependency-closed graph, importing the KerML descriptors once.
 pub fn descriptors() -> agq_kernel::metamodel::DescriptorSet {
-    let mut all = agq_kerml::descriptors();
+    extend(agq_kerml::descriptors())
+}
+/// Compose the complete SysML descriptors with an explicit KerML interpretation.
+/// This selects structural metadata; it does not accept a semantic dependency.
+pub fn descriptors_for_profile(
+    profile: agq_kerml::BaselineProfile,
+) -> Result<agq_kernel::metamodel::DescriptorSet, agq_kerml::ProfileError> {
+    Ok(extend(agq_kerml::descriptors_for_profile(profile)?))
+}
+fn extend(mut all: agq_kernel::metamodel::DescriptorSet) -> agq_kernel::metamodel::DescriptorSet {
     let own = own_descriptors();
     all.models.extend(own.models);
     all.classes.extend(own.classes);
@@ -32,4 +41,13 @@ pub fn descriptors() -> agq_kernel::metamodel::DescriptorSet {
 pub fn registry()
 -> Result<agq_kernel::metamodel::MetamodelRegistry, agq_kernel::metamodel::MetamodelError> {
     agq_kernel::metamodel::MetamodelRegistry::from_descriptors(descriptors())
+}
+/// Register SysML over the exact explicitly selected KerML profile.
+/// The legacy `registry()` continues to use the published KerML baseline.
+pub fn registry_for_profile(
+    profile: agq_kerml::BaselineProfile,
+) -> Result<agq_kernel::metamodel::MetamodelRegistry, agq_kerml::ProfileError> {
+    Ok(agq_kernel::metamodel::MetamodelRegistry::from_descriptors(
+        descriptors_for_profile(profile)?,
+    )?)
 }

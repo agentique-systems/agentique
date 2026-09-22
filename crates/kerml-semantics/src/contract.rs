@@ -229,6 +229,25 @@ pub struct QueryResult<T> {
 }
 
 impl<T> QueryResult<T> {
+    /// Project a value without discarding context, completeness or any evidence.
+    /// A projection that performs additional semantic reads must account for
+    /// those reads separately; this operation only transforms the existing value.
+    pub fn map<U>(self, transform: impl FnOnce(T) -> U) -> QueryResult<U> {
+        QueryResult {
+            value: transform(self.value),
+            producer_evidence: self.producer_evidence,
+            shared_search_dependencies: self.shared_search_dependencies,
+            context: self.context,
+            completeness: self.completeness,
+            diagnostics: self.diagnostics,
+            positive_dependencies: self.positive_dependencies,
+            search_dependencies: self.search_dependencies,
+            explanations: self.explanations,
+            fact_origins: self.fact_origins,
+            declared_fact_origins: self.declared_fact_origins,
+            canonical_dependencies: self.canonical_dependencies,
+        }
+    }
     pub(crate) fn new(context: &SemanticContextId, value: T) -> Self {
         Self {
             producer_evidence: false,

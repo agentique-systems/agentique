@@ -1,0 +1,206 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "sysml-registry-extension-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "registry_extensions",
+        "--test",
+        "immutable_dependencies",
+        "-p",
+        "agq-sysml",
+        "--test",
+        "profile_registry"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9b80b688db056e6d76fcbfb79c9457807fd49e02",
+      "working_changes_sha256": "5e804df6334bb7d97f4a91f4e8955f6287ec579b178f7b1d5fcd82585648672a",
+      "output_sha256": "2fc89cc41112f42d6b581630a78a0629f0f0bab64d41caac5c7204ed5ee40d8e",
+      "duration_seconds": 10.53,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-registry-extension-focused.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-registry-extension-corrected",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "registry_extensions",
+        "--test",
+        "immutable_dependencies",
+        "-p",
+        "agq-sysml",
+        "--test",
+        "profile_registry"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9b80b688db056e6d76fcbfb79c9457807fd49e02",
+      "working_changes_sha256": "67e1b043d89af4ed1f25e83b2cf5b1bfdca2813af6ae4eb7b3dd481e5e9d8404",
+      "output_sha256": "c00cce727462dcd88ccc5005d820170bb00f374550efe754b99dcda9dfc2f1af",
+      "duration_seconds": 11.38,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-registry-extension-corrected.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-dependency-support-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "registry_extensions",
+        "--test",
+        "immutable_dependencies",
+        "-p",
+        "agq-sysml",
+        "--test",
+        "profile_registry",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "composed_candidate_context_keeps_dependency_obligations_and_asymmetric_roots"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9b80b688db056e6d76fcbfb79c9457807fd49e02",
+      "working_changes_sha256": "f233aff012cbec719fc59d2771e86a5a9c036e437f21c4b73a79fe9a83015619",
+      "output_sha256": "10d6d8ce17c68155153a67bf773f5cd766099573ba4dff5e34d94bf29e40396f",
+      "duration_seconds": 9.45,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-dependency-support-focused.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-registry-extension-final",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "registry_extensions",
+        "--test",
+        "immutable_dependencies",
+        "-p",
+        "agq-sysml",
+        "--test",
+        "profile_registry"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "051d8a434b9fd6380e531e667b4c40e206ffc2d3",
+      "working_changes_sha256": "f233aff012cbec719fc59d2771e86a5a9c036e437f21c4b73a79fe9a83015619",
+      "output_sha256": "27deef80a947b6c6125a5d70e9b3c03650453dfd8cbdc48877bcb9c3ba8cc59b",
+      "duration_seconds": 0.88,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-registry-extension-final.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-dependency-support-check",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-kerml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "051d8a434b9fd6380e531e667b4c40e206ffc2d3",
+      "working_changes_sha256": "2032f4bdc21a1d4a8b3121afbeec4f10b58ebc68b4cb37f6422c8cc35cd8b991",
+      "output_sha256": "66d97cd2e7b332c86269fb9770b611cc75bcbaf345e4b7cba22b8d8274929d08",
+      "duration_seconds": 12.05,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-dependency-support-check.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-dependency-regression-final",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "registry_extensions",
+        "--test",
+        "immutable_dependencies",
+        "-p",
+        "agq-sysml",
+        "--test",
+        "profile_registry"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "051d8a434b9fd6380e531e667b4c40e206ffc2d3",
+      "working_changes_sha256": "2032f4bdc21a1d4a8b3121afbeec4f10b58ebc68b4cb37f6422c8cc35cd8b991",
+      "output_sha256": "14f232fa5280acd986e89264ab9abd22d90f01625667769239e02bc34fadb61a",
+      "duration_seconds": 11.48,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-dependency-regression-final.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    }
+  ]
+}

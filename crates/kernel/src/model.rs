@@ -34,6 +34,7 @@ pub struct ConstructionView {
     revision: RevisionId,
     model: ModelView,
     obligations: Vec<ConstructionObligation>,
+    dependency: Option<Arc<crate::derived::DerivedOverlay>>,
 }
 impl ConstructionView {
     /// Transaction revision, distinct from the base and from subsequent edits.
@@ -47,6 +48,11 @@ impl ConstructionView {
     /// Missing required values, sorted by element and property identity.
     pub fn obligations(&self) -> &[ConstructionObligation] {
         &self.obligations
+    }
+    /// The protected dependency retained by the snapshot that produced this
+    /// candidate. Preview validates dependency writes and ownership atomically.
+    pub fn immutable_dependency(&self) -> Option<&Arc<crate::derived::DerivedOverlay>> {
+        self.dependency.as_ref()
     }
 }
 
@@ -682,6 +688,34 @@ impl Snapshot {
     /// remove, reorder or transfer ownership of dependency facts. This generic
     /// operation confers no language-specific publication acceptance.
     pub fn with_immutable_dependency(dependency: Arc<crate::derived::DerivedOverlay>) -> Self {
+        let model = dependency.model().clone();
+        Self::with_dependency_model(dependency, model)
+    }
+    /// Mount the exact immutable dependency under a compatible larger registry.
+    /// Existing canonical records and proof/search storage remain shared, while
+    /// indexes and structural validation use the extension registry. The original
+    /// dependency and its registry are never mutated or reinterpreted in place.
+    pub fn with_immutable_dependency_in_registry(
+        dependency: Arc<crate::derived::DerivedOverlay>,
+        registry: Arc<MetamodelRegistry>,
+    ) -> Result<Self, ModelError> {
+        let original = dependency.model();
+        registry.require_extension_of(original.registry())?;
+        let mut model = ModelView::build(
+            registry,
+            original.records.clone(),
+            original.links.clone(),
+            original.derived_navigation.clone(),
+        )?;
+        model.declared_source = original.declared_source.clone();
+        model.statuses = original.statuses.clone();
+        model.searches = original.searches.clone();
+        Ok(Self::with_dependency_model(dependency, model))
+    }
+    fn with_dependency_model(
+        dependency: Arc<crate::derived::DerivedOverlay>,
+        model: ModelView,
+    ) -> Self {
         let mut used_ids = dependency.declared().inner.used_ids.clone();
         used_ids.extend(dependency.model().elements().map(|r| r.id()));
         let mut used_links = dependency.declared().inner.used_links.clone();
@@ -689,7 +723,7 @@ impl Snapshot {
         Self {
             inner: Arc::new(SnapshotData {
                 revision: RevisionId::new(),
-                model: dependency.model().clone(),
+                model,
                 used_ids,
                 used_links,
                 dependency: Some(dependency),
@@ -773,6 +807,7 @@ impl Snapshot {
         Ok(ConstructionView {
             revision: changes.revision,
             model,
+            dependency: self.inner.dependency.clone(),
             obligations: validation
                 .deficits
                 .expect("construction validation")

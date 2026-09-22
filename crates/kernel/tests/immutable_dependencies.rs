@@ -14,6 +14,8 @@ fn publication() -> Arc<DerivedOverlay> {
     let source = vertical();
     let mut edit = source.change_set();
     edit.set(OWNS, SOURCES, ordered_refs(&[VEHICLE]), authored());
+    let retired = ElementId::from_u128(777777);
+    edit.create(retired, PART_DEF, authored()).remove(retired);
     let source = source.apply(&edit).unwrap();
     let mut b = DerivationBuilder::new(source);
     b.element(
@@ -290,4 +292,97 @@ fn local_composite_slots_cannot_take_ownership_of_dependency_roots() {
         .set(relationship, GENERAL, scalar_ref(VEHICLE), authored());
     let authored = project.apply(&changes).unwrap();
     DerivationBuilder::new(authored).build().unwrap();
+}
+
+#[test]
+fn extension_registry_keeps_shared_dependency_and_transaction_guards() {
+    use agq_kernel::metamodel::*;
+    let dependency = publication();
+    let (mut classes, mut properties) = descriptors();
+    let extension_class = MetaclassId::from_u128(9100);
+    let extension_name = PropertyId::from_u128(9101);
+    classes.push(class(extension_class, "Extension", &[PART_DEF]));
+    let mut name = property(
+        extension_name,
+        "extensionName",
+        extension_class,
+        ValueKind::String,
+        Multiplicity::OPTIONAL,
+    );
+    name.redefines.insert(NAME);
+    properties.push(name);
+    let extension =
+        Arc::new(MetamodelRegistry::new([model_descriptor()], classes, properties).unwrap());
+    let first =
+        Snapshot::with_immutable_dependency_in_registry(dependency.clone(), extension.clone())
+            .unwrap();
+    let second =
+        Snapshot::with_immutable_dependency_in_registry(dependency.clone(), extension).unwrap();
+    assert!(Arc::ptr_eq(
+        first.immutable_dependency().unwrap(),
+        &dependency
+    ));
+    assert!(
+        dependency
+            .model()
+            .registry()
+            .class(extension_class)
+            .is_err()
+    );
+    for record in dependency.model().elements() {
+        assert!(std::ptr::eq(
+            record,
+            first.model().element(record.id()).unwrap()
+        ));
+        assert!(std::ptr::eq(
+            record,
+            second.model().element(record.id()).unwrap()
+        ));
+    }
+    let local = ElementId::from_u128(9102);
+    let retired = ElementId::from_u128(777777);
+    let mut reuse = first.change_set();
+    reuse.create(retired, extension_class, authored());
+    assert!(matches!(first.apply(&reuse), Err(ModelError::ReusedIdentity(id)) if id == retired));
+    let mut edit = first.change_set();
+    edit.create(local, extension_class, authored()).set(
+        local,
+        extension_name,
+        text("local"),
+        authored(),
+    );
+    let first = first.apply(&edit).unwrap();
+    assert!(second.model().element(local).is_none());
+    assert_eq!(
+        first.model().navigation_slot(VEHICLE, EFFECTIVE),
+        dependency.model().navigation_slot(VEHICLE, EFFECTIVE)
+    );
+    assert_incoming_property_index(first.model());
+    let mut edit = first.change_set();
+    edit.set(VEHICLE, NAME, text("forbidden"), authored());
+    assert!(matches!(
+        first.preview(&edit),
+        Err(ModelError::ImmutableDependency(_))
+    ));
+    assert!(matches!(
+        first.apply(&edit),
+        Err(ModelError::ImmutableDependency(_))
+    ));
+    let mut edit = first.change_set();
+    edit.set(local, CONTAINS, set_refs(&[VEHICLE]), authored());
+    assert!(matches!(
+        first.preview(&edit),
+        Err(ModelError::ImmutableDependency(_))
+    ));
+    let mut derived = DerivationBuilder::new(first);
+    derived.element(
+        key(VEHICLE, 9103),
+        extension_class,
+        [(CONTAINS, set_refs(&[VEHICLE]))],
+        BTreeSet::new(),
+    );
+    assert!(matches!(
+        derived.build(),
+        Err(DerivationError::Model(ModelError::ImmutableDependency(_)))
+    ));
 }

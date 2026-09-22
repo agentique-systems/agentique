@@ -125,6 +125,36 @@ impl<'m> SemanticContext<'m> {
             .into();
         Ok(context)
     }
+    /// Bind an unpublished project candidate, including pending source scopes
+    /// and structural obligations. This never promotes a candidate to a Snapshot.
+    pub fn for_project_construction(
+        candidate: &'m agq_kernel::ConstructionView,
+        options: SemanticOptions,
+        libraries: BTreeSet<LibraryPin>,
+        pending_specializations: BTreeSet<ElementId>,
+        pending_namespaces: BTreeSet<ElementId>,
+    ) -> Result<Self, ContextError> {
+        let mut context = Self::for_construction(candidate, options, libraries)?;
+        for (&class, scopes) in [
+            (&agq_kerml::classes::TYPE, &pending_specializations),
+            (&agq_kerml::classes::NAMESPACE, &pending_namespaces),
+        ] {
+            for &id in scopes {
+                if !candidate.model().element(id).is_some_and(|record| {
+                    candidate
+                        .model()
+                        .registry()
+                        .is_subtype(record.metaclass(), class)
+                        .unwrap_or(false)
+                }) {
+                    return Err(ContextError::InvalidPendingScope(id));
+                }
+            }
+        }
+        context.id.pending_specialization_scopes = pending_specializations;
+        context.id.pending_namespace_scopes = pending_namespaces;
+        Ok(context)
+    }
     /// Install exact root availability. Library roots can exclude authored roots
     /// while authored projects explicitly depend on the library roots.
     pub fn with_available_roots(

@@ -60,7 +60,9 @@ impl<'m> KerMlQueries<'m> {
     pub fn fork(&self) -> Self {
         Self::new(self.context.fork())
     }
-    pub(crate) fn model(&self) -> &'m ModelView {
+    /// Exact immutable canonical view used by this evaluator. Composed language
+    /// layers can borrow it without supplying a second, potentially different graph.
+    pub fn model(&self) -> &'m ModelView {
         self.context.model
     }
     pub(crate) fn result<T>(&self, value: T) -> QueryResult<T> {

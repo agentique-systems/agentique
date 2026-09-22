@@ -91,19 +91,56 @@ impl CompletePublicationOverlay {
         {
             return Err(ContextError::PublicationDependencyMismatch);
         }
-        let mut availability = (*self.context.available_roots).clone();
-        availability.insert(
-            project_root,
-            availability.keys().copied().chain([project_root]).collect(),
-        );
-        let mut context = SemanticContext::for_project_snapshot(
+        let context = SemanticContext::for_project_snapshot(
             snapshot,
             self.context.options.clone(),
             self.context.pinned_libraries.clone(),
             pending_specializations,
             pending_namespaces,
-        )?
-        .with_available_roots(availability)?;
+        )?;
+        self.attach_project_context(context, &[project_root])
+    }
+    /// Bind a partial source/Systems candidate that retains this exact protected
+    /// dependency. Local roots see one another and the accepted roots; accepted
+    /// library roots keep their original availability. Missing endpoints and
+    /// pending scopes remain explicit construction/query incompleteness.
+    pub fn project_construction_context<'m>(
+        &self,
+        candidate: &'m agq_kernel::ConstructionView,
+        local_roots: &[ElementId],
+        pending_specializations: BTreeSet<ElementId>,
+        pending_namespaces: BTreeSet<ElementId>,
+    ) -> Result<SemanticContext<'m>, ContextError> {
+        if !candidate
+            .immutable_dependency()
+            .is_some_and(|dependency| std::ptr::eq(dependency.model(), self.overlay.model()))
+        {
+            return Err(ContextError::PublicationDependencyMismatch);
+        }
+        let context = SemanticContext::for_project_construction(
+            candidate,
+            self.context.options.clone(),
+            self.context.pinned_libraries.clone(),
+            pending_specializations,
+            pending_namespaces,
+        )?;
+        self.attach_project_context(context, local_roots)
+    }
+    fn attach_project_context<'m>(
+        &self,
+        context: SemanticContext<'m>,
+        local_roots: &[ElementId],
+    ) -> Result<SemanticContext<'m>, ContextError> {
+        let mut availability = (*self.context.available_roots).clone();
+        let visible: BTreeSet<_> = availability.keys().chain(local_roots).copied().collect();
+        for &root in local_roots {
+            // Existing accepted roots must never gain visibility of authored roots.
+            if availability.contains_key(&root) {
+                continue;
+            }
+            availability.insert(root, visible.clone());
+        }
+        let mut context = context.with_available_roots(availability)?;
         context.id.standard_bindings = self.context.standard_bindings.clone();
         context.id.formal_constraint_targets = self.context.formal_constraint_targets.clone();
         context.id.library_graph_digest = self.context.library_graph_digest;

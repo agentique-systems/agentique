@@ -293,6 +293,84 @@ fn accepted_graph_roundtrip_retains_context_and_protected_dependency() {
 }
 
 #[test]
+fn composed_candidate_context_keeps_dependency_obligations_and_asymmetric_roots() {
+    let (complete, roots, _) = fixture();
+    let dependency = Arc::new(complete.overlay().clone());
+    let project = Snapshot::with_immutable_dependency_in_registry(
+        dependency.clone(),
+        Arc::new(agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap()),
+    )
+    .unwrap();
+    let first = ElementId::from_u128(900001);
+    let second = ElementId::from_u128(900002);
+    let definition = ElementId::from_u128(900003);
+    let mut changes = project.change_set();
+    let authored = DeclaredOrigin::Authored { source: None };
+    changes
+        .create(first, c::NAMESPACE, authored.clone())
+        .create(second, c::NAMESPACE, authored.clone())
+        .create(definition, agq_sysml::classes::PART_DEFINITION, authored);
+    let candidate = project.preview(&changes).unwrap();
+    assert!(Arc::ptr_eq(
+        candidate.immutable_dependency().unwrap(),
+        &dependency
+    ));
+    assert!(!candidate.obligations().is_empty());
+    assert!(project.apply(&changes).is_err());
+    let context = complete
+        .project_construction_context(
+            &candidate,
+            &[first, second],
+            BTreeSet::new(),
+            BTreeSet::from([first]),
+        )
+        .unwrap();
+    assert_eq!(
+        context.id().publication_dependency_digest,
+        Some(complete.context().model_digest)
+    );
+    assert_eq!(
+        context.id().construction_obligations.len(),
+        candidate.obligations().len()
+    );
+    for &library_root in &roots {
+        assert!(!context.id().available_roots[&library_root].contains(&first));
+        assert!(context.id().available_roots[&first].contains(&library_root));
+    }
+    assert!(context.id().available_roots[&first].contains(&second));
+    let query = KerMlQueries::new(context);
+    assert!(std::ptr::eq(query.model(), candidate.model()));
+    let missing = query.lookup_path(
+        first,
+        &QualifiedName {
+            absolute: false,
+            segments: vec!["not_yet_known".into()],
+        },
+    );
+    assert_eq!(
+        missing.map(|hits| hits.len()).completeness,
+        Completeness::Incomplete
+    );
+    let unattached = Snapshot::new(Arc::new(
+        agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
+    ));
+    let other = unattached.preview(&unattached.change_set()).unwrap();
+    assert!(matches!(
+        complete.project_construction_context(&other, &[], BTreeSet::new(), BTreeSet::new()),
+        Err(ContextError::PublicationDependencyMismatch)
+    ));
+    assert!(matches!(
+        complete.project_construction_context(
+            &candidate,
+            &[first],
+            BTreeSet::new(),
+            BTreeSet::from([ElementId::from_u128(99_999_999)])
+        ),
+        Err(ContextError::InvalidPendingScope(_))
+    ));
+}
+
+#[test]
 fn restoration_rejects_graph_profile_rules_descriptor_library_and_source_tampering() {
     let (complete, roots, libraries) = fixture();
     let (graph, receipt) = trusted_fixture(&complete);
