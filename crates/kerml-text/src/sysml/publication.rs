@@ -1,6 +1,8 @@
 //! Acceptance of the exact Systems Library, independently of SysML conformance.
 use super::{SystemsDocumentStatus, SystemsLibraryCandidate};
-use crate::library::{CanonicalKermlStandardLibraries, LibraryLoadError, LibrarySourceMap};
+use crate::library::{
+    CanonicalKermlStandardLibraries, LibraryLoadError, LibrarySourceMap, PendingLibraryReference,
+};
 use agq_kerml_semantics::{
     Completeness, Diagnostic, KerMlQueries, PublicationClosureOptions, PublicationCounters,
     PublicationFamily, PublicationOverlayError, PublicationStage, SemanticContextId,
@@ -8,9 +10,9 @@ use agq_kerml_semantics::{
 };
 use agq_kerml_syntax::production::SysmlSyntaxProfile;
 use agq_kernel::{
-    ElementId, Snapshot,
+    DocumentId, ElementId, Snapshot, SourceRevisionId, SyntaxNodeId,
     derived::{DerivedOverlay, PropertyState},
-    provenance::{DeclaredOrigin, FactKey, Origin},
+    provenance::{ByteRange, DeclaredOrigin, FactKey, Origin, SourceOrigin},
     value::Value,
 };
 use agq_standard_libraries::{LibraryLanguage, VerifiedLibrary, VerifiedLibrarySet};
@@ -18,7 +20,8 @@ use agq_sysml::{classes as sc, properties as sp};
 use agq_sysml_semantics::{
     SYSML_SEMANTIC_CONTEXT_DOMAIN, StandardSysmlBindings, StandardSysmlRole, SysmlBaselineProfile,
     SysmlBindingError, SysmlContextError, SysmlDependencyContract, SysmlProducerExtension,
-    SysmlSemanticContextId, SystemsLibraryIdentity, sysml_producer_rule_ids,
+    SysmlQueries, SysmlQueryResult, SysmlSemanticContext, SysmlSemanticContextId,
+    SystemsLibraryIdentity, sysml_producer_rule_ids,
 };
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, sync::Arc};
@@ -83,6 +86,9 @@ pub enum SystemsPublicationFinding {
         completeness: Completeness,
         converged: bool,
     },
+    /// Outstanding final-frontier evidence retained when authority rejects the
+    /// input before repeating strict producer work.
+    ProducerDiagnostic(Diagnostic),
     Capability {
         family: SystemsPublicationFamily,
         diagnostic: Diagnostic,
@@ -142,6 +148,27 @@ pub struct CanonicalSysmlSystemsLibrary {
     audit: SystemsPublicationAudit,
     counters: PublicationCounters,
 }
+
+/// Source metadata survives acceptance preparation; no construction graph or
+/// construction derivation is retained while the strict scheduler runs.
+struct PublicationInputs {
+    accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
+    roots: Vec<ElementId>,
+    source_map: LibrarySourceMap,
+    documents: Vec<SystemsDocumentStatus>,
+    references: Vec<PendingLibraryReference>,
+}
+impl PublicationInputs {
+    fn consume(candidate: SystemsLibraryCandidate) -> Self {
+        Self {
+            accepted_kerml: candidate.accepted_kerml().clone(),
+            roots: candidate.draft().roots().to_vec(),
+            source_map: candidate.draft().source_map().clone(),
+            documents: candidate.documents().to_vec(),
+            references: candidate.draft().references().to_vec(),
+        }
+    }
+}
 impl CanonicalSysmlSystemsLibrary {
     /// Revalidate declared storage and rerun the combined scheduler on new local
     /// records only. Neither an earlier construction closure nor a caller's
@@ -171,6 +198,7 @@ impl CanonicalSysmlSystemsLibrary {
                 .findings
                 .push(SystemsPublicationFinding::KernelObligations(obligations));
         }
+        audit_prior_authority(candidate.production(), &mut audit);
         if !audit.findings.is_empty() {
             return Err(SystemsPublicationError::Rejected(Box::new(audit)));
         }
@@ -209,13 +237,15 @@ impl CanonicalSysmlSystemsLibrary {
             }
         };
         drop(candidate_queries);
+        // Consuming the candidate here releases both its ConstructionView and
+        // ConstructionOverlay before allocating the strict producer frontier.
+        let inputs = PublicationInputs::consume(candidate);
         contract.standard_bindings = producer_bindings.targets().clone();
         let contract_digest = contract.context_identity_digest();
-        let roots: Vec<_> = candidate
-            .draft()
-            .roots()
+        let roots: Vec<_> = inputs
+            .roots
             .iter()
-            .chain(candidate.accepted_kerml().roots())
+            .chain(inputs.accepted_kerml.roots())
             .copied()
             .collect();
         let extension =
@@ -224,10 +254,10 @@ impl CanonicalSysmlSystemsLibrary {
             &declared,
             options,
             |overlay| {
-                candidate
-                    .accepted_kerml()
+                inputs
+                    .accepted_kerml
                     .complete_overlay()
-                    .project_overlay_context(overlay, candidate.draft().roots())
+                    .project_overlay_context(overlay, &inputs.roots)
                     .and_then(|context| {
                         context.with_semantic_extension_identity(
                             SYSML_SEMANTIC_CONTEXT_DOMAIN,
@@ -247,10 +277,10 @@ impl CanonicalSysmlSystemsLibrary {
             });
         }
         let q = KerMlQueries::new(
-            candidate
-                .accepted_kerml()
+            inputs
+                .accepted_kerml
                 .complete_overlay()
-                .project_overlay_context(&closure.overlay, candidate.draft().roots())
+                .project_overlay_context(&closure.overlay, &inputs.roots)
                 .and_then(|context| {
                     context.with_semantic_extension_identity(
                         SYSML_SEMANTIC_CONTEXT_DOMAIN,
@@ -305,18 +335,15 @@ impl CanonicalSysmlSystemsLibrary {
                 }
             }
         }
-        audit_sysml_population(&q, &local, &mut audit);
-        audit_references(&q, &candidate, &mut audit);
+        audit_references(&q, &inputs.references, &mut audit);
         let bindings = StandardSysmlBindings::validate(
             q.model(),
             &q,
             identity,
-            candidate.draft().roots(),
+            &inputs.roots,
             StandardSysmlRole::ALL,
         )
-        .and_then(|bindings| {
-            bindings.with_verified_sources(library, candidate.draft().source_map())
-        });
+        .and_then(|bindings| bindings.with_verified_sources(library, &inputs.source_map));
         let bindings = match bindings {
             Ok(bindings) => {
                 if bindings.targets() != producer_bindings.targets() {
@@ -337,6 +364,20 @@ impl CanonicalSysmlSystemsLibrary {
                 None
             }
         };
+        if let Some(bindings) = &bindings {
+            // Typed current-graph queries validate narrowed SysML domains. The
+            // separate producer gate is responsible for the closure claim.
+            let context = SysmlSemanticContext::for_overlay(
+                &closure.overlay,
+                inputs.accepted_kerml.complete_overlay(),
+                &inputs.roots,
+                &contract,
+                bindings.clone(),
+            )?;
+            for batch in local.chunks(32) {
+                audit_sysml_population(&SysmlQueries::new(context.fork()), batch, &mut audit);
+            }
+        }
         if !audit.findings.is_empty() {
             return Err(SystemsPublicationError::Rejected(Box::new(audit)));
         }
@@ -351,13 +392,13 @@ impl CanonicalSysmlSystemsLibrary {
         drop(q);
         Ok(Self {
             overlay: Arc::new(closure.overlay),
-            accepted_kerml: candidate.accepted_kerml().clone(),
+            accepted_kerml: inputs.accepted_kerml,
             bindings,
             identity: publication_identity,
             context,
-            roots: candidate.draft().roots().to_vec(),
-            source_map: candidate.draft().source_map().clone(),
-            documents: candidate.documents().to_vec(),
+            roots: inputs.roots,
+            source_map: inputs.source_map,
+            documents: inputs.documents,
             audit,
             counters: closure.counters,
         })
@@ -535,48 +576,121 @@ fn audit_source_provenance(
     let expected = Origin::Declared(DeclaredOrigin::StandardLibrary {
         library: library.id(),
     });
+    let mut source_nodes = SourceNodes::new();
+    for source in library.documents() {
+        let syntax = agq_kerml_syntax::production::parse_sysml_with_profile(
+            SysmlSyntaxProfile::OperationalV1,
+            source.document(),
+            source.revision(),
+            source.source(),
+            Default::default(),
+        );
+        match syntax {
+            Ok(syntax) if syntax.is_complete() => {
+                source_nodes.insert(
+                    source.document(),
+                    (
+                        source.revision(),
+                        syntax
+                            .nodes()
+                            .map(|node| (node.id(), node.range()))
+                            .collect(),
+                    ),
+                );
+            }
+            _ => audit.findings.push(SystemsPublicationFinding::Document {
+                path: source.path().into(),
+                reason: "Source provenance requires the exact complete operational syntax arena"
+                    .into(),
+            }),
+        }
+    }
     for record in declared
         .model()
         .elements()
         .filter(|record| !declared.is_dependency_element(record.id()))
     {
-        let fact = FactKey::Element(record.id());
-        let source_valid = source_map.get(&fact).is_some_and(|origin| {
-            library
-                .documents()
-                .iter()
-                .find(|source| source.document() == origin.document)
-                .is_some_and(|source| {
-                    source.revision() == origin.revision
-                        && origin.syntax_node.is_some()
-                        && origin.range.start() < origin.range.end()
-                        && source
-                            .source()
-                            .get(origin.range.start() as usize..origin.range.end() as usize)
-                            .is_some()
-                })
-        });
-        if record.origin() != &expected || !source_valid {
-            audit
-                .findings
-                .push(SystemsPublicationFinding::Provenance(fact));
-        }
+        audit_source_fact(
+            FactKey::Element(record.id()),
+            record.origin(),
+            &expected,
+            source_map,
+            &source_nodes,
+            audit,
+        );
         for (property, slot) in record.slots() {
-            if slot.origin() != &expected {
-                audit
-                    .findings
-                    .push(SystemsPublicationFinding::Provenance(FactKey::Property {
-                        element: record.id(),
-                        property,
-                    }));
-            }
+            audit_source_fact(
+                FactKey::Property {
+                    element: record.id(),
+                    property,
+                },
+                slot.origin(),
+                &expected,
+                source_map,
+                &source_nodes,
+                audit,
+            );
         }
+    }
+    for occurrence in declared
+        .model()
+        .association_occurrences()
+        .filter(|occurrence| {
+            declared.immutable_dependency().is_none_or(|dependency| {
+                dependency
+                    .model()
+                    .association_occurrence(occurrence.id())
+                    .is_none()
+            })
+        })
+    {
+        audit_source_fact(
+            FactKey::AssociationOccurrence(occurrence.id()),
+            occurrence.origin(),
+            &expected,
+            source_map,
+            &source_nodes,
+            audit,
+        );
+    }
+}
+
+type SourceNodes = BTreeMap<DocumentId, (SourceRevisionId, BTreeMap<SyntaxNodeId, ByteRange>)>;
+
+fn valid_source_origin(origin: &SourceOrigin, source_nodes: &SourceNodes) -> bool {
+    source_nodes
+        .get(&origin.document)
+        .is_some_and(|(revision, nodes)| {
+            *revision == origin.revision
+                && origin
+                    .syntax_node
+                    .is_some_and(|node| nodes.get(&node) == Some(&origin.range))
+        })
+}
+
+fn audit_source_fact(
+    fact: FactKey,
+    origin: &Origin,
+    expected: &Origin,
+    source_map: &LibrarySourceMap,
+    source_nodes: &SourceNodes,
+    audit: &mut SystemsPublicationAudit,
+) {
+    if origin != expected
+        || !source_map
+            .get(&fact)
+            .is_some_and(|s| valid_source_origin(s, source_nodes))
+    {
+        audit
+            .findings
+            .push(SystemsPublicationFinding::Provenance(fact));
+    } else {
         audit.checked(SystemsPublicationFamily::IdentityProvenance, 1);
     }
 }
 
-fn audit_sysml_population(
-    q: &KerMlQueries<'_>,
+fn audit_sysml_population<'m>(
+    q: &SysmlQueries<'m>,
     subjects: &[ElementId],
     audit: &mut SystemsPublicationAudit,
 ) {
@@ -593,6 +707,7 @@ fn audit_sysml_population(
                 .is_subtype(class, base)
                 .unwrap_or(false)
         };
+        let mut families = Vec::new();
         for (family, classes) in [
             (
                 SystemsPublicationFamily::DefinitionUsage,
@@ -655,14 +770,50 @@ fn audit_sysml_population(
                     sc::VIEWPOINT_USAGE,
                     sc::METADATA_DEFINITION,
                     sc::METADATA_USAGE,
+                    sc::ENUMERATION_DEFINITION,
+                    sc::ENUMERATION_USAGE,
+                    sc::RENDERING_DEFINITION,
+                    sc::RENDERING_USAGE,
                 ][..],
             ),
         ] {
             if classes.iter().any(|&class| is(class)) {
-                audit.checked(family, 1);
+                families.push(family);
             }
         }
+        if is(sc::DEFINITION) || is(sc::USAGE) {
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "effective names",
+                q.effective_names(subject),
+            );
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "current effective usages",
+                q.current_effective_usages(subject),
+            );
+        }
+        if is(sc::DEFINITION) {
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "direct specializations",
+                q.direct_specializations(subject),
+            );
+        }
         if is(sc::USAGE) {
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "current usage types",
+                q.current_usage_types(subject),
+            );
             let actual = q.model().property_state(subject, sp::USAGE_MAY_TIME_VARY);
             let valid = matches!(&actual, Ok(PropertyState::Computed(slot))
                 if matches!(slot.value(), agq_kernel::value::SlotValue::Scalar(Value::Boolean(_)))
@@ -682,6 +833,81 @@ fn audit_sysml_population(
                 });
             }
         }
+        for (applies, name, query) in [
+            (
+                sc::ATTRIBUTE_USAGE,
+                "current attribute definitions",
+                SysmlQueries::current_attribute_definitions
+                    as fn(&SysmlQueries<'m>, ElementId) -> _,
+            ),
+            (
+                sc::ITEM_USAGE,
+                "current item definitions",
+                SysmlQueries::current_item_definitions,
+            ),
+            (
+                sc::PART_USAGE,
+                "current part definitions",
+                SysmlQueries::current_part_definitions,
+            ),
+            (
+                sc::PORT_USAGE,
+                "current port definitions",
+                SysmlQueries::current_port_definitions,
+            ),
+            (
+                sc::CONNECTOR_AS_USAGE,
+                "current connection related features",
+                SysmlQueries::current_connection_related_features,
+            ),
+        ] {
+            if is(applies) {
+                audit_typed_answer(audit, &families, subject, name, query(q, subject));
+            }
+        }
+    }
+}
+
+fn audit_typed_answer<T>(
+    audit: &mut SystemsPublicationAudit,
+    families: &[SystemsPublicationFamily],
+    subject: ElementId,
+    operation: &'static str,
+    answer: SysmlQueryResult<T>,
+) {
+    let completeness = answer.completeness();
+    if completeness == Completeness::Complete {
+        for &family in families {
+            audit.checked(family, 1);
+        }
+        return;
+    }
+    let mut diagnostics = answer.diagnostics;
+    diagnostics.extend(answer.kerml.diagnostics);
+    for query in answer.supporting_queries {
+        diagnostics.extend(query.diagnostics);
+    }
+    for query in answer.supporting_names {
+        diagnostics.extend(query.diagnostics);
+    }
+    for query in answer.observations.into_values() {
+        diagnostics.extend(query.diagnostics);
+    }
+    diagnostics.insert(Diagnostic {
+        code: "SQ_PUBLICATION_TYPED_QUERY",
+        subject,
+        message: format!(
+            "{operation} is {completeness:?}; pending implications: {:?}",
+            answer.pending
+        ),
+    });
+    for &family in families {
+        audit.findings.extend(
+            diagnostics
+                .iter()
+                .cloned()
+                .map(|diagnostic| SystemsPublicationFinding::Capability { family, diagnostic }),
+        );
     }
 }
 
@@ -709,12 +935,55 @@ fn authority_conflict(
     })
 }
 
-fn audit_references(
-    q: &KerMlQueries<'_>,
-    candidate: &SystemsLibraryCandidate,
+fn audit_prior_authority(
+    production: Option<&super::SystemsConstructionProduction>,
     audit: &mut SystemsPublicationAudit,
 ) {
-    for batch in candidate.draft().references().chunks(32) {
+    let Some(production) = production else { return };
+    let Some(last) = production.stages.last() else {
+        return;
+    };
+    let conflicts: Vec<_> = last
+        .diagnostics
+        .iter()
+        .flat_map(|diagnostic| {
+            [
+                "checkViewpointDefinitionSpecialization",
+                "checkViewpointUsageSpecialization",
+                "checkConnectionDefinitionBinarySpecialization",
+            ]
+            .into_iter()
+            .filter_map(|rule| authority_conflict(rule, diagnostic.subject, diagnostic))
+        })
+        .collect();
+    if conflicts.is_empty() {
+        return;
+    }
+    audit.findings.extend(
+        conflicts
+            .into_iter()
+            .map(SystemsPublicationFinding::Authority),
+    );
+    audit.findings.push(SystemsPublicationFinding::Producers {
+        completeness: production.completeness,
+        converged: production.converged,
+    });
+    // A known standards conflict does not relabel ordinary implementation gaps.
+    // Retain every outstanding producer diagnostic in its original form.
+    audit.findings.extend(
+        last.diagnostics
+            .iter()
+            .cloned()
+            .map(SystemsPublicationFinding::ProducerDiagnostic),
+    );
+}
+
+fn audit_references(
+    q: &KerMlQueries<'_>,
+    references: &[PendingLibraryReference],
+    audit: &mut SystemsPublicationAudit,
+) {
+    for batch in references.chunks(32) {
         let status_queries = q.status_queries();
         for reference in batch {
             let answer = status_queries.lookup_relationship_target(
@@ -855,6 +1124,210 @@ fn publication_identity(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn authority_preflight_retains_ordinary_failures_and_ignores_superseded_frontiers() {
+        let missing = Diagnostic {
+            code: "SQ_TARGET_MISSING",
+            subject: ElementId::from_u128(1),
+            message: "Exact formal target Views::Viewpoint is unavailable".into(),
+        };
+        let ordinary = Diagnostic {
+            code: "KQ_PENDING_SUPERTYPES",
+            subject: ElementId::from_u128(2),
+            message: "Pending ordinary producer".into(),
+        };
+        let mut production = super::super::SystemsConstructionProduction {
+            final_predicates: true,
+            completeness: Completeness::Incomplete,
+            converged: true,
+            counters: Default::default(),
+            stages: vec![PublicationStage {
+                stratum: agq_kerml_semantics::ResultStructureStratum::Structural,
+                counters: Default::default(),
+                stage: 0,
+                input_elements: 0,
+                added_elements: 0,
+                added_occurrences: 0,
+                completeness: Completeness::Incomplete,
+                diagnostics: [missing, ordinary.clone()].into_iter().collect(),
+            }],
+        };
+        let mut audit = SystemsPublicationAudit::default();
+        audit_prior_authority(Some(&production), &mut audit);
+        assert_eq!(
+            audit
+                .findings
+                .iter()
+                .filter(|f| matches!(f, SystemsPublicationFinding::Authority(_)))
+                .count(),
+            1
+        );
+        assert!(audit.findings.iter().any(
+            |f| matches!(f, SystemsPublicationFinding::ProducerDiagnostic(d) if d == &ordinary)
+        ));
+        let mut last = production.stages[0].clone();
+        last.stage = 1;
+        last.diagnostics = [ordinary].into_iter().collect();
+        production.stages.push(last);
+        let mut audit = SystemsPublicationAudit::default();
+        audit_prior_authority(Some(&production), &mut audit);
+        assert!(
+            audit.findings.is_empty(),
+            "a transient failure is not a final authority witness"
+        );
+    }
+    #[test]
+    fn source_gate_requires_exact_node_revision_range_and_origin_for_every_fact_kind() {
+        let document = DocumentId::from_u128(1);
+        let revision = SourceRevisionId::from_u128(2);
+        let node = SyntaxNodeId::from_u128(3);
+        let range = ByteRange::new(4, 8).unwrap();
+        let source = SourceOrigin {
+            document,
+            revision,
+            range,
+            syntax_node: Some(node),
+        };
+        let nodes = SourceNodes::from([(document, (revision, BTreeMap::from([(node, range)])))]);
+        let expected = Origin::Declared(DeclaredOrigin::StandardLibrary {
+            library: SystemsLibraryIdentity::LIBRARY,
+        });
+        for fact in [
+            FactKey::Element(ElementId::from_u128(4)),
+            FactKey::Property {
+                element: ElementId::from_u128(4),
+                property: agq_kerml::properties::ELEMENT_DECLARED_NAME,
+            },
+            FactKey::AssociationOccurrence(agq_kernel::AssociationOccurrenceId::from_u128(5)),
+        ] {
+            let mut audit = SystemsPublicationAudit::default();
+            let mut source_map = LibrarySourceMap::from([(fact, source.clone())]);
+            audit_source_fact(fact, &expected, &expected, &source_map, &nodes, &mut audit);
+            assert!(audit.findings.is_empty());
+            for invalid in [
+                SourceOrigin {
+                    document: DocumentId::from_u128(99),
+                    ..source.clone()
+                },
+                SourceOrigin {
+                    revision: SourceRevisionId::from_u128(99),
+                    ..source.clone()
+                },
+                SourceOrigin {
+                    syntax_node: None,
+                    ..source.clone()
+                },
+                SourceOrigin {
+                    syntax_node: Some(SyntaxNodeId::from_u128(99)),
+                    ..source.clone()
+                },
+                SourceOrigin {
+                    range: ByteRange::new(4, 7).unwrap(),
+                    ..source.clone()
+                },
+            ] {
+                source_map.insert(fact, invalid);
+                audit_source_fact(fact, &expected, &expected, &source_map, &nodes, &mut audit);
+            }
+            source_map.clear();
+            audit_source_fact(fact, &expected, &expected, &source_map, &nodes, &mut audit);
+            source_map.insert(fact, source.clone());
+            audit_source_fact(
+                fact,
+                &Origin::Declared(DeclaredOrigin::Authored { source: None }),
+                &expected,
+                &source_map,
+                &nodes,
+                &mut audit,
+            );
+            assert_eq!(audit.findings.len(), 7);
+            assert!(audit.findings.iter().all(|finding| matches!(finding, SystemsPublicationFinding::Provenance(key) if *key == fact)));
+        }
+    }
+
+    #[test]
+    fn all_systems_declared_fact_sources_match_exact_operational_syntax_nodes() {
+        use crate::library::construction::{self, SourceInput};
+        use agq_kerml_syntax::production;
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
+        let base = Snapshot::new(Arc::new(
+            agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9).unwrap(),
+        ));
+        let expected = Origin::Declared(DeclaredOrigin::StandardLibrary {
+            library: SystemsLibraryIdentity::LIBRARY,
+        });
+        let mut audit = SystemsPublicationAudit::default();
+        for source in sources
+            .documents()
+            .filter(|d| d.language() == LibraryLanguage::SysMl)
+        {
+            let syntax = production::parse_sysml_with_profile(
+                SysmlSyntaxProfile::OperationalV1,
+                source.document(),
+                source.revision(),
+                source.source(),
+                Default::default(),
+            )
+            .unwrap();
+            assert!(syntax.is_complete());
+            let nodes = SourceNodes::from([(
+                source.document(),
+                (
+                    source.revision(),
+                    syntax.nodes().map(|n| (n.id(), n.range())).collect(),
+                ),
+            )]);
+            let draft = construction::construct_on(
+                &[SourceInput {
+                    syntax: &syntax,
+                    library: Some(source),
+                    sysml: true,
+                }],
+                &Default::default(),
+                agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                base.clone(),
+                None,
+            )
+            .unwrap();
+            for record in draft.candidate().model().elements() {
+                audit_source_fact(
+                    FactKey::Element(record.id()),
+                    record.origin(),
+                    &expected,
+                    draft.source_map(),
+                    &nodes,
+                    &mut audit,
+                );
+                for (property, slot) in record.slots() {
+                    audit_source_fact(
+                        FactKey::Property {
+                            element: record.id(),
+                            property,
+                        },
+                        slot.origin(),
+                        &expected,
+                        draft.source_map(),
+                        &nodes,
+                        &mut audit,
+                    );
+                }
+            }
+            for occurrence in draft.candidate().model().association_occurrences() {
+                audit_source_fact(
+                    FactKey::AssociationOccurrence(occurrence.id()),
+                    occurrence.origin(),
+                    &expected,
+                    draft.source_map(),
+                    &nodes,
+                    &mut audit,
+                );
+            }
+        }
+        assert!(audit.findings.is_empty(), "{:?}", audit.findings);
+        assert!(audit.checked[&SystemsPublicationFamily::IdentityProvenance] > 7591);
+    }
+
     #[test]
     fn reference_gate_requires_complete_unique_correct_kind_matching_endpoint() {
         let a = ElementId::from_u128(1);
