@@ -1798,13 +1798,19 @@ impl ResultStructurePlan<'_> {
                         .get(member)
                         .map(|record| record.class)
                         .or_else(|| model.element(*member).map(|record| record.metaclass()));
-                    if member_class.is_some_and(|class| {
-                        model
+                    if let Some(member_class) = member_class
+                        && model
                             .registry()
-                            .is_subtype(class, c::FEATURE)
+                            .is_subtype(member_class, c::FEATURE)
                             .unwrap_or(false)
-                    }) {
+                    {
                         let value = |property| {
+                            let property = model
+                                .registry()
+                                .resolve_property(member_class, property)
+                                .ok()
+                                .flatten()?
+                                .id;
                             self.graph
                                 .contributed_properties
                                 .get(&(*member, property))

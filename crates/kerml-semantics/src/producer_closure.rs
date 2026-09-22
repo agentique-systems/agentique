@@ -548,21 +548,18 @@ impl ProducerEvaluationTable {
             .iter()
             .filter(|descriptor| descriptor.applicability != ProducerApplicability::Never)
             .flat_map(|descriptor| {
-                use agq_kerml::properties as p;
-                let mut kinds = Vec::new();
-                if descriptor
-                    .effects
-                    .contains(&ProducerEffect::Scalar(p::FEATURE_DIRECTION))
-                {
-                    kinds.push(crate::FeaturePopulationKind::Parameter);
-                }
-                if descriptor
-                    .effects
-                    .contains(&ProducerEffect::Scalar(p::FEATURE_IS_END))
-                {
-                    kinds.push(crate::FeaturePopulationKind::End);
-                }
-                kinds
+                [
+                    crate::FeaturePopulationKind::Parameter,
+                    crate::FeaturePopulationKind::End,
+                ]
+                .into_iter()
+                .filter(|&kind| {
+                    descriptor.effects.iter().any(|effect| {
+                        matches!(effect, ProducerEffect::Scalar(property)
+                            if scalar_changes_feature_population(*property, kind, model))
+                    })
+                })
+                .collect::<Vec<_>>()
             })
             .collect();
         let mut blocked = BTreeSet::new();
@@ -1410,15 +1407,8 @@ pub(crate) fn effect_changes_read(
         ProducerRead::FeaturePopulation(_, kind) => {
             effect == ProducerEffect::Membership
                 || effect == ProducerEffect::Ownership
-                || match (kind, effect) {
-                    (crate::FeaturePopulationKind::Parameter, ProducerEffect::Scalar(property)) => {
-                        property == agq_kerml::properties::FEATURE_DIRECTION
-                    }
-                    (crate::FeaturePopulationKind::End, ProducerEffect::Scalar(property)) => {
-                        property == agq_kerml::properties::FEATURE_IS_END
-                    }
-                    _ => false,
-                }
+                || matches!(effect, ProducerEffect::Scalar(property)
+                    if scalar_changes_feature_population(property, *kind, model))
         }
         ProducerRead::Structural(_) | ProducerRead::Inverse => {
             !matches!(effect, ProducerEffect::Scalar(_))
@@ -1491,5 +1481,30 @@ pub(crate) fn effect_changes_read(
                 )
             })
         }
+    }
+}
+
+fn scalar_changes_feature_population(
+    written: PropertyId,
+    kind: crate::FeaturePopulationKind,
+    model: &ModelView,
+) -> bool {
+    let selected = match kind {
+        crate::FeaturePopulationKind::Parameter => agq_kerml::properties::FEATURE_DIRECTION,
+        crate::FeaturePopulationKind::End => agq_kerml::properties::FEATURE_IS_END,
+        crate::FeaturePopulationKind::Result => return false,
+    };
+    if written == selected {
+        return true;
+    }
+    let registry = model.registry();
+    let resolved = registry
+        .property(written)
+        .and_then(|property| registry.property_context(property))
+        .and_then(|class| registry.resolve_property(class, selected));
+    match resolved {
+        Ok(property) => property.is_some_and(|property| property.id == written),
+        // An unclassified extension effect cannot support an exclusion proof.
+        Err(_) => true,
     }
 }

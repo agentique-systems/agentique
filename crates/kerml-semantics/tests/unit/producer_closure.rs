@@ -1163,13 +1163,61 @@ fn pending_ownership_can_activate_typing_on_a_currently_unowned_subject() {
 fn positional_bounds_remain_open_to_future_scalar_producers() {
     use crate::FeaturePopulationKind as K;
     use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
-    let mut f = Fixture::new();
+    use agq_kernel::metamodel::{MetamodelRegistry, PropertyOwner};
+    let direction_alias = PropertyId::from_u128(0xfee100);
+    let end_alias = PropertyId::from_u128(0xfee101);
+    let unknown_property = PropertyId::from_u128(0xfee102);
+    let custom_class = MetaclassId::from_u128(0xfee103);
+    let mut descriptors = agq_kerml::descriptors();
+    let mut class = descriptors
+        .classes
+        .iter()
+        .find(|c| c.id == c::FEATURE)
+        .unwrap()
+        .clone();
+    class.id = custom_class;
+    class.name = "FixtureFeature".into();
+    class.direct_supertypes = BTreeSet::from([c::FEATURE]);
+    descriptors.classes.push(class);
+    for (original, alias) in [
+        (p::FEATURE_DIRECTION, direction_alias),
+        (p::FEATURE_IS_END, end_alias),
+    ] {
+        let mut property = descriptors
+            .properties
+            .iter()
+            .find(|p| p.id == original)
+            .unwrap()
+            .clone();
+        property.id = alias;
+        property.name = format!("fixture{}", property.name);
+        property.owner = PropertyOwner::Class(custom_class);
+        property.redefines = BTreeSet::from([original]);
+        property.association = None;
+        property.opposite_ends.clear();
+        descriptors.properties.push(property);
+    }
+    let base = Snapshot::new(Arc::new(
+        MetamodelRegistry::from_descriptors(descriptors).unwrap(),
+    ));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
     f.create(1, c::CLASSIFIER);
     f.create(2, c::CLASSIFIER);
     let snapshot = f.finish();
     for kind in [K::Parameter, K::End, K::Result] {
         for bounded in [false, true] {
-            for future_property in [None, Some(p::FEATURE_DIRECTION), Some(p::FEATURE_IS_END)] {
+            for future_property in [
+                None,
+                Some(p::FEATURE_DIRECTION),
+                Some(p::FEATURE_IS_END),
+                Some(direction_alias),
+                Some(end_alias),
+                Some(unknown_property),
+            ] {
                 let mut writer = ProducerDescriptor::new(
                     ACTIVATE,
                     [ProducerEffect::Membership],
@@ -1240,8 +1288,8 @@ fn positional_bounds_remain_open_to_future_scalar_producers() {
                     |_| false,
                 );
                 let remains_open = !bounded
-                    || matches!((kind, future_property), (K::Parameter, Some(property)) if property == p::FEATURE_DIRECTION)
-                    || matches!((kind, future_property), (K::End, Some(property)) if property == p::FEATURE_IS_END);
+                    || matches!((kind, future_property), (K::Parameter, Some(property)) if [p::FEATURE_DIRECTION, direction_alias, unknown_property].contains(&property))
+                    || matches!((kind, future_property), (K::End, Some(property)) if [p::FEATURE_IS_END, end_alias, unknown_property].contains(&property));
                 assert_eq!(
                     certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
                     Some(if remains_open {
