@@ -863,6 +863,38 @@
       "environment_overrides": {
         "CARGO_INCREMENTAL": "0"
       }
+    },
+    {
+      "name": "v9-slices-cde-exact-seeds",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=C,D,E",
+        "--output=verification/generated/kerml-v9-publication/slices/slice-{slice}.json"
+      ],
+      "source_commit": "6581a4ce0ad969661f48ce1a9038ba32420543a7",
+      "working_changes_sha256": "e8343959e033185450247b9df09cedce57d0a79b78815fd6a43a810f91fb546b",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-slices-cde-exact-seeds",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 17212,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 5800902656,
+      "safety_stop": null,
+      "duration_seconds": 3354.234,
+      "peak_rss_bytes": 2607566848,
+      "peak_private_bytes": 3104436224,
+      "samples": 3352,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 3670016000,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "a0108c1b979b41e3612fc79b3fd9336fd12c6d1ec57d805eddafef16a325e7da"
     }
   ]
 }

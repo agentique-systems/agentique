@@ -14,9 +14,25 @@ rules, current issue and immutable reference implementation identities, corpus
 witnesses, and retained historical findings. Its zero authority blocker count
 does not assert producer closure or publication acceptance.
 
-Implementation and acceptance are in progress. A–E slices must pass in order
-before one monitored whole-corpus attempt (90 minutes, 6 GiB private memory).
+Implementation and acceptance are in progress. A–E slices have passed in order,
+with matching source/descriptor/rule identities, Complete producer closure,
+zero capability/reference findings and closed dependency boundaries. Their union
+completes all 15 retained symbolic multiplicity references. No slice hit a
+resource stop. The single whole-corpus attempt is next (90 minutes, 6 GiB private memory).
 Conformance coverage is incomplete and independent of publication acceptance.
+
+| Slice | Scoped declarations | Audited subjects | Complete mandatory references | Slice seconds |
+| --- | ---: | ---: | ---: | ---: |
+| A | 11,227 | 21,656 | 1,629 | 817.27 |
+| B | 11,229 | 21,658 | 1,636 | 887.55 |
+| C | 11,657 | 23,244 | 1,674 | 888.32 |
+| D | 12,674 | 24,965 | 1,844 | 954.48 |
+| E | 15,416 | 32,320 | 2,174 | 1,311.18 |
+
+These overlapping populations are not summed as unique coverage. Each required
+three scope attempts. Shared preparation was 203.31 seconds for A/B and 197.42
+seconds for C–E. The C–E command exited 0 after 3,354.23 seconds with
+3,104,436,224 peak private bytes, below the development memory limit.
 
 The first A preflight completed producer closure and all 1,173 mandatory
 references, including `Transfers::Transfer::instant[instantNum]`. It exposed

@@ -7,9 +7,9 @@
   "slices": {
     "A": "Complete",
     "B": "Complete",
-    "C": "running",
-    "D": "not_run",
-    "E": "not_run"
+    "C": "Complete",
+    "D": "Complete",
+    "E": "Complete"
   },
   "whole_corpus_attempts": 0,
   "producer_closure": "not_run",
@@ -120,6 +120,62 @@
       "result": "NotRun",
       "failure": "Basename suffix collision with other *Performances.kerml documents; failed before producer closure",
       "resource_stop": false
+    },
+    {
+      "slice": "C",
+      "result": "Complete",
+      "producer_closure": "Complete",
+      "capability_findings": 0,
+      "mandatory_references_checked": 1674,
+      "mandatory_reference_failures": 0,
+      "boundary_complete": true,
+      "scope_attempts": 3,
+      "subjects": 11657,
+      "audited_subjects": 23244,
+      "preparation_seconds": 197.4155329,
+      "slice_seconds": 888.3152044,
+      "report": "verification/generated/kerml-v9-publication/slices/slice-C.json",
+      "report_sha256": "17fb27dbdc0547d19be1aace3d6ebfd4364e4770f49a6270123a536f705ec5e1",
+      "resource_stop": false
+    },
+    {
+      "slice": "D",
+      "result": "Complete",
+      "producer_closure": "Complete",
+      "capability_findings": 0,
+      "mandatory_references_checked": 1844,
+      "mandatory_reference_failures": 0,
+      "boundary_complete": true,
+      "scope_attempts": 3,
+      "subjects": 12674,
+      "audited_subjects": 24965,
+      "preparation_seconds": 197.4155329,
+      "slice_seconds": 954.4766151,
+      "report": "verification/generated/kerml-v9-publication/slices/slice-D.json",
+      "report_sha256": "0a35d4ad159ceeb97c90d421557e94448e2ab7554ba6148fac7a7049e9f1bb46",
+      "resource_stop": false
+    },
+    {
+      "slice": "E",
+      "result": "Complete",
+      "producer_closure": "Complete",
+      "capability_findings": 0,
+      "mandatory_references_checked": 2174,
+      "mandatory_reference_failures": 0,
+      "boundary_complete": true,
+      "scope_attempts": 3,
+      "subjects": 15416,
+      "audited_subjects": 32320,
+      "preparation_seconds": 197.4155329,
+      "slice_seconds": 1311.1782457,
+      "report": "verification/generated/kerml-v9-publication/slices/slice-E.json",
+      "report_sha256": "538fd414733c949d9ee7b7765ea1d2ec18fbd0ff09bff06b0dfd27626b62f9b4",
+      "resource_stop": false
     }
-  ]
+  ],
+  "retained_symbolic_bound_references": {
+    "required": 15,
+    "complete": 15,
+    "missing": []
+  }
 }
