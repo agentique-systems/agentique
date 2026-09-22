@@ -727,6 +727,71 @@ fn pending_creator_cannot_hide_a_future_cross_subject_typing_family() {
 }
 
 #[test]
+fn immutable_record_reads_are_fixed_but_external_source_relationships_stay_open() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut writer = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([
+        writer,
+        ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::Typing],
+            ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+        ),
+    ])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    for (read, expected) in [
+        (
+            ProducerRead::Any(id(2)),
+            ProducerEvaluationState::EvaluatedComplete,
+        ),
+        (
+            ProducerRead::Source(id(2), c::FEATURE_TYPING, p::FEATURE_TYPING_TYPED_FEATURE),
+            ProducerEvaluationState::Pending,
+        ),
+    ] {
+        let mut table = ProducerEvaluationTable::default();
+        for record in snapshot.model().elements() {
+            table.pending(record.id(), snapshot.model(), &registry);
+        }
+        table
+            .record(
+                &[
+                    (id(1), ACTIVATE, Completeness::Incomplete),
+                    (id(3), TYPE, Completeness::Complete),
+                ],
+                &registry,
+            )
+            .unwrap();
+        table.record_reads(&[(id(3), TYPE, vec![read].into())], &registry);
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &table,
+            |subject| subject == id(2),
+        );
+        assert_eq!(
+            certificate.evaluation(id(3), registry.index(TYPE).unwrap()),
+            Some(expected)
+        );
+        assert!(
+            !certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping),
+            "a new local nonowned typing may still reference the dependency source"
+        );
+    }
+}
+
+#[test]
 fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
     let descriptor =
         ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);

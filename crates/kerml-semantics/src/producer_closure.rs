@@ -527,26 +527,33 @@ impl ProducerEvaluationTable {
                         // collections cannot change. Arbitrary inverse/source
                         // relationship searches remain open: local carriers
                         // may refer to a dependency without writing its record.
-                        let fixed =
-                            match read {
-                                ProducerRead::Any(id)
-                                | ProducerRead::Structural(id)
-                                | ProducerRead::Owned(id, _) => immutable(*id),
-                                ProducerRead::Property(id, property) => {
-                                    immutable(*id)
-                                        && model
-                                            .registry()
-                                            .inverse_storage(*property)
-                                            .is_ok_and(|inverse| inverse.is_none())
-                                }
-                                ProducerRead::Source(id, _, property) => immutable(*id)
+                        let fixed = match read {
+                            ProducerRead::Any(id)
+                            | ProducerRead::Structural(id)
+                            | ProducerRead::Owned(id, _) => immutable(*id),
+                            ProducerRead::Property(id, property) => model.element(*id).and_then(|record| record.slot(*property)).is_some_and(|slot| matches!(slot.value(), agq_kernel::value::SlotValue::Scalar(_))) || immutable(*id)
+                                && (model
+                                    .element(*id)
+                                    .is_some_and(|record| record.slot(*property).is_some())
+                                    || model
+                                        .registry()
+                                        .property(*property)
+                                        .is_ok_and(|descriptor| descriptor.composite)
+                                    || [
+                                        agq_kerml::properties::ELEMENT_OWNING_RELATIONSHIP,
+                                        agq_kerml::properties::RELATIONSHIP_OWNING_RELATED_ELEMENT,
+                                    ]
+                                    .contains(property)),
+                            ProducerRead::Source(id, _, property) => {
+                                immutable(*id)
                                     && [
                                         agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP,
                                         agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT,
                                     ]
-                                    .contains(property),
-                                _ => false,
-                            };
+                                    .contains(property)
+                            }
+                            _ => false,
+                        };
                         if fixed {
                             continue;
                         }
