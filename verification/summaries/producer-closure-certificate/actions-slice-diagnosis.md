@@ -34,6 +34,33 @@ The generic excluded-subtype query regression passes (exit 0):
 It preserves canonical order, non-feature Membership subclasses, ownership
 proofs, and a relevant membership whose endpoint remains pending.
 
-The new combined fixtures initially remain red pending the independent value
-staging fix and the exact closure dependency matcher. Neither a publication nor
-language-readiness claim follows from this diagnosis.
+Both combined regressions now pass. Non-valuation contextual features are created
+atomically with their value binding. Transition source lookup records its exact
+Membership population with FeatureMembership subtypes excluded. Original selected
+ownership entries retain their declared support when later derived entries are
+outside that population; a selected derived entry or later broad observation
+retains the complete derived proof. Typed structural searches survive persistence.
+
+Final focused preflight on 2026-09-22, after `b959ad1` and `80fca95`, used
+`CARGO_INCREMENTAL=0`, `CARGO_PROFILE_DEV_DEBUG=0`,
+`CARGO_PROFILE_TEST_DEBUG=0`, `CARGO_BUILD_JOBS=2`, and isolated target
+`target/foundation-actions`:
+
+| Command | Actual result |
+| --- | --- |
+| `cargo test -p agq-sysml-semantics` | Exit 0; 53 passed, including nested state, directed value, absent owner, v2 authority, and shared snapshot/value contexts |
+| `cargo test -p agq-kerml-semantics --lib filtered_declared_ownership` | Exit 0; 1 passed, including narrow/broad observation orders and materialized proof reread |
+| `cargo test -p agq-kerml-semantics --lib variable` | Exit 0; 4 passed after declared ownership support change |
+| `cargo test -p agq-kerml-semantics --lib feature_values` | Exit 0; 2 passed after declared ownership support change |
+| `cargo test -p agq-kerml-semantics --test initial_values_v10 --test ordered_results --test positional_publication` | Exit 0; 1 + 7 + 3 passed after declared ownership support change |
+| `cargo fmt --all -- --check` | Exit 0 after the final proof expansion guard |
+| `cargo clippy -p agq-kerml-semantics -p agq-sysml-semantics --all-targets -- -D warnings` | Exit 0 |
+| `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p agq-kerml-semantics -p agq-sysml-semantics` | Exit 0 |
+
+One preliminary command used nonexistent integration target `variable_featuring`
+and exited 1 before running tests; the actual variable/value checks above use
+their unit-test filters. An initial `selected_declared_ownership` filter selected
+zero tests; the corrected `filtered_declared_ownership` command ran the regression.
+
+These focused results do not establish corpus publication or language readiness.
+The lead owns the subsequent bounded Actions slice and publication gates.
