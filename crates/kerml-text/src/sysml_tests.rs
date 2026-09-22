@@ -202,6 +202,46 @@ fn unsupported_sysml_semantics_is_rejected_without_fabricating_plain_features() 
 }
 
 #[test]
+fn reference_metadata_preserves_private_aliases_and_imports_and_rejects_unknown_kinds() {
+    let syntax = parse(
+        "package Supply { part def Original; } package User { private import Supply::*; private alias Hidden for Supply::Original; }",
+    );
+    let draft = lower(&syntax);
+    let snapshot = draft.strict_snapshot().unwrap();
+    let import = snapshot
+        .model()
+        .instances(c::NAMESPACE_IMPORT, true)
+        .unwrap()
+        .next()
+        .unwrap()
+        .id();
+    let metadata = reference_metadata(snapshot.model(), import, false).unwrap();
+    assert_eq!(
+        metadata,
+        (ReferenceKind::NamespaceImport, None, Visibility::Private)
+    );
+    let alias = snapshot
+        .model()
+        .instances(c::MEMBERSHIP, false)
+        .unwrap()
+        .next()
+        .unwrap()
+        .id();
+    assert_eq!(
+        reference_metadata(snapshot.model(), alias, true).unwrap(),
+        (
+            ReferenceKind::Alias,
+            Some("Hidden".into()),
+            Visibility::Private
+        )
+    );
+    assert!(
+        reference_metadata(snapshot.model(), alias, false).is_err(),
+        "arbitrary reference membership is never labeled Alias"
+    );
+}
+
+#[test]
 fn authored_edit_reuses_unaffected_semantic_and_relationship_identities() {
     let first = parse("part def Engine; part def Vehicle { part engine : Engine; }");
     let before = lower(&first);

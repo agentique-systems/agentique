@@ -10,10 +10,14 @@ use crate::{
         construction::{self, SourceInput},
     },
 };
-use agq_kerml::classes as c;
+use agq_kerml::{classes as c, properties as p};
 use agq_kerml_semantics::{Completeness, KerMlQueries, Resolution};
 use agq_kerml_syntax::{ReferenceKind, Visibility, production};
-use agq_kernel::{ElementId, Snapshot, provenance::DeclaredOrigin};
+use agq_kernel::{
+    ElementId, ModelView, Snapshot,
+    provenance::{DeclaredOrigin, FactKey},
+    value::Value,
+};
 use agq_standard_libraries::{LibraryLanguage, VerifiedLibrarySet};
 use std::{collections::BTreeSet, sync::Arc};
 #[cfg(test)]
@@ -89,6 +93,7 @@ pub fn prepare_systems_library(
     }
     let mut parsed = Vec::new();
     let mut documents = Vec::new();
+    let base = base(&publication)?;
     for source in sources
         .documents()
         .filter(|source| source.language() == LibraryLanguage::SysMl)
@@ -107,6 +112,23 @@ pub fn prepare_systems_library(
             == source.source();
         let construction_gap = if syntax.is_complete() {
             construction::check_supported_sysml(&syntax)
+                .and_then(|()| {
+                    // Probe the same actions that aggregate construction uses,
+                    // including modifiers and mandatory syntactic synthesis.
+                    // Missing reference endpoints remain ordinary obligations.
+                    construction::construct_on(
+                        &[SourceInput {
+                            syntax: &syntax,
+                            library: Some(source),
+                            sysml: true,
+                        }],
+                        &Default::default(),
+                        publication.profile(),
+                        base.clone(),
+                        None,
+                    )
+                    .map(|_| ())
+                })
                 .err()
                 .map(|error| error.to_string())
         } else {
@@ -140,7 +162,7 @@ pub fn prepare_systems_library(
         &inputs,
         &Default::default(),
         publication.profile(),
-        base(&publication)?,
+        base,
         None,
     )?;
     Ok(SystemsLibraryCandidate {
@@ -251,33 +273,19 @@ pub(crate) fn lower_source(
     let mut references = Vec::new();
     let mut diagnostics = Vec::new();
     for reference in draft.references() {
-        let class = snapshot
-            .model()
-            .element(reference.relationship)
-            .expect("canonical relationship")
-            .metaclass();
-        let is = |expected| {
-            snapshot
-                .model()
-                .registry()
-                .is_subtype(class, expected)
-                .unwrap_or(false)
-        };
-        let kind = if is(c::FEATURE_TYPING) {
-            ReferenceKind::Typing
-        } else if is(c::REDEFINITION) {
-            ReferenceKind::Redefinition
-        } else if is(c::SUBSETTING) {
-            ReferenceKind::Subsetting
-        } else if is(c::SPECIALIZATION) {
-            ReferenceKind::Specialization
-        } else if is(c::MEMBERSHIP_IMPORT) {
-            ReferenceKind::MembershipImport
-        } else if is(c::NAMESPACE_IMPORT) {
-            ReferenceKind::NamespaceImport
-        } else {
-            ReferenceKind::Alias
-        };
+        let source = &draft.source_map()[&FactKey::Element(reference.relationship)];
+        let alias_source = inputs
+            .iter()
+            .find(|input| input.syntax.document() == source.document)
+            .and_then(|input| {
+                input
+                    .syntax
+                    .nodes()
+                    .find(|node| Some(node.id()) == source.syntax_node)
+            })
+            .is_some_and(|node| node.kind() == production::Production::AliasMember);
+        let (kind, alias, visibility) =
+            reference_metadata(snapshot.model(), reference.relationship, alias_source)?;
         let specific = q
             .owning_related_element(reference.relationship)
             .value
@@ -351,8 +359,8 @@ pub(crate) fn lower_source(
             name: reference.name.clone(),
             origin: reference.origin.clone(),
             resolution,
-            alias: None,
-            visibility: Visibility::Public,
+            alias,
+            visibility,
         });
     }
     drop(q);
@@ -364,4 +372,106 @@ pub(crate) fn lower_source(
         diagnostics,
         source_map: draft.source_map().clone(),
     })
+}
+
+fn reference_metadata(
+    model: &ModelView,
+    relationship: ElementId,
+    alias_source: bool,
+) -> Result<(ReferenceKind, Option<String>, Visibility), LibraryLoadError> {
+    let class = model
+        .element(relationship)
+        .expect("canonical relationship")
+        .metaclass();
+    let is = |expected| {
+        model
+            .registry()
+            .is_subtype(class, expected)
+            .unwrap_or(false)
+    };
+    let kind = if is(c::FEATURE_TYPING) {
+        ReferenceKind::Typing
+    } else if is(c::REDEFINITION) {
+        ReferenceKind::Redefinition
+    } else if is(c::SUBSETTING) {
+        ReferenceKind::Subsetting
+    } else if is(c::SPECIALIZATION) {
+        ReferenceKind::Specialization
+    } else if is(c::MEMBERSHIP_IMPORT) {
+        ReferenceKind::MembershipImport
+    } else if is(c::NAMESPACE_IMPORT) {
+        ReferenceKind::NamespaceImport
+    } else if class == c::MEMBERSHIP && alias_source {
+        ReferenceKind::Alias
+    } else {
+        return Err(LibraryLoadError::Interpretation(format!(
+            "Authored source reference metadata for metaclass {class} is not implemented"
+        )));
+    };
+    let alias = if kind == ReferenceKind::Alias {
+        model
+            .navigation_slot(relationship, p::MEMBERSHIP_MEMBER_NAME)
+            .and_then(|slot| {
+                slot.value().values().find_map(|value| {
+                    if let Value::String(name) = value {
+                        Some(name.clone())
+                    } else {
+                        None
+                    }
+                })
+            })
+    } else {
+        None
+    };
+    let property = if is(c::IMPORT) {
+        Some(p::IMPORT_VISIBILITY)
+    } else if is(c::MEMBERSHIP) {
+        Some(p::MEMBERSHIP_VISIBILITY)
+    } else {
+        None
+    };
+    let visibility = if let Some(property) = property {
+        let literal = model
+            .navigation_slot(relationship, property)
+            .and_then(|slot| {
+                slot.value().values().find_map(|value| {
+                    if let Value::Enumeration(id) = value {
+                        Some(*id)
+                    } else {
+                        None
+                    }
+                })
+            })
+            .ok_or_else(|| {
+                LibraryLoadError::Interpretation("Reference visibility is unavailable".into())
+            })?;
+        let agq_kernel::metamodel::ValueKind::Enumeration(domain) = model
+            .registry()
+            .property(property)
+            .expect("visibility descriptor")
+            .value_kind
+        else {
+            unreachable!("pinned visibility enumeration")
+        };
+        match model
+            .registry()
+            .enumeration(domain)
+            .expect("visibility domain")
+            .literals
+            .get(&literal)
+            .map(String::as_str)
+        {
+            Some("public") => Visibility::Public,
+            Some("protected") => Visibility::Protected,
+            Some("private") => Visibility::Private,
+            _ => {
+                return Err(LibraryLoadError::Interpretation(
+                    "Reference visibility literal is invalid".into(),
+                ));
+            }
+        }
+    } else {
+        Visibility::Public
+    };
+    Ok((kind, alias, visibility))
 }

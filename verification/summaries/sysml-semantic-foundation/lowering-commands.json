@@ -325,6 +325,142 @@
         "min_free_disk_bytes": 0
       },
       "output_sha256": "1076c92f32566e2ccd73f71ac3332b57beade72246277c92bb21a7591f1cddb1"
+    },
+    {
+      "name": "sysml-reference-metadata-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "sysml::tests",
+        "--",
+        "--nocapture"
+      ],
+      "source_commit": "fa017ee012ba28389d2006dd2e7cd773ae3d1c36",
+      "working_changes_sha256": "dd3ef08680d52b11cf9c0c9f093d6a3f4ddd17f1ff55007e57e78920b89632a6",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/sysml-reference-metadata-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 30160,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 8.031,
+      "peak_rss_bytes": 457871360,
+      "peak_private_bytes": 566337536,
+      "samples": 9,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "73dfad53cc6c67f969e30d64447682d9509d9b04e58687229292769059132fa2"
+    },
+    {
+      "name": "sysml-foundation-tool-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "fa017ee012ba28389d2006dd2e7cd773ae3d1c36",
+      "working_changes_sha256": "dd3ef08680d52b11cf9c0c9f093d6a3f4ddd17f1ff55007e57e78920b89632a6",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/sysml-foundation-tool-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 10432,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 11.031,
+      "peak_rss_bytes": 482914304,
+      "peak_private_bytes": 602382336,
+      "samples": 12,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "4d9b82a69744c737e2617c36785f2b207e4574d3175420521f56b840a7267e56"
+    },
+    {
+      "name": "sysml-lowering-strict-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--no-deps"
+      ],
+      "source_commit": "fa017ee012ba28389d2006dd2e7cd773ae3d1c36",
+      "working_changes_sha256": "dd3ef08680d52b11cf9c0c9f093d6a3f4ddd17f1ff55007e57e78920b89632a6",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "RUSTDOCFLAGS": "-Dwarnings"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/sysml-lowering-strict-rustdoc",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 1896,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 6.031,
+      "peak_rss_bytes": 790528000,
+      "peak_private_bytes": 1091928064,
+      "samples": 7,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "6aad2d86721b6f4feb3a4b108801a05391f0b450aebda542c73c11ff6b07e3c4"
     }
   ]
 }

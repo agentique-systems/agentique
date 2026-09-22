@@ -24,6 +24,17 @@ pub struct ReferenceAssertion {
     pub(crate) alias: Option<String>,
     pub(crate) visibility: agq_kerml_syntax::Visibility,
 }
+impl ReferenceAssertion {
+    /// Declared alias name, when this assertion is an alias membership.
+    pub fn alias(&self) -> Option<&str> {
+        self.alias.as_deref()
+    }
+    /// Canonical visibility for import/alias assertions. Other relationship
+    /// assertions have no visibility restriction and report `Public`.
+    pub fn visibility(&self) -> agq_kerml_syntax::Visibility {
+        self.visibility
+    }
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FrontendDiagnosticDomain {
     Resolution,
