@@ -365,9 +365,10 @@ pub fn prepare_systems_library_with_semantic_progress(
                                     BTreeSet::new(),
                                 )
                                 .and_then(|context| {
-                                    context.with_semantic_extension_identity(
+                                    context.with_naming_extension(
                                         agq_sysml_semantics::SYSML_SEMANTIC_CONTEXT_DOMAIN,
                                         dependency_contract.context_identity_digest(),
+                                        Arc::new(agq_sysml_semantics::SysmlNamingExtension),
                                     )
                                 })
                                 .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
@@ -438,9 +439,10 @@ fn systems_candidate_queries<'m>(
         )
     }
     .and_then(|context| {
-        context.with_semantic_extension_identity(
+        context.with_naming_extension(
             agq_sysml_semantics::SYSML_SEMANTIC_CONTEXT_DOMAIN,
             dependency_contract.context_identity_digest(),
+            Arc::new(agq_sysml_semantics::SysmlNamingExtension),
         )
     })
     .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;

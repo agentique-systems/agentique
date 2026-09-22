@@ -259,9 +259,10 @@ impl CanonicalSysmlSystemsLibrary {
                     .complete_overlay()
                     .project_overlay_context(overlay, &inputs.roots)
                     .and_then(|context| {
-                        context.with_semantic_extension_identity(
+                        context.with_naming_extension(
                             SYSML_SEMANTIC_CONTEXT_DOMAIN,
                             contract_digest,
+                            Arc::new(agq_sysml_semantics::SysmlNamingExtension),
                         )
                     })
                     .map_err(PublicationOverlayError::Context)
@@ -282,9 +283,10 @@ impl CanonicalSysmlSystemsLibrary {
                 .complete_overlay()
                 .project_overlay_context(&closure.overlay, &inputs.roots)
                 .and_then(|context| {
-                    context.with_semantic_extension_identity(
+                    context.with_naming_extension(
                         SYSML_SEMANTIC_CONTEXT_DOMAIN,
                         contract_digest,
+                        Arc::new(agq_sysml_semantics::SysmlNamingExtension),
                     )
                 })
                 .map_err(PublicationOverlayError::Context)?,
@@ -452,9 +454,10 @@ impl CanonicalSysmlSystemsLibrary {
                 .complete_overlay()
                 .project_overlay_context(&self.overlay, &self.roots)
                 .expect("accepted immutable Systems dependency")
-                .with_semantic_extension_identity(
+                .with_naming_extension(
                     SYSML_SEMANTIC_CONTEXT_DOMAIN,
                     self.identity.dependencies.context_identity_digest(),
+                    Arc::new(agq_sysml_semantics::SysmlNamingExtension),
                 )
                 .expect("accepted SysML context identity"),
         )

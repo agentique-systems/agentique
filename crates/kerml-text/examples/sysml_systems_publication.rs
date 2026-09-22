@@ -43,6 +43,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             for (reference, candidates) in &round.withdrawn_endpoints {
                 println!("Systems: withdrawn reference={reference:?} candidates={candidates:?}");
+                if let Some(diagnostics) = round.withdrawal_diagnostics.get(reference) {
+                    for diagnostic in diagnostics {
+                        println!("Systems: withdrawal diagnostic={diagnostic:?}");
+                    }
+                }
             }
         },
         |round, done, total, planned| {

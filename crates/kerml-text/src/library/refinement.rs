@@ -2,7 +2,7 @@
 use super::{LibraryDraft, LibraryLoadError, PendingLibraryReference};
 use agq_kerml::properties as p;
 use agq_kerml_semantics::{
-    KerMlStatusQueries, QueryInvalidationSet, QueryReadSet, SemanticContextId,
+    Diagnostic, KerMlStatusQueries, QueryInvalidationSet, QueryReadSet, SemanticContextId,
 };
 use agq_kernel::{
     ConstructionObligation, ElementId, ElementRecord, ModelView, PropertyId,
@@ -35,6 +35,9 @@ pub struct ReferenceRefinementRound {
     /// Withdrawn provisional endpoints with their replacement candidate
     /// element/membership identities. Observational only; never affects lookup.
     pub withdrawn_endpoints: BTreeMap<(ElementId, PropertyId), (ElementId, BTreeSet<ElementId>)>,
+    /// Diagnostics behind a changed selection, including incomplete negative
+    /// searches that forbid falling back to another namespace.
+    pub withdrawal_diagnostics: BTreeMap<(ElementId, PropertyId), Vec<Diagnostic>>,
     pub structural_obligations: usize,
     pub references_considered: usize,
     pub references_evaluated: usize,
@@ -53,6 +56,7 @@ struct CachedReference {
     // candidate records are additional explicit positive cache dependencies.
     candidates: BTreeSet<ElementId>,
     selected: Option<ElementId>,
+    diagnostics: Vec<Diagnostic>,
 }
 
 /// Exact local facts needed for change detection, without retaining the previous
@@ -334,6 +338,7 @@ pub(crate) fn refine_from(
             input_endpoints: resolved.len(),
             selected_endpoints: 0,
             withdrawn_endpoints: BTreeMap::new(),
+            withdrawal_diagnostics: BTreeMap::new(),
             structural_obligations: draft.candidate.obligations().len(),
             references_considered: draft.references.len(),
             references_evaluated: 0,
@@ -403,6 +408,7 @@ pub(crate) fn refine_from(
                     reads: result.reads.into_invalidation(),
                     candidates,
                     selected,
+                    diagnostics: result.outcome.diagnostics.into_iter().collect(),
                 }
             };
             if let Some(previous) = resolved.get(&key)
@@ -411,6 +417,9 @@ pub(crate) fn refine_from(
                 report
                     .withdrawn_endpoints
                     .insert(key, (*previous, cached.candidates.clone()));
+                report
+                    .withdrawal_diagnostics
+                    .insert(key, cached.diagnostics.clone());
             }
             if let Some(target) = cached.selected {
                 next.insert(key, target);
