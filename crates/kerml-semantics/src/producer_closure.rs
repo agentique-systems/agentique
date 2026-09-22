@@ -446,6 +446,12 @@ impl SemanticClosureRequirement {
     ];
     pub fn requires(self, effect: ProducerEffect) -> bool {
         use ProducerEffect as E;
+        // Ownership supplies implied relationship sources, featuring domains,
+        // member populations and ordered naming sources. It therefore reaches
+        // every current exhaustive query requirement, not only owningType.
+        if effect == E::Ownership {
+            return true;
+        }
         match self {
             Self::EffectiveOwnership => matches!(effect, E::Ownership),
             Self::EffectiveTyping => matches!(

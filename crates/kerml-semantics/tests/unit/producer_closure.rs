@@ -529,6 +529,150 @@ fn primitive_scalar_writers_keep_naming_and_membership_requirements_open() {
 }
 
 #[test]
+fn ownership_attachment_changes_queries_and_keeps_all_requirements_open() {
+    use crate::producer_closure::ProducerEvaluationTable;
+    let mut f = Fixture::new();
+    for (element, class) in [
+        (1, c::FEATURE),
+        (2, c::CLASSIFIER),
+        (3, c::FEATURE_MEMBERSHIP),
+        (4, c::FEATURE),
+        (5, c::REFERENCE_SUBSETTING),
+        (6, c::CLASSIFIER),
+        (7, c::FEATURE_TYPING),
+        (9, c::FEATURE),
+        (10, c::REDEFINITION),
+    ] {
+        f.create(element, class);
+    }
+    f.changes.set(
+        id(3),
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        SlotValue::Ordered(vec![Value::Reference(id(1))]),
+        origin(),
+    );
+    f.value(4, p::ELEMENT_DECLARED_NAME, Value::String("target".into()));
+    f.value(
+        5,
+        p::REFERENCE_SUBSETTING_REFERENCED_FEATURE,
+        Value::Reference(id(4)),
+    );
+    f.value(7, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(4)));
+    f.value(7, p::FEATURE_TYPING_TYPE, Value::Reference(id(6)));
+    f.own(4, 7);
+    f.value(
+        10,
+        p::REDEFINITION_REDEFINING_FEATURE,
+        Value::Reference(id(9)),
+    );
+    f.value(
+        10,
+        p::REDEFINITION_REDEFINED_FEATURE,
+        Value::Reference(id(4)),
+    );
+    let snapshot = f.finish();
+    let options = SemanticOptions {
+        exclude_implied: true,
+        ..Default::default()
+    };
+    let before = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, options.clone(), BTreeSet::new()).unwrap(),
+    );
+    let mut builder = agq_kernel::derived::DerivationBuilder::new(snapshot.clone());
+    for (owner, relationship) in [(id(2), id(3)), (id(1), id(5)), (id(9), id(10))] {
+        builder.extend_ordered_references(
+            owner,
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            vec![relationship],
+            agq_kernel::provenance::Explanation {
+                rule: RuleId::from_u128(99873),
+                dependencies: BTreeSet::from([Dependency::Declared(FactKey::Element(
+                    relationship,
+                ))]),
+            },
+        );
+    }
+    let overlay = builder.build().unwrap();
+    let after = KerMlQueries::new(
+        SemanticContext::for_overlay(&overlay, options, BTreeSet::new()).unwrap(),
+    );
+    assert!(before.feature_types(id(1)).value.is_empty());
+    assert_eq!(after.feature_types(id(1)).value, vec![id(6)]);
+    assert_eq!(before.owning_type(id(1)).value, None);
+    assert_eq!(after.owning_type(id(1)).value, Some(id(2)));
+    assert!(before.featuring_types(id(1)).value.is_empty());
+    assert_eq!(after.featuring_types(id(1)).value, vec![id(2)]);
+    assert!(before.effective_features(id(2)).value.is_empty());
+    assert_eq!(after.effective_features(id(2)).value, vec![id(1)]);
+    assert_eq!(
+        before.effective_names(id(9)).value,
+        EffectiveNames::Determinate(BTreeSet::new())
+    );
+    assert_eq!(
+        after.effective_names(id(9)).value,
+        EffectiveNames::Determinate(BTreeSet::from(["target".into()]))
+    );
+    assert_eq!(before.common_connector_context(&[id(1)]).value, None);
+    assert_eq!(after.common_connector_context(&[id(1)]).value, Some(id(2)));
+    for q in [&before, &after] {
+        for completeness in [
+            q.feature_types(id(1)).completeness,
+            q.owning_type(id(1)).completeness,
+            q.featuring_types(id(1)).completeness,
+            q.effective_features(id(2)).completeness,
+            q.effective_names(id(9)).completeness,
+            q.common_connector_context(&[id(1)]).completeness,
+        ] {
+            assert_eq!(completeness, Completeness::Complete);
+        }
+    }
+
+    let mut writer = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Ownership],
+        ProducerApplicability::Any,
+    );
+    writer.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let context = before
+        .context
+        .fork()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    for completeness in [
+        None,
+        Some(Completeness::Incomplete),
+        Some(Completeness::Complete),
+    ] {
+        let mut table = ProducerEvaluationTable::default();
+        for record in snapshot.model().elements() {
+            table.pending(record.id(), snapshot.model(), &registry);
+            if let Some(completeness) = completeness {
+                table
+                    .record(&[(record.id(), ACTIVATE, completeness)], &registry)
+                    .unwrap();
+            }
+            table.record_reads(&[(record.id(), ACTIVATE, Vec::new().into())], &registry);
+        }
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &table,
+            |_| false,
+        );
+        for requirement in SemanticClosureRequirement::ALL {
+            assert!(requirement.requires(ProducerEffect::Ownership));
+            assert_eq!(
+                certificate.is_closed(id(1), requirement),
+                completeness == Some(Completeness::Complete),
+                "{requirement:?} must account for ownership-dependent query inputs"
+            );
+        }
+    }
+}
+
+#[test]
 fn fresh_relationship_does_not_exempt_an_existing_semantic_source() {
     let snapshot = fixture();
     let q = KerMlQueries::new(
