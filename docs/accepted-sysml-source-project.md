@@ -12,6 +12,8 @@ certificate. `ProjectRevision::queries()` reads the composed KerML model;
 `sysml_queries()` exposes the effective SysML API over the same canonical IDs.
 `snapshot()` remains declared, while `semantic_model()` includes derived facts.
 Neither facade copies inherited members into authored declarations.
+Unchanged document objects and their lossless syntax arenas are shared by `Arc`
+across source revisions; editing one document does not clone all other arenas.
 
 Both publications remain protected shared dependencies. The independently
 validated mounted certificate preserves the precise accepted KerML ancestor and

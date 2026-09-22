@@ -185,7 +185,7 @@ pub enum ProjectDiagnostic {
 #[derive(Debug)]
 pub struct ProjectRevision {
     project: ProjectId,
-    documents: BTreeMap<String, ProjectDocument>,
+    documents: BTreeMap<String, Arc<ProjectDocument>>,
     model: ProjectModel,
     diagnostics: Vec<ProjectDiagnostic>,
 }
@@ -241,13 +241,16 @@ impl ProjectRevision {
     }
     /// Documents are ordered by exact project-local path, independent of insertion order.
     pub fn documents(&self) -> impl Iterator<Item = (&str, &ProjectDocument)> {
-        self.documents.iter().map(|(p, d)| (p.as_str(), d))
+        self.documents.iter().map(|(p, d)| (p.as_str(), d.as_ref()))
     }
     pub fn document(&self, id: DocumentId) -> Option<&ProjectDocument> {
-        self.documents.values().find(|d| d.id == id)
+        self.documents
+            .values()
+            .find(|d| d.id == id)
+            .map(Arc::as_ref)
     }
     pub fn document_at(&self, path: &str) -> Option<&ProjectDocument> {
-        self.documents.get(path)
+        self.documents.get(path).map(Arc::as_ref)
     }
     pub fn diagnostics(&self) -> &[ProjectDiagnostic] {
         &self.diagnostics
@@ -518,7 +521,7 @@ impl SourceProject {
                 check_path(&documents, &path)?;
                 documents.insert(
                     path,
-                    ProjectDocument::parse(
+                    Arc::new(ProjectDocument::parse(
                         DocumentId::new(),
                         language,
                         source.into(),
@@ -527,7 +530,7 @@ impl SourceProject {
                         self.accepted_sysml
                             .as_ref()
                             .map(|_| syntax::production::SysmlSyntaxProfile::OperationalV2),
-                    )?,
+                    )?),
                 );
                 continue;
             }
@@ -546,7 +549,7 @@ impl SourceProject {
             match change {
                 ProjectChange::Edit { edit, .. } => {
                     let next = documents[&path].edit(&edit, self.limits)?;
-                    documents.insert(path, next);
+                    documents.insert(path, Arc::new(next));
                 }
                 ProjectChange::Replace { source, .. } => {
                     let next = ProjectDocument::parse(
@@ -559,7 +562,7 @@ impl SourceProject {
                             .as_ref()
                             .map(|_| syntax::production::SysmlSyntaxProfile::OperationalV2),
                     )?;
-                    documents.insert(path, next);
+                    documents.insert(path, Arc::new(next));
                 }
                 ProjectChange::Remove { .. } => {
                     documents.remove(&path);
@@ -618,7 +621,7 @@ impl SourceProject {
             })
         } else {
             ProjectModel::KerMl(lowering::lower_project(
-                documents.values().filter_map(ProjectDocument::syntax),
+                documents.values().filter_map(|document| document.syntax()),
                 Some(match &self.current.model {
                     ProjectModel::KerMl(model) => model,
                     _ => unreachable!("immutable frontend"),
@@ -654,7 +657,7 @@ impl SourceProject {
     }
 }
 fn check_path(
-    documents: &BTreeMap<String, ProjectDocument>,
+    documents: &BTreeMap<String, Arc<ProjectDocument>>,
     path: &str,
 ) -> Result<(), ProjectError> {
     if path.is_empty() || documents.contains_key(path) {
