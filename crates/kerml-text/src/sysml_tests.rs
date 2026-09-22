@@ -17,6 +17,9 @@ mod rich_vertical;
 #[path = "sysml_programmatic_vertical_tests.rs"]
 mod programmatic_vertical;
 
+#[path = "agentique_self_model_tests.rs"]
+mod agentique_self_model;
+
 fn parse(source: &str) -> production::Document {
     let parsed = production::parse_sysml(
         DocumentId::new(),

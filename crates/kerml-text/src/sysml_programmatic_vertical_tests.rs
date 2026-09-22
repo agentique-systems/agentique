@@ -354,6 +354,348 @@ fn programmatic_vehicle() -> Snapshot {
     builder.finish()
 }
 
+/// Independently authored architecture slice: these commands do not read SysML
+/// syntax, a textual snapshot, or its IDs. The full model is checked separately.
+pub(super) fn programmatic_platform() -> Snapshot {
+    let mut builder = VehicleBuilder::new();
+    let root = builder.create(c::NAMESPACE, None);
+    for package in [
+        "ArchitectureContracts",
+        "LanguageArchitecture",
+        "PlatformArchitecture",
+    ] {
+        let id = builder.create(c::PACKAGE, Some(package));
+        builder.member(root, id, c::OWNING_MEMBERSHIP);
+    }
+    for (package, name, class) in [
+        (
+            "ArchitectureContracts",
+            "RevisionNumber",
+            s::ATTRIBUTE_DEFINITION,
+        ),
+        ("ArchitectureContracts", "SemanticState", s::ITEM_DEFINITION),
+        (
+            "ArchitectureContracts",
+            "ValidatedSemanticState",
+            s::ITEM_DEFINITION,
+        ),
+        ("ArchitectureContracts", "SemanticQuery", s::PORT_DEFINITION),
+        ("ArchitectureContracts", "ModelRevision", s::PORT_DEFINITION),
+        (
+            "ArchitectureContracts",
+            "DiagnosticStream",
+            s::PORT_DEFINITION,
+        ),
+        (
+            "ArchitectureContracts",
+            "SemanticAccess",
+            s::INTERFACE_DEFINITION,
+        ),
+        (
+            "LanguageArchitecture",
+            "StandardLibraryManager",
+            s::PART_DEFINITION,
+        ),
+        ("LanguageArchitecture", "SysMLEngine", s::PART_DEFINITION),
+        (
+            "PlatformArchitecture",
+            "ProjectWorkspace",
+            s::PART_DEFINITION,
+        ),
+        (
+            "PlatformArchitecture",
+            "IncrementalWorkspace",
+            s::PART_DEFINITION,
+        ),
+        (
+            "PlatformArchitecture",
+            "ModelingPlatform",
+            s::PART_DEFINITION,
+        ),
+        ("PlatformArchitecture", "QueryService", s::PART_DEFINITION),
+        (
+            "PlatformArchitecture",
+            "ValidationService",
+            s::PART_DEFINITION,
+        ),
+        ("PlatformArchitecture", "ViewService", s::PART_DEFINITION),
+        ("PlatformArchitecture", "Repository", s::PART_DEFINITION),
+        ("PlatformArchitecture", "Client", s::PART_DEFINITION),
+        (
+            "PlatformArchitecture",
+            "ValidateRevision",
+            s::ACTION_DEFINITION,
+        ),
+        ("PlatformArchitecture", "Serving", s::STATE_DEFINITION),
+        (
+            "PlatformArchitecture",
+            "ImmutableRevisions",
+            s::REQUIREMENT_DEFINITION,
+        ),
+    ] {
+        let id = builder.create(class, Some(name));
+        builder.member(builder.names[package], id, c::OWNING_MEMBERSHIP);
+    }
+    for (owner, name, class, definition, composite) in [
+        (
+            "ProjectWorkspace",
+            "kermlPublication",
+            s::PART_USAGE,
+            "StandardLibraryManager",
+            false,
+        ),
+        (
+            "ProjectWorkspace",
+            "systemsPublication",
+            s::PART_USAGE,
+            "StandardLibraryManager",
+            false,
+        ),
+        (
+            "ProjectWorkspace",
+            "languageQueries",
+            s::PART_USAGE,
+            "SysMLEngine",
+            false,
+        ),
+        (
+            "ProjectWorkspace",
+            "revisionNumber",
+            s::ATTRIBUTE_USAGE,
+            "RevisionNumber",
+            false,
+        ),
+        (
+            "ProjectWorkspace",
+            "workspaceRevision",
+            s::PORT_USAGE,
+            "ModelRevision",
+            true,
+        ),
+        (
+            "ProjectWorkspace",
+            "workspaceQuery",
+            s::PORT_USAGE,
+            "SemanticQuery",
+            true,
+        ),
+        (
+            "ProjectWorkspace",
+            "workspaceDiagnostics",
+            s::PORT_USAGE,
+            "DiagnosticStream",
+            true,
+        ),
+        (
+            "IncrementalWorkspace",
+            "acceptedRevision",
+            s::ATTRIBUTE_USAGE,
+            "RevisionNumber",
+            false,
+        ),
+        (
+            "SemanticAccess",
+            "requester",
+            s::PORT_USAGE,
+            "SemanticQuery",
+            false,
+        ),
+        (
+            "SemanticAccess",
+            "responder",
+            s::PORT_USAGE,
+            "SemanticQuery",
+            false,
+        ),
+        (
+            "ModelingPlatform",
+            "workspace",
+            s::PART_USAGE,
+            "ProjectWorkspace",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "queryService",
+            s::PART_USAGE,
+            "QueryService",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "validationService",
+            s::PART_USAGE,
+            "ValidationService",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "views",
+            s::PART_USAGE,
+            "ViewService",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "repository",
+            s::PART_USAGE,
+            "Repository",
+            true,
+        ),
+        ("ModelingPlatform", "client", s::PART_USAGE, "Client", true),
+        (
+            "ModelingPlatform",
+            "platformQueries",
+            s::PORT_USAGE,
+            "SemanticQuery",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "clientQueries",
+            s::PORT_USAGE,
+            "SemanticQuery",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "queryConnection",
+            s::INTERFACE_USAGE,
+            "SemanticAccess",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "validate",
+            s::ACTION_USAGE,
+            "ValidateRevision",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "operating",
+            s::STATE_USAGE,
+            "Serving",
+            true,
+        ),
+        (
+            "ValidateRevision",
+            "workingState",
+            s::ITEM_USAGE,
+            "SemanticState",
+            false,
+        ),
+        (
+            "ValidateRevision",
+            "checkedState",
+            s::ITEM_USAGE,
+            "ValidatedSemanticState",
+            false,
+        ),
+    ] {
+        let id = builder.create(class, Some(name));
+        builder.member(builder.names[owner], id, c::FEATURE_MEMBERSHIP);
+        builder.scalar(id, p::FEATURE_IS_COMPOSITE, Value::Boolean(composite));
+        builder.relationship(
+            c::FEATURE_TYPING,
+            id,
+            builder.names[definition],
+            Some(p::FEATURE_TYPING_TYPED_FEATURE),
+            p::FEATURE_TYPING_TYPE,
+        );
+    }
+    for (name, direction) in [("workingState", "in"), ("checkedState", "out")] {
+        builder.enumeration(builder.names[name], p::FEATURE_DIRECTION, direction);
+    }
+    for name in ["requester", "responder"] {
+        builder.scalar(builder.names[name], p::FEATURE_IS_END, Value::Boolean(true));
+    }
+    for (specific, general) in [
+        ("IncrementalWorkspace", "ProjectWorkspace"),
+        ("ValidatedSemanticState", "SemanticState"),
+    ] {
+        builder.relationship(
+            c::SUBCLASSIFICATION,
+            builder.names[specific],
+            builder.names[general],
+            Some(p::SUBCLASSIFICATION_SUBCLASSIFIER),
+            p::SUBCLASSIFICATION_SUPERCLASSIFIER,
+        );
+    }
+    builder.relationship(
+        c::REDEFINITION,
+        builder.names["acceptedRevision"],
+        builder.names["revisionNumber"],
+        Some(p::REDEFINITION_REDEFINING_FEATURE),
+        p::REDEFINITION_REDEFINED_FEATURE,
+    );
+    for endpoint in ["clientQueries", "platformQueries"] {
+        let end = builder.create(s::REFERENCE_USAGE, None);
+        builder.member(
+            builder.names["queryConnection"],
+            end,
+            c::END_FEATURE_MEMBERSHIP,
+        );
+        builder.scalar(end, p::FEATURE_IS_END, Value::Boolean(true));
+        builder.relationship(
+            c::REFERENCE_SUBSETTING,
+            end,
+            builder.names[endpoint],
+            None,
+            p::REFERENCE_SUBSETTING_REFERENCED_FEATURE,
+        );
+    }
+    for (name, kind) in [
+        ("startServing", "entry"),
+        ("checkRevision", "do"),
+        ("stopServing", "exit"),
+    ] {
+        let action = builder.create(s::PERFORM_ACTION_USAGE, Some(name));
+        builder.scalar(action, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+        let membership = builder.member(
+            builder.names["Serving"],
+            action,
+            s::STATE_SUBACTION_MEMBERSHIP,
+        );
+        builder.enumeration(membership, sp::STATE_SUBACTION_MEMBERSHIP_KIND, kind);
+        if name == "checkRevision" {
+            builder.relationship(
+                c::FEATURE_TYPING,
+                action,
+                builder.names["ValidateRevision"],
+                Some(p::FEATURE_TYPING_TYPED_FEATURE),
+                p::FEATURE_TYPING_TYPE,
+            );
+        }
+    }
+    let subject = builder.create(s::REFERENCE_USAGE, Some("subjectWorkspace"));
+    builder.member(
+        builder.names["ImmutableRevisions"],
+        subject,
+        s::SUBJECT_MEMBERSHIP,
+    );
+    builder.enumeration(subject, p::FEATURE_DIRECTION, "in");
+    builder.relationship(
+        c::FEATURE_TYPING,
+        subject,
+        builder.names["ProjectWorkspace"],
+        Some(p::FEATURE_TYPING_TYPED_FEATURE),
+        p::FEATURE_TYPING_TYPE,
+    );
+    let constraint = builder.create(s::CONSTRAINT_USAGE, Some("preservesPriorState"));
+    let membership = builder.member(
+        builder.names["ImmutableRevisions"],
+        constraint,
+        s::REQUIREMENT_CONSTRAINT_MEMBERSHIP,
+    );
+    builder.enumeration(
+        membership,
+        sp::REQUIREMENT_CONSTRAINT_MEMBERSHIP_KIND,
+        "requirement",
+    );
+    builder.finish()
+}
+
 fn declared_name(model: &ModelView, id: ElementId) -> String {
     let Some(SlotValue::Scalar(Value::String(name))) = model
         .navigation_slot(id, p::ELEMENT_DECLARED_NAME)
