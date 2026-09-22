@@ -92,13 +92,19 @@ of `KerMlConformanceReport` and does not alone establish accepted library or
 authored-project publication; those gates are recorded in the
 [milestone evidence](../verification/kerml-complete-publication/README.md).
 
-The current convergence slice also exposes a publication-blocking symbolic-bound
+The historical v8 convergence slice exposes a publication-blocking symbolic-bound
 reference: the retained v8 multiplicity interpretation gives its expression an
 empty domain, while the required reference binding has no permitted context for
 the outer Feature. Worklist and full scan agree on Incomplete. The
-[current witness and authority impact](../verification/summaries/overnight-convergence/README.md)
-record this boundary; no successor profile or implicit lexical-domain fallback
-has been adopted.
+[v8 witness and authority impact](../verification/summaries/overnight-convergence/README.md)
+retain this boundary. Operational v9 centralizes the two explicitly authorized
+multiplicity context corrections in `multiplicity_featuring_context`: semantic
+owning-Namespace Feature domain, or owning end Feature domain for an owned cross
+Feature. Bound Expressions share the MultiplicityRange domain. Incomplete
+premises remain incomplete; no lexical fallback or numeric evaluation is added.
+The [v9 authority record](../verification/summaries/kerml-v9-publication/authority-decision.json)
+keeps Published through v8 and their findings intact. Acceptance remains a
+separate corpus gate.
 
 Additive kernel handoff consumes an unshared overlay and transfers its accumulated
 maps; retained readers force a safe copy. Proof interning persists across frontiers.
@@ -126,6 +132,23 @@ set is not a proof or publication certificate. Cache reuse requires an unchanged
 query contract and complete reporting of changed records, pending inputs and both
 old and new navigation endpoints. Full explanations remain available through
 `KerMlQueries` against the same canonical graph.
+
+Scoped publication also carries `PublicationProviderReads`. It distinguishes
+observations of fixed declared identities and names from reads that can require
+additional additive producers. General revision invalidation retains all reads.
+Mutable ownership, incoming navigation, derived facts, missing identities and
+coarse persistent kernel searches remain conservative provider obligations.
+Discovered providers expand the slice before closure is rerun from its original
+declared graph; a development size limit never establishes semantic completeness.
+
+The kernel graph archive is a structural transport for a root Snapshot and its
+DerivedOverlay. It streams interned proof/search tables and preserves identities,
+provenance, occurrence order and retired identity reservations. Loading validates
+kernel invariants and conveys no language publication acceptance. Protected
+dependency snapshots cannot be flattened through this archive API. An accepted
+language cache additionally needs independently pinned publication, descriptor,
+rule, library and source identities; its artifact hash is distinct from the
+canonical semantic digest.
 
 Reference refinement reconstructs ordinary candidates and caches provisional
 reference outcomes against those read dependencies. `QueryInvalidationSet` keeps

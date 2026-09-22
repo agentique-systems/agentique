@@ -1,0 +1,30 @@
+{
+  "format": "agentique-foundation-milestone/1",
+  "base_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
+  "branch": "foundation/kerml-v9-to-sysml-semantics",
+  "status": "implementation-complete-publication-preflight-in-progress",
+  "profile": "agentique-kerml-1.0-operational/9",
+  "operational_default": "agentique-kerml-1.0-operational/2",
+  "rule_set": "agq-kerml-query/26",
+  "authorized_interpretations": ["KERML11-4", "KERML11-3"],
+  "authority_conflicts_blocking_publication": 0,
+  "historical_profiles_preserved": "Published through Operational v8",
+  "symbolic_bound_inventory": {"ordinary": 9, "owned_cross": 6},
+  "full_publication_attempts": 0,
+  "accepted_publication": false,
+  "accepted_bindings_regenerated": false,
+  "sysml_production_phase": "not_started",
+  "conformance_coverage": "incomplete",
+  "workspace_verification": {
+    "source_commit": "d322c1df0c5cbbe09d4ae889a78251399523b59c",
+    "clippy": "passed",
+    "tests": {"passed": 463, "failed": 0, "ignored": 2},
+    "commands": "commands.json"
+  },
+  "details": {
+    "capabilities": "capability-status.json",
+    "authority": "authority-decision.json",
+    "inventory": "bound-inventory.json",
+    "producer_performance": "scale-checks.json"
+  }
+}

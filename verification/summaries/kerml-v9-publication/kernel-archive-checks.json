@@ -1,0 +1,275 @@
+{
+  "format": "agentique-watchdog-summary/1",
+  "commands": [
+    {
+      "name": "kernel-archive-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "archive"
+      ],
+      "source_commit": "643b0ed21d03c6db8c5d47a0287821151d292f04",
+      "working_changes_sha256": "b21e9792884385b53a4f49b1738d037f4b6ef7619d21ab6b579838bacf81c5cf",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/kernel-archive-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 10216,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 2.032,
+      "peak_rss_bytes": 242233344,
+      "peak_private_bytes": 279457792,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "9b7ce3e0bd1b082dc9b4af921a97d029ab9d49abab7a3fa3ea5071d32c8e9942"
+    },
+    {
+      "name": "kernel-archive-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "643b0ed21d03c6db8c5d47a0287821151d292f04",
+      "working_changes_sha256": "b21e9792884385b53a4f49b1738d037f4b6ef7619d21ab6b579838bacf81c5cf",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/kernel-archive-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 13000,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 3.032,
+      "peak_rss_bytes": 468205568,
+      "peak_private_bytes": 536797184,
+      "samples": 4,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "2b807fe16ed8ed07a2b250d2e6556d036acff381dc645f1442be01b60da33346"
+    },
+    {
+      "name": "kernel-archive-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel"
+      ],
+      "source_commit": "643b0ed21d03c6db8c5d47a0287821151d292f04",
+      "working_changes_sha256": "1a8482964a14f310445fe4005260e3b58991b777757971fd9270fc495cd62fe2",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "RUSTDOCFLAGS": "-Dwarnings"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/kernel-archive-rustdoc",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 28484,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 5.031,
+      "peak_rss_bytes": 643432448,
+      "peak_private_bytes": 1068048384,
+      "samples": 6,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "af52909d0ce4bce1d929c6e462adeb1e000ffe20e1ae3147dfdee8ce34089f17"
+    },
+    {
+      "name": "kernel-archive-kernel-suite",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel"
+      ],
+      "source_commit": "643b0ed21d03c6db8c5d47a0287821151d292f04",
+      "working_changes_sha256": "1a8482964a14f310445fe4005260e3b58991b777757971fd9270fc495cd62fe2",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/kernel-archive-kernel-suite",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 26376,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 105.109,
+      "peak_rss_bytes": 548507648,
+      "peak_private_bytes": 648355840,
+      "samples": 106,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "00b8ccd165fef619acb431ee152c820317257740a93dfd1911f2206bc762a330"
+    },
+    {
+      "name": "kernel-archive-uuid-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "archive"
+      ],
+      "source_commit": "643b0ed21d03c6db8c5d47a0287821151d292f04",
+      "working_changes_sha256": "05c6b4436ae5064e87bead3455628cbb104dab33c48586347d22f53edd5ff681",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/kernel-archive-uuid-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 20972,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 48.078,
+      "peak_rss_bytes": 337575936,
+      "peak_private_bytes": 421298176,
+      "samples": 49,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "2088086598d49dff2cfc5bbc71d9d0d8edd3141b43efed3be2c3eaffc12906ad"
+    },
+    {
+      "name": "kernel-archive-final-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kernel",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "643b0ed21d03c6db8c5d47a0287821151d292f04",
+      "working_changes_sha256": "d450571c25f3eb3edf8daedd93cf9e74d9a19561a2167acfaf1f4033161a85b9",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/kernel-archive-final-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 26380,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 3.031,
+      "peak_rss_bytes": 383897600,
+      "peak_private_bytes": 531136512,
+      "samples": 4,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "90f4cba3831735fc220d0fa022bd6f2c1ad8b132ec8f75d44790a8301f0a69ba"
+    }
+  ],
+  "source_worktree": "../agentique-v9-slices",
+  "implementation_commits": [
+    "8036c28",
+    "7db2b11"
+  ],
+  "result": "Five focused archive tests and 95 kernel tests passed; Clippy, formatting and strict Rustdoc passed. The final buffer-release followup is covered by subsequent integrated restoration checks."
+}

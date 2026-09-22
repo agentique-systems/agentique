@@ -1,0 +1,101 @@
+{
+  "format": "agentique-publication-capability-status/1",
+  "profile": "agentique-kerml-1.0-operational/9",
+  "focused_multiplicity_context": "Complete",
+  "historical_profile_matrix": "Passed",
+  "publication_blocking_authority_conflicts": 0,
+  "slices": {
+    "A": "Complete",
+    "B": "running",
+    "C": "not_run",
+    "D": "not_run",
+    "E": "not_run"
+  },
+  "whole_corpus_attempts": 0,
+  "producer_closure": "not_run",
+  "publication_capabilities": "not_run",
+  "mandatory_references": "not_run",
+  "complete_publication_overlay": false,
+  "canonical_facade_accepted": false,
+  "accepted_bindings_regenerated": false,
+  "authored_accepted_library_consumption": false,
+  "operational_default": "agentique-kerml-1.0-operational/2",
+  "conformance_coverage": "Incomplete",
+  "sysml_semantic_phase": "not_started",
+  "slice_attempts": [
+    {
+      "slice": "A",
+      "producer_closure": "Complete",
+      "mandatory_references_checked": 1173,
+      "mandatory_reference_failures": 0,
+      "capability_findings": [
+        {
+          "code": "KQ_CONNECTOR_ENDPOINT",
+          "family": "ConnectorsAssociations",
+          "message": "End requires a unique reference subsetting",
+          "subject": "2c5b60b2-a3ce-5f43-b907-e80ce1d229fc"
+        },
+        {
+          "code": "KQ_CONNECTOR_ENDPOINT",
+          "family": "ConnectorsAssociations",
+          "message": "End requires a unique reference subsetting",
+          "subject": "36997286-8a5f-513f-bb77-22224d2fe9c5"
+        },
+        {
+          "code": "KQ_PUBLICATION_QUERY",
+          "family": "ConnectorsAssociations",
+          "message": "Mandatory publication query is not Complete",
+          "subject": "79768ad2-8cdb-5182-9eab-cf8fd48aee75"
+        }
+      ],
+      "missing_dependency_subjects": 919,
+      "symbolic_bounds_complete": true,
+      "symbolic_bounds_checked": 1,
+      "wall_seconds": 517.359,
+      "preparation_seconds": 216.2635677,
+      "slice_seconds": 300.3192113,
+      "peak_private_bytes": 1772097536,
+      "resource_stop": null,
+      "report": "verification/generated/kerml-v9-publication/slices/slice-A-attempt1.json",
+      "result": "Incomplete"
+    },
+    {
+      "slice": "A",
+      "attempt": 2,
+      "producer_closure": "Complete",
+      "capability_findings": 0,
+      "mandatory_reference_findings": 0,
+      "producer_graph_boundary_complete": true,
+      "scope_attempts": 2,
+      "initial_subjects": 7889,
+      "final_evaluated_subjects": 10410,
+      "missing_dependency_subjects": 242,
+      "capability_missing_subjects": 15,
+      "scope_failure": "Scope expansion requires 19757 subjects; development limit is 15778. Investigate before another closure run",
+      "wall_seconds": 587.703,
+      "peak_private_bytes": 2122854400,
+      "resource_stop": null,
+      "result": "Incomplete",
+      "report": "verification/generated/kerml-v9-publication/slices/slice-A-attempt2.scopes.jsonl",
+      "diagnosis": "The coarse invalidation boundary also scheduled declared identities and names observed during lookup. General invalidation remains unchanged; an additive publication provider contract distinguishes immutable observations from mutable producer inputs."
+    },
+    {
+      "slice": "A",
+      "attempt": 3,
+      "result": "Complete",
+      "producer_closure": "Complete",
+      "capability_findings": 0,
+      "mandatory_references_checked": 1629,
+      "mandatory_reference_failures": 0,
+      "boundary_complete": true,
+      "scope_attempts": 3,
+      "subjects": 11227,
+      "audited_subjects": 21656,
+      "preparation_seconds": 203.3144738,
+      "slice_seconds": 817.2653021,
+      "report": "verification/generated/kerml-v9-publication/slices/slice-A.json",
+      "report_sha256": "43d3521aa84c98b41ba8099ab4c2dde1a4762e401acfc91075c034d121d27d5a",
+      "resource_stop": false
+    }
+  ]
+}

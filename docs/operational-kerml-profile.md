@@ -279,3 +279,24 @@ Registration of v7 does not accept a library Snapshot, regenerate accepted
 bindings, or enable a production accepted-library facade. Full structural runtime
 readiness remains separate from strict raw metamodel conformance and KerML
 semantic publication.
+
+## Operational v9: multiplicity featuring context
+
+Operational v9 (`agentique-kerml-1.0-operational/9`) extends immutable v8 with
+KERML11-4 and KERML11-3 only. The ordinary multiplicity context comes from the
+owning Namespace when it is a Feature. For an owned cross Feature, it comes from
+the owning end Feature instead. MultiplicityRange bound Expressions receive
+that same context without evaluating numeric bounds.
+
+These are explicitly authorized Agentique operational interpretations, not
+adopted KerML 1.0 corrections. The 1.1 RTF ballot approval for KERML11-3 is
+corroboration outside the pinned 1.0 baseline. Published through v8 preserve their
+previous behavior, including the symbolic multiplicity-bound failure recorded
+under v8. [ADR 0023](adr/0023-operational-multiplicity-context-v9.md) and the
+[authority evidence](../verification/summaries/kerml-v9-publication/authority-decision.json)
+define the boundary.
+
+The default `OPERATIONAL` alias was intentionally frozen at v2 while successive
+profiles lacked an accepted complete canonical library publication. It may move
+to v9 only after that acceptance; a passing local fixture or scoped producer
+closure does not satisfy this gate.

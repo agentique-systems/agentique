@@ -15,6 +15,793 @@
       "duration_seconds": 1.91,
       "output": "verification/generated/kerml-v9-publication/v9-authority-capture.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "15ceab7acfb180e23d646ab60c26c7f74206c111",
+      "working_changes_sha256": "13d47761f5edda06055252c81a92842a56a2804a2cd684d17463422991dd4d75",
+      "output_sha256": "31bb218c7048c647f8277dca14a554d68585ea5e91427ad9c024687a16bd124b",
+      "duration_seconds": 0.84,
+      "output": "verification/generated/kerml-v9-publication/node-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "15ceab7acfb180e23d646ab60c26c7f74206c111",
+      "working_changes_sha256": "13d47761f5edda06055252c81a92842a56a2804a2cd684d17463422991dd4d75",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 1.94,
+      "output": "verification/generated/kerml-v9-publication/frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "15ceab7acfb180e23d646ab60c26c7f74206c111",
+      "working_changes_sha256": "13d47761f5edda06055252c81a92842a56a2804a2cd684d17463422991dd4d75",
+      "output_sha256": "f2ef5405898a782a83a23e71cfbae711b7bdb44d84b996369593ee5e3c123999",
+      "duration_seconds": 2.0,
+      "output": "verification/generated/kerml-v9-publication/frontend-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "standards-integrity",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "15ceab7acfb180e23d646ab60c26c7f74206c111",
+      "working_changes_sha256": "13d47761f5edda06055252c81a92842a56a2804a2cd684d17463422991dd4d75",
+      "output_sha256": "3f59953ec2f969f902902cec21f73dda316385a7729905ec5c70e89f050183f4",
+      "duration_seconds": 0.48,
+      "output": "verification/generated/kerml-v9-publication/standards-integrity.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "v9-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication",
+        "--example",
+        "multiplicity_inventory"
+      ],
+      "source_commit": "2922a3d1ef6f808df88ea24c48c331d0846544f0",
+      "working_changes_sha256": "4cd19ef57f0e4419aadb86db11416b0e8ffe2e69e712af9251dd3a614c0bd77d",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-release-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 22304,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 966283264,
+      "safety_stop": null,
+      "duration_seconds": 128.141,
+      "peak_rss_bytes": 1350914048,
+      "peak_private_bytes": 1610076160,
+      "samples": 129,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "1d43a15fc3ca30f81f19bbb180fdd2a1009138528165883ae280b330cc1d9f3f"
+    },
+    {
+      "name": "v9-bound-inventory",
+      "command": [
+        "target/release/examples/multiplicity_inventory.exe",
+        "--output=verification/generated/kerml-v9-publication/bound-inventory.json"
+      ],
+      "source_commit": "e74a6db3ee6552fea0096b85b3b2a7f0930188d3",
+      "working_changes_sha256": "4cd19ef57f0e4419aadb86db11416b0e8ffe2e69e712af9251dd3a614c0bd77d",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-bound-inventory",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 22044,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 973406208,
+      "safety_stop": null,
+      "duration_seconds": 4.14,
+      "peak_rss_bytes": 546988032,
+      "peak_private_bytes": 619249664,
+      "samples": 5,
+      "limits": {
+        "wall_seconds": 90.0,
+        "private_bytes": 2147483648,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "70e01c37205ed36d22ec0b3c8fd385de56f8c78cef8fa78f4d54ba3918daf75c"
+    },
+    {
+      "name": "browser-tests",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "e74a6db3ee6552fea0096b85b3b2a7f0930188d3",
+      "working_changes_sha256": "4cd19ef57f0e4419aadb86db11416b0e8ffe2e69e712af9251dd3a614c0bd77d",
+      "output_sha256": "b40559e34cdf3ca58df48df6b72c3482844d4e4a92e2ed814e3379d61606856c",
+      "duration_seconds": 54.39,
+      "output": "verification/generated/kerml-v9-publication/browser-tests.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "v9-release-final",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication",
+        "--example",
+        "multiplicity_inventory"
+      ],
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "4cd19ef57f0e4419aadb86db11416b0e8ffe2e69e712af9251dd3a614c0bd77d",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-release-final",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 24688,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 1046671360,
+      "safety_stop": null,
+      "duration_seconds": 59.094,
+      "peak_rss_bytes": 649334784,
+      "peak_private_bytes": 765587456,
+      "samples": 60,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "0957cf86c43bb776aaf67ac73cdcff5776ba0e8d4bc814d14fdfa71d39708068"
+    },
+    {
+      "name": "integration-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.59,
+      "output": "verification/generated/kerml-v9-publication/integration-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "integration-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/integration-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 1908,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 1049919488,
+      "safety_stop": null,
+      "duration_seconds": 23.047,
+      "peak_rss_bytes": 537055232,
+      "peak_private_bytes": 737296384,
+      "samples": 24,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "18fa1ef975587900875a9625e686874671f126455d72dc1a95da384ddd3edba0"
+    },
+    {
+      "name": "strict-language-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-standard-libraries"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "output_sha256": "a41162b2d65721a4b0933a6a0c89c444a0a6271f2219d6a9d408dd0867b0513a",
+      "duration_seconds": 20.89,
+      "output": "verification/generated/kerml-v9-publication/strict-language-rustdoc.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "name": "metamodel-stale",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "output_sha256": "bdde5f788c1bcb12bb1ef81faad57e1407c2d6c6581ff7730c70b01cec835614",
+      "duration_seconds": 7.59,
+      "output": "verification/generated/kerml-v9-publication/metamodel-stale.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "kerml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "output_sha256": "21d54f853cc7c0897f5faac98ec42143a3dd46d30bd46eb93200e86f6f84d61b",
+      "duration_seconds": 1.44,
+      "output": "verification/generated/kerml-v9-publication/kerml-runtime.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "sysml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "output_sha256": "c804a8c26b3a0868c17bcb9ffd63c149f7783f56d56b214550c453c781995f00",
+      "duration_seconds": 3.08,
+      "output": "verification/generated/kerml-v9-publication/sysml-runtime.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "integration-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/integration-workspace-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 816,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 992411648,
+      "safety_stop": null,
+      "duration_seconds": 324.391,
+      "peak_rss_bytes": 867799040,
+      "peak_private_bytes": 982585344,
+      "samples": 325,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "1ee59954e804a32fb00dcaf6188175e56a3d3880854b911ba7ae298f49cfded2"
+    },
+    {
+      "name": "v9-slices-a-e",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=all",
+        "--output=verification/generated/kerml-v9-publication/slices/slice-"
+      ],
+      "source_commit": "3f49b033ae14d735fc9dfc9fbdc0d3281a918a13",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "slice (?P<slice>[A-E]): (?P<state>[^\\r\\n]+)",
+      "output": "verification/generated/overnight-convergence/v9-slices-a-e",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 18204,
+      "monitor_error": null,
+      "last_progress": {
+        "slice": "A",
+        "state": "slice A has incomplete publication obligations"
+      },
+      "minimum_free_disk_bytes": 992477184,
+      "safety_stop": null,
+      "duration_seconds": 517.359,
+      "peak_rss_bytes": 1587585024,
+      "peak_private_bytes": 1772097536,
+      "samples": 517,
+      "limits": {
+        "wall_seconds": 1800.0,
+        "private_bytes": 3670016000,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "753f1e55d2771afd36c3d59bab2c57b5c078ac7d000a51b2f01e1a7265ed88af"
+    },
+    {
+      "name": "v9-a-boundary-source-metadata",
+      "command": [
+        "target/release/examples/library_elements.exe",
+        "--input=verification/generated/kerml-v9-publication/a-boundary-subjects.json",
+        "--output=verification/generated/kerml-v9-publication/a-boundary-source-metadata.json"
+      ],
+      "source_commit": "605bfbd8743f15a43820eafb7913812ceb0f7519",
+      "working_changes_sha256": "a1f679a739916801743ce508d984c79ae669fa7dbd30cd474451530704ddad4a",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-a-boundary-source-metadata",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 800,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 2.125,
+      "peak_rss_bytes": 43663360,
+      "peak_private_bytes": 487727104,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 60.0,
+        "private_bytes": 1073741824,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "3137df6a0621d2b59222e73300441d7d3a10aac28cad048acc88032e416d9abc"
+    },
+    {
+      "name": "v9-release-scope-fix",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication",
+        "--example",
+        "multiplicity_inventory"
+      ],
+      "source_commit": "51b3ff2068b83d799717b8ad5c824da4196203e3",
+      "working_changes_sha256": "cc461cf7bfce1e06033a4699e161fb4ae221cee10de8da2ac2bf2d737face5f2",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-release-scope-fix",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 19196,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 1618923520,
+      "safety_stop": null,
+      "duration_seconds": 60.078,
+      "peak_rss_bytes": 658563072,
+      "peak_private_bytes": 768147456,
+      "samples": 61,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "625c00c6b02ed7469860d495cddd3721dafeb50afcaf0fd5585949708b0b2d78"
+    },
+    {
+      "name": "v9-query25-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-standard-libraries"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "643b0ed21d03c6db8c5d47a0287821151d292f04",
+      "working_changes_sha256": "f0856c142a388ef9154ebce9180f66b2bd6d884c8e95c55b84829858d9219974",
+      "output_sha256": "e39032dc75888f4ddbec2fef5f78407c0565c458a9dce49a6bc84ac363f36b07",
+      "duration_seconds": 17.47,
+      "output": "verification/generated/kerml-v9-publication/v9-query25-rustdoc.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "RUSTDOCFLAGS": "-Dwarnings"
+      }
+    },
+    {
+      "name": "v9-slice-a-scope-fix",
+      "command": [
+        "target/release/examples/publication_slices.exe",
+        "--slice=A",
+        "--output=verification/generated/kerml-v9-publication/slices/slice-{slice}.json"
+      ],
+      "source_commit": "51b3ff2068b83d799717b8ad5c824da4196203e3",
+      "working_changes_sha256": "01136ae81497c4b91c82669d3c5ba5e2189f3459405cdde1aaf8472f146b33f6",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-slice-a-scope-fix",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 10612,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 1545736192,
+      "safety_stop": null,
+      "duration_seconds": 587.703,
+      "peak_rss_bytes": 1769533440,
+      "peak_private_bytes": 2122854400,
+      "samples": 588,
+      "limits": {
+        "wall_seconds": 1800.0,
+        "private_bytes": 3670016000,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "c21fcbf1962677544a42fc47925fd4e86c87bb7e346407001d343156c53319d6"
+    },
+    {
+      "name": "v9-provider-read-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "publication_reads"
+      ],
+      "source_commit": "3f2d98ca2fb95fb4a7b9ef1d3ec9289b87beb784",
+      "working_changes_sha256": "3f93bc31c2b4e1e239bd9f59724e4cb44cba970790f5c9c07f1735dcba893b05",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-provider-read-tests",
+      "exit_code": 124,
+      "command_exit_code": 0,
+      "command_pid": 9312,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 1530261504,
+      "safety_stop": "requested",
+      "duration_seconds": 106.125,
+      "peak_rss_bytes": 629977088,
+      "peak_private_bytes": 855670784,
+      "samples": 107,
+      "limits": {
+        "wall_seconds": 300.0,
+        "private_bytes": 2147483648,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "bbd272cf84ca0921d695fe5cfaecbcfed97abc9523880924035599d594238dfa"
+    },
+    {
+      "name": "v9-provider-read-tests-correct-filter",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "publication_overlay::tests"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3f2d98ca2fb95fb4a7b9ef1d3ec9289b87beb784",
+      "working_changes_sha256": "3f93bc31c2b4e1e239bd9f59724e4cb44cba970790f5c9c07f1735dcba893b05",
+      "output_sha256": "4faed9a470daf7359b65f3c7ee221cdd4f0f2774368c9feea1325027681023af",
+      "duration_seconds": 0.3,
+      "output": "verification/generated/kerml-v9-publication/v9-provider-read-tests-correct-filter.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "v9-provider-slice-release",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "1ad26a6baea3303521c0b2088e576201b5954b56",
+      "working_changes_sha256": "d8ef856709f7d74121e7a7f9bd06c2face698301d519922c71bf2f76614fa1ca",
+      "output_sha256": "b1a6cc9dde388eaf9675e5e2473763fe95001122d43e0f7e5dd86f98555dacaf",
+      "duration_seconds": 46.19,
+      "output": "verification/generated/kerml-v9-publication/v9-provider-slice-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "preserve-inactive-compiler-cache-with-ntfs-compression",
+      "command": [
+        "compact.exe",
+        "/C",
+        "/S",
+        "/I",
+        "/Q"
+      ],
+      "working_directory": "C:/Users/phili/github/agentique-systems/agentique/target/debug/incremental",
+      "exit_code": 0,
+      "output_summary": "28231 files within 1277 directories were compressed. 11216204937 bytes of data are stored in 5207092339 bytes. No files deleted.",
+      "logical_bytes": 11216204937,
+      "allocated_bytes": 5207092339,
+      "reason": "Safer storage-preserving alternative after automatic review rejected cache deletion; current builds disable incremental compilation."
+    },
+    {
+      "name": "v9-query26-workspace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "820a47e266b7d57e482f290b39d2a962cdb968f8",
+      "working_changes_sha256": "e831ffb952df2008b825a0f06de7b8da8292aef2f5de97b5e6b7701cfbcfa556",
+      "output_sha256": "461133b1fde7298f71e9686ddf2812c10b208b42f9096fcde2d46b4962efe359",
+      "duration_seconds": 23.88,
+      "output": "verification/generated/kerml-v9-publication/v9-query26-workspace-clippy.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "v9-current-canonical-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "canonical_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d322c1df0c5cbbe09d4ae889a78251399523b59c",
+      "working_changes_sha256": "e831ffb952df2008b825a0f06de7b8da8292aef2f5de97b5e6b7701cfbcfa556",
+      "output_sha256": "fa098f93c93154de5b71a433b283010e2b3ddcce1f33c4f51c88d4201f4830f6",
+      "duration_seconds": 194.72,
+      "output": "verification/generated/kerml-v9-publication/v9-current-canonical-release-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "v9-query26-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d322c1df0c5cbbe09d4ae889a78251399523b59c",
+      "working_changes_sha256": "e831ffb952df2008b825a0f06de7b8da8292aef2f5de97b5e6b7701cfbcfa556",
+      "output_sha256": "e47b0734e71eb8fb225ff17e4cdcf8026baa7d44b14af1e9c12f8210501d6fa4",
+      "duration_seconds": 345.95,
+      "output": "verification/generated/kerml-v9-publication/v9-query26-workspace-tests.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
     }
   ]
 }

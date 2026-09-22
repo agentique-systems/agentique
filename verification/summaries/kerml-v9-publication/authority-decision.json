@@ -61,7 +61,8 @@
         ],
         "behavior": "The owningNamespace, when a Feature, supplies implicit featuring types.",
         "sha256": "131c2452554814e0a8bf96abc788f4388c894eadcea9acc55dc32f1f9abe1455",
-        "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/blob/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureAdapter.java"
+        "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/blob/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/FeatureAdapter.java",
+        "retained_path": "verification/kerml-semantic-closure-v10/pilot/FeatureAdapter.java"
       },
       "ExpressionAdapter.java": {
         "lines": [
@@ -70,7 +71,8 @@
         ],
         "behavior": "MultiplicityRange bounds on an owned cross Feature receive the owning end Feature featuring types. The v9 interpretation applies this same domain consistently to the MultiplicityRange and its bound Expressions.",
         "sha256": "435d8f22006137d91f793d4a20be3c88e72a017db838bf1b1d7da654672d7141",
-        "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/blob/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/ExpressionAdapter.java"
+        "url": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/blob/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/adapter/ExpressionAdapter.java",
+        "retained_path": "verification/kerml-semantic-closure-v10/pilot/ExpressionAdapter.java"
       }
     }
   },

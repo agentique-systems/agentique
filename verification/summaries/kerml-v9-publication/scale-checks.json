@@ -1,0 +1,133 @@
+{
+  "format": "agentique-watchdog-summary/1",
+  "commands": [
+    {
+      "name": "v9-scale-current-build",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "-j",
+        "2",
+        "--lib",
+        "--no-run",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "source_commit": "605bfbd8743f15a43820eafb7913812ceb0f7519",
+      "working_changes_sha256": "e3f1dcac1835f73dea37743836345371bcab72d9ea1d45a574fd544cf63e7aab",
+      "environment_overrides": {
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-scale-current-build",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 17112,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 1638957056,
+      "safety_stop": null,
+      "duration_seconds": 294.329,
+      "peak_rss_bytes": 1199632384,
+      "peak_private_bytes": 2376314880,
+      "samples": 295,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "ab2561b4794a1434bb2c465bbca2c92cb09c10cea7ed1049c15173f1d976a46b"
+    },
+    {
+      "name": "v9-scale-current-sixty-thousand",
+      "command": [
+        "target/release/deps/agq_kerml_semantics-9a6336e6173c6a10.exe",
+        "producer_worklist_tests::publication_scale_sixty_thousand_subjects",
+        "--exact",
+        "--ignored",
+        "--nocapture"
+      ],
+      "source_commit": "605bfbd8743f15a43820eafb7913812ceb0f7519",
+      "working_changes_sha256": "22a775df23872ea21868a5263cc891953a76d9fe9b9b46dfbe21de2fb3c8b48c",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "semantic-scale round=(?P<round>\\d+) evaluated=(?P<evaluated>\\d+)/(?P<subjects>\\d+) proposed=(?P<proposed>\\d+)",
+      "output": "verification/generated/overnight-convergence/v9-scale-current-sixty-thousand",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 1100,
+      "monitor_error": null,
+      "last_progress": {
+        "round": "1",
+        "evaluated": "16000",
+        "subjects": "16000",
+        "proposed": "0"
+      },
+      "minimum_free_disk_bytes": 1646841856,
+      "safety_stop": null,
+      "duration_seconds": 6.218,
+      "peak_rss_bytes": 846200832,
+      "peak_private_bytes": 978673664,
+      "samples": 7,
+      "limits": {
+        "wall_seconds": 60.0,
+        "private_bytes": 1992294400,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "b87df90297898e0b329feb8bc761993f6487c721122bf1f4245d57d19ef25513"
+    }
+  ],
+  "scale_result": {
+    "profile": "agentique-kerml-1.0-operational/8",
+    "workload": "Unchanged retained 60000-subject crossing/worklist fixture built from current main checkout; no full corpus",
+    "test_body_seconds": 5.83,
+    "instrumented_closure_seconds": 5.6040785,
+    "counters": {
+      "declared_subjects": 60000,
+      "subjects_considered": 96002,
+      "subjects_evaluated": 28000,
+      "subjects_skipped_by_applicability": 68002,
+      "producer_families_attempted": 140000,
+      "new_elements_proposed": 24000,
+      "new_association_occurrences_proposed": 8000,
+      "existing_derived_facts_reused": 0,
+      "new_proof_sets_interned": 80000,
+      "existing_proof_sets_reused": 100000,
+      "dependency_edges_considered": 744000,
+      "dirty_subjects_enqueued": 36002,
+      "dirty_reevaluations": 12000,
+      "maximum_worklist_size": 60000,
+      "overlay_materializations": 2,
+      "empty_frontiers_reused": 1,
+      "fixed_point_rounds": 2,
+      "active_dependency_subjects": 16000,
+      "active_dependency_keys": 92004,
+      "active_dependency_edges": 232000,
+      "maximum_dependency_keys": 92004,
+      "maximum_dependency_edges": 232000,
+      "logical_search_sets": 24000,
+      "logical_search_entries": 664000,
+      "retained_search_sets": 8000,
+      "retained_search_entries": 256000,
+      "search_sets_interned": 8000,
+      "search_sets_reused": 16000
+    },
+    "baseline_test_body_seconds": 5.82,
+    "baseline_peak_private_bytes": 977530880,
+    "runtime_ratio": 1.0017,
+    "peak_private_ratio": 1.0012,
+    "over_twice_baseline": false,
+    "contention_note": "A slice capability audit was concurrently active during compilation; runtime observed no material regression."
+  }
+}

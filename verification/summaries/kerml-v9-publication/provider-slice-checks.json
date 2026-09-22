@@ -1,0 +1,89 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "provider-slice-fixtures",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "publication_slice_dependencies",
+        "--example",
+        "publication_slices"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9efd2830dd6b7719da8174c89ee66774841d78a8",
+      "working_changes_sha256": "86fe467d492a331b51fcce06c5f1676600632eaafb3d9e248a30f298e77c5035",
+      "output_sha256": "10de3c2c31aa4b7313bdebdc9514f7db31d3c6e3379eb299f49a4cc239af7397",
+      "duration_seconds": 8.66,
+      "output": "verification/generated/provider-slice-checks/provider-slice-fixtures.log",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "provider-slice-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9efd2830dd6b7719da8174c89ee66774841d78a8",
+      "working_changes_sha256": "86fe467d492a331b51fcce06c5f1676600632eaafb3d9e248a30f298e77c5035",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.72,
+      "output": "verification/generated/provider-slice-checks/provider-slice-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "provider-slice-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "publication_slice_dependencies",
+        "--example",
+        "publication_slices",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9efd2830dd6b7719da8174c89ee66774841d78a8",
+      "working_changes_sha256": "86fe467d492a331b51fcce06c5f1676600632eaafb3d9e248a30f298e77c5035",
+      "output_sha256": "235679e361567d3e9c8e6bba15f8e18ce6dde1f526c4a1a17913815db9408753",
+      "duration_seconds": 5.03,
+      "output": "verification/generated/provider-slice-checks/provider-slice-clippy.log",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    }
+  ],
+  "source_worktree": "../agentique-sysml-inventory",
+  "integrated_commit": "1ad26a6",
+  "result": "9 dependency fixtures passed; example compile, focused Clippy and formatting passed"
+}
