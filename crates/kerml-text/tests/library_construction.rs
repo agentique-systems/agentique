@@ -1,8 +1,18 @@
 use agq_kerml::{classes as c, properties as p};
-use agq_kerml_text::library::lower_declarations;
-use agq_kernel::provenance::{DeclaredOrigin, FactKey, Origin};
+use agq_kerml_text::library::{
+    LibrarySourceMap,
+    corrections::{LibraryPatchOperation, OperationalLibraryPatchSet, PatchElement},
+    lower_declarations,
+};
+use agq_kernel::{
+    ElementId, PropertyId,
+    provenance::{DeclaredOrigin, FactKey, Origin},
+};
 use agq_standard_libraries::VerifiedLibrarySet;
-use std::{collections::BTreeSet, path::Path};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::Path,
+};
 
 #[test]
 fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_evidence() {
@@ -174,32 +184,59 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
         model.instances(c::EXPRESSION, true).unwrap().count() > 1000,
         "Expressions must survive lowering"
     );
+    // The default advanced from v2 to v9 only after canonical acceptance. Its
+    // retained v3 correction outputs are distinct from original source facts:
+    // they must have exact reviewed provenance, never invented syntax origins.
+    assert_eq!(
+        first.baseline_profile(),
+        agq_kerml::BaselineProfile::OPERATIONAL_V9
+    );
+    let (reviewed, created) = reviewed_facts(&sources);
+    assert!(!created.is_empty());
+    let mut checked_corrections = BTreeSet::new();
     for record in model.elements() {
-        let source = &first.source_map()[&FactKey::Element(record.id())];
-        let document = sources
-            .documents()
-            .find(|d| d.document() == source.document)
-            .unwrap();
-        assert_eq!(source.revision, document.revision());
-        assert!(source.syntax_node.is_some());
-        assert!(
-            document
-                .source()
-                .get(source.range.start() as usize..source.range.end() as usize)
-                .is_some()
-        );
-        let expected = Origin::Declared(DeclaredOrigin::StandardLibrary {
-            library: document.library(),
-        });
-        assert_eq!(record.origin(), &expected);
-        for (property, slot) in record.slots() {
-            assert_eq!(slot.origin(), &expected);
-            assert!(first.source_map().contains_key(&FactKey::Property {
-                element: record.id(),
-                property
-            }));
+        let element = FactKey::Element(record.id());
+        let facts = std::iter::once((element, record.origin())).chain(record.slots().map(
+            |(property, slot)| {
+                (
+                    FactKey::Property {
+                        element: record.id(),
+                        property,
+                    },
+                    slot.origin(),
+                )
+            },
+        ));
+        for (fact, origin) in facts {
+            if let Some(expected) = reviewed.get(&fact) {
+                assert_eq!(origin, &Origin::Declared(expected.clone()), "{fact:?}");
+                checked_corrections.insert(fact);
+            } else {
+                assert_original_source_fact(fact, origin, first.source_map(), &sources);
+            }
+        }
+        if created.contains(&record.id()) {
+            assert!(
+                !first.source_map().contains_key(&element),
+                "correction output is not an original syntax node"
+            );
+            for (property, _) in record.slots() {
+                assert!(!first.source_map().contains_key(&FactKey::Property {
+                    element: record.id(),
+                    property
+                }));
+            }
+        } else {
+            // Reclassification or a changed slot must preserve the original
+            // element's source locator even when its fact origin is reviewed.
+            assert_source_locator(element, first.source_map(), &sources);
         }
     }
+    assert_eq!(
+        checked_corrections,
+        reviewed.keys().copied().collect(),
+        "every final manifest output is present with exact provenance"
+    );
     // Missing targets are explicit obligations; construction does not claim a
     // published snapshot or invent references merely to meet multiplicities.
     assert!(
@@ -242,8 +279,10 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
             .into_iter()
             .filter(|m| model.element(*m).unwrap().metaclass() == c::RETURN_PARAMETER_MEMBERSHIP)
             .count();
-        if first.source_map()[&FactKey::Element(expression.id())]
-            .syntax_node
+        if first
+            .source_map()
+            .get(&FactKey::Element(expression.id()))
+            .and_then(|source| source.syntax_node)
             .is_some_and(|id| declared_expressions.contains(&id))
         {
             assert!(
@@ -271,6 +310,123 @@ fn exact_corpus_construction_has_repeatable_canonical_facts_and_separate_source_
             "These declarations inherit their result; corroborated by the reference XMI including implied relationships"
         );
     }
+}
+
+fn assert_source_locator<'a>(
+    fact: FactKey,
+    source_map: &LibrarySourceMap,
+    sources: &'a VerifiedLibrarySet,
+) -> &'a agq_standard_libraries::LibraryDocument {
+    let source = source_map
+        .get(&fact)
+        .unwrap_or_else(|| panic!("Original source fact lacks source evidence: {fact:?}"));
+    let document = sources
+        .documents()
+        .find(|d| d.document() == source.document)
+        .unwrap();
+    assert_eq!(source.revision, document.revision());
+    assert!(source.syntax_node.is_some());
+    assert!(
+        document
+            .source()
+            .get(source.range.start() as usize..source.range.end() as usize)
+            .is_some()
+    );
+    document
+}
+
+fn assert_original_source_fact(
+    fact: FactKey,
+    origin: &Origin,
+    source_map: &LibrarySourceMap,
+    sources: &VerifiedLibrarySet,
+) {
+    let document = assert_source_locator(fact, source_map, sources);
+    assert_eq!(
+        origin,
+        &Origin::Declared(DeclaredOrigin::StandardLibrary {
+            library: document.library()
+        }),
+        "{fact:?}"
+    );
+}
+
+fn reviewed_facts(
+    sources: &VerifiedLibrarySet,
+) -> (BTreeMap<FactKey, DeclaredOrigin>, BTreeSet<ElementId>) {
+    let patch = OperationalLibraryPatchSet::reviewed().unwrap();
+    assert_eq!(patch.library_set, sources.content_set_id());
+    let mut facts = BTreeMap::new();
+    let mut created = BTreeSet::new();
+    for entry in &patch.entries {
+        let document = sources
+            .documents()
+            .find(|d| d.path() == entry.document)
+            .unwrap();
+        let resolve = |target: &PatchElement| match target {
+            PatchElement::Pinned(key) => ElementId::from_u128(
+                uuid::Uuid::parse_str(&patch.selectors[key].id)
+                    .unwrap()
+                    .as_u128(),
+            ),
+            PatchElement::Output(key) => patch.output_id(document.library(), &entry.id, key),
+        };
+        for operation in &entry.operations {
+            let (key, keys) = match operation {
+                LibraryPatchOperation::Create { key, .. } => {
+                    let id = patch.output_id(document.library(), &entry.id, key);
+                    assert!(created.insert(id));
+                    (
+                        key,
+                        vec![
+                            FactKey::Element(id),
+                            FactKey::Property {
+                                element: id,
+                                property: p::ELEMENT_ELEMENT_ID,
+                            },
+                        ],
+                    )
+                }
+                LibraryPatchOperation::Reclassify { key, element, .. } => {
+                    (key, vec![FactKey::Element(resolve(element))])
+                }
+                LibraryPatchOperation::Set {
+                    key,
+                    element,
+                    property,
+                    ..
+                }
+                | LibraryPatchOperation::Append {
+                    key,
+                    element,
+                    property,
+                    ..
+                } => (
+                    key,
+                    vec![FactKey::Property {
+                        element: resolve(element),
+                        property: PropertyId::from_u128(
+                            uuid::Uuid::parse_str(property).unwrap().as_u128(),
+                        ),
+                    }],
+                ),
+            };
+            for fact in keys {
+                facts.insert(
+                    fact,
+                    DeclaredOrigin::ReviewedCorrection {
+                        profile: patch.profile_id.clone(),
+                        entry: entry.id.clone(),
+                        authority: entry.authority.clone(),
+                        library: document.library(),
+                        source_key: format!("{}#sha256:{}", document.path(), document.sha256()),
+                        output_key: key.clone(),
+                    },
+                );
+            }
+        }
+    }
+    (facts, created)
 }
 
 #[derive(Clone, Copy)]

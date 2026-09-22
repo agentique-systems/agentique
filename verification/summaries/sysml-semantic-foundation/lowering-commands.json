@@ -507,6 +507,99 @@
         "min_free_disk_bytes": 0
       },
       "output_sha256": "c28421d02593bf30a478bfe571593802340968cf84c78a5da7ddec5b2b1173fe"
+    },
+    {
+      "name": "v9-source-and-correction-provenance",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "library_construction",
+        "--",
+        "--nocapture"
+      ],
+      "source_commit": "0100af23a9fef115bcf5fbfa10b379dc20bc383a",
+      "working_changes_sha256": "c5e8af324af20614ac4e43c0be6c991bb9b41b69859d80d0240171e3b42c34d8",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-source-and-correction-provenance",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 16304,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 78.109,
+      "peak_rss_bytes": 884506624,
+      "peak_private_bytes": 999178240,
+      "samples": 79,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 2147483648,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "b8b514a937aae29bf2c49a5bdf85aec35feaf456523f77a90990ae5209dd286b"
+    },
+    {
+      "name": "v9-provenance-fixture-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "library_construction",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "0100af23a9fef115bcf5fbfa10b379dc20bc383a",
+      "working_changes_sha256": "c5e8af324af20614ac4e43c0be6c991bb9b41b69859d80d0240171e3b42c34d8",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-provenance-fixture-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 18416,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 1.032,
+      "peak_rss_bytes": 1568768,
+      "peak_private_bytes": 227373056,
+      "samples": 2,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "667dcc3f23743c84a131fa6b392bfb8a0d84f74bc0afc56907cc33bebac19ea7"
     }
   ]
 }
