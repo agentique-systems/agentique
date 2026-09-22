@@ -39,7 +39,7 @@ pub struct InvalidByteRange {
 }
 
 /// Source evidence without an AST dependency. Document bounds are checked upstream.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SourceOrigin {
     /// Document identity allocated by the source store.
     pub document: DocumentId,
@@ -52,7 +52,7 @@ pub struct SourceOrigin {
 }
 
 /// Provenance of an explicitly submitted element or slot (including imports).
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum DeclaredOrigin {
     /// Explicitly authored, optionally backed by source text.
     Authored { source: Option<SourceOrigin> },
@@ -85,7 +85,9 @@ pub enum DeclaredOrigin {
 }
 
 /// Identifies an element assertion or a property assertion for explanations.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum FactKey {
     AssociationOccurrence(crate::AssociationOccurrenceId),
     Element(ElementId),
@@ -96,14 +98,16 @@ pub enum FactKey {
 }
 
 /// Positive evidence in one pinned declared revision / derivation overlay.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum Dependency {
     Declared(FactKey),
     Derived(FactKey),
 }
 
 /// One derivation's immediate evidence; follow `Derived` dependencies to explain it.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Explanation {
     /// Producer's stable versioned rule identity; rule execution is outside the kernel.
     pub rule: RuleId,
@@ -187,4 +191,16 @@ pub enum Origin {
     Declared(DeclaredOrigin),
     /// Immutable evidence is shared by records, indexes and explanation lookup.
     Derived(Arc<Explanation>),
+}
+
+impl serde::Serialize for ByteRange {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serde::Serialize::serialize(&(self.start, self.end), serializer)
+    }
+}
+impl<'de> serde::Deserialize<'de> for ByteRange {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let (start, end) = <(u64, u64) as serde::Deserialize>::deserialize(deserializer)?;
+        Self::new(start, end).map_err(serde::de::Error::custom)
+    }
 }

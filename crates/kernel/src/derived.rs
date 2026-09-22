@@ -10,6 +10,7 @@ use crate::{
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 
+mod archive_restore;
 mod proof_graph;
 mod search_sets;
 use proof_graph::cyclic_explanations;
@@ -822,7 +823,7 @@ pub enum DerivationError {
 }
 
 /// A typed reason why a structural computation is incomplete.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum IncompleteReason {
     MissingInput,
     UnsupportedRuntimeSemantics,
@@ -830,7 +831,9 @@ pub enum IncompleteReason {
 }
 /// Search dependencies include empty searches. They are evaluated against the exact
 /// registry and immutable model revision, not only positive fact dependencies.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum StructuralSearch {
     /// Conservative search over the entire immutable input graph, including
     /// absent facts. Any input change invalidates the computation.

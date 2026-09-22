@@ -19,6 +19,19 @@ macro_rules! identity {
                 Self(uuid::Uuid::new_v4().as_u128())
             }
         }
+        impl serde::Serialize for $name {
+            fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                serializer.collect_str(self)
+            }
+        }
+        impl<'de> serde::Deserialize<'de> for $name {
+            fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+                let value = <String as serde::Deserialize>::deserialize(deserializer)?;
+                uuid::Uuid::parse_str(&value)
+                    .map(|id| Self(id.as_u128()))
+                    .map_err(serde::de::Error::custom)
+            }
+        }
         impl Default for $name {
             fn default() -> Self {
                 Self::new()

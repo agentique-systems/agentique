@@ -43,6 +43,7 @@ pub mod provenance;
 pub mod value;
 
 pub use ids::*;
+pub use model::archive;
 pub use model::{
     ChangeSet, ConstructionObligation, ConstructionView, ElementRecord, ModelError, ModelView,
     ReferenceCarrier, ReferenceOccurrence, Slot, SlotShape, Snapshot,

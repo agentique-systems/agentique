@@ -1,3 +1,5 @@
+#[path = "archive.rs"]
+pub mod archive;
 use crate::association::AssociationOccurrence;
 use crate::metamodel::{
     MetamodelError, MetamodelRegistry, Multiplicity, PropertyDescriptor, ValueKind,
