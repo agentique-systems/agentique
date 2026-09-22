@@ -1080,12 +1080,26 @@ fn propagate(masks: &mut [u8], dependents: &[Vec<usize>]) {
     }
 }
 
-fn effect_changes_read(effect: ProducerEffect, read: &ProducerRead, model: &ModelView) -> bool {
+pub(crate) fn effect_changes_read(
+    effect: ProducerEffect,
+    read: &ProducerRead,
+    model: &ModelView,
+) -> bool {
     match read {
         ProducerRead::Global | ProducerRead::Any(_) => true,
         ProducerRead::Requirement(_, requirement) => requirement.requires(effect),
         ProducerRead::Structural(_) | ProducerRead::Inverse => {
             !matches!(effect, ProducerEffect::Scalar(_))
+        }
+        ProducerRead::Source(_, _, property)
+            if [
+                agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP,
+                agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            ]
+            .contains(property) =>
+        {
+            effect == ProducerEffect::Ownership
+                || matches!(effect, ProducerEffect::Scalar(written) if written == *property)
         }
         ProducerRead::Source(_, class, _) | ProducerRead::Owned(_, class) => {
             use agq_kerml::classes as c;
@@ -1106,6 +1120,10 @@ fn effect_changes_read(effect: ProducerEffect, read: &ProducerRead, model: &Mode
                     .registry()
                     .is_subtype(potential, *class)
                     .unwrap_or(false)
+                    || model
+                        .registry()
+                        .is_subtype(*class, potential)
+                        .unwrap_or(false)
             })
         }
         ProducerRead::Property(element, property) => {

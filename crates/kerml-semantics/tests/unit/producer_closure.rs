@@ -590,6 +590,90 @@ fn typed_population_retains_broad_reads_only_when_actually_observed() {
 }
 
 #[test]
+fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    f.create(3, c::CLASSIFIER);
+    member(&mut f, 1, 2, 4, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    let mut writer = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Scalar(p::TYPE_IS_ABSTRACT)],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::SubjectAndOwners;
+    let registry = ProducerRegistry::new([
+        writer,
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any),
+    ])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    for subject in [id(1), id(2), id(3), id(4)] {
+        table.pending(subject, snapshot.model(), &registry);
+        table
+            .record(&[(subject, TYPE, Completeness::Complete)], &registry)
+            .unwrap();
+        table.record_reads(
+            &[(
+                subject,
+                TYPE,
+                vec![ProducerRead::Property(subject, p::TYPE_IS_ABSTRACT)].into(),
+            )],
+            &registry,
+        );
+    }
+    table
+        .record(&[(id(2), ACTIVATE, Completeness::Incomplete)], &registry)
+        .unwrap();
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    assert!(certificate.is_closed(id(3), SemanticClosureRequirement::EffectiveTyping));
+}
+
+#[test]
+fn generic_effects_cover_subtype_populations_but_membership_does_not_reown() {
+    use crate::producer_closure::{ProducerRead, effect_changes_read};
+    let snapshot = fixture();
+    assert!(effect_changes_read(
+        ProducerEffect::Membership,
+        &ProducerRead::Owned(id(1), c::FEATURE_VALUE),
+        snapshot.model()
+    ));
+    assert!(effect_changes_read(
+        ProducerEffect::Typing,
+        &ProducerRead::Owned(id(1), c::SPECIALIZATION),
+        snapshot.model()
+    ));
+    let ownership = ProducerRead::Source(
+        id(1),
+        c::RELATIONSHIP,
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+    );
+    assert!(!effect_changes_read(
+        ProducerEffect::Membership,
+        &ownership,
+        snapshot.model()
+    ));
+    assert!(effect_changes_read(
+        ProducerEffect::Ownership,
+        &ownership,
+        snapshot.model()
+    ));
+}
+
+#[test]
 fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
     let descriptor =
         ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);
