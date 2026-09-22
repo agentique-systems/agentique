@@ -2,6 +2,8 @@
 //! through a private cfg(test) constructor. Real-cache integration is separate.
 #[path = "producer_tests.rs"]
 mod producer_tests;
+#[path = "structural_query_tests.rs"]
+mod structural_query_tests;
 #[path = "transition_tests.rs"]
 mod transition_tests;
 use super::*;
@@ -238,7 +240,7 @@ fn programmatic_vertical_reuses_original_inherited_usage_without_allocating_reco
     );
     assert!(!inherited.kerml.positive_dependencies.is_empty());
     assert_eq!(
-        queries.effective_qualified_name(id(3)).value(),
+        queries.current_qualified_name(id(3)).value(),
         &Some(QualifiedNamePath {
             segments: vec![
                 BTreeSet::from(["Vehicle".to_owned()]),

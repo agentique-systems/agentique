@@ -24,6 +24,12 @@ Commands executed in the isolated bridge self-model worktree, with
 | `cargo test -p agq-kerml-text agentique_self_model --lib` | 0 | 4 passed |
 | `cargo fmt --all` | 0 | Formatting applied |
 
+Toolchain: `rustc 1.92.0 (ded5c06cf 2025-12-08)`,
+`cargo 1.92.0 (344c4567c 2025-10-21)`. Initial source base:
+`0fbdf3ee19788a260b99d89e71dbd28f432d8243`; the self-model implementation is
+commit `8c172b5`. Follow-up effective-query verification is recorded in
+[`effective-queries.md`](effective-queries.md).
+
 Initial development runs found a reserved identifier and a missing test-project
 root; both fixture defects were corrected before the passing run. The public
 language behavior was not weakened to accept the fixture. Final branch-wide

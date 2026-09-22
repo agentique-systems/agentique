@@ -243,6 +243,17 @@ fn agentique_rich_platform_preserves_inheritance_redefinition_connections_and_id
             named(model, "platformQueries")
         ]
     );
+    for end in queries
+        .connector_related_structure(named(model, "queryConnection"))
+        .value
+        .ends
+    {
+        assert_eq!(
+            model.element(end).unwrap().metaclass(),
+            s::PORT_USAGE,
+            "interface end {end}"
+        );
+    }
     for (name, class) in [
         ("SemanticAccess", s::INTERFACE_DEFINITION),
         ("queryConnection", s::INTERFACE_USAGE),

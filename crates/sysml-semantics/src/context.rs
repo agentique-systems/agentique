@@ -15,7 +15,7 @@ use std::{
 };
 
 /// Identity of the implemented SysML query contract, independently of KerML rules.
-pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/3";
+pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/4";
 /// Final SysML 2.0 formal descriptor authority, not a preliminary revision.
 pub const SYSML_METAMODEL_VERSION: &str =
     "SysML/2.0;XMI:caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f";
@@ -472,6 +472,19 @@ pub(crate) fn fixture_context<'m>(
         id,
         bindings,
     }
+}
+
+/// Synthetic tests exercise normal attachment and certificate validation while
+/// deliberately omitting the public accepted-standard-library boundary.
+#[cfg(test)]
+pub(crate) fn fixture_overlay_context<'m>(
+    overlay: &'m DerivedOverlay,
+    kerml: SemanticContext<'m>,
+    profile: SysmlBaselineProfile,
+) -> Result<SysmlSemanticContext<'m>, SysmlContextError> {
+    let bindings = StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32]));
+    let contract = SysmlDependencyContract::checked_in_for_profile(&bindings, profile)?;
+    SysmlSemanticContext::attach(overlay.model(), kerml, contract, bindings)
 }
 
 #[cfg(test)]

@@ -630,7 +630,7 @@ pub(super) fn programmatic_platform() -> Snapshot {
         p::REDEFINITION_REDEFINED_FEATURE,
     );
     for endpoint in ["clientQueries", "platformQueries"] {
-        let end = builder.create(s::REFERENCE_USAGE, None);
+        let end = builder.create(s::PORT_USAGE, None);
         builder.member(
             builder.names["queryConnection"],
             end,

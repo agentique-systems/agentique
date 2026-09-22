@@ -957,6 +957,11 @@ fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities(
 }
 
 #[test]
+fn producer_closure_does_not_erase_unsupported_variation_semantics() {
+    actions_micro(ActionsMicro::Variation);
+}
+
+#[test]
 fn certified_usage_scalar_activates_shared_snapshot_and_value_context_producers() {
     actions_micro(ActionsMicro::VariableValue);
 }
@@ -979,6 +984,7 @@ fn directed_usage_value_closes_without_adopting_an_existing_contextual_feature()
 #[derive(Clone, Copy)]
 enum ActionsMicro {
     Basic,
+    Variation,
     VariableValue,
     RootUsage,
     NestedState,
@@ -1124,6 +1130,13 @@ fn actions_micro(variant: ActionsMicro) {
             .clear(id(parameter + 100_000), kp::ELEMENT_DECLARED_NAME);
     }
     f.create(50_003, sc::ACCEPT_ACTION_USAGE, "accepter");
+    if matches!(variant, ActionsMicro::Variation) {
+        f.value(
+            50_003,
+            agq_sysml::properties::USAGE_IS_VARIATION,
+            Value::Boolean(true),
+        );
+    }
     f.value(50_003, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
     f.member(50_000, 50_003, 150_003, sc::TRANSITION_FEATURE_MEMBERSHIP);
     f.changes.clear(id(150_003), kp::ELEMENT_DECLARED_NAME);
@@ -1172,20 +1185,24 @@ fn actions_micro(variant: ActionsMicro) {
         roots: &[ElementId],
         libraries: &LibrarySetIdentity,
     ) -> Result<SemanticContext<'m>, PublicationOverlayError> {
-        SemanticContext::for_overlay(overlay, options.clone(), BTreeSet::new())
+        let kerml = SemanticContext::for_overlay(overlay, options.clone(), BTreeSet::new())
             .unwrap()
             .with_standard_bindings(roots, libraries)
             .unwrap()
             .with_formal_constraint_targets(
                 roots,
                 libraries.artifacts[&StandardLibraryArtifact::Semantic],
-            )
-            .with_naming_extension(
-                SYSML_SEMANTIC_CONTEXT_DOMAIN,
-                [47; 32],
-                Arc::new(SysmlNamingExtension),
-            )
-            .map_err(PublicationOverlayError::Context)
+            );
+        crate::context::fixture_overlay_context(
+            overlay,
+            kerml,
+            SysmlBaselineProfile::OPERATIONAL_V2,
+        )
+        .map(|context| context.kerml)
+        .map_err(|error| match error {
+            SysmlContextError::KerMl(error) => PublicationOverlayError::Context(error),
+            _ => panic!("synthetic context: {error}"),
+        })
     }
     let initial = agq_kernel::derived::DerivationBuilder::new(snapshot.clone())
         .build()
@@ -1229,6 +1246,64 @@ fn actions_micro(variant: ActionsMicro) {
         .with_producer_closure(certificate.clone())
         .unwrap();
     let queries = KerMlQueries::new(context);
+    let composed_context = crate::context::fixture_overlay_context(
+        &closure.overlay,
+        SemanticContext::for_overlay(&closure.overlay, options.clone(), BTreeSet::new())
+            .unwrap()
+            .with_standard_bindings(&roots, &libraries)
+            .unwrap()
+            .with_formal_constraint_targets(
+                &roots,
+                libraries.artifacts[&StandardLibraryArtifact::Semantic],
+            ),
+        SysmlBaselineProfile::OPERATIONAL_V2,
+    )
+    .unwrap()
+    .with_producer_closure(certificate.clone())
+    .unwrap();
+    let composed = SysmlQueries::new(composed_context);
+    let trigger = composed.transition_features(id(50_000), TransitionFeatureKind::Trigger);
+    let expected_completeness = if matches!(variant, ActionsMicro::Variation) {
+        Completeness::Incomplete
+    } else {
+        Completeness::Complete
+    };
+    assert_eq!(trigger.completeness(), expected_completeness, "{trigger:?}");
+    assert_eq!(trigger.value(), &[id(50_003)]);
+    let payload = composed.accept_action_payload_parameter(id(50_003));
+    assert_eq!(payload.completeness(), expected_completeness, "{payload:?}");
+    assert_eq!(payload.value(), &[id(45_001)]);
+    let effective = composed.effective_usages(id(50_000));
+    if matches!(variant, ActionsMicro::Variation) {
+        assert_eq!(
+            effective.completeness(),
+            Completeness::Incomplete,
+            "{effective:?}"
+        );
+        assert!(
+            effective
+                .pending
+                .contains(&(id(50_003), PendingSysmlRule::Variation))
+        );
+        assert!(
+            !effective
+                .pending
+                .contains(&(id(50_003), PendingSysmlRule::ProducerClosure))
+        );
+    } else {
+        assert_eq!(
+            effective.completeness(),
+            Completeness::Complete,
+            "{effective:?}"
+        );
+    }
+    assert!(effective.value().contains(&id(50_003)));
+    assert!(effective.supporting_queries.iter().any(|proof| {
+        proof
+            .search_dependencies
+            .iter()
+            .any(|search| matches!(search, SearchDependency::ProducerClosure { .. }))
+    }));
     if nested_state {
         for subject in [50_000, 50_003, 50_010, 50_011, 50_012, 50_013] {
             assert!(

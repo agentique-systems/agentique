@@ -12,6 +12,10 @@ use agq_kernel::{
 use agq_sysml::{classes as sc, properties as sp};
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "structural_queries.rs"]
+mod structural;
+pub use structural::*;
+
 #[cfg(test)]
 #[path = "qualified_names_tests.rs"]
 mod qualified_names_tests;
@@ -27,7 +31,7 @@ pub enum PendingSysmlRule {
     /// The required canonical base edge is missing (or its anchor is unavailable).
     StandardGeneralization(StandardSysmlRole),
     KerMlGeneralization(StandardRole),
-    /// The phase-1 layer has no complete SysML producer-closure certificate.
+    /// No compatible certificate closes the required producer effects.
     ProducerClosure,
     /// Final formal text says singular subitem; the pinned library has subitems.
     CompositeItemSubsettingAuthorityGap,
@@ -490,9 +494,9 @@ impl<'m> SysmlQueries<'m> {
         self.check(&mut out, connection, &[sc::CONNECTOR_AS_USAGE]);
         out
     }
-    /// Ordinary effective names compose KerML. A variant naming override remains
+    /// Current-graph names compose KerML. A variant naming override remains
     /// pending rather than inheriting a falsely complete ordinary answer.
-    pub fn effective_names(&self, element: ElementId) -> SysmlQueryResult<EffectiveNames> {
+    pub fn current_names(&self, element: ElementId) -> SysmlQueryResult<EffectiveNames> {
         let mut out = self.wrap(self.kerml.effective_names(element));
         if self.check(&mut out, element, &[sc::DEFINITION, sc::USAGE]) {
             let property = if self.is(element, sc::USAGE) {
@@ -520,10 +524,10 @@ impl<'m> SysmlQueries<'m> {
             .push(relationship.map(|id| id.into_iter().collect()));
     }
 
-    /// Pinned deriveElementQualifiedName root boundary and owned-name population.
+    /// Current-graph deriveElementQualifiedName root boundary and owned-name population.
     /// Explicit full names are supported. Inherited-only name selection and
     /// duplicate sibling names remain Incomplete instead of choosing an endpoint.
-    pub fn effective_qualified_name(
+    pub fn current_qualified_name(
         &self,
         element: ElementId,
     ) -> SysmlQueryResult<Option<QualifiedNamePath>> {
@@ -672,50 +676,58 @@ impl<'m> SysmlQueries<'m> {
         if !self.is(subject, sc::DEFINITION) && !self.is(subject, sc::USAGE) {
             return;
         }
-        out.pending
-            .insert((subject, PendingSysmlRule::ProducerClosure));
-        let role = if self.is(subject, sc::PART_DEFINITION) {
-            Some(StandardSysmlRole::Part)
-        } else if self.is(subject, sc::ITEM_DEFINITION) {
-            Some(StandardSysmlRole::Item)
-        } else if self.is(subject, sc::PART_USAGE) {
-            Some(StandardSysmlRole::Parts)
-        } else if self.is(subject, sc::ITEM_USAGE) {
-            Some(StandardSysmlRole::Items)
-        } else {
-            None
-        };
-        let kerml_role = if self.is(subject, sc::ATTRIBUTE_USAGE) {
-            Some(StandardRole::DataValues)
-        } else if self.is(subject, sc::ATTRIBUTE_DEFINITION) {
-            Some(StandardRole::DataValue)
-        } else if role.is_none() && self.is(subject, sc::OCCURRENCE_USAGE) {
-            Some(StandardRole::Occurrences)
-        } else {
-            None
-        };
-        let ancestors = self.kerml.all_supertypes(subject);
-        if let Some(role) = role {
-            if self
-                .bindings
-                .get(role)
-                .is_none_or(|id| !ancestors.value.contains(&id))
+        // A validated combined-registry certificate closes the implemented
+        // producer boundary for this exact graph and semantic profile. Retain
+        // every positive/negative closure search in the composed answer.
+        let producer_closed = self.require_closure(
+            out,
+            subject,
+            &agq_kerml_semantics::SemanticClosureRequirement::ALL,
+        );
+        if !producer_closed {
+            let role = if self.is(subject, sc::PART_DEFINITION) {
+                Some(StandardSysmlRole::Part)
+            } else if self.is(subject, sc::ITEM_DEFINITION) {
+                Some(StandardSysmlRole::Item)
+            } else if self.is(subject, sc::PART_USAGE) {
+                Some(StandardSysmlRole::Parts)
+            } else if self.is(subject, sc::ITEM_USAGE) {
+                Some(StandardSysmlRole::Items)
+            } else {
+                None
+            };
+            let kerml_role = if self.is(subject, sc::ATTRIBUTE_USAGE) {
+                Some(StandardRole::DataValues)
+            } else if self.is(subject, sc::ATTRIBUTE_DEFINITION) {
+                Some(StandardRole::DataValue)
+            } else if role.is_none() && self.is(subject, sc::OCCURRENCE_USAGE) {
+                Some(StandardRole::Occurrences)
+            } else {
+                None
+            };
+            let ancestors = self.kerml.all_supertypes(subject);
+            if let Some(role) = role {
+                if self
+                    .bindings
+                    .get(role)
+                    .is_none_or(|id| !ancestors.value.contains(&id))
+                {
+                    out.pending
+                        .insert((subject, PendingSysmlRule::StandardGeneralization(role)));
+                }
+            } else if let Some(role) = kerml_role
+                && self
+                    .kerml
+                    .context()
+                    .standard_bindings
+                    .as_ref()
+                    .is_none_or(|bindings| !ancestors.value.contains(&bindings.get(role)))
             {
                 out.pending
-                    .insert((subject, PendingSysmlRule::StandardGeneralization(role)));
+                    .insert((subject, PendingSysmlRule::KerMlGeneralization(role)));
             }
-        } else if let Some(role) = kerml_role
-            && self
-                .kerml
-                .context()
-                .standard_bindings
-                .as_ref()
-                .is_none_or(|bindings| !ancestors.value.contains(&bindings.get(role)))
-        {
-            out.pending
-                .insert((subject, PendingSysmlRule::KerMlGeneralization(role)));
+            out.supporting_queries.push(ancestors);
         }
-        out.supporting_queries.push(ancestors);
         let variation = if self.is(subject, sc::USAGE) {
             sp::USAGE_IS_VARIATION
         } else {
@@ -755,8 +767,10 @@ impl<'m> SysmlQueries<'m> {
                 out.pending.insert((subject, PendingSysmlRule::Portion));
             }
         }
-        if self.is(subject, sc::USAGE) {
-            // mayTimeVary is derived. Never substitute false for NotComputed.
+        if !producer_closed && self.is(subject, sc::USAGE) {
+            // Before closure the scalar producer can alter featuring. Queries
+            // that consume the derived value itself must still observe its
+            // property state; a closed structural projection never invents false.
             if self
                 .boolean(out, subject, sp::USAGE_MAY_TIME_VARY)
                 .is_none()
@@ -781,10 +795,11 @@ impl<'m> SysmlQueries<'m> {
             out.supporting_queries
                 .push(owner.map(|value| value.into_iter().collect()));
         }
-        if self.is(subject, sc::PORT_USAGE)
-            || self.is(subject, sc::CONNECTION_USAGE)
-            || self.is(subject, sc::PORT_DEFINITION)
-            || self.is(subject, sc::CONNECTION_DEFINITION)
+        if !producer_closed
+            && (self.is(subject, sc::PORT_USAGE)
+                || self.is(subject, sc::CONNECTION_USAGE)
+                || self.is(subject, sc::PORT_DEFINITION)
+                || self.is(subject, sc::CONNECTION_DEFINITION))
         {
             out.pending
                 .insert((subject, PendingSysmlRule::SpecializedSemantics));
