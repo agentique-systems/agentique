@@ -111,21 +111,35 @@ name denotation. Source identity and semantic identity remain distinct. Unsuppor
 syntax, unresolved references and unimplemented semantic rules remain explicit.
 
 The SysML dialect extends the existing lossless production arena in
-`agq-kerml-syntax`; `agq-kerml-text` constructs its supported declarations through
-the same kernel change sets and reference refinement. `agq-sysml-semantics` has
-no parser dependency. It composes the accepted KerML context and checks the
-publication, profile, library set, descriptors and SysML dependency contract.
+`agq-kerml-syntax`; `agq-kerml-text` uses reusable Definition/Usage family contracts
+and the existing kernel construction machinery. All 21 pinned Systems Library
+documents parse under explicit Operational v1 with zero recovery and unchanged
+source bytes. The separately selectable Published grammar retains 13 complete
+parses and its eight exact failures. All 21 documents support declared canonical
+construction, producing 7,591 elements and 1,327 source reference assertions;
+those counts do not establish endpoint or semantic completeness.
+
+`agq-sysml-semantics` has no parser dependency. Its 13-field dependency contract
+binds the accepted KerML Operational v9 publication, profiles, descriptor graphs,
+library identities, grammar and semantic manifests, bindings and rule sets into
+the shared query-context identity. An unpublished construction overlay allows
+structural implications and reference refinement to cooperate. The dependency-
+driven scheduler supports combined KerML/SysML closure on new Systems records;
+the accepted KerML publication remains shared and sealed, without producer replay.
 Definition/Usage typing, specialization, ownership, inherited identity sets,
 subsetting, redefinition and names reuse KerML queries. Attribute/Item/Part
 projections and structural Port/Connector projections retain their evidence.
 Current-graph answers do not certify unfinished SysML producer closure.
 
-The pinned Systems Library has 21 documents. The strict final-grammar frontend
-currently accepts 13 and preserves all 21 byte for byte. Four unapproved grammar
-interpretations explain the other eight; unsupported canonical construction and
-semantic implications remain explicit. See the
-[SysML foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md)
-for the actual corpus and authored acceptance boundary.
+No Systems publication is accepted. Mandatory reference and combined producer
+closure remain pending, and three additional canonical target authority decisions
+await the user. `CanonicalSysmlSystemsLibrary` rejects any failed construction,
+reference, producer, capability, binding, provenance or authority gate. Canonical
+identities retain their source provenance through lowering and refinement;
+authored edits do not change the immutable library dependency. See the current
+[Systems publication evidence](../verification/summaries/sysml-systems-publication/README.md)
+and the historical
+[Phase 1 foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md).
 
 Normative targets are KerML 1.0 and SysML 2.0. Metamodel import, runtime descriptor
 closure, semantic queries, textual grammar and library ingestion have distinct

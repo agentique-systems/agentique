@@ -71,15 +71,33 @@ local roots without making accepted library roots see authored declarations.
 Generic registry compatibility and language profile/publication authentication
 remain separate checks.
 
-`agq-sysml-semantics` composes that KerML context with a separate SysML rule-set
-identity, the combined descriptor digest, Systems Library identity and scoped
-standard bindings. Attachment authenticates the checked-in accepted receipt as
-well as the caller's expected dependency contract. `canonical_fact_evidence`
-lets composed queries retain the existing proof/search dependencies and failed
-or incomplete property observations. SysML projections do not implement a
-second provenance walker or copy inherited usages. Direct and current-graph
-queries remain distinct from effective queries that report unfinished SysML
-producer obligations. Systems candidate construction is not semantic acceptance.
+`agq-sysml-semantics` composes that KerML context through a 13-field dependency
+contract. Its deterministic digest binds the accepted KerML Operational v9
+publication, both profiles, descriptor graphs, library identities, grammar and
+semantic manifests, scoped standard bindings and rule sets to shared query and
+producer answers. Attachment authenticates the checked-in receipt and expected
+contract; overlay attachment also requires the exact protected dependency.
+Context forks borrow the same graph with independent query caches. Historical
+KerML-only contexts and publication receipt encoding remain unchanged.
+
+The shared producer worklist operates on new Systems records and derived facts.
+Construction overlays retain missing endpoint obligations while structural
+bootstrap and reference refinement establish declared links; strict publication
+uses full combined closure. KerML producers are not replayed on the sealed
+dependency. `canonical_fact_evidence` retains existing proof/search dependencies
+and failed or incomplete observations. SysML projections reuse that evidence
+without copying inherited usages. Direct and current-graph queries remain
+distinct from effective queries with unfinished producer obligations.
+
+Operational v1 parses all 21 exact Systems sources without recovery, and generic
+lowering constructs 7,591 declared elements with 1,327 reference assertions while
+retaining StandardLibrary source provenance. Published grammar behavior remains
+13 complete parses and eight retained failures. The public Systems facade gates
+identity, provenance, bindings, mandatory references, capabilities and producer
+closure before acceptance. Closure and three additional canonical target authority
+decisions remain pending; neither declared construction nor context attachment
+certifies a Systems publication. See the
+[Systems publication evidence](../verification/summaries/sysml-systems-publication/README.md).
 
 The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
 under Operational v9 by default, with explicit historical profile selection.
@@ -413,8 +431,9 @@ The preceding bounded milestone left association storage, numeric domains,
 constraints, imports, inherited name resolution, multi-document projects and
 library ingestion open. Later structural and canonical-publication milestones
 supersede those limits. The current SysML foundation composes the accepted KerML
-publication and shared textual frontend; its remaining corpus and semantic gaps
-are recorded in the [foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md).
+publication and shared textual frontend; its remaining reference, producer and
+authority gates are recorded in the
+[Systems publication evidence](../verification/summaries/sysml-systems-publication/README.md).
 Application migration, persistence, API and execution remain separate future work.
 
 

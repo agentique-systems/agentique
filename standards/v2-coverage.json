@@ -118,7 +118,7 @@
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "claim": "Complete generation-2 structural runtime and accepted canonical KerML publication; partial SysML textual and semantic query foundation. No full language conformance, modeling platform, application migration or execution claim.",
+  "claim": "Complete generation-2 structural runtime and accepted canonical KerML publication; exact Operational v1 SysML Systems parsing and declared lowering with incomplete reference and combined producer closure. No accepted Systems publication, full language conformance, modeling platform, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": {
     "stage": "structural-runtime-v3",
@@ -137,9 +137,9 @@
   "modeling_platform_gate": {
     "stage": "prerequisite",
     "result": "blocked",
-    "evidence": "verification/summaries/sysml-semantic-foundation/README.md",
+    "evidence": "verification/summaries/sysml-systems-publication/README.md",
     "completed_stages": [],
-    "reason": "Canonical KerML is accepted and the SysML textual/query vertical is implemented. Systems Library construction, reference closure and effective SysML producer semantics remain incomplete.",
+    "reason": "Canonical KerML is accepted. All 21 exact Systems documents parse under Operational v1 and support generic declared construction; mandatory reference and combined producer closure remain pending. Three additional canonical target authority decisions await the user. No Systems publication or broader effective SysML semantic phase is accepted.",
     "previous_milestone": {
       "stage": "prerequisite",
       "result": "blocked",
@@ -529,6 +529,8 @@
     "generation_1_release_obligations": "unchanged"
   },
   "sysml_semantic_foundation_phase_1": {
+    "historical": true,
+    "superseded_by": "sysml_systems_library_publication",
     "status": "started-foundation-incomplete",
     "kerML_dependency": "accepted canonical Operational v9",
     "evidence": "verification/summaries/sysml-semantic-foundation/README.md",
@@ -545,5 +547,32 @@
     "programmatic_equivalence": "passed without requiring syntax IDs to match",
     "effective_sysml_producer_closure": "incomplete; pending implications retained",
     "systems_publication": "not accepted"
+  },
+  "sysml_systems_library_publication": {
+    "status": "implemented-foundation-pending-semantic-closure",
+    "evidence": "verification/summaries/sysml-systems-publication/README.md",
+    "kerML_dependency": "exact accepted immutable Operational v9; shared dependency, no producer replay",
+    "frontend": "shared lossless KerML/SysML lexer and production arena; explicit Published and Operational v1 profiles",
+    "systems_documents": 21,
+    "published_documents_parsed": 13,
+    "published_retained_failures": 8,
+    "operational_documents_parsed": 21,
+    "operational_recovery_count": 0,
+    "byte_preservation": "21/21 original sources unchanged in both profiles",
+    "grammar_authority": "Four authorized compatibility decisions; exact manifest and permanent Published regression matrix",
+    "candidate_lowering": "21/21 documents through reusable Definition/Usage family contracts and shared kernel construction",
+    "declared_elements": 7591,
+    "mandatory_reference_assertions": 1327,
+    "provenance": "StandardLibrary source identity, syntax identity, byte range and canonical declared identity retained through construction and reference refinement",
+    "semantic_context": "13-field authenticated dependency contract digest binds accepted KerML, profiles, descriptors, grammar and semantic manifests, library identities, bindings and rule sets to shared queries and producers",
+    "producer_architecture": "Shared dependency-driven KerML/SysML worklist on new Systems elements; unpublished construction overlay and structural reference bootstrap; full combined closure required for publication",
+    "mandatory_reference_closure": "pending; assertion and construction counts do not establish complete endpoints",
+    "effective_sysml_producer_closure": "pending; direct and current-graph queries do not promote effective completeness",
+    "authority_decisions_pending": 3,
+    "publication_facade": "implemented; acceptance rejects construction, reference, producer, capability, binding, identity, provenance or authority findings",
+    "systems_publication": "not accepted",
+    "sysml_conformance_coverage": "incomplete; separate from publication capabilities",
+    "broader_authored_semantic_phase": "not accepted; Systems publication prerequisite remains unmet",
+    "generation_1_release_obligations": "unchanged"
   }
 }
