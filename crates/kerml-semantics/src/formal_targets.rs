@@ -416,7 +416,7 @@ impl KerMlQueries<'_> {
         // A matching owned type is a positive witness. Absence of one requires
         // producer closure: later producers may add an owned FeatureTyping.
         if !step_rule {
-            let owned = self.owned_relationships(feature);
+            let owned = self.owned_relationships_of_type(feature, c::FEATURE_TYPING);
             let mut typed = false;
             for &relationship in &owned.value {
                 if self.is(relationship, c::FEATURE_TYPING)
