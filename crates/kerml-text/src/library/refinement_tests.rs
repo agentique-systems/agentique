@@ -461,3 +461,178 @@ fn pending_scope_changes_are_local_but_semantic_contract_changes_invalidate_all(
     assert!(context_changes(q.context(), &current, &mut BTreeSet::new()));
     assert!(answer.reads.affected_by(&BTreeSet::new(), true));
 }
+
+fn overlay_queries(draft: &LibraryDraft) -> Result<KerMlStatusQueries<'_>, LibraryLoadError> {
+    Ok(KerMlStatusQueries::new(
+        SemanticContext::for_construction_overlay(
+            draft.semantic_candidate().unwrap(),
+            SemanticOptions {
+                baseline_profile: draft.profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap(),
+    ))
+}
+
+#[test]
+fn next_refinement_construction_releases_prior_candidate_and_semantic_overlay() {
+    use agq_kernel::derived::ConstructionDerivationBuilder;
+    let mut previous = std::sync::Weak::<agq_kernel::ConstructionView>::new();
+    let mut rounds = 0;
+    let final_draft = refine(
+        |resolved| {
+            assert!(
+                previous.upgrade().is_none(),
+                "previous graph retained during next construction"
+            );
+            let mut draft = reconstruction(resolved)?;
+            let overlay = ConstructionDerivationBuilder::for_construction(draft.candidate.clone())
+                .build()
+                .unwrap();
+            previous = Arc::downgrade(&draft.candidate);
+            draft.set_semantic_candidate(overlay);
+            rounds += 1;
+            Ok(draft)
+        },
+        overlay_queries,
+        ReferenceRefinementStrategy::DependencyDriven,
+        |_| {},
+    )
+    .unwrap();
+    assert!(rounds >= 4);
+    assert!(previous.upgrade().is_some());
+    drop(final_draft);
+    assert!(previous.upgrade().is_none());
+}
+
+#[test]
+fn compact_signature_invalidates_negative_lookup_after_derived_import() {
+    use agq_kernel::{
+        DerivationKey, OutputKey, RuleId,
+        derived::ConstructionDerivationBuilder,
+        provenance::{Dependency, Explanation, FactKey},
+    };
+    fn draft(available: bool) -> LibraryDraft {
+        let mut draft = reconstruction(&Endpoints::new()).unwrap();
+        let mut builder = ConstructionDerivationBuilder::for_construction(draft.candidate.clone());
+        if available {
+            let key = DerivationKey {
+                rule: RuleId::from_u128(900),
+                subject: id(4),
+                output: OutputKey::from_u128(901),
+            };
+            let mut slots: BTreeMap<_, _> = draft
+                .candidate
+                .model()
+                .element(id(10))
+                .unwrap()
+                .slots()
+                .map(|(p, slot)| (p, slot.value().clone()))
+                .collect();
+            slots.insert(
+                p::NAMESPACE_IMPORT_IMPORTED_NAMESPACE,
+                SlotValue::Scalar(Value::Reference(id(2))),
+            );
+            builder.element(key, c::NAMESPACE_IMPORT, slots, BTreeSet::new());
+            builder.extend_ordered_references(
+                id(4),
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                vec![key.element_id()],
+                Explanation {
+                    rule: key.rule,
+                    dependencies: BTreeSet::from([Dependency::Declared(FactKey::Element(id(4)))]),
+                },
+            );
+        }
+        draft.set_semantic_candidate(builder.build().unwrap());
+        draft
+    }
+    let before = draft(false);
+    let q = overlay_queries(&before).unwrap();
+    let reference = before.references[1].clone();
+    let miss = q.lookup_relationship_target_with_reads(
+        reference.relationship,
+        reference.property,
+        &reference.name,
+    );
+    assert!(miss.outcome.value.is_empty());
+    let before_context = q.context().clone();
+    let signature = CandidateSignature::for_draft(&before);
+    let weak = Arc::downgrade(&before.candidate);
+    drop(q);
+    drop(before);
+    assert!(
+        weak.upgrade().is_none(),
+        "signature retained an overlay or candidate"
+    );
+    let after = draft(true);
+    let after_signature = CandidateSignature::for_draft(&after);
+    let mut affected = changed_signatures(&signature, &after_signature);
+    assert!(affected.contains(&id(4)));
+    assert!(affected.contains(&id(2)));
+    let q = overlay_queries(&after).unwrap();
+    let contract_changed = context_changes(&before_context, q.context(), &mut affected);
+    assert!(!contract_changed);
+    assert!(miss.reads.affected_by(&affected, contract_changed));
+    let found =
+        q.lookup_relationship_target(reference.relationship, reference.property, &reference.name);
+    assert_eq!(found.value.len(), 1);
+    assert_eq!(found.value[0].element, id(8));
+}
+
+#[test]
+fn compact_signature_omits_sealed_facts_but_preserves_dependency_endpoint_ownership() {
+    use agq_kernel::derived::DerivationBuilder;
+    let mut library = Fixture::new();
+    library.create(900, c::NAMESPACE);
+    library.member(900, 902, 901, c::CLASS, "First");
+    library.member(900, 904, 903, c::CLASS, "Second");
+    let dependency = Arc::new(
+        DerivationBuilder::new(library.draft().strict_snapshot().unwrap())
+            .build()
+            .unwrap(),
+    );
+    let local = |target| {
+        let base = Snapshot::with_immutable_dependency(dependency.clone());
+        let mut f = Fixture {
+            changes: base.change_set(),
+            base,
+            owned: BTreeMap::new(),
+            references: vec![],
+        };
+        f.create(1, c::NAMESPACE);
+        f.member(1, 3, 2, c::FEATURE, "Use");
+        f.create(4, c::FEATURE_TYPING);
+        f.own(2, 4);
+        f.value(4, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(2)));
+        f.value(4, p::FEATURE_TYPING_TYPE, Value::Reference(id(target)));
+        f.draft()
+    };
+    let before = local(901);
+    let after = local(903);
+    let before_signature = CandidateSignature::for_draft(&before);
+    let after_signature = CandidateSignature::for_draft(&after);
+    assert_eq!(before_signature.records.len(), 4);
+    assert!(before_signature.same_dependency(&after_signature));
+    assert_eq!(
+        changed_signatures(&before_signature, &after_signature),
+        changed_population(before.candidate(), after.candidate()),
+    );
+    let affected = changed_signatures(&before_signature, &after_signature);
+    for participant in [900, 901, 902, 903, 904] {
+        assert!(
+            affected.contains(&id(participant)),
+            "missing dependency owner/endpoint {participant}"
+        );
+    }
+    let independent = Arc::new(
+        DerivationBuilder::new(dependency.declared().clone())
+            .build()
+            .unwrap(),
+    );
+    let independent_signature =
+        CandidateSignature::capture(independent.model(), &[], Some(&independent));
+    assert!(!before_signature.same_dependency(&independent_signature));
+}

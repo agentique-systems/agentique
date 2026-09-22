@@ -5,11 +5,12 @@ use agq_kerml_semantics::{
     KerMlStatusQueries, QueryInvalidationSet, QueryReadSet, SemanticContextId,
 };
 use agq_kernel::{
-    ConstructionObligation, ConstructionView, ElementId, ElementRecord, ModelView, PropertyId,
-    value::Value,
+    ConstructionObligation, ElementId, ElementRecord, ModelView, PropertyId,
+    association::AssociationOccurrence, derived::DerivedOverlay, value::Value,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -51,6 +52,89 @@ struct CachedReference {
     selected: Option<ElementId>,
 }
 
+/// Exact local facts needed for change detection, without retaining the previous
+/// candidate's navigation indexes, overlay, or transitive proof/search maps.
+/// Immutable dependency records already belong to the shared sealed publication.
+struct CandidateSignature {
+    records: Vec<ElementRecord>,
+    occurrences: Vec<AssociationOccurrence>,
+    obligations: BTreeSet<(ElementId, PropertyId, usize)>,
+    // Only locally sourced containment edges. Sealed sources remain available
+    // through `dependency`, including ownership of newly referenced anchors.
+    ownership: BTreeMap<ElementId, Vec<ElementId>>,
+    dependency: Option<Arc<DerivedOverlay>>,
+}
+impl CandidateSignature {
+    fn capture(
+        model: &ModelView,
+        obligations: &[ConstructionObligation],
+        dependency: Option<&Arc<DerivedOverlay>>,
+    ) -> Self {
+        let dependency_model = dependency.map(|d| d.model());
+        let mut ownership = BTreeMap::<_, Vec<_>>::new();
+        let records = model
+            .elements()
+            .filter(|r| dependency_model.is_none_or(|d| d.element(r.id()).is_none()))
+            .map(|r| {
+                for reference in model.outgoing(r.id()).filter(|r| {
+                    matches!(
+                        r.property,
+                        p::ELEMENT_OWNED_RELATIONSHIP | p::RELATIONSHIP_OWNED_RELATED_ELEMENT
+                    )
+                }) {
+                    ownership.entry(reference.target).or_default().push(r.id());
+                }
+                r.clone()
+            })
+            .collect();
+        Self {
+            records,
+            occurrences: model
+                .association_occurrences()
+                .filter(|r| {
+                    dependency_model.is_none_or(|d| d.association_occurrence(r.id()).is_none())
+                })
+                .cloned()
+                .collect(),
+            obligations: obligations
+                .iter()
+                .map(|o| (o.element, o.property, o.actual))
+                .collect(),
+            ownership,
+            dependency: dependency.cloned(),
+        }
+    }
+    fn for_draft(draft: &LibraryDraft) -> Self {
+        Self::capture(
+            draft.reference_model(),
+            draft
+                .semantic_candidate
+                .as_ref()
+                .map_or_else(|| draft.candidate.obligations(), |s| s.obligations()),
+            draft.candidate.immutable_dependency(),
+        )
+    }
+    fn same_dependency(&self, other: &Self) -> bool {
+        match (&self.dependency, &other.dependency) {
+            (None, None) => true,
+            (Some(a), Some(b)) => std::ptr::eq(a.model(), b.model()),
+            _ => false,
+        }
+    }
+    fn ownership_sources(&self, id: ElementId) -> impl Iterator<Item = ElementId> + '_ {
+        self.ownership
+            .get(&id)
+            .into_iter()
+            .flatten()
+            .copied()
+            .chain(
+                self.dependency
+                    .iter()
+                    .flat_map(move |d| ownership_sources(d.model(), id)),
+            )
+    }
+}
+
 fn record_participants(record: &ElementRecord, affected: &mut BTreeSet<ElementId>) {
     affected.insert(record.id());
     affected.extend(
@@ -70,24 +154,23 @@ fn record_participants(record: &ElementRecord, affected: &mut BTreeSet<ElementId
 /// A merge walk compares canonical before/after records, including slot origins.
 /// A retarget or removal invalidates both its old and new navigation participants.
 #[cfg(test)]
-fn changed_population(before: &ConstructionView, after: &ConstructionView) -> BTreeSet<ElementId> {
-    changed_models(
-        before.model(),
-        before.obligations(),
-        after.model(),
-        after.obligations(),
+fn changed_population(
+    before: &agq_kernel::ConstructionView,
+    after: &agq_kernel::ConstructionView,
+) -> BTreeSet<ElementId> {
+    changed_signatures(
+        &CandidateSignature::capture(before.model(), before.obligations(), None),
+        &CandidateSignature::capture(after.model(), after.obligations(), None),
     )
 }
 
-fn changed_models(
-    before: &ModelView,
-    before_obligations: &[ConstructionObligation],
-    after: &ModelView,
-    after_obligations: &[ConstructionObligation],
+fn changed_signatures(
+    before: &CandidateSignature,
+    after: &CandidateSignature,
 ) -> BTreeSet<ElementId> {
     let mut affected = BTreeSet::new();
-    let mut old = before.elements().peekable();
-    let mut new = after.elements().peekable();
+    let mut old = before.records.iter().peekable();
+    let mut new = after.records.iter().peekable();
     while let (Some(a), Some(b)) = (old.peek(), new.peek()) {
         match a.id().cmp(&b.id()) {
             std::cmp::Ordering::Less => record_participants(old.next().unwrap(), &mut affected),
@@ -105,8 +188,8 @@ fn changed_models(
     for record in old.chain(new) {
         record_participants(record, &mut affected);
     }
-    let mut old = before.association_occurrences().peekable();
-    let mut new = after.association_occurrences().peekable();
+    let mut old = before.occurrences.iter().peekable();
+    let mut new = after.occurrences.iter().peekable();
     while let (Some(a), Some(b)) = (old.peek(), new.peek()) {
         match a.id().cmp(&b.id()) {
             std::cmp::Ordering::Less => {
@@ -128,15 +211,10 @@ fn changed_models(
     for occurrence in old.chain(new) {
         affected.extend(occurrence.ends().values().copied());
     }
-    let obligations = |candidate: &[ConstructionObligation]| {
-        candidate
-            .iter()
-            .map(|o| (o.element, o.property, o.actual))
-            .collect::<BTreeSet<_>>()
-    };
     affected.extend(
-        obligations(before_obligations)
-            .symmetric_difference(&obligations(after_obligations))
+        before
+            .obligations
+            .symmetric_difference(&after.obligations)
             .map(|(id, _, _)| *id),
     );
     // Direct containment owners are negative population search keys even when
@@ -145,11 +223,11 @@ fn changed_models(
     // Do not propagate arbitrary descendants to every ancestor root: reads of
     // transitive scope already carry their individual bounded search keys.
     let participants: Vec<_> = affected.iter().copied().collect();
-    for model in [before, after] {
+    for signature in [before, after] {
         for &id in &participants {
-            for owner in ownership_sources(model, id) {
+            for owner in signature.ownership_sources(id) {
                 affected.insert(owner);
-                affected.extend(ownership_sources(model, owner));
+                affected.extend(signature.ownership_sources(owner));
             }
         }
     }
@@ -214,10 +292,7 @@ pub(crate) fn refine_from(
     mut progress: impl FnMut(&ReferenceRefinementRound),
 ) -> Result<LibraryDraft, LibraryLoadError> {
     let mut previous_resolutions = BTreeSet::new();
-    let mut previous_candidate: Option<(
-        std::sync::Arc<ConstructionView>,
-        Option<agq_kernel::derived::ConstructionOverlay>,
-    )> = None;
+    let mut previous_candidate: Option<CandidateSignature> = None;
     let mut previous_context: Option<SemanticContextId> = None;
     let mut cache = BTreeMap::<ReferenceKey, CachedReference>::new();
     for round in 0.. {
@@ -230,24 +305,18 @@ pub(crate) fn refine_from(
         let draft = construct(&resolved)?;
         let construction_elapsed = start.elapsed();
         let start = Instant::now();
-        let mut affected =
-            previous_candidate
-                .take()
-                .as_ref()
-                .map_or_else(BTreeSet::new, |(old, semantic)| {
-                    changed_models(
-                        semantic.as_ref().map_or_else(|| old.model(), |s| s.model()),
-                        semantic
-                            .as_ref()
-                            .map_or_else(|| old.obligations(), |s| s.obligations()),
-                        draft.reference_model(),
-                        draft
-                            .semantic_candidate
-                            .as_ref()
-                            .map_or_else(|| draft.candidate.obligations(), |s| s.obligations()),
-                    )
-                });
-        // Release the old graph before retaining any new query caches.
+        let signature = CandidateSignature::for_draft(&draft);
+        let dependency_changed = previous_candidate
+            .as_ref()
+            .is_some_and(|previous| !previous.same_dependency(&signature));
+        let mut affected = previous_candidate
+            .take()
+            .as_ref()
+            .map_or_else(BTreeSet::new, |previous| {
+                changed_signatures(previous, &signature)
+            });
+        // The old graph was released before construction, and its compact local
+        // signature is now released before retaining any new query caches.
         let change_detection_elapsed = start.elapsed();
         let start = Instant::now();
         let mut queries = query(&draft)?;
@@ -255,7 +324,8 @@ pub(crate) fn refine_from(
         let context_elapsed = start.elapsed();
         let contract_changed = previous_context
             .as_ref()
-            .is_none_or(|old| context_changes(old, &context, &mut affected));
+            .is_none_or(|old| context_changes(old, &context, &mut affected))
+            || dependency_changed;
         let mut report = ReferenceRefinementRound {
             round,
             input_endpoints: resolved.len(),
@@ -343,7 +413,8 @@ pub(crate) fn refine_from(
         if next == resolved {
             return Ok(draft);
         }
-        previous_candidate = Some((draft.candidate, draft.semantic_candidate));
+        drop(draft);
+        previous_candidate = Some(signature);
         previous_context = Some(context);
         cache = next_cache;
         resolved = next;
