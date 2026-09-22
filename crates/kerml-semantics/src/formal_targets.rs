@@ -187,6 +187,7 @@ impl<'m> SemanticContext<'m> {
             })
             .collect();
         let mut context = queries.context;
+        context.discard_producer_closure();
         context.id.formal_constraint_targets = Some(std::sync::Arc::new(FormalConstraintTargets {
             profile: context.id.options.baseline_profile,
             model_digest: context.id.model_digest,
@@ -447,78 +448,29 @@ impl KerMlQueries<'_> {
         if !owner_matches && self.is(owner, c::FEATURE) {
             let types = self.feature_types(owner);
             owner_matches = types.value.iter().any(|&t| self.is(t, class));
-            let mut established_typing =
-                types.completeness == Completeness::Complete && !types.value.is_empty();
             out.merge(types);
-            if !owner_matches && established_typing {
-                let closed = self.negative_owner_typing_is_closed(owner);
-                established_typing = closed.value && closed.completeness == Completeness::Complete;
+            if !owner_matches {
+                let closed =
+                    self.producer_closure(owner, SemanticClosureRequirement::EffectiveTyping);
+                let established_typing =
+                    closed.value && closed.completeness == Completeness::Complete;
                 out.merge(closed);
-            }
-            if !owner_matches && !established_typing {
-                // A complete query on a partial graph alone is not a negative
-                // proof. Type-producing antecedents must also be closed.
-                out.problem(
+                if !established_typing {
+                    // A complete query on a partial graph alone is not a negative
+                    // proof. Type-producing antecedents must also be closed.
+                    out.problem(
                     Completeness::Incomplete,
                     "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
                     owner,
-                    "Effective owner typing is required to establish this antecedent",
+                    "A scheduler-issued EffectiveTyping closure witness is required for this negative owner-type antecedent",
                 );
+                }
             }
         }
         if !owner_matches {
             return out;
         }
         out.value = true;
-        out
-    }
-
-    /// A bounded negative proof for ordinary, unvalued, nonpositional owners.
-    /// `feature_types` accounts for canonical typing/subsetting/chains and required
-    /// metaclass bases. Other type-producing families must not be silently assumed
-    /// complete merely because that query has finished over a partial overlay.
-    fn negative_owner_typing_is_closed(&self, owner: ElementId) -> QueryResult<bool> {
-        let mut out = self.result(true);
-        let mut pending = vec![owner];
-        let mut seen = BTreeSet::new();
-        while let Some(feature) = pending.pop() {
-            if !seen.insert(feature) {
-                continue;
-            }
-            let owned = self.owned_relationships(feature);
-            let valuation = owned.value.iter().any(|&r| self.is(r, c::FEATURE_VALUE));
-            out.merge(owned);
-            let cross = self.is_owned_cross_feature(feature);
-            let is_cross = cross.value;
-            out.merge(cross);
-            let membership = self.owning_relationship(feature);
-            let is_result = membership
-                .value
-                .is_some_and(|r| self.is(r, c::RETURN_PARAMETER_MEMBERSHIP));
-            out.merge(membership);
-            let positional = is_result
-                || self
-                    .read_value(&mut out, feature, p::FEATURE_DIRECTION)
-                    .is_some()
-                || !matches!(
-                    self.read_value(&mut out, feature, p::FEATURE_IS_END),
-                    Some(Value::Boolean(false))
-                );
-            let formal = [p::FEATURE_IS_COMPOSITE, p::FEATURE_IS_PORTION]
-                .into_iter()
-                .any(|flag| {
-                    !matches!(
-                        self.read_value(&mut out, feature, flag),
-                        Some(Value::Boolean(false))
-                    )
-                });
-            if valuation || is_cross || positional || formal || self.is(feature, c::EXPRESSION) {
-                out.value = false;
-            }
-            let typing = self.typing_features(feature);
-            pending.extend(typing.value.iter().copied());
-            out.merge(typing);
-        }
         out
     }
 

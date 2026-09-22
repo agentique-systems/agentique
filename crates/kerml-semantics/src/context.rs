@@ -6,7 +6,8 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-/// Change whenever rules, proof construction, dependency semantics or digest encoding change.
+/// Accepted KerML query contract. Optional producer closure is independently
+/// versioned by `agq-producer-closure-context/1` and its registry identity.
 pub const RULE_SET_VERSION: &str = "agq-kerml-query/26";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
@@ -74,6 +75,11 @@ pub struct SemanticContextId {
     /// map is the historical KerML-only context. Values are content identities,
     /// not additional model records or publication certificates.
     pub semantic_extensions: BTreeMap<&'static str, [u8; 32]>,
+    /// Complete producer-family registry, including composed language effects.
+    /// Absent on legacy declared/current-graph contexts.
+    pub producer_registry_digest: Option<[u8; 32]>,
+    /// Scheduler-issued evidence; this changes completeness without adding facts.
+    pub producer_closure_digest: Option<[u8; 32]>,
     /// Phase is part of query identity; a partial overlay cannot claim closure.
     pub derivation_phase: crate::DerivationPhase,
 }
@@ -83,6 +89,24 @@ pub struct SemanticContext<'m> {
     pub(crate) model: &'m ModelView,
     pub(crate) id: SemanticContextId,
     pub(crate) naming_extension: Option<(&'static str, Arc<dyn SemanticNamingExtension>)>,
+    pub(crate) producer_closure: Option<Arc<crate::ProducerClosureCertificate>>,
+}
+
+impl SemanticContextId {
+    /// Exact interpretation and pending-input contract for producer closure.
+    /// Graph content is bound separately by the certificate. Revision labels and
+    /// proof attachment do not change this contract or deterministic issuance.
+    pub fn closure_contract_digest(&self) -> [u8; 32] {
+        let mut contract = self.clone();
+        contract.revision = RevisionId::from_u128(0);
+        contract.model_digest = [0; 32];
+        contract.producer_closure_digest = None;
+        contract.derivation_phase = crate::DerivationPhase::Declared;
+        let mut hash = Sha256::new();
+        hash.update(b"agq-producer-closure-context/1\0");
+        hash.update(format!("{contract:?}").as_bytes());
+        hash.finalize().into()
+    }
 }
 
 /// A composed language's normative override of Feature::namingFeature.
@@ -105,6 +129,10 @@ pub enum ContextError {
     PublicationDependencyMismatch,
     /// An attached interpretation contract cannot be replaced within a context.
     SemanticExtensionIdentityMismatch(&'static str),
+    /// A registry is immutable for one query/scheduler context.
+    ProducerRegistryIdentityMismatch,
+    /// The witness names a different graph, registry or interpretation contract.
+    ProducerClosureMismatch,
 }
 
 impl<'m> SemanticContext<'m> {
@@ -115,7 +143,43 @@ impl<'m> SemanticContext<'m> {
             model: self.model,
             id: self.id.clone(),
             naming_extension: self.naming_extension.clone(),
+            producer_closure: self.producer_closure.clone(),
         }
+    }
+    /// Freeze the complete producer registry before attaching closure evidence.
+    pub fn with_producer_registry_digest(mut self, digest: [u8; 32]) -> Result<Self, ContextError> {
+        match self.id.producer_registry_digest {
+            Some(existing) if existing != digest => {
+                return Err(ContextError::ProducerRegistryIdentityMismatch);
+            }
+            Some(_) => {}
+            None => {
+                self.discard_producer_closure();
+                self.id.producer_registry_digest = Some(digest);
+            }
+        }
+        Ok(self)
+    }
+    /// Attach immutable scheduler evidence after exact graph/contract checking.
+    /// No public constructor exists for the certificate itself.
+    pub fn with_producer_closure(
+        mut self,
+        certificate: Arc<crate::ProducerClosureCertificate>,
+    ) -> Result<Self, ContextError> {
+        if !certificate.compatible_context(&self.id) {
+            return Err(ContextError::ProducerClosureMismatch);
+        }
+        self.id.producer_closure_digest = Some(certificate.digest());
+        self.producer_closure = Some(certificate);
+        Ok(self)
+    }
+    /// Shared evidence for this exact immutable graph and interpretation.
+    pub fn producer_closure(&self) -> Option<&Arc<crate::ProducerClosureCertificate>> {
+        self.producer_closure.as_ref()
+    }
+    pub(crate) fn discard_producer_closure(&mut self) {
+        self.id.producer_closure_digest = None;
+        self.producer_closure = None;
     }
     /// Install a language query implementation under its frozen interpretation
     /// identity. The callback is runtime behavior, not an additional graph.
@@ -134,6 +198,9 @@ impl<'m> SemanticContext<'m> {
         {
             return Err(ContextError::SemanticExtensionIdentityMismatch(domain));
         }
+        if context.naming_extension.is_none() {
+            context.discard_producer_closure();
+        }
         context.naming_extension = Some((domain, extension));
         Ok(context)
     }
@@ -150,6 +217,7 @@ impl<'m> SemanticContext<'m> {
                 return Err(ContextError::SemanticExtensionIdentityMismatch(domain));
             }
         } else {
+            self.discard_producer_closure();
             self.id.semantic_extensions.insert(domain, digest);
         }
         Ok(self)
@@ -163,6 +231,7 @@ impl<'m> SemanticContext<'m> {
         let queries = crate::KerMlQueries::new(self);
         let bindings = crate::StandardKermlBindings::validate(&queries, roots, library_set)?;
         self = queries.context;
+        self.discard_producer_closure();
         self.id.standard_bindings = Some(Arc::new(bindings));
         self.id.library_graph_digest =
             Some(crate::context_digest::library_graph_digest(self.model));
@@ -255,7 +324,10 @@ impl<'m> SemanticContext<'m> {
         for (root, available) in &mut roots {
             available.insert(*root);
         }
-        self.id.available_roots = Arc::new(roots);
+        if *self.id.available_roots != roots {
+            self.discard_producer_closure();
+            self.id.available_roots = Arc::new(roots);
+        }
         Ok(self)
     }
     /// Bind a project with unavailable declaration evidence. A namespace barrier
@@ -447,6 +519,7 @@ impl<'m> SemanticContext<'m> {
         Ok(Self {
             model,
             naming_extension: None,
+            producer_closure: None,
             id: SemanticContextId {
                 revision,
                 model_digest,
@@ -477,6 +550,8 @@ impl<'m> SemanticContext<'m> {
                 derivation_phase: crate::DerivationPhase::Declared,
                 publication_dependency_digest: None,
                 semantic_extensions: BTreeMap::new(),
+                producer_registry_digest: None,
+                producer_closure_digest: None,
             },
         })
     }

@@ -71,3 +71,84 @@ fn changed_language_interpretation_invalidates_cached_outcomes_on_unchanged_reco
         &graph_changed
     ));
 }
+
+#[test]
+fn producer_registry_and_closure_change_query_identity_without_model_changes() {
+    let snapshot = snapshot();
+    let base =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
+    let first = base.fork().with_producer_registry_digest([1; 32]).unwrap();
+    assert_eq!(base.id().model_digest, first.id().model_digest);
+    assert!(!QueryReadSet::context_compatible(base.id(), first.id()));
+    assert_eq!(
+        first.id(),
+        first
+            .fork()
+            .with_producer_registry_digest([1; 32])
+            .unwrap()
+            .id()
+    );
+    assert!(matches!(
+        first.fork().with_producer_registry_digest([2; 32]),
+        Err(ContextError::ProducerRegistryIdentityMismatch)
+    ));
+    let mut attached = first.id().clone();
+    attached.producer_closure_digest = Some([3; 32]);
+    assert!(!QueryReadSet::context_compatible(first.id(), &attached));
+    assert_eq!(
+        first.id().closure_contract_digest(),
+        attached.closure_contract_digest()
+    );
+    attached.producer_registry_digest = Some([2; 32]);
+    assert_ne!(
+        first.id().closure_contract_digest(),
+        attached.closure_contract_digest()
+    );
+}
+
+#[test]
+fn closure_contract_is_independent_of_revision_label_and_evidence_attachment() {
+    let snapshot = snapshot();
+    let context =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
+    let mut alternative = context.id().clone();
+    alternative.revision = RevisionId::new();
+    alternative.model_digest = [5; 32];
+    alternative.derivation_phase = crate::DerivationPhase::PartialDerivationOverlay;
+    alternative.producer_closure_digest = Some([6; 32]);
+    assert_eq!(
+        context.id().closure_contract_digest(),
+        alternative.closure_contract_digest()
+    );
+    alternative
+        .pending_specialization_scopes
+        .insert(ElementId::from_u128(77));
+    assert_ne!(
+        context.id().closure_contract_digest(),
+        alternative.closure_contract_digest()
+    );
+}
+
+#[test]
+fn missing_closure_is_a_typed_dependency_without_a_fake_canonical_fact() {
+    use crate::{Completeness, SearchDependency, SemanticClosureRequirement};
+    let snapshot = snapshot();
+    let context =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
+    let queries = KerMlQueries::new(context);
+    let subject = ElementId::from_u128(5);
+    let answer = queries.producer_closure(subject, SemanticClosureRequirement::EffectiveTyping);
+    assert!(!answer.value);
+    assert_eq!(answer.completeness, Completeness::Incomplete);
+    assert!(answer.positive_dependencies.is_empty());
+    assert!(answer.canonical_dependencies.is_empty());
+    assert!(
+        answer
+            .search_dependencies
+            .contains(&SearchDependency::ProducerClosure {
+                subject,
+                requirement: SemanticClosureRequirement::EffectiveTyping,
+                certificate_digest: None,
+            })
+    );
+}

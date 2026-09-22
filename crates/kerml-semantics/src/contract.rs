@@ -17,6 +17,13 @@ pub enum Completeness {
 /// Set reads remain dependencies even when empty. Match pre- AND post-change state.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SearchDependency {
+    /// A negative/exhaustive semantic conclusion reads scheduler closure, not a
+    /// canonical fact. `None` preserves the missing-witness dependency.
+    ProducerClosure {
+        subject: ElementId,
+        requirement: crate::SemanticClosureRequirement,
+        certificate_digest: Option<[u8; 32]>,
+    },
     /// The semantic producer role, including the absence of such provenance.
     ImpliedBindingRole(Option<crate::ImpliedBindingRole>),
     /// Explicit profile-scoped redefinition search, including unsuccessful scopes.
@@ -80,6 +87,8 @@ pub struct Diagnostic {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum QueryKind {
+    /// Subject and value both identify the certified semantic subject.
+    ProducerClosure(crate::SemanticClosureRequirement),
     MultiplicityFeaturingContext,
     ImportedMemberships,
     ImportedMembershipPopulation,
@@ -141,6 +150,8 @@ pub enum Evidence {
 /// Stable within RULE_SET_VERSION. Exact normative anchors are in ADR 0005.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
+    /// Every relevant producer is closed under the witnessed exact certificate.
+    ProducerClosure(crate::SemanticClosureRequirement),
     MultiplicityFeaturingContext,
     PublishedImportedMemberships,
     OperationalImportedMembershipsV1,

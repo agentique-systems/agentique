@@ -50,6 +50,9 @@ fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKe
         ],
         S::Kernel(search) => [structural_search_key(search), None],
         S::Instances { .. } => [Some(K::Global), None],
+        // Exact graph binding makes every additive frontier invalidate a used
+        // witness, even if that frontier did not modify its requested subject.
+        S::ProducerClosure { .. } => [Some(K::Global), None],
         // These identities are immutable during this additive session. Binding
         // role reads are local provenance reads, not global role-population scans.
         S::StandardLibraries
@@ -90,6 +93,10 @@ fn publication_search_keys(
     model: &ModelView,
 ) -> impl Iterator<Item = InvalidationKey> {
     let fixed = match search {
+        // Certificate production is a scheduler stratum, not a request to run
+        // every graph producer. Exact witness identity is invalidated through
+        // the context contract; ordinary revision reads remain conservative.
+        SearchDependency::ProducerClosure { .. } => true,
         SearchDependency::Element(element) => declared_identity(model, *element),
         SearchDependency::PropertySet { element, property }
         | SearchDependency::Kernel(StructuralSearch::Property { element, property }) => {

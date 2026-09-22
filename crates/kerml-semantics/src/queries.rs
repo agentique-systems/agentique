@@ -65,6 +65,44 @@ impl<'m> KerMlQueries<'m> {
     pub fn model(&self) -> &'m ModelView {
         self.context.model
     }
+    /// Prove that every registered producer capable of changing this answer is
+    /// closed. Missing evidence remains an explicit dependency and incomplete
+    /// result. This query never treats graph quiescence as an absence proof.
+    pub fn producer_closure(
+        &self,
+        subject: ElementId,
+        requirement: SemanticClosureRequirement,
+    ) -> QueryResult<bool> {
+        let mut answer = self.result(false);
+        let certificate = self.context.producer_closure();
+        let search = SearchDependency::ProducerClosure {
+            subject,
+            requirement,
+            certificate_digest: certificate.map(|certificate| certificate.digest()),
+        };
+        answer.search_dependencies.insert(search.clone());
+        answer.value =
+            certificate.is_some_and(|certificate| certificate.is_closed(subject, requirement));
+        if answer.value {
+            answer.prove(
+                QueryKind::ProducerClosure(requirement),
+                subject,
+                subject,
+                Rule::ProducerClosure(requirement),
+                [Evidence::Search(search)],
+            );
+        } else {
+            answer.problem(
+                Completeness::Incomplete,
+                "KQ_PRODUCER_CLOSURE",
+                subject,
+                format!(
+                    "No compatible scheduler certificate closes {requirement:?} for this subject"
+                ),
+            );
+        }
+        answer
+    }
     /// Observe canonical facts for a composed language query, retaining the same
     /// provenance expansion and negative-read contracts as KerML queries. This
     /// does not derive a value: uncomputed derived properties and failed inputs

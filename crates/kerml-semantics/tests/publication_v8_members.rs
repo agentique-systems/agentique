@@ -85,7 +85,7 @@ fn positional_parameters_redefine_inherited_chain_target_members_even_when_renam
 }
 
 #[test]
-fn complete_owner_typing_can_disprove_an_inapplicable_structural_antecedent() {
+fn current_graph_owner_typing_cannot_disprove_an_antecedent_without_producer_closure() {
     let mut f = Fixture::new();
     f.create(1, c::STEP);
     f.create(2, c::BEHAVIOR);
@@ -108,7 +108,7 @@ fn complete_owner_typing_can_disprove_an_inapplicable_structural_antecedent() {
     assert!(!answer.value);
     assert_eq!(
         answer.completeness,
-        Completeness::Complete,
+        Completeness::Incomplete,
         "{:?}",
         answer.diagnostics
     );
@@ -118,8 +118,50 @@ fn complete_owner_typing_can_disprove_an_inapplicable_structural_antecedent() {
             .contains(&FactKey::Element(id(2)))
     );
     assert!(
+        answer
+            .search_dependencies
+            .contains(&SearchDependency::ProducerClosure {
+                subject: id(1),
+                requirement: SemanticClosureRequirement::EffectiveTyping,
+                certificate_digest: None,
+            })
+    );
+    assert!(
         q.formal_constraint_applies(FormalConstraintId::StepSubperformanceSpecialization, id(3))
             .value
+    );
+}
+
+#[test]
+fn positive_owner_typing_does_not_wait_for_negative_closure() {
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.create(2, c::STRUCTURE);
+    f.create(3, c::STEP);
+    f.value(3, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    member(&mut f, 1, 3, 13, c::FEATURE_MEMBERSHIP);
+    relation(&mut f, 1, 2, 12, c::FEATURE_TYPING, p::FEATURE_TYPING_TYPE);
+    f.value(12, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(1)));
+    let snapshot = f.finish();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default()).unwrap(),
+    );
+    let answer = q.formal_constraint_applies(
+        FormalConstraintId::StepOwnedPerformanceSpecialization,
+        id(3),
+    );
+    assert!(answer.value);
+    assert_eq!(
+        answer.completeness,
+        Completeness::Complete,
+        "{:?}",
+        answer.diagnostics
+    );
+    assert!(
+        !answer
+            .search_dependencies
+            .iter()
+            .any(|search| matches!(search, SearchDependency::ProducerClosure { .. }))
     );
 }
 
