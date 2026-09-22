@@ -284,6 +284,131 @@ fn certificate_is_identical_across_frontier_orders_batches_and_reference_scan() 
     }
 }
 
+struct NegativeOutput;
+impl PublicationProducerExtension for NegativeOutput {
+    fn descriptors(&self) -> Vec<ProducerDescriptor> {
+        [ACTIVATE, TYPE]
+            .into_iter()
+            .map(|family| {
+                let mut descriptor = ProducerDescriptor::new(
+                    family,
+                    [],
+                    ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+                );
+                descriptor
+                    .fresh_effects
+                    .insert(ProducerEffect::ResultStructure);
+                descriptor
+            })
+            .collect()
+    }
+    fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
+        model.registry().is_subtype(class, c::CLASSIFIER).unwrap()
+    }
+    fn contribute<'m>(
+        &self,
+        q: &KerMlQueries<'m>,
+        subject: ElementId,
+        _: ResultStructureStratum,
+        plan: &mut ResultStructurePlan<'m>,
+    ) -> Result<(), agq_kernel::derived::DerivationError> {
+        let positive = q.canonical_fact_evidence(FactKey::Element(subject));
+        plan.record_producer_evaluation_evidence(subject, ACTIVATE, &positive);
+        if subject == id(2) {
+            plan.add_derived_element(
+                DerivationKey {
+                    subject,
+                    rule: RuleId::from_u128(99501),
+                    output: OutputKey::from_u128(1),
+                },
+                c::COMMENT,
+                BTreeMap::from([(
+                    p::COMMENT_BODY,
+                    SlotValue::Scalar(Value::String("unrelated".into())),
+                )]),
+                None,
+                &positive,
+            )?;
+        }
+        let negative = if subject == id(1) {
+            q.producer_closure(subject, SemanticClosureRequirement::EffectiveTyping)
+                .map(|_| ())
+        } else {
+            positive
+        };
+        plan.record_producer_evaluation_evidence(subject, TYPE, &negative);
+        if subject == id(1) {
+            plan.add_derived_element(
+                DerivationKey {
+                    subject,
+                    rule: RuleId::from_u128(99502),
+                    output: OutputKey::from_u128(1),
+                },
+                c::COMMENT,
+                BTreeMap::from([(
+                    p::COMMENT_BODY,
+                    SlotValue::Scalar(Value::String("negative".into())),
+                )]),
+                None,
+                &negative,
+            )?;
+        }
+        plan.observe_evidence(negative)
+    }
+}
+
+#[test]
+fn negative_closure_output_is_deterministic_across_work_orders_and_batches() {
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::CLASSIFIER);
+    let snapshot = f.finish();
+    let mut expected = None;
+    for order in [
+        PublicationWorklistOrder::Fifo,
+        PublicationWorklistOrder::Lifo,
+        PublicationWorklistOrder::ReversedInitial,
+        PublicationWorklistOrder::Partitioned,
+    ] {
+        for batch_size in [1, 7] {
+            let result = close_result_structure_with_extension(
+                &snapshot,
+                PublicationClosureOptions {
+                    order,
+                    batch_size,
+                    ..Default::default()
+                },
+                |overlay| {
+                    SemanticContext::for_overlay(overlay, Default::default(), BTreeSet::new())
+                        .map_err(PublicationOverlayError::Context)
+                },
+                &NegativeOutput,
+                |_, _, _, _| {},
+                |_| {},
+            )
+            .unwrap();
+            assert!(result.converged);
+            assert_eq!(result.completeness, Completeness::Complete);
+            let certificate = result.certificate.unwrap();
+            assert_eq!(
+                result
+                    .overlay
+                    .model()
+                    .elements()
+                    .filter(|record| record.metaclass() == c::COMMENT)
+                    .count(),
+                2
+            );
+            let actual = (certificate.model_digest(), certificate.digest());
+            assert_eq!(
+                *expected.get_or_insert(actual),
+                actual,
+                "{order:?}, batch={batch_size}"
+            );
+        }
+    }
+}
+
 #[test]
 fn registry_and_graph_changes_reject_previous_certificate() {
     let snapshot = fixture();
@@ -382,6 +507,89 @@ fn fresh_relationship_does_not_exempt_an_existing_semantic_source() {
 }
 
 #[test]
+fn fresh_membership_cannot_silently_reown_an_existing_subject() {
+    let snapshot = fixture();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let mut plan = q.plan_result_structure([]);
+    plan.add_derived_element(
+        DerivationKey {
+            rule: RuleId::from_u128(99400),
+            subject: id(2),
+            output: OutputKey::from_u128(1),
+        },
+        c::OWNING_MEMBERSHIP,
+        BTreeMap::from([(
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            SlotValue::Ordered(vec![Value::Reference(id(3))]),
+        )]),
+        Some(id(2)),
+        &q.canonical_fact_evidence(FactKey::Element(id(2))),
+    )
+    .unwrap();
+    let mut descriptor = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Membership],
+        ProducerApplicability::Any,
+    );
+    descriptor.fresh_effects.insert(ProducerEffect::Ownership);
+    assert!(
+        plan.validate_declared_effects(
+            &[id(2)],
+            &ProducerRegistry::new([descriptor.clone()]).unwrap()
+        )
+        .is_err()
+    );
+    descriptor.effects.insert(ProducerEffect::Ownership);
+    descriptor.scope = ProducerEffectScope::Model;
+    plan.validate_declared_effects(&[id(2)], &ProducerRegistry::new([descriptor]).unwrap())
+        .unwrap();
+}
+
+#[test]
+fn typed_population_retains_broad_reads_only_when_actually_observed() {
+    use crate::producer_closure::{ProducerRead, producer_reads};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let mut evidence = q.canonical_fact_evidence(FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    });
+    evidence.search_dependencies.clear();
+    evidence
+        .search_dependencies
+        .insert(SearchDependency::OwnedRelationships {
+            owner: id(1),
+            class: c::FEATURE_TYPING,
+        });
+    let reads = producer_reads(&evidence, q.model());
+    assert!(reads.contains(&ProducerRead::Owned(id(1), c::FEATURE_TYPING)));
+    assert!(!reads.contains(&ProducerRead::Property(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP
+    )));
+    evidence
+        .search_dependencies
+        .insert(SearchDependency::PropertySet {
+            element: id(1),
+            property: p::ELEMENT_OWNED_RELATIONSHIP,
+        });
+    assert!(
+        producer_reads(&evidence, q.model()).contains(&ProducerRead::Property(
+            id(1),
+            p::ELEMENT_OWNED_RELATIONSHIP
+        ))
+    );
+}
+
+#[test]
 fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
     let descriptor =
         ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);
@@ -418,6 +626,46 @@ fn populated_overlay_revalidation_keeps_graph_and_certificate_identity() {
     assert_eq!(repeated.certificate.unwrap().digest(), expected.digest());
     assert_eq!(repeated.counters.new_elements_proposed, 0);
     assert_eq!(repeated.counters.fixed_point_rounds, 1);
+}
+
+#[test]
+fn populated_overlay_revalidates_under_changed_interpretation_contract() {
+    let original = run(&fixture(), false, Default::default());
+    let old = original.certificate.unwrap();
+    let repeated = close_result_structure_on_overlay_with_extension(
+        original.overlay,
+        Default::default(),
+        |overlay| {
+            SemanticContext::for_overlay(overlay, Default::default(), BTreeSet::new())
+                .and_then(|context| {
+                    context.with_semantic_extension_identity("fixture-naming/1", [7; 32])
+                })
+                .map_err(PublicationOverlayError::Context)
+        },
+        &DelayedTyping { incomplete: false },
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(repeated.converged);
+    assert_eq!(repeated.completeness, Completeness::Complete);
+    let renewed = repeated.certificate.unwrap();
+    assert_ne!(
+        renewed.context_contract_digest(),
+        old.context_contract_digest()
+    );
+    assert_ne!(renewed.digest(), old.digest());
+    assert_eq!(repeated.counters.new_elements_proposed, 0);
+    let context =
+        SemanticContext::for_overlay(&repeated.overlay, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_semantic_extension_identity("fixture-naming/1", [7; 32])
+            .unwrap()
+            .with_producer_registry_digest(renewed.registry_digest())
+            .unwrap();
+    assert!(!old.compatible_context(context.id()));
+    let q = KerMlQueries::new(context.with_producer_closure(renewed).unwrap());
+    assert_eq!(q.feature_types(id(1)).value, vec![id(2)]);
 }
 
 #[test]
@@ -610,11 +858,19 @@ fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
         "f65", "f66", "f67", "f68", "f69", "f70", "f71", "f72", "f73", "f74", "f75", "f76", "f77",
         "f78", "f79",
     ];
-    let registry = ProducerRegistry::new(families.into_iter().map(|name| {
+    let registry = ProducerRegistry::new(families.into_iter().enumerate().map(|(index, name)| {
         ProducerDescriptor::new(
             ProducerFamilyId::new(name),
-            [ProducerEffect::Typing],
-            ProducerApplicability::Any,
+            [if index == 0 {
+                ProducerEffect::Membership
+            } else {
+                ProducerEffect::Typing
+            }],
+            if index < 5 {
+                ProducerApplicability::Any
+            } else {
+                ProducerApplicability::Never
+            },
         )
     }))
     .unwrap();
@@ -628,9 +884,30 @@ fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
         let evaluations: Vec<_> = registry
             .descriptors()
             .iter()
-            .map(|d| (id(n), d.id, Completeness::Complete))
+            .take(5)
+            .enumerate()
+            .map(|(index, d)| {
+                (
+                    id(n),
+                    d.id,
+                    if n == 1 && index == 0 {
+                        Completeness::Incomplete
+                    } else {
+                        Completeness::Complete
+                    },
+                )
+            })
             .collect();
         table.record(&evaluations, &registry).unwrap();
+        let reads: crate::producer_closure::ProducerReads =
+            vec![crate::producer_closure::ProducerRead::Structural(id(n))].into();
+        table.record_reads(
+            &evaluations
+                .iter()
+                .map(|(subject, family, _)| (*subject, *family, reads.clone()))
+                .collect::<Vec<_>>(),
+            &registry,
+        );
     }
     let started = std::time::Instant::now();
     let certificate = ProducerClosureCertificate::issue(
@@ -641,11 +918,17 @@ fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
         |_| false,
     );
     eprintln!(
-        "closure certificate: subjects=60000 families=80 bytes={} build_ms={}",
+        "closure certificate: subjects=60000 families=80 applicable={} closed={} incomplete={} bytes={} build_ms={}",
+        certificate.applicable_pairs(),
+        certificate.closed_pairs(),
+        certificate.incomplete_pairs(),
         certificate.storage_bytes(),
         started.elapsed().as_millis()
     );
-    assert_eq!(certificate.closed_pairs(), 4_800_000);
+    assert_eq!(certificate.applicable_pairs(), 300_000);
+    assert_eq!(certificate.closed_pairs(), 299_995);
+    assert_eq!(certificate.incomplete_pairs(), 1);
     assert!(certificate.storage_bytes() < 2_300_000);
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
     assert!(certificate.is_closed(id(60_000), SemanticClosureRequirement::EffectiveTyping));
 }

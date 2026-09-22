@@ -355,10 +355,25 @@ impl ProducerRegistry {
             }
         }
         let mut hash = Sha256::new();
-        hash.update(b"agq-producer-registry/1");
+        hash.update(b"agq-producer-registry/2");
         // Debug is deterministic for these ordered value-only declarations;
         // its encoding is versioned by the registry schema above.
         hash.update(format!("{descriptors:?}").as_bytes());
+        // Requirement semantics are part of the registry contract, not an
+        // unversioned query implementation detail. Include every declared
+        // potential effect, including effects restricted to fresh subjects.
+        let effects: BTreeSet<_> = descriptors
+            .iter()
+            .flat_map(|descriptor| descriptor.effects.iter().chain(&descriptor.fresh_effects))
+            .copied()
+            .collect();
+        for requirement in SemanticClosureRequirement::ALL {
+            hash.update(requirement.contract_id().as_bytes());
+            for &effect in &effects {
+                hash.update(format!("{effect:?}").as_bytes());
+                hash.update([u8::from(requirement.requires(effect))]);
+            }
+        }
         Ok(Self {
             descriptors: descriptors.into_boxed_slice(),
             digest: hash.finalize().into(),
@@ -1106,6 +1121,14 @@ fn effect_changes_read(effect: ProducerEffect, read: &ProducerRead, model: &Mode
                 .map_or(*property, |descriptor| descriptor.id);
             if let ProducerEffect::Scalar(written) = effect {
                 return written == *property || written == resolved;
+            }
+            if [
+                agq_kerml::properties::ELEMENT_OWNING_RELATIONSHIP,
+                agq_kerml::properties::RELATIONSHIP_OWNING_RELATED_ELEMENT,
+            ]
+            .contains(property)
+            {
+                return effect == ProducerEffect::Ownership;
             }
             if effect == ProducerEffect::Naming {
                 return true;
