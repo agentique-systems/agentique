@@ -1,7 +1,7 @@
 # Scheduler-issued producer closure
 
-Implementation source: `9adb3e0` on the isolated
-`foundation/producer-closure` branch. This summary records generic closure work;
+Implementation source: `d590ed7` on the isolated
+`foundation/producer-closure-corpus` branch. This summary records generic closure work;
 it does not establish Systems Library acceptance.
 
 Families have stable string identities, explicit potential effects, applicability,
@@ -74,12 +74,34 @@ records with mutable noncomposite inverse navigation; reference scalar writes;
 current/future target-class bounds; existing scalar output target audits; and
 effective scalar property aliases.
 
+The current 37-test matrix additionally covers primitive scalar changes to effective
+names/membership; native and persisted class-exclusion populations, including
+unknown/unbounded writers, explicit broad reads and ownership movement; and staged
+directed FeatureValue closure. Non-valuation contextual features are created
+atomically with their binding instead of orphaned in an earlier stratum and
+reowned later. The directed fixture equals direct contextual materialization;
+the existing worklist/full-scan fixture also checks directed and undirected values
+across scheduling orders and batches. No ownership-effect exemption was added.
+
+| Current actual command at `d590ed7` | Result |
+| --- | --- |
+| `cargo test -p agq-kerml-semantics --lib producer_closure_tests -- --nocapture` | Exit 0; 37 passed |
+| `cargo fmt --all -- --check` | Exit 0 |
+| `cargo clippy -p agq-kerml-semantics --all-targets --locked --offline -- -D warnings` | Exit 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc -p agq-kerml-semantics --no-deps --locked --offline` | Exit 0 |
+| `cargo test -p agq-kerml-semantics --lib feature_value -- --nocapture` at the staging fix | Exit 0; 3 passed |
+
+Rejected evaluations now report exact subject, family, applicability state and
+descriptor. Rejected effects report the fact, originating rule/subject, semantic
+target and failed contract. Scheduler context drift identifies differing immutable
+context fields. These details are constructed only on failure.
+
 The synthetic scale fixture has 60,000 subjects and 80 registered families, with
 300,000 applicable evaluations carrying nonempty reads. One incomplete writer
 blocks four otherwise complete readers: 299,995 closed pairs remain. Certificate
-storage is **2,220,208 bytes**; the final focused debug run constructed it in
-**8,049 ms** during concurrent worktree activity (the earlier 32-test run measured
-6,186 ms). This measures the certificate,
+storage is **2,220,208 bytes**; the current focused debug run constructed it in
+**6,741 ms** during concurrent worktree activity (earlier runs measured
+6,186–8,049 ms). This measures the certificate,
 not whole-publication runtime or peak scheduler memory.
 
 Development failures exposed conservative read conflation and obsolete fixture
