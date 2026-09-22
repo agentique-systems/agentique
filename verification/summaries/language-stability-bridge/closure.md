@@ -60,3 +60,22 @@ The reviewed regressions are retained as permanent focused tests.
 | Command | Actual output | Exit |
 | --- | --- | --- |
 | `cargo test --locked --offline -p agq-kerml-semantics --lib producer_closure -- --nocapture` | 53 passed, 0 failed; 10.23 seconds. Compact 60,000-subject proof: 2,220,216 bytes, 6,082 ms issuance | 0 |
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo clippy --locked --offline -p agq-kerml-semantics --all-targets -- -D warnings` | Finished, no warnings | 0 |
+| `cargo clippy --locked --offline -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings | 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --no-deps` | Both public semantic APIs documented, no warnings | 0 |
+
+Synthetic combined-producer fixtures now close their standalone dependency using
+all actual anchor roles and explicit portion classification on skeletal Usage
+anchors. They mount that exact graph with `ProducerClosedDependency`, preserving
+shared Arc identity; a fabricated naming digest/immutable pointer is not authority.
+Final query contexts include the same authenticated dependency contract.
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib actions_micro_closes -- --nocapture` | Initial adaptation caught Arc type/error conversion/receiver lifetime mistakes; corrected locally; focused test then passed | 101, then 0 |
+| `cargo test --locked --offline -p agq-sysml-semantics` | 60 passed, 0 failed, 33.15 seconds; doc tests passed | 0 |
+| `cargo fmt --all -- --check` | No output | 0 |
+| `cargo clippy --locked --offline -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings after witness fixture correction | 0 |

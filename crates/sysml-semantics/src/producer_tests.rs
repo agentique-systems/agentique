@@ -619,6 +619,9 @@ fn may_time_vary_exact_antecedents_and_exclusions_use_canonical_identities() {
 }
 
 fn corpus_anchor_fixture() -> (Fixture, BTreeMap<StandardSysmlRole, u128>) {
+    corpus_anchor_fixture_complete(false)
+}
+fn corpus_anchor_fixture_complete(all: bool) -> (Fixture, BTreeMap<StandardSysmlRole, u128>) {
     let mut f = Fixture::new();
     f.origin = DeclaredOrigin::StandardLibrary {
         library: SystemsLibraryIdentity::LIBRARY,
@@ -627,7 +630,7 @@ fn corpus_anchor_fixture() -> (Fixture, BTreeMap<StandardSysmlRole, u128>) {
     let mut paths: BTreeMap<Vec<String>, u128> = BTreeMap::new();
     let mut roles = BTreeMap::new();
     let mut next = 10u128;
-    for role in [
+    let selected = [
         StandardSysmlRole::Action,
         StandardSysmlRole::Actions,
         StandardSysmlRole::Subactions,
@@ -656,7 +659,12 @@ fn corpus_anchor_fixture() -> (Fixture, BTreeMap<StandardSysmlRole, u128>) {
         StandardSysmlRole::Interface,
         StandardSysmlRole::Messages,
         StandardSysmlRole::Flows,
-    ] {
+    ];
+    for &role in if all {
+        &StandardSysmlRole::ALL[..]
+    } else {
+        &selected[..]
+    } {
         let (segments, expected) = role.specification();
         let mut owner = 1;
         for index in 0..segments.len() {
@@ -1004,7 +1012,7 @@ fn actions_micro(variant: ActionsMicro) {
     };
     // Synthetic anchors isolate the scheduler/query contract from the corpus.
     // They are immutable dependencies in this fixture, never a production receipt.
-    let (mut anchors, roles) = corpus_anchor_fixture();
+    let (mut anchors, roles) = corpus_anchor_fixture_complete(true);
     let (kernel, libraries, mut roots) = may_time_fixture(false, false, false, None);
     let kernel_queries = KerMlQueries::new(
         SemanticContext::for_snapshot(
@@ -1078,12 +1086,68 @@ fn actions_micro(variant: ActionsMicro) {
     for membership in anchors.model().instances(kc::MEMBERSHIP, true).unwrap() {
         names.clear(membership.id(), kp::ELEMENT_DECLARED_NAME);
     }
-    let dependency = Arc::new(
-        agq_kernel::derived::DerivationBuilder::new(anchors.apply(&names).unwrap())
-            .build()
-            .unwrap(),
+    // Skeletal synthetic anchors have no authored owner/type facts. Give their
+    // portion classification explicitly, then actually close them before use;
+    // immutable storage alone is not semantic closure authority.
+    for usage in anchors.model().instances(sc::USAGE, true).unwrap() {
+        let agq_kernel::provenance::Origin::Declared(origin) = usage.origin() else {
+            unreachable!()
+        };
+        names.set(
+            usage.id(),
+            kp::FEATURE_IS_PORTION,
+            SlotValue::Scalar(Value::Boolean(true)),
+            origin.clone(),
+        );
+    }
+    let anchor_snapshot = anchors.apply(&names).unwrap();
+    let anchor_options = SemanticOptions {
+        baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+        ..Default::default()
+    };
+    let anchor_extension = SysmlProducerExtension::new(
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+        roots.clone(),
     );
-    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let anchor_closure = close_result_structure_with_extension(
+        &anchor_snapshot,
+        Default::default(),
+        |overlay| make_context(overlay, &anchor_options, &roots, &libraries, None),
+        &anchor_extension,
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert_eq!(
+        anchor_closure.completeness,
+        Completeness::Complete,
+        "anchor closure {:?}",
+        anchor_closure.stages.last()
+    );
+    let registry = agq_kerml_semantics::ProducerRegistry::new(
+        agq_kerml_semantics::ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(anchor_options.baseline_profile))
+            .chain(crate::sysml_producer_descriptors()),
+    )
+    .unwrap();
+    let anchor_certificate = anchor_closure.certificate.unwrap();
+    let anchor_overlay = Arc::new(anchor_closure.overlay);
+    let anchor_context = make_context(&anchor_overlay, &anchor_options, &roots, &libraries, None)
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap()
+        .with_producer_closure(anchor_certificate)
+        .unwrap();
+    let dependency = agq_kerml_semantics::ProducerClosedDependency::new(
+        anchor_overlay.clone(),
+        &anchor_context,
+        &registry,
+    )
+    .unwrap();
+    drop(anchor_context);
+    let base = dependency.project_snapshot();
     let mut f = Fixture {
         changes: base.change_set(),
         base,
@@ -1184,15 +1248,22 @@ fn actions_micro(variant: ActionsMicro) {
         options: &SemanticOptions,
         roots: &[ElementId],
         libraries: &LibrarySetIdentity,
+        dependency: Option<&Arc<agq_kerml_semantics::ProducerClosedDependency>>,
     ) -> Result<SemanticContext<'m>, PublicationOverlayError> {
-        let kerml = SemanticContext::for_overlay(overlay, options.clone(), BTreeSet::new())
-            .unwrap()
-            .with_standard_bindings(roots, libraries)
-            .unwrap()
-            .with_formal_constraint_targets(
-                roots,
-                libraries.artifacts[&StandardLibraryArtifact::Semantic],
-            );
+        let kerml = if let Some(dependency) = dependency {
+            dependency
+                .project_overlay_context(overlay, roots)
+                .map_err(PublicationOverlayError::Context)?
+        } else {
+            SemanticContext::for_overlay(overlay, options.clone(), BTreeSet::new())
+                .unwrap()
+                .with_standard_bindings(roots, libraries)
+                .unwrap()
+                .with_formal_constraint_targets(
+                    roots,
+                    libraries.artifacts[&StandardLibraryArtifact::Semantic],
+                )
+        };
         crate::context::fixture_overlay_context(
             overlay,
             kerml,
@@ -1207,8 +1278,9 @@ fn actions_micro(variant: ActionsMicro) {
     let initial = agq_kernel::derived::DerivationBuilder::new(snapshot.clone())
         .build()
         .unwrap();
-    let initial_queries =
-        KerMlQueries::new(make_context(&initial, &options, &roots, &libraries).unwrap());
+    let initial_queries = KerMlQueries::new(
+        make_context(&initial, &options, &roots, &libraries, Some(&dependency)).unwrap(),
+    );
     assert_eq!(
         initial_queries
             .formal_constraint_applies(
@@ -1221,7 +1293,7 @@ fn actions_micro(variant: ActionsMicro) {
     let closure = close_result_structure_with_extension(
         &snapshot,
         Default::default(),
-        |overlay| make_context(overlay, &options, &roots, &libraries),
+        |overlay| make_context(overlay, &options, &roots, &libraries, Some(&dependency)),
         &extension,
         |_, _, _, _| {},
         |_| {},
@@ -1239,23 +1311,24 @@ fn actions_micro(variant: ActionsMicro) {
         .as_ref()
         .expect("scheduler-issued closure")
         .clone();
-    let context = make_context(&closure.overlay, &options, &roots, &libraries)
-        .unwrap()
-        .with_producer_registry_digest(certificate.registry_digest())
-        .unwrap()
-        .with_producer_closure(certificate.clone())
-        .unwrap();
+    let context = make_context(
+        &closure.overlay,
+        &options,
+        &roots,
+        &libraries,
+        Some(&dependency),
+    )
+    .unwrap()
+    .with_producer_registry_digest(certificate.registry_digest())
+    .unwrap()
+    .with_producer_closure(certificate.clone())
+    .unwrap();
     let queries = KerMlQueries::new(context);
     let composed_context = crate::context::fixture_overlay_context(
         &closure.overlay,
-        SemanticContext::for_overlay(&closure.overlay, options.clone(), BTreeSet::new())
-            .unwrap()
-            .with_standard_bindings(&roots, &libraries)
-            .unwrap()
-            .with_formal_constraint_targets(
-                &roots,
-                libraries.artifacts[&StandardLibraryArtifact::Semantic],
-            ),
+        dependency
+            .project_overlay_context(&closure.overlay, &roots)
+            .unwrap(),
         SysmlBaselineProfile::OPERATIONAL_V2,
     )
     .unwrap()
@@ -1445,7 +1518,7 @@ fn actions_micro(variant: ActionsMicro) {
     }
     assert!(Arc::ptr_eq(
         closure.overlay.declared().immutable_dependency().unwrap(),
-        &dependency
+        dependency.overlay()
     ));
 }
 
