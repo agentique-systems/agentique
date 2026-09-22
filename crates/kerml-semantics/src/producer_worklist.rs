@@ -642,9 +642,9 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 current.formal_constraint_targets = previous.formal_constraint_targets.clone();
             }
             if &current != previous {
-                return Err(PublicationOverlayError::Derivation(
-                    agq_kernel::derived::DerivationError::InputContextMismatch,
-                ));
+                return Err(PublicationOverlayError::SchedulerContextMismatch {
+                    changed_fields: current.differing_fields(previous),
+                });
             }
         } else {
             identity = Some(context.id().clone());
@@ -999,6 +999,51 @@ fn close_frontiers<Overlay: ProducerFrontier>(
 #[cfg(test)]
 mod dependency_index_tests {
     use super::*;
+
+    #[test]
+    fn changed_interpretation_at_later_stratum_reports_exact_context_field() {
+        let snapshot = Snapshot::new(std::sync::Arc::new(
+            agq_kerml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
+        ));
+        let mut context_calls = 0;
+        let result = close_result_structure(
+            &snapshot,
+            PublicationClosureOptions {
+                strategy: PublicationClosureStrategy::ReferenceFullScan,
+                ..Default::default()
+            },
+            |overlay| {
+                // First frontier and its issued witness have the same contract.
+                // The contextual-binding frontier deliberately changes it.
+                let contract = if context_calls < 2 { [1; 32] } else { [2; 32] };
+                context_calls += 1;
+                SemanticContext::for_overlay(
+                    overlay,
+                    SemanticOptions {
+                        baseline_profile: BaselineProfile::OPERATIONAL_V9,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .and_then(|context| {
+                    context.with_semantic_extension_identity("fixture-scheduler/1", contract)
+                })
+                .map_err(PublicationOverlayError::Context)
+            },
+            |_, _, _, _| {},
+            |_| {},
+        );
+        assert!(
+            matches!(
+                &result,
+                Err(PublicationOverlayError::SchedulerContextMismatch { changed_fields })
+                    if changed_fields == &["semantic_extensions"]
+            ),
+            "unexpected context rejection: {:?}; context calls: {context_calls}",
+            result.as_ref().err(),
+        );
+        assert_eq!(context_calls, 3);
+    }
 
     #[test]
     fn replaced_reads_release_empty_reverse_buckets_and_track_live_edges() {

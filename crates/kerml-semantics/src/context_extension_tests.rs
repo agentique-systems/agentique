@@ -6,6 +6,22 @@ fn snapshot() -> Snapshot {
 }
 
 #[test]
+fn context_mismatch_diagnostics_name_only_changed_identity_fields() {
+    let snapshot = snapshot();
+    let context =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
+    let original = context.id();
+    assert!(original.differing_fields(original).is_empty());
+    let mut changed = original.clone();
+    changed.options.exclude_implied = !changed.options.exclude_implied;
+    changed.producer_registry_digest = Some([17; 32]);
+    assert_eq!(
+        changed.differing_fields(original),
+        ["options", "producer_registry_digest"]
+    );
+}
+
+#[test]
 fn composed_identity_is_frozen_without_mutating_the_graph_or_original_context() {
     let snapshot = snapshot();
     let original =

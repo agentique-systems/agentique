@@ -93,6 +93,54 @@ pub struct SemanticContext<'m> {
 }
 
 impl SemanticContextId {
+    /// Identify a rejected scheduler input without expanding graph evidence or
+    /// serializing the potentially large binding and obligation populations.
+    pub(crate) fn differing_fields(&self, other: &Self) -> Vec<&'static str> {
+        macro_rules! compare {
+            ($($field:ident),* $(,)?) => {{
+                // Exhaustive destructuring makes newly added identity inputs a
+                // compile-time obligation for this diagnostic too.
+                let Self { $($field,)* } = self;
+                let mut changed = Vec::new();
+                $(if $field != &other.$field {
+                    changed.push(stringify!($field));
+                })*
+                changed
+            }};
+        }
+        compare!(
+            revision,
+            model_digest,
+            baseline_profile_id,
+            metamodel_version,
+            errata_manifest_digest,
+            result_domain_manifest_digest,
+            reference_binding_manifest_digest,
+            owned_cross_feature_manifest_digest,
+            owned_cross_domain_manifest_digest,
+            import_collision_manifest_digest,
+            multiplicity_context_manifest_digest,
+            cross_multiplicity_context_manifest_digest,
+            descriptor_digest,
+            rule_set_version,
+            pinned_libraries,
+            options,
+            pending_specialization_scopes,
+            pending_namespace_scopes,
+            construction_obligations,
+            available_roots,
+            standard_bindings,
+            formal_constraint_targets,
+            binding_version,
+            library_graph_digest,
+            publication_dependency_digest,
+            semantic_extensions,
+            producer_registry_digest,
+            producer_closure_digest,
+            derivation_phase,
+        )
+    }
+
     /// Exact interpretation and pending-input contract for producer closure.
     /// Graph content is bound separately by the certificate. Revision labels and
     /// proof attachment do not change this contract or deterministic issuance.
