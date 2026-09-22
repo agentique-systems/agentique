@@ -15,6 +15,7 @@ pub(crate) enum ProducerRead {
     Structural(ElementId),
     Source(ElementId, MetaclassId, PropertyId),
     Owned(ElementId, MetaclassId),
+    FeaturePopulation(ElementId, crate::FeaturePopulationKind),
     Inverse,
     Any(ElementId),
     Global,
@@ -52,6 +53,13 @@ pub(crate) fn producer_reads<T>(
         }
         K::OwnedRelationships { owner, class } => {
             result.insert(ProducerRead::Owned(*owner, *class));
+        }
+        K::OwnedMemberProjection { owner, contract } => {
+            result.insert(
+                crate::FeaturePopulationKind::from_contract_id(contract)
+                    .map(|kind| ProducerRead::FeaturePopulation(*owner, kind))
+                    .unwrap_or(ProducerRead::Global),
+            );
         }
         K::ProducerClosure {
             subject,
@@ -95,6 +103,9 @@ pub(crate) fn producer_reads<T>(
             S::OwnedRelationships { owner, class } => {
                 result.insert(ProducerRead::Owned(*owner, *class));
             }
+            S::StructuralFeaturePopulation { owner, kind } => {
+                result.insert(ProducerRead::FeaturePopulation(*owner, *kind));
+            }
             S::NamespaceMembers { namespace } | S::ImportSet { namespace } => {
                 result.insert(ProducerRead::Structural(*namespace));
             }
@@ -126,8 +137,41 @@ pub(crate) fn producer_reads<T>(
             _ => {}
         }
     }
+    let projection_owners: BTreeSet<_> = result
+        .iter()
+        .filter_map(|read| match read {
+            ProducerRead::FeaturePopulation(owner, _) => Some(*owner),
+            _ => None,
+        })
+        .collect();
+    let filtered_owners: BTreeSet<_> = result
+        .iter()
+        .filter_map(|read| match read {
+            ProducerRead::FeaturePopulation(owner, _) | ProducerRead::Owned(owner, _) => {
+                Some(*owner)
+            }
+            _ => None,
+        })
+        .collect();
     for fact in &answer.positive_dependencies {
         if let FactKey::Property { element, property } = fact {
+            if *property == agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT
+                && !result.contains(&ProducerRead::Property(*element, *property))
+                && model.element(*element).is_some_and(|record| {
+                    model
+                        .registry()
+                        .is_subtype(record.metaclass(), agq_kerml::classes::FEATURE_MEMBERSHIP)
+                        .unwrap_or(false)
+                })
+                && model
+                    .incoming_for_property(
+                        *element,
+                        agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP,
+                    )
+                    .any(|reference| projection_owners.contains(&reference.source))
+            {
+                continue;
+            }
             // An inverse ownership query reads one existing child's owner, not
             // arbitrary additions to the owner's backing collection. Its exact
             // canonical carrier fact remains in proof; the search defines the
@@ -156,9 +200,7 @@ pub(crate) fn producer_reads<T>(
                 continue;
             }
             if *property == agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP
-                && result
-                    .iter()
-                    .any(|read| matches!(read, ProducerRead::Owned(owner, _) if owner == element))
+                && filtered_owners.contains(element)
                 && !result.contains(&ProducerRead::Property(*element, *property))
             {
                 continue;
@@ -262,6 +304,10 @@ pub struct ProducerDescriptor {
     /// create. This bounds potential output, not the records observed so far.
     /// `None` permits every relationship class covered by its effects.
     pub relationship_classes: Option<BTreeSet<MetaclassId>>,
+    /// Positional populations this family's membership effects may change.
+    /// `None` is unconstrained. Existing scalar producer capabilities can reopen
+    /// Parameter/End exclusions on newly created members.
+    pub feature_populations: Option<BTreeSet<crate::FeaturePopulationKind>>,
     pub applicability: ProducerApplicability,
     pub scope: ProducerEffectScope,
     pub minimum_stratum: ResultStructureStratum,
@@ -277,6 +323,7 @@ impl ProducerDescriptor {
             effects: effects.into_iter().collect(),
             fresh_effects: BTreeSet::new(),
             relationship_classes: None,
+            feature_populations: None,
             applicability,
             scope: ProducerEffectScope::SubjectAndOwned,
             minimum_stratum: ResultStructureStratum::Structural,
@@ -496,6 +543,28 @@ impl ProducerEvaluationTable {
         let families = registry.descriptors.len();
         let future_effects = future_cross_subject_effects(registry);
         let future_families: Vec<_> = future_cross_subject_families(registry).collect();
+        let mutable_feature_populations: BTreeSet<_> = registry
+            .descriptors
+            .iter()
+            .filter(|descriptor| descriptor.applicability != ProducerApplicability::Never)
+            .flat_map(|descriptor| {
+                use agq_kerml::properties as p;
+                let mut kinds = Vec::new();
+                if descriptor
+                    .effects
+                    .contains(&ProducerEffect::Scalar(p::FEATURE_DIRECTION))
+                {
+                    kinds.push(crate::FeaturePopulationKind::Parameter);
+                }
+                if descriptor
+                    .effects
+                    .contains(&ProducerEffect::Scalar(p::FEATURE_IS_END))
+                {
+                    kinds.push(crate::FeaturePopulationKind::End);
+                }
+                kinds
+            })
+            .collect();
         let mut blocked = BTreeSet::new();
         let mut pending = VecDeque::new();
         for (i, &subject) in subjects.iter().enumerate() {
@@ -552,7 +621,8 @@ impl ProducerEvaluationTable {
                         let fixed = match read {
                             ProducerRead::Any(id)
                             | ProducerRead::Structural(id)
-                            | ProducerRead::Owned(id, _) => immutable(*id),
+                            | ProducerRead::Owned(id, _)
+                            | ProducerRead::FeaturePopulation(id, _) => immutable(*id),
                             ProducerRead::Property(id, property) => model.element(*id).and_then(|record| record.slot(*property)).is_some_and(|slot| matches!(slot.value(), agq_kernel::value::SlotValue::Scalar(_))) || immutable(*id)
                                 && (model
                                     .element(*id)
@@ -585,6 +655,7 @@ impl ProducerEvaluationTable {
                             ProducerRead::Property(id, _)
                             | ProducerRead::Source(id, _, _)
                             | ProducerRead::Owned(id, _)
+                            | ProducerRead::FeaturePopulation(id, _)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Any(id)
                             | ProducerRead::Requirement(id, _) => {
@@ -636,10 +707,15 @@ impl ProducerEvaluationTable {
                 for reads in readers.values() {
                     for (read, reader) in reads {
                         if future_families.iter().any(|future| {
-                            future
-                                .effects
-                                .iter()
-                                .any(|&effect| descriptor_changes_read(future, effect, read, model))
+                            future.effects.iter().any(|&effect| {
+                                descriptor_changes_read(
+                                    future,
+                                    effect,
+                                    read,
+                                    model,
+                                    &mutable_feature_populations,
+                                )
+                            })
                         }) {
                             if trace && !blocked.contains(reader) {
                                 eprintln!(
@@ -664,11 +740,15 @@ impl ProducerEvaluationTable {
             }
             let mut consume = |reads: &[(ProducerRead, usize)]| {
                 for (read, reader) in reads {
-                    if descriptor
-                        .effects
-                        .iter()
-                        .any(|&effect| descriptor_changes_read(descriptor, effect, read, model))
-                    {
+                    if descriptor.effects.iter().any(|&effect| {
+                        descriptor_changes_read(
+                            descriptor,
+                            effect,
+                            read,
+                            model,
+                            &mutable_feature_populations,
+                        )
+                    }) {
                         if trace && !blocked.contains(reader) {
                             eprintln!(
                                 "closure direct cause {subject:?}/{} -> {:?}/{} read={read:?}",
@@ -1265,9 +1345,41 @@ pub(crate) fn descriptor_changes_read(
     effect: ProducerEffect,
     read: &ProducerRead,
     model: &ModelView,
+    mutable_feature_populations: &BTreeSet<crate::FeaturePopulationKind>,
 ) -> bool {
     if !effect_changes_read(effect, read, model) {
         return false;
+    }
+    if let ProducerRead::FeaturePopulation(_, kind) = read
+        && effect == ProducerEffect::Membership
+    {
+        use agq_kerml::classes as c;
+        let relationship_class = match kind {
+            crate::FeaturePopulationKind::Result => c::RETURN_PARAMETER_MEMBERSHIP,
+            _ => c::FEATURE_MEMBERSHIP,
+        };
+        if descriptor
+            .relationship_classes
+            .as_ref()
+            .is_some_and(|classes| {
+                !classes.iter().any(|&class| {
+                    model
+                        .registry()
+                        .is_subtype(class, relationship_class)
+                        .unwrap_or(false)
+                })
+            })
+        {
+            return false;
+        }
+        if !mutable_feature_populations.contains(kind)
+            && descriptor
+                .feature_populations
+                .as_ref()
+                .is_some_and(|kinds| !kinds.contains(kind))
+        {
+            return false;
+        }
     }
     if !matches!(
         effect,
@@ -1295,6 +1407,19 @@ pub(crate) fn effect_changes_read(
     match read {
         ProducerRead::Global | ProducerRead::Any(_) => true,
         ProducerRead::Requirement(_, requirement) => requirement.requires(effect),
+        ProducerRead::FeaturePopulation(_, kind) => {
+            effect == ProducerEffect::Membership
+                || effect == ProducerEffect::Ownership
+                || match (kind, effect) {
+                    (crate::FeaturePopulationKind::Parameter, ProducerEffect::Scalar(property)) => {
+                        property == agq_kerml::properties::FEATURE_DIRECTION
+                    }
+                    (crate::FeaturePopulationKind::End, ProducerEffect::Scalar(property)) => {
+                        property == agq_kerml::properties::FEATURE_IS_END
+                    }
+                    _ => false,
+                }
+        }
         ProducerRead::Structural(_) | ProducerRead::Inverse => {
             !matches!(effect, ProducerEffect::Scalar(_))
         }

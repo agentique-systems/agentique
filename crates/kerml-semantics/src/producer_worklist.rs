@@ -221,6 +221,7 @@ impl ProducerFamily {
         .into_iter()
         .collect();
         if self == Self::VariableFeaturing {
+            descriptor.feature_populations = Some(BTreeSet::new());
             descriptor.relationship_classes = Some(
                 [c::TYPE_FEATURING, c::FEATURE_MEMBERSHIP, c::REDEFINITION]
                     .into_iter()

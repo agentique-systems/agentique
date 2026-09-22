@@ -1160,6 +1160,173 @@ fn pending_ownership_can_activate_typing_on_a_currently_unowned_subject() {
 }
 
 #[test]
+fn positional_bounds_remain_open_to_future_scalar_producers() {
+    use crate::FeaturePopulationKind as K;
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::CLASSIFIER);
+    let snapshot = f.finish();
+    for kind in [K::Parameter, K::End, K::Result] {
+        for bounded in [false, true] {
+            for future_property in [None, Some(p::FEATURE_DIRECTION), Some(p::FEATURE_IS_END)] {
+                let mut writer = ProducerDescriptor::new(
+                    ACTIVATE,
+                    [ProducerEffect::Membership],
+                    ProducerApplicability::Any,
+                );
+                writer.scope = ProducerEffectScope::SubjectAndOwners;
+                if bounded {
+                    writer.feature_populations = Some(BTreeSet::new());
+                }
+                let mut descriptors = vec![
+                    writer,
+                    ProducerDescriptor::new(
+                        TYPE,
+                        [ProducerEffect::Typing],
+                        ProducerApplicability::Any,
+                    ),
+                ];
+                if let Some(property) = future_property {
+                    descriptors.push(ProducerDescriptor::new(
+                        ProducerFamilyId::new("Fixture.FutureScalar"),
+                        [ProducerEffect::Scalar(property)],
+                        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+                    ));
+                }
+                let registry = ProducerRegistry::new(descriptors).unwrap();
+                let context =
+                    SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+                        .unwrap()
+                        .with_producer_registry_digest(registry.digest())
+                        .unwrap();
+                let mut table = ProducerEvaluationTable::default();
+                for record in snapshot.model().elements() {
+                    table.pending(record.id(), snapshot.model(), &registry);
+                    table
+                        .record(
+                            &[
+                                (
+                                    record.id(),
+                                    ACTIVATE,
+                                    if record.id() == id(1) {
+                                        Completeness::Incomplete
+                                    } else {
+                                        Completeness::Complete
+                                    },
+                                ),
+                                (record.id(), TYPE, Completeness::Complete),
+                            ],
+                            &registry,
+                        )
+                        .unwrap();
+                    table.record_reads(
+                        &[
+                            (record.id(), ACTIVATE, Vec::new().into()),
+                            (
+                                record.id(),
+                                TYPE,
+                                vec![ProducerRead::FeaturePopulation(id(1), kind)].into(),
+                            ),
+                        ],
+                        &registry,
+                    );
+                }
+                let certificate = ProducerClosureCertificate::issue(
+                    snapshot.model(),
+                    context.id(),
+                    &registry,
+                    &table,
+                    |_| false,
+                );
+                let remains_open = !bounded
+                    || matches!((kind, future_property), (K::Parameter, Some(property)) if property == p::FEATURE_DIRECTION)
+                    || matches!((kind, future_property), (K::End, Some(property)) if property == p::FEATURE_IS_END);
+                assert_eq!(
+                    certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
+                    Some(if remains_open {
+                        ProducerEvaluationState::Pending
+                    } else {
+                        ProducerEvaluationState::EvaluatedComplete
+                    }),
+                    "kind={kind:?}, bounded={bounded}, future={future_property:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn empty_positional_bound_rejects_qualifying_or_unknown_members() {
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    f.enumeration(2, p::FEATURE_DIRECTION, "in");
+    let snapshot = f.finish();
+    let direction = snapshot
+        .model()
+        .navigation_slot(id(2), p::FEATURE_DIRECTION)
+        .unwrap()
+        .value()
+        .clone();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let mut descriptor = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Membership],
+        ProducerApplicability::Any,
+    );
+    descriptor.feature_populations = Some(BTreeSet::new());
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    for case in 0..5 {
+        let mut plan = q.plan_result_structure([]);
+        let key = |n| DerivationKey {
+            subject: id(1),
+            rule: RuleId::from_u128(99900),
+            output: OutputKey::from_u128(n),
+        };
+        let mut slots = BTreeMap::new();
+        if case == 1 {
+            slots.insert(p::FEATURE_DIRECTION, direction.clone());
+        }
+        if case == 2 {
+            slots.insert(p::FEATURE_IS_END, SlotValue::Scalar(Value::Boolean(true)));
+        }
+        if case != 4 {
+            plan.add_derived_element(
+                key(1),
+                c::FEATURE,
+                slots,
+                None,
+                &q.canonical_fact_evidence(FactKey::Element(id(1))),
+            )
+            .unwrap();
+        }
+        plan.add_derived_element(
+            key(2),
+            if case == 3 {
+                c::RETURN_PARAMETER_MEMBERSHIP
+            } else {
+                c::FEATURE_MEMBERSHIP
+            },
+            BTreeMap::from([(
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                SlotValue::Ordered(vec![Value::Reference(key(1).element_id())]),
+            )]),
+            Some(id(1)),
+            &q.canonical_fact_evidence(FactKey::Element(id(1))),
+        )
+        .unwrap();
+        assert_eq!(
+            plan.validate_declared_effects(&[id(1)], &registry).is_ok(),
+            case == 0,
+            "case={case}"
+        );
+    }
+}
+
+#[test]
 fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
     let descriptor =
         ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);

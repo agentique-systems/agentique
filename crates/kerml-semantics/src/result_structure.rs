@@ -1780,6 +1780,69 @@ impl ResultStructurePlan<'_> {
             let Some((effect, property)) = effect_role else {
                 continue;
             };
+            let feature_populations = if is(c::FEATURE_MEMBERSHIP) {
+                let members: Vec<_> = record
+                    .slots
+                    .get(&p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
+                    .into_iter()
+                    .flat_map(|slot| slot.values())
+                    .filter_map(|value| match value {
+                        Value::Reference(member) => Some(*member),
+                        _ => None,
+                    })
+                    .collect();
+                if let [member] = members.as_slice() {
+                    let member_class = self
+                        .graph
+                        .records
+                        .get(member)
+                        .map(|record| record.class)
+                        .or_else(|| model.element(*member).map(|record| record.metaclass()));
+                    if member_class.is_some_and(|class| {
+                        model
+                            .registry()
+                            .is_subtype(class, c::FEATURE)
+                            .unwrap_or(false)
+                    }) {
+                        let value = |property| {
+                            self.graph
+                                .contributed_properties
+                                .get(&(*member, property))
+                                .map(|contribution| &contribution.value)
+                                .or_else(|| {
+                                    self.graph
+                                        .records
+                                        .get(member)
+                                        .and_then(|record| record.slots.get(&property))
+                                })
+                                .or_else(|| {
+                                    model
+                                        .navigation_slot(*member, property)
+                                        .map(|slot| slot.value())
+                                })
+                        };
+                        let mut kinds = BTreeSet::new();
+                        if is(c::RETURN_PARAMETER_MEMBERSHIP) {
+                            kinds.insert(crate::FeaturePopulationKind::Result);
+                        } else if value(p::FEATURE_DIRECTION).is_some() {
+                            kinds.insert(crate::FeaturePopulationKind::Parameter);
+                        }
+                        if !matches!(
+                            value(p::FEATURE_IS_END),
+                            Some(SlotValue::Scalar(Value::Boolean(false)))
+                        ) {
+                            kinds.insert(crate::FeaturePopulationKind::End);
+                        }
+                        Some(kinds)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                Some(BTreeSet::new())
+            };
             let source = record
                 .slots
                 .get(&property)
@@ -1817,9 +1880,17 @@ impl ResultStructurePlan<'_> {
             let fresh = model.element(source).is_none();
             let permitted = descriptors.iter().any(|&(subject, descriptor)| {
                 descriptor
-                    .relationship_classes
+                    .feature_populations
                     .as_ref()
-                    .is_none_or(|classes| classes.contains(&record.class))
+                    .is_none_or(|allowed| {
+                        feature_populations
+                            .as_ref()
+                            .is_some_and(|actual| actual.is_subset(allowed))
+                    })
+                    && descriptor
+                        .relationship_classes
+                        .as_ref()
+                        .is_none_or(|classes| classes.contains(&record.class))
                     && ((fresh && descriptor.fresh_effects.contains(&effect))
                         || (descriptor.effects.contains(&effect)
                             && (fresh
