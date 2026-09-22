@@ -2,6 +2,8 @@
 //! through a private cfg(test) constructor. Real-cache integration is separate.
 #[path = "producer_tests.rs"]
 mod producer_tests;
+#[path = "transition_tests.rs"]
+mod transition_tests;
 use super::*;
 use agq_kerml::{classes as kc, properties as kp};
 use agq_kerml_semantics::{Completeness, KerMlQueries, SemanticContext, SemanticOptions};

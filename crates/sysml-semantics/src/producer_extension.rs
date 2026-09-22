@@ -73,6 +73,15 @@ fn contribute(
             &result.evidence,
         )?;
     }
+    for element in result.elements {
+        plan.add_derived_element(
+            element.key,
+            element.metaclass,
+            element.slots,
+            element.owner,
+            &result.evidence,
+        )?;
+    }
     Ok(())
 }
 impl PublicationProducerExtension for SysmlProducerExtension {

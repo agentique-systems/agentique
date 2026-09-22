@@ -15,7 +15,7 @@ use std::{
 };
 
 /// Identity of the implemented SysML query contract, independently of KerML rules.
-pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/2";
+pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/3";
 /// Final SysML 2.0 formal descriptor authority, not a preliminary revision.
 pub const SYSML_METAMODEL_VERSION: &str =
     "SysML/2.0;XMI:caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f";
@@ -283,9 +283,10 @@ impl<'m> SysmlSemanticContext<'m> {
                 "standard SysML bindings graph",
             ));
         }
-        let kerml = kerml.with_semantic_extension_identity(
+        let kerml = kerml.with_naming_extension(
             crate::SYSML_SEMANTIC_CONTEXT_DOMAIN,
             trusted.context_identity_digest(),
+            Arc::new(crate::SysmlNamingExtension),
         )?;
         let id = SysmlSemanticContextId {
             kerml: kerml.id().clone(),
@@ -431,9 +432,10 @@ pub(crate) fn fixture_context<'m>(
     )
     .unwrap();
     let kerml = kerml
-        .with_semantic_extension_identity(
+        .with_naming_extension(
             crate::SYSML_SEMANTIC_CONTEXT_DOMAIN,
             contract.context_identity_digest(),
+            Arc::new(crate::SysmlNamingExtension),
         )
         .unwrap();
     let id = SysmlSemanticContextId {

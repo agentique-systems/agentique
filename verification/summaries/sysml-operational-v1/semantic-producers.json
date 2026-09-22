@@ -227,6 +227,26 @@
     ],
     "full_corpus_run": false
   },
+  "transition_payload_and_naming": {
+    "authority": "Pinned SysML.xmi: checkTransitionUsagePayloadSpecialization; ReferenceUsage, PerformActionUsage, ConstraintUsage and Usage namingFeature operations; deriveEventOccurrenceUsageEventOccurrence",
+    "rule_set": "agq-sysml-query/3",
+    "implementation": [
+      "Second transition input subsets a canonical Feature chain ordered trigger then trigger payload; all identities derive from profile, rule and canonical subject",
+      "Shared naming extension resolves transition payload names, performed action feature targets, requirement constraint feature targets and variant referenced features",
+      "Explicit names retain precedence; fallback and applicable null stay distinct and retain negative ownership/search evidence",
+      "Incomplete trigger structure authorizes no synthesized facts; an existing transitive chain suppresses synthesis"
+    ],
+    "commands": [
+      { "command": "cargo test -p agq-sysml-semantics transition_tests", "exit": 1, "output": "First two attempts:3 passed;1 failed due synthetic ReferenceSubsetting source-property writes; corrected fixture to derive source through canonical ownership" },
+      { "command": "cargo test -p agq-sysml-semantics transition_tests", "exit": 0, "output": "4 passed;0 failed;0.73s" },
+      { "command": "cargo test -p agq-sysml-semantics", "exit": 0, "output": "41 passed;0 failed;3.29s;doc tests passed" },
+      { "command": "cargo clippy -p agq-sysml-semantics --all-targets -- -D warnings", "exit": 0, "output": "Finished dev profile2.45s" },
+      { "command": "cargo fmt -p agq-sysml-semantics -- --check", "exit": 0, "output": "No formatting differences" },
+      { "command": "RUSTDOCFLAGS=-D warnings cargo doc -p agq-sysml-semantics --no-deps", "exit": 0, "output": "Generated documentation;2.77s" }
+    ],
+    "full_corpus_run": false,
+    "publication_status": "Incomplete; this bounded capability adds no authority corrections or acceptance"
+  },
   "reference_refinement_mode": {
     "scope": "Explicit unpublished structural-only SysmlProducerExtension::for_reference_refinement; full new() semantics unchanged",
     "verified": [

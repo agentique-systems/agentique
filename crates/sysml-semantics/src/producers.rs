@@ -52,6 +52,15 @@ pub struct SysmlPropertyProposal {
     pub rule: RuleId,
 }
 
+/// Canonical structural synthesis whose ordered ownership is part of the rule.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SysmlElementProposal {
+    pub key: DerivationKey,
+    pub metaclass: MetaclassId,
+    pub slots: BTreeMap<PropertyId, SlotValue>,
+    pub owner: Option<ElementId>,
+}
+
 /// One normative rule evaluation, including all positive and negative reads.
 /// Incomplete evidence never authorizes any of this result's proposals.
 #[derive(Clone, Debug)]
@@ -60,6 +69,7 @@ pub struct SysmlProducerResult {
     pub evidence: QueryResult<()>,
     pub relationships: Vec<SysmlRelationshipProposal>,
     pub properties: Vec<SysmlPropertyProposal>,
+    pub elements: Vec<SysmlElementProposal>,
 }
 
 /// Per-subject frontier contribution. The shared scheduler owns dirty propagation.
@@ -109,6 +119,7 @@ pub fn sysml_producer_rule_ids(profile: SysmlBaselineProfile) -> BTreeSet<RuleId
             "checkInterfaceUsageBinarySpecialization",
             "checkFlowUsageFlowSpecialization",
             "deriveUsageMayTimeVary",
+            "checkTransitionUsagePayloadSpecialization",
         ])
         .map(|rule| profile.rule_id(rule))
         .collect()
@@ -477,6 +488,12 @@ pub fn plan_sysml_producers(
             result = evaluator.specialize(result, subject, Target::Sysml(R::Flows));
         }
         plan.results.push(result);
+    }
+    if evaluator.is(subject, sc::TRANSITION_USAGE) {
+        plan.results
+            .push(crate::transition::plan_transition_payload(
+                queries, profile, subject,
+            ));
     }
     // A more specific proposed standard edge can already establish a broader
     // requirement through the target's existing ancestry. Retain that proof and
@@ -1053,6 +1070,7 @@ impl Evaluator<'_, '_> {
             evidence,
             relationships: vec![],
             properties: vec![],
+            elements: vec![],
         }
     }
     fn boolean(
@@ -1583,5 +1601,6 @@ pub fn plan_sysml_may_time_vary(
         evidence: answer.map(|_| ()),
         relationships: vec![],
         properties,
+        elements: vec![],
     }
 }

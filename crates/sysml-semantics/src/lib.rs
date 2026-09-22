@@ -13,6 +13,7 @@ mod producer_extension;
 mod producers;
 mod profile;
 mod queries;
+mod transition;
 
 pub use bindings::*;
 pub use context::*;
@@ -21,6 +22,7 @@ pub use producer_extension::*;
 pub use producers::*;
 pub use profile::*;
 pub use queries::*;
+pub use transition::*;
 
 #[cfg(test)]
 mod tests;
