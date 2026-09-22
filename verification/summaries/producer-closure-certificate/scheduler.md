@@ -1,6 +1,6 @@
 # Scheduler-issued producer closure
 
-Implementation source: `28e6b5db7d56af74780e399c584fdf2686fe8902` on the isolated
+Implementation source: `47977a5` on the isolated
 `foundation/producer-closure` branch. This summary records generic closure work;
 it does not establish Systems Library acceptance.
 
@@ -10,6 +10,11 @@ fresh semantic subjects: a new relationship pointing to an existing source is
 not a fresh-source exemption. Registry identity covers the sorted descriptors and
 the explicit requirement/effect mapping. Declarations are trusted implementation
 contracts; batch output checks provide defense in depth, not inferred declarations.
+Optional exact relationship-class and positional member-population bounds refine
+typed reads; absent bounds remain conservative. Future scalar producers reopen
+parameter/end exclusions even before an applicable subject exists. Property
+redefinitions are resolved through the registry; unknown scalar properties remain
+conservative. Pending ownership changes expand ownership-dependent write scopes.
 
 The scheduler retains per-family evaluation status and precise query reads.
 Incomplete or dirty families prevent closure of dependent complete evaluations,
@@ -39,26 +44,29 @@ Verification used Windows, Rust/Cargo 1.92.0, isolated `target/foundation-closur
 
 | Actual command | Result |
 | --- | --- |
-| `cargo test -p agq-kerml-semantics --lib producer_closure_tests -- --nocapture` | Exit 0; 22 passed |
+| `cargo test -p agq-kerml-semantics --lib producer_closure_tests -- --nocapture` at `47977a5` | Exit 0; 28 passed |
 | `cargo test -p agq-kerml-semantics --lib -- --nocapture` at `e039114` | Exit 0; 93 passed, 2 existing scale probes ignored |
-| `cargo fmt --all -- --check` | Exit 0 |
-| `cargo clippy -p agq-kerml-semantics -p agq-sysml-semantics --all-targets --locked --offline -- -D warnings` | Exit 0 |
-| `RUSTDOCFLAGS=-D warnings cargo doc -p agq-kerml-semantics -p agq-sysml-semantics --no-deps --locked --offline` | Exit 0 |
+| `cargo fmt --all -- --check` at `28e6b5d` | Exit 0 |
+| `cargo clippy -p agq-kerml-semantics -p agq-sysml-semantics --all-targets --locked --offline -- -D warnings` at `9125c91` | Exit 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc -p agq-kerml-semantics -p agq-sysml-semantics --no-deps --locked --offline` at `28e6b5d` | Exit 0 |
 
-The 22-test matrix covers delayed producer activation; incomplete/inapplicable
+The 28-test matrix covers delayed producer activation; incomplete/inapplicable
 families; registry and graph mismatch; malformed registration; FIFO, LIFO,
 reversed, partitioned and reference-scan scheduling; varied batches; actual
 negative-proof-consuming output determinism; existing-overlay revalidation;
 ownership-derived chain/reference sources; transitive scalar dependencies;
 arbitrary inverse reads; fresh-source/reownership misuse; subtype populations;
 future cross-subject producers; protected stored reads versus external semantic
-searches; and existing scalar versus absent/collection reads.
+searches; existing scalar versus absent/collection reads; current/future bounded
+relationship classes; strict descendant scopes; pending ownership attachment;
+future scalar projection activation including property aliases; and malformed or
+qualifying membership outputs that violate an empty positional bound.
 
 The synthetic scale fixture has 60,000 subjects and 80 registered families, with
 300,000 applicable evaluations carrying nonempty reads. One incomplete writer
 blocks four otherwise complete readers: 299,995 closed pairs remain. Certificate
 storage is **2,220,208 bytes**; the final focused debug run constructed it in
-**6,945 ms** during concurrent worktree activity. This measures the certificate,
+**6,108 ms** during concurrent worktree activity. This measures the certificate,
 not whole-publication runtime or peak scheduler memory.
 
 Development failures exposed conservative read conflation and obsolete fixture
