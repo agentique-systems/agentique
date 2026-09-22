@@ -1,0 +1,3644 @@
+{
+  "archive_sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+  "authority": {
+    "document": "formal/26-03-02",
+    "metamodel_uri": "https://www.omg.org/spec/SysML/20250201",
+    "specification": "SysML 2.0"
+  },
+  "definition_introducers": 165,
+  "dependencies": [
+    {
+      "resource": "https://www.omg.org/spec/KerML/20250201/Semantic-Library.kpar",
+      "version_constraint": "1.0.0"
+    },
+    {
+      "resource": "https://www.omg.org/spec/KerML/20250201/Data-Type-Library.kpar",
+      "version_constraint": "1.0.0"
+    },
+    {
+      "resource": "https://www.omg.org/spec/KerML/20250201/Function-Library.kpar",
+      "version_constraint": "1.0.0"
+    }
+  ],
+  "document_count": 21,
+  "documents": [
+    {
+      "bytes": 14335,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 18,
+      "document_id": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+      "families": {
+        "action": {
+          "definition_introducers": 18,
+          "usage_keyword_surfaces": 44
+        },
+        "attribute": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        },
+        "occurrence": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 3
+        },
+        "state": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            170,
+            192
+          ],
+          "target": "Base::Anything",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            202,
+            232
+          ],
+          "target": "ScalarValues::Positive",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            242,
+            271
+          ],
+          "target": "ScalarValues::Natural",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            281,
+            312
+          ],
+          "target": "SequenceFunctions::size",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            322,
+            356
+          ],
+          "target": "SequenceFunctions::isEmpty",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            366,
+            397
+          ],
+          "target": "Occurrences::Occurrence",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            407,
+            440
+          ],
+          "target": "Occurrences::HappensWhile",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            450,
+            483
+          ],
+          "target": "Performances::Performance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            493,
+            527
+          ],
+          "target": "Performances::performances",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            537,
+            571
+          ],
+          "target": "Transfers::SendPerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            581,
+            616
+          ],
+          "target": "Transfers::sendPerformances",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            626,
+            662
+          ],
+          "target": "Transfers::AcceptPerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            672,
+            709
+          ],
+          "target": "Transfers::acceptPerformances",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            719,
+            782
+          ],
+          "target": "FeatureReferencingPerformances::FeatureWritePerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            792,
+            837
+          ],
+          "target": "ControlPerformances::MergePerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            847,
+            895
+          ],
+          "target": "ControlPerformances::DecisionPerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            905,
+            951
+          ],
+          "target": "ControlPerformances::IfThenPerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            961,
+            1011
+          ],
+          "target": "ControlPerformances::IfThenElsePerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            1021,
+            1065
+          ],
+          "target": "ControlPerformances::LoopPerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            1075,
+            1128
+          ],
+          "target": "TransitionPerformances::TransitionPerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            1138,
+            1199
+          ],
+          "target": "TransitionPerformances::NonStateTransitionPerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            1209,
+            1243
+          ],
+          "target": "Transfers::MessageTransfer",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            1253,
+            1281
+          ],
+          "target": "Flows::MessageAction",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            1291,
+            1327
+          ],
+          "target": "OccurrenceFunctions::destroy",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 2082
+      },
+      "path": "Systems Library/Actions.sysml",
+      "reference_usage_introducers_without_family_keyword": 8,
+      "sha256": "541e019ff4a827fc5f2139987d2a96f8735e9423d623859fb0e93281371eafb5",
+      "shared_kerml_production_surfaces": {
+        "AsExpression": {
+          "first_byte_range": [
+            2070,
+            2072
+          ],
+          "occurrences": 3
+        },
+        "BindingConnector": {
+          "first_byte_range": [
+            6196,
+            6200
+          ],
+          "occurrences": 4
+        },
+        "Documentation": {
+          "first_byte_range": [
+            36,
+            39
+          ],
+          "occurrences": 61
+        },
+        "FeatureChainSeparator": {
+          "first_byte_range": [
+            2080,
+            2081
+          ],
+          "occurrences": 8
+        },
+        "FeatureValueDefault": {
+          "first_byte_range": [
+            7131,
+            7138
+          ],
+          "occurrences": 4
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            2062,
+            2063
+          ],
+          "occurrences": 7
+        },
+        "Import": {
+          "first_byte_range": [
+            170,
+            176
+          ],
+          "occurrences": 24
+        },
+        "IndexExpression": {
+          "first_byte_range": [
+            13749,
+            13751
+          ],
+          "occurrences": 1
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            1915,
+            1916
+          ],
+          "occurrences": 39
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            181,
+            183
+          ],
+          "occurrences": 28
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            1585,
+            1588
+          ],
+          "occurrences": 17
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            1358,
+            1360
+          ],
+          "occurrences": 46
+        }
+      },
+      "source_revision_id": "9b3045f1-4ad2-539c-89cd-5b709aa0583a",
+      "sysml_extension_production_surfaces": {
+        "ActionSuccession": {
+          "first_byte_range": [
+            6179,
+            6183
+          ],
+          "occurrences": 4
+        },
+        "AssignmentActionUsage": {
+          "first_byte_range": [
+            13647,
+            13653
+          ],
+          "occurrences": 3
+        },
+        "PerformActionUsage": {
+          "first_byte_range": [
+            13768,
+            13775
+          ],
+          "occurrences": 1
+        },
+        "ReferenceUsage": {
+          "first_byte_range": [
+            1561,
+            1564
+          ],
+          "occurrences": 13
+        },
+        "TransitionUsage": {
+          "first_byte_range": [
+            6105,
+            6115
+          ],
+          "occurrences": 1
+        },
+        "WhileLoopActionUsage": {
+          "first_byte_range": [
+            13701,
+            13706
+          ],
+          "occurrences": 1
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 49
+    },
+    {
+      "bytes": 788,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "f4f235c1-75d6-50e9-b3c9-6c791f63eacb",
+      "families": {
+        "allocation": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 1
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            178,
+            200
+          ],
+          "target": "Base::Anything",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            210,
+            232
+          ],
+          "target": "Connections::*",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 107
+      },
+      "path": "Systems Library/Allocations.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            40,
+            43
+          ],
+          "occurrences": 3
+        },
+        "Import": {
+          "first_byte_range": [
+            178,
+            184
+          ],
+          "occurrences": 2
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            665,
+            666
+          ],
+          "occurrences": 1
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            189,
+            191
+          ],
+          "occurrences": 4
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            533,
+            536
+          ],
+          "occurrences": 2
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            261,
+            263
+          ],
+          "occurrences": 2
+        }
+      },
+      "source_revision_id": "8cbe8ab1-054f-5dde-a128-a49657761a16",
+      "sysml_extension_production_surfaces": {},
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 1
+    },
+    {
+      "bytes": 1038,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "bd6e1341-4d9a-598a-ae74-3356c5295541",
+      "families": {
+        "analysis_case": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 3
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            184,
+            216
+          ],
+          "target": "Performances::Evaluation",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            226,
+            259
+          ],
+          "target": "Performances::evaluations",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            269,
+            302
+          ],
+          "target": "Calculations::Calculation",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            312,
+            331
+          ],
+          "target": "Cases::Case",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            341,
+            361
+          ],
+          "target": "Cases::cases",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 167
+      },
+      "path": "Systems Library/AnalysisCases.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "2bb88f61178f2cefd5441600d2d980ed1e1a4ffc5cb7b3ca9207edee5c350f87",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            42,
+            45
+          ],
+          "occurrences": 4
+        },
+        "Import": {
+          "first_byte_range": [
+            184,
+            190
+          ],
+          "occurrences": 5
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            724,
+            725
+          ],
+          "occurrences": 2
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            203,
+            205
+          ],
+          "occurrences": 7
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            621,
+            624
+          ],
+          "occurrences": 2
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            400,
+            402
+          ],
+          "occurrences": 3
+        }
+      },
+      "source_revision_id": "dd9a5d30-638c-5d4f-a95c-ce8699d35e30",
+      "sysml_extension_production_surfaces": {
+        "ReferenceUsage": {
+          "first_byte_range": [
+            588,
+            591
+          ],
+          "occurrences": 1
+        },
+        "SubjectMember": {
+          "first_byte_range": [
+            641,
+            648
+          ],
+          "occurrences": 1
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 3
+    },
+    {
+      "bytes": 626,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 0,
+      "document_id": "d4b0bce6-0650-5ca9-b4c1-123406ee7ad6",
+      "families": {},
+      "imports": [
+        {
+          "byte_range": [
+            172,
+            195
+          ],
+          "target": "Base::DataValue",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            205,
+            229
+          ],
+          "target": "Base::dataValues",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 65
+      },
+      "path": "Systems Library/Attributes.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d",
+      "shared_kerml_production_surfaces": {
+        "AliasMember": {
+          "first_byte_range": [
+            232,
+            237
+          ],
+          "occurrences": 2
+        },
+        "Documentation": {
+          "first_byte_range": [
+            38,
+            41
+          ],
+          "occurrences": 3
+        },
+        "Import": {
+          "first_byte_range": [
+            172,
+            178
+          ],
+          "occurrences": 2
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            183,
+            185
+          ],
+          "occurrences": 2
+        }
+      },
+      "source_revision_id": "e70019a0-e75d-5264-a220-c2b93bda3eb6",
+      "sysml_extension_production_surfaces": {},
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 0
+    },
+    {
+      "bytes": 990,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "1353da88-7307-5076-90eb-0e8137b11bae",
+      "families": {
+        "calculation": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 3
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            180,
+            212
+          ],
+          "target": "Performances::Evaluation",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            222,
+            255
+          ],
+          "target": "Performances::evaluations",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            265,
+            288
+          ],
+          "target": "Actions::Action",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            298,
+            322
+          ],
+          "target": "Actions::actions",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 150
+      },
+      "path": "Systems Library/Calculations.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "19f5c2ac553c0a034550292de6bfa601e6948fc81d5af781b59c940eee2e5f72",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            41,
+            44
+          ],
+          "occurrences": 4
+        },
+        "Import": {
+          "first_byte_range": [
+            180,
+            186
+          ],
+          "occurrences": 4
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            861,
+            862
+          ],
+          "occurrences": 1
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            199,
+            201
+          ],
+          "occurrences": 6
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            611,
+            614
+          ],
+          "occurrences": 1
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            356,
+            358
+          ],
+          "occurrences": 3
+        }
+      },
+      "source_revision_id": "755c5ba2-e10d-5de0-bfbb-3bc11918af9d",
+      "sysml_extension_production_surfaces": {
+        "ReferenceUsage": {
+          "first_byte_range": [
+            584,
+            587
+          ],
+          "occurrences": 1
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 3
+    },
+    {
+      "bytes": 1619,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "e78a99fd-3875-5781-a4ab-4a05b29cf291",
+      "families": {
+        "case": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 3
+        },
+        "part": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            167,
+            189
+          ],
+          "target": "Base::Anything",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            199,
+            237
+          ],
+          "target": "Requirements::RequirementCheck",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            247,
+            280
+          ],
+          "target": "Calculations::Calculation",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            290,
+            324
+          ],
+          "target": "Calculations::calculations",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            334,
+            353
+          ],
+          "target": "Parts::Part",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            363,
+            383
+          ],
+          "target": "Parts::parts",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 260
+      },
+      "path": "Systems Library/Cases.sysml",
+      "reference_usage_introducers_without_family_keyword": 1,
+      "sha256": "2c4c0cbaaa466f9f720ba69af3a019517ca0a7741a561f7880006bae946bf24f",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            34,
+            37
+          ],
+          "occurrences": 8
+        },
+        "FeatureValueDefault": {
+          "first_byte_range": [
+            1152,
+            1159
+          ],
+          "occurrences": 1
+        },
+        "Import": {
+          "first_byte_range": [
+            167,
+            173
+          ],
+          "occurrences": 6
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            645,
+            646
+          ],
+          "occurrences": 6
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            178,
+            180
+          ],
+          "occurrences": 8
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            594,
+            597
+          ],
+          "occurrences": 1
+        },
+        "ReturnParameter": {
+          "first_byte_range": [
+            1183,
+            1189
+          ],
+          "occurrences": 1
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            410,
+            412
+          ],
+          "occurrences": 4
+        }
+      },
+      "source_revision_id": "42377615-7cc1-5968-b880-82a5e91de1fd",
+      "sysml_extension_production_surfaces": {
+        "ObjectiveMember": {
+          "first_byte_range": [
+            990,
+            999
+          ],
+          "occurrences": 1
+        },
+        "ReferenceUsage": {
+          "first_byte_range": [
+            573,
+            576
+          ],
+          "occurrences": 3
+        },
+        "SubjectMember": {
+          "first_byte_range": [
+            622,
+            629
+          ],
+          "occurrences": 2
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 4
+    },
+    {
+      "bytes": 2133,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 2,
+      "document_id": "54160c33-fbae-52a0-8a59-e32ee8a8752f",
+      "families": {
+        "connection": {
+          "definition_introducers": 2,
+          "usage_keyword_surfaces": 2
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            197,
+            219
+          ],
+          "target": "Base::Anything",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            232,
+            263
+          ],
+          "target": "Occurrences::Occurrence",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            276,
+            310
+          ],
+          "target": "Occurrences::HappensDuring",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            323,
+            350
+          ],
+          "target": "Objects::LinkObject",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            363,
+            391
+          ],
+          "target": "Objects::linkObjects",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            404,
+            437
+          ],
+          "target": "Objects::BinaryLinkObject",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            450,
+            484
+          ],
+          "target": "Objects::binaryLinkObjects",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            497,
+            524
+          ],
+          "target": "Transfers::Transfer",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            537,
+            565
+          ],
+          "target": "Transfers::transfers",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            578,
+            609
+          ],
+          "target": "Transfers::FlowTransfer",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            622,
+            654
+          ],
+          "target": "Transfers::flowTransfers",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            667,
+            704
+          ],
+          "target": "Transfers::FlowTransferBefore",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            717,
+            755
+          ],
+          "target": "Transfers::flowTransfersBefore",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            768,
+            797
+          ],
+          "target": "ScalarValues::Natural",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            810,
+            829
+          ],
+          "target": "Parts::Part",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            842,
+            862
+          ],
+          "target": "Parts::parts",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            875,
+            898
+          ],
+          "target": "Actions::Action",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            911,
+            935
+          ],
+          "target": "Actions::actions",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 313
+      },
+      "path": "Systems Library/Connections.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            43,
+            46
+          ],
+          "occurrences": 5
+        },
+        "Import": {
+          "first_byte_range": [
+            197,
+            203
+          ],
+          "occurrences": 18
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            1749,
+            1750
+          ],
+          "occurrences": 2
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            208,
+            210
+          ],
+          "occurrences": 20
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            1602,
+            1605
+          ],
+          "occurrences": 2
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            976,
+            978
+          ],
+          "occurrences": 4
+        }
+      },
+      "source_revision_id": "74287a42-126f-55bb-a6ae-9250a42030ed",
+      "sysml_extension_production_surfaces": {},
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 2
+    },
+    {
+      "bytes": 1263,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "02523915-5c75-5840-9a07-1b2c00b781f1",
+      "families": {
+        "constraint": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 4
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            167,
+            206
+          ],
+          "target": "Performances::BooleanEvaluation",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            216,
+            256
+          ],
+          "target": "Performances::booleanEvaluations",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            266,
+            303
+          ],
+          "target": "Performances::trueEvaluations",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            313,
+            351
+          ],
+          "target": "Performances::falseEvaluations",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 157
+      },
+      "path": "Systems Library/Constraints.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "84dd65984abd0c35c37b75ef5766bfa63c836aa75a1c75a9d3eb5f4230fa8fdd",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            40,
+            43
+          ],
+          "occurrences": 5
+        },
+        "Import": {
+          "first_byte_range": [
+            167,
+            173
+          ],
+          "occurrences": 4
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            704,
+            705
+          ],
+          "occurrences": 1
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            186,
+            188
+          ],
+          "occurrences": 5
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            616,
+            619
+          ],
+          "occurrences": 1
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            395,
+            397
+          ],
+          "occurrences": 4
+        }
+      },
+      "source_revision_id": "2121bd1f-ad90-54c2-92e0-0031519e698d",
+      "sysml_extension_production_surfaces": {
+        "ReferenceUsage": {
+          "first_byte_range": [
+            579,
+            582
+          ],
+          "occurrences": 1
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 4
+    },
+    {
+      "bytes": 4987,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 4,
+      "document_id": "24be0e02-4ed9-5306-aeaa-de836c2f50ce",
+      "families": {
+        "action": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        },
+        "attribute": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 2
+        },
+        "connection": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 2
+        },
+        "flow": {
+          "definition_introducers": 4,
+          "usage_keyword_surfaces": 0
+        },
+        "message": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 3
+        },
+        "occurrence": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 14
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            185,
+            204
+          ],
+          "target": "Links::Link",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            217,
+            248
+          ],
+          "target": "Occurrences::Occurrence",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            261,
+            295
+          ],
+          "target": "Occurrences::HappensDuring",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            308,
+            342
+          ],
+          "target": "Objects::binaryLinkObjects",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            355,
+            382
+          ],
+          "target": "Transfers::Transfer",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            395,
+            423
+          ],
+          "target": "Transfers::transfers",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            436,
+            467
+          ],
+          "target": "Transfers::FlowTransfer",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            480,
+            512
+          ],
+          "target": "Transfers::flowTransfers",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            525,
+            562
+          ],
+          "target": "Transfers::FlowTransferBefore",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            575,
+            613
+          ],
+          "target": "Transfers::flowTransfersBefore",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            626,
+            649
+          ],
+          "target": "Actions::Action",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            662,
+            686
+          ],
+          "target": "Actions::actions",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            699,
+            728
+          ],
+          "target": "ScalarValues::Natural",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 830
+      },
+      "path": "Systems Library/Flows.sysml",
+      "reference_usage_introducers_without_family_keyword": 2,
+      "sha256": "4e65e6a45060d634db8ba16767d7692e7704c62c84b579fdb2e56b18bd0f8a34",
+      "shared_kerml_production_surfaces": {
+        "ConditionalExpression": {
+          "first_byte_range": [
+            2505,
+            2507
+          ],
+          "occurrences": 2
+        },
+        "Documentation": {
+          "first_byte_range": [
+            37,
+            40
+          ],
+          "occurrences": 11
+        },
+        "FeatureChainSeparator": {
+          "first_byte_range": [
+            1802,
+            1803
+          ],
+          "occurrences": 4
+        },
+        "FeatureValueDefault": {
+          "first_byte_range": [
+            1780,
+            1787
+          ],
+          "occurrences": 2
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            1719,
+            1720
+          ],
+          "occurrences": 3
+        },
+        "Import": {
+          "first_byte_range": [
+            185,
+            191
+          ],
+          "occurrences": 13
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            1033,
+            1034
+          ],
+          "occurrences": 16
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            197,
+            199
+          ],
+          "occurrences": 41
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            1506,
+            1509
+          ],
+          "occurrences": 13
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            770,
+            772
+          ],
+          "occurrences": 7
+        }
+      },
+      "source_revision_id": "dcf2d265-4325-5057-a10d-6277aed70aea",
+      "sysml_extension_production_surfaces": {
+        "ActionSuccession": {
+          "first_byte_range": [
+            2711,
+            2715
+          ],
+          "occurrences": 2
+        },
+        "ConnectionUsageConnect": {
+          "first_byte_range": [
+            2340,
+            2347
+          ],
+          "occurrences": 2
+        },
+        "EventOccurrenceUsage": {
+          "first_byte_range": [
+            1747,
+            1763
+          ],
+          "occurrences": 2
+        },
+        "ReferenceUsage": {
+          "first_byte_range": [
+            1021,
+            1024
+          ],
+          "occurrences": 3
+        },
+        "SuccessionAsUsage": {
+          "first_byte_range": [
+            2661,
+            2671
+          ],
+          "occurrences": 2
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 22
+    },
+    {
+      "bytes": 3467,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 3,
+      "document_id": "2a80d641-a037-5a99-b151-18036e3d273e",
+      "families": {
+        "attribute": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        },
+        "calculation": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 0
+        },
+        "interface": {
+          "definition_introducers": 2,
+          "usage_keyword_surfaces": 2
+        },
+        "port": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 4
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            192,
+            223
+          ],
+          "target": "Connections::Connection",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            236,
+            268
+          ],
+          "target": "Connections::connections",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            281,
+            318
+          ],
+          "target": "Connections::BinaryConnection",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            331,
+            369
+          ],
+          "target": "Connections::binaryConnections",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            382,
+            401
+          ],
+          "target": "Ports::Port",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            419,
+            448
+          ],
+          "target": "ScalarValues::Natural",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            461,
+            492
+          ],
+          "target": "SequenceFunctions::size",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            505,
+            543
+          ],
+          "target": "SequenceFunctions::excludingAt",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            556,
+            591
+          ],
+          "target": "ControlFunctions::selectOne",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            609,
+            644
+          ],
+          "target": "SequenceFunctions::notEmpty",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 427
+      },
+      "path": "Systems Library/Interfaces.sysml",
+      "reference_usage_introducers_without_family_keyword": 2,
+      "sha256": "62b5c3c2bc3960e8d25633231c3933a81e422b3a904dc9541b8787113d076c66",
+      "shared_kerml_production_surfaces": {
+        "ArrowExpression": {
+          "first_byte_range": [
+            1044,
+            1046
+          ],
+          "occurrences": 3
+        },
+        "Documentation": {
+          "first_byte_range": [
+            42,
+            45
+          ],
+          "occurrences": 7
+        },
+        "FeatureValueDefault": {
+          "first_byte_range": [
+            2131,
+            2138
+          ],
+          "occurrences": 1
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            1028,
+            1029
+          ],
+          "occurrences": 1
+        },
+        "Import": {
+          "first_byte_range": [
+            192,
+            198
+          ],
+          "occurrences": 10
+        },
+        "IndexExpression": {
+          "first_byte_range": [
+            1065,
+            1067
+          ],
+          "occurrences": 1
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            916,
+            917
+          ],
+          "occurrences": 8
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            210,
+            212
+          ],
+          "occurrences": 14
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            1686,
+            1689
+          ],
+          "occurrences": 5
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            963,
+            965
+          ],
+          "occurrences": 6
+        }
+      },
+      "source_revision_id": "11b745a2-d5c6-5822-98bb-cef89594fa1c",
+      "sysml_extension_production_surfaces": {
+        "ReferenceUsage": {
+          "first_byte_range": [
+            1677,
+            1680
+          ],
+          "occurrences": 4
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 7
+    },
+    {
+      "bytes": 3946,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 2,
+      "document_id": "58deefe8-d1ca-5a88-83d9-efb8b07e074e",
+      "families": {
+        "attribute": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 2
+        },
+        "connection": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 0
+        },
+        "constraint": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 5
+        },
+        "item": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 18
+        },
+        "part": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            166,
+            189
+          ],
+          "target": "Objects::Object",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            199,
+            223
+          ],
+          "target": "Objects::objects",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            233,
+            252
+          ],
+          "target": "Parts::Part",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            262,
+            282
+          ],
+          "target": "Parts::parts",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            292,
+            325
+          ],
+          "target": "Occurrences::HappensWhile",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            335,
+            369
+          ],
+          "target": "Occurrences::JustOutsideOf",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            379,
+            417
+          ],
+          "target": "Objects::StructuredSpaceObject",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            427,
+            463
+          ],
+          "target": "Constraints::ConstraintCheck",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            473,
+            510
+          ],
+          "target": "Constraints::constraintChecks",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            520,
+            557
+          ],
+          "target": "CollectionFunctions::contains",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            567,
+            601
+          ],
+          "target": "SequenceFunctions::isEmpty",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            611,
+            646
+          ],
+          "target": "SequenceFunctions::notEmpty",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            656,
+            691
+          ],
+          "target": "SequenceFunctions::includes",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            701,
+            733
+          ],
+          "target": "SequenceFunctions::union",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            743,
+            775
+          ],
+          "target": "ControlFunctions::forAll",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 763
+      },
+      "path": "Systems Library/Items.sysml",
+      "reference_usage_introducers_without_family_keyword": 1,
+      "sha256": "3a344edb7def2276fa15e410c363531e5098d93bdf33a583418151fa87f538b3",
+      "shared_kerml_production_surfaces": {
+        "ArrowExpression": {
+          "first_byte_range": [
+            2100,
+            2102
+          ],
+          "occurrences": 2
+        },
+        "AsExpression": {
+          "first_byte_range": [
+            1532,
+            1534
+          ],
+          "occurrences": 4
+        },
+        "ConditionalExpression": {
+          "first_byte_range": [
+            1523,
+            1525
+          ],
+          "occurrences": 1
+        },
+        "Documentation": {
+          "first_byte_range": [
+            34,
+            37
+          ],
+          "occurrences": 14
+        },
+        "FeatureChainSeparator": {
+          "first_byte_range": [
+            1540,
+            1541
+          ],
+          "occurrences": 10
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            1516,
+            1517
+          ],
+          "occurrences": 2
+        },
+        "Import": {
+          "first_byte_range": [
+            166,
+            172
+          ],
+          "occurrences": 15
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            1239,
+            1240
+          ],
+          "occurrences": 12
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            180,
+            182
+          ],
+          "occurrences": 16
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            1002,
+            1005
+          ],
+          "occurrences": 13
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            802,
+            804
+          ],
+          "occurrences": 7
+        }
+      },
+      "source_revision_id": "4798e317-3ea6-5532-b02a-24a088bd3632",
+      "sysml_extension_production_surfaces": {
+        "AssertConstraintUsage": {
+          "first_byte_range": [
+            1791,
+            1797
+          ],
+          "occurrences": 4
+        },
+        "ReferenceUsage": {
+          "first_byte_range": [
+            987,
+            990
+          ],
+          "occurrences": 1
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 26
+    },
+    {
+      "bytes": 813,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "ba15f023-7c02-5e13-a9d9-c9698c313654",
+      "families": {
+        "item": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        },
+        "metadata": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 0
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            181,
+            212
+          ],
+          "target": "Metaobjects::Metaobject",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            222,
+            254
+          ],
+          "target": "Metaobjects::metaobjects",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            264,
+            283
+          ],
+          "target": "Items::Item",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            293,
+            313
+          ],
+          "target": "Items::items",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 104
+      },
+      "path": "Systems Library/Metadata.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "6ad7a7857fad81570c84fac73981f8cce5aacab79bee2619644670bb792b2474",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            36,
+            39
+          ],
+          "occurrences": 3
+        },
+        "Import": {
+          "first_byte_range": [
+            181,
+            187
+          ],
+          "occurrences": 4
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            584,
+            585
+          ],
+          "occurrences": 1
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            199,
+            201
+          ],
+          "occurrences": 4
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            352,
+            354
+          ],
+          "occurrences": 2
+        }
+      },
+      "source_revision_id": "8b4e1453-304a-5fdc-8d65-aedc3328e14c",
+      "sysml_extension_production_surfaces": {},
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 1
+    },
+    {
+      "bytes": 1844,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "8c7eb7dd-a3a2-5d0c-bac3-d8d66a69d0a4",
+      "families": {
+        "action": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 2
+        },
+        "part": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 4
+        },
+        "port": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        },
+        "state": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 2
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            161,
+            184
+          ],
+          "target": "Objects::Object",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            194,
+            218
+          ],
+          "target": "Objects::objects",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            228,
+            247
+          ],
+          "target": "Items::Item",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            257,
+            277
+          ],
+          "target": "Items::items",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            287,
+            306
+          ],
+          "target": "Ports::Port",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            316,
+            336
+          ],
+          "target": "Ports::ports",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            346,
+            369
+          ],
+          "target": "Actions::Action",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            379,
+            403
+          ],
+          "target": "Actions::actions",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            413,
+            440
+          ],
+          "target": "States::StateAction",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            450,
+            478
+          ],
+          "target": "States::stateActions",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 372
+      },
+      "path": "Systems Library/Parts.sysml",
+      "reference_usage_introducers_without_family_keyword": 1,
+      "sha256": "ccaaee608c1eb372c47cfdfc011c5f4f48cc5bcca5fb8b2441587ec26fd0fdaa",
+      "shared_kerml_production_surfaces": {
+        "AsExpression": {
+          "first_byte_range": [
+            1266,
+            1268
+          ],
+          "occurrences": 1
+        },
+        "Documentation": {
+          "first_byte_range": [
+            33,
+            36
+          ],
+          "occurrences": 9
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            1259,
+            1260
+          ],
+          "occurrences": 1
+        },
+        "Import": {
+          "first_byte_range": [
+            161,
+            167
+          ],
+          "occurrences": 10
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            815,
+            816
+          ],
+          "occurrences": 6
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            175,
+            177
+          ],
+          "occurrences": 13
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            691,
+            694
+          ],
+          "occurrences": 4
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            505,
+            507
+          ],
+          "occurrences": 7
+        }
+      },
+      "source_revision_id": "35747f82-3b12-56c8-b13f-5328f125aed9",
+      "sysml_extension_production_surfaces": {
+        "ReferenceUsage": {
+          "first_byte_range": [
+            676,
+            679
+          ],
+          "occurrences": 4
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 9
+    },
+    {
+      "bytes": 1522,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "fe2608aa-5aca-541c-b702-893347cd9e9b",
+      "families": {
+        "port": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 3
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            185,
+            208
+          ],
+          "target": "Objects::Object",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            221,
+            245
+          ],
+          "target": "Objects::objects",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 175
+      },
+      "path": "Systems Library/Ports.sysml",
+      "reference_usage_introducers_without_family_keyword": 2,
+      "sha256": "401b2cb745bc0efb9df386d0435bddffa0e23d1eb6511cbe824734169b6a9566",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            37,
+            40
+          ],
+          "occurrences": 6
+        },
+        "FeatureChainSeparator": {
+          "first_byte_range": [
+            1163,
+            1164
+          ],
+          "occurrences": 1
+        },
+        "Import": {
+          "first_byte_range": [
+            185,
+            191
+          ],
+          "occurrences": 2
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            723,
+            724
+          ],
+          "occurrences": 3
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            199,
+            201
+          ],
+          "occurrences": 3
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            668,
+            671
+          ],
+          "occurrences": 2
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            278,
+            280
+          ],
+          "occurrences": 5
+        }
+      },
+      "source_revision_id": "31c26dcf-3911-5b7f-9e4f-39ebfd14318f",
+      "sysml_extension_production_surfaces": {
+        "ReferenceUsage": {
+          "first_byte_range": [
+            653,
+            656
+          ],
+          "occurrences": 3
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 3
+    },
+    {
+      "bytes": 5466,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 8,
+      "document_id": "1eb31772-876d-5715-b642-94c0edac7c4f",
+      "families": {
+        "concern": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 3
+        },
+        "constraint": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 4
+        },
+        "part": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 2
+        },
+        "requirement": {
+          "definition_introducers": 6,
+          "usage_keyword_surfaces": 5
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            165,
+            187
+          ],
+          "target": "Base::Anything",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            197,
+            225
+          ],
+          "target": "ScalarValues::String",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            235,
+            268
+          ],
+          "target": "ControlFunctions::allTrue",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            278,
+            315
+          ],
+          "target": "Constraints::constraintChecks",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            325,
+            370
+          ],
+          "target": "Constraints::assertedConstraintChecks",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            380,
+            424
+          ],
+          "target": "Constraints::negatedConstraintChecks",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            434,
+            453
+          ],
+          "target": "Parts::Part",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            463,
+            483
+          ],
+          "target": "Parts::parts",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            493,
+            516
+          ],
+          "target": "Actions::Action",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            526,
+            555
+          ],
+          "target": "Interfaces::Interface",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            565,
+            599
+          ],
+          "target": "Attributes::AttributeValue",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 639
+      },
+      "path": "Systems Library/Requirements.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "c436a8fe2959b380ee3d8ae7c1c206311aa9c1215d13800b215f9952e1216632",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            41,
+            44
+          ],
+          "occurrences": 21
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            1263,
+            1264
+          ],
+          "occurrences": 1
+        },
+        "Import": {
+          "first_byte_range": [
+            165,
+            171
+          ],
+          "occurrences": 11
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            950,
+            951
+          ],
+          "occurrences": 10
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            176,
+            178
+          ],
+          "occurrences": 13
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            1693,
+            1696
+          ],
+          "occurrences": 4
+        },
+        "ReturnParameter": {
+          "first_byte_range": [
+            1249,
+            1255
+          ],
+          "occurrences": 1
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            957,
+            959
+          ],
+          "occurrences": 15
+        }
+      },
+      "source_revision_id": "98ca0d4c-5494-5ea2-a8c3-a0da8bc440bb",
+      "sysml_extension_production_surfaces": {
+        "ReferenceUsage": {
+          "first_byte_range": [
+            1677,
+            1680
+          ],
+          "occurrences": 4
+        },
+        "SubjectMember": {
+          "first_byte_range": [
+            1726,
+            1733
+          ],
+          "occurrences": 6
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 14
+    },
+    {
+      "bytes": 6115,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 8,
+      "document_id": "fd9aaa5c-751b-52a4-960b-b08ac3ad3b68",
+      "families": {
+        "view": {
+          "definition_introducers": 8,
+          "usage_keyword_surfaces": 0
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            171,
+            187
+          ],
+          "target": "SysML::*",
+          "visibility": "public"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 177
+      },
+      "path": "Systems Library/StandardViewDefinitions.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "b29882b0240e3cc2721b66c6bc9fd1d2d2431a34e80e170cd465911ff8d833a5",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            55,
+            58
+          ],
+          "occurrences": 9
+        },
+        "Import": {
+          "first_byte_range": [
+            171,
+            177
+          ],
+          "occurrences": 1
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            183,
+            185
+          ],
+          "occurrences": 1
+        },
+        "SpecializesKeyword": {
+          "first_byte_range": [
+            1928,
+            1939
+          ],
+          "occurrences": 2
+        }
+      },
+      "source_revision_id": "2201aa1f-388b-5960-8686-b04d717912ad",
+      "sysml_extension_production_surfaces": {},
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 0
+    },
+    {
+      "bytes": 3369,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 2,
+      "document_id": "869ab9ca-e736-5d27-b49c-f697f22b25b9",
+      "families": {
+        "action": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 6
+        },
+        "attribute": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        },
+        "constraint": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        },
+        "state": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 5
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            168,
+            199
+          ],
+          "target": "Occurrences::Occurrence",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            209,
+            252
+          ],
+          "target": "StatePerformances::StatePerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            262,
+            315
+          ],
+          "target": "StatePerformances::StateTransitionPerformance",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            325,
+            348
+          ],
+          "target": "Actions::Action",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            358,
+            391
+          ],
+          "target": "Actions::TransitionAction",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            401,
+            435
+          ],
+          "target": "Actions::transitionActions",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            445,
+            474
+          ],
+          "target": "Actions::AcceptAction",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            484,
+            508
+          ],
+          "target": "Actions::actions",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            518,
+            553
+          ],
+          "target": "SequenceFunctions::notEmpty",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            563,
+            594
+          ],
+          "target": "SequenceFunctions::size",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 505
+      },
+      "path": "Systems Library/States.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "9524f4c6d4dd10550faf6692dfdef3975e9e7f8514368e92032e8a17199f4980",
+      "shared_kerml_production_surfaces": {
+        "BindingConnector": {
+          "first_byte_range": [
+            3143,
+            3147
+          ],
+          "occurrences": 2
+        },
+        "Documentation": {
+          "first_byte_range": [
+            35,
+            38
+          ],
+          "occurrences": 9
+        },
+        "FeatureChainSeparator": {
+          "first_byte_range": [
+            3166,
+            3167
+          ],
+          "occurrences": 2
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            3156,
+            3157
+          ],
+          "occurrences": 2
+        },
+        "Import": {
+          "first_byte_range": [
+            168,
+            174
+          ],
+          "occurrences": 10
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            1538,
+            1539
+          ],
+          "occurrences": 8
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            186,
+            188
+          ],
+          "occurrences": 18
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            828,
+            831
+          ],
+          "occurrences": 10
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            629,
+            631
+          ],
+          "occurrences": 7
+        }
+      },
+      "source_revision_id": "5055a07b-7cb9-5a5c-a7a1-62e6bd2c76ce",
+      "sysml_extension_production_surfaces": {
+        "ActionSuccession": {
+          "first_byte_range": [
+            2385,
+            2389
+          ],
+          "occurrences": 1
+        },
+        "AssertConstraintUsage": {
+          "first_byte_range": [
+            2538,
+            2544
+          ],
+          "occurrences": 1
+        },
+        "ReferenceUsage": {
+          "first_byte_range": [
+            966,
+            969
+          ],
+          "occurrences": 3
+        },
+        "StateDoMember": {
+          "first_byte_range": [
+            843,
+            845
+          ],
+          "occurrences": 1
+        },
+        "StateEntryMember": {
+          "first_byte_range": [
+            803,
+            808
+          ],
+          "occurrences": 1
+        },
+        "StateExitMember": {
+          "first_byte_range": [
+            882,
+            886
+          ],
+          "occurrences": 1
+        },
+        "SuccessionAsUsage": {
+          "first_byte_range": [
+            2329,
+            2339
+          ],
+          "occurrences": 1
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 13
+    },
+    {
+      "bytes": 24613,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 98,
+      "document_id": "325305b9-b018-5559-acd5-8592e2e60015",
+      "families": {
+        "attribute": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 26
+        },
+        "enumeration": {
+          "definition_introducers": 5,
+          "usage_keyword_surfaces": 13
+        },
+        "item": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 192
+        },
+        "metadata": {
+          "definition_introducers": 93,
+          "usage_keyword_surfaces": 0
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            141,
+            164
+          ],
+          "target": "ScalarValues::*",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            173,
+            191
+          ],
+          "target": "Systems::*",
+          "visibility": "public"
+        },
+        {
+          "byte_range": [
+            222,
+            246
+          ],
+          "target": "KerML::Kernel::*",
+          "visibility": "public"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 6245
+      },
+      "path": "Systems Library/SysML.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "badb9f49bd280d0273a5f55fd6572fe2b332df6c8f3888415c04589fb314b900",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            34,
+            37
+          ],
+          "occurrences": 1
+        },
+        "Import": {
+          "first_byte_range": [
+            141,
+            147
+          ],
+          "occurrences": 3
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            358,
+            359
+          ],
+          "occurrences": 218
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 2
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            160,
+            162
+          ],
+          "occurrences": 4
+        },
+        "RedefinesKeyword": {
+          "first_byte_range": [
+            816,
+            825
+          ],
+          "occurrences": 60
+        },
+        "SpecializesKeyword": {
+          "first_byte_range": [
+            283,
+            294
+          ],
+          "occurrences": 93
+        },
+        "SubsetsKeyword": {
+          "first_byte_range": [
+            426,
+            433
+          ],
+          "occurrences": 107
+        }
+      },
+      "source_revision_id": "dba98901-61ea-5d47-bae5-25a93d3c548a",
+      "sysml_extension_production_surfaces": {
+        "EnumerationDefinition": {
+          "first_byte_range": [
+            13106,
+            13114
+          ],
+          "occurrences": 5
+        },
+        "EnumerationUsage": {
+          "first_byte_range": [
+            13106,
+            13110
+          ],
+          "occurrences": 18
+        },
+        "ReferenceUsage": {
+          "first_byte_range": [
+            320,
+            323
+          ],
+          "occurrences": 179
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 231
+    },
+    {
+      "bytes": 1271,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 1,
+      "document_id": "ce273c67-cc1f-5cec-a3b0-847c964cdba3",
+      "families": {
+        "use_case": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 6
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            171,
+            190
+          ],
+          "target": "Cases::Case",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            200,
+            220
+          ],
+          "target": "Cases::cases",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 235
+      },
+      "path": "Systems Library/UseCases.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "242e51944c32032215d76a9ff1fd967d8ba36efffd9d78da1c423a5b102a2cf6",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            37,
+            40
+          ],
+          "occurrences": 7
+        },
+        "Import": {
+          "first_byte_range": [
+            171,
+            177
+          ],
+          "occurrences": 2
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            782,
+            783
+          ],
+          "occurrences": 3
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            183,
+            185
+          ],
+          "occurrences": 5
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            441,
+            444
+          ],
+          "occurrences": 5
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            245,
+            247
+          ],
+          "occurrences": 4
+        }
+      },
+      "source_revision_id": "df1d0aed-2b85-586a-9624-24afc518d770",
+      "sysml_extension_production_surfaces": {
+        "ObjectiveMember": {
+          "first_byte_range": [
+            490,
+            499
+          ],
+          "occurrences": 1
+        },
+        "ReferenceUsage": {
+          "first_byte_range": [
+            413,
+            416
+          ],
+          "occurrences": 4
+        },
+        "SubjectMember": {
+          "first_byte_range": [
+            459,
+            466
+          ],
+          "occurrences": 1
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 6
+    },
+    {
+      "bytes": 2488,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 5,
+      "document_id": "9e3730df-148c-5a36-9195-a23cc1b824ea",
+      "families": {
+        "attribute": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 3
+        },
+        "calculation": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 0
+        },
+        "enumeration": {
+          "definition_introducers": 2,
+          "usage_keyword_surfaces": 0
+        },
+        "metadata": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 0
+        },
+        "requirement": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 2
+        },
+        "verification_case": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 3
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            192,
+            211
+          ],
+          "target": "Cases::Case",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            221,
+            241
+          ],
+          "target": "Cases::cases",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            251,
+            289
+          ],
+          "target": "Requirements::RequirementCheck",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            299,
+            328
+          ],
+          "target": "ScalarValues::Boolean",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 383
+      },
+      "path": "Systems Library/VerificationCases.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "dbee7255e16df9c5cf0bded96c43cb60b1e5026b6973c5fb1176316902ac47b9",
+      "shared_kerml_production_surfaces": {
+        "ConditionalExpression": {
+          "first_byte_range": [
+            2014,
+            2016
+          ],
+          "occurrences": 1
+        },
+        "Documentation": {
+          "first_byte_range": [
+            46,
+            49
+          ],
+          "occurrences": 10
+        },
+        "FeatureChainSeparator": {
+          "first_byte_range": [
+            1077,
+            1078
+          ],
+          "occurrences": 1
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            761,
+            762
+          ],
+          "occurrences": 3
+        },
+        "Import": {
+          "first_byte_range": [
+            192,
+            198
+          ],
+          "occurrences": 4
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            849,
+            850
+          ],
+          "occurrences": 5
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            204,
+            206
+          ],
+          "occurrences": 10
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            618,
+            621
+          ],
+          "occurrences": 4
+        },
+        "ReturnParameter": {
+          "first_byte_range": [
+            669,
+            675
+          ],
+          "occurrences": 2
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            375,
+            377
+          ],
+          "occurrences": 4
+        }
+      },
+      "source_revision_id": "25bbf70f-46e4-5a62-bc30-e552db458350",
+      "sysml_extension_production_surfaces": {
+        "EnumerationDefinition": {
+          "first_byte_range": [
+            1623,
+            1631
+          ],
+          "occurrences": 2
+        },
+        "EnumerationUsage": {
+          "first_byte_range": [
+            1623,
+            1627
+          ],
+          "occurrences": 2
+        },
+        "ObjectiveMember": {
+          "first_byte_range": [
+            715,
+            724
+          ],
+          "occurrences": 1
+        },
+        "ReferenceUsage": {
+          "first_byte_range": [
+            577,
+            580
+          ],
+          "occurrences": 2
+        },
+        "SubjectMember": {
+          "first_byte_range": [
+            638,
+            645
+          ],
+          "occurrences": 2
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 8
+    },
+    {
+      "bytes": 3845,
+      "canonical_lowering_status": "not-started",
+      "definition_introducers": 6,
+      "document_id": "78215481-452f-5123-9500-4ec748094e73",
+      "families": {
+        "rendering": {
+          "definition_introducers": 4,
+          "usage_keyword_surfaces": 10
+        },
+        "requirement": {
+          "definition_introducers": 0,
+          "usage_keyword_surfaces": 1
+        },
+        "view": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 4
+        },
+        "viewpoint": {
+          "definition_introducers": 1,
+          "usage_keyword_surfaces": 3
+        }
+      },
+      "imports": [
+        {
+          "byte_range": [
+            180,
+            199
+          ],
+          "target": "Parts::Part",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            209,
+            229
+          ],
+          "target": "Parts::parts",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            239,
+            277
+          ],
+          "target": "Requirements::RequirementCheck",
+          "visibility": "private"
+        },
+        {
+          "byte_range": [
+            287,
+            326
+          ],
+          "target": "Requirements::requirementChecks",
+          "visibility": "private"
+        }
+      ],
+      "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+      "lossless_lexing": {
+        "exact_byte_preservation": true,
+        "lexical_diagnostics": 0,
+        "tokens": 591
+      },
+      "path": "Systems Library/Views.sysml",
+      "reference_usage_introducers_without_family_keyword": 0,
+      "sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
+      "shared_kerml_production_surfaces": {
+        "Documentation": {
+          "first_byte_range": [
+            34,
+            37
+          ],
+          "occurrences": 20
+        },
+        "FeatureChainSeparator": {
+          "first_byte_range": [
+            3825,
+            3826
+          ],
+          "occurrences": 1
+        },
+        "FeatureValueEquals": {
+          "first_byte_range": [
+            3813,
+            3814
+          ],
+          "occurrences": 1
+        },
+        "Import": {
+          "first_byte_range": [
+            180,
+            186
+          ],
+          "occurrences": 4
+        },
+        "MultiplicityOpen": {
+          "first_byte_range": [
+            429,
+            430
+          ],
+          "occurrences": 15
+        },
+        "Package": {
+          "first_byte_range": [
+            17,
+            24
+          ],
+          "occurrences": 1
+        },
+        "QualifiedNameSeparator": {
+          "first_byte_range": [
+            192,
+            194
+          ],
+          "occurrences": 5
+        },
+        "RedefinesSymbol": {
+          "first_byte_range": [
+            374,
+            377
+          ],
+          "occurrences": 6
+        },
+        "SpecializesSymbol": {
+          "first_byte_range": [
+            353,
+            355
+          ],
+          "occurrences": 16
+        }
+      },
+      "source_revision_id": "d4d50c13-f40e-58c0-b5ae-414e479ffbd2",
+      "sysml_extension_production_surfaces": {
+        "ReferenceUsage": {
+          "first_byte_range": [
+            365,
+            368
+          ],
+          "occurrences": 7
+        },
+        "RequireConstraintMember": {
+          "first_byte_range": [
+            984,
+            991
+          ],
+          "occurrences": 1
+        },
+        "SatisfyRequirementUsage": {
+          "first_byte_range": [
+            846,
+            853
+          ],
+          "occurrences": 1
+        },
+        "SubjectMember": {
+          "first_byte_range": [
+            1384,
+            1391
+          ],
+          "occurrences": 1
+        }
+      },
+      "sysml_grammar_status": "not-evaluated-no-sysml-frontend",
+      "usage_family_keyword_surfaces": 18
+    }
+  ],
+  "family_categories": [
+    "attribute",
+    "part",
+    "item",
+    "port",
+    "connection",
+    "interface",
+    "flow",
+    "message",
+    "action",
+    "state",
+    "requirement",
+    "constraint",
+    "calculation",
+    "analysis_case",
+    "verification_case",
+    "use_case",
+    "case",
+    "metadata",
+    "enumeration",
+    "occurrence",
+    "allocation",
+    "concern",
+    "view",
+    "viewpoint",
+    "rendering"
+  ],
+  "format": "agentique-sysml-systems-source-inventory/1",
+  "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+  "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "metadata_findings": [
+    "RetainedOtherEntry { library: LibraryId(143896951322811418632148777743477558037), path: \"Systems Library/.DS_Store\" }",
+    "RetainedOtherEntry { library: LibraryId(143896951322811418632148777743477558037), path: \"__MACOSX/Systems Library/._.DS_Store\" }",
+    "MissingIndexTarget { library: LibraryId(143896951322811418632148777743477558037), name: \"AnalysisCases\", target: \"Systems Library/AnalysisCase.sysml\" }",
+    "UnindexedDocument { library: LibraryId(143896951322811418632148777743477558037), path: \"Systems Library/AnalysisCases.sysml\" }"
+  ],
+  "method": "Exact verified original KPAR bytes; shared agq-kerml-syntax lossless lexer; keyword/symbol surfaces excluding quoted names, strings, comments and notes. Production names identify required grammar work, not recognized productions or canonical records. A ref prefix on a family usage is not another Usage. Counts of enum, event, requirement and action surfaces can overlap specialized constructs. Omitted family/surface entries have zero occurrences. Zero means absent lexical evidence, not an implemented semantic rule.",
+  "project_version": "2.0.0",
+  "resource": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+  "source_bytes": 86538,
+  "sysml_documents_parsed": 0,
+  "sysml_semantics_started": false,
+  "usage_family_keyword_surfaces": 424
+}

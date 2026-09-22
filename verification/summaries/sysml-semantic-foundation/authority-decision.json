@@ -1,0 +1,61 @@
+{
+  "format": "agentique-sysml-foundation-authority/1",
+  "status": "preparation-only-no-new-standard-correction-adopted",
+  "specification": {
+    "name": "SysML",
+    "version": "2.0",
+    "document": "formal/2026-03-02",
+    "path": "SysML.pdf",
+    "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a",
+    "sections_inspected": [
+      "8.1 metamodel composition",
+      "8.2.2.1.1 EBNF conventions",
+      "8.2.2.1.2 shared lexical structure and distinct reserved words",
+      "8.2.2.2-4 common element and annotation productions",
+      "8.2.2.18.3-26.4 transition, calculation, constraint, requirement, case and view productions"
+    ],
+    "preliminary_2_1_authority_used": false
+  },
+  "abstract_syntax": {
+    "path": "standards/normative/sysml-2.0/SysML.xmi",
+    "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+    "existing_inventory": "standards/sysml-semantic-coverage.json",
+    "class_count": 93,
+    "new_rule_interpretations": []
+  },
+  "source": {
+    "path": "standards/artifacts/Systems-Library.kpar",
+    "resource": "https://www.omg.org/spec/SysML/20250201/Systems-Library.kpar",
+    "omg_file_id": "ptc/25-04-24",
+    "sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+    "bytes": 27577,
+    "project_version": "2.0.0",
+    "content_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+    "april_2026_corrected_release_used": false,
+    "original_bytes_modified": false
+  },
+  "retained_findings": [
+    {
+      "id": "SYSTEMS-INDEX-ANALYSISCASES",
+      "scope": "archive metadata",
+      "fact": "The AnalysisCases index targets absent AnalysisCase.sysml; the actual original entry is AnalysisCases.sysml.",
+      "disposition": "Existing verifier diagnoses MissingIndexTarget and UnindexedDocument. Inventory uses verified actual entries and preserves the original metadata. No source correction."
+    },
+    {
+      "id": "SYSTEMS-GRAMMAR-SATISFY-REQUIREMENT",
+      "scope": "future parser authority review",
+      "formal_section": "8.2.2.21.2, printed page 189, PDF page 221 (one-based)",
+      "formal_production": "SatisfyRequirementUsage",
+      "printed_prefix": "OccurrenceUsagePrefix 'assert' ( isNegated ?= 'not' ) 'satisfy'",
+      "source_document": "Systems Library/Views.sysml",
+      "source_sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
+      "source_byte_range": [846, 896],
+      "source_text": "satisfy requirement viewpointConformance by that {",
+      "disposition": "The source omits the printed assert terminal. Retain as a specific grammar compatibility review item before claiming this document parsed. No permissive recovery, source rewriting or operational correction adopted. Not a KerML publication blocker."
+    }
+  ],
+  "kerML_semantic_dependency": {
+    "status": "not-attached",
+    "reason": "Preparation runs independently while canonical KerML acceptance is pending. Only the lead can establish K10-K13 acceptance."
+  }
+}

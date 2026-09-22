@@ -1,0 +1,34 @@
+{
+  "format": "agentique-sysml-foundation-capabilities/1",
+  "status": "SYSML SYSTEMS LIBRARY FOUNDATION INCOMPLETE",
+  "scope": "S0-S5 preparation; no SysML production semantics enabled",
+  "capabilities": {
+    "pinned_systems_archive_verified": "Complete",
+    "document_identity_and_import_inventory": "Complete for all 21 original entries",
+    "shared_lossless_lexer": "Complete for all 21 original entries",
+    "source_construct_family_inventory": "Complete lexical inventory; not recognized grammar productions",
+    "production_level_inventory": "Incomplete: SysML grammar recognizer required",
+    "sysml_grammar_acceptance": "NotStarted: 0/21 documents accepted",
+    "canonical_sysml_lowering": "NotStarted",
+    "accepted_kerML_dependency": "NotAttached",
+    "mixed_project_resolution": "NotStarted for SysML",
+    "sysml_semantic_crate": "NotStarted",
+    "definition_usage_semantics": "NotStarted",
+    "attribute_part_item_semantics": "NotStarted",
+    "port_connection_semantics": "NotStarted",
+    "standard_sysml_bindings": "NotStarted",
+    "authored_vertical": "NotStarted",
+    "programmatic_textual_equivalence": "NotStarted",
+    "systems_library_candidate": "NotStarted",
+    "systems_library_publication": "NotStarted"
+  },
+  "specific_gaps": [
+    "Accepted canonical KerML publication and authored integration prerequisite",
+    "Shared grammar parameterization with final SysML 2.0 reserved words and extension productions",
+    "Published SatisfyRequirementUsage prefix versus Views.sysml source witness requires explicit review",
+    "Profile-aware combined SysML/KerML descriptors and parser-independent accepted dependency contract",
+    "Canonical SysML construction, pending references and Systems candidate elaboration",
+    "Evidence-bearing Definition/Usage and Part/Item/Attribute queries over the shared graph"
+  ],
+  "generation_1_obligations": "unchanged"
+}
