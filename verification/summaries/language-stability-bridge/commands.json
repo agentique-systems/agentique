@@ -1,0 +1,308 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "0fbdf3ee19788a260b99d89e71dbd28f432d8243",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.23,
+      "output": "verification/generated/language-stability-bridge/frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "0fbdf3ee19788a260b99d89e71dbd28f432d8243",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "3c6f6c5c5d4e5865995cf5b1ae56479077b3cbc99db66a59af56ac558c538a31",
+      "duration_seconds": 2.23,
+      "output": "verification/generated/language-stability-bridge/frontend-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "0fbdf3ee19788a260b99d89e71dbd28f432d8243",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "79732ee7aad2566378a7fc098ce933247dd1c84e34fc11577dd6cc0b507ef4c3",
+      "duration_seconds": 0.64,
+      "output": "verification/generated/language-stability-bridge/node-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "standards-integrity",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "0fbdf3ee19788a260b99d89e71dbd28f432d8243",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "69ea3f16914452209eb24bf0c79722cc78a7e7c6cbe16634d8a23da0ae4b2966",
+      "duration_seconds": 0.59,
+      "output": "verification/generated/language-stability-bridge/standards-integrity.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "actions-baseline-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0fbdf3ee19788a260b99d89e71dbd28f432d8243",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "1fef87096ed0670215a08ae82ddc3f3b05ee71373558addade60c53a1c88763a",
+      "duration_seconds": 356.59,
+      "output": "verification/generated/language-stability-bridge/actions-baseline-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "bridge-text-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "dc9bb91d47850a45e6bc4eb6d59ce9482f2a1ba1",
+      "working_changes_sha256": "54ec5cf32f1cc7882620f42e80a0127bb8e1a7add3d96e6be93898aae1375616",
+      "output_sha256": "6367a89de5f5abe907170393808fb3bbb1412dc4404e4205ecb4ee6f09d31a95",
+      "duration_seconds": 29.97,
+      "output": "verification/generated/language-stability-bridge/bridge-text-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "actions-integrated-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "48034cfb0d6e92dff8e22427b78703ae0fed90bf",
+      "working_changes_sha256": "bf49a5c3f7baeb8bdb14b369b2d9515a718ca094d858173a98e2868a656bd02a",
+      "output_sha256": "4b8965dd444abed0c2f236a5ddce6b2b8dff20ea810424a4dc744e4eb5fb54f5",
+      "duration_seconds": 120.02,
+      "output": "verification/generated/language-stability-bridge/actions-integrated-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "provider-integrated-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e15692af4376829ac0cc81eee4ad5800d85ce1f3",
+      "working_changes_sha256": "1ab498bc68c16f7faf8bb6f3ca7eb01a448e44372cf3817dc25c156676a13484",
+      "output_sha256": "e839451fbce87ba5997a25342ab37255b0fa70b6f63e4bfcbd5f07d2257e8725",
+      "duration_seconds": 99.02,
+      "output": "verification/generated/language-stability-bridge/provider-integrated-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "kerml-grammar-stale",
+      "command": [
+        "python",
+        "tools/kerml-grammar/generate.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "ade18f8730e3669c8697fa2fec174369114585d4",
+      "working_changes_sha256": "1ab498bc68c16f7faf8bb6f3ca7eb01a448e44372cf3817dc25c156676a13484",
+      "output_sha256": "f3a599a056523d9072af76571f2157b7cc271a5afa80cad15b482498f51df7c6",
+      "duration_seconds": 0.23,
+      "output": "verification/generated/language-stability-bridge/kerml-grammar-stale.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-grammar-stale",
+      "command": [
+        "python",
+        "tools/sysml-grammar/generate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "ade18f8730e3669c8697fa2fec174369114585d4",
+      "working_changes_sha256": "1ab498bc68c16f7faf8bb6f3ca7eb01a448e44372cf3817dc25c156676a13484",
+      "output_sha256": "29106a270ab4b808a4289843a999b02e9f3950df2ba0954fb1a90611cea9d2b4",
+      "duration_seconds": 0.45,
+      "output": "verification/generated/language-stability-bridge/sysml-grammar-stale.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "actions-provider-closure-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "89b959a4f8f97c6bf6e7ecc92b25a287817b76f7",
+      "working_changes_sha256": "1ab498bc68c16f7faf8bb6f3ca7eb01a448e44372cf3817dc25c156676a13484",
+      "output_sha256": "8f75dc1f49dbaad402c2d9d271db4146d9bb12107a05e3617f34ff3a2003960d",
+      "duration_seconds": 103.11,
+      "output": "verification/generated/language-stability-bridge/actions-provider-closure-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "metamodel-stale",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "3ae046e5fe720f7b3636d18beae6ccec6a7f3bdafa7ac94fa55b324b85fb0571",
+      "output_sha256": "1fbce1d141fb18cb4413205e311be155c43e2418e0d54329d179f4a2b47d9349",
+      "duration_seconds": 10.36,
+      "output": "verification/generated/language-stability-bridge/metamodel-stale.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "kerml-runtime-gate",
+      "command": [
+        "target/foundation-integration/debug/metamodel-gen.exe",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "metamodel-gen: unknown argument --version",
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "3ae046e5fe720f7b3636d18beae6ccec6a7f3bdafa7ac94fa55b324b85fb0571",
+      "output_sha256": "9987e0d2e5fc0c7f170046fc2b3ac6115b62adca548b42ca48dc303268a4cddf",
+      "duration_seconds": 1.27,
+      "output": "verification/generated/language-stability-bridge/kerml-runtime-gate.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-runtime-gate",
+      "command": [
+        "target/foundation-integration/debug/metamodel-gen.exe",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "metamodel-gen: unknown argument --version",
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "3ae046e5fe720f7b3636d18beae6ccec6a7f3bdafa7ac94fa55b324b85fb0571",
+      "output_sha256": "dc65bf266dbda4e5ebdd4e2bd1f161e8d3b9091d5c98677221d425a5c484fbb9",
+      "duration_seconds": 2.8,
+      "output": "verification/generated/language-stability-bridge/sysml-runtime-gate.log",
+      "environment_overrides": {}
+    }
+  ]
+}
