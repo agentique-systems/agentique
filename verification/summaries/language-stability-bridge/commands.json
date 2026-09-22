@@ -303,6 +303,88 @@
       "duration_seconds": 2.8,
       "output": "verification/generated/language-stability-bridge/sysml-runtime-gate.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "integrated-closure-text-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "3ae046e5fe720f7b3636d18beae6ccec6a7f3bdafa7ac94fa55b324b85fb0571",
+      "output_sha256": "d5e522fc5469a802b8631e483bf89763ccbdcb4864b36fcbb4b6789bac0a6493",
+      "duration_seconds": 64.75,
+      "output": "verification/generated/language-stability-bridge/integrated-closure-text-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "closure-report-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "6e9902c86ffd5c943e5caf06d7b0c32beb543075",
+      "working_changes_sha256": "c3b98fbd81a228c20863bad7e665967feca04dc5cedd843fa22d22d1ade3a8bc",
+      "output_sha256": "e2245ed9f4ba0f9535c3731518985bd32e46aa6d59a79cf0d7552f020a227db7",
+      "duration_seconds": 8.38,
+      "output": "verification/generated/language-stability-bridge/closure-report-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "closure-report-check-fixed",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "6e9902c86ffd5c943e5caf06d7b0c32beb543075",
+      "working_changes_sha256": "bc1787f65b5bbe10aa6b78bd2effea0df9232004207ca5d2dd767724a98657b3",
+      "output_sha256": "6f25d53295f024a0a32947c6fc241e42768e905ebf0f1536ccf441b0e290f543",
+      "duration_seconds": 0.39,
+      "output": "verification/generated/language-stability-bridge/closure-report-check-fixed.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }

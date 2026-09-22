@@ -262,6 +262,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .production()
         .map(|production| production.authority_conflicts())
         .unwrap_or_default();
+    // Bounded explanation for actual final diagnostic subjects. This keeps
+    // pending writers distinct from completed evaluations whose upstream
+    // requirements remain open, without serializing the full certificate.
+    let registry = agq_kerml_semantics::ProducerRegistry::new(
+        agq_kerml_semantics::ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(accepted.profile()))
+            .chain(agq_sysml_semantics::sysml_producer_descriptors()),
+    )
+    .map_err(|family| format!("duplicate producer family: {}", family.name()))?;
+    let diagnostic_subjects: BTreeSet<_> = candidate
+        .production()
+        .and_then(|production| production.stages.last())
+        .into_iter()
+        .flat_map(|stage| {
+            stage
+                .diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.subject)
+        })
+        .collect();
+    let closure_explanations: Vec<_> = draft.producer_closure().into_iter().flat_map(|certificate| {
+        diagnostic_subjects.iter().map(|subject| json!({
+            "subject":subject,
+            "requirements":agq_kerml_semantics::SemanticClosureRequirement::ALL.into_iter().map(|requirement|json!({
+                "requirement":format!("{requirement:?}"),
+                "closed":certificate.is_closed(*subject,requirement),
+                "source":certificate.closure_source(*subject,requirement).map(|source|format!("{source:?}")),
+            })).collect::<Vec<_>>(),
+            "evaluations":registry.descriptors().iter().enumerate().filter_map(|(index,descriptor)| {
+                let state=certificate.evaluation(*subject,index)?;
+                (state != agq_kerml_semantics::ProducerEvaluationState::Inapplicable).then(||json!({
+                    "family":descriptor.id.name(),"state":format!("{state:?}"),
+                    "scope":format!("{:?}",descriptor.scope),"effects":format!("{:?}",descriptor.effects),
+                }))
+            }).collect::<Vec<_>>(),
+        }))
+    }).collect();
     let documents: Vec<_> = candidate.documents().iter().map(|document| {
         let reference_counts = document_counts.get(&document.document).cloned().unwrap_or_default();
         let reference_total: usize = reference_counts.values().sum();
@@ -306,6 +344,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "retained_evaluations":production.retained_closure_evaluations,
             "reopened_evaluations":production.reopened_closure_evaluations,
         })),
+        "closure_explanations":closure_explanations,
         "local_elements":model.elements().filter(|r|accepted.overlay().model().element(r.id()).is_none()).count(),
         "mandatory_references":{"total":draft.references().len(),"counts":counts,"failures":failures},
         "authority_targets":authority,
