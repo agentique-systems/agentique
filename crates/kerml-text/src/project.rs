@@ -195,6 +195,12 @@ enum ProjectModel {
     SysMl(crate::sysml::SourceModel),
 }
 impl ProjectModel {
+    fn semantic_model(&self) -> &agq_kernel::ModelView {
+        match self {
+            Self::KerMl(model) => model.snapshot().model(),
+            Self::SysMl(model) => model.semantic_model(),
+        }
+    }
     fn snapshot(&self) -> &Snapshot {
         match self {
             Self::KerMl(model) => model.snapshot(),
@@ -275,7 +281,7 @@ impl ProjectRevision {
     /// Shared canonical semantic model, including the derived overlay when the
     /// accepted authored producer path is enabled. `snapshot` remains declared.
     pub fn semantic_model(&self) -> &agq_kernel::ModelView {
-        self.queries().model()
+        self.model.semantic_model()
     }
     pub fn producer_status(&self) -> Option<&crate::sysml::AuthoredProducerStatus> {
         match &self.model {

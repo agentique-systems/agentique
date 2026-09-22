@@ -121,6 +121,9 @@ pub(super) struct EffectiveSourceModel {
     pub(super) status: AuthoredProducerStatus,
 }
 impl EffectiveSourceModel {
+    pub(super) fn model(&self) -> &ModelView {
+        self.overlay.model()
+    }
     pub(super) fn context(&self, root: ElementId) -> SemanticContext<'_> {
         let context = self
             .dependency

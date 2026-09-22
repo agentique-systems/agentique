@@ -646,6 +646,11 @@ impl SourceModel {
     pub(crate) fn snapshot(&self) -> &Snapshot {
         &self.snapshot
     }
+    pub(crate) fn semantic_model(&self) -> &ModelView {
+        self.effective
+            .as_ref()
+            .map_or_else(|| self.snapshot.model(), |effective| effective.model())
+    }
     pub(crate) fn root(&self) -> ElementId {
         self.root
     }
