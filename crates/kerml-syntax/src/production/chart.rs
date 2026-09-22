@@ -44,14 +44,15 @@ impl Chart {
 }
 
 pub(super) fn parse(out: &mut Document, budget: usize) -> Result<(), SourceError> {
+    let grammar = out.dialect.grammar();
     let significant: Vec<_> = out
         .tokens
         .iter()
         .enumerate()
         .filter_map(|(i, t)| (!t.kind.is_trivia()).then_some(i))
         .collect();
-    let mut rules_by_name = vec![vec![]; generated::SYMBOL_COUNT];
-    for (i, rule) in generated::RULES.iter().enumerate() {
+    let mut rules_by_name = vec![vec![]; grammar.symbol_count];
+    for (i, rule) in grammar.rules.iter().enumerate() {
         rules_by_name[rule.lhs as usize].push(i);
     }
     let mut chart = Chart {
@@ -61,7 +62,7 @@ pub(super) fn parse(out: &mut Document, budget: usize) -> Result<(), SourceError
         items: 0,
         budget,
     };
-    for &rule in &rules_by_name[generated::ROOT as usize] {
+    for &rule in &rules_by_name[grammar.root as usize] {
         chart.insert(
             0,
             Key {
@@ -78,7 +79,7 @@ pub(super) fn parse(out: &mut Document, budget: usize) -> Result<(), SourceError
             let (key, children) = chart.columns[end].items[index].clone();
             let item_index = index;
             index += 1;
-            let rule = &generated::RULES[key.rule];
+            let rule = &grammar.rules[key.rule];
             if key.dot == rule.rhs.len() {
                 let completed_key = (rule.lhs, key.start, end);
                 if chart.completed.contains_key(&completed_key) {
@@ -138,7 +139,7 @@ pub(super) fn parse(out: &mut Document, budget: usize) -> Result<(), SourceError
                     terminal => {
                         if let Some(&i) = significant.get(end) {
                             let token = &out.tokens[i];
-                            if matches(terminal, token, out.token_text(token)) {
+                            if matches(terminal, token, out.token_text(token), grammar.keywords) {
                                 chart.insert(
                                     end + 1,
                                     Key {
@@ -156,12 +157,12 @@ pub(super) fn parse(out: &mut Document, budget: usize) -> Result<(), SourceError
     }
     let complete = chart
         .completed
-        .get(&(generated::ROOT, 0, significant.len()))
+        .get(&(grammar.root, 0, significant.len()))
         .copied();
     let root = complete.or_else(|| {
         (0..significant.len())
             .rev()
-            .find_map(|end| chart.completed.get(&(generated::ROOT, 0, end)).copied())
+            .find_map(|end| chart.completed.get(&(grammar.root, 0, end)).copied())
     });
     if let Some(root) = root {
         materialize(out, &chart.nodes, root, &significant);
@@ -173,23 +174,35 @@ pub(super) fn parse(out: &mut Document, budget: usize) -> Result<(), SourceError
             .map_or(out.source.len(), |&i| out.tokens[i].range.start() as usize);
         let span = crate::range(start, out.source.len());
         out.recovery.push(span);
+        let farthest = chart
+            .columns
+            .iter()
+            .rposition(|c| !c.items.is_empty())
+            .unwrap_or(0);
+        let failure = significant.get(farthest).map_or_else(
+            || crate::range(out.source.len(), out.source.len()),
+            |&index| out.tokens[index].range,
+        );
         out.diagnostics.push(SyntaxDiagnostic {
-            code: "KG_RECOVERY",
-            range: span,
-            message:
-                "Incomplete or unsupported grammar; retained source is not a semantic declaration"
-                    .into(),
+            code: match out.dialect {
+                Dialect::KerMl => "KG_RECOVERY",
+                Dialect::SysMl => "SG_RECOVERY",
+            },
+            range: if out.dialect == Dialect::KerMl { span } else { failure },
+            message: match out.dialect {
+                Dialect::KerMl => "Incomplete or unsupported grammar; retained source is not a semantic declaration",
+                Dialect::SysMl => "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+            }.into(),
         });
     }
     Ok(())
 }
-fn matches(symbol: Symbol, token: &Token, text: &str) -> bool {
+fn matches(symbol: Symbol, token: &Token, text: &str, keywords: &[&str]) -> bool {
     match symbol {
         Symbol::Text(expected) => text == expected,
         Symbol::Name => {
             token.kind == TokenKind::QuotedName
-                || (token.kind == TokenKind::Word
-                    && generated::KEYWORDS.binary_search(&text).is_err())
+                || (token.kind == TokenKind::Word && keywords.binary_search(&text).is_err())
         }
         Symbol::String => token.kind == TokenKind::StringValue,
         Symbol::Comment => token.kind == TokenKind::Comment,
@@ -220,7 +233,11 @@ fn materialize(out: &mut Document, nodes: &[Completed], root: usize, significant
                     uuid::Uuid::new_v5(
                         &uuid::Uuid::from_u128(0xe7457369f34c52f88d67bf3e2c68b407),
                         format!(
-                            "agq-kerml-production/1:{}:{}:{}",
+                            "{}/1:{}:{}:{}",
+                            match out.dialect {
+                                Dialect::KerMl => "agq-kerml-production",
+                                Dialect::SysMl => "agq-sysml-production",
+                            },
                             out.revision,
                             index.0,
                             kind.name()

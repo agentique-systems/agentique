@@ -77,6 +77,8 @@ name = "agq-kerml-syntax"
 version = "0.1.0"
 dependencies = [
  "agq-kernel",
+ "agq-standard-libraries",
+ "serde_json",
  "thiserror",
  "uuid",
 ]

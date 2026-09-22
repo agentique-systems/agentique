@@ -4,6 +4,7 @@
 //! The source/token partition is authoritative for round trips, including recovery.
 mod chart;
 mod generated;
+mod generated_sysml;
 pub use generated::Production;
 
 use crate::{
@@ -26,6 +27,41 @@ struct Rule {
     lhs: u16,
     kind: Option<Production>,
     rhs: &'static [Symbol],
+}
+
+/// The pinned textual dialect used by the shared lexer and production arena.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Dialect {
+    /// KerML 1.0, including its separately recorded grammar discrepancies.
+    KerMl,
+    /// Final SysML 2.0, with no corpus compatibility alternatives added.
+    SysMl,
+}
+
+struct Grammar {
+    root: u16,
+    symbol_count: usize,
+    rules: &'static [Rule],
+    keywords: &'static [&'static str],
+}
+
+impl Dialect {
+    fn grammar(self) -> Grammar {
+        match self {
+            Self::KerMl => Grammar {
+                root: generated::ROOT,
+                symbol_count: generated::SYMBOL_COUNT,
+                rules: generated::RULES,
+                keywords: generated::KEYWORDS,
+            },
+            Self::SysMl => Grammar {
+                root: generated_sysml::ROOT,
+                symbol_count: generated_sysml::SYMBOL_COUNT,
+                rules: generated_sysml::RULES,
+                keywords: generated_sysml::KEYWORDS,
+            },
+        }
+    }
 }
 
 /// Work limits are independent of semantic identity and source revision policy.
@@ -68,6 +104,7 @@ pub struct GrammarDiscrepancy {
 /// Immutable syntax only. All semantic records belong to a kernel Snapshot.
 #[derive(Clone, Debug)]
 pub struct Document {
+    dialect: Dialect,
     document: DocumentId,
     revision: SourceRevisionId,
     source: Arc<str>,
@@ -97,7 +134,13 @@ impl Document {
             edit.range.start() as usize..edit.range.end() as usize,
             &edit.replacement,
         );
-        let mut next = parse(self.document, SourceRevisionId::new(), source, limits)?;
+        let mut next = parse_with_dialect(
+            self.dialect,
+            self.document,
+            SourceRevisionId::new(),
+            source,
+            limits,
+        )?;
         let delta = edit.replacement.len() as i64 - (edit.range.end() - edit.range.start()) as i64;
         let mut candidates = std::collections::BTreeMap::<_, Vec<_>>::new();
         for node in &self.nodes {
@@ -130,6 +173,10 @@ impl Document {
     }
     pub fn document(&self) -> DocumentId {
         self.document
+    }
+    /// The grammar and reserved-name policy retained by subsequent edits.
+    pub fn dialect(&self) -> Dialect {
+        self.dialect
     }
     pub fn revision(&self) -> SourceRevisionId {
         self.revision
@@ -226,7 +273,23 @@ impl<'a> Node<'a> {
     }
     pub fn names(self) -> impl Iterator<Item = crate::Name> + 'a {
         self.tokens().filter_map(move |t| {
-            crate::lexer::name(t, self.document.token_text(t)).map(|value| crate::Name {
+            let text = self.document.token_text(t);
+            let value = if t.kind == TokenKind::QuotedName {
+                crate::lexer::name(t, text)
+            } else if t.kind == TokenKind::Word
+                && self
+                    .document
+                    .dialect
+                    .grammar()
+                    .keywords
+                    .binary_search(&text)
+                    .is_err()
+            {
+                Some(text.to_owned())
+            } else {
+                None
+            };
+            value.map(|value| crate::Name {
                 value,
                 range: t.range,
             })
@@ -250,12 +313,36 @@ pub fn parse(
     source: impl Into<Arc<str>>,
     limits: Limits,
 ) -> Result<Document, SourceError> {
+    parse_with_dialect(Dialect::KerMl, document, revision, source, limits)
+}
+
+/// Parse final SysML 2.0 with the same lexer, limits, source identities and arena
+/// used by KerML. Published grammar gaps remain recovery; no semantic records
+/// or implied library declarations are created by syntax recognition.
+pub fn parse_sysml(
+    document: DocumentId,
+    revision: SourceRevisionId,
+    source: impl Into<Arc<str>>,
+    limits: Limits,
+) -> Result<Document, SourceError> {
+    parse_with_dialect(Dialect::SysMl, document, revision, source, limits)
+}
+
+/// Parse an immutable revision using an explicit pinned grammar dialect.
+pub fn parse_with_dialect(
+    dialect: Dialect,
+    document: DocumentId,
+    revision: SourceRevisionId,
+    source: impl Into<Arc<str>>,
+    limits: Limits,
+) -> Result<Document, SourceError> {
     let source = source.into();
     if source.len() > limits.source.max_bytes {
         return Err(SourceError::Limit("byte"));
     }
     let (tokens, diagnostics) = crate::lexer::lex(&source, limits.source.max_tokens)?;
     let mut out = Document {
+        dialect,
         document,
         revision,
         source,

@@ -58,6 +58,8 @@ pub enum ReferenceKind {
     Subsetting,
     Redefinition,
     NamespaceImport,
+    /// An import naming a specific Membership rather than a Namespace.
+    MembershipImport,
     Alias,
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

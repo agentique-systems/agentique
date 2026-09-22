@@ -9,3 +9,7 @@ description = "Lossless, recoverable KerML syntax independent of semantic constr
 agq-kernel = { path = "../kernel" }
 thiserror.workspace = true
 uuid.workspace = true
+
+[dev-dependencies]
+agq-standard-libraries = { path = "../standard-libraries" }
+serde_json.workspace = true

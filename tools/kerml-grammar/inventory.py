@@ -19,7 +19,7 @@ GRAMMAR = ROOT / "standards/grammar/kerml-1.0.ebnf"
 
 
 class Grammar:
-    def __init__(self, text):
+    def __init__(self, text, *, unresolved=()):
         self.rules = []
         self.by_name = defaultdict(list)
         self.names = []
@@ -35,7 +35,11 @@ class Grammar:
                 self.add(name, rhs)
             assert self.take() == ";", name
         missing = {s for _, rhs in self.rules for s in rhs if not s.startswith("'") and s not in self.by_name}
-        assert missing == {"NAME", "STRING_VALUE", "DECIMAL_VALUE", "EXPONENTIAL_VALUE", "REGULAR_COMMENT"}, missing
+        assert missing == {"NAME", "STRING_VALUE", "DECIMAL_VALUE", "EXPONENTIAL_VALUE", "REGULAR_COMMENT"} | set(unresolved), missing
+        # An undefined published nonterminal has no alternatives. It cannot
+        # consume a token or match epsilon; callers must name every such gap.
+        for name in unresolved:
+            self.by_name[name] = []
         self.keywords = {s[1:-1] for _, rhs in self.rules for s in rhs if s.startswith("'") and s[1:-1].isalpha()}
         # KerML 1.0 8.2.2.6: all reserved names, including those not used by a production.
         lexer = (ROOT / "crates/kerml-syntax/src/lexer.rs").read_text()

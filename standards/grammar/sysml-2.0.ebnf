@@ -1,0 +1,701 @@
+# SysML 2.0 final, 8.2.2; exact source/action anchors: sysml-2.0-source.json.
+# Overrides and additions to kerml-1.0.ebnf. No corpus compatibility alternatives.
+# Undefined printed nonterminals remain unmatchable (see source manifest).
+# 8.2.2.2; printed pages 166.
+Identification = ( '<' NAME '>' )? ( NAME )?;
+# 8.2.2.2; printed pages 166.
+RelationshipBody = ';' | '{' ( OwnedAnnotation )* '}';
+# 8.2.2.3; printed pages 166.
+Dependency = ( PrefixMetadataAnnotation )* 'dependency' DependencyDeclaration RelationshipBody;
+# 8.2.2.3; printed pages 166.
+DependencyDeclaration = ( Identification 'from' )? QualifiedName ( ',' QualifiedName )* 'to' QualifiedName ( ',' QualifiedName )*;
+# 8.2.2.4.1; printed pages 166.
+Annotation = QualifiedName;
+# 8.2.2.4.1; printed pages 166.
+OwnedAnnotation = AnnotatingElement;
+# 8.2.2.4.1; printed pages 166.
+AnnotatingMember = AnnotatingElement;
+# 8.2.2.4.1; printed pages 166.
+AnnotatingElement = Comment | Documentation | TextualRepresentation | MetadataFeature;
+# 8.2.2.4.2; printed pages 166.
+Comment = ( 'comment' Identification ( 'about' Annotation ( ',' Annotation )* )? )? ( 'locale' STRING_VALUE )? REGULAR_COMMENT;
+# 8.2.2.4.2; printed pages 166.
+Documentation = 'doc' Identification ( 'locale' STRING_VALUE )? REGULAR_COMMENT;
+# 8.2.2.4.3; printed pages 166.
+TextualRepresentation = ( 'rep' Identification )? 'language' STRING_VALUE REGULAR_COMMENT;
+# 8.2.2.5.1; printed pages 167.
+RootNamespace = PackageBodyElement*;
+# 8.2.2.5.1; printed pages 167.
+Package = ( PrefixMetadataMember )* PackageDeclaration PackageBody;
+# 8.2.2.5.1; printed pages 167.
+LibraryPackage = ( 'standard' ) 'library' ( PrefixMetadataMember )* PackageDeclaration PackageBody;
+# 8.2.2.5.1; printed pages 167.
+PackageDeclaration = 'package' Identification;
+# 8.2.2.5.1; printed pages 167.
+PackageBody = ';' | '{' PackageBodyElement* '}';
+# 8.2.2.5.1; printed pages 167.
+PackageBodyElement = PackageMember | ElementFilterMember | AliasMember | Import;
+# 8.2.2.5.1; printed pages 167.
+MemberPrefix = ( VisibilityIndicator )?;
+# 8.2.2.5.1; printed pages 167.
+PackageMember = MemberPrefix ( DefinitionElement | UsageElement );
+# 8.2.2.5.1; printed pages 167.
+ElementFilterMember = MemberPrefix 'filter' OwnedExpression ';';
+# 8.2.2.5.1; printed pages 167.
+AliasMember = MemberPrefix 'alias' ( '<' NAME '>' )? ( NAME )? 'for' QualifiedName RelationshipBody;
+# 8.2.2.5.1; printed pages 167.
+Import = VisibilityIndicator 'import' ( 'all' )? ImportDeclaration RelationshipBody;
+# 8.2.2.5.1; printed pages 167.
+ImportDeclaration = MembershipImport | NamespaceImport;
+# 8.2.2.5.1; printed pages 167.
+MembershipImport = QualifiedName ( '::' '**' )?;
+# 8.2.2.5.1; printed pages 167,168.
+NamespaceImport = QualifiedName '::' '*' ( '::' '**' )? | FilterPackage;
+# 8.2.2.5.1; printed pages 168.
+FilterPackage = FilterPackageImport ( FilterPackageMember )+;
+# 8.2.2.5.1; printed pages 168.
+FilterPackageMember = '[' OwnedExpression ']';
+# 8.2.2.5.1; printed pages 168.
+VisibilityIndicator = 'public' | 'private' | 'protected';
+# 8.2.2.5.2; printed pages 168.
+DefinitionElement = Package | LibraryPackage | AnnotatingElement | Dependency | AttributeDefinition | EnumerationDefinition | OccurrenceDefinition | IndividualDefinition | ItemDefinition | PartDefinition | ConnectionDefinition | FlowDefinition | InterfaceDefinition | PortDefinition | ActionDefinition | CalculationDefinition | StateDefinition | ConstraintDefinition | RequirementDefinition | ConcernDefinition | CaseDefinition | AnalysisCaseDefinition | VerificationCaseDefinition | UseCaseDefinition | ViewDefinition | ViewpointDefinition | RenderingDefinition | MetadataDefinition | ExtendedDefinition;
+# 8.2.2.5.2; printed pages 168.
+UsageElement = NonOccurrenceUsageElement | OccurrenceUsageElement;
+# 8.2.2.6.1; printed pages 168.
+BasicDefinitionPrefix = 'abstract' | 'variation';
+# 8.2.2.6.1; printed pages 168.
+DefinitionExtensionKeyword = PrefixMetadataMember;
+# 8.2.2.6.1; printed pages 168.
+DefinitionPrefix = BasicDefinitionPrefix? DefinitionExtensionKeyword*;
+# 8.2.2.6.1; printed pages 169.
+Definition = DefinitionDeclaration DefinitionBody;
+# 8.2.2.6.1; printed pages 169.
+DefinitionDeclaration = Identification SubclassificationPart?;
+# 8.2.2.6.1; printed pages 169.
+DefinitionBody = ';' | '{' DefinitionBodyItem* '}';
+# 8.2.2.6.1; printed pages 169.
+DefinitionBodyItem = DefinitionMember | VariantUsageMember | NonOccurrenceUsageMember | ( SourceSuccessionMember )? OccurrenceUsageMember | AliasMember | Import;
+# 8.2.2.6.1; printed pages 169.
+DefinitionMember = MemberPrefix DefinitionElement;
+# 8.2.2.6.1; printed pages 169.
+VariantUsageMember = MemberPrefix 'variant' VariantUsageElement;
+# 8.2.2.6.1; printed pages 169.
+NonOccurrenceUsageMember = MemberPrefix NonOccurrenceUsageElement;
+# 8.2.2.6.1; printed pages 169.
+OccurrenceUsageMember = MemberPrefix OccurrenceUsageElement;
+# 8.2.2.6.1; printed pages 169.
+StructureUsageMember = MemberPrefix StructureUsageElement;
+# 8.2.2.6.1; printed pages 169.
+BehaviorUsageMember = MemberPrefix BehaviorUsageElement;
+# 8.2.2.6.2; printed pages 169.
+FeatureDirection = 'in' | 'out' | 'inout';
+# 8.2.2.6.2; printed pages 169.
+RefPrefix = ( FeatureDirection )? ( 'derived' )? ( 'abstract' | 'variation' )? ( 'constant' )?;
+# 8.2.2.6.2; printed pages 169.
+BasicUsagePrefix = RefPrefix ( 'ref' )?;
+# 8.2.2.6.2; printed pages 169.
+EndUsagePrefix = 'end' ( OwnedCrossFeatureMember )?;
+# 8.2.2.6.2; printed pages 169.
+OwnedCrossFeatureMember = OwnedCrossFeature;
+# 8.2.2.6.2; printed pages 170.
+OwnedCrossFeature = BasicUsagePrefix UsageDeclaration;
+# 8.2.2.6.2; printed pages 170.
+UsageExtensionKeyword = PrefixMetadataMember;
+# 8.2.2.6.2; printed pages 170.
+UnextendedUsagePrefix = EndUsagePrefix | BasicUsagePrefix;
+# 8.2.2.6.2; printed pages 170.
+UsagePrefix = UnextendedUsagePrefix UsageExtensionKeyword*;
+# 8.2.2.6.2; printed pages 170.
+Usage = UsageDeclaration UsageCompletion;
+# 8.2.2.6.2; printed pages 170.
+UsageDeclaration = Identification FeatureSpecializationPart?;
+# 8.2.2.6.2; printed pages 170.
+UsageCompletion = ValuePart? UsageBody;
+# 8.2.2.6.2; printed pages 170.
+UsageBody = DefinitionBody;
+# 8.2.2.6.2; printed pages 170.
+ValuePart = FeatureValue;
+# 8.2.2.6.2; printed pages 170.
+FeatureValue = ( '=' | ':=' | 'default' ( '=' | ':=' )? ) OwnedExpression;
+# 8.2.2.6.3; printed pages 170.
+DefaultReferenceUsage = RefPrefix Usage;
+# 8.2.2.6.3; printed pages 170.
+ReferenceUsage = ( EndUsagePrefix | RefPrefix ) 'ref' Usage;
+# 8.2.2.6.3; printed pages 170.
+VariantReference = OwnedReferenceSubsetting FeatureSpecialization* UsageBody;
+# 8.2.2.6.4; printed pages 170,171.
+NonOccurrenceUsageElement = DefaultReferenceUsage | ReferenceUsage | AttributeUsage | EnumerationUsage | BindingConnectorAsUsage | SuccessionAsUsage | ExtendedUsage;
+# 8.2.2.6.4; printed pages 171.
+OccurrenceUsageElement = StructureUsageElement | BehaviorUsageElement;
+# 8.2.2.6.4; printed pages 171.
+StructureUsageElement = OccurrenceUsage | IndividualUsage | PortionUsage | EventOccurrenceUsage | ItemUsage | PartUsage | ViewUsage | RenderingUsage | PortUsage | ConnectionUsage | InterfaceUsage | AllocationUsage | Message | FlowUsage | SuccessionFlowUsage;
+# 8.2.2.6.4; printed pages 171.
+BehaviorUsageElement = ActionUsage | CalculationUsage | StateUsage | ConstraintUsage | RequirementUsage | ConcernUsage | CaseUsage | AnalysisCaseUsage | VerificationCaseUsage | UseCaseUsage | ViewpointUsage | PerformActionUsage | ExhibitStateUsage | IncludeUseCaseUsage | AssertConstraintUsage | SatisfyRequirementUsage;
+# 8.2.2.6.4; printed pages 171.
+VariantUsageElement = VariantReference | ReferenceUsage | AttributeUsage | BindingConnectorAsUsage | SuccessionAsUsage | OccurrenceUsage | IndividualUsage | PortionUsage | EventOccurrenceUsage | ItemUsage | PartUsage | ViewUsage | RenderingUsage | PortUsage | ConnectionUsage | InterfaceUsage | AllocationUsage | Message | FlowUsage | SuccessionFlowUsage | BehaviorUsageElement;
+# 8.2.2.6.5; printed pages 172.
+SubclassificationPart = SPECIALIZES OwnedSubclassification ( ',' OwnedSubclassification )*;
+# 8.2.2.6.5; printed pages 172.
+OwnedSubclassification = QualifiedName;
+# 8.2.2.6.5; printed pages 172.
+FeatureSpecializationPart = FeatureSpecialization+ MultiplicityPart? FeatureSpecialization* | MultiplicityPart FeatureSpecialization*;
+# 8.2.2.6.5; printed pages 172.
+FeatureSpecialization = Typings | Subsettings | References | Crosses | Redefinitions;
+# 8.2.2.6.5; printed pages 172.
+Typings = TypedBy ( ',' FeatureTyping )*;
+# 8.2.2.6.5; printed pages 172.
+TypedBy = DEFINED_BY FeatureTyping;
+# 8.2.2.6.5; printed pages 172.
+FeatureTyping = OwnedFeatureTyping | ConjugatedPortTyping;
+# 8.2.2.6.5; printed pages 172.
+OwnedFeatureTyping = QualifiedName | OwnedFeatureChain;
+# 8.2.2.6.5; printed pages 172.
+Subsettings = Subsets ( ',' OwnedSubsetting )*;
+# 8.2.2.6.5; printed pages 172.
+Subsets = SUBSETS OwnedSubsetting;
+# 8.2.2.6.5; printed pages 172.
+OwnedSubsetting = QualifiedName | OwnedFeatureChain;
+# 8.2.2.6.5; printed pages 172.
+References = REFERENCES OwnedReferenceSubsetting;
+# 8.2.2.6.5; printed pages 172.
+OwnedReferenceSubsetting = QualifiedName | OwnedFeatureChain;
+# 8.2.2.6.5; printed pages 172.
+Crosses = CROSSES OwnedCrossSubsetting;
+# 8.2.2.6.5; printed pages 172.
+OwnedCrossSubsetting = QualifiedName | OwnedFeatureChain;
+# 8.2.2.6.5; printed pages 172.
+Redefinitions = Redefines ( ',' OwnedRedefinition )*;
+# 8.2.2.6.5; printed pages 172.
+Redefines = REDEFINES OwnedRedefinition;
+# 8.2.2.6.5; printed pages 173.
+OwnedRedefinition = QualifiedName | OwnedFeatureChain;
+# 8.2.2.6.5; printed pages 173.
+OwnedFeatureChain = OwnedFeatureChaining ( '.' OwnedFeatureChaining )+;
+# 8.2.2.6.5; printed pages 173.
+OwnedFeatureChaining = QualifiedName;
+# 8.2.2.6.6; printed pages 173.
+MultiplicityPart = OwnedMultiplicity | ( OwnedMultiplicity )? ( 'ordered' ( 'nonunique' )? | 'nonunique' ( 'ordered' )? );
+# 8.2.2.6.6; printed pages 173.
+OwnedMultiplicity = MultiplicityRange;
+# 8.2.2.6.6; printed pages 173.
+MultiplicityRange = '[' ( MultiplicityExpressionMember '..' )? MultiplicityExpressionMember ']';
+# 8.2.2.6.6; printed pages 173.
+MultiplicityExpressionMember = ( LiteralExpression | FeatureReferenceExpression );
+# 8.2.2.7; printed pages 173.
+AttributeDefinition = DefinitionPrefix 'attribute' 'def' Definition;
+# 8.2.2.7; printed pages 173.
+AttributeUsage = UsagePrefix 'attribute' Usage;
+# 8.2.2.8; printed pages 173.
+EnumerationDefinition = DefinitionExtensionKeyword* 'enum' 'def' DefinitionDeclaration EnumerationBody;
+# 8.2.2.8; printed pages 173.
+EnumerationBody = ';' | '{' ( AnnotatingMember | EnumerationUsageMember )* '}';
+# 8.2.2.8; printed pages 173.
+EnumerationUsageMember = MemberPrefix EnumeratedValue;
+# 8.2.2.8; printed pages 173.
+EnumeratedValue = 'enum'? Usage;
+# 8.2.2.8; printed pages 173.
+EnumerationUsage = UsagePrefix 'enum' Usage;
+# 8.2.2.9.1; printed pages 174.
+OccurrenceDefinitionPrefix = BasicDefinitionPrefix? ( 'individual' EmptyMultiplicityMember )? DefinitionExtensionKeyword*;
+# 8.2.2.9.1; printed pages 174.
+OccurrenceDefinition = OccurrenceDefinitionPrefix 'occurrence' 'def' Definition;
+# 8.2.2.9.1; printed pages 174.
+IndividualDefinition = BasicDefinitionPrefix? 'individual' DefinitionExtensionKeyword* 'def' Definition EmptyMultiplicityMember;
+# 8.2.2.9.1; printed pages 174.
+EmptyMultiplicityMember = EmptyMultiplicity;
+# 8.2.2.9.1; printed pages 174.
+EmptyMultiplicity = ;
+# 8.2.2.9.2; printed pages 174.
+OccurrenceUsagePrefix = BasicUsagePrefix ( 'individual' )? ( PortionKind )? UsageExtensionKeyword*;
+# 8.2.2.9.2; printed pages 174.
+OccurrenceUsage = OccurrenceUsagePrefix 'occurrence' Usage;
+# 8.2.2.9.2; printed pages 174.
+IndividualUsage = BasicUsagePrefix 'individual' UsageExtensionKeyword* Usage;
+# 8.2.2.9.2; printed pages 174.
+PortionUsage = BasicUsagePrefix ( 'individual' )? PortionKind UsageExtensionKeyword* Usage;
+# 8.2.2.9.2; printed pages 174.
+PortionKind = 'snapshot' | 'timeslice';
+# 8.2.2.9.2; printed pages 174.
+EventOccurrenceUsage = OccurrenceUsagePrefix 'event' ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'occurrence' UsageDeclaration? ) UsageCompletion;
+# 8.2.2.9.3; printed pages 174.
+SourceSuccessionMember = 'then' SourceSuccession;
+# 8.2.2.9.3; printed pages 175.
+SourceSuccession = SourceEndMember;
+# 8.2.2.9.3; printed pages 175.
+SourceEndMember = SourceEnd;
+# 8.2.2.9.3; printed pages 175.
+SourceEnd = ( OwnedMultiplicity )?;
+# 8.2.2.10; printed pages 175.
+ItemDefinition = OccurrenceDefinitionPrefix 'item' 'def' Definition;
+# 8.2.2.10; printed pages 175.
+ItemUsage = OccurrenceUsagePrefix 'item' Usage;
+# 8.2.2.11; printed pages 175.
+PartDefinition = OccurrenceDefinitionPrefix 'part' 'def' Definition;
+# 8.2.2.11; printed pages 175.
+PartUsage = OccurrenceUsagePrefix 'part' Usage;
+# 8.2.2.12; printed pages 175.
+PortDefinition = DefinitionPrefix 'port' 'def' Definition ConjugatedPortDefinitionMember;
+# 8.2.2.12; printed pages 175.
+ConjugatedPortDefinitionMember = ConjugatedPortDefinition;
+# 8.2.2.12; printed pages 175.
+ConjugatedPortDefinition = PortConjugation;
+# 8.2.2.12; printed pages 175.
+PortConjugation = ;
+# 8.2.2.12; printed pages 175.
+PortUsage = OccurrenceUsagePrefix 'port' Usage;
+# 8.2.2.12; printed pages 175.
+ConjugatedPortTyping = '~' QualifiedName;
+# 8.2.2.13.1; printed pages 176.
+ConnectionDefinition = OccurrenceDefinitionPrefix 'connection' 'def' Definition;
+# 8.2.2.13.1; printed pages 176.
+ConnectionUsage = OccurrenceUsagePrefix ( 'connection' UsageDeclaration ValuePart? ( 'connect' ConnectorPart )? | 'connect' ConnectorPart ) UsageBody;
+# 8.2.2.13.1; printed pages 176.
+ConnectorPart = BinaryConnectorPart | NaryConnectorPart;
+# 8.2.2.13.1; printed pages 176.
+BinaryConnectorPart = ConnectorEndMember 'to' ConnectorEndMember;
+# 8.2.2.13.1; printed pages 176.
+NaryConnectorPart = '(' ConnectorEndMember ',' ConnectorEndMember ( ',' ConnectorEndMember )* ')';
+# 8.2.2.13.1; printed pages 176.
+ConnectorEndMember = ConnectorEnd;
+# 8.2.2.13.1; printed pages 176.
+ConnectorEnd = ( OwnedCrossMultiplicityMember )? ( NAME REFERENCES )? OwnedReferenceSubsetting;
+# 8.2.2.13.1; printed pages 176.
+OwnedCrossMultiplicityMember = OwnedCrossMultiplicity;
+# 8.2.2.13.1; printed pages 176.
+OwnedCrossMultiplicity = OwnedMultiplicity;
+# 8.2.2.13.2; printed pages 176.
+BindingConnectorAsUsage = UsagePrefix ( 'binding' UsageDeclaration )? 'bind' ConnectorEndMember '=' ConnectorEndMember UsageBody;
+# 8.2.2.13.3; printed pages 176,177.
+SuccessionAsUsage = UsagePrefix ( 'succession' UsageDeclaration )? 'first' ConnectorEndMember 'then' ConnectorEndMember UsageBody;
+# 8.2.2.14.1; printed pages 177.
+InterfaceDefinition = OccurrenceDefinitionPrefix 'interface' 'def' DefinitionDeclaration InterfaceBody;
+# 8.2.2.14.1; printed pages 177.
+InterfaceBody = ';' | '{' InterfaceBodyItem* '}';
+# 8.2.2.14.1; printed pages 177.
+InterfaceBodyItem = DefinitionMember | VariantUsageMember | InterfaceNonOccurrenceUsageMember | ( SourceSuccessionMember )? InterfaceOccurrenceUsageMember | AliasMember | Import;
+# 8.2.2.14.1; printed pages 177.
+InterfaceNonOccurrenceUsageMember = MemberPrefix InterfaceNonOccurrenceUsageElement;
+# 8.2.2.14.1; printed pages 177.
+InterfaceNonOccurrenceUsageElement = ReferenceUsage | AttributeUsage | EnumerationUsage | BindingConnectorAsUsage | SuccessionAsUsage;
+# 8.2.2.14.1; printed pages 177.
+InterfaceOccurrenceUsageMember = MemberPrefix InterfaceOccurrenceUsageElement;
+# 8.2.2.14.1; printed pages 177.
+InterfaceOccurrenceUsageElement = DefaultInterfaceEnd | StructureUsageElement | BehaviorUsageElement;
+# 8.2.2.14.1; printed pages 177.
+DefaultInterfaceEnd = 'end' Usage;
+# 8.2.2.14.2; printed pages 177.
+InterfaceUsage = OccurrenceUsagePrefix 'interface' InterfaceUsageDeclaration InterfaceBody;
+# 8.2.2.14.2; printed pages 177.
+InterfaceUsageDeclaration = UsageDeclaration ValuePart? ( 'connect' InterfacePart )? | InterfacePart;
+# 8.2.2.14.2; printed pages 177.
+InterfacePart = BinaryInterfacePart | NaryInterfacePart;
+# 8.2.2.14.2; printed pages 177.
+BinaryInterfacePart = InterfaceEndMember 'to' InterfaceEndMember;
+# 8.2.2.14.2; printed pages 177,178.
+NaryInterfacePart = '(' InterfaceEndMember ',' InterfaceEndMember ( ',' InterfaceEndMember )* ')';
+# 8.2.2.14.2; printed pages 178.
+InterfaceEndMember = InterfaceEnd;
+# 8.2.2.14.2; printed pages 178.
+InterfaceEnd = ( OwnedCrossMultiplicityMember )? ( NAME REFERENCES )? OwnedReferenceSubsetting;
+# 8.2.2.15; printed pages 178.
+AllocationDefinition = OccurrenceDefinitionPrefix 'allocation' 'def' Definition;
+# 8.2.2.15; printed pages 178.
+AllocationUsage = OccurrenceUsagePrefix AllocationUsageDeclaration UsageBody;
+# 8.2.2.15; printed pages 178.
+AllocationUsageDeclaration = 'allocation' UsageDeclaration ( 'allocate' ConnectorPart )? | 'allocate' ConnectorPart;
+# 8.2.2.16; printed pages 178.
+FlowDefinition = OccurrenceDefinitionPrefix 'flow' 'def' Definition;
+# 8.2.2.16; printed pages 178.
+Message = OccurrenceUsagePrefix 'message' MessageDeclaration DefinitionBody;
+# 8.2.2.16; printed pages 178.
+MessageDeclaration = UsageDeclaration ValuePart? ( 'of' FlowPayloadFeatureMember )? ( 'from' MessageEventMember 'to' MessageEventMember )? | MessageEventMember 'to' MessageEventMember;
+# 8.2.2.16; printed pages 178.
+MessageEventMember = MessageEvent;
+# 8.2.2.16; printed pages 178.
+MessageEvent = OwnedReferenceSubsetting;
+# 8.2.2.16; printed pages 178.
+FlowUsage = OccurrenceUsagePrefix 'flow' FlowDeclaration DefinitionBody;
+# 8.2.2.16; printed pages 178.
+SuccessionFlowUsage = OccurrenceUsagePrefix 'succession' 'flow' FlowDeclaration DefinitionBody;
+# 8.2.2.16; printed pages 178,179.
+FlowDeclaration = UsageDeclaration ValuePart? ( 'of' FlowPayloadFeatureMember )? ( 'from' FlowEndMember 'to' FlowEndMember )? | FlowEndMember 'to' FlowEndMember;
+# 8.2.2.16; printed pages 179.
+FlowPayloadFeatureMember = FlowPayloadFeature;
+# 8.2.2.16; printed pages 179.
+FlowPayloadFeature = PayloadFeature;
+# 8.2.2.16; printed pages 179.
+PayloadFeature = Identification? PayloadFeatureSpecializationPart ValuePart? | OwnedFeatureTyping ( OwnedMultiplicity )? | OwnedMultiplicity OwnedFeatureTyping;
+# 8.2.2.16; printed pages 179.
+PayloadFeatureSpecializationPart = ( FeatureSpecialization )+ MultiplicityPart? FeatureSpecialization* | MultiplicityPart FeatureSpecialization+;
+# 8.2.2.16; printed pages 179.
+FlowEndMember = FlowEnd;
+# 8.2.2.16; printed pages 179.
+FlowEnd = ( FlowEndSubsetting )? FlowFeatureMember;
+# 8.2.2.16; printed pages 179.
+FlowEndSubsetting = QualifiedName | FeatureChainPrefix;
+# 8.2.2.16; printed pages 179.
+FeatureChainPrefix = ( OwnedFeatureChaining '.' )+ OwnedFeatureChaining '.';
+# 8.2.2.16; printed pages 179.
+FlowFeatureMember = FlowFeature;
+# 8.2.2.16; printed pages 179.
+FlowFeature = FlowFeatureRedefinition;
+# 8.2.2.16; printed pages 179.
+FlowFeatureRefefinition = QualifiedName;
+# 8.2.2.17.1; printed pages 179,180.
+ActionDefinition = OccurrenceDefinitionPrefix 'action' 'def' DefinitionDeclaration ActionBody;
+# 8.2.2.17.1; printed pages 180.
+ActionBody = ';' | '{' ActionBodyItem* '}';
+# 8.2.2.17.1; printed pages 180.
+ActionBodyItem = NonBehaviorBodyItem | InitialNodeMember ( ActionTargetSuccessionMember )* | ( SourceSuccessionMember )? ActionBehaviorMember ( ActionTargetSuccessionMember )* | GuardedSuccessionMember;
+# 8.2.2.17.1; printed pages 180.
+NonBehaviorBodyItem = Import | AliasMember | DefinitionMember | VariantUsageMember | NonOccurrenceUsageMember | ( SourceSuccessionMember )? StructureUsageMember;
+# 8.2.2.17.1; printed pages 180.
+ActionBehaviorMember = BehaviorUsageMember | ActionNodeMember;
+# 8.2.2.17.1; printed pages 180.
+InitialNodeMember = MemberPrefix 'first' QualifiedName RelationshipBody;
+# 8.2.2.17.1; printed pages 180.
+ActionNodeMember = MemberPrefix ActionNode;
+# 8.2.2.17.1; printed pages 180.
+ActionTargetSuccessionMember = MemberPrefix ActionTargetSuccession;
+# 8.2.2.17.1; printed pages 180.
+GuardedSuccessionMember = MemberPrefix GuardedSuccession;
+# 8.2.2.17.2; printed pages 180.
+ActionUsage = OccurrenceUsagePrefix 'action' ActionUsageDeclaration ActionBody;
+# 8.2.2.17.2; printed pages 180.
+ActionUsageDeclaration = UsageDeclaration ValuePart?;
+# 8.2.2.17.2; printed pages 180.
+PerformActionUsage = OccurrenceUsagePrefix 'perform' PerformActionUsageDeclaration ActionBody;
+# 8.2.2.17.2; printed pages 180.
+PerformActionUsageDeclaration = ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'action' UsageDeclaration ) ValuePart?;
+# 8.2.2.17.2; printed pages 180,181.
+ActionNode = ControlNode | SendNode | AcceptNode | AssignmentNode | TerminateNode | IfNode | WhileLoopNode | ForLoopNode;
+# 8.2.2.17.2; printed pages 181.
+ActionNodeUsageDeclaration = 'action' UsageDeclaration?;
+# 8.2.2.17.2; printed pages 181.
+ActionNodePrefix = OccurrenceUsagePrefix ActionNodeUsageDeclaration?;
+# 8.2.2.17.3; printed pages 181.
+ControlNode = MergeNode | DecisionNode | JoinNode| ForkNode;
+# 8.2.2.17.3; printed pages 181.
+ControlNodePrefix = RefPrefix ( 'individual' )? ( PortionKind )? UsageExtensionKeyword*;
+# 8.2.2.17.3; printed pages 181.
+MergeNode = ControlNodePrefix 'merge' UsageDeclaration ActionBody;
+# 8.2.2.17.3; printed pages 181.
+DecisionNode = ControlNodePrefix 'decide' UsageDeclaration ActionBody;
+# 8.2.2.17.3; printed pages 181.
+JoinNode = ControlNodePrefix 'join' UsageDeclaration ActionBody;
+# 8.2.2.17.3; printed pages 181.
+ForkNode = ControlNodePrefix 'fork' UsageDeclaration ActionBody;
+# 8.2.2.17.4; printed pages 181.
+AcceptNode = OccurrenceUsagePrefix AcceptNodeDeclaration ActionBody;
+# 8.2.2.17.4; printed pages 181.
+AcceptNodeDeclaration = ActionNodeUsageDeclaration? 'accept' AcceptParameterPart;
+# 8.2.2.17.4; printed pages 181.
+AcceptParameterPart = PayloadParameterMember ( 'via' NodeParameterMember )?;
+# 8.2.2.17.4; printed pages 181.
+PayloadParameterMember = PayloadParameter;
+# 8.2.2.17.4; printed pages 181.
+PayloadParameter = PayloadFeature | Identification PayloadFeatureSpecializationPart? TriggerValuePart;
+# 8.2.2.17.4; printed pages 182.
+TriggerValuePart = TriggerFeatureValue;
+# 8.2.2.17.4; printed pages 182.
+TriggerFeatureValue = TriggerExpression;
+# 8.2.2.17.4; printed pages 182.
+TriggerExpression = ( 'at' | 'after' ) ArgumentMember | 'when' ArgumentExpressionMember;
+# 8.2.2.17.4; printed pages 182.
+ArgumentMember = Argument;
+# 8.2.2.17.4; printed pages 182.
+Argument = ArgumentValue;
+# 8.2.2.17.4; printed pages 182.
+ArgumentValue = OwnedExpression;
+# 8.2.2.17.4; printed pages 182.
+ArgumentExpressionMember = ArgumentExpression;
+# 8.2.2.17.4; printed pages 182.
+ArgumentExpression = ArgumentExpressionValue;
+# 8.2.2.17.4; printed pages 182.
+ArgumentExpressionValue = OwnedExpressionReference;
+# 8.2.2.17.4; printed pages 182.
+SendNode = OccurrenceUsagePrefix ActionUsageDeclaration? 'send' ( NodeParameterMember SenderReceiverPart? | EmptyParameterMember SendReceiverPart )? ActionBody;
+# 8.2.2.17.4; printed pages 182.
+SendNodeDeclaration = ActionNodeUsageDeclaration? 'send' NodeParameterMember SenderReceiverPart?;
+# 8.2.2.17.4; printed pages 182.
+SenderReceiverPart = 'via' NodeParameterMember ( 'to' NodeParameterMember )? | EmptyParameterMember 'to' NodeParameterMember;
+# 8.2.2.17.4; printed pages 182.
+NodeParameterMember = NodeParameter;
+# 8.2.2.17.4; printed pages 182.
+NodeParameter = FeatureBinding;
+# 8.2.2.17.4; printed pages 182.
+FeatureBinding = OwnedExpression;
+# 8.2.2.17.4; printed pages 182.
+EmptyParameterMember = EmptyUsage;
+# 8.2.2.17.4; printed pages 182.
+EmptyUsage = ;
+# 8.2.2.17.5; printed pages 183.
+AssignmentNode = OccurrenceUsagePrefix AssignmentNodeDeclaration ActionBody;
+# 8.2.2.17.5; printed pages 183.
+AssignmentNodeDeclaration = ( ActionNodeUsageDeclaration )? 'assign' AssignmentTargetMember FeatureChainMember ':=' NodeParameterMember;
+# 8.2.2.17.5; printed pages 183.
+AssignmentTargetMember = AssignmentTargetParameter;
+# 8.2.2.17.5; printed pages 183.
+AssignmentTargetParameter = ( AssignmentTargetBinding '.' )?;
+# 8.2.2.17.5; printed pages 183.
+AssignmentTargetBinding = NonFeatureChainPrimaryExpression;
+# 8.2.2.17.5; printed pages 183.
+FeatureChainMember = QualifiedName | OwnedFeatureChainMember;
+# 8.2.2.17.5; printed pages 183.
+OwnedFeatureChainMember = OwnedFeatureChain;
+# 8.2.2.17.6; printed pages 183.
+TerminateNode = OccurrenceUsagePrefix ActionNodeUsageDeclaration? 'terminate' ( NodeParameterMember )? ActionBody;
+# 8.2.2.17.7; printed pages 183.
+IfNode = ActionNodePrefix 'if' ExpressionParameterMember ActionBodyParameterMember ( 'else' ( ActionBodyParameterMember | IfNodeParameterMember ) )?;
+# 8.2.2.17.7; printed pages 183.
+ExpressionParameterMember = OwnedExpression;
+# 8.2.2.17.7; printed pages 183.
+ActionBodyParameterMember = ActionBodyParameter;
+# 8.2.2.17.7; printed pages 183.
+ActionBodyParameter = ( 'action' UsageDeclaration? )? '{' ActionBodyItem* '}';
+# 8.2.2.17.7; printed pages 183.
+IfNodeParameterMember = IfNode;
+# 8.2.2.17.7; printed pages 183,184.
+WhileLoopNode = ActionNodePrefix ( 'while' ExpressionParameterMember | 'loop' EmptyParameterMember ) ActionBodyParameterMember ( 'until' ExpressionParameterMember ';' )?;
+# 8.2.2.17.7; printed pages 184.
+ForLoopNode = ActionNodePrefix 'for' ForVariableDeclarationMember 'in' NodeParameterMember ActionBodyParameterMember;
+# 8.2.2.17.7; printed pages 184.
+ForVariableDeclarationMember = UsageDeclaration;
+# 8.2.2.17.7; printed pages 184.
+ForVariableDeclaration = UsageDeclaration;
+# 8.2.2.17.8; printed pages 184.
+ActionTargetSuccession = ( TargetSuccession | GuardedTargetSuccession | DefaultTargetSuccession ) UsageBody;
+# 8.2.2.17.8; printed pages 184.
+TargetSuccession = SourceEndMember 'then' ConnectorEndMember;
+# 8.2.2.17.8; printed pages 184.
+GuardedTargetSuccession = GuardExpressionMember 'then' TransitionSuccessionMember;
+# 8.2.2.17.8; printed pages 184.
+DefaultTargetSuccession = 'else' TransitionSuccessionMember;
+# 8.2.2.17.8; printed pages 184.
+GuardedSuccession = ( 'succession' UsageDeclaration )? 'first' FeatureChainMember GuardExpressionMember 'then' TransitionSuccessionMember UsageBody;
+# 8.2.2.18.1; printed pages 184.
+StateDefinition = OccurrenceDefinitionPrefix 'state' 'def' DefinitionDeclaration StateDefBody;
+# 8.2.2.18.1; printed pages 184.
+StateDefBody = ';' | ( 'parallel' )? '{' StateBodyItem* '}';
+# 8.2.2.18.1; printed pages 184,185.
+StateBodyItem = NonBehaviorBodyItem | ( SourceSuccessionMember )? BehaviorUsageMember ( TargetTransitionUsageMember )* | TransitionUsageMember | EntryActionMember ( EntryTransitionMember )* | DoActionMember | ExitActionMember;
+# 8.2.2.18.1; printed pages 185.
+EntryActionMember = MemberPrefix 'entry' StateActionUsage;
+# 8.2.2.18.1; printed pages 185.
+DoActionMember = MemberPrefix 'do' StateActionUsage;
+# 8.2.2.18.1; printed pages 185.
+ExitActionMember = MemberPrefix 'exit' StateActionUsage;
+# 8.2.2.18.1; printed pages 185.
+EntryTransitionMember = MemberPrefix ( GuardedTargetSuccession | 'then' TargetSuccession ) ';';
+# 8.2.2.18.1; printed pages 185.
+StateActionUsage = EmptyActionUsage ';' | StatePerformActionUsage | StateAcceptActionUsage | StateSendActionUsage | StateAssignmentActionUsage;
+# 8.2.2.18.1; printed pages 185.
+EmptyActionUsage = ;
+# 8.2.2.18.1; printed pages 185.
+StatePerformActionUsage = PerformActionUsageDeclaration ActionBody;
+# 8.2.2.18.1; printed pages 185.
+StateAcceptActionUsage = AcceptNodeDeclaration ActionBody;
+# 8.2.2.18.1; printed pages 185.
+StateSendActionUsage = SendNodeDeclaration ActionBody;
+# 8.2.2.18.1; printed pages 185.
+StateAssignmentActionUsage = AssignmentNodeDeclaration ActionBody;
+# 8.2.2.18.1; printed pages 185.
+TransitionUsageMember = MemberPrefix TransitionUsage;
+# 8.2.2.18.1; printed pages 185.
+TargetTransitionUsageMember = MemberPrefix TargetTransitionUsage;
+# 8.2.2.18.2; printed pages 185.
+StateUsage = OccurrenceUsagePrefix 'state' ActionUsageDeclaration StateUsageBody;
+# 8.2.2.18.2; printed pages 185.
+StateUsageBody = ';' | ( 'parallel' )? '{' StateBodyItem* '}';
+# 8.2.2.18.2; printed pages 185,186.
+ExhibitStateUsage = OccurrenceUsagePrefix 'exhibit' ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'state' UsageDeclaration ) ValuePart? StateUsageBody;
+# 8.2.2.18.3; printed pages 186.
+TransitionUsage = 'transition' ( UsageDeclaration 'first' )? FeatureChainMember EmptyParameterMember ( EmptyParameterMember TriggerActionMember )? ( GuardExpressionMember )? ( EffectBehaviorMember )? 'then' TransitionSuccessionMember ActionBody;
+# 8.2.2.18.3; printed pages 186.
+TargetTransitionUsage = EmptyParameterMember ( 'transition' ( EmptyParameterMember TriggerActionMember )? ( GuardExpressionMember )? ( EffectBehaviorMember )? | EmptyParameterMember TriggerActionMember ( GuardExpressionMember )? ( EffectBehaviorMember )? | GuardExpressionMember ( EffectBehaviorMember )? )? 'then' TransitionSuccessionMember ActionBody;
+# 8.2.2.18.3; printed pages 186.
+TriggerActionMember = 'accept' TriggerAction;
+# 8.2.2.18.3; printed pages 186.
+TriggerAction = AcceptParameterPart;
+# 8.2.2.18.3; printed pages 186.
+GuardExpressionMember = 'if' OwnedExpression;
+# 8.2.2.18.3; printed pages 186.
+EffectBehaviorMember = 'do' EffectBehaviorUsage;
+# 8.2.2.18.3; printed pages 186.
+EffectBehaviorUsage = EmptyActionUsage | TransitionPerformActionUsage | TransitionAcceptActionUsage | TransitionSendActionUsage | TransitionAssignmentActionUsage;
+# 8.2.2.18.3; printed pages 186.
+TransitionPerformActionUsage = PerformActionUsageDeclaration ( '{' ActionBodyItem* '}' )?;
+# 8.2.2.18.3; printed pages 186.
+TransitionAcceptActionUsage = AcceptNodeDeclaration ( '{' ActionBodyItem* '}' )?;
+# 8.2.2.18.3; printed pages 186.
+TransitionSendActionUsage = SendNodeDeclaration ( '{' ActionBodyItem* '}' )?;
+# 8.2.2.18.3; printed pages 187.
+TransitionAssignmentActionUsage = AssignmentNodeDeclaration ( '{' ActionBodyItem* '}' )?;
+# 8.2.2.18.3; printed pages 187.
+TransitionSuccessionMember = TransitionSuccession;
+# 8.2.2.18.3; printed pages 187.
+TransitionSuccession = EmptyEndMember ConnectorEndMember;
+# 8.2.2.18.3; printed pages 187.
+EmptyEndMember = EmptyFeature;
+# 8.2.2.18.3; printed pages 187.
+EmptyFeature = ;
+# 8.2.2.19; printed pages 187.
+CalculationDefinition = OccurrenceDefinitionPrefix 'calc' 'def' DefinitionDeclaration CalculationBody;
+# 8.2.2.19; printed pages 187.
+CalculationUsage = OccurrenceUsagePrefix 'calc' ActionUsageDeclaration CalculationBody;
+# 8.2.2.19; printed pages 187.
+CalculationBody = ';' | '{' CalculationBodyPart '}';
+# 8.2.2.19; printed pages 187.
+CalculationBodyPart = CalculationBodyItem* ( ResultExpressionMember )?;
+# 8.2.2.19; printed pages 187.
+CalculationBodyItem = ActionBodyItem | ReturnParameterMember;
+# 8.2.2.19; printed pages 187.
+ReturnParameterMember = MemberPrefix? 'return' UsageElement;
+# 8.2.2.19; printed pages 187.
+ResultExpressionMember = MemberPrefix? OwnedExpression;
+# 8.2.2.20; printed pages 187.
+ConstraintDefinition = OccurrenceDefinitionPrefix 'constraint' 'def' DefinitionDeclaration CalculationBody;
+# 8.2.2.20; printed pages 187.
+ConstraintUsage = OccurrenceUsagePrefix 'constraint' ConstraintUsageDeclaration CalculationBody;
+# 8.2.2.20; printed pages 187.
+AssertConstraintUsage = OccurrenceUsagePrefix 'assert' ( 'not' )? ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'constraint' ConstraintUsageDeclaration ) CalculationBody;
+# 8.2.2.20; printed pages 187.
+ConstraintUsageDeclaration = UsageDeclaration ValuePart?;
+# 8.2.2.21.1; printed pages 188.
+RequirementDefinition = OccurrenceDefinitionPrefix 'requirement' 'def' DefinitionDeclaration RequirementBody;
+# 8.2.2.21.1; printed pages 188.
+RequirementBody = ';' | '{' RequirementBodyItem* '}';
+# 8.2.2.21.1; printed pages 188.
+RequirementBodyItem = DefinitionBodyItem | SubjectMember | RequirementConstraintMember | FramedConcernMember | RequirementVerificationMember | ActorMember | StakeholderMember;
+# 8.2.2.21.1; printed pages 188.
+SubjectMember = MemberPrefix SubjectUsage;
+# 8.2.2.21.1; printed pages 188.
+SubjectUsage = 'subject' UsageExtensionKeyword* Usage;
+# 8.2.2.21.1; printed pages 188.
+RequirementConstraintMember = MemberPrefix? RequirementKind RequirementConstraintUsage;
+# 8.2.2.21.1; printed pages 188.
+RequirementKind = 'assume' | 'require';
+# 8.2.2.21.1; printed pages 188.
+RequirementConstraintUsage = OwnedReferenceSubsetting FeatureSpecializationPart? RequirementBody | ( UsageExtensionKeyword* 'constraint' | UsageExtensionKeyword+ ) ConstraintUsageDeclaration CalculationBody;
+# 8.2.2.21.1; printed pages 188.
+FramedConcernMember = MemberPrefix? 'frame' FramedConcernUsage;
+# 8.2.2.21.1; printed pages 188.
+FramedConcernUsage = OwnedReferenceSubsetting FeatureSpecializationPart? CalculationBody | ( UsageExtensionKeyword* 'concern' | UsageExtensionKeyword+ ) CalculationUsageDeclaration CalculationBody;
+# 8.2.2.21.1; printed pages 188.
+ActorMember = MemberPrefix ActorUsage;
+# 8.2.2.21.1; printed pages 188.
+ActorUsage = 'actor' UsageExtensionKeyword* Usage;
+# 8.2.2.21.1; printed pages 188.
+StakeholderMember = MemberPrefix StakeholderUsage;
+# 8.2.2.21.1; printed pages 188.
+StakeholderUsage = 'stakeholder' UsageExtensionKeyword* Usage;
+# 8.2.2.21.2; printed pages 189.
+RequirementUsage = OccurrenceUsagePrefix 'requirement' ConstraintUsageDeclaration RequirementBody;
+# 8.2.2.21.2; printed pages 189.
+SatisfyRequirementUsage = OccurrenceUsagePrefix 'assert' ( 'not' ) 'satisfy' ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'requirement' UsageDeclaration ) ValuePart? ( 'by' SatisfactionSubjectMember )? RequirementBody;
+# 8.2.2.21.2; printed pages 189.
+SatisfactionSubjectMember = SatisfactionParameter;
+# 8.2.2.21.2; printed pages 189.
+SatisfactionParameter = SatisfactionFeatureValue;
+# 8.2.2.21.2; printed pages 189.
+SatisfactionFeatureValue = SatisfactionReferenceExpression;
+# 8.2.2.21.2; printed pages 189.
+SatisfactionReferenceExpression = FeatureChainMember;
+# 8.2.2.21.3; printed pages 189.
+ConcernDefinition = OccurrenceDefinitionPrefix 'concern' 'def' DefinitionDeclaration RequirementBody;
+# 8.2.2.21.3; printed pages 189.
+ConcernUsage = OccurrenceUsagePrefix 'concern' ConstraintUsageDeclaration RequirementBody;
+# 8.2.2.22; printed pages 189.
+CaseDefinition = OccurrenceDefinitionPrefix 'case' 'def' DefinitionDeclaration CaseBody;
+# 8.2.2.22; printed pages 189.
+CaseUsage = OccurrenceUsagePrefix 'case' ConstraintUsageDeclaration CaseBody;
+# 8.2.2.22; printed pages 189.
+CaseBody = ';' | '{' CaseBodyItem* ( ResultExpressionMember )? '}';
+# 8.2.2.22; printed pages 189.
+CaseBodyItem = ActionBodyItem | SubjectMember | ActorMember | ObjectiveMember;
+# 8.2.2.22; printed pages 189.
+ObjectiveMember = MemberPrefix 'objective' ObjectiveRequirementUsage;
+# 8.2.2.22; printed pages 190.
+ObjectiveRequirementUsage = UsageExtensionKeyword* ConstraintUsageDeclaration RequirementBody;
+# 8.2.2.23; printed pages 190.
+AnalysisCaseDefinition = OccurrenceDefinitionPrefix 'analysis' 'def' DefinitionDeclaration CaseBody;
+# 8.2.2.23; printed pages 190.
+AnalysisCaseUsage = OccurrenceUsagePrefix 'analysis' ConstraintUsageDeclaration CaseBody;
+# 8.2.2.24; printed pages 190.
+VerificationCaseDefinition = OccurrenceDefinitionPrefix 'verification' 'def' DefinitionDeclaration CaseBody;
+# 8.2.2.24; printed pages 190.
+VerificationCaseUsage = OccurrenceUsagePrefix 'verification' ConstraintUsageDeclaration CaseBody;
+# 8.2.2.24; printed pages 190.
+RequirementVerificationMember = MemberPrefix 'verify' RequirementVerificationUsage;
+# 8.2.2.24; printed pages 190.
+RequirementVerificationUsage = OwnedReferenceSubsetting FeatureSpecialization* RequirementBody | ( UsageExtensionKeyword* 'requirement' | UsageExtensionKeyword+ ) ConstraintUsageDeclaration RequirementBody;
+# 8.2.2.25; printed pages 190.
+UseCaseDefinition = OccurrenceDefinitionPrefix 'use' 'case' 'def' DefinitionDeclaration CaseBody;
+# 8.2.2.25; printed pages 190.
+UseCaseUsage = OccurrenceUsagePrefix 'use' 'case' ConstraintUsageDeclaration CaseBody;
+# 8.2.2.25; printed pages 190.
+IncludeUseCaseUsage = OccurrenceUsagePrefix 'include' ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'use' 'case' UsageDeclaration ) ValuePart? CaseBody;
+# 8.2.2.26.1; printed pages 190.
+ViewDefinition = OccurrenceDefinitionPrefix 'view' 'def' DefinitionDeclaration ViewDefinitionBody;
+# 8.2.2.26.1; printed pages 191.
+ViewDefinitionBody = ';' | '{' ViewDefinitionBodyItem* '}';
+# 8.2.2.26.1; printed pages 191.
+ViewDefinitionBodyItem = DefinitionBodyItem | ElementFilterMember | ViewRenderingMember;
+# 8.2.2.26.1; printed pages 191.
+ViewRenderingMember = MemberPrefix 'render' ViewRenderingUsage;
+# 8.2.2.26.1; printed pages 191.
+ViewRenderingUsage = OwnedReferenceSubsetting FeatureSpecializationPart? UsageBody | ( UsageExtensionKeyword* 'rendering' | UsageExtensionKeyword+ ) Usage;
+# 8.2.2.26.2; printed pages 191.
+ViewUsage = OccurrenceUsagePrefix 'view' UsageDeclaration? ValuePart? ViewBody;
+# 8.2.2.26.2; printed pages 191.
+ViewBody = ';' | '{' ViewBodyItem* '}';
+# 8.2.2.26.2; printed pages 191.
+ViewBodyItem = DefinitionBodyItem | ElementFilterMember | ViewRenderingMember | Expose;
+# 8.2.2.26.2; printed pages 191.
+Expose = 'expose' ( MembershipExpose | NamespaceExpose ) RelationshipBody;
+# 8.2.2.26.2; printed pages 191.
+MembershipExpose = MembershipImport;
+# 8.2.2.26.2; printed pages 191.
+NamespaceExpose = NamespaceImport;
+# 8.2.2.26.3; printed pages 191.
+ViewpointDefinition = OccurrenceDefinitionPrefix 'viewpoint' 'def' DefinitionDeclaration RequirementBody;
+# 8.2.2.26.3; printed pages 191.
+ViewpointUsage = OccurrenceUsagePrefix 'viewpoint' ConstraintUsageDeclaration RequirementBody;
+# 8.2.2.26.4; printed pages 191.
+RenderingDefinition = OccurrenceDefinitionPrefix 'rendering' 'def' Definition;
+# 8.2.2.26.4; printed pages 192.
+RenderingUsage = OccurrenceUsagePrefix 'rendering' Usage;
+# 8.2.2.27; printed pages 192.
+MetadataDefinition = ( 'abstract')? DefinitionExtensionKeyWord* 'metadata' 'def' Definition;
+# 8.2.2.27; printed pages 192.
+PrefixMetadataAnnotation = '#' PrefixMetadataUsage;
+# 8.2.2.27; printed pages 192.
+PrefixMetadataMember = '#' PrefixMetadataUsage;
+# 8.2.2.27; printed pages 192.
+PrefixMetadataUsage = OwnedFeatureTyping;
+# 8.2.2.27; printed pages 192.
+MetadataUsage = UsageExtensionKeyword* ( '@' | 'metadata' ) MetadataUsageDeclaration ( 'about' Annotation ( ',' Annotation )* )? MetadataBody;
+# 8.2.2.27; printed pages 192.
+MetadataUsageDeclaration = ( Identification ( ':' | 'typed' 'by' ) )? OwnedFeatureTyping;
+# 8.2.2.27; printed pages 192.
+MetadataBody = ';' | '{' ( DefinitionMember | MetadataBodyUsageMember | AliasMember | Import )* '}';
+# 8.2.2.27; printed pages 192.
+MetadataBodyUsageMember = MetadataBodyUsage;
+# 8.2.2.27; printed pages 192.
+MetadataBodyUsage = 'ref'? ( ':>>' | 'redefines' )? OwnedRedefinition FeatureSpecializationPart? ValuePart? MetadataBody;
+# 8.2.2.27; printed pages 192.
+ExtendedDefinition = BasicDefinitionPrefix? DefinitionExtensionKeyword+ 'def' Definition;
+# 8.2.2.27; printed pages 192.
+ExtendedUsage = UnextendedUsagePrefix UsageExtensionKeyword+ Usage;
+# 8.2.2.1.2; printed pages 165.
+DEFINED_BY = ':' | 'defined' 'by';
+# 8.2.2.1.2; printed pages 165.
+SPECIALIZES = ':>' | 'specializes';
+# 8.2.2.1.2; printed pages 165.
+SUBSETS = ':>' | 'subsets';
+# 8.2.2.1.2; printed pages 165.
+REFERENCES = '::>' | 'references';
+# 8.2.2.1.2; printed pages 165.
+CROSSES = '=>' | 'crosses';
+# 8.2.2.1.2; printed pages 165.
+REDEFINES = ':>>' | 'redefines';

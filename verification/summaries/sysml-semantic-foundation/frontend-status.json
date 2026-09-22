@@ -1,0 +1,342 @@
+﻿{
+  "compatibility_interpretations_adopted": [],
+  "documents": [
+    {
+      "bytes": 14335,
+      "complete": true,
+      "diagnostics": [],
+      "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Actions.sysml",
+      "production_nodes": 3300,
+      "recovery_regions": 0,
+      "revision": "9b3045f1-4ad2-539c-89cd-5b709aa0583a",
+      "sha256": "541e019ff4a827fc5f2139987d2a96f8735e9423d623859fb0e93281371eafb5"
+    },
+    {
+      "bytes": 788,
+      "complete": false,
+      "diagnostics": [
+        {
+          "byte_range": [
+            246,
+            249
+          ],
+          "code": "SG_RECOVERY",
+          "message": "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+          "token": "def"
+        }
+      ],
+      "document": "f4f235c1-75d6-50e9-b3c9-6c791f63eacb",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Allocations.sysml",
+      "production_nodes": 1,
+      "recovery_regions": 1,
+      "revision": "8cbe8ab1-054f-5dde-a128-a49657761a16",
+      "sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1"
+    },
+    {
+      "bytes": 1038,
+      "complete": true,
+      "diagnostics": [],
+      "document": "bd6e1341-4d9a-598a-ae74-3356c5295541",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/AnalysisCases.sysml",
+      "production_nodes": 213,
+      "recovery_regions": 0,
+      "revision": "dd9a5d30-638c-5d4f-a95c-ce8699d35e30",
+      "sha256": "2bb88f61178f2cefd5441600d2d980ed1e1a4ffc5cb7b3ca9207edee5c350f87"
+    },
+    {
+      "bytes": 626,
+      "complete": true,
+      "diagnostics": [],
+      "document": "d4b0bce6-0650-5ca9-b4c1-123406ee7ad6",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Attributes.sysml",
+      "production_nodes": 48,
+      "recovery_regions": 0,
+      "revision": "e70019a0-e75d-5264-a220-c2b93bda3eb6",
+      "sha256": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d"
+    },
+    {
+      "bytes": 990,
+      "complete": true,
+      "diagnostics": [],
+      "document": "1353da88-7307-5076-90eb-0e8137b11bae",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Calculations.sysml",
+      "production_nodes": 189,
+      "recovery_regions": 0,
+      "revision": "755c5ba2-e10d-5de0-bfbb-3bc11918af9d",
+      "sha256": "19f5c2ac553c0a034550292de6bfa601e6948fc81d5af781b59c940eee2e5f72"
+    },
+    {
+      "bytes": 1619,
+      "complete": false,
+      "diagnostics": [
+        {
+          "byte_range": [
+            1183,
+            1189
+          ],
+          "code": "SG_RECOVERY",
+          "message": "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+          "token": "return"
+        }
+      ],
+      "document": "e78a99fd-3875-5781-a4ab-4a05b29cf291",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Cases.sysml",
+      "production_nodes": 1,
+      "recovery_regions": 1,
+      "revision": "42377615-7cc1-5968-b880-82a5e91de1fd",
+      "sha256": "2c4c0cbaaa466f9f720ba69af3a019517ca0a7741a561f7880006bae946bf24f"
+    },
+    {
+      "bytes": 2133,
+      "complete": false,
+      "diagnostics": [
+        {
+          "byte_range": [
+            1630,
+            1631
+          ],
+          "code": "SG_RECOVERY",
+          "message": "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+          "token": ";"
+        }
+      ],
+      "document": "54160c33-fbae-52a0-8a59-e32ee8a8752f",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Connections.sysml",
+      "production_nodes": 1,
+      "recovery_regions": 1,
+      "revision": "74287a42-126f-55bb-a6ae-9250a42030ed",
+      "sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3"
+    },
+    {
+      "bytes": 1263,
+      "complete": true,
+      "diagnostics": [],
+      "document": "02523915-5c75-5840-9a07-1b2c00b781f1",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Constraints.sysml",
+      "production_nodes": 209,
+      "recovery_regions": 0,
+      "revision": "2121bd1f-ad90-54c2-92e0-0031519e698d",
+      "sha256": "84dd65984abd0c35c37b75ef5766bfa63c836aa75a1c75a9d3eb5f4230fa8fdd"
+    },
+    {
+      "bytes": 4987,
+      "complete": false,
+      "diagnostics": [
+        {
+          "byte_range": [
+            1476,
+            1486
+          ],
+          "code": "SG_RECOVERY",
+          "message": "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+          "token": "occurrence"
+        }
+      ],
+      "document": "24be0e02-4ed9-5306-aeaa-de836c2f50ce",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Flows.sysml",
+      "production_nodes": 1,
+      "recovery_regions": 1,
+      "revision": "dcf2d265-4325-5057-a10d-6277aed70aea",
+      "sha256": "4e65e6a45060d634db8ba16767d7692e7704c62c84b579fdb2e56b18bd0f8a34"
+    },
+    {
+      "bytes": 3467,
+      "complete": false,
+      "diagnostics": [
+        {
+          "byte_range": [
+            2934,
+            2938
+          ],
+          "code": "SG_RECOVERY",
+          "message": "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+          "token": "port"
+        }
+      ],
+      "document": "2a80d641-a037-5a99-b151-18036e3d273e",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Interfaces.sysml",
+      "production_nodes": 1,
+      "recovery_regions": 1,
+      "revision": "11b745a2-d5c6-5822-98bb-cef89594fa1c",
+      "sha256": "62b5c3c2bc3960e8d25633231c3933a81e422b3a904dc9541b8787113d076c66"
+    },
+    {
+      "bytes": 3946,
+      "complete": false,
+      "diagnostics": [
+        {
+          "byte_range": [
+            3681,
+            3685
+          ],
+          "code": "SG_RECOVERY",
+          "message": "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+          "token": "item"
+        }
+      ],
+      "document": "58deefe8-d1ca-5a88-83d9-efb8b07e074e",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Items.sysml",
+      "production_nodes": 1,
+      "recovery_regions": 1,
+      "revision": "4798e317-3ea6-5532-b02a-24a088bd3632",
+      "sha256": "3a344edb7def2276fa15e410c363531e5098d93bdf33a583418151fa87f538b3"
+    },
+    {
+      "bytes": 813,
+      "complete": true,
+      "diagnostics": [],
+      "document": "ba15f023-7c02-5e13-a9d9-c9698c313654",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Metadata.sysml",
+      "production_nodes": 114,
+      "recovery_regions": 0,
+      "revision": "8b4e1453-304a-5fdc-8d65-aedc3328e14c",
+      "sha256": "6ad7a7857fad81570c84fac73981f8cce5aacab79bee2619644670bb792b2474"
+    },
+    {
+      "bytes": 1844,
+      "complete": true,
+      "diagnostics": [],
+      "document": "8c7eb7dd-a3a2-5d0c-bac3-d8d66a69d0a4",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Parts.sysml",
+      "production_nodes": 529,
+      "recovery_regions": 0,
+      "revision": "35747f82-3b12-56c8-b13f-5328f125aed9",
+      "sha256": "ccaaee608c1eb372c47cfdfc011c5f4f48cc5bcca5fb8b2441587ec26fd0fdaa"
+    },
+    {
+      "bytes": 1522,
+      "complete": true,
+      "diagnostics": [],
+      "document": "fe2608aa-5aca-541c-b702-893347cd9e9b",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Ports.sysml",
+      "production_nodes": 255,
+      "recovery_regions": 0,
+      "revision": "31c26dcf-3911-5b7f-9e4f-39ebfd14318f",
+      "sha256": "401b2cb745bc0efb9df386d0435bddffa0e23d1eb6511cbe824734169b6a9566"
+    },
+    {
+      "bytes": 5466,
+      "complete": true,
+      "diagnostics": [],
+      "document": "1eb31772-876d-5715-b642-94c0edac7c4f",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Requirements.sysml",
+      "production_nodes": 986,
+      "recovery_regions": 0,
+      "revision": "98ca0d4c-5494-5ea2-a8c3-a0da8bc440bb",
+      "sha256": "c436a8fe2959b380ee3d8ae7c1c206311aa9c1215d13800b215f9952e1216632"
+    },
+    {
+      "bytes": 6115,
+      "complete": true,
+      "diagnostics": [],
+      "document": "fd9aaa5c-751b-52a4-960b-b08ac3ad3b68",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/StandardViewDefinitions.sysml",
+      "production_nodes": 167,
+      "recovery_regions": 0,
+      "revision": "2201aa1f-388b-5960-8686-b04d717912ad",
+      "sha256": "b29882b0240e3cc2721b66c6bc9fd1d2d2431a34e80e170cd465911ff8d833a5"
+    },
+    {
+      "bytes": 3369,
+      "complete": true,
+      "diagnostics": [],
+      "document": "869ab9ca-e736-5d27-b49c-f697f22b25b9",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/States.sysml",
+      "production_nodes": 819,
+      "recovery_regions": 0,
+      "revision": "5055a07b-7cb9-5a5c-a7a1-62e6bd2c76ce",
+      "sha256": "9524f4c6d4dd10550faf6692dfdef3975e9e7f8514368e92032e8a17199f4980"
+    },
+    {
+      "bytes": 24613,
+      "complete": true,
+      "diagnostics": [],
+      "document": "325305b9-b018-5559-acd5-8592e2e60015",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/SysML.sysml",
+      "production_nodes": 9489,
+      "recovery_regions": 0,
+      "revision": "dba98901-61ea-5d47-bae5-25a93d3c548a",
+      "sha256": "badb9f49bd280d0273a5f55fd6572fe2b332df6c8f3888415c04589fb314b900"
+    },
+    {
+      "bytes": 1271,
+      "complete": true,
+      "diagnostics": [],
+      "document": "ce273c67-cc1f-5cec-a3b0-847c964cdba3",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/UseCases.sysml",
+      "production_nodes": 328,
+      "recovery_regions": 0,
+      "revision": "df1d0aed-2b85-586a-9624-24afc518d770",
+      "sha256": "242e51944c32032215d76a9ff1fd967d8ba36efffd9d78da1c423a5b102a2cf6"
+    },
+    {
+      "bytes": 2488,
+      "complete": false,
+      "diagnostics": [
+        {
+          "byte_range": [
+            669,
+            675
+          ],
+          "code": "SG_RECOVERY",
+          "message": "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+          "token": "return"
+        }
+      ],
+      "document": "9e3730df-148c-5a36-9195-a23cc1b824ea",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/VerificationCases.sysml",
+      "production_nodes": 1,
+      "recovery_regions": 1,
+      "revision": "25bbf70f-46e4-5a62-bc30-e552db458350",
+      "sha256": "dbee7255e16df9c5cf0bded96c43cb60b1e5026b6973c5fb1176316902ac47b9"
+    },
+    {
+      "bytes": 3845,
+      "complete": false,
+      "diagnostics": [
+        {
+          "byte_range": [
+            846,
+            853
+          ],
+          "code": "SG_RECOVERY",
+          "message": "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration",
+          "token": "satisfy"
+        }
+      ],
+      "document": "78215481-452f-5123-9500-4ec748094e73",
+      "exact_byte_preservation": true,
+      "path": "Systems Library/Views.sysml",
+      "production_nodes": 1,
+      "recovery_regions": 1,
+      "revision": "d4d50c13-f40e-58c0-b5ae-414e479ffbd2",
+      "sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25"
+    }
+  ],
+  "documents_parsed": 13,
+  "documents_total": 21,
+  "format": "agentique-sysml-strict-frontend/1",
+  "grammar": "SysML 2.0 final",
+  "semantic_acceptance": false
+}
