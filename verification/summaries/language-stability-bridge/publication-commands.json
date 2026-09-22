@@ -102,6 +102,40 @@
         "min_free_disk_bytes": 1073741824
       },
       "output_sha256": "b98ad92f95710beaa927ad8e722d05688e081ec17a09d712875759d023edd9c3"
+    },
+    {
+      "name": "actions-selected-populations",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-selected-populations/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "f6eaac7a515685f1d6457f585be57fd59a569ec4",
+      "working_changes_sha256": "2b462615c103d110863bb759f5b405e59e498a7954aa4ed6f3608ca06654570e",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-selected-populations",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 15116,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 29520863232,
+      "safety_stop": null,
+      "duration_seconds": 1066.39,
+      "peak_rss_bytes": 5188866048,
+      "peak_private_bytes": 5281718272,
+      "samples": 1066,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "566b0213183862d6af30d3c5ff1a1f1c0e42835bc206e1e5b30602f902924a5a"
     }
   ]
 }
