@@ -1,0 +1,526 @@
+{
+  "format": "agentique-sysml-systems-authority-review/1",
+  "review_status": "exact-authority-conflicts-confirmed-canonical-graph-witnesses-pending",
+  "source_commit": "ca4b59f726b7cdfa1505e921058b7b64357377dc",
+  "baseline": "Pinned final SysML 2.0; no preliminary SysML 2.1 or KerML 1.1 rule adopted.",
+  "profiles": {
+    "published": "omg-sysml-2.0-published/1",
+    "operational": "agentique-sysml-2.0-operational/1"
+  },
+  "authority_inputs": [
+    {
+      "path": "SysML.pdf",
+      "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a",
+      "bytes": 3804140
+    },
+    {
+      "path": "standards/normative/sysml-2.0/SysML.xmi",
+      "sha256": "caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f",
+      "bytes": 1135635
+    },
+    {
+      "path": "standards/artifacts/Systems-Library.kpar",
+      "sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+      "bytes": 27577
+    }
+  ],
+  "grammar_manifest_sha256": "150aeac2ad97e803ba8b7823e1c3d07285efda9b9fd8670c877880647cd135ea",
+  "immutable_kerml_dependency": {
+    "profile": "agentique-kerml-1.0-operational/9",
+    "publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+    "modified": false
+  },
+  "authorized_decisions": [
+    {
+      "id": "SYSTEMS-GRAMMAR-ALLOCATION-DISPATCH",
+      "status": "authorized-operational-v1",
+      "authority": "Explicit milestone instructions Parts A1-A4",
+      "manifest": "standards/grammar/sysml-2.0-operational-v1.json",
+      "changes": [
+        {
+          "production": "DefinitionElement",
+          "published_rhs": "Package | LibraryPackage | AnnotatingElement | Dependency | AttributeDefinition | EnumerationDefinition | OccurrenceDefinition | IndividualDefinition | ItemDefinition | PartDefinition | ConnectionDefinition | FlowDefinition | InterfaceDefinition | PortDefinition | ActionDefinition | CalculationDefinition | StateDefinition | ConstraintDefinition | RequirementDefinition | ConcernDefinition | CaseDefinition | AnalysisCaseDefinition | VerificationCaseDefinition | UseCaseDefinition | ViewDefinition | ViewpointDefinition | RenderingDefinition | MetadataDefinition | ExtendedDefinition",
+          "operational_rhs": "Package | LibraryPackage | AnnotatingElement | Dependency | AttributeDefinition | EnumerationDefinition | OccurrenceDefinition | IndividualDefinition | ItemDefinition | PartDefinition | ConnectionDefinition | FlowDefinition | InterfaceDefinition | PortDefinition | ActionDefinition | CalculationDefinition | StateDefinition | ConstraintDefinition | RequirementDefinition | ConcernDefinition | CaseDefinition | AnalysisCaseDefinition | VerificationCaseDefinition | UseCaseDefinition | ViewDefinition | ViewpointDefinition | RenderingDefinition | MetadataDefinition | ExtendedDefinition | AllocationDefinition"
+        }
+      ]
+    },
+    {
+      "id": "SYSTEMS-GRAMMAR-CASE-RETURN",
+      "status": "authorized-operational-v1",
+      "authority": "Explicit milestone instructions Parts A1-A4",
+      "manifest": "standards/grammar/sysml-2.0-operational-v1.json",
+      "changes": [
+        {
+          "production": "CaseBodyItem",
+          "published_rhs": "ActionBodyItem | SubjectMember | ActorMember | ObjectiveMember",
+          "operational_rhs": "ActionBodyItem | SubjectMember | ActorMember | ObjectiveMember | ReturnParameterMember"
+        }
+      ]
+    },
+    {
+      "id": "SYSTEMS-GRAMMAR-END-USAGE-PREFIX",
+      "status": "authorized-operational-v1",
+      "authority": "Explicit milestone instructions Parts A1-A4",
+      "manifest": "standards/grammar/sysml-2.0-operational-v1.json",
+      "changes": [
+        {
+          "production": "DefaultReferenceUsage",
+          "published_rhs": "RefPrefix Usage",
+          "operational_rhs": "( EndUsagePrefix | RefPrefix ) Usage"
+        },
+        {
+          "production": "OccurrenceUsagePrefix",
+          "published_rhs": "BasicUsagePrefix ( 'individual' )? ( PortionKind )? UsageExtensionKeyword*",
+          "operational_rhs": "UnextendedUsagePrefix ( 'individual' )? ( PortionKind )? UsageExtensionKeyword*"
+        }
+      ]
+    },
+    {
+      "id": "SYSTEMS-GRAMMAR-SATISFY-REQUIREMENT",
+      "status": "authorized-operational-v1",
+      "authority": "Explicit milestone instructions Parts A1-A4",
+      "manifest": "standards/grammar/sysml-2.0-operational-v1.json",
+      "changes": [
+        {
+          "production": "SatisfyRequirementUsage",
+          "published_rhs": "OccurrenceUsagePrefix 'assert' ( 'not' ) 'satisfy' ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'requirement' UsageDeclaration ) ValuePart? ( 'by' SatisfactionSubjectMember )? RequirementBody",
+          "operational_rhs": "OccurrenceUsagePrefix 'assert'? ( 'not' )? 'satisfy' ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'requirement' UsageDeclaration ) ValuePart? ( 'by' SatisfactionSubjectMember )? RequirementBody"
+        }
+      ]
+    },
+    {
+      "id": "AGQ-SYSML20-001",
+      "status": "authorized-operational-v1",
+      "authority": "Explicit milestone Part B, including its cited OMG SYSML21-46 rationale",
+      "rule": {
+        "name": "checkItemUsageSubitemSpecialization",
+        "xmi_id": "Systems-Items-ItemUsage-checkItemUsageSubitemSpecialization",
+        "xmi_line": 5158,
+        "formal_body": "isComposite and owningType <> null and (owningType.oclIsKindOf(ItemDefinition) or  owningType.oclIsKindOf(ItemUsage)) implies     specializesFromLibrary('Items::Item::subitem')"
+      },
+      "published_target": "Items::Item::subitem",
+      "operational_target": "Items::Item::subitems",
+      "scope": "Only the target changes; the full published antecedent is retained. Use the actual canonical subitems identity; no alias and no library edit.",
+      "pdf_anchors": [
+        {
+          "section": "8.3.10.3",
+          "pdf_pages": [
+            320
+          ],
+          "printed_pages": [
+            288
+          ]
+        },
+        {
+          "section": "8.4.1 Table 32",
+          "pdf_pages": [
+            429
+          ],
+          "printed_pages": [
+            397
+          ]
+        }
+      ],
+      "source_witnesses": [
+        {
+          "path": "Systems Library/Items.sysml",
+          "source_sha256": "3a344edb7def2276fa15e410c363531e5098d93bdf33a583418151fa87f538b3",
+          "line": 110,
+          "byte_range": [
+            3039,
+            3096
+          ],
+          "text": "abstract item subitems: Item[0..*] :> items, subobjects {",
+          "textual_metaclass": "ItemUsage"
+        }
+      ],
+      "historical_profile": "Published preserves singular subitem."
+    },
+    {
+      "id": "SYSML20-ATTRIBUTE-FORMAL-PRECEDENCE",
+      "status": "authorized-formal-target-precedence",
+      "authority": "Explicit milestone Part B1",
+      "rule": {
+        "name": "checkAttributeUsageSpecialization",
+        "xmi_id": "Systems-Attributes-AttributeUsage-checkAttributeUsageSpecialization",
+        "xmi_line": 7899,
+        "formal_body": "specializesFromLibrary('Base::dataValues')"
+      },
+      "target_in_both_profiles": "Base::dataValues",
+      "table_32_target": "Attributes::attributes",
+      "pdf_anchors": [
+        {
+          "section": "8.3.7.3",
+          "pdf_pages": [
+            311
+          ],
+          "printed_pages": [
+            279
+          ]
+        },
+        {
+          "section": "8.4.1 Table 32",
+          "pdf_pages": [
+            429
+          ],
+          "printed_pages": [
+            397
+          ]
+        },
+        {
+          "section": "8.4.3.2",
+          "pdf_pages": [
+            436
+          ],
+          "printed_pages": [
+            404
+          ]
+        }
+      ],
+      "source_witnesses": [
+        {
+          "path": "Systems Library/Attributes.sysml",
+          "source_sha256": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d",
+          "line": 9,
+          "byte_range": [
+            197,
+            229
+          ],
+          "text": "private import Base::dataValues;"
+        },
+        {
+          "path": "Systems Library/Attributes.sysml",
+          "source_sha256": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d",
+          "line": 19,
+          "byte_range": [
+            498,
+            536
+          ],
+          "text": "alias attributeValues for dataValues {"
+        }
+      ],
+      "disposition": "Table 32 documentation/summary inconsistency. Formal rule, semantics prose and pinned alias agree on Base::dataValues. No graph contradiction is established, and no Attributes::attributes declaration is authorized."
+    }
+  ],
+  "remaining_findings": [
+    {
+      "id": "SYSML20-PUB-001",
+      "subject_metaclass": "ViewpointDefinition",
+      "rule": {
+        "name": "checkViewpointDefinitionSpecialization",
+        "xmi_id": "Systems-Views-ViewpointDefinition-checkViewpointDefinitionSpecialization",
+        "xmi_line": 8999,
+        "formal_body": "specializesFromLibrary('Views::Viewpoint')"
+      },
+      "formal_target": "Views::Viewpoint",
+      "other_pinned_authority_target": "Views::ViewpointCheck",
+      "antecedent": "Every ViewpointDefinition; no additional condition",
+      "pdf_anchors": [
+        {
+          "section": "8.3.26.8",
+          "pdf_pages": [
+            420,
+            421
+          ],
+          "printed_pages": [
+            388,
+            389
+          ],
+          "observation": "Formal body and its adjacent prose both use Views::Viewpoint."
+        },
+        {
+          "section": "8.4.1 Table 31",
+          "pdf_pages": [
+            428
+          ],
+          "printed_pages": [
+            396
+          ],
+          "observation": "Implied Subclassification target is Views::ViewpointCheck."
+        },
+        {
+          "section": "8.4.22.3",
+          "pdf_pages": [
+            490
+          ],
+          "printed_pages": [
+            458
+          ],
+          "observation": "Semantics prose names Views::ViewpointCheck. The adjacent example independently spells its package Viewpoints; it is not adopted."
+        },
+        {
+          "section": "9.2.19.2.11",
+          "pdf_pages": [
+            543,
+            544
+          ],
+          "printed_pages": [
+            511,
+            512
+          ],
+          "observation": "Catalog declares ViewpointCheck as a ViewpointDefinition and the base of all ViewpointDefinitions."
+        }
+      ],
+      "source_witnesses": [
+        {
+          "path": "Systems Library/Views.sysml",
+          "source_sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
+          "line": 52,
+          "byte_range": [
+            1092,
+            1151
+          ],
+          "text": "abstract viewpoint def ViewpointCheck :> RequirementCheck {",
+          "textual_metaclass": "ViewpointDefinition"
+        }
+      ],
+      "source_antecedent_evidence": "The pinned source explicitly declares a ViewpointDefinition, so this unconditional rule applies once correctly lowered.",
+      "required_relationship": "Subclassifications to the required canonical base unless already satisfied transitively.",
+      "authority_status": "unresolved-exact-corpus-target-conflict",
+      "correction_authorized": false,
+      "publication_impact": "The rule chooses a canonical specialization endpoint and is therefore a graph-producing obligation, not only an unrelated conformance validator.",
+      "canonical_graph_evidence": {
+        "status": "pending-lead-candidate-query",
+        "subject_element_id": null,
+        "formal_target_lookup": null,
+        "other_target_lookup": null,
+        "antecedent_query": null,
+        "publication_blocker_confirmed": false
+      },
+      "disposition": "Preserve the formal target and report any incomplete lookup; do not invent an alias, silently substitute the other target, or waive the producer. Attach actual candidate query evidence before declaring a demonstrated publication blocker."
+    },
+    {
+      "id": "SYSML20-PUB-002",
+      "subject_metaclass": "ViewpointUsage",
+      "rule": {
+        "name": "checkViewpointUsageSpecialization",
+        "xmi_id": "Systems-Views-ViewpointUsage-checkViewpointUsageSpecialization",
+        "xmi_line": 9261,
+        "formal_body": "specializesFromLibrary('Views::viewpoints')"
+      },
+      "formal_target": "Views::viewpoints",
+      "other_pinned_authority_target": "Views::viewpointChecks",
+      "antecedent": "Every ViewpointUsage; no additional condition",
+      "pdf_anchors": [
+        {
+          "section": "8.3.26.9",
+          "pdf_pages": [
+            421
+          ],
+          "printed_pages": [
+            389
+          ],
+          "observation": "Formal body and its adjacent prose both use Views::viewpoints."
+        },
+        {
+          "section": "8.4.1 Table 32",
+          "pdf_pages": [
+            432
+          ],
+          "printed_pages": [
+            400
+          ],
+          "observation": "Implied Subsetting target also uses Views::viewpoints."
+        },
+        {
+          "section": "8.4.22.4",
+          "pdf_pages": [
+            490
+          ],
+          "printed_pages": [
+            458
+          ],
+          "observation": "Semantics prose and usage example require Views::viewpointChecks."
+        },
+        {
+          "section": "9.2.19.2.12",
+          "pdf_pages": [
+            544
+          ],
+          "printed_pages": [
+            512
+          ],
+          "observation": "Catalog declares viewpointChecks as a ViewpointUsage and the base feature of all ViewpointUsages."
+        }
+      ],
+      "source_witnesses": [
+        {
+          "path": "Systems Library/Views.sysml",
+          "source_sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
+          "line": 30,
+          "byte_range": [
+            654,
+            750
+          ],
+          "text": "viewpoint viewpointSatisfactions : ViewpointCheck[0..*] :> viewpointChecks, checkedConstraints {",
+          "textual_metaclass": "ViewpointUsage"
+        },
+        {
+          "path": "Systems Library/Views.sysml",
+          "source_sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
+          "line": 107,
+          "byte_range": [
+            2319,
+            2409
+          ],
+          "text": "abstract viewpoint viewpointChecks : ViewpointCheck[0..*] nonunique :> requirementChecks {",
+          "textual_metaclass": "ViewpointUsage"
+        }
+      ],
+      "source_antecedent_evidence": "Two explicit ViewpointUsage declarations exercise the unconditional rule. The existing viewpointChecks Subsetting on viewpointSatisfactions does not satisfy a formal target with a different canonical identity.",
+      "required_relationship": "Subsettings to the required canonical base unless already satisfied transitively; FeatureTyping cannot substitute.",
+      "authority_status": "unresolved-exact-corpus-target-conflict",
+      "correction_authorized": false,
+      "publication_impact": "The rule chooses a canonical specialization endpoint and is therefore a graph-producing obligation, not only an unrelated conformance validator.",
+      "canonical_graph_evidence": {
+        "status": "pending-lead-candidate-query",
+        "subject_element_id": null,
+        "formal_target_lookup": null,
+        "other_target_lookup": null,
+        "antecedent_query": null,
+        "publication_blocker_confirmed": false
+      },
+      "disposition": "Preserve the formal target and report any incomplete lookup; do not invent an alias, silently substitute the other target, or waive the producer. Attach actual candidate query evidence before declaring a demonstrated publication blocker."
+    },
+    {
+      "id": "SYSML20-PUB-003",
+      "subject_metaclass": "ConnectionDefinition",
+      "rule": {
+        "name": "checkConnectionDefinitionBinarySpecialization",
+        "xmi_id": "Systems-Connections-ConnectionDefinition-checkConnectionDefinitionBinarySpecialization",
+        "xmi_line": 9436,
+        "formal_body": "ownedEndFeature->size() = 2 implies specializesFromLibrary('Connections::BinaryConnections')"
+      },
+      "formal_target": "Connections::BinaryConnections",
+      "other_pinned_authority_target": "Connections::BinaryConnection",
+      "antecedent": "ownedEndFeature->size() = 2",
+      "pdf_anchors": [
+        {
+          "section": "8.3.13.3",
+          "pdf_pages": [
+            330
+          ],
+          "printed_pages": [
+            298
+          ],
+          "observation": "Formal body uses plural BinaryConnections; adjacent prose uses singular BinaryConnection. XMI has the same discrepancy."
+        },
+        {
+          "section": "8.4.1 Table 31",
+          "pdf_pages": [
+            428
+          ],
+          "printed_pages": [
+            396
+          ],
+          "observation": "Implied Subclassification target is singular Connections::BinaryConnection."
+        },
+        {
+          "section": "8.4.9.1",
+          "pdf_pages": [
+            443,
+            444
+          ],
+          "printed_pages": [
+            411,
+            412
+          ],
+          "observation": "Prose and end redefinition paths use singular BinaryConnection; the illustrative B specialization line uses plural BinaryConnections."
+        }
+      ],
+      "source_witnesses": [
+        {
+          "path": "Systems Library/Connections.sysml",
+          "source_sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3",
+          "line": 35,
+          "byte_range": [
+            1225,
+            1299
+          ],
+          "text": "abstract connection def BinaryConnection :> Connection, BinaryLinkObject {",
+          "textual_metaclass": "ConnectionDefinition"
+        },
+        {
+          "path": "Systems Library/Connections.sysml",
+          "source_sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3",
+          "line": 43,
+          "byte_range": [
+            1581,
+            1631
+          ],
+          "text": "end source: Anything :>> BinaryLinkObject::source;"
+        },
+        {
+          "path": "Systems Library/Connections.sysml",
+          "source_sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3",
+          "line": 44,
+          "byte_range": [
+            1640,
+            1690
+          ],
+          "text": "end target: Anything :>> BinaryLinkObject::target;"
+        },
+        {
+          "path": "Systems Library/Allocations.sysml",
+          "source_sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+          "line": 11,
+          "byte_range": [
+            235,
+            282
+          ],
+          "text": "allocation def Allocation :> BinaryConnection {",
+          "textual_metaclass": "AllocationDefinition"
+        },
+        {
+          "path": "Systems Library/Allocations.sysml",
+          "source_sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+          "line": 19,
+          "byte_range": [
+            512,
+            562
+          ],
+          "text": "end source: Anything :>> BinaryConnection::source;"
+        },
+        {
+          "path": "Systems Library/Allocations.sysml",
+          "source_sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+          "line": 20,
+          "byte_range": [
+            565,
+            615
+          ],
+          "text": "end target: Anything :>> BinaryConnection::target;"
+        }
+      ],
+      "source_antecedent_evidence": "BinaryConnection directly owns the two written end usages source and target. Allocation, whose metaclass specializes ConnectionDefinition, also directly owns two ends. The canonical ownedEndFeature size must still be confirmed on correctly lowered records.",
+      "required_relationship": "Subclassification to the required binary canonical base when the exact owned-end antecedent is true.",
+      "authority_status": "unresolved-exact-corpus-target-conflict",
+      "correction_authorized": false,
+      "publication_impact": "The rule chooses a canonical specialization endpoint and is therefore a graph-producing obligation, not only an unrelated conformance validator.",
+      "canonical_graph_evidence": {
+        "status": "pending-lead-candidate-query",
+        "subject_element_id": null,
+        "formal_target_lookup": null,
+        "other_target_lookup": null,
+        "antecedent_query": null,
+        "publication_blocker_confirmed": false
+      },
+      "disposition": "Preserve the formal target and report any incomplete lookup; do not invent an alias, silently substitute the other target, or waive the producer. Attach actual candidate query evidence before declaring a demonstrated publication blocker."
+    }
+  ],
+  "source_name_observations": {
+    "scope": "Whole-word scan of all 21 exact SysML source texts; source observation is not a canonical namespace query.",
+    "Viewpoint": "No whole-word occurrence.",
+    "BinaryConnections": "No whole-word occurrence.",
+    "viewpoints": "Only one occurrence: prose comment in Views.sysml line 4; no declaration or alias by that name."
+  },
+  "acceptance_boundary": "These three findings have exact corpus source antecedents and change required graph endpoints. Final publication-blocker classification awaits candidate identities, complete/incomplete lookup outcomes, canonical antecedents and evidence dependencies from the lead. They do not authorize a correction.",
+  "verification": {
+    "command": "python - < authority-review.md Python reproduction block",
+    "exit_code": 0,
+    "tool": "Python 3.12.10; pypdf; xml.etree.ElementTree; zipfile",
+    "source_mutations": false,
+    "output_summary": "Verified 3 authority hashes, 5 formal PDF/XMI rules, 12 source witnesses, and the 21-document name observations; canonical graph evidence remains separate.",
+    "previous_probe": "An initial PDF prose-token boundary check failed because pypdf joins BinaryConnection with the following word from; the final check uses the unambiguous exact Table 31 token on PDF 428. No authority input changed."
+  }
+}
