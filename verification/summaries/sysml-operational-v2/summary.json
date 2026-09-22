@@ -4,6 +4,10 @@
   "scope": "Operational v2 authority profile and focused Systems semantic closure regressions",
   "commands": [
     {
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "exit_code": 0
+    },
+    {
       "command": "cargo fmt --all -- --check",
       "exit_code": 0
     },
@@ -26,6 +30,11 @@
       "command": "cargo test --locked --offline -p agq-kerml-syntax operational_v2_reuses_v1_grammar",
       "exit_code": 0,
       "result": "1 passed"
+    },
+    {
+      "command": "cargo test --workspace",
+      "exit_code": 101,
+      "result": "environment failure: linker/PDB writes reported no space on device; no semantic test failure was reached"
     }
   ],
   "publication_attempted": false,
