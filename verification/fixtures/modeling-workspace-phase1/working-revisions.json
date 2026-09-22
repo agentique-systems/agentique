@@ -1,0 +1,88 @@
+{
+  "format": "agq-modeling-workspace-working-inputs/1",
+  "status": "prepared-inputs-not-workspace-acceptance",
+  "initial_documents": [
+    {
+      "path": "Contracts.kerml",
+      "language": "KerML",
+      "source": "package PlatformContracts { datatype RevisionValue; }\n"
+    },
+    {
+      "path": "Repository.sysml",
+      "language": "SysML",
+      "source": "package Storage { part def Repository { attribute revision : PlatformContracts::RevisionValue; } }\n"
+    },
+    {
+      "path": "Workspace.sysml",
+      "language": "SysML",
+      "source": "package Modeling { part def Workspace { part repository : Storage::Repository; } }\n"
+    }
+  ],
+  "independent_scenarios": [
+    {
+      "name": "missing-typing-endpoint",
+      "document": "Workspace.sysml",
+      "source": "package Modeling { part def Workspace { part repository : Storage::MissingRepository; } }\n",
+      "syntax": "Parsed",
+      "working_assertions": [
+        "new head retains exactly these bytes",
+        "strict snapshot absent while required endpoint obligation exists",
+        "reference assertion is not Complete Resolved",
+        "query context carries construction obligation and current source identity",
+        "validation fails; previous validated revision is unchanged"
+      ]
+    },
+    {
+      "name": "recovered-provider",
+      "document": "Repository.sysml",
+      "source": "package Storage { part def Repository {",
+      "syntax": "Recovered",
+      "working_assertions": [
+        "new head retains recovered syntax and exact malformed bytes",
+        "unsafe document contributes no fabricated or stale declarations",
+        "available partial queries carry pending project namespace evidence, otherwise explicit unavailable",
+        "missing provider does not support a Complete negative conclusion",
+        "repair uses this revision's syntax reconciliation history"
+      ]
+    }
+  ],
+  "remove_and_repair": {
+    "remove": "Repository.sysml",
+    "assertions": [
+      "successful removal advances Working head and removes current canonical provider",
+      "remaining consumer reference cannot retain old resolved endpoint",
+      "old revision still resolves its original provider",
+      "re-adding the same path allocates a new DocumentId and fresh authored identities",
+      "repaired current revision can validate without resurrecting removed identities"
+    ]
+  },
+  "scaling": {
+    "groups": 50,
+    "documents_per_group": 2,
+    "templates": [
+      {
+        "path": "Contracts$INDEX.kerml",
+        "language": "KerML",
+        "source": "package Contracts$INDEX { datatype RevisionValue; }\n"
+      },
+      {
+        "path": "Worker$INDEX.sysml",
+        "language": "SysML",
+        "source": "package Workbench$INDEX { part def Worker { attribute revision : Contracts$INDEX::RevisionValue; part engine; } part worker : Worker; }\n"
+      }
+    ],
+    "revisions": [
+      "s1: add all 100 documents in one explicit batch",
+      "s2: edit Worker025 to add port bus inside Worker",
+      "s3: append SpecializedWorker :> Worker with part :>> engine in Workbench025",
+      "s4: remove Contracts025; retain Working revision with consumer reference failure",
+      "s5: re-add Contracts025 and validate repair"
+    ],
+    "parallel_reads": {
+      "threads": 4,
+      "revisions": ["s1", "s2", "s3", "s4", "s5"],
+      "query_groups": [0, 25, 49],
+      "iterations": 8
+    }
+  }
+}

@@ -46,6 +46,11 @@ Conceptual public operations are `add_kerml`, `add_sysml`, `edit_document` and
 frontend `ProjectChange` values. Ordinary callers do not receive graph mutation
 or producer APIs.
 
+The [frontend boundary review](modeling-workspace-frontend-boundary.md) specifies
+the additive immutable source-input/result carrier, query facade, recovery
+scope evidence and concrete 100-document fixture. It reuses the prepared accepted
+Systems constructor while preserving the existing strict SourceProject API.
+
 The sequence is: check expected head and edit validity; construct candidate
 documents/syntax; lower available declarations and retain missing obligations;
 run local semantic closure as supported; collect exact diagnostics; then publish

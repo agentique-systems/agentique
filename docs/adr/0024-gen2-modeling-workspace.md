@@ -21,9 +21,12 @@ language crates, and persistence is outside this first workspace phase.
 Generation 2 already has useful source infrastructure in
 `agq-kerml-text::SourceProject`: immutable document revisions, explicit languages,
 stable document identities, edit reconciliation, source maps and shared accepted
-KerML dependencies. Its current mixed-language constructor does not establish an
-accepted Systems dependency or a validated effective SysML revision. Those are
-prerequisites for reuse, not assumptions conferred by a workspace wrapper.
+KerML dependencies. The prepared accepted-SysML constructor also mounts the
+authenticated Systems dependency and supplies effective language contexts.
+Its strict source history still cannot retain recovered documents or unresolved
+required endpoints as Working revisions. The
+[frontend boundary review](../modeling-workspace-frontend-boundary.md) specifies
+that remaining additive boundary; a workspace wrapper cannot supply it implicitly.
 
 ## Proposed decision
 

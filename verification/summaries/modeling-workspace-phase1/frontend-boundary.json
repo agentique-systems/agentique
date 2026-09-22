@@ -1,0 +1,82 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "workspace-working-input-preflight",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_frontend_inputs",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c28fd161f85f9d59737e8e2a6d98110a0694a74e",
+      "working_changes_sha256": "caf995615155f528c9ffea696cfd768ec8d13e7ee9137a5c906249f148cc257f",
+      "output_sha256": "b2c1d6f4a7e2ab9610e1afb5a1e522314800179ff3f8ad0662ed4bd0aa5b3f72",
+      "duration_seconds": 4.03,
+      "output": "verification/generated/modeling-workspace-phase1/workspace-working-input-preflight.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "workspace-input-fixture-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_frontend_inputs",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c28fd161f85f9d59737e8e2a6d98110a0694a74e",
+      "working_changes_sha256": "83cd585f132ee109352514f1a1e4a7416f447bbccc8dd9713a2733230c311992",
+      "output_sha256": "45bb234848362bc1c1bef6c24e06a0471db0249a44b0498644021f3d03db68ff",
+      "duration_seconds": 1.45,
+      "output": "verification/generated/modeling-workspace-phase1/workspace-input-fixture-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "workspace-frontend-boundary-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c28fd161f85f9d59737e8e2a6d98110a0694a74e",
+      "working_changes_sha256": "8710b2aea920ee5fe8493c15f1ec1f122dda44b10fe411b76972f6c90ef92baa",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.19,
+      "output": "verification/generated/modeling-workspace-phase1/workspace-frontend-boundary-fmt.log",
+      "environment_overrides": {}
+    }
+  ]
+}

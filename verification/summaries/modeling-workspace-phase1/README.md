@@ -20,3 +20,11 @@ These are design/test obligations, not executed workspace acceptance tests.
 Existing frontend strict-snapshot requirements must be addressed explicitly after
 the gate. SourceProject currently rebuilds authored dependencies; no incremental
 workspace performance or accepted Systems integration is claimed here.
+
+The subsequent [frontend boundary review](../../../docs/modeling-workspace-frontend-boundary.md)
+inspects the prepared accepted-publication SourceProject path. It specifies an
+additive immutable input/result carrier, obligation-backed query facade, recovery
+and removal handling, identity history and 100-document read/scaling assertions.
+Its concrete input fixture has real-frontend parser preflight tests; results are
+recorded in `frontend-boundary.json`. Those tests do not instantiate a workspace
+or establish semantic acceptance. No production workspace has been integrated.
