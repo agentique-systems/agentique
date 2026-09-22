@@ -116,6 +116,19 @@ exercise the negative predicates. A dedicated test verifies every requirement on
 every subject in the untyped SysML anchor population and exact dependency sharing.
 These remain synthetic closed dependencies, not accepted standards receipts.
 
+Negative ownership evidence is exercised by
+`formal_owner_absence_requires_a_witness_until_delayed_attachment`,
+`initial_zero_writer_proof_closes_absent_owner_without_a_scheduler_round`, and
+`initial_closure_requires_a_closed_pending_namespace_owner_provider`. They
+distinguish proven absence from an unresolved provider or possible producer
+attachment. The Actions microfixture checks a false, Complete formal antecedent
+with typed producer-closure evidence. Evidence retains the subject, requirement,
+certificate digest and `LocalProducerClosure`/`AcceptedDependency` source;
+accepted-boundary tests reject unauthenticated immutable graphs. A definitely
+absent owner requires ownership closure, while a present owner's negative class
+test additionally requires effective typing closure. No fabricated owner or
+unnecessary typing premise is introduced to format an explanation.
+
 | Command | Actual output | Exit |
 | --- | --- | --- |
 | `cargo test --locked --offline -p agq-sysml-semantics --lib actions_micro_closes -- --nocapture` | 1 passed, 18.89 seconds | 0 |

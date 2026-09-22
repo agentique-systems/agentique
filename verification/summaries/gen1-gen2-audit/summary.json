@@ -53,6 +53,21 @@
       "duration_seconds": 0.03,
       "output": "verification/generated/gen1-gen2-audit/staged-whitespace.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "generation-boundary-integration",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "3942e68614862a65300c8e15f8b2626176ddbf0a",
+      "working_changes_sha256": "4d77e084c76c37051a0fd98f15b613380bbc24026f2d5d59e274f1d226435c9c",
+      "output_sha256": "4b46c49f77531a7a4652e7a79f7004a097d42001186db5c21968bfc8afb2ce13",
+      "duration_seconds": 0.17,
+      "output": "verification/generated/gen1-gen2-audit/generation-boundary-integration.log",
+      "environment_overrides": {}
     }
   ]
 }
