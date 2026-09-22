@@ -18,6 +18,145 @@
       "duration_seconds": 2.27,
       "output": "verification/generated/kerml-v9-publication/publication-tooling-format.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "publication-tooling-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "--example",
+        "canonical_publication"
+      ],
+      "source_commit": "7efffb259df918a539ae1175620f017c6777df70",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-tooling-focused",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 7488,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 15.031,
+      "peak_rss_bytes": 632528896,
+      "peak_private_bytes": 742043648,
+      "samples": 16,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "fd675bfd1d916fdacdc5dc2da60dc33009f4fe388b6b1df257270b44f592240d"
+    },
+    {
+      "name": "multiplicity-inventory",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "multiplicity_inventory",
+        "--",
+        "--output=verification/generated/kerml-v9-publication/multiplicity-inventory.json"
+      ],
+      "source_commit": "7efffb259df918a539ae1175620f017c6777df70",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/multiplicity-inventory",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 29596,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 18.047,
+      "peak_rss_bytes": 541777920,
+      "peak_private_bytes": 631087104,
+      "samples": 19,
+      "limits": {
+        "wall_seconds": 120.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "2eacd6352b2fbcdecc164a522f150159b7d406d04b4711ca9b54529a9feca4a8"
+    },
+    {
+      "name": "publication-v9-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "publication_slices",
+        "--example",
+        "canonical_publication",
+        "--example",
+        "multiplicity_inventory"
+      ],
+      "source_commit": "7efffb259df918a539ae1175620f017c6777df70",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-v9-release-build",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 26824,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": "requested",
+      "duration_seconds": 41.062,
+      "peak_rss_bytes": 683900928,
+      "peak_private_bytes": 793255936,
+      "samples": 42,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 3221225472,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "a298fa9fb61cf926b238c7375173ac1c1f5d48f622788a34405868401df23b74"
     }
   ]
 }

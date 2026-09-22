@@ -1,0 +1,257 @@
+{
+  "format": "agentique-multiplicity-bound-inventory/1",
+  "profile": "agentique-kerml-1.0-operational/9",
+  "source_content_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "multiplicity_ranges": 1498,
+  "counts": {
+    "cross_feature_multiplicity_reference_bounds": 6,
+    "literal_bounds": 1716,
+    "ordinary_multiplicity_reference_bounds": 9,
+    "other_expression_bounds": 0,
+    "unbounded_bounds": 365
+  },
+  "reference_expression_count": 15,
+  "historical_population": {
+    "complete": true,
+    "missing": [],
+    "previous_count": 15,
+    "previous_groups": {
+      "cross_multiplicity": 6,
+      "ordinary_multiplicity": 9
+    },
+    "retained_source": "verification/kerml-semantic-closure-v10/remaining-structural-investigations.json"
+  },
+  "status": "complete-source-inventory; semantic closure acceptance pending",
+  "bound_expression_count": 2096,
+  "complete_source_inventory": true,
+  "semantic_audit_executed": false,
+  "full_inventory": "verification/generated/kerml-v9-publication/multiplicity-inventory.json",
+  "verification_command": "multiplicity-inventory in tooling-commands.json",
+  "symbolic_references": [
+    {
+      "expression": "ba5a05e4-79ce-57e2-bf90-fa6113147a1e",
+      "multiplicity": "05c9e0e5-02ff-56bd-97d5-d1ff7046fb84",
+      "qualified_path": "StatePerformances::StateTransitionPerformance::linkTriggerDuring",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/StatePerformances.kerml",
+        "range": [
+          5188,
+          5193
+        ],
+        "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+        "text": "tdNum"
+      }
+    },
+    {
+      "expression": "ae67a31f-e263-55af-9549-b901fe8ec89e",
+      "multiplicity": "1d85edd6-bcfe-5e2c-b5c5-447807866e72",
+      "qualified_path": "Transfers::FlowTransfer::sourceOutputLink::transferPayload",
+      "category": "cross_feature_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          3517,
+          3527
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "payloadNum"
+      }
+    },
+    {
+      "expression": "bbbdfce1-62c9-5194-b443-08b839aaff3f",
+      "multiplicity": "441f786b-a202-5495-b0a4-ffaff7526ae9",
+      "qualified_path": "StatePerformances::StateTransitionPerformance",
+      "category": "cross_feature_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/StatePerformances.kerml",
+        "range": [
+          5401,
+          5407
+        ],
+        "sha256": "f02fb7e8de58f4304c95c575ee1bcb7d271d621ce8e336ce36ea80a4e956c3da",
+        "text": "accNum"
+      }
+    },
+    {
+      "expression": "2796afaf-1633-553e-acc3-dc1ad28f0f54",
+      "multiplicity": "54bb619f-b5fb-5451-a262-3d95027b9121",
+      "qualified_path": "Transfers::FlowTransfer::targetInputLink",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          3680,
+          3690
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "payloadNum"
+      }
+    },
+    {
+      "expression": "78e497fe-fe02-543f-9dad-4281b6f1f7dd",
+      "multiplicity": "84b1c3d3-6690-5dcc-a80f-4cdfb8f84677",
+      "qualified_path": "Transfers::FlowTransfer::delivering",
+      "category": "cross_feature_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          5122,
+          5132
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "payloadNum"
+      }
+    },
+    {
+      "expression": "4941cca2-d407-5336-b93e-29f97ebb742c",
+      "multiplicity": "85ec27ef-3704-56aa-831d-f1d25f503ff7",
+      "qualified_path": "Transfers::FlowTransfer::targetInputLink::transferPayload",
+      "category": "cross_feature_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          3889,
+          3899
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "payloadNum"
+      }
+    },
+    {
+      "expression": "50044d97-d809-516d-9065-8d3dfb48efb9",
+      "multiplicity": "d02cd3b6-11fb-5c44-b84c-28399be19d1d",
+      "qualified_path": "Transfers::FlowTransfer::sending",
+      "category": "cross_feature_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          4083,
+          4093
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "payloadNum"
+      }
+    },
+    {
+      "expression": "3f630d5e-a2f0-5bdb-a20e-33d03f0970d3",
+      "multiplicity": "d3f8aa3e-ce08-5dc0-aff7-08d63825678e",
+      "qualified_path": "Transfers::Transfer::instant",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          1813,
+          1823
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "instantNum"
+      }
+    },
+    {
+      "expression": "50637f8c-972e-5951-8aac-e4ca6627d385",
+      "multiplicity": "df7063d8-1566-546d-85df-cca8bc0fa499",
+      "qualified_path": "Transfers::FlowTransfer::delivering",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          5104,
+          5114
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "payloadNum"
+      }
+    },
+    {
+      "expression": "f0a910e0-17c9-5bd6-8ad0-9ae0933dee80",
+      "multiplicity": "df7baea9-d442-51cd-b66f-73ded21ab117",
+      "qualified_path": "TransitionPerformances::TransitionPerformance::accept",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+        "range": [
+          1705,
+          1711
+        ],
+        "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+        "text": "accNum"
+      }
+    },
+    {
+      "expression": "aff98c9d-e1be-50cb-be0d-38afe58d1bfa",
+      "multiplicity": "e7cef827-66ff-5a61-aaa2-c909dcd184ca",
+      "qualified_path": "CollectionFunctions::array#::indexes",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Function Library/CollectionFunctions.kerml",
+        "range": [
+          1986,
+          1987
+        ],
+        "sha256": "c33e76c32d8370fefef123692a93d621f09a4cb944f08dd3543461f1f73c1505",
+        "text": "n"
+      }
+    },
+    {
+      "expression": "8e97e6b9-8756-59d5-a889-25e008001a89",
+      "multiplicity": "f6f33a65-98a4-50f3-8dd4-a43cb84354b5",
+      "qualified_path": "Transfers::FlowTransfer::sending",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          4048,
+          4058
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "payloadNum"
+      }
+    },
+    {
+      "expression": "31120298-7b2b-565d-930b-8e29dde9ee75",
+      "multiplicity": "f823409b-5a3b-53fe-9702-a5d55b064fee",
+      "qualified_path": "TransitionPerformances::NonStateTransitionPerformance::triggerAfter",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+        "range": [
+          2243,
+          2248
+        ],
+        "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+        "text": "taNum"
+      }
+    },
+    {
+      "expression": "5100fa35-67c5-51c5-9769-ed5a68ffc0e9",
+      "multiplicity": "fdeff36c-c5b0-5d4f-8b81-da0a54d4344e",
+      "qualified_path": "Transfers::FlowTransfer::sourceOutputLink",
+      "category": "ordinary_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/Transfers.kerml",
+        "range": [
+          3303,
+          3313
+        ],
+        "sha256": "16ff5ce4a866ef1f2e6a0fc0ebe5736b1f8008aed8f0bba94124db195edd3160",
+        "text": "payloadNum"
+      }
+    },
+    {
+      "expression": "e2704e2f-b5ad-5683-8816-6c714127a1fd",
+      "multiplicity": "fe034c11-b82f-51df-a6db-46aca23778d5",
+      "qualified_path": "TransitionPerformances::TransitionPerformance",
+      "category": "cross_feature_multiplicity_reference_bounds",
+      "source": {
+        "document": "Kernel Semantic Library/TransitionPerformances.kerml",
+        "range": [
+          1908,
+          1914
+        ],
+        "sha256": "4478cabd982b3347baaeabe9ee808d7e0e919f6beebfdb5220e1b96e8eabf00d",
+        "text": "accNum"
+      }
+    }
+  ]
+}

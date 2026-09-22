@@ -41,7 +41,7 @@ The memory cap is twice that observed private-memory baseline. The combined wall
 cap allows the shared preparation plus five sequential slices; it does not replace
 reviewing the individual elapsed times against the historical measurement.
 
-Only after A–E pass, run the one monitored whole-corpus attempt:
+Only after Aâ€“E pass, run the one monitored whole-corpus attempt:
 
 ```powershell
 python verification/scripts/watchdog.py --name kerml-v9-canonical --wall-seconds 5400 --private-mib 6144 --summary verification/summaries/kerml-v9-publication/commands.json -- target/release/examples/canonical_publication.exe --slice-evidence=verification/generated/kerml-v9-publication/slices --output=verification/generated/kerml-v9-publication/canonical.json --write-bindings --conformance-output=verification/generated/kerml-v9-publication/conformance.json
@@ -54,6 +54,17 @@ shadowing, accepted library feature chains, stable IDs, immutable parallel reade
 edit isolation and an explicitly wrong profile. Authored chain syntax is a separate
 frontend capability; the chain check here proves that authored contexts reuse the
 accepted canonical chain records and semantic ordering.
+
+Focused verification passed seven library tests and the stale/incomplete preflight
+regression. The source inventory passed with 1,498 MultiplicityRanges and 2,096
+bound Expressions: 9 ordinary symbolic, 6 cross symbolic, 1,716 literal and 365
+unbounded. All 15 retained witness identities remain present. These source counts
+do not claim semantic publication acceptance.
+
+The sibling-worktree release build was deliberately stopped (exit 124,
+`stop=requested`) so the lead could build in the integrated main worktree; example
+binaries embed `CARGO_MANIFEST_DIR`. This was a build cancellation, not a corpus
+attempt or semantic failure.
 
 Raw outputs remain ignored. `tooling-commands.json` contains actual focused-check
 commands, exit codes and output hashes; publication acceptance is reported by the

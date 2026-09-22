@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &report,
     )?;
     println!(
-        "{} bounds: {}; {} retained symbolic references",
+        "{} MultiplicityRanges: {}; {} retained symbolic references",
         report["multiplicity_ranges"],
         report["counts"],
         report["historical_population"]["previous_count"]
