@@ -760,10 +760,11 @@ impl<'a> Graph<'a> {
         deps: &BTreeSet<Dependency>,
     ) -> ElementId {
         let (source, target) = participants;
-        self.direct_searches.insert(SearchDependency::PropertySet {
-            element: source,
-            property: p::ELEMENT_OWNED_RELATIONSHIP,
-        });
+        self.direct_searches
+            .insert(SearchDependency::OwnedRelationships {
+                owner: source,
+                class,
+            });
         // Required structure can already be authored. Preserve that relationship's
         // identity instead of adding a second realization of the same obligation.
         if let Some(owned) = self
@@ -774,6 +775,12 @@ impl<'a> Graph<'a> {
                 let Value::Reference(relationship) = value else {
                     continue;
                 };
+                let Some(record) = self.model.element(*relationship) else {
+                    continue;
+                };
+                if record.metaclass() != class {
+                    continue;
+                }
                 self.direct_searches
                     .insert(SearchDependency::Element(*relationship));
                 for property in [endpoints.0, endpoints.1] {
@@ -782,9 +789,6 @@ impl<'a> Graph<'a> {
                         property,
                     });
                 }
-                let Some(record) = self.model.element(*relationship) else {
-                    continue;
-                };
                 let endpoint = |property| {
                     self.model
                         .navigation_slot(*relationship, property)
@@ -795,10 +799,7 @@ impl<'a> Graph<'a> {
                             })
                         })
                 };
-                if record.metaclass() == class
-                    && endpoint(endpoints.0) == Some(source)
-                    && endpoint(endpoints.1) == Some(target)
-                {
+                if endpoint(endpoints.0) == Some(source) && endpoint(endpoints.1) == Some(target) {
                     return *relationship;
                 }
             }

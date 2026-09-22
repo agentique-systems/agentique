@@ -333,6 +333,12 @@ impl KerMlQueries<'_> {
         }
         let mut features = vec![];
         for membership in members {
+            let result = self.is(membership, c::RETURN_PARAMETER_MEMBERSHIP);
+            if matches!(position, Position::Result) && !result
+                || matches!(position, Position::Parameter) && result
+            {
+                continue;
+            }
             self.fact(out, FactKey::Element(membership));
             let view = agq_kerml::views::Membership::try_new(membership, self.model())
                 .expect("checked FeatureMembership");
@@ -360,19 +366,15 @@ impl KerMlQueries<'_> {
                     );
                     continue;
                 }
-                let result = self.is(membership, c::RETURN_PARAMETER_MEMBERSHIP);
                 let selected = match position {
-                    Position::Result => result,
+                    Position::Result => true,
                     Position::End => matches!(
                         self.read_value(out, feature, p::FEATURE_IS_END),
                         Some(Value::Boolean(true))
                     ),
-                    Position::Parameter => {
-                        !result
-                            && self
-                                .read_value(out, feature, p::FEATURE_DIRECTION)
-                                .is_some()
-                    }
+                    Position::Parameter => self
+                        .read_value(out, feature, p::FEATURE_DIRECTION)
+                        .is_some(),
                 };
                 if selected {
                     features.push(feature);
