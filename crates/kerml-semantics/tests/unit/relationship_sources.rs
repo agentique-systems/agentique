@@ -218,4 +218,17 @@ fn excluded_owned_population_preserves_order_and_relevant_pending_endpoints() {
             .contains(&FactKey::Element(id(22)))
     );
     assert_eq!(q.member(id(23)).completeness, Completeness::Incomplete);
+    let unknown = MetaclassId::from_u128(0xfeed0001);
+    for (class, excluded) in [(unknown, c::FEATURE_MEMBERSHIP), (c::MEMBERSHIP, unknown)] {
+        let invalid = q.owned_relationships_excluding(id(1), class, [excluded]);
+        assert_eq!(invalid.completeness, Completeness::Invalid, "{invalid:?}");
+        assert!(invalid.value.is_empty());
+        assert!(invalid.search_dependencies.contains(
+            &SearchDependency::OwnedRelationshipsExcluding {
+                owner: id(1),
+                class,
+                excluded: BTreeSet::from([excluded]),
+            }
+        ));
+    }
 }

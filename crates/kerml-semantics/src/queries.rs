@@ -569,6 +569,18 @@ impl<'m> KerMlQueries<'m> {
             }
         };
         out.search_dependencies.insert(search.clone());
+        if std::iter::once(class)
+            .chain(excluded.iter().copied())
+            .any(|class| self.model().registry().class(class).is_err())
+        {
+            out.problem(
+                Completeness::Invalid,
+                "KQ_RELATIONSHIP_POPULATION_CLASS",
+                element,
+                "Owned relationship selection requires registered included and excluded classes",
+            );
+            return out;
+        }
         let mut evidence = vec![Evidence::Search(search)];
         if let Some(values) = self.accept(&mut out, element, view.owned_relationship()) {
             let values: Vec<_> = values
