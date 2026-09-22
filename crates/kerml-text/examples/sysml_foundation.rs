@@ -78,6 +78,9 @@ fn assert_vertical(queries: &SysmlQueries<'_>, ids: [ElementId; 4]) {
         types.diagnostics
     );
     assert_eq!(types.value(), &[engine_definition]);
+    let current_types = queries.current_usage_types(engine);
+    assert_eq!(current_types.completeness(), Completeness::Complete);
+    assert_eq!(current_types.value(), &[engine_definition]);
     let part_types = queries.current_part_definitions(engine);
     assert_eq!(
         part_types.completeness(),
@@ -109,6 +112,15 @@ fn assert_vertical(queries: &SysmlQueries<'_>, ids: [ElementId; 4]) {
     let owned = queries.owned_usages(sports_car);
     assert_eq!(owned.completeness(), Completeness::Complete);
     assert!(owned.value().is_empty());
+    let name = queries.effective_qualified_name(engine);
+    assert_eq!(name.completeness(), Completeness::Complete);
+    assert_eq!(
+        name.value().as_ref().unwrap().segments,
+        vec![
+            BTreeSet::from(["Vehicle".into()]),
+            BTreeSet::from(["engine".into()])
+        ]
+    );
     assert_eq!(
         queries.model().elements().count(),
         count,
