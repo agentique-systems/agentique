@@ -65,6 +65,13 @@ failure. The release binary for the latest run includes the selected-population
 semantic correction; subsequent origin interning and exported metaclass changes
 do not alter its semantic results.
 
+A focused immutable-dependency review passes five tests. Accepted records are
+not producer subjects, but combined project searches over local noncomposite
+carriers remain subject to local closure. An accepted dependency source marker
+does not certify those searches by itself. The existing regressions cover both
+external source relationships and noncomposite inverse navigation; no accepted
+KerML interpretation or publication was changed.
+
 The medium candidate's static dependency closure is 13 documents: Actions,
 Attributes, Calculations, Connections, Constraints, Flows, Interfaces, Items,
 Parts, Ports, Requirements, States and Views. `Interfaces::excludingOnce` is a
