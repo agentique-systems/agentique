@@ -1,6 +1,6 @@
 # Scheduler-issued producer closure
 
-Implementation source: `0eec834` on the isolated
+Implementation source: `9adb3e0` on the isolated
 `foundation/producer-closure` branch. This summary records generic closure work;
 it does not establish Systems Library acceptance.
 
@@ -21,6 +21,9 @@ scalar reads remain precise, while reference-valued or unclassified scalar effec
 conservatively reopen cross-subject requirements and inverse searches. Registry
 schema 3 versions this interpretation. Existing scalar contributions are checked
 against declared property, target class and write scope.
+Primitive scalar declarations and reads resolve both the base and effective
+property identity on the actual subject; the regression covers query reads,
+closure blocking, accepted output audit and canonical materialization.
 
 The scheduler retains per-family evaluation status and precise query reads.
 Incomplete or dirty families prevent closure of dependent complete evaluations,
@@ -50,13 +53,13 @@ Verification used Windows, Rust/Cargo 1.92.0, isolated `target/foundation-closur
 
 | Actual command | Result |
 | --- | --- |
-| `cargo test -p agq-kerml-semantics --lib producer_closure_tests -- --nocapture` at `0eec834` | Exit 0; 33 passed |
+| `cargo test -p agq-kerml-semantics --lib producer_closure_tests -- --nocapture` at `9adb3e0` | Exit 0; 34 passed |
 | `cargo test -p agq-kerml-semantics --lib -- --nocapture` at `e039114` | Exit 0; 93 passed, 2 existing scale probes ignored |
-| `cargo fmt --all -- --check` at `0eec834` | Exit 0 |
-| `cargo clippy -p agq-kerml-semantics --all-targets --locked --offline -- -D warnings` at `0eec834` | Exit 0 |
+| `cargo fmt --all -- --check` at `9adb3e0` | Exit 0 |
+| `cargo clippy -p agq-kerml-semantics --all-targets --locked --offline -- -D warnings` at `9adb3e0` | Exit 0 |
 | `RUSTDOCFLAGS=-D warnings cargo doc -p agq-kerml-semantics --no-deps --locked --offline` at `0eec834` | Exit 0 |
 
-The 33-test matrix covers delayed producer activation; incomplete/inapplicable
+The 34-test matrix covers delayed producer activation; incomplete/inapplicable
 families; registry and graph mismatch; malformed registration; FIFO, LIFO,
 reversed, partitioned and reference-scan scheduling; varied batches; actual
 negative-proof-consuming output determinism; existing-overlay revalidation;
@@ -68,13 +71,14 @@ relationship classes; strict descendant scopes; pending ownership attachment;
 future scalar projection activation including property aliases; malformed or
 qualifying membership outputs that violate an empty positional bound; immutable
 records with mutable noncomposite inverse navigation; reference scalar writes;
-current/future target-class bounds; and existing scalar output target audits.
+current/future target-class bounds; existing scalar output target audits; and
+effective scalar property aliases.
 
 The synthetic scale fixture has 60,000 subjects and 80 registered families, with
 300,000 applicable evaluations carrying nonempty reads. One incomplete writer
 blocks four otherwise complete readers: 299,995 closed pairs remain. Certificate
 storage is **2,220,208 bytes**; the final focused debug run constructed it in
-**8,133 ms** during concurrent worktree activity (the previous 32-test run measured
+**8,049 ms** during concurrent worktree activity (the earlier 32-test run measured
 6,186 ms). This measures the certificate,
 not whole-publication runtime or peak scheduler memory.
 
