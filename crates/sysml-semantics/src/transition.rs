@@ -63,10 +63,19 @@ fn enumeration<T>(
         .cloned()
 }
 fn input_parameters(q: &KerMlQueries<'_>, subject: ElementId) -> QueryResult<Vec<ElementId>> {
-    let parameters = q.structural_parameter_features(subject);
+    // SysML 2.0 ActionUsage::inputParameters explicitly selects f.owner=self
+    // from input. Inherited parameter identities do not receive this Usage's
+    // payload specialization.
+    let parameters = q.owned_parameter_features(subject);
     let ids = parameters.value.clone();
     let mut out = parameters.map(|_| vec![]);
     for parameter in ids {
+        let owner = q.owner(parameter);
+        let owned = owner.value == Some(subject);
+        merge(&mut out, owner);
+        if !owned {
+            continue;
+        }
         if matches!(
             enumeration(q, &mut out, parameter, kp::FEATURE_DIRECTION).as_deref(),
             Some("in" | "inout")
@@ -333,18 +342,23 @@ pub(crate) fn plan_transition_payload(
         );
         return result;
     };
-    let ancestors = q.all_supertypes(parameter);
+    let mut ancestors = q.all_supertypes(parameter);
     let mut satisfied = false;
-    for &ancestor in &ancestors.value {
+    for ancestor in ancestors.value.clone() {
         if !is(q, ancestor, kc::FEATURE) {
             continue;
         }
         let chain = q.chaining_features(ancestor);
         satisfied |= chain.value.ends_with(&[trigger, payload]);
-        merge(&mut result.evidence, chain);
+        merge(&mut ancestors, chain);
     }
-    merge(&mut result.evidence, ancestors);
-    if satisfied || result.evidence.completeness != Completeness::Complete {
+    if satisfied && ancestors.completeness == Completeness::Complete {
+        merge(&mut result.evidence, ancestors);
+        return result;
+    }
+    // Exhaustive ancestor absence is only a redundancy optimization. Known
+    // trigger and input parameters independently imply this payload chain.
+    if result.evidence.completeness != Completeness::Complete {
         return result;
     }
     let key = |role| DerivationKey {

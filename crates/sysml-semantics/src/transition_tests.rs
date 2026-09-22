@@ -119,6 +119,78 @@ fn transition_naming_preserves_explicit_names_and_distinguishes_null_from_pendin
 }
 
 #[test]
+fn transition_input_parameters_exclude_inherited_parameter_identities() {
+    let mut f = fixture(true, true);
+    f.create(300, sc::TRANSITION_USAGE, "specializedTransition");
+    f.relation(
+        300,
+        100,
+        400,
+        kc::SUBSETTING,
+        kp::SUBSETTING_SUBSETTED_FEATURE,
+    );
+    f.create(310, sc::ACCEPT_ACTION_USAGE, "ownTrigger");
+    f.member(300, 310, 410, sc::TRANSITION_FEATURE_MEMBERSHIP);
+    enumeration(
+        &mut f,
+        410,
+        sp::TRANSITION_FEATURE_MEMBERSHIP_KIND,
+        "trigger",
+    );
+    f.create(311, sc::REFERENCE_USAGE, "ownPayload");
+    enumeration(&mut f, 311, kp::FEATURE_DIRECTION, "in");
+    f.member(310, 311, 411, kc::PARAMETER_MEMBERSHIP);
+    let snapshot = f.finish();
+    let queries = q(&snapshot);
+    assert_eq!(
+        queries.kerml().structural_parameter_features(id(300)).value,
+        [id(101), id(102)]
+    );
+    assert!(
+        queries
+            .kerml()
+            .owned_parameter_features(id(300))
+            .value
+            .is_empty()
+    );
+    let result = crate::transition::plan_transition_payload(
+        queries.kerml(),
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        id(300),
+    );
+    assert_eq!(result.evidence.completeness, Completeness::Incomplete);
+    assert!(
+        result.elements.is_empty(),
+        "inherited inputs remain unchanged"
+    );
+    assert!(
+        result
+            .evidence
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == "SQ_TRANSITION_PAYLOAD_PENDING" })
+    );
+}
+
+#[test]
+fn pending_extra_parameter_ancestors_do_not_suppress_known_payload_structure() {
+    let snapshot = fixture(true, true).finish();
+    let context = crate::context::fixture_context(&snapshot, BTreeSet::from([id(102)]));
+    let queries = KerMlQueries::new(context.kerml);
+    assert_eq!(
+        queries.all_supertypes(id(102)).completeness,
+        Completeness::Incomplete
+    );
+    let result = crate::transition::plan_transition_payload(
+        &queries,
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        id(100),
+    );
+    assert_eq!(result.evidence.completeness, Completeness::Complete);
+    assert_eq!(result.elements.len(), 4);
+}
+
+#[test]
 fn transition_payload_specialization_materializes_ordered_chain_and_is_idempotent() {
     let snapshot = fixture(true, true).finish();
     let queries = q(&snapshot);

@@ -1,7 +1,7 @@
 //! Structural consequences of KerML 1.0 checks, without executable evaluation.
 use crate::*;
 use agq_kerml::{classes as c, properties as p};
-use agq_kernel::{ElementId, value::Value};
+use agq_kernel::{ElementId, provenance::FactKey, value::Value};
 
 #[derive(Clone, Copy)]
 enum Position {
@@ -290,14 +290,76 @@ impl KerMlQueries<'_> {
         owner: ElementId,
         position: Position,
     ) -> Vec<ElementId> {
-        let members = self.memberships_of_type(owner, c::FEATURE_MEMBERSHIP);
+        // This predicate observes one ordered feature projection. Keep its
+        // canonical backing facts while recording that narrower population,
+        // including the endpoint arity and metaclass checks of member().
+        let Some(view) = self.checked::<agq_kerml::views::Namespace, _>(out, owner) else {
+            return vec![];
+        };
+        let stored_fact = |element, property| FactKey::Property {
+            element,
+            property: self
+                .model()
+                .element(element)
+                .and_then(|record| {
+                    self.model()
+                        .registry()
+                        .resolve_property(record.metaclass(), property)
+                        .ok()
+                        .flatten()
+                })
+                .map_or(property, |descriptor| descriptor.id),
+        };
+        out.search_dependencies
+            .insert(SearchDependency::StructuralFeaturePopulation {
+                owner,
+                kind: match position {
+                    Position::Parameter => FeaturePopulationKind::Parameter,
+                    Position::Result => FeaturePopulationKind::Result,
+                    Position::End => FeaturePopulationKind::End,
+                },
+            });
+        let Some(members) = self.accept(out, owner, view.owned_relationship()) else {
+            self.property(out, owner, p::ELEMENT_OWNED_RELATIONSHIP);
+            return vec![];
+        };
+        let members: Vec<_> = members
+            .into_iter()
+            .flat_map(|members| members.iter())
+            .filter(|&member| self.is(member, c::FEATURE_MEMBERSHIP))
+            .collect();
+        if !members.is_empty() {
+            self.fact(out, stored_fact(owner, p::ELEMENT_OWNED_RELATIONSHIP));
+        }
         let mut features = vec![];
-        for &membership in &members.value {
-            if !self.is(membership, c::FEATURE_MEMBERSHIP) {
+        for membership in members {
+            self.fact(out, FactKey::Element(membership));
+            let view = agq_kerml::views::Membership::try_new(membership, self.model())
+                .expect("checked FeatureMembership");
+            let Some(endpoints) = self.accept(out, membership, view.owned_related_element()) else {
+                self.property(out, membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT);
                 continue;
-            }
-            let member = self.member(membership);
-            if let Some(feature) = member.value {
+            };
+            let endpoints: Vec<_> = endpoints
+                .into_iter()
+                .flat_map(|members| members.iter())
+                .collect();
+            self.fact(
+                out,
+                stored_fact(membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT),
+            );
+            if let [feature] = endpoints.as_slice() {
+                let feature = *feature;
+                self.fact(out, FactKey::Element(feature));
+                if !self.is(feature, c::FEATURE) {
+                    out.problem(
+                        Completeness::Invalid,
+                        "KQ_MEMBER_TYPE",
+                        membership,
+                        "FeatureMembership must own a Feature",
+                    );
+                    continue;
+                }
                 let result = self.is(membership, c::RETURN_PARAMETER_MEMBERSHIP);
                 let selected = match position {
                     Position::Result => result,
@@ -315,11 +377,24 @@ impl KerMlQueries<'_> {
                 if selected {
                     features.push(feature);
                 }
+            } else {
+                out.problem(
+                    Completeness::Invalid,
+                    "KQ_MEMBERSHIP_ARITY",
+                    membership,
+                    "owning membership requires exactly one owned member",
+                );
             }
-            out.merge(member);
         }
-        out.merge(members);
         features
+    }
+
+    /// Directly owned, directed, non-result Features in canonical membership
+    /// order. Inherited parameter identities are not included in this projection.
+    pub fn owned_parameter_features(&self, owner: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        out.value = self.positioned_features(&mut out, owner, Position::Parameter);
+        out
     }
     pub(crate) fn implied_redefinitions(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
