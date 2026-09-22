@@ -11,6 +11,54 @@ fn libraries() -> LibrarySetIdentity {
 }
 
 #[test]
+fn extension_rule_registry_only_authorizes_exact_provenance_ids() {
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    let snapshot = f.finish();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let key = DerivationKey {
+        rule: RuleId::from_u128(765),
+        subject: id(1),
+        output: OutputKey::from_u128(1),
+    };
+    let mut plan = q.plan_result_structure([]);
+    let produced = plan
+        .add_derived_element(
+            key,
+            c::CLASSIFIER,
+            BTreeMap::new(),
+            None,
+            &q.canonical_fact_evidence(FactKey::Element(id(1))),
+        )
+        .unwrap()
+        .unwrap();
+    let result = plan.materialize(&snapshot).unwrap();
+    let q = KerMlQueries::new(
+        SemanticContext::for_overlay(&result.overlay, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let rejected = |report: &PublicationCapabilityReport| {
+        report
+            .failures
+            .values()
+            .flatten()
+            .any(|d| d.code == "KQ_PUBLICATION_RULE")
+    };
+    assert!(rejected(&q.audit_publication_capabilities([produced])));
+    assert!(rejected(&q.audit_publication_capabilities_with_rules(
+        [produced],
+        [RuleId::from_u128(766)]
+    )));
+    let allowed = q.audit_publication_capabilities_with_rules([produced], [key.rule]);
+    assert!(!rejected(&allowed));
+    assert_eq!(
+        allowed.context.derivation_phase,
+        DerivationPhase::PartialDerivationOverlay
+    );
+}
+
+#[test]
 fn a_stage_limit_never_promotes_an_unexecuted_overlay() {
     let snapshot = Snapshot::new(Arc::new(
         agq_kerml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8).unwrap(),

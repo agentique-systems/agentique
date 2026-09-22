@@ -20,6 +20,8 @@ use agq_kernel::{
 };
 use agq_standard_libraries::{LibraryLanguage, VerifiedLibrarySet};
 use std::{collections::BTreeSet, sync::Arc};
+mod publication;
+pub use publication::*;
 #[cfg(test)]
 #[path = "sysml_tests.rs"]
 mod tests;

@@ -182,7 +182,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         draft.candidate().obligations().len(),
         started.elapsed().as_secs_f64()
     );
-    if !candidate.construction_complete() || !failures.is_empty() {
+    if !candidate.construction_complete()
+        || !failures.is_empty()
+        || !candidate.production().is_some_and(|production| {
+            production.converged && production.completeness == Completeness::Complete
+        })
+    {
         std::process::exit(1);
     }
     Ok(())

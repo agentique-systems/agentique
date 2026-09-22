@@ -1120,24 +1120,7 @@ impl<'a> Graph<'a> {
         {
             self.evidence_pool.intern_shared(proof.clone())
         } else {
-            let mut normalized = BTreeSet::new();
-            for &dependency in dependencies {
-                // Ownership extensions retain their prior contributors without
-                // depending on the same aggregate this producer may extend.
-                if let Dependency::Derived(FactKey::Property {
-                    element,
-                    property: p::ELEMENT_OWNED_RELATIONSHIP,
-                }) = dependency
-                    && let Some(slot) = self
-                        .model
-                        .navigation_slot(element, p::ELEMENT_OWNED_RELATIONSHIP)
-                    && let Origin::Derived(proof) = slot.origin()
-                {
-                    normalized.extend(proof.dependencies.iter().copied());
-                } else {
-                    normalized.insert(dependency);
-                }
-            }
+            let mut normalized = self.producer_dependencies(dependencies);
             let subject = FactKey::Element(key.subject);
             normalized.insert(if self.model.declared_fact_origin(subject).is_some() {
                 Dependency::Declared(subject)
@@ -1159,6 +1142,29 @@ impl<'a> Graph<'a> {
             },
         );
         id
+    }
+    fn producer_dependencies(&self, dependencies: &BTreeSet<Dependency>) -> BTreeSet<Dependency> {
+        let mut normalized = BTreeSet::new();
+        for &dependency in dependencies {
+            // Keep the actual prior contributors of an extensible ownership
+            // collection. Depending on its aggregate key would let a later
+            // relationship's ownership proof depend on its own antecedent.
+            // Search reads still track the complete collection for invalidation.
+            if let Dependency::Derived(FactKey::Property {
+                element,
+                property: p::ELEMENT_OWNED_RELATIONSHIP,
+            }) = dependency
+                && let Some(slot) = self
+                    .model
+                    .navigation_slot(element, p::ELEMENT_OWNED_RELATIONSHIP)
+                && let Origin::Derived(proof) = slot.origin()
+            {
+                normalized.extend(proof.dependencies.iter().copied());
+            } else {
+                normalized.insert(dependency);
+            }
+        }
+        normalized
     }
     fn set(&mut self, id: ElementId, property: PropertyId, value: Value) {
         self.set_value(id, property, SlotValue::Scalar(value));

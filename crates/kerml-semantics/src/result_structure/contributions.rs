@@ -115,15 +115,15 @@ impl ResultStructurePlan<'_> {
         if let SlotValue::Bag(values) = &mut value {
             values.sort();
         }
+        let dependencies = self
+            .graph
+            .producer_dependencies(&evidence.canonical_dependencies);
         contributions::merge_property(
             &mut self.graph.contributed_properties,
             (subject, property),
             PropertyContribution {
                 value,
-                explanation: KernelExplanation {
-                    rule,
-                    dependencies: evidence.canonical_dependencies.clone(),
-                },
+                explanation: KernelExplanation { rule, dependencies },
                 searches: crate::read_dependencies::structural_searches(evidence),
             },
         )
