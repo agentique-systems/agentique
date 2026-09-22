@@ -792,6 +792,53 @@ fn stable_usage_property_activates_kerml_after_structural_closure() {
             .count()
             >= 2
     );
+    // `Usage::mayTimeVary` redefines KerML `Feature::isVariable`. The stable
+    // SysML scalar must dirty the KerML producer and create its canonical
+    // snapshot-domain chain, not merely make a later query appear complete.
+    let model = worklist.overlay.model();
+    let snapshots = bindings.get(StandardRole::OccurrenceSnapshots);
+    for usage in [id(10), id(11)] {
+        let featuring = model
+            .instances(c::TYPE_FEATURING, true)
+            .unwrap()
+            .find(|relationship| {
+                model
+                    .navigation_slot(relationship.id(), p::TYPE_FEATURING_FEATURE_OF_TYPE)
+                    .is_some_and(|slot| {
+                        slot.value().values().any(
+                            |value| matches!(value, Value::Reference(feature) if *feature == usage),
+                        )
+                    })
+            })
+            .expect("stable mayTimeVary must activate VariableFeaturing");
+        let domain = model
+            .navigation_slot(featuring.id(), p::TYPE_FEATURING_FEATURING_TYPE)
+            .and_then(|slot| {
+                slot.value().values().find_map(|value| match value {
+                    Value::Reference(id) => Some(*id),
+                    _ => None,
+                })
+            })
+            .expect("VariableFeaturing must use a canonical snapshot domain");
+        assert!(
+            model.incoming(domain).any(|reference| {
+                model.element(reference.source).is_some_and(|relationship| {
+                    relationship.metaclass() == c::REDEFINITION
+                        && model
+                            .navigation_slot(
+                                relationship.id(),
+                                p::REDEFINITION_REDEFINED_FEATURE,
+                            )
+                            .is_some_and(|slot| {
+                                slot.value().values().any(|value| {
+                                    matches!(value, Value::Reference(target) if *target == snapshots)
+                                })
+                            })
+                })
+            }),
+            "snapshot domain must redefine the accepted OccurrenceSnapshots anchor"
+        );
+    }
     compare(&reference, &worklist, Some(&bindings));
 }
 
