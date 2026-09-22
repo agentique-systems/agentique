@@ -157,6 +157,101 @@
         "min_free_disk_bytes": 0
       },
       "output_sha256": "a298fa9fb61cf926b238c7375173ac1c1f5d48f622788a34405868401df23b74"
+    },
+    {
+      "name": "dynamic-scope-regression",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "publication_slice_dependencies",
+        "--example",
+        "publication_slices"
+      ],
+      "source_commit": "0921ab617237efc4eb998a09096f9e2ef31f6e2a",
+      "working_changes_sha256": "f1405c587833e6a978279c2ed612e3c09f29dd5968b0c1e7aa1518f398bf11ea",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/dynamic-scope-regression",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 27528,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 2.016,
+      "peak_rss_bytes": 277417984,
+      "peak_private_bytes": 498352128,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "1f689007d9086f437a7a407b66a731cd267b7c187ed7cb0c48e0788bbdbc5348"
+    },
+    {
+      "name": "dynamic-scope-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "publication_slice_dependencies",
+        "--example",
+        "publication_slices",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "0921ab617237efc4eb998a09096f9e2ef31f6e2a",
+      "working_changes_sha256": "f1405c587833e6a978279c2ed612e3c09f29dd5968b0c1e7aa1518f398bf11ea",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/dynamic-scope-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 17396,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 6.031,
+      "peak_rss_bytes": 337874944,
+      "peak_private_bytes": 437112832,
+      "samples": 7,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "b807a9c876e6e865c1a67bd761ab88dc7822073c25ed9cb9184fd5d2e5f34b30"
     }
   ]
 }

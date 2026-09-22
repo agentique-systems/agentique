@@ -86,6 +86,28 @@ pub fn subjects(
     Ok(selected)
 }
 
+/// Extend a slice with concrete providers discovered by its graph/read boundary.
+/// This closes ownership and structural references before another producer run.
+/// The size limit is a development safeguard, never a weakened semantic boundary.
+pub fn expanded_subjects(
+    model: &ModelView,
+    population: &BTreeSet<ElementId>,
+    missing: &BTreeSet<ElementId>,
+    maximum: usize,
+) -> Result<BTreeSet<ElementId>, String> {
+    let expanded = subjects(model, population.union(missing).copied())?;
+    if expanded.len() <= population.len() {
+        return Err("Scope expansion did not add a declared provider".into());
+    }
+    if expanded.len() > maximum {
+        return Err(format!(
+            "Scope expansion requires {} subjects; development limit is {maximum}. Investigate before another closure run",
+            expanded.len()
+        ));
+    }
+    Ok(expanded)
+}
+
 /// A failed boundary is explicit evidence that the selected population cannot
 /// yet claim a dependency-complete slice. It never seals a publication.
 #[derive(Default)]

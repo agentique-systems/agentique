@@ -17,6 +17,54 @@ pub struct PublicationInput {
     pub refinement: Vec<serde_json::Value>,
 }
 impl PublicationInput {
+    pub fn expanded_subjects(
+        &self,
+        population: &BTreeSet<ElementId>,
+        missing: &BTreeSet<ElementId>,
+        maximum: usize,
+    ) -> Result<BTreeSet<ElementId>, String> {
+        publication_dependencies::expanded_subjects(
+            self.snapshot.model(),
+            population,
+            missing,
+            maximum,
+        )
+    }
+
+    /// Explicit fixture seeds use semantic qualified lookup, never hardcoded IDs.
+    pub fn fixture_subject(
+        &self,
+        sources: &VerifiedLibrarySet,
+        segments: &[&str],
+    ) -> Result<ElementId, Box<dyn std::error::Error>> {
+        let q = self.draft.queries(sources)?;
+        let mut candidates = BTreeSet::new();
+        for &root in self.draft.roots() {
+            let result = q.lookup_path(
+                root,
+                &QualifiedName {
+                    absolute: true,
+                    segments: segments
+                        .iter()
+                        .map(|segment| (*segment).to_owned())
+                        .collect(),
+                },
+            );
+            if result.completeness != Completeness::Complete {
+                return Err(format!(
+                    "Slice fixture lookup {segments:?} is {:?}",
+                    result.completeness
+                )
+                .into());
+            }
+            candidates.extend(result.value.iter().map(|member| member.element));
+        }
+        if candidates.len() != 1 {
+            return Err(format!("Slice fixture lookup {segments:?} requires one target").into());
+        }
+        Ok(*candidates.first().expect("one fixture target"))
+    }
+
     pub fn load(sources: &VerifiedLibrarySet) -> Result<Self, Box<dyn std::error::Error>> {
         let (draft, refinement) = publication_refinement::prepare(sources)?;
         let identity = draft.queries(sources)?.context().clone();

@@ -6,6 +6,16 @@ content set and declared graph digest. A report also requires Complete producer
 closure, a complete scope boundary, zero capability/reference findings, a complete
 symbolic-bound audit and no resource stop. Slices always stop at the first failure.
 Shared source preparation and each slice have separately reported elapsed times.
+A slice closes newly discovered declared providers before acceptance. Graph and
+producer reads are checked before capability audits, so a known incomplete scope
+never spends time on those audits. Capability/reference reads may request a later
+scope expansion. Each expansion retains every missing ID, phase counts, source
+details and elapsed time in the ignored `.scopes.jsonl` report. It always reruns
+against the original declared snapshot, and never waives a read dependency.
+A proposed scope exceeding twice its initial declared-subject population stops
+before another closure; this is a development limit, not semantic completeness.
+Slice C explicitly includes the canonical `CollectionFunctions::array#` fixture
+through qualified lookup, guaranteeing coverage of the retained `indexes[n]` bound.
 
 Build once with debug information and incremental output disabled, using the shared
 workspace target directory. The lead runs the integrated branch, so `CARGO_MANIFEST_DIR`
@@ -69,3 +79,9 @@ attempt or semantic failure.
 Raw outputs remain ignored. `tooling-commands.json` contains actual focused-check
 commands, exit codes and output hashes; publication acceptance is reported by the
 lead only after the monitored gates complete.
+
+The dynamic scope regression and five existing dependency-boundary tests passed;
+focused Clippy passed with warnings denied. The regression proves that an omitted
+Function producer is included on retry, its result binding is then produced, the
+boundary closes, and an unrelated Function stays excluded. A too-small population
+limit rejects expansion without relaxing acceptance.

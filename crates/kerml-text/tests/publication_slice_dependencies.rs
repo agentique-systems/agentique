@@ -9,7 +9,9 @@ use agq_kernel::{
     provenance::DeclaredOrigin,
     value::{SlotValue, Value},
 };
-use publication_dependencies::{Boundary, subjects, subjects_with_context_anchors};
+use publication_dependencies::{
+    Boundary, expanded_subjects, subjects, subjects_with_context_anchors,
+};
 use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
@@ -298,4 +300,68 @@ fn final_reference_reads_reject_an_omitted_semantic_provider() {
         &answer.reads.into_invalidation(),
     );
     assert!(boundary.is_complete());
+}
+
+#[test]
+fn a_discovered_provider_expands_the_scope_before_reclosing_producers() {
+    let snapshot = fixture();
+    let run = |population: BTreeSet<ElementId>| {
+        close_result_structure(
+            &snapshot,
+            PublicationClosureOptions {
+                initial_subjects: Some(population),
+                ..Default::default()
+            },
+            context,
+            |_, _, _, _| {},
+            |_| {},
+        )
+        .unwrap()
+    };
+    let initial = BTreeSet::from([id(4), id(5), id(20)]);
+    let first = run(initial.clone());
+    let missing = Boundary::from_graph(first.overlay.model(), &initial).unwrap();
+    assert!(!missing.is_complete());
+    assert!(missing.missing_subjects.contains(&id(2)));
+    // A too-small workflow limit stops; it never turns a missing provider into a pass.
+    assert!(
+        expanded_subjects(
+            snapshot.model(),
+            &initial,
+            &missing.missing_subjects,
+            initial.len()
+        )
+        .is_err()
+    );
+    let expanded =
+        expanded_subjects(snapshot.model(), &initial, &missing.missing_subjects, 32).unwrap();
+    let second = run(expanded.clone());
+    assert_eq!(second.completeness, Completeness::Complete);
+    assert!(
+        second
+            .overlay
+            .model()
+            .instances(c::BINDING_CONNECTOR, true)
+            .unwrap()
+            .count()
+            > 0
+    );
+    let final_population = expanded
+        .into_iter()
+        .chain(
+            second
+                .overlay
+                .model()
+                .elements()
+                .filter(|record| snapshot.model().element(record.id()).is_none())
+                .map(|record| record.id()),
+        )
+        .collect();
+    assert!(
+        Boundary::from_graph(second.overlay.model(), &final_population)
+            .unwrap()
+            .is_complete()
+    );
+    // Expansion remains local: the unrelated Function in the imported Package is excluded.
+    assert!(!final_population.contains(&id(60)));
 }
