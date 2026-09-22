@@ -53,6 +53,7 @@ pub enum SearchDependency {
         subject: ElementId,
         requirement: crate::SemanticClosureRequirement,
         certificate_digest: Option<[u8; 32]>,
+        source: Option<crate::ClosureSource>,
     },
     /// The semantic producer role, including the absence of such provenance.
     ImpliedBindingRole(Option<crate::ImpliedBindingRole>),

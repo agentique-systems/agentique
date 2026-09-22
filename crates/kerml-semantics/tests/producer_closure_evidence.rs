@@ -67,6 +67,7 @@ fn negative_typing_becomes_complete_only_with_the_exact_scheduler_witness() {
             subject: id(1),
             requirement: SemanticClosureRequirement::EffectiveTyping,
             certificate_digest: Some(certificate.digest()),
+            source: Some(ClosureSource::LocalProducerClosure),
         };
         assert!(answer.search_dependencies.contains(&witness));
         assert!(answer.explanations.values().flatten().any(|proof| {

@@ -185,7 +185,13 @@ fn delayed_producer_requires_witness_and_closes_after_dependency_activation() {
         },
     );
     assert!(!partial.converged);
-    assert!(partial.certificate.is_none());
+    assert!(
+        !partial
+            .certificate
+            .as_ref()
+            .unwrap()
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
     let result = run(&snapshot, false, Default::default());
     assert!(result.converged);
     assert_eq!(
@@ -710,6 +716,7 @@ fn formal_owner_absence_requires_a_witness_until_delayed_attachment() {
                 subject: id(1),
                 requirement: SemanticClosureRequirement::EffectiveOwnership,
                 certificate_digest: None,
+                source: None,
             })
     );
 
@@ -743,6 +750,7 @@ fn formal_owner_absence_requires_a_witness_until_delayed_attachment() {
                 subject: id(1),
                 requirement: SemanticClosureRequirement::EffectiveOwnership,
                 certificate_digest: Some(pending.digest()),
+                source: None,
             })
     );
 
@@ -3139,4 +3147,286 @@ fn initial_pending_table_can_certify_only_producer_independent_requirements() {
             Completeness::Incomplete
         );
     }
+}
+
+#[test]
+fn initial_zero_writer_proof_closes_absent_owner_without_a_scheduler_round() {
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.value(1, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    let snapshot = f.finish();
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveOwnership));
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    let absent = queries.formal_constraint_applies(
+        FormalConstraintId::StepOwnedPerformanceSpecialization,
+        id(1),
+    );
+    assert_eq!(absent.completeness, Completeness::Complete, "{absent:?}");
+    assert!(!absent.value);
+    assert!(absent.search_dependencies.iter().any(|search| matches!(
+        search,
+        SearchDependency::ProducerClosure {
+            source: Some(ClosureSource::LocalProducerClosure),
+            requirement: SemanticClosureRequirement::EffectiveOwnership,
+            ..
+        }
+    )));
+
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Ownership],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    let open = queries.formal_constraint_applies(
+        FormalConstraintId::StepOwnedPerformanceSpecialization,
+        id(1),
+    );
+    assert_eq!(open.completeness, Completeness::Incomplete);
+    assert!(!open.value);
+}
+
+#[test]
+fn unaccepted_immutable_dependency_cannot_mint_accepted_closure() {
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(fixture())
+            .build()
+            .unwrap(),
+    );
+    let snapshot = Snapshot::with_immutable_dependency(dependency);
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    assert_ne!(
+        certificate.closure_source(id(1), SemanticClosureRequirement::EffectiveOwnership),
+        Some(ClosureSource::AcceptedDependency)
+    );
+}
+
+#[test]
+fn accepted_dependency_population_is_closed_without_replaying_local_subject_writers() {
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(fixture())
+            .build()
+            .unwrap(),
+    );
+    let base = Snapshot::with_immutable_dependency(dependency);
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::FEATURE);
+    let snapshot = f.finish();
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing, ProducerEffect::Membership],
+        ProducerApplicability::Any,
+    );
+    writer.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let mut context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    // Exercise the private accepted-boundary marker independently of corpus restoration.
+    // Production code only installs this marker after the accepted overlay pointer check.
+    context.id.publication_dependency_digest = Some([7; 32]);
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    for requirement in [
+        SemanticClosureRequirement::EffectiveTyping,
+        SemanticClosureRequirement::EffectiveMembership,
+    ] {
+        assert_eq!(
+            certificate.closure_source(id(1), requirement),
+            Some(ClosureSource::AcceptedDependency)
+        );
+        assert!(!certificate.is_closed(id(4), requirement));
+    }
+}
+
+#[test]
+fn closure_checkpoint_retains_unrelated_evaluations_and_reopens_changed_negative_searches() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(1), snapshot.model(), &registry);
+    table
+        .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(
+            id(1),
+            TYPE,
+            vec![ProducerRead::Source(
+                id(1),
+                c::FEATURE_TYPING,
+                p::FEATURE_TYPING_TYPED_FEATURE,
+            )]
+            .into(),
+        )],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    assert!(checkpoint.fingerprint_storage_bytes() <= snapshot.model().len() * 48);
+    drop(context);
+    let mut f = Fixture {
+        changes: snapshot.change_set(),
+        base: snapshot.clone(),
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::CLASSIFIER);
+    let unrelated = f.finish();
+    let next = SemanticContext::for_snapshot(&unrelated, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&next, &registry).unwrap();
+    assert_eq!(rebound.retained_evaluations, 1);
+    assert_eq!(rebound.reopened_evaluations, 0);
+    assert_ne!(
+        certificate.model_digest(),
+        rebound.certificate.model_digest()
+    );
+    assert!(
+        rebound
+            .certificate
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
+    assert!(next.with_producer_closure(rebound.certificate).is_ok());
+
+    // A fresh source relationship invalidates an earlier empty source search,
+    // although the Feature record itself is byte-for-byte unchanged.
+    let mut f = Fixture {
+        changes: unrelated.change_set(),
+        base: unrelated,
+        owned: BTreeMap::new(),
+    };
+    f.create(5, c::FEATURE_TYPING);
+    f.value(5, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(1)));
+    f.value(5, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+    let changed = f.finish();
+    assert_eq!(
+        snapshot.model().element(id(1)),
+        changed.model().element(id(1))
+    );
+    let next = SemanticContext::for_snapshot(&changed, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&next, &registry).unwrap();
+    assert_eq!(rebound.reopened_evaluations, 1);
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
+    let changed_registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Ownership],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    assert_eq!(
+        checkpoint.rebind(&next, &changed_registry).unwrap_err(),
+        ContextError::ProducerClosureMismatch
+    );
+}
+
+#[test]
+fn new_writer_opportunities_reopen_equal_looking_conclusions() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(1), snapshot.model(), &registry);
+    table
+        .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(1), TYPE, vec![ProducerRead::Structural(id(1))].into())],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    assert!(certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    let mut f = Fixture {
+        changes: snapshot.change_set(),
+        base: snapshot,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::FEATURE);
+    let changed = f.finish();
+    let next = SemanticContext::for_snapshot(&changed, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&next, &registry).unwrap();
+    assert_eq!(rebound.retained_evaluations, 1);
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(2), SemanticClosureRequirement::EffectiveTyping)
+    );
 }

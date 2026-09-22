@@ -165,6 +165,7 @@ fn missing_closure_is_a_typed_dependency_without_a_fake_canonical_fact() {
                 subject,
                 requirement: SemanticClosureRequirement::EffectiveTyping,
                 certificate_digest: None,
+                source: None,
             })
     );
 }

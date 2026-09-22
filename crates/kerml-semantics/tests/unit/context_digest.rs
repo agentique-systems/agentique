@@ -447,6 +447,7 @@ fn transported_closure_requirements_do_not_canonicalize_certificate_history() {
                     subject: id(2),
                     requirement: SemanticClosureRequirement::EffectiveTyping,
                     certificate_digest: *certificate_digest,
+                    source: None,
                 });
         }
         let searches = crate::read_dependencies::structural_searches(&answer);

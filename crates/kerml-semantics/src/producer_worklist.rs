@@ -596,7 +596,13 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     let mut evaluations = crate::producer_closure::ProducerEvaluationTable::default();
     let mut certificate: Option<std::sync::Arc<ProducerClosureCertificate>> = None;
     let extension_descriptors = extension.descriptors();
-    let mut unregistered_extension = false;
+    let mut unregistered_extension = extension_descriptors.is_empty()
+        && population.iter().any(|&subject| {
+            overlay
+                .model()
+                .element(subject)
+                .is_some_and(|record| extension.applies(overlay.model(), record.metaclass()))
+        });
     let mut stratum = ResultStructureStratum::Structural;
     let mut deferred_bindings = BTreeSet::new();
     for round in 0..options.max_rounds {
@@ -612,6 +618,18 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         current_context = current_context
             .with_producer_registry_digest(registry.digest())
             .map_err(PublicationOverlayError::Context)?;
+        if round == 0
+            && let Some(witness) = current_context.producer_closure()
+        {
+            evaluations = witness.evaluation_table();
+            certificate = Some(witness.clone());
+        }
+        if certificate.is_none() && !unregistered_extension {
+            certificate = Some(std::sync::Arc::new(
+                ProducerClosureCertificate::initial(&current_context, registry)
+                    .map_err(PublicationOverlayError::Context)?,
+            ));
+        }
         if let Some(witness) = &certificate {
             if witness.compatible_context(current_context.id()) {
                 current_context = current_context
@@ -896,7 +914,10 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                     next_context.id(),
                     registry,
                     &evaluations,
-                    |id| Overlay::is_dependency_element(input, id),
+                    |id| {
+                        next_context.id().publication_dependency_digest.is_some()
+                            && Overlay::is_dependency_element(input, id)
+                    },
                 ));
                 counters.applicable_subject_family_pairs = issued.applicable_pairs();
                 counters.closed_producer_pairs = issued.closed_pairs();
@@ -953,7 +974,31 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             overlay = next;
             break;
         }
-        certificate = None;
+        // Revalidate evaluations before rebinding evidence to the changed graph.
+        // Unaffected read sets survive; new families/subjects and changed reads
+        // reopen, and issue recomputes upstream causal blockers and closed masks.
+        evaluations.invalidate(&changed);
+        certificate = if unregistered_extension {
+            None
+        } else {
+            let started = std::time::Instant::now();
+            let next_context = context_factory(&next)?
+                .with_producer_registry_digest(registry.digest())
+                .map_err(PublicationOverlayError::Context)?;
+            let issued = std::sync::Arc::new(ProducerClosureCertificate::issue(
+                next.model(),
+                next_context.id(),
+                registry,
+                &evaluations,
+                |id| {
+                    next_context.id().publication_dependency_digest.is_some()
+                        && Overlay::is_dependency_element(input, id)
+                },
+            ));
+            counters.certificate_build_micros += started.elapsed().as_micros();
+            counters.certificate_bytes = issued.storage_bytes();
+            Some(issued)
+        };
         population.extend(new_subjects);
         worklist = match options.strategy {
             PublicationClosureStrategy::Worklist => index

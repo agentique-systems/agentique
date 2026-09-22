@@ -8,6 +8,10 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
 
+#[path = "producer_closure_rebind.rs"]
+mod rebind;
+pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
+
 /// Precise scalar reads coexist with conservative structural population reads.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum ProducerRead {
@@ -589,12 +593,33 @@ impl ProducerRegistry {
 
 /// Compressed evaluation table retained only by the scheduler. The outer index
 /// is one entry per subject; there is no tree node per subject/family pair.
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct ProducerEvaluationTable {
     rows: BTreeMap<ElementId, Vec<ProducerEvaluationState>>,
     reads: BTreeMap<ElementId, Vec<(usize, ProducerReads)>>,
 }
 impl ProducerEvaluationTable {
+    pub(crate) fn invalidate(&mut self, changed: &BTreeSet<ElementId>) {
+        for (&subject, row) in &mut self.rows {
+            for (family, state) in row.iter_mut().enumerate() {
+                if *state == ProducerEvaluationState::Inapplicable {
+                    continue;
+                }
+                let reads = self
+                    .reads
+                    .get(&subject)
+                    .and_then(|row| row.iter().find(|(index, _)| *index == family));
+                if changed.contains(&subject)
+                    || reads.is_none_or(|(_, reads)| {
+                        reads.iter().any(|read| rebind::read_changed(read, changed))
+                    })
+                {
+                    *state = ProducerEvaluationState::Pending;
+                }
+            }
+        }
+    }
+
     /// Least fixed point: an evaluated producer is not quiescent while an
     /// unfinished producer can change one of its actual query reads.
     fn dependency_blocked(
@@ -784,9 +809,16 @@ impl ProducerEvaluationTable {
                 && !future_effects.is_empty()
             {
                 future_effects_applied = true;
-                for reads in readers.values() {
+                for (read_subject, reads) in &readers {
                     for (read, reader) in reads {
                         if future_families.iter().any(|future| {
+                            if immutable(*read_subject)
+                                && future.scope != ProducerEffectScope::Model
+                                && !has_reference_scalar(future, model)
+                                && !(ownership_mutable && future.scope.depends_on_ownership())
+                            {
+                                return false;
+                            }
                             future.effects.iter().any(|&effect| {
                                 descriptor_changes_read(
                                     future,
@@ -995,6 +1027,10 @@ impl ProducerEvaluationTable {
 /// ordinary query callers can only inspect scheduler-issued certificates.
 #[derive(Clone, Debug)]
 pub struct ProducerClosureCertificate {
+    // Optional scheduler read metadata, separate from the compact receipt proof.
+    // Restoration remains exact without this optimization; rebinding then reopens
+    // every evaluated family whose reads are unavailable.
+    transport_reads: Arc<BTreeMap<ElementId, Vec<(usize, ProducerReads)>>>,
     model_digest: [u8; 32],
     registry_digest: [u8; 32],
     context_contract_digest: [u8; 32],
@@ -1007,11 +1043,55 @@ pub struct ProducerClosureCertificate {
     closed_pairs: usize,
     incomplete_pairs: usize,
 }
+/// Why an exhaustive conclusion is closed in this interpretation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ClosureSource {
+    /// The accepted dependency is immutable and no local producer can alter this population.
+    AcceptedDependency,
+    /// Applicable local writers and their upstream reads are closed.
+    LocalProducerClosure,
+}
+
 impl ProducerClosureCertificate {
+    pub(crate) fn evaluation_table(&self) -> ProducerEvaluationTable {
+        ProducerEvaluationTable {
+            rows: self
+                .subjects
+                .iter()
+                .copied()
+                .map(|subject| {
+                    (
+                        subject,
+                        (0..self.families)
+                            .map(|family| {
+                                self.evaluation(subject, family).expect("certificate pair")
+                            })
+                            .collect(),
+                    )
+                })
+                .collect(),
+            reads: self.transport_reads.as_ref().clone(),
+        }
+    }
+
+    /// Identify the proof boundary for Explain without fabricating a model fact.
+    pub fn closure_source(
+        &self,
+        subject: ElementId,
+        requirement: SemanticClosureRequirement,
+    ) -> Option<ClosureSource> {
+        let index = self.subjects.binary_search(&subject).ok()?;
+        (self.closed[index] & requirement.bit() != 0).then_some(if self.closed[index] & 128 != 0 {
+            ClosureSource::AcceptedDependency
+        } else {
+            ClosureSource::LocalProducerClosure
+        })
+    }
+
     /// Export immutable proof bytes; acceptance and restoration require separately trusted authority.
     pub fn receipt_value(&self) -> serde_json::Value {
         serde_json::json!({
-            "format": "agq-producer-closure-certificate/1",
+            "format": "agq-producer-closure-certificate/2",
             "model_digest": self.model_digest, "registry_digest": self.registry_digest,
             "context_contract_digest": self.context_contract_digest, "digest": self.digest,
             "subjects": self.subjects.iter().map(|id| id.as_u128().to_string()).collect::<Vec<_>>(),
@@ -1028,7 +1108,7 @@ impl ProducerClosureCertificate {
         model: &ModelView,
     ) -> Option<Self> {
         use serde_json::from_value;
-        if value["format"] != "agq-producer-closure-certificate/1" {
+        if value["format"] != "agq-producer-closure-certificate/2" {
             return None;
         }
         let model_digest: [u8; 32] = from_value(value["model_digest"].clone()).ok()?;
@@ -1059,7 +1139,7 @@ impl ProducerClosureCertificate {
                 .iter()
                 .copied()
                 .eq(model.elements().map(|r| r.id()))
-            || closed.iter().any(|mask| *mask & !63 != 0)
+            || closed.iter().any(|mask| *mask & !191 != 0)
         {
             return None;
         }
@@ -1076,6 +1156,7 @@ impl ProducerClosureCertificate {
             return None;
         }
         let mut result = Self {
+            transport_reads: Arc::default(),
             model_digest,
             registry_digest,
             context_contract_digest,
@@ -1139,6 +1220,7 @@ impl ProducerClosureCertificate {
             _ => ProducerEvaluationState::EvaluatedIncomplete,
         })
     }
+    /// Compact certificate proof size, excluding optional scheduler revalidation metadata.
     pub fn storage_bytes(&self) -> usize {
         std::mem::size_of::<Self>()
             + std::mem::size_of_val(self.subjects.as_ref())
@@ -1157,7 +1239,7 @@ impl ProducerClosureCertificate {
     pub fn closed_effects(&self) -> usize {
         self.closed
             .iter()
-            .map(|mask| mask.count_ones() as usize)
+            .map(|mask| (mask & 63).count_ones() as usize)
             .sum()
     }
 
@@ -1188,6 +1270,7 @@ impl ProducerClosureCertificate {
                 || has_reference_scalar(descriptor, model)
         });
         let mut global_block = 0;
+        let mut dependency_global_block = 0;
         let mut applicable_pairs = 0;
         let mut closed_pairs = 0;
         let mut incomplete_pairs = 0;
@@ -1233,6 +1316,16 @@ impl ProducerClosureCertificate {
                                 .any(|&effect| requirement.requires_in_model(effect, model))
                             {
                                 global_block |= requirement.bit();
+                                if future_cross_subject_families(registry, model).any(|family| {
+                                    (family.scope == ProducerEffectScope::Model
+                                        || has_reference_scalar(family, model)
+                                        || ownership_mutable && family.scope.depends_on_ownership())
+                                        && family.effects.iter().any(|&effect| {
+                                            requirement.requires_in_model(effect, model)
+                                        })
+                                }) {
+                                    dependency_global_block |= requirement.bit();
+                                }
                             }
                         }
                     }
@@ -1250,6 +1343,12 @@ impl ProducerClosureCertificate {
                     // a relevant unfinished producer conservatively blocks them
                     // throughout the graph instead of claiming local absence.
                     global_block |= mask & !SemanticClosureRequirement::EffectiveTyping.bit();
+                    if descriptor.scope == ProducerEffectScope::Model
+                        || has_reference_scalar(descriptor, model)
+                        || ownership_mutable && descriptor.scope.depends_on_ownership()
+                    {
+                        dependency_global_block |= mask;
+                    }
                     match descriptor.scope {
                         _ if has_reference_scalar(descriptor, model) => global_block |= mask,
                         scope if ownership_mutable && scope.depends_on_ownership() => {
@@ -1315,7 +1414,13 @@ impl ProducerClosureCertificate {
         propagate(&mut inherited_blocks, &owned_by);
         propagate(&mut owner_blocks, &owners_of);
         for (i, mask) in inherited_blocks.into_iter().enumerate() {
-            blocked[i] |= mask | owner_blocks[i] | global_block;
+            blocked[i] |= mask
+                | owner_blocks[i]
+                | if immutable(subjects[i]) {
+                    dependency_global_block
+                } else {
+                    global_block
+                };
         }
         // Exhaustive typing follows canonical specialization/conjugation/chains.
         // Include all specialization subtypes conservatively, including incoming
@@ -1383,7 +1488,18 @@ impl ProducerClosureCertificate {
             }
         }
         propagate(&mut blocked, &dependents);
-        let closed: Vec<_> = blocked.into_iter().map(|mask| !mask & 63).collect();
+        let closed: Vec<_> = blocked
+            .into_iter()
+            .enumerate()
+            .map(|(i, mask)| {
+                (!mask & 63)
+                    | if immutable(subjects[i]) && context.publication_dependency_digest.is_some() {
+                        128
+                    } else {
+                        0
+                    }
+            })
+            .collect();
         let context_contract_digest = context.closure_contract_digest();
         let digest = certificate_digest(
             context.model_digest,
@@ -1394,6 +1510,7 @@ impl ProducerClosureCertificate {
             &states,
         );
         Self {
+            transport_reads: Arc::new(table.reads.clone()),
             model_digest: context.model_digest,
             registry_digest: registry.digest,
             context_contract_digest,
@@ -1418,7 +1535,7 @@ fn certificate_digest(
     states: &[u8],
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
-    hash.update(b"agq-producer-closure-certificate/1");
+    hash.update(b"agq-producer-closure-certificate/2");
     hash.update(model);
     hash.update(registry);
     hash.update(contract);

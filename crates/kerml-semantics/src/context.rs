@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Accepted KerML query contract. Optional producer closure is independently
-/// versioned by `agq-producer-closure-context/1` and its registry identity.
+/// versioned by `agq-producer-closure-context/2` and its registry identity.
 pub const RULE_SET_VERSION: &str = "agq-kerml-query/26";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
@@ -90,6 +90,7 @@ pub struct SemanticContext<'m> {
     pub(crate) id: SemanticContextId,
     pub(crate) naming_extension: Option<(&'static str, Arc<dyn SemanticNamingExtension>)>,
     pub(crate) producer_closure: Option<Arc<crate::ProducerClosureCertificate>>,
+    pub(crate) immutable_dependency: Option<&'m ModelView>,
 }
 
 impl SemanticContextId {
@@ -151,7 +152,7 @@ impl SemanticContextId {
         contract.producer_closure_digest = None;
         contract.derivation_phase = crate::DerivationPhase::Declared;
         let mut hash = Sha256::new();
-        hash.update(b"agq-producer-closure-context/1\0");
+        hash.update(b"agq-producer-closure-context/2\0");
         hash.update(format!("{contract:?}").as_bytes());
         hash.finalize().into()
     }
@@ -192,6 +193,7 @@ impl<'m> SemanticContext<'m> {
             id: self.id.clone(),
             naming_extension: self.naming_extension.clone(),
             producer_closure: self.producer_closure.clone(),
+            immutable_dependency: self.immutable_dependency,
         }
     }
     /// Freeze the complete producer registry before attaching closure evidence.
@@ -293,6 +295,9 @@ impl<'m> SemanticContext<'m> {
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
         let mut context = Self::bind(candidate.model(), candidate.revision(), options, libraries)?;
+        context.immutable_dependency = candidate
+            .immutable_dependency()
+            .map(|dependency| dependency.model());
         context.id.construction_obligations = candidate
             .obligations()
             .iter()
@@ -435,7 +440,11 @@ impl<'m> SemanticContext<'m> {
         options: SemanticOptions,
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
-        Self::bind(snapshot.model(), snapshot.revision(), options, libraries)
+        let mut context = Self::bind(snapshot.model(), snapshot.revision(), options, libraries)?;
+        context.immutable_dependency = snapshot
+            .immutable_dependency()
+            .map(|dependency| dependency.model());
+        Ok(context)
     }
     pub fn for_overlay(
         overlay: &'m DerivedOverlay,
@@ -443,6 +452,10 @@ impl<'m> SemanticContext<'m> {
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
         let mut context = Self::bind(overlay.model(), overlay.base_revision(), options, libraries)?;
+        context.immutable_dependency = overlay
+            .declared()
+            .immutable_dependency()
+            .map(|dependency| dependency.model());
         context.id.derivation_phase = crate::DerivationPhase::PartialDerivationOverlay;
         Ok(context)
     }
@@ -455,6 +468,10 @@ impl<'m> SemanticContext<'m> {
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
         let mut context = Self::bind(overlay.model(), overlay.base_revision(), options, libraries)?;
+        context.immutable_dependency = overlay
+            .declared()
+            .immutable_dependency()
+            .map(|dependency| dependency.model());
         context.id.derivation_phase = crate::DerivationPhase::PartialDerivationOverlay;
         context.id.construction_obligations = overlay
             .obligations()
@@ -568,6 +585,7 @@ impl<'m> SemanticContext<'m> {
             model,
             naming_extension: None,
             producer_closure: None,
+            immutable_dependency: None,
             id: SemanticContextId {
                 revision,
                 model_digest,

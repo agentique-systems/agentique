@@ -124,6 +124,7 @@ fn current_graph_owner_typing_cannot_disprove_an_antecedent_without_producer_clo
                 subject: id(1),
                 requirement: SemanticClosureRequirement::EffectiveTyping,
                 certificate_digest: None,
+                source: None,
             })
     );
     assert!(

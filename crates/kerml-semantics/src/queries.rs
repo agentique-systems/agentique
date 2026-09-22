@@ -87,6 +87,8 @@ impl<'m> KerMlQueries<'m> {
             subject,
             requirement,
             certificate_digest: certificate.map(|certificate| certificate.digest()),
+            source: certificate
+                .and_then(|certificate| certificate.closure_source(subject, requirement)),
         };
         answer.search_dependencies.insert(search.clone());
         answer.value =

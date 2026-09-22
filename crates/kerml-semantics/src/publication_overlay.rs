@@ -224,6 +224,11 @@ impl CompletePublicationOverlay {
             id: self.context.clone(),
             naming_extension: None,
             producer_closure: self.certificate.clone(),
+            immutable_dependency: self
+                .overlay
+                .declared()
+                .immutable_dependency()
+                .map(|dependency| dependency.model()),
         })
     }
 }
