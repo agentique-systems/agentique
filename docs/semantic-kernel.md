@@ -95,13 +95,14 @@ and failed or incomplete observations. SysML projections reuse that evidence
 without copying inherited usages. Direct and current-graph queries remain
 distinct from effective queries with unfinished producer obligations.
 
-Operational v1 parses all 21 exact Systems sources without recovery, and generic
+Operational v2 (reusing the frozen Operational v1 grammar) parses all 21 exact Systems sources without recovery, and generic
 lowering constructs 7,591 declared elements with 1,327 reference assertions while
 retaining StandardLibrary source provenance. Published grammar behavior remains
 13 complete parses and eight retained failures. The public Systems facade gates
 identity, provenance, bindings, mandatory references, capabilities and producer
-closure before acceptance. Closure and three additional canonical target authority
-decisions remain pending; neither declared construction nor context attachment
+closure before acceptance. Closure remains pending; the three bounded authority
+decisions are recorded in the immutable Operational v2 correction manifest.
+Neither declared construction nor context attachment
 certifies a Systems publication. See the
 [Systems publication evidence](../verification/summaries/sysml-systems-publication/README.md).
 

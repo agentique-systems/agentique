@@ -113,7 +113,7 @@ syntax, unresolved references and unimplemented semantic rules remain explicit.
 The SysML dialect extends the existing lossless production arena in
 `agq-kerml-syntax`; `agq-kerml-text` uses reusable Definition/Usage family contracts
 and the existing kernel construction machinery. All 21 pinned Systems Library
-documents parse under explicit Operational v1 with zero recovery and unchanged
+documents parse under explicit Operational v2 with zero recovery and unchanged
 source bytes. The separately selectable Published grammar retains 13 complete
 parses and its eight exact failures. All 21 documents support declared canonical
 construction, producing 7,591 elements and 1,327 source reference assertions;
@@ -132,8 +132,9 @@ projections and structural Port/Connector projections retain their evidence.
 Current-graph answers do not certify unfinished SysML producer closure.
 
 No Systems publication is accepted. Mandatory reference and combined producer
-closure remain pending, and three additional canonical target authority decisions
-await the user. `CanonicalSysmlSystemsLibrary` rejects any failed construction,
+closure remain pending. Operational v2 records the three bounded canonical target
+corrections while Published and Operational v1 remain reproducible.
+`CanonicalSysmlSystemsLibrary` rejects any failed construction,
 reference, producer, capability, binding, provenance or authority gate. Canonical
 identities retain their source provenance through lowering and refinement;
 authored edits do not change the immutable library dependency. See the current

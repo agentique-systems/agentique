@@ -1,0 +1,33 @@
+{
+  "format": "agentique-verification-summary/1",
+  "source_commit": "8fcb3ba10f845abc38e39288617e36ae06f4b091",
+  "scope": "Operational v2 authority profile and focused Systems semantic closure regressions",
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib",
+      "exit_code": 0,
+      "result": "45 passed"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-semantics stable_usage_property_activates_kerml_after_structural_closure",
+      "exit_code": 0,
+      "result": "1 passed"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text sysml::publication --lib",
+      "exit_code": 0,
+      "result": "5 passed"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-syntax operational_v2_reuses_v1_grammar",
+      "exit_code": 0,
+      "result": "1 passed"
+    }
+  ],
+  "publication_attempted": false,
+  "publication_reason": "Targeted acceptance prerequisites are not green; no full Systems publication attempt was authorized."
+}

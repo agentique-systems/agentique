@@ -1,0 +1,31 @@
+{
+  "format": "agentique-sysml-operational-v2-authority/1",
+  "profile": "agentique-sysml-2.0-operational/2",
+  "predecessors": [
+    "omg-sysml-2.0-published/1",
+    "agentique-sysml-2.0-operational/1"
+  ],
+  "manifest": "standards/sysml-2.0-operational-semantic-v2.json",
+  "corrections": [
+    {
+      "issue": "SYSML21-301",
+      "rule": "checkViewpointDefinitionSpecialization",
+      "published_target": "Views::Viewpoint",
+      "operational_v2_target": "Views::ViewpointCheck"
+    },
+    {
+      "issue": "SYSML21-301",
+      "rule": "checkViewpointUsageSpecialization",
+      "published_target": "Views::viewpoints",
+      "operational_v2_target": "Views::viewpointChecks"
+    },
+    {
+      "issue": "SYSML21-348",
+      "rule": "checkConnectionDefinitionBinarySpecialization",
+      "published_target": "Connections::BinaryConnections",
+      "operational_v2_target": "Connections::BinaryConnection",
+      "antecedent": "ownedEndFeature->size() = 2"
+    }
+  ],
+  "constraints": "No alias, source rename, fabricated declaration, or unrelated View/Connection correction is authorized."
+}
