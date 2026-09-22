@@ -14,6 +14,36 @@ pub enum Completeness {
     Invalid,
 }
 
+/// A bounded structural Feature population with language-defined membership
+/// semantics. The stable contract identifies a query projection, not a model fact.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum FeaturePopulationKind {
+    Parameter,
+    End,
+    Result,
+}
+
+impl FeaturePopulationKind {
+    /// Opaque versioned identity retained by the language-neutral kernel.
+    pub const fn contract_id(self) -> &'static str {
+        match self {
+            Self::Parameter => "agq-feature-population/Parameter/1",
+            Self::End => "agq-feature-population/End/1",
+            Self::Result => "agq-feature-population/Result/1",
+        }
+    }
+
+    /// Recognize only the exact supported projection contract version.
+    pub fn from_contract_id(id: &str) -> Option<Self> {
+        match id {
+            "agq-feature-population/Parameter/1" => Some(Self::Parameter),
+            "agq-feature-population/End/1" => Some(Self::End),
+            "agq-feature-population/Result/1" => Some(Self::Result),
+            _ => None,
+        }
+    }
+}
+
 /// Set reads remain dependencies even when empty. Match pre- AND post-change state.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SearchDependency {
