@@ -35,6 +35,7 @@ mod result_structure;
 mod specialization_witness;
 mod status_queries;
 mod structural;
+mod trusted_publication;
 mod typing;
 mod validation;
 
@@ -66,6 +67,7 @@ pub use resolution::*;
 pub use result_structure::*;
 pub use status_queries::*;
 pub use structural::MultiplicityBounds;
+pub use trusted_publication::{TrustedPublicationError, TrustedPublicationReceipt};
 pub use validation::RedefinitionEndConformance;
 
 #[cfg(test)]

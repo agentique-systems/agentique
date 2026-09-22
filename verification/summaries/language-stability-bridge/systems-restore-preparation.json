@@ -1,0 +1,323 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "systems-restore-scaffold-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "6ab892158df6b573441b0a4c1c9a235ca8a76f0179b0ff0273ff664601fea7ac",
+      "output_sha256": "711461fb21ec7e83993699856688fcfa6816519730f0522006700774e92f4e29",
+      "duration_seconds": 10.42,
+      "output": "verification/generated/language-stability-bridge/systems-restore-scaffold-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "systems-restore-scaffold-check-2",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "697f1175c6231850ca902a992df691b1887b61b1f3172c9910da6fdf1a309603",
+      "output_sha256": "f5a9beb9944656756608eac3e2159b2d75fda63349f3c4970597a7c12d5874c3",
+      "duration_seconds": 2.89,
+      "output": "verification/generated/language-stability-bridge/systems-restore-scaffold-check-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "trusted-closure-restore-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "trusted_publication",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "5245b69e767c791dd2377bffd6e514ef218714c2ef0dda1298ec2b20f419d300",
+      "output_sha256": "9bb9238d31612a44e414253a0f0d7f29759dadff2d8907e876c7b4653add7b6f",
+      "duration_seconds": 14.89,
+      "output": "verification/generated/language-stability-bridge/trusted-closure-restore-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "systems-cache-restore-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "sysml::publication::cache::restoration",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "e551a4ecd40ec001e95eda3d1f966893db742f3c38527d189a76c01665e2aa25",
+      "output_sha256": "8974695ca99ef66cea458b8c72e7295856be2e0dadccade7318e6a8a29bb2a9a",
+      "duration_seconds": 25.27,
+      "output": "verification/generated/language-stability-bridge/systems-cache-restore-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "systems-restore-scaffold-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4c6e4e8e507bdcf9e3779b72d8c2f036c37902a2",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "932736bdd978443db2f707e751041afc4307dc9443348d4c7ca5ba4790110d0d",
+      "duration_seconds": 11.19,
+      "output": "verification/generated/language-stability-bridge/systems-restore-scaffold-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "systems-restore-scaffold-clippy-final",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4c6e4e8e507bdcf9e3779b72d8c2f036c37902a2",
+      "working_changes_sha256": "37ef3199c6b70e99a3b9c07ab075a2c90d3e44a897be0daca8e61fd8db233b02",
+      "output_sha256": "ba46c79d7cc0737e78fd05fdf30470e83f3f955b5e22ef68da4d4b79a4f9df7c",
+      "duration_seconds": 7.5,
+      "output": "verification/generated/language-stability-bridge/systems-restore-scaffold-clippy-final.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "systems-restore-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4c6e4e8e507bdcf9e3779b72d8c2f036c37902a2",
+      "working_changes_sha256": "37ef3199c6b70e99a3b9c07ab075a2c90d3e44a897be0daca8e61fd8db233b02",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.36,
+      "output": "verification/generated/language-stability-bridge/systems-restore-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "systems-restore-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4c6e4e8e507bdcf9e3779b72d8c2f036c37902a2",
+      "working_changes_sha256": "37ef3199c6b70e99a3b9c07ab075a2c90d3e44a897be0daca8e61fd8db233b02",
+      "output_sha256": "c4b5ffa80f2feae5783ee0e716f3901fc57f6b085675a00c270fe42afe773d53",
+      "duration_seconds": 3.62,
+      "output": "verification/generated/language-stability-bridge/systems-restore-rustdoc.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture",
+        "RUSTDOCFLAGS": "-Dwarnings"
+      }
+    },
+    {
+      "name": "systems-restore-integrated-closure-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "trusted_publication",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4c6e4e8e507bdcf9e3779b72d8c2f036c37902a2",
+      "working_changes_sha256": "37ef3199c6b70e99a3b9c07ab075a2c90d3e44a897be0daca8e61fd8db233b02",
+      "output_sha256": "621530dba9b66da6fe7b5cb8f6582a8894cc827401d352fc667430b8399cb429",
+      "duration_seconds": 14.62,
+      "output": "verification/generated/language-stability-bridge/systems-restore-integrated-closure-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "systems-restore-integrated-cache-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "sysml::publication::cache::restoration",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4c6e4e8e507bdcf9e3779b72d8c2f036c37902a2",
+      "working_changes_sha256": "37ef3199c6b70e99a3b9c07ab075a2c90d3e44a897be0daca8e61fd8db233b02",
+      "output_sha256": "3e28ba5e75975f934f6ea8ff2ab387dfe9833945a080e3037d4cb0f18fee8cd0",
+      "duration_seconds": 11.08,
+      "output": "verification/generated/language-stability-bridge/systems-restore-integrated-cache-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "kerml-existing-restore-regression",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "publication_overlay::restoration",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4c6e4e8e507bdcf9e3779b72d8c2f036c37902a2",
+      "working_changes_sha256": "01b9dc662e8ac990ec5590f88a5741ff4fc992ae7bcd7d41f585d3c0b01944ac",
+      "output_sha256": "6fa11ff67cd9b375c6d6aea0bfb957640171e9f26bdec2fce60a39b957af5c6f",
+      "duration_seconds": 2.33,
+      "output": "verification/generated/language-stability-bridge/kerml-existing-restore-regression.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    }
+  ]
+}

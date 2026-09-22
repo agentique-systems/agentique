@@ -217,6 +217,35 @@ impl<'m> SysmlSemanticContext<'m> {
         let kerml = producer_context(kerml)?;
         Self::attach(kerml.model(), kerml, trusted, bindings)
     }
+    /// Restore authenticated evidence for an already accepted Systems graph.
+    /// The complete expected registry is rebuilt here; a weaker caller registry
+    /// cannot authorize effective SysML query completeness.
+    pub fn with_trusted_producer_closure(
+        mut self,
+        receipt: &agq_kerml_semantics::TrustedPublicationReceipt,
+        reader: impl std::io::Read,
+    ) -> Result<Self, SysmlContextError> {
+        if receipt.id() != "sysml-systems-operational-v2" {
+            return Err(SysmlContextError::IdentityMismatch(
+                "Systems receipt authority",
+            ));
+        }
+        let registry = agq_kerml_semantics::ProducerRegistry::new(
+            agq_kerml_semantics::ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(self.kerml.id().options.baseline_profile))
+                .chain(crate::sysml_producer_descriptors()),
+        )
+        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
+        self.kerml = self
+            .kerml
+            .with_producer_registry_digest(registry.digest())?;
+        let certificate = receipt
+            .restore_producer_closure(reader, &self.kerml, &registry)
+            .map_err(|_| SysmlContextError::IdentityMismatch("trusted Systems producer closure"))?;
+        self.with_producer_closure(certificate)
+    }
+
     /// Attach scheduler evidence to the exact composed graph and dependency
     /// contract. This does not accept a library publication or waive pending
     /// SysML query capabilities. The complete expected KerML/SysML producer

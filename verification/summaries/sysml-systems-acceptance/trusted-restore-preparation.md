@@ -1,10 +1,14 @@
 # Trusted Systems restoration preparation
 
-Status: **disabled and unimplemented; pending actual Systems publication
-acceptance**. This proposal grants no acceptance and introduces no restoration
-API. Implement Phase F only after the complete publication gate passes. Existing
-Systems export bytes alone remain insufficient authority. Preserve the accepted
-KerML Operational v9 `/26` receipt encoding and restoration API unchanged.
+Status: **implemented scaffolding, disabled; pending actual Systems publication
+acceptance**. The bridge milestone explicitly authorized preparing this code in
+isolation. Its finite compiled catalogue is empty, so no Systems cache can restore
+an accepted facade yet. Add catalogue authority only after the complete publication
+gate passes. Existing Systems export bytes alone remain insufficient authority.
+The accepted KerML Operational v9 `/26` receipt encoding and restoration API are
+unchanged. See
+[`systems-restore-scaffold.md`](../language-stability-bridge/systems-restore-scaffold.md)
+for implementation checks and the remaining accepted-artifact gate.
 
 ## Authority and concrete API
 
@@ -18,14 +22,14 @@ Systems entry only from the actual accepted export; do not add a placeholder.
 pub struct TrustedPublicationReceipt { /* private authenticated documents */ }
 
 impl TrustedPublicationReceipt {
-    pub fn checked_in(id: &str) -> Result<Self, PublicationRestoreError>;
+    pub fn checked_in(id: &str) -> Result<Self, TrustedPublicationError>;
 
     pub fn restore_producer_closure(
         &self,
         reader: impl std::io::Read,
         context: &SemanticContext<'_>,
         registry: &ProducerRegistry,
-    ) -> Result<Arc<ProducerClosureCertificate>, PublicationRestoreError>;
+    ) -> Result<Arc<ProducerClosureCertificate>, TrustedPublicationError>;
 }
 ```
 
@@ -120,7 +124,6 @@ of the receipt and exact graph checks.
 | Missing reference assertion or incomplete checked-family population | Reject exact accepted audit population |
 | Existing accepted KerML `/26` cache | Restores unchanged through its existing authority/API |
 
-Verification for this preparation: read-only inspection of existing receipt,
-closure decoder, dependent archive, SysML context/bindings, and Systems export
-paths. No implementation tests were run for this document-only proposal, and no
-publication or language-readiness gate is claimed.
+This document originated as read-only preparation. The linked bridge summary
+records the subsequent implementation tests. Neither stage establishes Systems
+publication acceptance or language readiness.
