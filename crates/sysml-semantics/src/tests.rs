@@ -169,10 +169,15 @@ impl Fixture {
 }
 fn vertical() -> Fixture {
     let mut f = Fixture::new();
+    f.create(10_000, kc::NAMESPACE, "temporaryRootName");
+    f.changes.clear(id(10_000), kp::ELEMENT_DECLARED_NAME);
     f.create(1, sc::PART_DEFINITION, "Engine");
     f.create(2, sc::PART_DEFINITION, "Vehicle");
     f.create(3, sc::PART_USAGE, "engine");
     f.create(4, sc::PART_DEFINITION, "SportsCar");
+    f.member(10_000, 1, 10_001, kc::OWNING_MEMBERSHIP);
+    f.member(10_000, 2, 10_002, kc::OWNING_MEMBERSHIP);
+    f.member(10_000, 4, 10_003, kc::OWNING_MEMBERSHIP);
     f.member(2, 3, 103, kc::FEATURE_MEMBERSHIP);
     f.relation(3, 1, 201, kc::FEATURE_TYPING, kp::FEATURE_TYPING_TYPE);
     f.relation(
