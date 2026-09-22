@@ -211,6 +211,22 @@ fn queries(snapshot: &Snapshot, profile: Profile) -> KerMlQueries<'_> {
     )
 }
 
+fn overlay_context(
+    overlay: &agq_kernel::derived::DerivedOverlay,
+    profile: Profile,
+) -> SemanticContext<'_> {
+    SemanticContext::for_overlay(
+        overlay,
+        SemanticOptions {
+            baseline_profile: profile,
+            ..Default::default()
+        },
+        Default::default(),
+    )
+    .unwrap()
+    .with_formal_constraint_targets(&[id(1)], LibraryId::from_u128(7))
+}
+
 #[test]
 fn six_rules_six_profiles_exact_targets_and_arbitrary_names() {
     let mut contexts = BTreeSet::new();
@@ -243,6 +259,36 @@ fn six_rules_six_profiles_exact_targets_and_arbitrary_names() {
                 assert!(reflexive.value, "{rule:?}");
                 assert_eq!(reflexive.completeness, Completeness::Complete);
                 let validation = q.validate_formal_target_constraints(targets[&rule]);
+                // Positive rule evidence remains usable on the current graph,
+                // but exhaustive validation may need other negative antecedents.
+                assert_ne!(validation.completeness, Completeness::Invalid);
+                if validation.completeness == Completeness::Incomplete {
+                    assert!(validation.search_dependencies.iter().any(|search| matches!(
+                        search,
+                        SearchDependency::ProducerClosure {
+                            certificate_digest: None,
+                            ..
+                        }
+                    )));
+                }
+                let closure = close_result_structure(
+                    &snapshot,
+                    Default::default(),
+                    |overlay| Ok(overlay_context(overlay, profile)),
+                    |_, _, _, _| {},
+                    |_| {},
+                )
+                .unwrap();
+                assert!(closure.converged, "{rule:?}: {:?}", closure.stages);
+                let certificate = closure.certificate.as_ref().expect("scheduler witness");
+                let effective = KerMlQueries::new(
+                    overlay_context(&closure.overlay, profile)
+                        .with_producer_registry_digest(certificate.registry_digest())
+                        .unwrap()
+                        .with_producer_closure(certificate.clone())
+                        .unwrap(),
+                );
+                let validation = effective.validate_formal_target_constraints(targets[&rule]);
                 assert_eq!(
                     validation.completeness,
                     Completeness::Complete,

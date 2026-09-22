@@ -1,6 +1,28 @@
 use super::*;
 
 #[test]
+fn closure_witness_is_invalidated_by_any_graph_delta_but_is_not_a_graph_provider() {
+    let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
+    let queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default()).unwrap(),
+    );
+    let answer = queries.producer_closure(
+        ElementId::from_u128(1),
+        SemanticClosureRequirement::EffectiveTyping,
+    );
+    let keys = query_read_keys(&answer, snapshot.model());
+    assert_eq!(keys, BTreeSet::from([InvalidationKey::Global]));
+    let compact = QueryInvalidationSet::from_keys(keys);
+    assert!(compact.affected_by(&BTreeSet::from([ElementId::from_u128(99)]), false));
+    assert!(query_publication_provider_keys(&answer, snapshot.model()).is_empty());
+    assert_eq!(
+        structural_searches(&answer),
+        BTreeSet::from([StructuralSearch::Model])
+    );
+    assert!(answer.canonical_dependencies.is_empty());
+}
+
+#[test]
 fn compact_invalidation_matches_every_five_subject_read_and_change_population() {
     let ids: Vec<_> = (1..=5).map(ElementId::from_u128).collect();
     for reads_mask in 0..(1 << 11) {
