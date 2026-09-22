@@ -522,6 +522,13 @@ impl KerMlQueries<'_> {
                 .map(|(id, _)| *id)
                 .collect();
             if ready.is_empty() {
+                // Language extensions authenticate their own rule-set identity.
+                // Keep the sealed KerML-only interpretation reproducible.
+                if !self.context().semantic_extensions.is_empty()
+                    && complete_owned_position_cycles(&graph, &owned, &mut values)
+                {
+                    continue;
+                }
                 out.problem(
                     Completeness::Incomplete,
                     "KQ_END_CYCLE",
@@ -580,3 +587,87 @@ impl KerMlQueries<'_> {
         out
     }
 }
+
+/// Resolve only cycles whose position vectors have a finite structural proof.
+/// Every member must own the same number of positions, covering every resolved
+/// external general. Then all inherited positions are replaced positionally and
+/// each exact owned vector is the result. No seed iteration or identity ordering
+/// selects among otherwise possible inherited orders. The zero-position case
+/// similarly proves an empty result only when all external results are empty.
+fn complete_owned_position_cycles(
+    graph: &std::collections::BTreeMap<ElementId, Vec<ElementId>>,
+    owned: &std::collections::BTreeMap<ElementId, Vec<ElementId>>,
+    values: &mut std::collections::BTreeMap<ElementId, Vec<ElementId>>,
+) -> bool {
+    use std::collections::{BTreeMap, BTreeSet};
+
+    // Iterative Kosaraju over unresolved vertices. Already resolved generals
+    // remain boundary inputs, so unrelated cyclic ancestors cannot be assumed
+    // to have the same cardinality as this component.
+    let unresolved: BTreeSet<_> = graph
+        .keys()
+        .copied()
+        .filter(|id| !values.contains_key(id))
+        .collect();
+    let mut reverse = BTreeMap::<ElementId, Vec<ElementId>>::new();
+    let mut seen = BTreeSet::new();
+    let mut finish = Vec::with_capacity(unresolved.len());
+    for &id in &unresolved {
+        for &general in &graph[&id] {
+            if unresolved.contains(&general) {
+                reverse.entry(general).or_default().push(id);
+            }
+        }
+        let mut pending = vec![(id, false)];
+        while let Some((current, expanded)) = pending.pop() {
+            if expanded {
+                finish.push(current);
+            } else if seen.insert(current) {
+                pending.push((current, true));
+                pending.extend(
+                    graph[&current]
+                        .iter()
+                        .rev()
+                        .filter(|general| unresolved.contains(general))
+                        .map(|&general| (general, false)),
+                );
+            }
+        }
+    }
+    let mut assigned = BTreeSet::new();
+    let mut completed = false;
+    for seed in finish.into_iter().rev() {
+        let mut component = BTreeSet::new();
+        let mut pending = vec![seed];
+        while let Some(current) = pending.pop() {
+            if assigned.insert(current) {
+                component.insert(current);
+                pending.extend(reverse.get(&current).into_iter().flatten().copied());
+            }
+        }
+        if component.is_empty() {
+            continue;
+        }
+        let count = owned[&seed].len();
+        let covered = component.iter().all(|id| {
+            owned[id].len() == count
+                && graph[id].iter().all(|general| {
+                    component.contains(general)
+                        || values
+                            .get(general)
+                            .is_some_and(|positions| positions.len() <= count)
+                })
+        });
+        if covered {
+            for id in component {
+                values.insert(id, owned[&id].clone());
+            }
+            completed = true;
+        }
+    }
+    completed
+}
+
+#[cfg(test)]
+#[path = "../tests/unit/owned_position_cycles.rs"]
+mod owned_position_cycles;
