@@ -166,6 +166,7 @@ impl Fixture {
         LibraryDraft {
             candidate: Arc::new(self.base.preview(&self.changes).unwrap()),
             semantic_candidate: None,
+            producer_closure: None,
             base: self.base,
             profile: BaselineProfile::OPERATIONAL_V8,
             source_map: BTreeMap::new(),

@@ -41,6 +41,7 @@ pub struct LibraryDraft {
     base: Snapshot,
     candidate: std::sync::Arc<agq_kernel::ConstructionView>,
     semantic_candidate: Option<agq_kernel::derived::ConstructionOverlay>,
+    producer_closure: Option<std::sync::Arc<agq_kerml_semantics::ProducerClosureCertificate>>,
     profile: agq_kerml::BaselineProfile,
     source_map: LibrarySourceMap,
     roots: Vec<ElementId>,
@@ -191,11 +192,25 @@ impl LibraryDraft {
             &self.candidate
         ));
         self.semantic_candidate = Some(overlay);
+        self.producer_closure = None;
     }
     /// Unpublished producer facts, when reference refinement required semantic
     /// inheritance. This overlay is not used by strict declared construction.
     pub fn semantic_candidate(&self) -> Option<&agq_kernel::derived::ConstructionOverlay> {
         self.semantic_candidate.as_ref()
+    }
+    /// Scheduler evidence belongs to the exact immutable semantic candidate,
+    /// separately from its canonical records and source construction.
+    pub fn producer_closure(
+        &self,
+    ) -> Option<&std::sync::Arc<agq_kerml_semantics::ProducerClosureCertificate>> {
+        self.producer_closure.as_ref()
+    }
+    pub(crate) fn set_producer_closure(
+        &mut self,
+        certificate: Option<std::sync::Arc<agq_kerml_semantics::ProducerClosureCertificate>>,
+    ) {
+        self.producer_closure = certificate;
     }
     pub(crate) fn reference_model(&self) -> &agq_kernel::ModelView {
         self.semantic_candidate

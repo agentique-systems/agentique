@@ -918,6 +918,7 @@ impl Builder {
             profile: self.profile,
             candidate: std::sync::Arc::new(candidate),
             semantic_candidate: None,
+            producer_closure: None,
             source_map,
             roots: self.roots,
             references: self.references,

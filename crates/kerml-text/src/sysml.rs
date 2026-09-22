@@ -454,6 +454,7 @@ fn prepare_systems_library_scope(
                         counters: closure.counters,
                     });
                     current.set_semantic_candidate(closure.overlay);
+                    current.set_producer_closure(closure.certificate);
                     Ok(current)
                 },
                 |current| {
@@ -468,7 +469,9 @@ fn prepare_systems_library_scope(
                 ReferenceRefinementStrategy::DependencyDriven,
                 &mut progress,
             )?;
-            if draft.candidate().obligations().is_empty() {
+            // Scoped preflights must exercise final predicates even when the
+            // positive bootstrap happened to resolve every declared endpoint.
+            if draft.candidate().obligations().is_empty() && (paths.is_none() || final_predicates) {
                 break;
             }
         }
@@ -510,6 +513,14 @@ fn systems_candidate_queries<'m>(
         )
     })
     .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
+    let context = if let Some(certificate) = draft.producer_closure() {
+        context
+            .with_producer_registry_digest(certificate.registry_digest())
+            .and_then(|context| context.with_producer_closure(certificate.clone()))
+            .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?
+    } else {
+        context
+    };
     Ok(KerMlQueries::new(context))
 }
 

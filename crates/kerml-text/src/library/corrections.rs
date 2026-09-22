@@ -342,6 +342,7 @@ impl OperationalLibraryPatchSet {
         Ok(LibraryDraft {
             candidate: std::sync::Arc::new(candidate),
             semantic_candidate: None,
+            producer_closure: None,
             references,
             superseded_references,
             ..draft

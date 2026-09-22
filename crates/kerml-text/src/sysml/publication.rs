@@ -138,6 +138,7 @@ pub struct SystemsPublicationIdentity {
 /// Only `publish` constructs this facade, after every applicable gate passes.
 pub struct CanonicalSysmlSystemsLibrary {
     overlay: Arc<DerivedOverlay>,
+    producer_closure: Arc<agq_kerml_semantics::ProducerClosureCertificate>,
     accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
     bindings: StandardSysmlBindings,
     identity: SystemsPublicationIdentity,
@@ -282,6 +283,12 @@ impl CanonicalSysmlSystemsLibrary {
                 converged: closure.converged,
             });
         }
+        let Some(certificate) = closure.certificate.clone() else {
+            audit.findings.push(SystemsPublicationFinding::Identity(
+                "scheduler closure certificate missing",
+            ));
+            return Err(SystemsPublicationError::Rejected(Box::new(audit)));
+        };
         let q = KerMlQueries::new(
             inputs
                 .accepted_kerml
@@ -294,6 +301,10 @@ impl CanonicalSysmlSystemsLibrary {
                         Arc::new(agq_sysml_semantics::SysmlNamingExtension),
                     )
                 })
+                .and_then(|context| {
+                    context.with_producer_registry_digest(certificate.registry_digest())
+                })
+                .and_then(|context| context.with_producer_closure(certificate.clone()))
                 .map_err(PublicationOverlayError::Context)?,
         );
         if q.context().descriptor_digest != contract.combined_descriptor_digest {
@@ -399,6 +410,7 @@ impl CanonicalSysmlSystemsLibrary {
         drop(q);
         Ok(Self {
             overlay: Arc::new(closure.overlay),
+            producer_closure: certificate,
             accepted_kerml: inputs.accepted_kerml,
             bindings,
             identity: publication_identity,
@@ -415,6 +427,10 @@ impl CanonicalSysmlSystemsLibrary {
     }
     pub fn overlay(&self) -> &DerivedOverlay {
         &self.overlay
+    }
+    /// Immutable scheduler evidence for this exact accepted graph and registry.
+    pub fn producer_closure(&self) -> &Arc<agq_kerml_semantics::ProducerClosureCertificate> {
+        &self.producer_closure
     }
     pub fn accepted_kerml(&self) -> &Arc<CanonicalKermlStandardLibraries> {
         &self.accepted_kerml
@@ -464,7 +480,11 @@ impl CanonicalSysmlSystemsLibrary {
                     self.identity.dependencies.context_identity_digest(),
                     Arc::new(agq_sysml_semantics::SysmlNamingExtension),
                 )
-                .expect("accepted SysML context identity"),
+                .and_then(|context| {
+                    context.with_producer_registry_digest(self.producer_closure.registry_digest())
+                })
+                .and_then(|context| context.with_producer_closure(self.producer_closure.clone()))
+                .expect("accepted SysML context identity and producer closure"),
         )
     }
 }
