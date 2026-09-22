@@ -97,7 +97,6 @@ fn relationship_structure_transport_preserves_native_reads_and_invalidation() {
     ));
 }
 
-
 #[test]
 fn owned_relationship_exclusions_survive_transport_and_owner_invalidation() {
     let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
