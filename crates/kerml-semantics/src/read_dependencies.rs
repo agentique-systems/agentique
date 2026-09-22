@@ -201,13 +201,12 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
         } else if let SearchDependency::ProducerClosure {
             subject,
             requirement,
-            certificate_digest,
+            ..
         } = search
         {
             result.insert(StructuralSearch::ProducerClosure {
                 subject: *subject,
                 requirement: format!("agq-semantic-closure/{requirement:?}/1"),
-                certificate_digest: *certificate_digest,
             });
         } else if let SearchDependency::Element(element) = search {
             result.insert(StructuralSearch::ElementIdentity(*element));

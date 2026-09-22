@@ -57,7 +57,6 @@ fn overlay() -> DerivedOverlay {
         StructuralSearch::ProducerClosure {
             subject: VEHICLE,
             requirement: "fixture-effective-type/1".into(),
-            certificate_digest: Some([42; 32]),
         },
         StructuralSearch::SourceRelationships {
             source: VEHICLE,

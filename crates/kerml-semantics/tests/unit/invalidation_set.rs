@@ -90,7 +90,6 @@ fn closure_witness_is_invalidated_by_any_graph_delta_but_is_not_a_graph_provider
         BTreeSet::from([StructuralSearch::ProducerClosure {
             subject: ElementId::from_u128(1),
             requirement: "agq-semantic-closure/EffectiveTyping/1".into(),
-            certificate_digest: None,
         }])
     );
     let mut reread = queries.result(());

@@ -878,13 +878,13 @@ pub enum StructuralSearch {
     /// populations are outside this lookup, unlike the broader `Element` read.
     /// An absent identity remains a negative dependency.
     ElementIdentity(ElementId),
-    /// Scheduler-issued closure evidence about this exact graph. `requirement`
-    /// is an opaque, versioned language contract identity, never a model fact.
-    /// A missing digest retains an unsuccessful closure-evidence lookup.
+    /// A reopenable producer-closure requirement, not a stored certificate.
+    /// `requirement` is an opaque, versioned language contract identity. Query
+    /// contexts supply exact scheduler-issued evidence; historical certificate
+    /// identities never become canonical model content.
     ProducerClosure {
         subject: ElementId,
         requirement: String,
-        certificate_digest: Option<[u8; 32]>,
     },
 }
 /// Explicit unsuccessful computation; never an empty value.

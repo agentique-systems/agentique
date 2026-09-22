@@ -268,20 +268,18 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
     let search = build(None, Some(StructuralSearch::Incoming(id(2))), false);
     let navigation = build(None, None, true);
     let identity_search = build(None, Some(StructuralSearch::ElementIdentity(id(2))), false);
-    let closure_search = |digest| {
+    let closure_search = |subject| {
         build(
             None,
             Some(StructuralSearch::ProducerClosure {
-                subject: id(2),
+                subject,
                 requirement: "agq-semantic-closure/EffectiveTyping/1".into(),
-                certificate_digest: digest,
             }),
             false,
         )
     };
-    let missing_closure = closure_search(None);
-    let certified_closure = closure_search(Some([42; 32]));
-    let other_closure = closure_search(Some([43; 32]));
+    let closure = closure_search(id(2));
+    let other_closure = closure_search(id(3));
     let source_search = build(
         None,
         Some(StructuralSearch::SourceRelationships {
@@ -306,8 +304,7 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
         &search,
         &navigation,
         &identity_search,
-        &missing_closure,
-        &certified_closure,
+        &closure,
         &other_closure,
         &source_search,
         &other_source_search,
@@ -315,7 +312,7 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
     .into_iter()
     .map(|overlay| model_digest(overlay.model()))
     .collect();
-    assert_eq!(digests.len(), 10);
+    assert_eq!(digests.len(), 9);
     let failures = [
         ComputationFailure::Incomplete {
             reason: IncompleteReason::MissingInput,
@@ -350,6 +347,55 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
         digests.insert(model_digest(builder.build().unwrap().model()));
     }
     assert_eq!(digests.len(), 5);
+}
+
+#[test]
+fn transported_closure_requirements_do_not_canonicalize_certificate_history() {
+    use crate::{QueryResult, SearchDependency, SemanticClosureRequirement, SemanticContext};
+    let normative = Snapshot::new(Arc::new(agq_kerml::registry().unwrap()));
+    let context =
+        SemanticContext::for_snapshot(&normative, Default::default(), Default::default()).unwrap();
+    let base = snapshot(3, authored());
+    let build = |digests: &[Option<[u8; 32]>]| {
+        let mut answer = QueryResult::new(context.id(), ());
+        for certificate_digest in digests {
+            answer
+                .search_dependencies
+                .insert(SearchDependency::ProducerClosure {
+                    subject: id(2),
+                    requirement: SemanticClosureRequirement::EffectiveTyping,
+                    certificate_digest: *certificate_digest,
+                });
+        }
+        let searches = crate::read_dependencies::structural_searches(&answer);
+        assert_eq!(
+            searches,
+            BTreeSet::from([StructuralSearch::ProducerClosure {
+                subject: id(2),
+                requirement: "agq-semantic-closure/EffectiveTyping/1".into(),
+            }])
+        );
+        let mut builder = DerivationBuilder::new(base.clone());
+        builder.element(key(1), NODE, [], BTreeSet::new());
+        builder.searches(FactKey::Element(key(1).element_id()), searches);
+        (answer.search_dependencies, builder.build().unwrap())
+    };
+    let (first_evidence, first) = build(&[Some([42; 32])]);
+    let (second_evidence, second) = build(&[Some([43; 32])]);
+    let (_, repeated) = build(&[None, Some([42; 32]), Some([43; 32])]);
+    assert_ne!(
+        first_evidence, second_evidence,
+        "query evidence remains exact"
+    );
+    for other in [&second, &repeated] {
+        assert_eq!(model_digest(first.model()), model_digest(other.model()));
+        assert!(
+            first
+                .model()
+                .computation_searches()
+                .eq(other.model().computation_searches())
+        );
+    }
 }
 
 #[test]
