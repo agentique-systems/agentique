@@ -994,6 +994,11 @@ fn directed_usage_value_closes_without_adopting_an_existing_contextual_feature()
     actions_micro(ActionsMicro::DirectedValue);
 }
 
+#[test]
+fn unnamed_constraint_and_connection_usages_close_under_occurrence_owner() {
+    actions_micro(ActionsMicro::UnnamedOccurrenceUsages);
+}
+
 #[derive(Clone, Copy)]
 enum ActionsMicro {
     Basic,
@@ -1002,6 +1007,7 @@ enum ActionsMicro {
     RootUsage,
     NestedState,
     DirectedValue,
+    UnnamedOccurrenceUsages,
 }
 
 fn actions_micro(variant: ActionsMicro) {
@@ -1011,6 +1017,7 @@ fn actions_micro(variant: ActionsMicro) {
     );
     let with_root_usage = matches!(variant, ActionsMicro::RootUsage);
     let nested_state = matches!(variant, ActionsMicro::NestedState);
+    let unnamed_occurrence_usages = matches!(variant, ActionsMicro::UnnamedOccurrenceUsages);
     use agq_kerml_semantics::{
         FormalConstraintId, MemberAccess, PublicationOverlayError, SemanticClosureRequirement,
         close_result_structure_with_extension,
@@ -1018,7 +1025,7 @@ fn actions_micro(variant: ActionsMicro) {
     // Synthetic anchors isolate the scheduler/query contract from the corpus.
     // They are immutable dependencies in this fixture, never a production receipt.
     let (kernel_dependency, libraries, mut roots) =
-        closed_kernel_anchor_fixture(with_variable_value);
+        closed_kernel_anchor_fixture(with_variable_value || unnamed_occurrence_usages);
     let occurrence = kernel_dependency
         .context()
         .standard_bindings
@@ -1216,6 +1223,28 @@ fn actions_micro(variant: ActionsMicro) {
     if with_root_usage {
         f.create(50_008, sc::REFERENCE_USAGE, "rootReference");
     }
+    if unnamed_occurrence_usages {
+        f.create(50_020, sc::OCCURRENCE_DEFINITION, "Owner");
+        f.relation(
+            50_020,
+            occurrence.as_u128(),
+            250_020,
+            kc::SUBCLASSIFICATION,
+            kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
+        );
+        for (subject, metaclass) in [
+            (50_021, sc::CONSTRAINT_USAGE),
+            (50_022, sc::ASSERT_CONSTRAINT_USAGE),
+            (50_023, sc::CONNECTION_USAGE),
+        ] {
+            f.create(subject, metaclass, "");
+            f.changes.clear(id(subject), kp::ELEMENT_DECLARED_NAME);
+            f.value(subject, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+            f.member(50_020, subject, subject + 100_000, kc::FEATURE_MEMBERSHIP);
+            f.changes
+                .clear(id(subject + 100_000), kp::ELEMENT_DECLARED_NAME);
+        }
+    }
     if with_variable_value {
         f.create(50_005, sc::REFERENCE_USAGE, "variableValue");
         if matches!(variant, ActionsMicro::DirectedValue) {
@@ -1334,6 +1363,33 @@ fn actions_micro(variant: ActionsMicro) {
     .with_producer_closure(certificate.clone())
     .unwrap();
     let composed = SysmlQueries::new(composed_context);
+    if unnamed_occurrence_usages {
+        for subject in [50_021, 50_022, 50_023] {
+            assert!(
+                certificate.is_closed(id(subject), SemanticClosureRequirement::EffectiveTyping)
+            );
+            let scalar = plan_sysml_may_time_vary(
+                &queries,
+                SysmlBaselineProfile::OPERATIONAL_V2,
+                &StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+                &roots,
+                id(subject),
+            );
+            assert_eq!(
+                scalar.evidence.completeness,
+                Completeness::Complete,
+                "{scalar:?}"
+            );
+            assert_eq!(
+                queries
+                    .model()
+                    .navigation_slot(id(subject), agq_sysml::properties::USAGE_MAY_TIME_VARY)
+                    .unwrap()
+                    .value(),
+                &SlotValue::Scalar(Value::Boolean(true)),
+            );
+        }
+    }
     let trigger = composed.transition_features(id(50_000), TransitionFeatureKind::Trigger);
     let expected_completeness = if matches!(variant, ActionsMicro::Variation) {
         Completeness::Incomplete
