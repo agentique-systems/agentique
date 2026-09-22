@@ -1,6 +1,6 @@
 {
   "format": "agentique-sysml-systems-authority-review/1",
-  "review_status": "exact-authority-conflicts-and-declared-canonical-witnesses-confirmed-full-closure-pending",
+  "review_status": "exact-authority-conflicts-confirmed-on-combined-candidate-publication-rejected",
   "source_commit": "4f20914898151ae2dcded058529304623bbc1c5d",
   "baseline": "Pinned final SysML 2.0; no preliminary SysML 2.1 or KerML 1.1 rule adopted.",
   "profiles": {
@@ -648,7 +648,7 @@
     "BinaryConnections": "No whole-word occurrence.",
     "viewpoints": "Only one occurrence: prose comment in Views.sysml line 4; no declaration or alias by that name."
   },
-  "acceptance_boundary": "Exact corpus antecedents, complete owned declaration absence/presence, expected metaclasses and provenance are now witnessed on an unpublished canonical ConstructionView. This fixture intentionally omits the accepted KerML graph and producer/refinement closure. It neither asserts a global imported/inherited namespace answer nor establishes full candidate publication failure or success. No correction is authorized.",
+  "acceptance_boundary": "Historical declared-only fixtures retain their original scope. The additional combined-candidate run now confirms namespace absence/presence and publication-blocking producer obligations over the accepted immutable KerML dependency. Independent reference/producer closure findings are preserved; the candidate is not accepted and no new correction is authorized.",
   "verification": {
     "command": "python - < authority-review.md Python reproduction block",
     "exit_code": 0,
@@ -704,5 +704,122 @@
       "result": "Test did not run: imported PropertyState from the kernel root instead of agq_kernel::derived. Import corrected before the successful run."
     },
     "no_accepted_publication_claim": true
+  },
+  "combined_candidate_verification": {
+    "source_commit": "66c692c71e52c93cac38dd45a7053a4243fca3f2",
+    "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "report_sha256": "4ecfedffb60e7693a737d87cf69c94f38d0fa744ee0f7ac102aaa3cda2dd730e",
+    "reproduce": "README.md",
+    "command_record": "summary.json#systems-owned-cycle-7",
+    "accepted_kerml_dependency": true,
+    "namespace_lookups": [
+      {
+        "completeness": "Complete",
+        "path": "Views::Viewpoint",
+        "targets": []
+      },
+      {
+        "completeness": "Complete",
+        "path": "Views::ViewpointCheck",
+        "targets": [
+          "8c8a3d17-aa0d-50dc-bb3b-b5b41b330b5d"
+        ]
+      },
+      {
+        "completeness": "Complete",
+        "path": "Views::viewpoints",
+        "targets": []
+      },
+      {
+        "completeness": "Complete",
+        "path": "Views::viewpointChecks",
+        "targets": [
+          "29b6d0ae-8a25-55d0-ac30-9d153e62ddba"
+        ]
+      },
+      {
+        "completeness": "Complete",
+        "path": "Connections::BinaryConnections",
+        "targets": []
+      },
+      {
+        "completeness": "Complete",
+        "path": "Connections::BinaryConnection",
+        "targets": [
+          "6f256a75-d031-5390-90d0-24ba7666497b"
+        ]
+      },
+      {
+        "completeness": "Complete",
+        "path": "Items::Item::subitem",
+        "targets": []
+      },
+      {
+        "completeness": "Complete",
+        "path": "Items::Item::subitems",
+        "targets": [
+          "9f21e6ab-0aab-5f93-a574-5a24e51a5dd0"
+        ]
+      },
+      {
+        "completeness": "Complete",
+        "path": "Base::dataValues",
+        "targets": [
+          "170bd54f-53f0-512b-b16b-2c96e7fe9021"
+        ]
+      },
+      {
+        "completeness": "Complete",
+        "path": "Attributes::attributes",
+        "targets": []
+      }
+    ],
+    "producer_witnesses": [
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Connections::BinaryConnections is unavailable",
+        "subject": "1c60c98b-d3e4-531e-8b37-0ac695c0e9f2"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Views::viewpoints is unavailable",
+        "subject": "29b6d0ae-8a25-55d0-ac30-9d153e62ddba"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Connections::BinaryConnections is unavailable",
+        "subject": "6f256a75-d031-5390-90d0-24ba7666497b"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Views::viewpoints is unavailable",
+        "subject": "8b4a6d90-870b-52b3-b4f7-3c1e66966d82"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Views::Viewpoint is unavailable",
+        "subject": "8c8a3d17-aa0d-50dc-bb3b-b5b41b330b5d"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Connections::BinaryConnections is unavailable",
+        "subject": "90be230b-60ec-57ed-b107-5c20d799a765"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Views::viewpoints is unavailable",
+        "subject": "92713464-c2df-5d85-9a2c-8d9641ef3714"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Connections::BinaryConnections is unavailable",
+        "subject": "e92634ae-d196-5164-b7e0-8815b2274924"
+      }
+    ],
+    "publication_authority_findings": 8,
+    "distinct_conflicts": 3,
+    "correction_authorized": false,
+    "separate_implementation_findings": "candidate-status.json",
+    "result": "All three exact formal targets are Complete-absent in the combined namespace, and each proposed actual declaration is a unique Complete target. Eight applicable producer obligations and publication authority findings confirm their blocking impact."
   }
 }

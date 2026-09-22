@@ -33,9 +33,27 @@ A whole-word scan of all 21 exact source texts finds no `Viewpoint` or
 `BinaryConnections` occurrence. The only `viewpoints` occurrence is descriptive
 comment text at `Views.sysml:4`. There is no source alias under any missing name.
 This source observation is separate from a canonical namespace lookup. The
-focused declared-graph test described below now supplies exact owned-path
-witnesses; full accepted-dependency candidate closure remains pending. Neither
-the source scan nor this test makes an accepted-publication claim.
+focused declared-graph test described below supplies exact owned-path witnesses.
+The subsequent combined-candidate run described next establishes their actual
+publication impact. Neither establishes an accepted publication.
+
+## Combined candidate outcome
+
+The `systems-owned-cycle-7` run at commit `66c692c` restored the exact accepted
+KerML v9 dependency and completed the full construction worklist, including final
+scalar predicates. Canonical namespace lookup returned Complete with no target
+for all three formal names, and Complete with one canonical identity for each
+actual declaration in the table. Eight applicable producer obligations report
+`SQ_TARGET_MISSING`; the publication facade retained eight authority findings
+covering these three decisions and rejected the candidate.
+
+The [candidate status](candidate-status.json) also retains twelve incomplete
+mandatory references and eleven other producer diagnostics. Those independent
+implementation findings are not attributed to these spelling conflicts.
+No correction, alias, source edit or waiver was applied. The decision manifest's
+`combined_candidate_verification` records the namespace results, canonical subject
+identities and report digest; its earlier declared-only fixtures retain their
+original, narrower scope.
 
 ## Declared canonical witnesses
 

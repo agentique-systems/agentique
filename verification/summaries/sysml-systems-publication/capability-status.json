@@ -1,0 +1,93 @@
+{
+  "format": "agentique-sysml-systems-capability-status/1",
+  "verification": {
+    "source_commit": "66c692c71e52c93cac38dd45a7053a4243fca3f2",
+    "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "report_sha256": "4ecfedffb60e7693a737d87cf69c94f38d0fa744ee0f7ac102aaa3cda2dd730e",
+    "reproduce": "README.md",
+    "command_record": "summary.json#systems-owned-cycle-7"
+  },
+  "publication_accepted": false,
+  "conformance_is_publication_gate": false,
+  "families": [
+    {
+      "family": "Syntax",
+      "status": "Complete",
+      "evidence": "21/21 Operational parses, zero recovery; original bytes retained."
+    },
+    {
+      "family": "CanonicalLowering",
+      "status": "Incomplete",
+      "evidence": "21/21 reusable declared lowering; two mandatory relationship endpoint obligations prevent strict kernel acceptance."
+    },
+    {
+      "family": "NamespacesImports",
+      "status": "Incomplete",
+      "evidence": "1315/1327 mandatory references Complete; 12 Incomplete in Actions. Other failure counters zero."
+    },
+    {
+      "family": "DefinitionUsage",
+      "status": "Incomplete",
+      "evidence": "Implemented family; final capability audit not reached because construction/authority preflight failed."
+    },
+    {
+      "family": "AttributeItemPart",
+      "status": "Incomplete",
+      "evidence": "Implemented family; final capability audit not reached because construction/authority preflight failed."
+    },
+    {
+      "family": "OccurrenceActionState",
+      "status": "Incomplete",
+      "evidence": "Implemented family; final capability audit not reached because construction/authority preflight failed."
+    },
+    {
+      "family": "CalculationConstraintRequirementCase",
+      "status": "Incomplete",
+      "evidence": "Implemented family; final capability audit not reached because construction/authority preflight failed."
+    },
+    {
+      "family": "PortConnectionInterfaceFlow",
+      "status": "Incomplete",
+      "evidence": "Implemented family; final capability audit not reached because construction/authority preflight failed."
+    },
+    {
+      "family": "ViewMetadata",
+      "status": "Incomplete",
+      "evidence": "Implemented family; final capability audit not reached because construction/authority preflight failed."
+    },
+    {
+      "family": "TypingSpecializationSubsettingRedefinition",
+      "status": "Incomplete",
+      "evidence": "Implemented family; final capability audit not reached because construction/authority preflight failed."
+    },
+    {
+      "family": "MayTimeVary",
+      "status": "Incomplete",
+      "evidence": "Exact structural derivation implemented and final scalar stratum executed; combined producer/capability acceptance remains incomplete."
+    },
+    {
+      "family": "StandardBindings",
+      "status": "Incomplete",
+      "evidence": "69 required algorithmic roles implemented; no accepted binding set because publication preflight rejects the candidate."
+    },
+    {
+      "family": "IdentityProvenance",
+      "status": "Incomplete",
+      "evidence": "Declared provenance and context regressions pass. Full publication source/proof audit is gated by failed construction/authority preflight."
+    }
+  ],
+  "acceptance": {
+    "combined_producers": "Incomplete",
+    "kernel_obligations": 2,
+    "mandatory_incomplete": 12,
+    "authority_decisions_pending": 3,
+    "strict_capability_findings": null,
+    "all_applicable_families_complete": false
+  },
+  "limitations": [
+    "A completed fixed point is not Complete producer closure.",
+    "Unchecked capability families are not counted as passing.",
+    "FIFO/LIFO/batch/partition focused scheduler regressions do not establish corpus-level publication digest determinism.",
+    "Authored Systems dependencies and Phase 2 remain gated on accepted publication."
+  ]
+}

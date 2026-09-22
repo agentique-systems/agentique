@@ -549,7 +549,7 @@
     "systems_publication": "not accepted"
   },
   "sysml_systems_library_publication": {
-    "status": "implemented-foundation-pending-semantic-closure",
+    "status": "incomplete-reference-and-producer-closure-with-authority-conflicts",
     "evidence": "verification/summaries/sysml-systems-publication/README.md",
     "kerML_dependency": "exact accepted immutable Operational v9; shared dependency, no producer replay",
     "frontend": "shared lossless KerML/SysML lexer and production arena; explicit Published and Operational v1 profiles",
@@ -566,13 +566,23 @@
     "provenance": "StandardLibrary source identity, syntax identity, byte range and canonical declared identity retained through construction and reference refinement",
     "semantic_context": "13-field authenticated dependency contract digest binds accepted KerML, profiles, descriptors, grammar and semantic manifests, library identities, bindings and rule sets to shared queries and producers",
     "producer_architecture": "Shared dependency-driven KerML/SysML worklist on new Systems elements; unpublished construction overlay and structural reference bootstrap; full combined closure required for publication",
-    "mandatory_reference_closure": "pending; assertion and construction counts do not establish complete endpoints",
-    "effective_sysml_producer_closure": "pending; direct and current-graph queries do not promote effective completeness",
+    "mandatory_reference_closure": {
+      "total": 1327,
+      "ambiguous": 0,
+      "complete": 1315,
+      "endpoint_mismatch": 0,
+      "incomplete": 12,
+      "invalid": 0,
+      "unresolved": 0
+    },
+    "effective_sysml_producer_closure": "Incomplete after converged full construction worklist; five owner-typing, three variable featuring, three value-context and eight exact-target diagnostics",
     "authority_decisions_pending": 3,
     "publication_facade": "implemented; acceptance rejects construction, reference, producer, capability, binding, identity, provenance or authority findings",
     "systems_publication": "not accepted",
     "sysml_conformance_coverage": "incomplete; separate from publication capabilities",
     "broader_authored_semantic_phase": "not accepted; Systems publication prerequisite remains unmet",
-    "generation_1_release_obligations": "unchanged"
+    "generation_1_release_obligations": "unchanged",
+    "kernel_construction_obligations": 2,
+    "candidate_evidence": "verification/summaries/sysml-systems-publication/candidate-status.json"
   }
 }

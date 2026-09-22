@@ -1,0 +1,515 @@
+{
+  "format": "agentique-sysml-systems-candidate-status/1",
+  "verification": {
+    "source_commit": "66c692c71e52c93cac38dd45a7053a4243fca3f2",
+    "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "report_sha256": "4ecfedffb60e7693a737d87cf69c94f38d0fa744ee0f7ac102aaa3cda2dd730e",
+    "reproduce": "README.md",
+    "command_record": "summary.json#systems-owned-cycle-7"
+  },
+  "publication_accepted": false,
+  "accepted_kerml": {
+    "profile": "agentique-kerml-1.0-operational/9",
+    "publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+    "producers_replayed": false
+  },
+  "sysml_profile": "agentique-sysml-2.0-operational/1",
+  "textual_foundation": {
+    "published_complete": 13,
+    "published_retained_failures": 8,
+    "operational_complete": 21,
+    "documents": 21,
+    "operational_recovery": 0,
+    "byte_exact": 21,
+    "source_bytes": 86538,
+    "matrix": "../sysml-operational-v1/grammar-status.json"
+  },
+  "canonical_construction": {
+    "documents_lowered": 21,
+    "declared_elements": 7591,
+    "local_elements_with_derivations": 13177,
+    "kernel_obligations": 2,
+    "strict_construction_complete": false
+  },
+  "mandatory_references": {
+    "counts": {
+      "ambiguous": 0,
+      "complete": 1315,
+      "endpoint_mismatch": 0,
+      "incomplete": 12,
+      "invalid": 0,
+      "unresolved": 0
+    },
+    "failures": [
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "dcbeadeb-51ff-58e1-bc18-50a95aa2d31c"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "accepter"
+        ],
+        "property": "db4ec700-c481-53ed-b0b0-0e83e5fb9619",
+        "range": [
+          6058,
+          6066
+        ],
+        "relationship": "f0dc1785-3a51-5c73-a06b-22e4d9ed04c3",
+        "status": "incomplete",
+        "stored": [],
+        "targets": []
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_CONSTRUCTION_OBLIGATION",
+            "message": "Required property db4ec700-c481-53ed-b0b0-0e83e5fb9619 is pending structural construction",
+            "subject": "f0dc1785-3a51-5c73-a06b-22e4d9ed04c3"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "acceptedMessage"
+        ],
+        "property": "db4ec700-c481-53ed-b0b0-0e83e5fb9619",
+        "range": [
+          6067,
+          6082
+        ],
+        "relationship": "ee147c3c-ebf5-54ff-ab11-58db076dbf60",
+        "status": "incomplete",
+        "stored": [],
+        "targets": []
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "dcbeadeb-51ff-58e1-bc18-50a95aa2d31c"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "start"
+        ],
+        "property": "87f10741-a872-520c-bf55-286fddc10bb8",
+        "range": [
+          6134,
+          6139
+        ],
+        "relationship": "e7c6a93e-df15-5f03-9b95-519172795052",
+        "status": "incomplete",
+        "stored": [
+          "fb320563-3d63-5345-b92f-fa7b099b7ad3"
+        ],
+        "targets": [
+          "fb320563-3d63-5345-b92f-fa7b099b7ad3"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "8cf3c953-ad02-5312-bf90-b8ab9dca34ee"
+          },
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "dcbeadeb-51ff-58e1-bc18-50a95aa2d31c"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "Anything"
+        ],
+        "property": "0bdf3b5b-03eb-5d5d-8012-c145b713a986",
+        "range": [
+          6157,
+          6165
+        ],
+        "relationship": "0c96c8e7-2d74-5bda-9566-a99c2be9799e",
+        "status": "incomplete",
+        "stored": [
+          "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+        ],
+        "targets": [
+          "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "8cf3c953-ad02-5312-bf90-b8ab9dca34ee"
+          },
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "dcbeadeb-51ff-58e1-bc18-50a95aa2d31c"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "receiver"
+        ],
+        "property": "87f10741-a872-520c-bf55-286fddc10bb8",
+        "range": [
+          6170,
+          6178
+        ],
+        "relationship": "902b7f8f-5ec5-59e9-9ac0-2a8d4a906e90",
+        "status": "incomplete",
+        "stored": [
+          "04b776b6-a02e-5e0c-8240-0f013b5999e2"
+        ],
+        "targets": [
+          "04b776b6-a02e-5e0c-8240-0f013b5999e2"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "dcbeadeb-51ff-58e1-bc18-50a95aa2d31c"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "done"
+        ],
+        "property": "a50148e3-e9b1-583e-bd5b-d9d35f346af9",
+        "range": [
+          6184,
+          6188
+        ],
+        "relationship": "70eca230-43f6-5cbc-8224-8c474e65b53b",
+        "status": "incomplete",
+        "stored": [
+          "e674e9c4-6fbe-5f1e-84dd-8634ad47d609"
+        ],
+        "targets": [
+          "e674e9c4-6fbe-5f1e-84dd-8634ad47d609"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "dcbeadeb-51ff-58e1-bc18-50a95aa2d31c"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "apayload"
+        ],
+        "property": "db4ec700-c481-53ed-b0b0-0e83e5fb9619",
+        "range": [
+          6230,
+          6238
+        ],
+        "relationship": "8cff9c29-3437-5786-acbb-8bc41c5bae5d",
+        "status": "incomplete",
+        "stored": [
+          "006ebf10-0147-55f4-b469-6041876e9f8d"
+        ],
+        "targets": [
+          "006ebf10-0147-55f4-b469-6041876e9f8d"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "var"
+        ],
+        "property": "87f10741-a872-520c-bf55-286fddc10bb8",
+        "range": [
+          13739,
+          13742
+        ],
+        "relationship": "c85a2329-c9c9-591a-acc5-6e43262a10f5",
+        "status": "incomplete",
+        "stored": [
+          "80885877-4832-52b4-b0ea-6095438ec393"
+        ],
+        "targets": [
+          "80885877-4832-52b4-b0ea-6095438ec393"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "seq"
+        ],
+        "property": "87f10741-a872-520c-bf55-286fddc10bb8",
+        "range": [
+          13746,
+          13749
+        ],
+        "relationship": "72fd5a06-3151-5dbe-8655-e7ca1b7070ff",
+        "status": "incomplete",
+        "stored": [
+          "d2154d84-1179-549d-978d-808fa10a6524"
+        ],
+        "targets": [
+          "d2154d84-1179-549d-978d-808fa10a6524"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "index"
+        ],
+        "property": "87f10741-a872-520c-bf55-286fddc10bb8",
+        "range": [
+          13751,
+          13756
+        ],
+        "relationship": "74fd082e-a6ad-517d-94ba-6051fa3c3dbc",
+        "status": "incomplete",
+        "stored": [
+          "bc7cef08-516f-5e6a-a118-0205f85aab81"
+        ],
+        "targets": [
+          "bc7cef08-516f-5e6a-a118-0205f85aab81"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "index"
+        ],
+        "property": "87f10741-a872-520c-bf55-286fddc10bb8",
+        "range": [
+          13798,
+          13803
+        ],
+        "relationship": "d4aafed3-d9bf-5a43-9049-668c2afd4f18",
+        "status": "incomplete",
+        "stored": [
+          "bc7cef08-516f-5e6a-a118-0205f85aab81"
+        ],
+        "targets": [
+          "bc7cef08-516f-5e6a-a118-0205f85aab81"
+        ]
+      },
+      {
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "Effective owner typing is required to establish this antecedent",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          }
+        ],
+        "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+        "name": [
+          "index"
+        ],
+        "property": "87f10741-a872-520c-bf55-286fddc10bb8",
+        "range": [
+          13807,
+          13812
+        ],
+        "relationship": "5624f788-5eda-5ad0-b44e-812bdde7ecd9",
+        "status": "incomplete",
+        "stored": [
+          "bc7cef08-516f-5e6a-a118-0205f85aab81"
+        ],
+        "targets": [
+          "bc7cef08-516f-5e6a-a118-0205f85aab81"
+        ]
+      }
+    ],
+    "total": 1327
+  },
+  "combined_construction_producers": {
+    "completeness": "Incomplete",
+    "converged": true,
+    "derived_elements": 5586,
+    "diagnostics": [
+      {
+        "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+        "message": "Effective owner typing is required to establish this antecedent",
+        "subject": "412500e0-fa50-50e1-8fb6-fe03d88d2f17"
+      },
+      {
+        "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+        "message": "Effective owner typing is required to establish this antecedent",
+        "subject": "5c001eb4-d4e0-5bd4-866b-b756155e1bea"
+      },
+      {
+        "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+        "message": "Effective owner typing is required to establish this antecedent",
+        "subject": "8cf3c953-ad02-5312-bf90-b8ab9dca34ee"
+      },
+      {
+        "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+        "message": "Effective owner typing is required to establish this antecedent",
+        "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+      },
+      {
+        "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+        "message": "Effective owner typing is required to establish this antecedent",
+        "subject": "dcbeadeb-51ff-58e1-bc18-50a95aa2d31c"
+      },
+      {
+        "code": "KQ_VALUE_CONTEXT",
+        "message": "Value binding requires complete featuring domains",
+        "subject": "61b49e8f-6e0d-584c-87f1-2ef0f51bbf88"
+      },
+      {
+        "code": "KQ_VALUE_CONTEXT",
+        "message": "Value binding requires complete featuring domains",
+        "subject": "d32765d8-ddf2-5f1f-9662-a200aefd1b2e"
+      },
+      {
+        "code": "KQ_VALUE_CONTEXT",
+        "message": "Value binding requires complete featuring domains",
+        "subject": "f994d43f-f5bf-54c3-8b14-6f0d16284cb6"
+      },
+      {
+        "code": "KQ_VARIABLE_FEATURING",
+        "message": "Variable featuring requires its snapshot domain",
+        "subject": "4f1c7548-fa6f-5ec4-b275-754941bd1cd6"
+      },
+      {
+        "code": "KQ_VARIABLE_FEATURING",
+        "message": "Variable featuring requires its snapshot domain",
+        "subject": "98c30374-e65a-579b-be50-0d23d18160d8"
+      },
+      {
+        "code": "KQ_VARIABLE_FEATURING",
+        "message": "Variable featuring requires its snapshot domain",
+        "subject": "a1ff5677-154c-54fa-b0b4-78c9a54a3c73"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Connections::BinaryConnections is unavailable",
+        "subject": "1c60c98b-d3e4-531e-8b37-0ac695c0e9f2"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Views::viewpoints is unavailable",
+        "subject": "29b6d0ae-8a25-55d0-ac30-9d153e62ddba"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Connections::BinaryConnections is unavailable",
+        "subject": "6f256a75-d031-5390-90d0-24ba7666497b"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Views::viewpoints is unavailable",
+        "subject": "8b4a6d90-870b-52b3-b4f7-3c1e66966d82"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Views::Viewpoint is unavailable",
+        "subject": "8c8a3d17-aa0d-50dc-bb3b-b5b41b330b5d"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Connections::BinaryConnections is unavailable",
+        "subject": "90be230b-60ec-57ed-b107-5c20d799a765"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Views::viewpoints is unavailable",
+        "subject": "92713464-c2df-5d85-9a2c-8d9641ef3714"
+      },
+      {
+        "code": "SQ_TARGET_MISSING",
+        "message": "Exact formal target Connections::BinaryConnections is unavailable",
+        "subject": "e92634ae-d196-5164-b7e0-8815b2274924"
+      }
+    ],
+    "final_predicates": true,
+    "rounds": 9,
+    "subjects_evaluated": 18232,
+    "diagnostic_counts": {
+      "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 5,
+      "KQ_VALUE_CONTEXT": 3,
+      "KQ_VARIABLE_FEATURING": 3,
+      "SQ_TARGET_MISSING": 8
+    }
+  },
+  "publication_gate": {
+    "status": "rejected",
+    "checked": {
+      "CanonicalLowering": 21,
+      "Syntax": 21
+    },
+    "kernel_obligations": 2,
+    "authority_conflicts": 3,
+    "applicable_authority_findings": 8,
+    "strict_publication_closure": "not run: construction and authority preflight rejected the candidate",
+    "accepted_standard_sysml_bindings": false
+  },
+  "closure_diagnosis": {
+    "missing_endpoints": [
+      "Actions.sysml:6058..6066 accepter",
+      "Actions.sysml:6067..6082 acceptedMessage"
+    ],
+    "reference_impact": "12 Incomplete references in Actions.sysml; ten have matching selected endpoints and two remain unbound. No Complete unresolved, ambiguous, invalid, or mismatched reference.",
+    "typing": "Negative owner-typing closure remains unproved for five composite or positional Usage owners. Current feature typing alone does not certify completion of type-producing implications.",
+    "featuring": "Three NodeParameter ReferenceUsages lack a completed variable snapshot domain; their FeatureValue bindings retain Incomplete featuring evidence.",
+    "scope": "These are implementation/producer-closure findings, not additional authority decisions or conformance validators. No incomplete query was promoted to Complete.",
+    "resolved_in_this_run": [
+      "Sixteen Flow reference withdrawals eliminated by bounded owned-position SCC proof.",
+      "Views viewRendering references resolved.",
+      "Transition payload naming and structural chain available.",
+      "No reference refinement cycle, scalar proof cycle, or ambiguous final reference."
+    ]
+  },
+  "resources": {
+    "duration_seconds": 1670.796,
+    "peak_private_bytes": 6290550784,
+    "minimum_free_disk_bytes": 13996658688,
+    "exit_code": 1,
+    "safety_stop": null,
+    "limits": {
+      "wall_seconds": 1800.0,
+      "private_bytes": 6442450944,
+      "sample_seconds": 1,
+      "min_free_disk_bytes": 1073741824
+    }
+  },
+  "sysml_conformance_coverage": "incomplete; not the reason for publication rejection",
+  "phase_2_started": false
+}
