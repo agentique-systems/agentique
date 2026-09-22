@@ -1,0 +1,471 @@
+{
+  "format": "agentique-sysml-grammar-preparation-review/1",
+  "status": "NOT ADOPTED",
+  "purpose": "Concrete authority review for a future SysML frontend; no parser/semantic implementation or accepted KerML semantic dependency.",
+  "production_sysml_documents_parsed": 0,
+  "canonical_sysml_lowering": "not-started",
+  "sysml_semantics": "not-started",
+  "authority": {
+    "specification": "SysML 2.0 final",
+    "document": "formal/2026-03-02",
+    "path": "SysML.pdf",
+    "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a",
+    "grammar_pdf_pages_one_based": [
+      197,
+      224
+    ],
+    "preliminary_authority_used": false,
+    "issue_tracker_crawl": false
+  },
+  "corpus": {
+    "path": "standards/artifacts/Systems-Library.kpar",
+    "sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+    "library_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+    "documents": 21,
+    "source_bytes": 86538,
+    "original_bytes_changed": false
+  },
+  "projection": {
+    "printed_sysml_rules_including_six_lexical_terminals": 349,
+    "same_named_kerml_rules": 81,
+    "added_sysml_rules": 268,
+    "inherited_kerml_rules": 186,
+    "combined_rules": 535,
+    "kerml_grammar_path": "standards/grammar/kerml-1.0.ebnf",
+    "kerml_grammar_sha256": "0df753e598399b123e2f12ed5fc9935aa871b9c2507b9bef549004063ba7693a",
+    "method": "Retain raw printed synthesis separately; remove non-parsing assignments for recognition, preserve terminal optionality and dispatch alternatives. Header delimiter/terminal-quote transcription notes and unused undefined productions remain in ignored raw evidence. This projection is not a normative parser.",
+    "lexical_cross_check": "Every original KPAR document digest verified; exact bytes reconstructed; total token counts match the existing shared Rust lexer inventory.",
+    "recognizer": "Existing tools/kerml-grammar/inventory.py Earley recognizer; first derivation, not a precedence AST."
+  },
+  "outcomes": {
+    "unchanged_recognition_projection": "13/21",
+    "isolated_unadopted_probe": "21/21",
+    "recovery_used": false,
+    "production_parse_acceptance": "0/21",
+    "documents": [
+      {
+        "path": "Systems Library/Actions.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/Allocations.sysml",
+        "unchanged_draft": false,
+        "unadopted_probe": true,
+        "initial_failure_byte": 246
+      },
+      {
+        "path": "Systems Library/AnalysisCases.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/Attributes.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/Calculations.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/Cases.sysml",
+        "unchanged_draft": false,
+        "unadopted_probe": true,
+        "initial_failure_byte": 1183
+      },
+      {
+        "path": "Systems Library/Connections.sysml",
+        "unchanged_draft": false,
+        "unadopted_probe": true,
+        "initial_failure_byte": 1630
+      },
+      {
+        "path": "Systems Library/Constraints.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/Flows.sysml",
+        "unchanged_draft": false,
+        "unadopted_probe": true,
+        "initial_failure_byte": 1476
+      },
+      {
+        "path": "Systems Library/Interfaces.sysml",
+        "unchanged_draft": false,
+        "unadopted_probe": true,
+        "initial_failure_byte": 2934
+      },
+      {
+        "path": "Systems Library/Items.sysml",
+        "unchanged_draft": false,
+        "unadopted_probe": true,
+        "initial_failure_byte": 3681
+      },
+      {
+        "path": "Systems Library/Metadata.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/Parts.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/Ports.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/Requirements.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/StandardViewDefinitions.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/States.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/SysML.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/UseCases.sysml",
+        "unchanged_draft": true,
+        "unadopted_probe": true,
+        "initial_failure_byte": null
+      },
+      {
+        "path": "Systems Library/VerificationCases.sysml",
+        "unchanged_draft": false,
+        "unadopted_probe": true,
+        "initial_failure_byte": 669
+      },
+      {
+        "path": "Systems Library/Views.sysml",
+        "unchanged_draft": false,
+        "unadopted_probe": true,
+        "initial_failure_byte": 846
+      }
+    ]
+  },
+  "probe_derivation_closure": {
+    "named_productions": 291,
+    "added_sysml": 169,
+    "same_named_sysml": 62,
+    "unchanged_kerml": 60,
+    "meaning": "Actual selected derivations for all 21 docs under the explicit hypotheses; not semantic or precedence acceptance. Full production lists and document ranges remain ignored."
+  },
+  "review_items": [
+    {
+      "id": "SYSTEMS-GRAMMAR-ALLOCATION-DISPATCH",
+      "conflict": "AllocationDefinition is defined in 8.2.2.15 but absent from the alternatives of DefinitionElement used by PackageMember.",
+      "anchors": [
+        {
+          "production": "DefinitionElement",
+          "section": "8.2.2.5.2",
+          "pdf_pages_one_based": [
+            200
+          ],
+          "printed_pages": [
+            168
+          ],
+          "printed_header": "DefinitionElement : Element =",
+          "printed_rhs": "Package\n| LibraryPackage\n| AnnotatingElement\n| Dependency\n| AttributeDefinition\n| EnumerationDefinition\n| OccurrenceDefinition\n| IndividualDefinition\n| ItemDefinition\n| PartDefinition\n| ConnectionDefinition\n| FlowDefinition\n| InterfaceDefinition\n| PortDefinition\n| ActionDefinition\n| CalculationDefinition\n| StateDefinition\n| ConstraintDefinition\n| RequirementDefinition\n| ConcernDefinition\n| CaseDefinition\n| AnalysisCaseDefinition\n| VerificationCaseDefinition\n| UseCaseDefinition\n| ViewDefinition\n| ViewpointDefinition\n| RenderingDefinition\n| MetadataDefinition\n| ExtendedDefinition"
+        },
+        {
+          "production": "AllocationDefinition",
+          "section": "8.2.2.15",
+          "pdf_pages_one_based": [
+            210
+          ],
+          "printed_pages": [
+            178
+          ],
+          "printed_header": "AllocationDefinition =",
+          "printed_rhs": "OccurrenceDefinitionPrefix 'allocation' 'def' Definition"
+        }
+      ],
+      "proposed_minimal_edits": [
+        {
+          "production": "DefinitionElement",
+          "operation": "append alternative",
+          "ebnf": "| AllocationDefinition"
+        }
+      ],
+      "witnesses": [
+        {
+          "document": "Systems Library/Allocations.sysml",
+          "source_sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+          "utf8_byte_range": [
+            235,
+            282
+          ],
+          "text": "allocation def Allocation :> BinaryConnection {"
+        }
+      ],
+      "visual_verification": [
+        "pdf-page-200.png"
+      ],
+      "status": "NOT ADOPTED"
+    },
+    {
+      "id": "SYSTEMS-GRAMMAR-CASE-RETURN",
+      "conflict": "CaseBodyItem permits ActionBodyItem, SubjectMember, ActorMember and ObjectiveMember, but none accepts the return members present in Cases and VerificationCases.",
+      "anchors": [
+        {
+          "production": "CaseBodyItem",
+          "section": "8.2.2.22",
+          "pdf_pages_one_based": [
+            221
+          ],
+          "printed_pages": [
+            189
+          ],
+          "printed_header": "CaseBodyItem : Type =",
+          "printed_rhs": "ActionBodyItem\n| ownedRelationship += SubjectMember\n| ownedRelationship += ActorMember\n| ownedRelationship += ObjectiveMember"
+        },
+        {
+          "production": "ReturnParameterMember",
+          "section": "8.2.2.19",
+          "pdf_pages_one_based": [
+            219
+          ],
+          "printed_pages": [
+            187
+          ],
+          "printed_header": "ReturnParameterMember : ReturnParameterMembership =",
+          "printed_rhs": "MemberPrefix? 'return' ownedRelatedElement += UsageElement"
+        }
+      ],
+      "proposed_minimal_edits": [
+        {
+          "production": "CaseBodyItem",
+          "operation": "append alternative",
+          "ebnf": "| ReturnParameterMember"
+        }
+      ],
+      "witnesses": [
+        {
+          "document": "Systems Library/Cases.sysml",
+          "source_sha256": "2c4c0cbaaa466f9f720ba69af3a019517ca0a7741a561f7880006bae946bf24f",
+          "utf8_byte_range": [
+            1183,
+            1208
+          ],
+          "text": "return ref result[0..*] {"
+        },
+        {
+          "document": "Systems Library/VerificationCases.sysml",
+          "source_sha256": "dbee7255e16df9c5cf0bded96c43cb60b1e5026b6973c5fb1176316902ac47b9",
+          "utf8_byte_range": [
+            669,
+            709
+          ],
+          "text": "return verdict : VerdictKind :>> result;"
+        }
+      ],
+      "visual_verification": [
+        "pdf-page-221.png"
+      ],
+      "status": "NOT ADOPTED"
+    },
+    {
+      "id": "SYSTEMS-GRAMMAR-END-USAGE-PREFIX",
+      "conflict": "OccurrenceUsagePrefix begins with BasicUsagePrefix, excluding end on occurrence/item/port usages; DefaultReferenceUsage begins with RefPrefix, excluding the bare end usages in Connections.",
+      "anchors": [
+        {
+          "production": "OccurrenceUsagePrefix",
+          "section": "8.2.2.9.2",
+          "pdf_pages_one_based": [
+            206
+          ],
+          "printed_pages": [
+            174
+          ],
+          "printed_header": "OccurrenceUsagePrefix : OccurrenceUsage =",
+          "printed_rhs": "BasicUsagePrefix\n( isIndividual ?= 'individual' )?\n( portionKind = PortionKind\n{ isPortion = true }\n)?\nUsageExtensionKeyword*"
+        },
+        {
+          "production": "DefaultReferenceUsage",
+          "section": "8.2.2.6.3",
+          "pdf_pages_one_based": [
+            202
+          ],
+          "printed_pages": [
+            170
+          ],
+          "printed_header": "DefaultReferenceUsage : ReferenceUsage =",
+          "printed_rhs": "RefPrefix Usage"
+        },
+        {
+          "production": "UnextendedUsagePrefix",
+          "section": "8.2.2.6.2",
+          "pdf_pages_one_based": [
+            202
+          ],
+          "printed_pages": [
+            170
+          ],
+          "printed_header": "UnextendedUsagePrefix : Usage =",
+          "printed_rhs": "EndUsagePrefix | BasicUsagePrefix"
+        },
+        {
+          "production": "EndUsagePrefix",
+          "section": "8.2.2.6.2",
+          "pdf_pages_one_based": [
+            201
+          ],
+          "printed_pages": [
+            169
+          ],
+          "printed_header": "EndUsagePrefix : Usage =",
+          "printed_rhs": "isEnd ?= 'end' ( ownedRelationship += OwnedCrossFeatureMember )?"
+        }
+      ],
+      "proposed_minimal_edits": [
+        {
+          "production": "OccurrenceUsagePrefix",
+          "operation": "replace first nonterminal",
+          "before": "BasicUsagePrefix",
+          "after": "UnextendedUsagePrefix"
+        },
+        {
+          "production": "DefaultReferenceUsage",
+          "operation": "replace complete recognition RHS",
+          "before": "RefPrefix Usage",
+          "after": "(EndUsagePrefix | RefPrefix) Usage"
+        }
+      ],
+      "witnesses": [
+        {
+          "document": "Systems Library/Connections.sysml",
+          "source_sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3",
+          "utf8_byte_range": [
+            1581,
+            1631
+          ],
+          "text": "end source: Anything :>> BinaryLinkObject::source;"
+        },
+        {
+          "document": "Systems Library/Flows.sysml",
+          "source_sha256": "4e65e6a45060d634db8ba16767d7692e7704c62c84b579fdb2e56b18bd0f8a34",
+          "utf8_byte_range": [
+            1472,
+            1527
+          ],
+          "text": "end occurrence source: Occurrence :>> Transfer::source;"
+        },
+        {
+          "document": "Systems Library/Interfaces.sysml",
+          "source_sha256": "62b5c3c2bc3960e8d25633231c3933a81e422b3a904dc9541b8787113d076c66",
+          "utf8_byte_range": [
+            2930,
+            2981
+          ],
+          "text": "end port source: Port :>> BinaryConnection::source;"
+        },
+        {
+          "document": "Systems Library/Items.sysml",
+          "source_sha256": "3a344edb7def2276fa15e410c363531e5098d93bdf33a583418151fa87f538b3",
+          "utf8_byte_range": [
+            3659,
+            3738
+          ],
+          "text": "end touchesToo [0..*] item touchedItemToo :>> separateSpaceToo, thisOccurrence;"
+        }
+      ],
+      "visual_verification": [
+        "pdf-page-201.png",
+        "pdf-page-202.png",
+        "pdf-page-206.png"
+      ],
+      "status": "NOT ADOPTED"
+    },
+    {
+      "id": "SYSTEMS-GRAMMAR-SATISFY-REQUIREMENT",
+      "conflict": "The printed SatisfyRequirementUsage requires both assert and not before satisfy. Views omits both. Visual inspection confirms neither terminal is optional in the printed rule.",
+      "anchors": [
+        {
+          "production": "SatisfyRequirementUsage",
+          "section": "8.2.2.21.2",
+          "pdf_pages_one_based": [
+            221
+          ],
+          "printed_pages": [
+            189
+          ],
+          "printed_header": "SatisfyRequirementUsage =",
+          "printed_rhs": "OccurrenceUsagePrefix 'assert' ( isNegated ?= 'not' ) 'satisfy'\n( ownedRelationship += OwnedReferenceSubsetting\nFeatureSpecializationPart?\n| 'requirement' UsageDeclaration )\nValuePart?\n( 'by' ownedRelationship += SatisfactionSubjectMember )?\nRequirementBody"
+        }
+      ],
+      "proposed_minimal_edits": [
+        {
+          "production": "SatisfyRequirementUsage",
+          "operation": "replace prefix only",
+          "before": "OccurrenceUsagePrefix 'assert' (isNegated ?= 'not') 'satisfy'",
+          "after": "OccurrenceUsagePrefix 'assert'? (isNegated ?= 'not')? 'satisfy'"
+        }
+      ],
+      "witnesses": [
+        {
+          "document": "Systems Library/Views.sysml",
+          "source_sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
+          "utf8_byte_range": [
+            846,
+            896
+          ],
+          "text": "satisfy requirement viewpointConformance by that {"
+        }
+      ],
+      "visual_verification": [
+        "pdf-page-221.png"
+      ],
+      "history": "Retains and supplements the original single-gap finding in authority-decision.json; that file is unchanged.",
+      "status": "NOT ADOPTED"
+    }
+  ],
+  "evidence": {
+    "commands": "grammar-preparation-commands.json",
+    "raw_directory": "verification/generated/sysml-grammar-preparation",
+    "raw_files_sha256": {
+      "extract.py": "2f90901becb41d9bc1664414adca45579e6835a83d5acd25bb4406b13c9d2ee7",
+      "analyze.py": "8816725a0690444e30754efd138d852890c5d10a2e49e63663df39163c0166de",
+      "extracted-rules.json": "a53783b2dfe25e969d4989cec8fe9948d5b267b51820bb76442f76770bc7ee16",
+      "sysml-2.0-projection.draft.ebnf": "eef3d001d4840fc07081973c0934dd9ed2eb463ebed084e8bf5e469724b55a91",
+      "sysml-2.0-with-kerml.draft.ebnf": "e4f3cdef6a3f686d2c3a86d55904e7f48d7e734c33d679356f77d831c012d2dc",
+      "sysml-2.0-corpus-probe.draft.ebnf": "8f527d847fa39f25e460a074dd970cc85b43d1e2f3e4855211d5bb38b9111676",
+      "faithful-corpus-analysis.json": "da7bf2dd1c079c4b190bce024596572daac69b0e393b56d52bc93c500d313347",
+      "hypothesis-corpus-analysis.json": "edf139995ffc845190d868081afb5e5c09e7d5ab282dfad66cff05cc19445854",
+      "pdf-page-200.png": "f7e0f1128f4953982eef64d26ce2fa7a00002c65d1efad4093a914df4eda01b3",
+      "pdf-page-201.png": "42b08fce6360c2a2f16d8bd0cea558bdd10ce55501994fe7a92aa4789c89a817",
+      "pdf-page-202.png": "6e600f9bae7603086b074d484ee93d5db798e4cee0e218f305b90e3af00ad6d3",
+      "pdf-page-206.png": "8fc9876210d4538c6fb453ef19686f4977d094e52f6bcd6e173867c4de6d8031",
+      "pdf-page-221.png": "28147add06605def9f185953fe1d5cb6dcead14f3852704e0113955ddcf4681c"
+    },
+    "visual_check": "Rendered the exact pinned PDF using isolated pypdfium2 5.13.0; visually inspected the retained page images, confirming the optional punctuation and alternatives independently of extracted text."
+  },
+  "boundary": "Additional SysML authority decisions are pending. These proposals do not change Published KerML, Operational v9, or accepted publication prerequisites. No production SysML path may depend on unaccepted KerML."
+}

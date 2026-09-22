@@ -1,0 +1,51 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "sysml-grammar-extraction",
+      "command": [
+        "python",
+        "verification/generated/sysml-grammar-preparation/extract.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "6a14807ef7ed70eedef48bee3020bbe99c5cfcde",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "0bb16d44feb4e3e31f7b939ab839791f5d1601e5a96facd0175d0f101e187669",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-grammar-extraction.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-grammar-unchanged-draft",
+      "command": [
+        "python",
+        "verification/generated/sysml-grammar-preparation/analyze.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "6a14807ef7ed70eedef48bee3020bbe99c5cfcde",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "60f3169a4b9582aca5d876792f6f8a7090c45eccf4c9a8c8c78e950a39c64361",
+      "duration_seconds": 1.38,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-grammar-unchanged-draft.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-grammar-unadopted-probe",
+      "command": [
+        "python",
+        "verification/generated/sysml-grammar-preparation/analyze.py",
+        "--hypotheses"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "6a14807ef7ed70eedef48bee3020bbe99c5cfcde",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "88aae5f6f152aefe4054b7e021be1ad74a69e74d557be11bd8a1fa39f66e1586",
+      "duration_seconds": 1.53,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-grammar-unadopted-probe.log",
+      "environment_overrides": {}
+    }
+  ]
+}
