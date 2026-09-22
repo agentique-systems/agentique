@@ -128,6 +128,33 @@ pub(crate) fn producer_reads<T>(
     }
     for fact in &answer.positive_dependencies {
         if let FactKey::Property { element, property } = fact {
+            // An inverse ownership query reads one existing child's owner, not
+            // arbitrary additions to the owner's backing collection. Its exact
+            // canonical carrier fact remains in proof; the search defines the
+            // observed projection. Explicit broad reads still take precedence.
+            if !result.contains(&ProducerRead::Property(*element, *property))
+                && result.iter().any(|read| match read {
+                    ProducerRead::Source(child, _, backing)
+                        if backing == property
+                            && [
+                                agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP,
+                                agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                            ]
+                            .contains(backing) =>
+                    {
+                        model
+                            .navigation_slot(*element, *property)
+                            .is_some_and(|slot| {
+                                slot.value().values().any(|value| {
+                                    *value == agq_kernel::value::Value::Reference(*child)
+                                })
+                            })
+                    }
+                    _ => false,
+                })
+            {
+                continue;
+            }
             if *property == agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP
                 && result
                     .iter()
@@ -239,6 +266,30 @@ impl ProducerDescriptor {
             minimum_stratum: ResultStructureStratum::Structural,
         }
     }
+    fn can_create_subjects(&self) -> bool {
+        !self.fresh_effects.is_empty()
+            || self
+                .effects
+                .iter()
+                .any(|effect| !matches!(effect, ProducerEffect::Scalar(_)))
+    }
+}
+
+/// A pending creator can activate families with no subjects in the current
+/// frontier. Their cross-subject effects cannot be omitted from the witness.
+fn future_cross_subject_effects(registry: &ProducerRegistry) -> BTreeSet<ProducerEffect> {
+    registry
+        .descriptors
+        .iter()
+        .filter(|descriptor| {
+            descriptor.applicability != ProducerApplicability::Never
+                && matches!(
+                    descriptor.scope,
+                    ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
+                )
+        })
+        .flat_map(|descriptor| descriptor.effects.iter().copied())
+        .collect()
 }
 
 /// Explicit effect requirements of exhaustive queries. Positive witnesses do
@@ -409,6 +460,7 @@ impl ProducerEvaluationTable {
         immutable: &impl Fn(ElementId) -> bool,
     ) -> BTreeSet<usize> {
         let families = registry.descriptors.len();
+        let future_effects = future_cross_subject_effects(registry);
         let mut blocked = BTreeSet::new();
         let mut pending = VecDeque::new();
         for (i, &subject) in subjects.iter().enumerate() {
@@ -506,6 +558,18 @@ impl ProducerEvaluationTable {
                 continue;
             }
             let mut affected = global.clone();
+            if descriptor.can_create_subjects() && !future_effects.is_empty() {
+                for reads in readers.values() {
+                    for (read, reader) in reads {
+                        if future_effects
+                            .iter()
+                            .any(|&effect| effect_changes_read(effect, read, model))
+                        {
+                            affected.push(*reader);
+                        }
+                    }
+                }
+            }
             if descriptor
                 .effects
                 .iter()
@@ -834,6 +898,7 @@ impl ProducerClosureCertificate {
             .map(|(i, id)| (id, i))
             .collect();
         let families = registry.descriptors.len();
+        let future_effects = future_cross_subject_effects(registry);
         let mut states = vec![0; (subjects.len() * families).div_ceil(4)];
         let mut blocked = vec![0_u8; subjects.len()];
         let mut inherited_blocks = vec![0_u8; subjects.len()];
@@ -881,6 +946,16 @@ impl ProducerClosureCertificate {
                     state,
                     ProducerEvaluationState::Pending | ProducerEvaluationState::EvaluatedIncomplete
                 ) {
+                    if descriptor.can_create_subjects() {
+                        for requirement in SemanticClosureRequirement::ALL {
+                            if future_effects
+                                .iter()
+                                .any(|&effect| requirement.requires(effect))
+                            {
+                                global_block |= requirement.bit();
+                            }
+                        }
+                    }
                     let mask = SemanticClosureRequirement::ALL
                         .into_iter()
                         .filter(|r| descriptor.effects.iter().any(|&e| r.requires(e)))

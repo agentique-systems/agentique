@@ -606,7 +606,7 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
     writer.scope = ProducerEffectScope::SubjectAndOwners;
     let registry = ProducerRegistry::new([
         writer,
-        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any),
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Scalar(p::TYPE_IS_SUFFICIENT)], ProducerApplicability::Any),
     ])
     .unwrap();
     let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
@@ -638,8 +638,8 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
         &table,
         |_| false,
     );
-    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
-    assert!(certificate.is_closed(id(3), SemanticClosureRequirement::EffectiveTyping));
+    assert_eq!(certificate.evaluation(id(1), registry.index(TYPE).unwrap()), Some(ProducerEvaluationState::Pending));
+    assert_eq!(certificate.evaluation(id(3), registry.index(TYPE).unwrap()), Some(ProducerEvaluationState::EvaluatedComplete));
 }
 
 #[test]
@@ -671,6 +671,48 @@ fn generic_effects_cover_subtype_populations_but_membership_does_not_reown() {
         &ownership,
         snapshot.model()
     ));
+}
+
+#[test]
+fn pending_creator_cannot_hide_a_future_cross_subject_typing_family() {
+    let snapshot = fixture();
+    let mut creator = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Membership],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    creator
+        .fresh_effects
+        .insert(ProducerEffect::ResultStructure);
+    let mut future = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE_VALUE]),
+    );
+    future.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([creator, future]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = crate::producer_closure::ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        table.pending(record.id(), snapshot.model(), &registry);
+    }
+    table
+        .record(&[(id(1), ACTIVATE, Completeness::Incomplete)], &registry)
+        .unwrap();
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    assert!(
+        !certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping),
+        "an absent family may activate on a future generated FeatureValue and type this existing Classifier"
+    );
 }
 
 #[test]
