@@ -620,19 +620,31 @@ impl ProducerEvaluationTable {
                             | ProducerRead::Structural(id)
                             | ProducerRead::Owned(id, _)
                             | ProducerRead::FeaturePopulation(id, _) => immutable(*id),
-                            ProducerRead::Property(id, property) => model.element(*id).and_then(|record| record.slot(*property)).is_some_and(|slot| matches!(slot.value(), agq_kernel::value::SlotValue::Scalar(_))) || immutable(*id)
-                                && (model
-                                    .element(*id)
-                                    .is_some_and(|record| record.slot(*property).is_some())
-                                    || model
-                                        .registry()
-                                        .property(*property)
-                                        .is_ok_and(|descriptor| descriptor.composite)
-                                    || [
-                                        agq_kerml::properties::ELEMENT_OWNING_RELATIONSHIP,
-                                        agq_kerml::properties::RELATIONSHIP_OWNING_RELATED_ELEMENT,
-                                    ]
-                                    .contains(property)),
+                            ProducerRead::Property(id, property) => {
+                                let registry = model.registry();
+                                let stored =
+                                    model.element(*id).and_then(|record| record.slot(*property));
+                                stored.is_some_and(|slot| {
+                                    matches!(slot.value(), agq_kernel::value::SlotValue::Scalar(_))
+                                }) || immutable(*id)
+                                    && (stored.is_some()
+                                        || registry.property(*property).is_ok_and(|descriptor| {
+                                            descriptor.composite
+                                                || !descriptor.derived
+                                                    && registry
+                                                        .supports_slot_storage(*property)
+                                                        .unwrap_or(false)
+                                        })
+                                        || registry
+                                            .inverse_storage(*property)
+                                            .ok()
+                                            .flatten()
+                                            .is_some_and(|backing| {
+                                                registry
+                                                    .property(backing)
+                                                    .is_ok_and(|descriptor| descriptor.composite)
+                                            }))
+                            }
                             ProducerRead::Source(id, _, property) => {
                                 immutable(*id)
                                     && [
@@ -640,6 +652,10 @@ impl ProducerEvaluationTable {
                                         agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT,
                                     ]
                                     .contains(property)
+                                    && model
+                                        .registry()
+                                        .property(*property)
+                                        .is_ok_and(|descriptor| descriptor.composite)
                             }
                             _ => false,
                         };

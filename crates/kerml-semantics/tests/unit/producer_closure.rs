@@ -767,6 +767,10 @@ fn immutable_record_reads_are_fixed_but_external_source_relationships_stay_open(
             ProducerEvaluationState::EvaluatedComplete,
         ),
         (
+            ProducerRead::Property(id(2), p::ELEMENT_OWNED_RELATIONSHIP),
+            ProducerEvaluationState::EvaluatedComplete,
+        ),
+        (
             ProducerRead::Source(id(2), c::FEATURE_TYPING, p::FEATURE_TYPING_TYPED_FEATURE),
             ProducerEvaluationState::Pending,
         ),
