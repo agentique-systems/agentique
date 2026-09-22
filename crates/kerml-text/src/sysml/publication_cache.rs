@@ -61,6 +61,7 @@ impl CanonicalSysmlSystemsLibrary {
                     "library":self.bindings.identity().library,
                     "qualified_path":path,
                     "expected_metaclass":expected,
+                    "visibility":"public",
                     "source":source,
                     "source_path":document.path(),
                     "source_sha256":document.sha256(),
