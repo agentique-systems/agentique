@@ -125,6 +125,105 @@ pub fn sysml_producer_rule_ids(profile: SysmlBaselineProfile) -> BTreeSet<RuleId
         .collect()
 }
 
+/// Declared effects and structural applicability of every implemented family.
+/// This inventory is independent of which facts a particular execution emits.
+pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescriptor> {
+    use agq_kerml_semantics::{
+        ProducerApplicability, ProducerDescriptor, ProducerEffect, ProducerFamilyId,
+        ResultStructureStratum,
+    };
+    let mut families = BTreeMap::<&'static str, Vec<MetaclassId>>::new();
+    for &(class, rule, _) in BASE_RULES.iter().chain(SUBACTION_RULES) {
+        families.entry(rule).or_default().push(class);
+    }
+    for &(class, _, rule, _) in COMPOSITE_RULES.iter().chain(OWNED_RULES) {
+        families.entry(rule).or_default().push(class);
+    }
+    for (class, rules) in [
+        (
+            sc::ACCEPT_ACTION_USAGE,
+            &[
+                "checkAcceptActionUsageTriggerActionSpecialization",
+                "checkAcceptActionUsageSpecialization",
+                "checkAcceptActionUsageSubactionSpecialization",
+            ][..],
+        ),
+        (
+            sc::STATE_USAGE,
+            &[
+                "checkStateUsageSubstateSpecialization",
+                "checkStateUsageExclusiveStateSpecialization",
+            ][..],
+        ),
+        (
+            sc::TRANSITION_USAGE,
+            &[
+                "checkTransitionUsageStateSpecialization",
+                "checkTransitionUsageActionSpecialization",
+                "checkTransitionUsagePayloadSpecialization",
+            ][..],
+        ),
+        (
+            sc::OCCURRENCE_USAGE,
+            &["checkOccurrenceUsageSuboccurrenceSpecialization"][..],
+        ),
+        (
+            sc::CONNECTION_DEFINITION,
+            &["checkConnectionDefinitionBinarySpecialization"][..],
+        ),
+        (
+            sc::CONNECTION_USAGE,
+            &["checkConnectionUsageBinarySpecialization"][..],
+        ),
+        (
+            sc::INTERFACE_DEFINITION,
+            &["checkInterfaceDefinitionBinarySpecialization"][..],
+        ),
+        (
+            sc::INTERFACE_USAGE,
+            &["checkInterfaceUsageBinarySpecialization"][..],
+        ),
+        (sc::FLOW_USAGE, &["checkFlowUsageFlowSpecialization"][..]),
+        (sc::USAGE, &["deriveUsageMayTimeVary"][..]),
+    ] {
+        for &rule in rules {
+            families.entry(rule).or_default().push(class);
+        }
+    }
+    families
+        .into_iter()
+        .map(|(rule, mut classes)| {
+            classes.sort();
+            classes.dedup();
+            let effects = match rule {
+                "deriveUsageMayTimeVary" => vec![
+                    ProducerEffect::Scalar(kp::FEATURE_IS_VARIABLE),
+                    ProducerEffect::Scalar(sp::USAGE_MAY_TIME_VARY),
+                ],
+                "checkTransitionUsagePayloadSpecialization" => vec![
+                    ProducerEffect::Membership,
+                    ProducerEffect::Specialization,
+                    ProducerEffect::Subsetting,
+                    ProducerEffect::FeatureChain,
+                    ProducerEffect::ResultStructure,
+                ],
+                // A Usage contributes Subsetting; a Definition contributes
+                // Subclassification. Both are Specialization relationships.
+                _ => vec![ProducerEffect::Specialization, ProducerEffect::Subsetting],
+            };
+            let mut descriptor = ProducerDescriptor::new(
+                ProducerFamilyId::new(rule),
+                effects,
+                ProducerApplicability::Subtypes(classes),
+            );
+            if rule == "deriveUsageMayTimeVary" {
+                descriptor.minimum_stratum = ResultStructureStratum::StableProperties;
+            }
+            descriptor
+        })
+        .collect()
+}
+
 #[derive(Clone, Copy)]
 enum Target {
     Sysml(R),
@@ -252,6 +351,22 @@ pub fn plan_sysml_producers(
     }
     if evaluator.is(subject, sc::ACCEPT_ACTION_USAGE) {
         let trigger = evaluator.trigger_action(subject);
+        // Both alternatives are evaluated against the same predicate. Retaining
+        // the inactive result lets the scheduler distinguish a closed family
+        // from a family that has not been evaluated on this frontier.
+        let mut inactive = evaluator.result(
+            subject,
+            if trigger.value {
+                "checkAcceptActionUsageSpecialization"
+            } else {
+                "checkAcceptActionUsageTriggerActionSpecialization"
+            },
+        );
+        inactive
+            .evidence
+            .merge_evidence(trigger.clone())
+            .expect("same producer context");
+        plan.results.push(inactive);
         let mut result = evaluator.result(
             subject,
             if trigger.value {
@@ -1477,6 +1592,17 @@ pub fn current_usage_may_time_vary(
     roots: &[ElementId],
     subject: ElementId,
 ) -> QueryResult<Option<bool>> {
+    usage_may_time_vary(queries, profile, bindings, roots, subject, false)
+}
+
+fn usage_may_time_vary(
+    queries: &KerMlQueries<'_>,
+    profile: SysmlBaselineProfile,
+    bindings: &StandardSysmlBindings,
+    roots: &[ElementId],
+    subject: ElementId,
+    require_closure: bool,
+) -> QueryResult<Option<bool>> {
     let evaluator = Evaluator {
         queries,
         profile,
@@ -1503,6 +1629,14 @@ pub fn current_usage_may_time_vary(
         .merge_evidence(owner)
         .expect("same producer context");
     let Some(owner) = owner_id else {
+        if require_closure {
+            evidence
+                .merge_evidence(queries.producer_closure(
+                    subject,
+                    agq_kerml_semantics::SemanticClosureRequirement::EffectiveMembership,
+                ))
+                .expect("same producer context");
+        }
         let complete = evidence.completeness == Completeness::Complete;
         return evidence.map(|()| complete.then_some(false));
     };
@@ -1520,7 +1654,16 @@ pub fn current_usage_may_time_vary(
         return evidence.map(|()| None);
     }
     if !owner_is_occurrence {
-        return evidence.map(|()| Some(false));
+        if require_closure {
+            evidence
+                .merge_evidence(queries.producer_closure(
+                    owner,
+                    agq_kerml_semantics::SemanticClosureRequirement::EffectiveTyping,
+                ))
+                .expect("same producer context");
+        }
+        let complete = evidence.completeness == Completeness::Complete;
+        return evidence.map(|()| complete.then_some(false));
     }
     if evaluator.boolean(&mut evidence, subject, kp::FEATURE_IS_PORTION) == Some(true) {
         let complete = evidence.completeness == Completeness::Complete;
@@ -1585,12 +1728,20 @@ pub fn current_usage_may_time_vary(
     evidence
         .merge_evidence(types)
         .expect("same producer context");
+    if require_closure && !excludes {
+        evidence
+            .merge_evidence(queries.producer_closure(
+                subject,
+                agq_kerml_semantics::SemanticClosureRequirement::EffectiveTyping,
+            ))
+            .expect("same producer context");
+    }
     let complete = evidence.completeness == Completeness::Complete;
     evidence.map(|()| complete.then_some(!excludes))
 }
 
-/// Final-stratum scalar proposal. Call only after the shared structural worklist
-/// reaches fixed point; any subsequent structural change invalidates this proof.
+/// Final-stratum scalar proposal. Negative type predicates require the shared
+/// scheduler's closure certificate; a fixed point alone is not evidence of absence.
 pub fn plan_sysml_may_time_vary(
     queries: &KerMlQueries<'_>,
     profile: SysmlBaselineProfile,
@@ -1598,7 +1749,7 @@ pub fn plan_sysml_may_time_vary(
     roots: &[ElementId],
     subject: ElementId,
 ) -> SysmlProducerResult {
-    let answer = current_usage_may_time_vary(queries, profile, bindings, roots, subject);
+    let answer = usage_may_time_vary(queries, profile, bindings, roots, subject, true);
     let value = answer.value;
     let rule = "deriveUsageMayTimeVary";
     let properties = value

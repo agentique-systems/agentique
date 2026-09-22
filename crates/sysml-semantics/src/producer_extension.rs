@@ -1,7 +1,7 @@
 //! SysML contributions use the existing KerML dependency-driven scheduler.
 use crate::{
     StandardSysmlBindings, SysmlBaselineProfile, SysmlProducerResult, plan_sysml_may_time_vary,
-    plan_sysml_producers, sysml_producers_apply,
+    plan_sysml_producers, sysml_producer_descriptors, sysml_producers_apply,
 };
 use agq_kerml_semantics::{
     KerMlQueries, PublicationProducerExtension, ResultStructurePlan, ResultStructureStratum,
@@ -51,9 +51,15 @@ impl SysmlProducerExtension {
 }
 
 fn contribute(
+    subject: ElementId,
     result: SysmlProducerResult,
     plan: &mut ResultStructurePlan<'_>,
 ) -> Result<(), DerivationError> {
+    plan.record_producer_evaluation(
+        subject,
+        agq_kerml_semantics::ProducerFamilyId::new(result.rule),
+        result.evidence.completeness,
+    );
     plan.observe_evidence(result.evidence.clone())?;
     for relationship in result.relationships {
         plan.add_derived_element(
@@ -85,6 +91,11 @@ fn contribute(
     Ok(())
 }
 impl PublicationProducerExtension for SysmlProducerExtension {
+    fn descriptors(&self) -> Vec<agq_kerml_semantics::ProducerDescriptor> {
+        // The bootstrap registry still declares MayTimeVary. Its unevaluated
+        // stable-property family cannot accidentally establish full closure.
+        sysml_producer_descriptors()
+    }
     fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
         sysml_producers_apply(model, class)
     }
@@ -102,7 +113,7 @@ impl PublicationProducerExtension for SysmlProducerExtension {
             plan_sysml_producers(queries, self.profile, &self.bindings, &self.roots, subject)
                 .results
         {
-            contribute(result, plan)?;
+            contribute(subject, result, plan)?;
         }
         if self.stable_properties
             && stratum != ResultStructureStratum::Structural
@@ -115,6 +126,7 @@ impl PublicationProducerExtension for SysmlProducerExtension {
             })
         {
             contribute(
+                subject,
                 plan_sysml_may_time_vary(
                     queries,
                     self.profile,

@@ -87,7 +87,7 @@ fn fixture() -> Snapshot {
 }
 
 #[test]
-fn reference_refinement_keeps_base_relationships_but_never_produces_stable_scalars() {
+fn reference_refinement_keeps_base_relationships_and_negative_scalars_require_closure() {
     let snapshot = fixture();
     let options = SemanticOptions {
         baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
@@ -113,7 +113,7 @@ fn reference_refinement_keeps_base_relationships_but_never_produces_stable_scala
         ResultStructureStratum::StableProperties,
         ResultStructureStratum::ContextualBindings,
     ] {
-        for (extension, scalar_expected) in [
+        for (extension, scalar_attempted) in [
             (&bootstrap, false),
             (&full, stratum != ResultStructureStratum::Structural),
         ] {
@@ -124,7 +124,14 @@ fn reference_refinement_keeps_base_relationships_but_never_produces_stable_scala
                     .unwrap();
             }
             let result = plan.materialize(&snapshot).unwrap();
-            assert_eq!(result.production.completeness, Completeness::Complete);
+            assert_eq!(
+                result.production.completeness,
+                if scalar_attempted {
+                    Completeness::Incomplete
+                } else {
+                    Completeness::Complete
+                }
+            );
             let relationships: Vec<_> = result
                 .overlay
                 .model()
@@ -149,10 +156,10 @@ fn reference_refinement_keeps_base_relationships_but_never_produces_stable_scala
                 .overlay
                 .model()
                 .navigation_slot(id(5), sp::USAGE_MAY_TIME_VARY);
-            assert_eq!(scalar.is_some(), scalar_expected, "{stratum:?}");
-            if let Some(scalar) = scalar {
-                assert_eq!(scalar.value(), &SlotValue::Scalar(Value::Boolean(false)));
-            }
+            assert!(
+                scalar.is_none(),
+                "{stratum:?}: absent owner needs a closure witness"
+            );
             let context =
                 SemanticContext::for_overlay(&result.overlay, options.clone(), Default::default())
                     .unwrap();
@@ -162,5 +169,51 @@ fn reference_refinement_keeps_base_relationships_but_never_produces_stable_scala
                 "neither a mode nor a materialized plan confers publication acceptance"
             );
         }
+    }
+}
+
+#[test]
+fn producer_descriptors_cover_exactly_implemented_rules_with_declared_effects() {
+    use agq_kerml_semantics::{ProducerEffect, ProducerFamilyId};
+    let descriptors = sysml_producer_descriptors();
+    let ids: std::collections::BTreeSet<_> = descriptors.iter().map(|d| d.id).collect();
+    assert_eq!(ids.len(), descriptors.len(), "family identities are unique");
+    assert_eq!(
+        descriptors.len(),
+        crate::sysml_producer_rule_ids(SysmlBaselineProfile::OPERATIONAL_V2).len(),
+        "each implemented rule must declare its effects"
+    );
+    assert!(
+        descriptors
+            .iter()
+            .all(|descriptor| !descriptor.effects.is_empty())
+    );
+    let scalar = descriptors
+        .iter()
+        .find(|descriptor| descriptor.id == ProducerFamilyId::new("deriveUsageMayTimeVary"))
+        .unwrap();
+    assert_eq!(
+        scalar.minimum_stratum,
+        ResultStructureStratum::StableProperties
+    );
+    assert_eq!(
+        scalar.effects,
+        std::collections::BTreeSet::from([
+            ProducerEffect::Scalar(kp::FEATURE_IS_VARIABLE),
+            ProducerEffect::Scalar(sp::USAGE_MAY_TIME_VARY),
+        ])
+    );
+    let payload = descriptors
+        .iter()
+        .find(|descriptor| {
+            descriptor.id == ProducerFamilyId::new("checkTransitionUsagePayloadSpecialization")
+        })
+        .unwrap();
+    for effect in [
+        ProducerEffect::Subsetting,
+        ProducerEffect::FeatureChain,
+        ProducerEffect::ResultStructure,
+    ] {
+        assert!(payload.effects.contains(&effect));
     }
 }

@@ -531,6 +531,27 @@ fn may_time_vary_exact_antecedents_and_exclusions_use_canonical_identities() {
             &roots,
             id(40_001),
         );
+        let negative_type_premise = !occurrence || expected;
+        if negative_type_premise {
+            assert_eq!(scalar.evidence.completeness, Completeness::Incomplete);
+            assert!(scalar.properties.is_empty());
+            assert!(
+                scalar
+                    .evidence
+                    .search_dependencies
+                    .iter()
+                    .any(|dependency| {
+                        matches!(
+                            dependency,
+                            agq_kerml_semantics::SearchDependency::ProducerClosure { .. }
+                        )
+                    })
+            );
+            continue;
+        }
+        // Positive exclusions and the authored portion flag are sufficient;
+        // they do not wait on unrelated absent-type closure evidence.
+        assert_eq!(scalar.evidence.completeness, Completeness::Complete);
         assert_eq!(scalar.properties.len(), 1);
         assert_eq!(
             scalar.properties[0].property,
@@ -850,6 +871,15 @@ fn transition_acceptance_and_source_specialization_use_structural_memberships() 
             accept_specialization.relationships[0].general,
             id(roles[&target])
         );
+        let inactive_rule = if trigger {
+            "checkAcceptActionUsageSpecialization"
+        } else {
+            "checkAcceptActionUsageTriggerActionSpecialization"
+        };
+        let inactive = result(&accept, inactive_rule);
+        assert_eq!(inactive.evidence.completeness, Completeness::Complete);
+        assert!(inactive.relationships.is_empty());
+        assert!(!inactive.evidence.search_dependencies.is_empty());
         let transition = queries.producer_plan(&[id(1)], id(3001));
         assert_eq!(
             result(&transition, "checkTransitionUsageSpecialization").relationships[0].general,
