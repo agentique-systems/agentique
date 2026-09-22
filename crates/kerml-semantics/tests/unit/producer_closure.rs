@@ -1106,6 +1106,60 @@ fn owned_descendant_effects_do_not_retype_or_invalidate_the_producer_subject() {
 }
 
 #[test]
+fn pending_ownership_can_activate_typing_on_a_currently_unowned_subject() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut attachment = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Ownership, ProducerEffect::Membership],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    attachment.scope = ProducerEffectScope::Model;
+    for scope in [
+        ProducerEffectScope::SubjectAndOwned,
+        ProducerEffectScope::OwnedDescendants,
+    ] {
+        let mut typing =
+            ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);
+        typing.scope = scope;
+        let registry = ProducerRegistry::new([attachment.clone(), typing]).unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let mut table = ProducerEvaluationTable::default();
+        for record in snapshot.model().elements() {
+            table.pending(record.id(), snapshot.model(), &registry);
+            table
+                .record(&[(record.id(), TYPE, Completeness::Complete)], &registry)
+                .unwrap();
+            table.record_reads(
+                &[(
+                    record.id(),
+                    TYPE,
+                    vec![ProducerRead::Owned(record.id(), c::MEMBERSHIP)].into(),
+                )],
+                &registry,
+            );
+        }
+        table
+            .record(&[(id(1), ACTIVATE, Completeness::Incomplete)], &registry)
+            .unwrap();
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &table,
+            |_| false,
+        );
+        assert!(
+            !certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping),
+            "pending ownership may place the current orphan in a typing producer's future {scope:?} scope"
+        );
+    }
+}
+
+#[test]
 fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
     let descriptor =
         ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);

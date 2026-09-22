@@ -234,6 +234,14 @@ pub enum ProducerEffectScope {
     SubjectAndOwners,
     Model,
 }
+impl ProducerEffectScope {
+    fn depends_on_ownership(self) -> bool {
+        matches!(
+            self,
+            Self::SubjectAndOwned | Self::OwnedDescendants | Self::SubjectAndOwners
+        )
+    }
+}
 
 /// Immutable declaration under one semantic rule-set identity.
 ///
@@ -293,12 +301,16 @@ fn future_cross_subject_effects(registry: &ProducerRegistry) -> BTreeSet<Produce
 fn future_cross_subject_families(
     registry: &ProducerRegistry,
 ) -> impl Iterator<Item = &ProducerDescriptor> {
-    registry.descriptors.iter().filter(|descriptor| {
+    let ownership_mutable = registry
+        .descriptors
+        .iter()
+        .any(|descriptor| descriptor.effects.contains(&ProducerEffect::Ownership));
+    registry.descriptors.iter().filter(move |descriptor| {
         descriptor.applicability != ProducerApplicability::Never
-            && matches!(
+            && (matches!(
                 descriptor.scope,
                 ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
-            )
+            ) || (ownership_mutable && descriptor.scope.depends_on_ownership()))
     })
 }
 
@@ -670,7 +682,7 @@ impl ProducerEvaluationTable {
                 }
             };
             if descriptor.scope == ProducerEffectScope::Model
-                || (ownership_mutable && descriptor.scope == ProducerEffectScope::SubjectAndOwners)
+                || (ownership_mutable && descriptor.scope.depends_on_ownership())
             {
                 for reads in readers.values() {
                     consume(reads);
@@ -1053,12 +1065,12 @@ impl ProducerClosureCertificate {
                     // throughout the graph instead of claiming local absence.
                     global_block |= mask & !SemanticClosureRequirement::EffectiveTyping.bit();
                     match descriptor.scope {
+                        scope if ownership_mutable && scope.depends_on_ownership() => {
+                            global_block |= mask
+                        }
                         ProducerEffectScope::Model => global_block |= mask,
                         ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
                         ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
-                        ProducerEffectScope::SubjectAndOwners if ownership_mutable => {
-                            global_block |= mask
-                        }
                         ProducerEffectScope::SubjectAndOwners => owner_blocks[i] |= mask,
                         ProducerEffectScope::Subject => blocked[i] |= mask,
                     }
