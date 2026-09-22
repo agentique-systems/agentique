@@ -43,3 +43,10 @@ positional redefinitions already suppress every inherited result.
 
 No whole Systems Library candidate was run from this workstream. These fixture
 results do not establish Systems publication acceptance.
+
+Final primitive scalar-alias matcher (`9adb3e0`, local cherry-pick `118bfed`):
+the same low-artifact environment reran `cargo test -p agq-sysml-semantics`
+(51 passed), `cargo test -p agq-kerml-semantics --lib variable` (4 passed),
+`cargo test -p agq-kerml-semantics --lib feature_values` (2 passed), and
+`cargo test -p agq-kerml-semantics --test initial_values_v10` (1 passed).
+Every command exited 0; all three combined SysML closure fixtures remain green.
