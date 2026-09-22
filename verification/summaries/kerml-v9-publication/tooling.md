@@ -98,3 +98,17 @@ Both acceptance preflight regressions passed, including rejection of an incomple
 row or a missing identity despite a successful summary flag. Focused Clippy passed
 with warnings denied. These checks compile the real authored-consumption helper;
 its corpus-dependent assertions run only against the accepted publication.
+
+Before source preparation, the canonical runner now reserves and probes every
+report, stage-log, cache, receipt and requested conformance destination. Binding
+and receipt staging files are reserved too, and existing replacement targets are
+opened without truncation to detect write protection. A collision or unwritable
+path therefore fails before producer work. Empty reservations are removed on
+ordinary failure; populated diagnostic artifacts remain available.
+
+A stage-log write failure no longer discards a successful in-memory publication.
+Its complete stage data and telemetry error are retained in the final report, and
+an initial report-write failure still proceeds to the durable cache attempt.
+Semantic acceptance remains independent of telemetry status. Four focused example
+tests passed, including collision isolation, empty-reservation cleanup and durable
+staged replacement. Focused Clippy and workspace formatting checks passed.

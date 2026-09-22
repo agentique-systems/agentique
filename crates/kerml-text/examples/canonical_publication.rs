@@ -14,6 +14,9 @@ mod multiplicity_inventory;
 mod publication_authority;
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
+#[path = "support/publication_output.rs"]
+mod publication_output;
+use publication_output::ReservedFile;
 #[path = "support/publication_preflight.rs"]
 mod publication_preflight;
 #[path = "support/publication_refinement.rs"]
@@ -28,20 +31,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .find_map(|a| a.strip_prefix("--output=").map(str::to_owned))
         .ok_or("--output is required")?;
     let path = root.join(output);
-    if path.exists() {
-        return Err("Output exists; use a fresh generated evidence path".into());
-    }
-    std::fs::create_dir_all(path.parent().ok_or("output parent")?)?;
     let cache_path = std::env::args()
         .find_map(|a| a.strip_prefix("--cache-output=").map(|p| root.join(p)))
         .unwrap_or_else(|| path.with_extension("publication.zip"));
-    if cache_path.exists() {
-        return Err("Publication cache exists; use a fresh --cache-output path".into());
-    }
     let generated_receipt = cache_path.with_extension("receipt.json");
-    if generated_receipt.exists() {
-        return Err("Publication cache receipt exists; use a fresh --cache-output path".into());
-    }
+    let manifest_path = root.join("standards/kerml-standard-bindings.json");
+    let receipt_path = root.join("standards/kerml-accepted-publication.json");
+    let write_bindings = std::env::args().any(|a| a == "--write-bindings");
+    let check_bindings = write_bindings || std::env::args().any(|a| a == "--check-bindings");
+    let slice_evidence = std::env::args()
+        .find_map(|a| a.strip_prefix("--slice-evidence=").map(str::to_owned))
+        .ok_or(
+            "--slice-evidence=<directory containing slice-A.json through slice-E.json> is required",
+        )?;
+    // Reserve every destination while failures are still cheap. Empty reservations
+    // clean themselves up; a stopped/failed populated artifact remains inspectable.
+    let report_output = ReservedFile::new(&path)?;
+    let stage_output = ReservedFile::new(path.with_extension("stages.jsonl"))?;
+    let cache_output = ReservedFile::new(&cache_path)?;
+    let receipt_output = ReservedFile::new(&generated_receipt)?;
+    let staged_bindings = if write_bindings {
+        Some((
+            ReservedFile::replacement(&manifest_path)?,
+            ReservedFile::replacement(&receipt_path)?,
+        ))
+    } else {
+        None
+    };
+    let conformance_output = std::env::args()
+        .find_map(|a| {
+            a.strip_prefix("--conformance-output=")
+                .map(|p| root.join(p))
+        })
+        .map(ReservedFile::new)
+        .transpose()?;
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
     let authority = publication_authority::conflicts(&root)?;
     let blockers = authority
@@ -52,11 +75,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Publication authority gate failed".into());
     }
     let (draft, refinement) = publication_refinement::prepare(&sources)?;
-    let slice_evidence = std::env::args()
-        .find_map(|a| a.strip_prefix("--slice-evidence=").map(str::to_owned))
-        .ok_or(
-            "--slice-evidence=<directory containing slice-A.json through slice-E.json> is required",
-        )?;
     let preflight_references = publication_preflight::check(
         &root.join(slice_evidence),
         &publication_preflight::identity(
@@ -77,10 +95,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let construction_obligations = draft.candidate().obligations().len();
     let mut stages = vec![];
-    let mut stage_log = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path.with_extension("stages.jsonl"))?;
+    let mut stage_log = stage_output.file();
     let mut stage_log_error = None;
     let closure = CanonicalKermlStandardLibraries::publish(
         draft,
@@ -123,17 +138,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         },
     );
-    if let Some(error) = stage_log_error {
-        return Err(error.into());
-    }
     let publication = match closure {
         Ok(complete) => complete,
         Err(error) => {
-            std::fs::write(
-                &path,
-                serde_json::to_vec_pretty(
-                    &json!({"format":"agq-kerml-complete-publication/1","profile":BaselineProfile::OPERATIONAL_V9.id(),"input_set":sources.content_set_id(),"overlay":"Incomplete","kernel_construction_obligations":construction_obligations,"publication_blocking_authority_conflicts":blockers,"stages":stages,"failure":format!("{error:?}"),"reference_failures": match &error { CanonicalPublicationError::References(failures) => failures.iter().map(|f| json!({"relationship":f.relationship.to_string(),"completeness":format!("{:?}",f.completeness),"candidates":f.candidates,"canonical_endpoint_valid":f.canonical_endpoint_valid})).collect::<Vec<_>>(), _ => vec![] }}),
-                )?,
+            report_output.write_json(
+                    &json!({"format":"agq-kerml-complete-publication/1","profile":BaselineProfile::OPERATIONAL_V9.id(),"input_set":sources.content_set_id(),"overlay":"Incomplete","stage_log_error":stage_log_error.as_ref().map(ToString::to_string),"kernel_construction_obligations":construction_obligations,"publication_blocking_authority_conflicts":blockers,"stages":stages,"failure":format!("{error:?}"),"reference_failures": match &error { CanonicalPublicationError::References(failures) => failures.iter().map(|f| json!({"relationship":f.relationship.to_string(),"completeness":format!("{:?}",f.completeness),"candidates":f.candidates,"canonical_endpoint_valid":f.canonical_endpoint_valid})).collect::<Vec<_>>(), _ => vec![] }}),
             )?;
             return Err(error.into());
         }
@@ -141,9 +150,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let publication = Arc::new(publication);
     // Preserve the accepted core result before binding I/O or authored regressions.
     // A later tool failure must remain distinguishable from a failed publication.
-    std::fs::write(
-        &path,
-        serde_json::to_vec_pretty(&json!({
+    let initial_report_error = report_output.write_json(&json!({
             "format":"agq-kerml-complete-publication/1", "profile":publication.profile().id(),
             "input_set":sources.content_set_id(), "overlay":"CompletePublicationOverlay",
             "accepted_overlay_and_references":true, "canonical_facade_accepted":true,
@@ -152,45 +159,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "semantic_digest":publication.semantic_digest(), "stages":stages,
             "capabilities":publication.complete_overlay().checked_items().iter().map(|(family,count)|json!({"family":format!("{family:?}"),"checked_items":count,"status":"Complete"})).collect::<Vec<_>>(),
             "accepted_binding_manifest":{"status":"pending"}, "authored_consumption_verified":false,
-            "post_publication_checks":"pending"
-        }))?,
-    )?;
+            "post_publication_checks":"pending",
+            "stage_log_error":stage_log_error.as_ref().map(ToString::to_string)
+        })).err().map(|error| error.to_string());
+    if let Some(error) = &initial_report_error {
+        eprintln!(
+            "cannot persist initial accepted report; still attempting durable cache: {error}"
+        );
+    }
     // Reuse the accepted in-memory publication; never launch a second corpus
     // closure merely to regenerate or stale-check its binding manifest.
     let accepted_manifest = publication.binding_manifest(&sources)?;
     // Persist the already accepted facade once. ZIP deflation and the kernel
     // codec stream graph/proof/search data without buffering a second corpus.
-    std::fs::create_dir_all(cache_path.parent().ok_or("cache parent")?)?;
-    let cache_file = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&cache_path)?;
+    let cache_file = cache_output.file();
     println!(
         "accepted publication cache: streaming {}",
         cache_path.display()
     );
-    let cache_receipt = publication.write_cache(&cache_file, &sources)?;
+    let cache_receipt = publication.write_cache(cache_file, &sources)?;
     cache_file.sync_all()?;
     println!(
         "accepted publication cache: {} compressed bytes",
         cache_file.metadata()?.len()
     );
-    let receipt_path = root.join("standards/kerml-accepted-publication.json");
-    // A receipt beside the generated cache is evidence only. Restoration trusts
-    // the separately checked-in standards receipt and binding manifest.
-    write_new_json(&generated_receipt, &cache_receipt)?;
-    let manifest_path = root.join("standards/kerml-standard-bindings.json");
-    let write_bindings = std::env::args().any(|a| a == "--write-bindings");
-    let check_bindings = write_bindings || std::env::args().any(|a| a == "--check-bindings");
-    if write_bindings {
-        let staged_manifest = manifest_path.with_extension("json.pending");
-        let staged_receipt = receipt_path.with_extension("json.pending");
-        write_new_json(&staged_manifest, &accepted_manifest)?;
-        write_new_json(&staged_receipt, &cache_receipt)?;
-        // Each file replacement is atomic. A crash between them leaves a
-        // mismatched pair, which restoration rejects before reading the graph.
-        std::fs::rename(staged_manifest, &manifest_path)?;
-        std::fs::rename(staged_receipt, &receipt_path)?;
+    // The archive is finalized and durable before either acceptance file changes.
+    // A receipt beside the generated cache is evidence only; restoration uses
+    // the separately checked-in pair compiled into the next build.
+    receipt_output.write_json(&cache_receipt)?;
+    if let Some((staged_manifest, staged_receipt)) = staged_bindings {
+        staged_manifest.write_json(&accepted_manifest)?;
+        staged_receipt.write_json(&cache_receipt)?;
+        // A crash between replacements leaves a mismatched pair, rejected closed.
+        staged_manifest.replace(&manifest_path)?;
+        staged_receipt.replace(&receipt_path)?;
     }
     if check_bindings {
         publication.check_binding_manifest(
@@ -219,13 +221,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err("Authored publication regression assertion failed; see raw output".into())
     });
 
-    std::fs::write(
-        &path,
-        serde_json::to_vec_pretty(&json!({
+    report_output.write_json(&json!({
             "format":"agq-kerml-complete-publication/1", "profile":BaselineProfile::OPERATIONAL_V9.id(),
             "input_set":sources.content_set_id(), "overlay":"CompletePublicationOverlay", "accepted_overlay_and_references":true,
             "reference_refinement":refinement,
             "post_publication_checks":"finished",
+            "stage_log_error":stage_log_error.as_ref().map(ToString::to_string),
+            "initial_report_error":initial_report_error,
+            "stage_evidence_preserved_in_report":true,
             "preflight_symbolic_population":preflight_population,
             "accepted_binding_manifest":{"format":accepted_manifest["format"],"roles":accepted_manifest["entries"].as_array().map(Vec::len),
                 "written":write_bindings,"stale_check_passed":check_bindings,"path":"standards/kerml-standard-bindings.json"},
@@ -238,11 +241,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "capabilities":complete.checked_items().iter().map(|(family,count)|json!({"family":format!("{family:?}"),"checked_items":count,"status":"Complete"})).collect::<Vec<_>>(),
             "semantic_digest":complete.context().model_digest,
             "counters":publication_metrics::counters(complete.counters()),
-        }))?,
-    )?;
-    if let Some(output) =
-        std::env::args().find_map(|a| a.strip_prefix("--conformance-output=").map(str::to_owned))
-    {
+        }))?;
+    if let Some(output) = conformance_output {
         let coverage: serde_json::Value = serde_json::from_slice(&std::fs::read(root.join(
             "verification/kerml-publication-convergence/publication-critical-coverage.json",
         ))?)?;
@@ -289,11 +289,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("separate conformance batch {index}");
             }
         }
-        std::fs::write(
-            root.join(output),
-            serde_json::to_vec_pretty(
+        output.write_json(
                 &json!({"format":"agentique-kerml-conformance-report/1","profile":report.context.baseline_profile_id,"scope":"CompletePublicationOverlay","validation_executed":std::env::args().any(|a|a == "--validate-conformance"),"coverage":format!("{:?}",report.coverage.status()),"checked":report.coverage.checked,"authority_conflicts":report.authority_conflicts.iter().map(|(issue,impact)|json!({"issue":issue,"impact":format!("{impact:?}")})).collect::<Vec<_>>(),"diagnostics":report.diagnostics.iter().map(|d|json!({"subject":d.subject.to_string(),"code":d.code,"message":d.message})).collect::<Vec<_>>()}),
-            )?,
         )?;
     }
     authored?;
@@ -303,19 +300,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
     println!("KERML CANONICAL LIBRARY PUBLICATION COMPLETE");
-    Ok(())
-}
-
-fn write_new_json(
-    path: &Path,
-    value: &serde_json::Value,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut file = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)?;
-    serde_json::to_writer_pretty(&mut file, value)?;
-    writeln!(file)?;
-    file.sync_all()?;
     Ok(())
 }
