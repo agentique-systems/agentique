@@ -126,3 +126,59 @@ fn stale_graph_registry_or_interpretation_cannot_reuse_a_certificate() {
         Err(ContextError::ProducerClosureMismatch)
     ));
 }
+
+#[test]
+fn strict_construction_revalidation_preserves_the_exact_semantic_graph_digest() {
+    use agq_kernel::derived::{ConstructionDerivationBuilder, StructuralSearch};
+    let snapshot = fixture(true);
+    let candidate = Arc::new(snapshot.preview(&snapshot.change_set()).unwrap());
+    let declared = snapshot.apply(&snapshot.change_set()).unwrap();
+    assert_ne!(candidate.revision(), declared.revision());
+    let key = DerivationKey {
+        rule: RuleId::from_u128(991),
+        subject: id(1),
+        output: OutputKey::from_u128(1),
+    };
+    let mut builder = ConstructionDerivationBuilder::for_construction(candidate);
+    let properties = snapshot
+        .model()
+        .element(id(1))
+        .unwrap()
+        .slots()
+        .map(|(property, slot)| {
+            let value = if property == p::ELEMENT_ELEMENT_ID {
+                SlotValue::Scalar(Value::String(key.element_id().to_string()))
+            } else {
+                slot.value().clone()
+            };
+            (property, value)
+        })
+        .filter(|(property, _)| *property != p::ELEMENT_OWNED_RELATIONSHIP);
+    builder.element(key, c::STEP, properties, BTreeSet::new());
+    builder.searches(
+        FactKey::Element(key.element_id()),
+        BTreeSet::from([StructuralSearch::Incoming(id(1))]),
+    );
+    let construction = builder.build().unwrap();
+    let before = SemanticContext::for_construction_overlay(
+        &construction,
+        Default::default(),
+        Default::default(),
+    )
+    .unwrap()
+    .id()
+    .model_digest;
+    let strict = construction.revalidate(declared).unwrap();
+    let after = SemanticContext::for_overlay(&strict, Default::default(), Default::default())
+        .unwrap()
+        .id()
+        .model_digest;
+    assert_eq!(before, after);
+    assert!(
+        strict
+            .declared()
+            .model()
+            .element(key.element_id())
+            .is_none()
+    );
+}
