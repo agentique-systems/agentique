@@ -1261,7 +1261,7 @@ impl ProducerClosureCertificate {
         let families = registry.descriptors.len();
         let future_effects = future_cross_subject_effects(registry, model);
         let mut states = vec![0; (subjects.len() * families).div_ceil(4)];
-        let mut blocked = vec![0_u8; subjects.len()];
+        let mut blocked = pending_provider_masks(model, context, &subjects, &positions, &immutable);
         let mut inherited_blocks = vec![0_u8; subjects.len()];
         let mut descendant_blocks = vec![0_u8; subjects.len()];
         let mut owner_blocks = vec![0_u8; subjects.len()];
@@ -1821,4 +1821,172 @@ fn scalar_changes_feature_population(
         // An unclassified extension effect cannot support an exclusion proof.
         Err(_) => true,
     }
+}
+
+/// Source/linking obligations can expose a previously invisible relationship
+/// source. They are providers outside the producer registry, so even a zero-writer
+/// certificate must retain their possible semantic effects.
+fn pending_provider_masks(
+    model: &ModelView,
+    context: &SemanticContextId,
+    subjects: &[ElementId],
+    positions: &BTreeMap<ElementId, usize>,
+    immutable: &impl Fn(ElementId) -> bool,
+) -> Vec<u8> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{metamodel::ValueKind, value::Value};
+    let mut blocked = vec![0; subjects.len()];
+    for &subject in &context.pending_specialization_scopes {
+        if let Some(&index) = positions.get(&subject) {
+            blocked[index] |= SemanticClosureRequirement::ALL
+                .into_iter()
+                .filter(|requirement| requirement.requires(ProducerEffect::Specialization))
+                .fold(0, |mask, requirement| mask | requirement.bit());
+        }
+    }
+    for &subject in &context.pending_namespace_scopes {
+        if let Some(&index) = positions.get(&subject) {
+            blocked[index] |= SemanticClosureRequirement::EffectiveMembership.bit()
+                | SemanticClosureRequirement::EffectiveNaming.bit();
+        }
+    }
+    if !context.pending_namespace_scopes.is_empty() {
+        // An unavailable source declaration population may introduce an owning
+        // carrier for an existing, currently unowned local subject. Existing
+        // composite ownership cannot be replaced additively, and protected
+        // dependency subjects cannot be adopted by a local composite carrier.
+        for (index, &subject) in subjects.iter().enumerate() {
+            if !immutable(subject)
+                && model
+                    .incoming_for_property(subject, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
+                    .next()
+                    .is_none()
+            {
+                blocked[index] |= 63;
+            }
+        }
+    }
+    for &(carrier, pending_property) in context.construction_obligations.iter() {
+        let Some(record) = model.element(carrier) else {
+            continue;
+        };
+        let is = |class| {
+            model
+                .registry()
+                .is_subtype(record.metaclass(), class)
+                .unwrap_or(false)
+        };
+        let effective = |property| {
+            model
+                .registry()
+                .resolve_property(record.metaclass(), property)
+                .ok()
+                .flatten()
+                .map(|descriptor| descriptor.id)
+        };
+        let ownership = [
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        ]
+        .into_iter()
+        .any(|property| effective(property) == Some(pending_property));
+        let (effect, source_property) = if ownership {
+            (ProducerEffect::Ownership, pending_property)
+        } else if is(c::FEATURE_TYPING) {
+            (ProducerEffect::Typing, p::FEATURE_TYPING_TYPED_FEATURE)
+        } else if is(c::REDEFINITION) {
+            (
+                ProducerEffect::Redefinition,
+                p::REDEFINITION_REDEFINING_FEATURE,
+            )
+        } else if is(c::SUBSETTING) {
+            (ProducerEffect::Subsetting, p::SUBSETTING_SUBSETTING_FEATURE)
+        } else if is(c::SPECIALIZATION) {
+            (ProducerEffect::Specialization, p::SPECIALIZATION_SPECIFIC)
+        } else if is(c::CONJUGATION) {
+            (ProducerEffect::Conjugation, p::CONJUGATION_CONJUGATED_TYPE)
+        } else if is(c::TYPE_FEATURING) {
+            (ProducerEffect::Featuring, p::TYPE_FEATURING_FEATURE_OF_TYPE)
+        } else if is(c::MEMBERSHIP) {
+            (
+                ProducerEffect::Membership,
+                p::MEMBERSHIP_MEMBERSHIP_OWNING_NAMESPACE,
+            )
+        } else if is(c::FEATURE_CHAINING) {
+            (
+                ProducerEffect::FeatureChain,
+                p::FEATURE_CHAINING_FEATURE_CHAINED,
+            )
+        } else {
+            // Unclassified required reference carriers cannot prove a negative
+            // result. Primitive missing values stay local to their subject.
+            (ProducerEffect::Scalar(pending_property), pending_property)
+        };
+        let source_property = effective(source_property).unwrap_or(source_property);
+        let mask = SemanticClosureRequirement::ALL
+            .into_iter()
+            .filter(|requirement| requirement.requires_in_model(effect, model))
+            .fold(0, |mask, requirement| mask | requirement.bit());
+        let source_domain = model
+            .registry()
+            .property(source_property)
+            .ok()
+            .and_then(|property| model.registry().storage_kind(property.value_kind).ok());
+        let mut sources: Vec<_> = if ownership {
+            vec![]
+        } else {
+            model
+                .navigation_slot(carrier, source_property)
+                .into_iter()
+                .flat_map(|slot| slot.value().values())
+                .filter_map(|value| {
+                    if let Value::Reference(id) = value {
+                        Some(*id)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        };
+        if sources.is_empty()
+            && (is(c::FEATURE_CHAINING) || is(c::REFERENCE_SUBSETTING) || is(c::MEMBERSHIP))
+        {
+            sources.extend(
+                model
+                    .incoming_for_property(carrier, p::ELEMENT_OWNED_RELATIONSHIP)
+                    .map(|reference| reference.source),
+            );
+        }
+        if !sources.is_empty() {
+            for source in sources {
+                if let Some(&index) = positions.get(&source) {
+                    blocked[index] |= mask;
+                }
+            }
+        } else if let Some(ValueKind::Reference(domain)) = source_domain {
+            for (index, &subject) in subjects.iter().enumerate() {
+                // New composite owners cannot acquire protected dependency
+                // elements; ordinary source endpoints have no such exemption.
+                let protected = ownership
+                    && immutable(subject)
+                    && model
+                        .registry()
+                        .property(pending_property)
+                        .is_ok_and(|property| property.composite);
+                if !protected
+                    && model.element(subject).is_some_and(|record| {
+                        model
+                            .registry()
+                            .is_subtype(record.metaclass(), domain)
+                            .unwrap_or(true)
+                    })
+                {
+                    blocked[index] |= mask;
+                }
+            }
+        } else if let Some(&index) = positions.get(&carrier) {
+            blocked[index] |= mask;
+        }
+    }
+    blocked
 }

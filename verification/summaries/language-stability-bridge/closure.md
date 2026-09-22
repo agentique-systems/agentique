@@ -31,3 +31,23 @@ Environment: `CARGO_INCREMENTAL=0`, `CARGO_PROFILE_DEV_DEBUG=0`,
 `CARGO_PROFILE_TEST_DEBUG=0`, `CARGO_BUILD_JOBS=2`; target directory
 `target/bridge-closure`. Package-wide tests, Clippy and strict Rustdoc follow at
 integration. These checks do not establish Systems publication acceptance.
+
+
+Provider review identified and corrected a separate zero-writer gap: unresolved
+relationship source endpoints, known-source missing targets, pending specialization
+scopes and unavailable namespace populations remain semantic provider obligations.
+Required FeatureTyping, Redefinition, Subsetting, FeatureChaining and Membership
+carriers are covered generically, including namespace providers with no kernel
+lower-bound obligation. External ordinary source endpoints may affect dependency
+subjects; unknown composite owners cannot adopt protected dependency elements.
+
+Additional outcomes:
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics` | KerML unit/integration suite passed; SysML49 passed/5 failed: legacy synthetic immutable fixtures lacked actual dependency closure authority | 101 |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib initial_closure_ -- --nocapture` | All3 adversarial provider regressions passed after generic fix | 0 |
+
+Raw package output is ignored at
+`verification/generated/language-stability-bridge/closure-package-tests.log`.
+Synthetic fixture correction remains separate from production acceptance.

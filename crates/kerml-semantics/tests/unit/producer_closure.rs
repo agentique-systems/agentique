@@ -3430,3 +3430,205 @@ fn new_writer_opportunities_reopen_equal_looking_conclusions() {
             .is_closed(id(2), SemanticClosureRequirement::EffectiveTyping)
     );
 }
+
+#[test]
+fn reconstruction_reopens_producer_when_detached_output_disappears() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let output = DerivationKey {
+        rule: RuleId::from_u128(99191),
+        subject: id(1),
+        output: OutputKey::from_u128(99192),
+    };
+    let mut builder = agq_kernel::derived::DerivationBuilder::new(snapshot.clone());
+    builder.element(
+        output,
+        c::CLASSIFIER,
+        snapshot
+            .model()
+            .element(id(2))
+            .unwrap()
+            .slots()
+            .map(|(property, slot)| (property, slot.value().clone())),
+        BTreeSet::new(),
+    );
+    let overlay = builder.build().unwrap();
+    assert_eq!(
+        snapshot.model().element(id(1)),
+        overlay.model().element(id(1))
+    );
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let context = SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(1), overlay.model(), &registry);
+    table
+        .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(1), TYPE, vec![ProducerRead::Structural(id(1))].into())],
+        &registry,
+    );
+    let certificate =
+        ProducerClosureCertificate::issue(overlay.model(), context.id(), &registry, &table, |_| {
+            false
+        });
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    drop(context);
+    drop(overlay);
+    let new = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&new, &registry).unwrap();
+    assert_eq!(rebound.reopened_evaluations, 1);
+    assert!(rebound.affected_subjects.contains(&id(1)));
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
+}
+
+#[test]
+fn initial_closure_must_not_close_an_unidentified_pending_typing_provider() {
+    let mut f = Fixture::new();
+    f.create(1, c::FEATURE);
+    f.create(2, c::CLASSIFIER);
+    f.create(3, c::FEATURE_TYPING);
+    f.value(3, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+    // The relationship exists but its required source has not yet linked.
+    // Reconstruction can fill this endpoint with the existing Feature 1.
+    let construction = f.construction();
+    assert!(!construction.obligations().is_empty());
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Never,
+    )])
+    .unwrap();
+    let context =
+        SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    let types = queries.feature_types(id(1));
+    assert!(types.value.is_empty());
+    let absent = queries.producer_closure(id(1), SemanticClosureRequirement::EffectiveTyping);
+    assert_eq!(
+        absent.completeness,
+        Completeness::Incomplete,
+        "unidentified provider obligations {:?} must keep typing absence open; types={types:?}; closure={absent:?}",
+        construction.obligations(),
+    );
+}
+
+#[test]
+fn initial_closure_keeps_pending_relationship_provider_populations_open() {
+    for (label, class, target_property, requirement) in [
+        (
+            "redefinition",
+            c::REDEFINITION,
+            Some(p::REDEFINITION_REDEFINED_FEATURE),
+            SemanticClosureRequirement::EffectiveTyping,
+        ),
+        (
+            "subsetting",
+            c::SUBSETTING,
+            Some(p::SUBSETTING_SUBSETTED_FEATURE),
+            SemanticClosureRequirement::EffectiveTyping,
+        ),
+        (
+            "chaining",
+            c::FEATURE_CHAINING,
+            None,
+            SemanticClosureRequirement::EffectiveTyping,
+        ),
+        (
+            "membership",
+            c::MEMBERSHIP,
+            None,
+            SemanticClosureRequirement::EffectiveMembership,
+        ),
+    ] {
+        let mut f = Fixture::new();
+        f.create(1, c::FEATURE);
+        f.create(2, c::FEATURE);
+        f.create(3, class);
+        if let Some(property) = target_property {
+            f.value(3, property, Value::Reference(id(2)));
+        } else {
+            f.own(1, 3);
+        }
+        let construction = f.construction();
+        assert!(!construction.obligations().is_empty(), "{label}");
+        let registry = ProducerRegistry::new([ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::Typing],
+            ProducerApplicability::Never,
+        )])
+        .unwrap();
+        let context =
+            SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(registry.digest())
+                .unwrap();
+        let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+        assert!(
+            !certificate.is_closed(id(1), requirement),
+            "{label} pending provider {:?} cannot close {requirement:?}",
+            construction.obligations()
+        );
+    }
+}
+
+#[test]
+fn initial_closure_requires_a_closed_pending_namespace_owner_provider() {
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.value(1, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    f.create(2, c::BEHAVIOR);
+    f.create(3, c::FEATURE_MEMBERSHIP);
+    f.own(2, 3);
+    // OwningMembership endpoints are derived from their owned-related collection.
+    // This missing source population is marked by the pending namespace contract,
+    // even though it is not a required stored-slot construction obligation.
+    let construction = f.construction();
+    assert!(construction.obligations().is_empty());
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Never,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_project_construction(
+        &construction,
+        Default::default(),
+        BTreeSet::new(),
+        BTreeSet::new(),
+        BTreeSet::from([id(2)]),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    let absent = queries
+        .formal_constraint_applies(FormalConstraintId::StepSubperformanceSpecialization, id(1));
+    assert_eq!(
+        absent.completeness,
+        Completeness::Incomplete,
+        "source provider 2 may still attach FeatureMembership 3 to Step 1: {absent:?}"
+    );
+}
