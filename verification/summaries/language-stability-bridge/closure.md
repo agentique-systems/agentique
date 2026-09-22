@@ -51,3 +51,12 @@ Additional outcomes:
 Raw package output is ignored at
 `verification/generated/language-stability-bridge/closure-package-tests.log`.
 Synthetic fixture correction remains separate from production acceptance.
+
+Follow-up provider review closes causal transport and delayed carrier ownership:
+retained producers reading an opened requirement are reopened transitively, and
+namespace attachment of an existing owning relationship reopens its descendants.
+The reviewed regressions are retained as permanent focused tests.
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib producer_closure -- --nocapture` | 53 passed, 0 failed; 10.23 seconds. Compact 60,000-subject proof: 2,220,216 bytes, 6,082 ms issuance | 0 |

@@ -629,6 +629,7 @@ impl ProducerEvaluationTable {
         subjects: &[ElementId],
         positions: &BTreeMap<ElementId, usize>,
         immutable: &impl Fn(ElementId) -> bool,
+        provider_masks: &[u8],
     ) -> BTreeSet<usize> {
         let families = registry.descriptors.len();
         let future_effects = future_cross_subject_effects(registry, model);
@@ -678,6 +679,32 @@ impl ProducerEvaluationTable {
                     let pair = i * families + j;
                     blocked.insert(pair);
                     pending.push_back(pair);
+                }
+            }
+        }
+        // A completed producer may depend on a source provider that has no
+        // producer-family row. Seed those causal blockers before propagating
+        // potential writer effects, including transitive requirement reads.
+        let has_pending_providers = provider_masks.iter().any(|mask| *mask != 0);
+        for (&subject, row) in &self.rows {
+            for (family, state) in row.iter().enumerate() {
+                if !has_pending_providers || *state != ProducerEvaluationState::EvaluatedComplete {
+                    continue;
+                }
+                let reads = self
+                    .reads
+                    .get(&subject)
+                    .and_then(|reads| reads.iter().find(|(index, _)| *index == family));
+                let affected = reads.is_none_or(|(_, reads)| {
+                    reads
+                        .iter()
+                        .any(|read| provider_changes_read(read, model, positions, provider_masks))
+                });
+                if affected {
+                    let pair = positions[&subject] * families + family;
+                    if blocked.insert(pair) {
+                        pending.push_back(pair);
+                    }
                 }
             }
         }
@@ -1275,7 +1302,7 @@ impl ProducerClosureCertificate {
         let mut closed_pairs = 0;
         let mut incomplete_pairs = 0;
         let dependency_blocked =
-            table.dependency_blocked(model, registry, &subjects, &positions, &immutable);
+            table.dependency_blocked(model, registry, &subjects, &positions, &immutable, &blocked);
         for (i, &subject) in subjects.iter().enumerate() {
             let record = model.element(subject).expect("indexed subject");
             for (j, descriptor) in registry.descriptors.iter().enumerate() {
@@ -1988,5 +2015,106 @@ fn pending_provider_masks(
             blocked[index] |= mask;
         }
     }
+    // A provider can attach an already existing ownership carrier. Its child
+    // then acquires an owning Type without changing the child's own membership.
+    let mut ownership_masks: Vec<_> = blocked
+        .iter()
+        .map(|mask| {
+            if mask & SemanticClosureRequirement::EffectiveOwnership.bit() != 0 {
+                *mask
+            } else {
+                0
+            }
+        })
+        .collect();
+    if ownership_masks.iter().all(|mask| *mask == 0) {
+        return blocked;
+    }
+    let mut owned = vec![Vec::new(); subjects.len()];
+    for (index, &subject) in subjects.iter().enumerate() {
+        for property in [
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        ] {
+            let property = model
+                .element(subject)
+                .and_then(|record| {
+                    model
+                        .registry()
+                        .resolve_property(record.metaclass(), property)
+                        .ok()
+                        .flatten()
+                })
+                .map_or(property, |descriptor| descriptor.id);
+            if let Some(slot) = model.navigation_slot(subject, property) {
+                for value in slot.value().values() {
+                    if let Value::Reference(child) = value
+                        && let Some(&child) = positions.get(child)
+                    {
+                        owned[index].push(child);
+                    }
+                }
+            }
+        }
+    }
+    propagate(&mut ownership_masks, &owned);
+    for (mask, ownership) in blocked.iter_mut().zip(ownership_masks) {
+        *mask |= ownership;
+    }
     blocked
+}
+
+fn provider_changes_read(
+    read: &ProducerRead,
+    model: &ModelView,
+    positions: &BTreeMap<ElementId, usize>,
+    masks: &[u8],
+) -> bool {
+    use agq_kerml::{classes as c, properties as p};
+    let mask = |id| positions.get(&id).map_or(0, |&index| masks[index]);
+    match read {
+        ProducerRead::Global | ProducerRead::Inverse => masks.iter().any(|mask| *mask != 0),
+        ProducerRead::Requirement(id, requirement) => mask(*id) & requirement.bit() != 0,
+        ProducerRead::Property(id, property) => {
+            let fixed = model
+                .element(*id)
+                .and_then(|record| record.slot(*property))
+                .is_some_and(|slot| {
+                    matches!(slot.value(), agq_kernel::value::SlotValue::Scalar(_))
+                });
+            !fixed && mask(*id) != 0
+        }
+        ProducerRead::Source(id, class, property) => {
+            if [
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            ]
+            .contains(property)
+            {
+                mask(*id) & SemanticClosureRequirement::EffectiveOwnership.bit() != 0
+            } else {
+                provider_changes_read(&ProducerRead::Owned(*id, *class), model, positions, masks)
+            }
+        }
+        ProducerRead::Owned(id, class) | ProducerRead::OwnedExcluding(id, class, _) => {
+            let is = |base| model.registry().is_subtype(*class, base).unwrap_or(true);
+            let requirement =
+                if is(c::SPECIALIZATION) || is(c::FEATURE_CHAINING) || is(c::CONJUGATION) {
+                    Some(SemanticClosureRequirement::EffectiveTyping)
+                } else if is(c::MEMBERSHIP) {
+                    Some(SemanticClosureRequirement::EffectiveMembership)
+                } else if is(c::TYPE_FEATURING) {
+                    Some(SemanticClosureRequirement::EffectiveFeaturing)
+                } else {
+                    None
+                };
+            requirement.map_or(mask(*id) != 0, |requirement| {
+                mask(*id) & requirement.bit() != 0
+            })
+        }
+        ProducerRead::FeaturePopulation(id, _) => {
+            mask(*id) & SemanticClosureRequirement::EffectiveMembership.bit() != 0
+        }
+        ProducerRead::Structural(id) | ProducerRead::Any(id) => mask(*id) != 0,
+    }
 }

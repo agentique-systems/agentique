@@ -3632,3 +3632,111 @@ fn initial_closure_requires_a_closed_pending_namespace_owner_provider() {
         "source provider 2 may still attach FeatureMembership 3 to Step 1: {absent:?}"
     );
 }
+
+#[test]
+fn rebound_pending_provider_reopens_transitive_requirement_readers() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut descriptor = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Specialization],
+        ProducerApplicability::Any,
+    );
+    descriptor.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    for subject in [id(1), id(2), id(3)] {
+        table.pending(subject, snapshot.model(), &registry);
+        table
+            .record(&[(subject, TYPE, Completeness::Complete)], &registry)
+            .unwrap();
+        let reads = if subject == id(3) {
+            vec![ProducerRead::Requirement(
+                id(1),
+                SemanticClosureRequirement::EffectiveTyping,
+            )]
+        } else {
+            vec![ProducerRead::Structural(subject)]
+        };
+        table.record_reads(&[(subject, TYPE, reads.into())], &registry);
+    }
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    assert!(certificate.is_closed(id(3), SemanticClosureRequirement::EffectiveTyping));
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    let mut f = Fixture {
+        changes: snapshot.change_set(),
+        base: snapshot,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::FEATURE_TYPING);
+    f.value(4, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+    let construction = f.construction();
+    let new = SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&new, &registry).unwrap();
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(3), SemanticClosureRequirement::EffectiveTyping),
+        "a retained producer depends on newly open provider requirement 1: {rebound:?}"
+    );
+}
+
+#[test]
+fn initial_pending_namespace_keeps_unattached_owning_membership_open() {
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.value(1, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    f.create(2, c::BEHAVIOR);
+    f.create(3, c::FEATURE_MEMBERSHIP);
+    f.changes.set(
+        id(3),
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        SlotValue::Ordered(vec![Value::Reference(id(1))]),
+        origin(),
+    );
+    let construction = f.construction();
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Never,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_project_construction(
+        &construction,
+        Default::default(),
+        BTreeSet::new(),
+        BTreeSet::new(),
+        BTreeSet::from([id(2)]),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    assert_eq!(queries.owning_relationship(id(1)).value, Some(id(3)));
+    let absent = queries
+        .formal_constraint_applies(FormalConstraintId::StepSubperformanceSpecialization, id(1));
+    assert_eq!(
+        absent.completeness,
+        Completeness::Incomplete,
+        "pending namespace 2 can attach existing membership 3 and give Step 1 an owning Type: {absent:?}"
+    );
+}
