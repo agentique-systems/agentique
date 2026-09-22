@@ -1,4 +1,7 @@
-use agq_kernel::{ElementId, ModelView, RevisionId, Snapshot, derived::DerivedOverlay};
+use agq_kernel::{
+    ElementId, ModelView, RevisionId, Snapshot,
+    derived::{ConstructionOverlay, DerivedOverlay},
+};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -134,15 +137,33 @@ impl<'m> SemanticContext<'m> {
         pending_specializations: BTreeSet<ElementId>,
         pending_namespaces: BTreeSet<ElementId>,
     ) -> Result<Self, ContextError> {
-        let mut context = Self::for_construction(candidate, options, libraries)?;
+        Self::for_construction(candidate, options, libraries)?
+            .with_pending_scopes(pending_specializations, pending_namespaces)
+    }
+    /// Bind a producer frontier over an unpublished project. The current
+    /// frontier's obligations and pending source scopes remain incomplete.
+    pub fn for_project_construction_overlay(
+        overlay: &'m ConstructionOverlay,
+        options: SemanticOptions,
+        libraries: BTreeSet<LibraryPin>,
+        pending_specializations: BTreeSet<ElementId>,
+        pending_namespaces: BTreeSet<ElementId>,
+    ) -> Result<Self, ContextError> {
+        Self::for_construction_overlay(overlay, options, libraries)?
+            .with_pending_scopes(pending_specializations, pending_namespaces)
+    }
+    fn with_pending_scopes(
+        mut self,
+        pending_specializations: BTreeSet<ElementId>,
+        pending_namespaces: BTreeSet<ElementId>,
+    ) -> Result<Self, ContextError> {
         for (&class, scopes) in [
             (&agq_kerml::classes::TYPE, &pending_specializations),
             (&agq_kerml::classes::NAMESPACE, &pending_namespaces),
         ] {
             for &id in scopes {
-                if !candidate.model().element(id).is_some_and(|record| {
-                    candidate
-                        .model()
+                if !self.model.element(id).is_some_and(|record| {
+                    self.model
                         .registry()
                         .is_subtype(record.metaclass(), class)
                         .unwrap_or(false)
@@ -151,9 +172,9 @@ impl<'m> SemanticContext<'m> {
                 }
             }
         }
-        context.id.pending_specialization_scopes = pending_specializations;
-        context.id.pending_namespace_scopes = pending_namespaces;
-        Ok(context)
+        self.id.pending_specialization_scopes = pending_specializations;
+        self.id.pending_namespace_scopes = pending_namespaces;
+        Ok(self)
     }
     /// Install exact root availability. Library roots can exclude authored roots
     /// while authored projects explicitly depend on the library roots.
@@ -247,6 +268,24 @@ impl<'m> SemanticContext<'m> {
     ) -> Result<Self, ContextError> {
         let mut context = Self::bind(overlay.model(), overlay.base_revision(), options, libraries)?;
         context.id.derivation_phase = crate::DerivationPhase::PartialDerivationOverlay;
+        Ok(context)
+    }
+    /// Bind an unpublished derivation without claiming producer closure or
+    /// structural publication. Obligations describe this frontier, including
+    /// missing values on newly derived records.
+    pub fn for_construction_overlay(
+        overlay: &'m ConstructionOverlay,
+        options: SemanticOptions,
+        libraries: BTreeSet<LibraryPin>,
+    ) -> Result<Self, ContextError> {
+        let mut context = Self::bind(overlay.model(), overlay.base_revision(), options, libraries)?;
+        context.id.derivation_phase = crate::DerivationPhase::PartialDerivationOverlay;
+        context.id.construction_obligations = overlay
+            .obligations()
+            .iter()
+            .map(|o| (o.element, o.property))
+            .collect::<BTreeSet<_>>()
+            .into();
         Ok(context)
     }
     fn bind(

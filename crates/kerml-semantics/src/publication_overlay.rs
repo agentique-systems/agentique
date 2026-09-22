@@ -6,7 +6,7 @@ use crate::*;
 use agq_kerml::{BaselineProfile, classes as c};
 use agq_kernel::{
     ElementId, ModelView, Snapshot,
-    derived::{DerivationError, DerivedOverlay},
+    derived::{ConstructionOverlay, DerivationError, DerivedOverlay},
     provenance::{DeclaredOrigin, Dependency, FactKey, Origin},
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -119,6 +119,53 @@ impl CompletePublicationOverlay {
         }
         let context = SemanticContext::for_project_construction(
             candidate,
+            self.context.options.clone(),
+            self.context.pinned_libraries.clone(),
+            pending_specializations,
+            pending_namespaces,
+        )?;
+        self.attach_project_context(context, local_roots)
+    }
+    /// Bind a producer frontier over new local declarations. The exact accepted
+    /// dependency remains sealed; its namespace availability is unchanged.
+    pub fn project_overlay_context<'m>(
+        &self,
+        overlay: &'m DerivedOverlay,
+        local_roots: &[ElementId],
+    ) -> Result<SemanticContext<'m>, ContextError> {
+        if !overlay
+            .declared()
+            .immutable_dependency()
+            .is_some_and(|dependency| std::ptr::eq(dependency.model(), self.overlay.model()))
+        {
+            return Err(ContextError::PublicationDependencyMismatch);
+        }
+        let context = SemanticContext::for_overlay(
+            overlay,
+            self.context.options.clone(),
+            self.context.pinned_libraries.clone(),
+        )?;
+        self.attach_project_context(context, local_roots)
+    }
+    /// Bind an unpublished producer frontier over this exact protected
+    /// dependency. Missing values and pending source scopes remain explicit;
+    /// accepted library roots retain their original namespace availability.
+    pub fn project_construction_overlay_context<'m>(
+        &self,
+        overlay: &'m ConstructionOverlay,
+        local_roots: &[ElementId],
+        pending_specializations: BTreeSet<ElementId>,
+        pending_namespaces: BTreeSet<ElementId>,
+    ) -> Result<SemanticContext<'m>, ContextError> {
+        if !overlay
+            .declared()
+            .immutable_dependency()
+            .is_some_and(|dependency| std::ptr::eq(dependency.model(), self.overlay.model()))
+        {
+            return Err(ContextError::PublicationDependencyMismatch);
+        }
+        let context = SemanticContext::for_project_construction_overlay(
+            overlay,
             self.context.options.clone(),
             self.context.pinned_libraries.clone(),
             pending_specializations,
@@ -652,3 +699,160 @@ impl PublicationChecks<'_> {
 #[cfg(test)]
 #[path = "../tests/unit/publication_reads.rs"]
 mod tests;
+
+#[cfg(test)]
+mod construction_context_tests {
+    use crate as agq_kerml_semantics;
+    include!("../tests/common/namespace_fixture.rs");
+    use super::CompletePublicationOverlay;
+    use agq_kernel::derived::{ConstructionDerivationBuilder, DerivationBuilder};
+
+    fn publication() -> CompletePublicationOverlay {
+        let mut fixture = Fixture::new();
+        fixture.create(1, c::PACKAGE);
+        let overlay = DerivationBuilder::new(fixture.finish()).build().unwrap();
+        let context =
+            SemanticContext::for_overlay(&overlay, Default::default(), Default::default())
+                .unwrap()
+                .with_available_roots(BTreeMap::from([(id(1), BTreeSet::from([id(1)]))]))
+                .unwrap()
+                .id()
+                .clone();
+        CompletePublicationOverlay {
+            overlay,
+            context,
+            checked: BTreeMap::new(),
+            stages: Vec::new(),
+            counters: Default::default(),
+            restored_from_receipt: false,
+        }
+    }
+
+    fn frontier(publication: &CompletePublicationOverlay) -> super::ConstructionOverlay {
+        let base = Snapshot::with_immutable_dependency(Arc::new(publication.overlay.clone()));
+        let changes = base.change_set();
+        let mut fixture = Fixture {
+            base,
+            changes,
+            owned: BTreeMap::new(),
+        };
+        fixture.create(100, c::PACKAGE);
+        fixture.create(101, c::CLASS);
+        fixture.create(200, c::SPECIALIZATION);
+        fixture.value(200, p::SPECIALIZATION_SPECIFIC, Value::Reference(id(101)));
+        let declared = Arc::new(fixture.construction());
+        assert_eq!(declared.obligations().len(), 1);
+        let mut builder = ConstructionDerivationBuilder::for_construction(declared);
+        builder.element(
+            DerivationKey {
+                rule: RuleId::from_u128(900),
+                subject: id(101),
+                output: OutputKey::from_u128(901),
+            },
+            c::SPECIALIZATION,
+            [
+                (
+                    p::RELATIONSHIP_IS_IMPLIED,
+                    SlotValue::Scalar(Value::Boolean(true)),
+                ),
+                (
+                    p::SPECIALIZATION_SPECIFIC,
+                    SlotValue::Scalar(Value::Reference(id(101))),
+                ),
+            ],
+            BTreeSet::from([Dependency::Declared(FactKey::Element(id(101)))]),
+        );
+        builder.build().unwrap()
+    }
+
+    #[test]
+    fn construction_overlay_context_retains_current_obligations_and_protected_root_scopes() {
+        let publication = publication();
+        let overlay = frontier(&publication);
+        assert!(overlay.obligations().len() > overlay.declared().obligations().len());
+        assert!(overlay.obligations().iter().any(|obligation| {
+            obligation.element != id(200) && obligation.property == p::SPECIALIZATION_GENERAL
+        }));
+        let context = publication
+            .project_construction_overlay_context(
+                &overlay,
+                &[id(100)],
+                BTreeSet::from([id(101)]),
+                BTreeSet::from([id(100)]),
+            )
+            .unwrap();
+        assert_eq!(
+            context.id().derivation_phase,
+            DerivationPhase::PartialDerivationOverlay
+        );
+        assert_eq!(context.id().revision, overlay.base_revision());
+        assert_eq!(
+            *context.id().construction_obligations,
+            overlay
+                .obligations()
+                .iter()
+                .map(|o| (o.element, o.property))
+                .collect()
+        );
+        assert_eq!(
+            context.id().pending_specialization_scopes,
+            BTreeSet::from([id(101)])
+        );
+        assert_eq!(
+            context.id().pending_namespace_scopes,
+            BTreeSet::from([id(100)])
+        );
+        assert_eq!(
+            context.id().available_roots[&id(1)],
+            BTreeSet::from([id(1)])
+        );
+        assert_eq!(
+            context.id().available_roots[&id(100)],
+            BTreeSet::from([id(1), id(100)])
+        );
+        assert_eq!(
+            context.id().publication_dependency_digest,
+            Some(publication.context.model_digest)
+        );
+        assert_eq!(context.id().options, publication.context.options);
+        assert_eq!(
+            context.id().pinned_libraries,
+            publication.context.pinned_libraries
+        );
+        let without_pending = publication
+            .project_construction_overlay_context(
+                &overlay,
+                &[id(100)],
+                BTreeSet::new(),
+                BTreeSet::new(),
+            )
+            .unwrap();
+        assert_ne!(context.id(), without_pending.id());
+        assert!(std::ptr::eq(context.model, overlay.model()));
+    }
+
+    #[test]
+    fn construction_overlay_context_rejects_foreign_dependency_and_invalid_scopes() {
+        let accepted = publication();
+        let overlay = frontier(&accepted);
+        let foreign = publication();
+        assert!(matches!(
+            foreign.project_construction_overlay_context(
+                &overlay,
+                &[id(100)],
+                BTreeSet::new(),
+                BTreeSet::new()
+            ),
+            Err(ContextError::PublicationDependencyMismatch)
+        ));
+        for (roots, specializations, namespaces) in [
+            (vec![id(100)], BTreeSet::from([id(200)]), BTreeSet::new()),
+            (vec![id(100)], BTreeSet::new(), BTreeSet::from([id(200)])),
+            (vec![id(200)], BTreeSet::new(), BTreeSet::new()),
+        ] {
+            assert!(matches!(accepted.project_construction_overlay_context(
+                &overlay, &roots, specializations, namespaces
+            ), Err(ContextError::InvalidPendingScope(bad)) if bad == id(200)));
+        }
+    }
+}
