@@ -197,3 +197,15 @@ query evaluators, then checks shared Arc identity. Its focused rerun passed:
 `cargo test --locked --offline -p agq-kerml-semantics --test cross_features_v10
 produced_value_infrastructure_does_not_become_an_owned_cross_feature -- --nocapture`
 (exit 0, one test, 0.34 seconds). Package verification continues below.
+
+Final selected-population verification at `522b17c`:
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --no-fail-fast` | KerML 147 unit tests and all integration suites passed, 2 scale probes ignored; SysML 63 passed in 47.81 seconds; both doc-test suites passed | 0 |
+| `cargo clippy --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings | 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --no-deps` | Both public semantic APIs documented without warnings | 0 |
+| `cargo fmt --all -- --check` | No output | 0 |
+
+Raw package output is ignored at
+`verification/generated/language-stability-bridge/selected-inverse-package-tests-final.log`.
