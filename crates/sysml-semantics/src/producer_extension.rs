@@ -14,6 +14,7 @@ pub struct SysmlProducerExtension {
     profile: SysmlBaselineProfile,
     bindings: StandardSysmlBindings,
     roots: Vec<ElementId>,
+    stable_properties: bool,
 }
 impl SysmlProducerExtension {
     /// Roots include local Systems declarations and accepted KerML namespaces.
@@ -27,6 +28,24 @@ impl SysmlProducerExtension {
             profile,
             bindings,
             roots,
+            stable_properties: true,
+        }
+    }
+
+    /// Bootstrap inherited reference targets using positive structural rules.
+    /// This explicitly unpublished mode omits `mayTimeVary` in every stratum;
+    /// its result cannot establish complete SysML producer closure. Once source
+    /// endpoints construct strictly, publication must use the full `new` mode.
+    pub fn for_reference_refinement(
+        profile: SysmlBaselineProfile,
+        bindings: StandardSysmlBindings,
+        roots: Vec<ElementId>,
+    ) -> Self {
+        Self {
+            profile,
+            bindings,
+            roots,
+            stable_properties: false,
         }
     }
 }
@@ -61,7 +80,7 @@ impl PublicationProducerExtension for SysmlProducerExtension {
         sysml_producers_apply(model, class)
     }
     fn has_stable_properties(&self) -> bool {
-        true
+        self.stable_properties
     }
     fn contribute<'m>(
         &self,
@@ -76,7 +95,8 @@ impl PublicationProducerExtension for SysmlProducerExtension {
         {
             contribute(result, plan)?;
         }
-        if stratum != ResultStructureStratum::Structural
+        if self.stable_properties
+            && stratum != ResultStructureStratum::Structural
             && queries.model().element(subject).is_some_and(|record| {
                 queries
                     .model()
@@ -99,3 +119,7 @@ impl PublicationProducerExtension for SysmlProducerExtension {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "producer_extension_tests.rs"]
+mod tests;

@@ -226,5 +226,42 @@
       }
     ],
     "full_corpus_run": false
+  },
+  "reference_refinement_mode": {
+    "scope": "Explicit unpublished structural-only SysmlProducerExtension::for_reference_refinement; full new() semantics unchanged",
+    "verified": [
+      "Bootstrap contributes positive base relationships in every stratum",
+      "Bootstrap never emits mayTimeVary, including an explicitly requested StableProperties or ContextualBindings contribution",
+      "Full mode still emits mayTimeVary after Structural",
+      "Neither mode promotes a materialized plan from PartialDerivationOverlay"
+    ],
+    "commands": [
+      {
+        "command": "cargo test -p agq-sysml-semantics producer_extension",
+        "exit": 1,
+        "output": "Initial test compile used record instead of ElementId; fixture accessor corrected"
+      },
+      {
+        "command": "cargo test -p agq-sysml-semantics producer_extension",
+        "exit": 0,
+        "output": "1 passed;0 failed;0.83s"
+      },
+      {
+        "command": "cargo clippy -p agq-sysml-semantics --all-targets -- -D warnings",
+        "exit": 0,
+        "output": "Finished dev profile2.34s"
+      },
+      {
+        "command": "cargo fmt -p agq-sysml-semantics -- --check",
+        "exit": 0,
+        "output": "No formatting differences"
+      },
+      {
+        "command": "RUSTDOCFLAGS=-D warnings cargo doc -p agq-sysml-semantics --no-deps",
+        "exit": 0,
+        "output": "Generated documentation;2.77s"
+      }
+    ],
+    "limitation": "Root integration must select full mode for final strict publication closure; no full corpus run performed by this stage"
   }
 }
