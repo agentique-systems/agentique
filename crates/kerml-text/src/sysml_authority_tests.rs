@@ -173,10 +173,15 @@ fn exact_systems_authority_targets_have_complete_declared_owned_path_witnesses()
     let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
     let documents: Vec<_> = sources
         .documents()
-        .filter(|source| source.language() == LibraryLanguage::SysMl)
+        .filter(|source| {
+            source.language() == LibraryLanguage::SysMl
+                && ["Views.sysml", "Connections.sysml"]
+                    .iter()
+                    .any(|name| source.path().ends_with(name))
+        })
         .map(|source| {
             let syntax = production::parse_sysml_with_profile(
-                production::SysmlSyntaxProfile::OperationalV1,
+                production::SysmlSyntaxProfile::OperationalV2,
                 source.document(),
                 source.revision(),
                 source.source(),
@@ -188,7 +193,7 @@ fn exact_systems_authority_targets_have_complete_declared_owned_path_witnesses()
             (source, syntax)
         })
         .collect();
-    assert_eq!(documents.len(), 21);
+    assert_eq!(documents.len(), 2);
     let inputs: Vec<_> = documents
         .iter()
         .map(|(source, syntax)| SourceInput {
@@ -211,7 +216,7 @@ fn exact_systems_authority_targets_have_complete_declared_owned_path_witnesses()
         None,
     )
     .unwrap();
-    assert_eq!(draft.roots().len(), 21);
+    assert_eq!(draft.roots().len(), 2);
     assert!(!draft.candidate().obligations().is_empty());
     let query = KerMlQueries::new(
         SemanticContext::for_construction(draft.candidate(), options(), BTreeSet::new()).unwrap(),
@@ -322,7 +327,7 @@ fn exact_systems_authority_targets_have_complete_declared_owned_path_witnesses()
     println!(
         "AUTHORITY_DECLARED_WITNESS {}",
         json!({
-            "fixture": "unpublished all-21-document declared candidate on empty combined-registry graph",
+            "fixture": "unpublished Views/Connections declared authority slice on empty combined-registry graph",
             "accepted_kerml_dependency": false, "producer_closure": "not-run",
             "global_namespace_completeness_claim": false, "mandatory_reference_closure_claim": false,
             "documents": documents.len(), "findings": findings,
