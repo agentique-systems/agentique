@@ -116,6 +116,93 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
       }
+    },
+    {
+      "name": "declared-source-closure-correction-independent",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_closure_tests",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eadad432e35b53024511a9be8faaab600d433aa6",
+      "working_changes_sha256": "cbf6ed199e675437a3f6daf90496a415328fee2af5498c1abe0e9830a2a838ec",
+      "output_sha256": "e14bdb2bfdfafc52b02d5105c8a93df68a0fa9dc58301d50cd6a66cef8dc1a86",
+      "duration_seconds": 28.47,
+      "output": "verification/generated/language-stability-bridge/declared-source-closure-correction-independent.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "declared-source-context-identity-independent",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_source_identity_is_opt_in_and_registry_reattachment_is_idempotent",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eadad432e35b53024511a9be8faaab600d433aa6",
+      "working_changes_sha256": "cbf6ed199e675437a3f6daf90496a415328fee2af5498c1abe0e9830a2a838ec",
+      "output_sha256": "293786ddf375475dc1f2f1b409a76315135276434b9e0e7d89d8d88501e402c4",
+      "duration_seconds": 0.28,
+      "output": "verification/generated/language-stability-bridge/declared-source-context-identity-independent.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "declared-source-anchor-provenance-independent",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "standard_anchor_path_requires_original_declared_ownership",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eadad432e35b53024511a9be8faaab600d433aa6",
+      "working_changes_sha256": "cbf6ed199e675437a3f6daf90496a415328fee2af5498c1abe0e9830a2a838ec",
+      "output_sha256": "4120d3efdd26a924f4ec0479e65530d1cdb66d7f1668e9f7b243f498850295a7",
+      "duration_seconds": 19.27,
+      "output": "verification/generated/language-stability-bridge/declared-source-anchor-provenance-independent.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
     }
   ]
 }
