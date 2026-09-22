@@ -961,6 +961,33 @@
         "CARGO_PROFILE_RELEASE_LTO": "false",
         "CARGO_PROFILE_RELEASE_DEBUG": "0"
       }
+    },
+    {
+      "name": "scoped-failure-diagnostics",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "48d37d51a3c97d5f0f9702c8ee9ce2f230bdc5eb",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "0ae794351967dc958ac67766eec0e799dec8fba906cb1704eed1cf684b8e594b",
+      "duration_seconds": 2.95,
+      "output": "verification/generated/producer-closure-certificate/scoped-failure-diagnostics.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }
