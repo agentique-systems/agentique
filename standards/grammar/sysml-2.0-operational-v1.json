@@ -1,0 +1,62 @@
+{
+  "format": "agentique-sysml-grammar-compatibility/1",
+  "profile": "agentique-sysml-2.0-operational/1",
+  "published_profile": "omg-sysml-2.0-published/1",
+  "authority": {
+    "path": "SysML.pdf",
+    "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a",
+    "pdf_pages": [
+      197,
+      224
+    ],
+    "printed_pages": [
+      165,
+      192
+    ]
+  },
+  "authorization": "Explicit SysML Systems Library publication milestone instructions, Parts A1-A5; four reviewed compatibility decisions adopted without changing original sources or the published grammar.",
+  "prior_review": "verification/summaries/sysml-semantic-foundation/grammar-preparation-review.json",
+  "published_grammar": {
+    "path": "standards/grammar/sysml-2.0.ebnf",
+    "sha256": "c1514c5ab584f185749cc5d3ecfa0bfbe0411d5d9f4840886c8314e372adff44",
+    "hash_encoding": "UTF-8 with LF; original maintained grammar unchanged"
+  },
+  "systems_artifact": {
+    "path": "standards/artifacts/Systems-Library.kpar",
+    "sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f"
+  },
+  "changes": [
+    {
+      "decision": "SYSTEMS-GRAMMAR-ALLOCATION-DISPATCH",
+      "production": "DefinitionElement",
+      "published_rhs": "Package | LibraryPackage | AnnotatingElement | Dependency | AttributeDefinition | EnumerationDefinition | OccurrenceDefinition | IndividualDefinition | ItemDefinition | PartDefinition | ConnectionDefinition | FlowDefinition | InterfaceDefinition | PortDefinition | ActionDefinition | CalculationDefinition | StateDefinition | ConstraintDefinition | RequirementDefinition | ConcernDefinition | CaseDefinition | AnalysisCaseDefinition | VerificationCaseDefinition | UseCaseDefinition | ViewDefinition | ViewpointDefinition | RenderingDefinition | MetadataDefinition | ExtendedDefinition",
+      "operational_rhs": "Package | LibraryPackage | AnnotatingElement | Dependency | AttributeDefinition | EnumerationDefinition | OccurrenceDefinition | IndividualDefinition | ItemDefinition | PartDefinition | ConnectionDefinition | FlowDefinition | InterfaceDefinition | PortDefinition | ActionDefinition | CalculationDefinition | StateDefinition | ConstraintDefinition | RequirementDefinition | ConcernDefinition | CaseDefinition | AnalysisCaseDefinition | VerificationCaseDefinition | UseCaseDefinition | ViewDefinition | ViewpointDefinition | RenderingDefinition | MetadataDefinition | ExtendedDefinition | AllocationDefinition"
+    },
+    {
+      "decision": "SYSTEMS-GRAMMAR-CASE-RETURN",
+      "production": "CaseBodyItem",
+      "published_rhs": "ActionBodyItem | SubjectMember | ActorMember | ObjectiveMember",
+      "operational_rhs": "ActionBodyItem | SubjectMember | ActorMember | ObjectiveMember | ReturnParameterMember"
+    },
+    {
+      "decision": "SYSTEMS-GRAMMAR-END-USAGE-PREFIX",
+      "production": "DefaultReferenceUsage",
+      "published_rhs": "RefPrefix Usage",
+      "operational_rhs": "( EndUsagePrefix | RefPrefix ) Usage"
+    },
+    {
+      "decision": "SYSTEMS-GRAMMAR-END-USAGE-PREFIX",
+      "production": "OccurrenceUsagePrefix",
+      "published_rhs": "BasicUsagePrefix ( 'individual' )? ( PortionKind )? UsageExtensionKeyword*",
+      "operational_rhs": "UnextendedUsagePrefix ( 'individual' )? ( PortionKind )? UsageExtensionKeyword*"
+    },
+    {
+      "decision": "SYSTEMS-GRAMMAR-SATISFY-REQUIREMENT",
+      "production": "SatisfyRequirementUsage",
+      "published_rhs": "OccurrenceUsagePrefix 'assert' ( 'not' ) 'satisfy' ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'requirement' UsageDeclaration ) ValuePart? ( 'by' SatisfactionSubjectMember )? RequirementBody",
+      "operational_rhs": "OccurrenceUsagePrefix 'assert'? ( 'not' )? 'satisfy' ( OwnedReferenceSubsetting FeatureSpecializationPart? | 'requirement' UsageDeclaration ) ValuePart? ( 'by' SatisfactionSubjectMember )? RequirementBody"
+    }
+  ],
+  "source_rewriting": false,
+  "recovery_counts_as_parse_success": false
+}

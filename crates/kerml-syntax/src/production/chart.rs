@@ -44,7 +44,7 @@ impl Chart {
 }
 
 pub(super) fn parse(out: &mut Document, budget: usize) -> Result<(), SourceError> {
-    let grammar = out.dialect.grammar();
+    let grammar = out.dialect.grammar(out.sysml_profile);
     let significant: Vec<_> = out
         .tokens
         .iter()
@@ -236,7 +236,12 @@ fn materialize(out: &mut Document, nodes: &[Completed], root: usize, significant
                             "{}/1:{}:{}:{}",
                             match out.dialect {
                                 Dialect::KerMl => "agq-kerml-production",
-                                Dialect::SysMl => "agq-sysml-production",
+                                Dialect::SysMl => match out.sysml_profile {
+                                    Some(super::SysmlSyntaxProfile::OperationalV1) => {
+                                        "agq-sysml-operational-v1-production"
+                                    }
+                                    _ => "agq-sysml-production",
+                                },
                             },
                             out.revision,
                             index.0,

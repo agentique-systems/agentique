@@ -5,6 +5,7 @@
 mod chart;
 mod generated;
 mod generated_sysml;
+mod generated_sysml_operational;
 pub use generated::Production;
 
 use crate::{
@@ -34,8 +35,37 @@ struct Rule {
 pub enum Dialect {
     /// KerML 1.0, including its separately recorded grammar discrepancies.
     KerMl,
-    /// Final SysML 2.0, with no corpus compatibility alternatives added.
+    /// SysML 2.0; the document separately retains its selected syntax profile.
     SysMl,
+}
+
+/// Explicit textual authority selection, independent of semantic acceptance.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SysmlSyntaxProfile {
+    /// Exact published final grammar; the historical eight corpus failures remain.
+    #[default]
+    Published,
+    /// Published grammar plus the four reviewed Systems Library compatibility decisions.
+    OperationalV1,
+}
+
+impl SysmlSyntaxProfile {
+    /// Versioned authority identity shared with the SysML semantic profile.
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Published => "omg-sysml-2.0-published/1",
+            Self::OperationalV1 => "agentique-sysml-2.0-operational/1",
+        }
+    }
+
+    /// SHA-256 of the operational compatibility manifest's UTF-8 bytes with LF.
+    /// Published selection applies no compatibility manifest.
+    pub fn grammar_compatibility_manifest_sha256(self) -> Option<&'static str> {
+        match self {
+            Self::Published => None,
+            Self::OperationalV1 => Some(generated_sysml_operational::COMPATIBILITY_MANIFEST_SHA256),
+        }
+    }
 }
 
 struct Grammar {
@@ -46,15 +76,21 @@ struct Grammar {
 }
 
 impl Dialect {
-    fn grammar(self) -> Grammar {
-        match self {
-            Self::KerMl => Grammar {
+    fn grammar(self, profile: Option<SysmlSyntaxProfile>) -> Grammar {
+        match (self, profile) {
+            (Self::KerMl, _) => Grammar {
                 root: generated::ROOT,
                 symbol_count: generated::SYMBOL_COUNT,
                 rules: generated::RULES,
                 keywords: generated::KEYWORDS,
             },
-            Self::SysMl => Grammar {
+            (Self::SysMl, Some(SysmlSyntaxProfile::OperationalV1)) => Grammar {
+                root: generated_sysml_operational::ROOT,
+                symbol_count: generated_sysml_operational::SYMBOL_COUNT,
+                rules: generated_sysml_operational::RULES,
+                keywords: generated_sysml_operational::KEYWORDS,
+            },
+            (Self::SysMl, _) => Grammar {
                 root: generated_sysml::ROOT,
                 symbol_count: generated_sysml::SYMBOL_COUNT,
                 rules: generated_sysml::RULES,
@@ -105,6 +141,7 @@ pub struct GrammarDiscrepancy {
 #[derive(Clone, Debug)]
 pub struct Document {
     dialect: Dialect,
+    sysml_profile: Option<SysmlSyntaxProfile>,
     document: DocumentId,
     revision: SourceRevisionId,
     source: Arc<str>,
@@ -134,8 +171,9 @@ impl Document {
             edit.range.start() as usize..edit.range.end() as usize,
             &edit.replacement,
         );
-        let mut next = parse_with_dialect(
+        let mut next = parse_with_profile(
             self.dialect,
+            self.sysml_profile,
             self.document,
             SourceRevisionId::new(),
             source,
@@ -177,6 +215,10 @@ impl Document {
     /// The grammar and reserved-name policy retained by subsequent edits.
     pub fn dialect(&self) -> Dialect {
         self.dialect
+    }
+    /// The selected SysML grammar authority; absent for KerML documents.
+    pub fn sysml_profile(&self) -> Option<SysmlSyntaxProfile> {
+        self.sysml_profile
     }
     pub fn revision(&self) -> SourceRevisionId {
         self.revision
@@ -280,7 +322,7 @@ impl<'a> Node<'a> {
                 && self
                     .document
                     .dialect
-                    .grammar()
+                    .grammar(self.document.sysml_profile)
                     .keywords
                     .binary_search(&text)
                     .is_err()
@@ -328,9 +370,46 @@ pub fn parse_sysml(
     parse_with_dialect(Dialect::SysMl, document, revision, source, limits)
 }
 
+/// Parse final SysML with an explicit published or operational grammar authority.
+/// Operational recognition never rewrites sources or counts recovery as success.
+pub fn parse_sysml_with_profile(
+    profile: SysmlSyntaxProfile,
+    document: DocumentId,
+    revision: SourceRevisionId,
+    source: impl Into<Arc<str>>,
+    limits: Limits,
+) -> Result<Document, SourceError> {
+    parse_with_profile(
+        Dialect::SysMl,
+        Some(profile),
+        document,
+        revision,
+        source,
+        limits,
+    )
+}
+
 /// Parse an immutable revision using an explicit pinned grammar dialect.
 pub fn parse_with_dialect(
     dialect: Dialect,
+    document: DocumentId,
+    revision: SourceRevisionId,
+    source: impl Into<Arc<str>>,
+    limits: Limits,
+) -> Result<Document, SourceError> {
+    parse_with_profile(
+        dialect,
+        (dialect == Dialect::SysMl).then_some(SysmlSyntaxProfile::Published),
+        document,
+        revision,
+        source,
+        limits,
+    )
+}
+
+fn parse_with_profile(
+    dialect: Dialect,
+    sysml_profile: Option<SysmlSyntaxProfile>,
     document: DocumentId,
     revision: SourceRevisionId,
     source: impl Into<Arc<str>>,
@@ -343,6 +422,7 @@ pub fn parse_with_dialect(
     let (tokens, diagnostics) = crate::lexer::lex(&source, limits.source.max_tokens)?;
     let mut out = Document {
         dialect,
+        sysml_profile,
         document,
         revision,
         source,

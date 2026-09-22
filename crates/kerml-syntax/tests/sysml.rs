@@ -1,12 +1,23 @@
 use agq_kerml_syntax::{
     ByteRange, DocumentId, SourceError, SourceRevisionId, TextEdit,
-    production::{self, Dialect, Document, Limits, Production as P},
+    production::{self, Dialect, Document, Limits, Production as P, SysmlSyntaxProfile},
 };
 use agq_standard_libraries::{LibraryLanguage, VerifiedLibrarySet};
 use std::path::Path;
 
 fn parsed(source: &str) -> Document {
     production::parse_sysml(
+        DocumentId::new(),
+        SourceRevisionId::new(),
+        source,
+        Limits::default(),
+    )
+    .unwrap()
+}
+
+fn operational(source: &str) -> Document {
+    production::parse_sysml_with_profile(
+        SysmlSyntaxProfile::OperationalV1,
         DocumentId::new(),
         SourceRevisionId::new(),
         source,
@@ -152,7 +163,7 @@ fn shared_expression_precedence_and_empty_port_wrappers_are_retained() {
 }
 
 #[test]
-fn pending_grammar_interpretations_are_not_accepted() {
+fn published_grammar_retains_reviewed_compatibility_failures() {
     for source in [
         "allocation def Allocation;",
         "case def Case { return result : Result; }",
@@ -196,6 +207,7 @@ fn all_pinned_systems_documents_are_lossless_and_strict_outcomes_are_explicit() 
     let libraries = VerifiedLibrarySet::load_from_directory(&root).unwrap();
     let mut complete = Vec::new();
     let mut incomplete = Vec::new();
+    let mut operational_complete = 0;
     for source in libraries
         .documents()
         .filter(|d| d.language() == LibraryLanguage::SysMl)
@@ -210,15 +222,52 @@ fn all_pinned_systems_documents_are_lossless_and_strict_outcomes_are_explicit() 
         assert_lossless(&doc, source.source());
         assert_eq!(doc.document(), source.document());
         assert_eq!(doc.revision(), source.revision());
+        let operational = production::parse_sysml_with_profile(
+            SysmlSyntaxProfile::OperationalV1,
+            source.document(),
+            source.revision(),
+            source.source(),
+            Limits::default(),
+        )
+        .unwrap();
+        assert_lossless(&operational, source.source());
+        assert!(
+            operational.is_complete(),
+            "{}: {:?}",
+            source.path(),
+            operational.diagnostics()
+        );
+        assert_eq!(operational.recovery().len(), 0);
+        assert_eq!(operational.document(), source.document());
+        assert_eq!(operational.revision(), source.revision());
+        assert_eq!(
+            operational
+                .roots()
+                .map(|node| node.kind())
+                .collect::<Vec<_>>(),
+            [P::RootNamespace]
+        );
+        operational_complete += 1;
         if doc.is_complete() {
             complete.push(source.path().to_owned());
         } else {
-            incomplete.push(source.path().to_owned());
+            let [diagnostic] = doc.diagnostics() else {
+                panic!("Changed historical diagnostics: {}", source.path());
+            };
+            assert_eq!(diagnostic.code, "SG_RECOVERY");
+            assert_eq!(doc.recovery().len(), 1);
+            incomplete.push((
+                source.path().to_owned(),
+                diagnostic.range.start(),
+                diagnostic.range.end(),
+                doc.text(diagnostic.range).unwrap().to_owned(),
+            ));
         }
     }
     complete.sort();
     incomplete.sort();
     assert_eq!(complete.len() + incomplete.len(), 21);
+    assert_eq!(operational_complete, 21);
     assert_eq!(
         complete.len(),
         13,
@@ -227,14 +276,157 @@ fn all_pinned_systems_documents_are_lossless_and_strict_outcomes_are_explicit() 
     assert_eq!(
         incomplete,
         [
-            "Systems Library/Allocations.sysml",
-            "Systems Library/Cases.sysml",
-            "Systems Library/Connections.sysml",
-            "Systems Library/Flows.sysml",
-            "Systems Library/Interfaces.sysml",
-            "Systems Library/Items.sysml",
-            "Systems Library/VerificationCases.sysml",
-            "Systems Library/Views.sysml",
+            (
+                "Systems Library/Allocations.sysml".to_owned(),
+                246,
+                249,
+                "def".to_owned()
+            ),
+            (
+                "Systems Library/Cases.sysml".to_owned(),
+                1183,
+                1189,
+                "return".to_owned()
+            ),
+            (
+                "Systems Library/Connections.sysml".to_owned(),
+                1630,
+                1631,
+                ";".to_owned()
+            ),
+            (
+                "Systems Library/Flows.sysml".to_owned(),
+                1476,
+                1486,
+                "occurrence".to_owned()
+            ),
+            (
+                "Systems Library/Interfaces.sysml".to_owned(),
+                2934,
+                2938,
+                "port".to_owned()
+            ),
+            (
+                "Systems Library/Items.sysml".to_owned(),
+                3681,
+                3685,
+                "item".to_owned()
+            ),
+            (
+                "Systems Library/VerificationCases.sysml".to_owned(),
+                669,
+                675,
+                "return".to_owned()
+            ),
+            (
+                "Systems Library/Views.sysml".to_owned(),
+                846,
+                853,
+                "satisfy".to_owned()
+            ),
         ]
+    );
+}
+
+#[test]
+fn operational_grammar_accepts_only_the_reviewed_compatibility_shapes() {
+    for (source, kind) in [
+        ("allocation def Allocation;", P::AllocationDefinition),
+        (
+            "case def Case { return result : Result; }",
+            P::ReturnParameterMember,
+        ),
+        ("connection def Link { end item source; }", P::ItemUsage),
+        (
+            "connection def Link { end source; }",
+            P::DefaultReferenceUsage,
+        ),
+        (
+            "flow def Transfer { end occurrence source; }",
+            P::OccurrenceUsage,
+        ),
+        ("interface def Connector { end port source; }", P::PortUsage),
+        (
+            "item def Item { end touchesToo [0..*] item touchedItemToo; }",
+            P::OwnedCrossFeatureMember,
+        ),
+        (
+            "satisfy requirement check by that;",
+            P::SatisfyRequirementUsage,
+        ),
+        (
+            "assert satisfy requirement check;",
+            P::SatisfyRequirementUsage,
+        ),
+        ("not satisfy requirement check;", P::SatisfyRequirementUsage),
+        (
+            "assert not satisfy requirement check;",
+            P::SatisfyRequirementUsage,
+        ),
+    ] {
+        let doc = operational(source);
+        assert!(doc.is_complete(), "{source}: {:?}", doc.diagnostics());
+        assert_lossless(&doc, source);
+        assert!(
+            doc.nodes().any(|node| node.kind() == kind),
+            "{source}: {kind:?}"
+        );
+    }
+    for source in [
+        "end allocation def Allocation;",
+        "case def Case { return return; }",
+        "end end item duplicate;",
+        "end individual sample;",
+        "requirement check by that;",
+        "satisfy by that;",
+    ] {
+        let doc = operational(source);
+        assert!(!doc.is_complete(), "Overbroad compatibility: {source}");
+        assert_lossless(&doc, source);
+    }
+}
+
+#[test]
+fn profile_and_identity_survive_edits_without_changing_historical_identity() {
+    let id = DocumentId::new();
+    let revision = SourceRevisionId::new();
+    let strict = production::parse_sysml(id, revision, "package P;", Limits::default()).unwrap();
+    let op = production::parse_sysml_with_profile(
+        SysmlSyntaxProfile::OperationalV1,
+        id,
+        revision,
+        "package P;",
+        Limits::default(),
+    )
+    .unwrap();
+    assert_eq!(strict.sysml_profile(), Some(SysmlSyntaxProfile::Published));
+    assert_eq!(op.sysml_profile(), Some(SysmlSyntaxProfile::OperationalV1));
+    assert_ne!(
+        strict.roots().next().unwrap().id(),
+        op.roots().next().unwrap().id()
+    );
+    assert_eq!(strict.tokens(), op.tokens());
+    let op = operational("allocation def Allocation;");
+    let edited = op
+        .edit(
+            &TextEdit {
+                range: ByteRange::new(15, 25).unwrap(),
+                replacement: "Replacement".into(),
+            },
+            Limits::default(),
+        )
+        .unwrap();
+    assert!(edited.is_complete(), "{:?}", edited.diagnostics());
+    assert_eq!(edited.sysml_profile(), op.sysml_profile());
+    assert_eq!(
+        SysmlSyntaxProfile::Published.grammar_compatibility_manifest_sha256(),
+        None
+    );
+    assert_eq!(
+        SysmlSyntaxProfile::OperationalV1
+            .grammar_compatibility_manifest_sha256()
+            .unwrap()
+            .len(),
+        64
     );
 }

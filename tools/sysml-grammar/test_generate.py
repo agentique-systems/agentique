@@ -1,6 +1,7 @@
 """Focused contracts for strict extension generation; no source acquisition."""
 from pathlib import Path
 import importlib.util
+import json
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +33,29 @@ class StrictGrammar(unittest.TestCase):
         for name in ['OwnedFeatureTyping', 'OwnedSubclassification', 'PartDefinition', 'DefinitionMember', 'OccurrenceUsageMember', 'ConjugatedPortDefinitionMember']:
             self.assertEqual(self.kinds[name], name)
         self.assertEqual(len(set(self.kinds.values())), 535)
+
+
+class OperationalGrammar(unittest.TestCase):
+    def test_exact_reviewed_diff_and_preserved_other_rules(self):
+        source = json.loads((ROOT / 'standards/grammar/sysml-2.0-source.json').read_text(encoding='utf-8'))
+        published = {rule['name']: rule['recognition_rhs'] for rule in source['rules']}
+        operational = module.operational_overrides(published)
+        expected = {
+            'DefinitionElement': published['DefinitionElement'] + ' | AllocationDefinition',
+            'CaseBodyItem': published['CaseBodyItem'] + ' | ReturnParameterMember',
+            'DefaultReferenceUsage': '( EndUsagePrefix | RefPrefix ) Usage',
+            'OccurrenceUsagePrefix': published['OccurrenceUsagePrefix'].replace('BasicUsagePrefix', 'UnextendedUsagePrefix', 1),
+            'SatisfyRequirementUsage': published['SatisfyRequirementUsage'].replace("'assert' ( 'not' )", "'assert'? ( 'not' )?", 1),
+        }
+        self.assertEqual({name: rhs for name, rhs in operational.items() if published[name] != rhs}, expected)
+        self.assertEqual(set(operational), set(published))
+
+    def test_profile_does_not_add_production_kinds_or_change_keywords(self):
+        published, published_kinds = module.grammar_source()
+        operational, operational_kinds = module.grammar_source(operational=True)
+        self.assertEqual(set(operational_kinds.values()), set(published_kinds.values()))
+        self.assertEqual(operational.keywords, published.keywords)
+        self.assertEqual(len(operational.rules), 2040)
 
 
 if __name__ == '__main__':
