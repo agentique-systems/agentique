@@ -35,6 +35,7 @@ Disk preflight reported 51,406,036,992 bytes free before compilation.
 | `cargo test --locked --offline -p agq-kerml-semantics --test producer_closure_evidence --test publication_v8_members --test formal_targets_v5` | 0 | 2 + 4 + 4 tests passed |
 | `cargo test --locked --offline -p agq-kerml-semantics --lib context::extension_tests` | 0 | 5 passed, 64 filtered |
 | `cargo test --locked --offline -p agq-kerml-semantics --lib closure_witness_is_invalidated` | 0 | 1 passed, 69 filtered |
+| `cargo test --locked --offline -p agq-kerml-semantics` | 0 | Full package passed; 68 unit tests passed, 2 existing scale probes ignored; every integration binary and Rustdoc passed |
 | `git diff --check` | 0 | No whitespace errors |
 
 The authority matrix now separately observes uncertified current-graph
