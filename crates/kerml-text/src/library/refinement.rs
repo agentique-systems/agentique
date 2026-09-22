@@ -32,6 +32,9 @@ pub struct ReferenceRefinementRound {
     pub round: usize,
     pub input_endpoints: usize,
     pub selected_endpoints: usize,
+    /// Withdrawn provisional endpoints with their replacement candidate
+    /// element/membership identities. Observational only; never affects lookup.
+    pub withdrawn_endpoints: BTreeMap<(ElementId, PropertyId), (ElementId, BTreeSet<ElementId>)>,
     pub structural_obligations: usize,
     pub references_considered: usize,
     pub references_evaluated: usize,
@@ -330,6 +333,7 @@ pub(crate) fn refine_from(
             round,
             input_endpoints: resolved.len(),
             selected_endpoints: 0,
+            withdrawn_endpoints: BTreeMap::new(),
             structural_obligations: draft.candidate.obligations().len(),
             references_considered: draft.references.len(),
             references_evaluated: 0,
@@ -401,6 +405,13 @@ pub(crate) fn refine_from(
                     selected,
                 }
             };
+            if let Some(previous) = resolved.get(&key)
+                && cached.selected != Some(*previous)
+            {
+                report
+                    .withdrawn_endpoints
+                    .insert(key, (*previous, cached.candidates.clone()));
+            }
             if let Some(target) = cached.selected {
                 next.insert(key, target);
             }

@@ -56,6 +56,9 @@ pub struct SystemsLibraryCandidate {
 /// Unpublished combined worklist result, separate from canonical acceptance.
 #[derive(Debug)]
 pub struct SystemsConstructionProduction {
+    /// False identifies a reference bootstrap. The strict publication gate
+    /// always runs all predicates after declared endpoint reconstruction.
+    pub final_predicates: bool,
     pub completeness: Completeness,
     pub converged: bool,
     pub stages: Vec<agq_kerml_semantics::PublicationStage>,
@@ -292,99 +295,118 @@ pub fn prepare_systems_library_with_semantic_progress(
     )?;
     let mut production = None;
     if all_supported && profile == production::SysmlSyntaxProfile::OperationalV1 {
-        let endpoints = draft
-            .references()
-            .iter()
-            .filter_map(|reference| {
-                draft
-                    .candidate()
-                    .model()
-                    .navigation_slot(reference.relationship, reference.property)
-                    .and_then(|slot| {
-                        slot.value().values().find_map(|value| {
-                            if let Value::Reference(id) = value {
-                                Some(((reference.relationship, reference.property), *id))
-                            } else {
-                                None
-                            }
-                        })
-                    })
-            })
-            .collect();
-        // Reconstruct only declared records. Derived endpoints and ownership
-        // remain in a distinct unpublished overlay and are never copied back.
-        drop(draft);
-        draft = library::refinement::refine_from(
-            endpoints,
-            |resolved| {
-                let mut current = construction::construct_on(
-                    &inputs,
-                    resolved,
-                    publication.profile(),
-                    base.clone(),
-                    None,
-                )?;
-                let roots: Vec<_> = current
-                    .roots()
-                    .iter()
-                    .chain(publication.roots())
-                    .copied()
-                    .collect();
-                let extension = agq_sysml_semantics::SysmlProducerExtension::new(
-                    semantic_profile,
-                    candidate_bindings.clone(),
-                    roots,
-                );
-                let closure = agq_kerml_semantics::close_construction_structure_with_extension(
-                    current.candidate_shared(),
-                    Default::default(),
-                    |overlay| {
-                        publication
-                            .complete_overlay()
-                            .project_construction_overlay_context(
-                                overlay,
-                                current.roots(),
-                                BTreeSet::new(),
-                                BTreeSet::new(),
-                            )
-                            .and_then(|context| {
-                                context.with_semantic_extension_identity(
-                                    agq_sysml_semantics::SYSML_SEMANTIC_CONTEXT_DOMAIN,
-                                    dependency_contract.context_identity_digest(),
-                                )
+        // Positive inheritance normally supplies source endpoints without
+        // evaluating scalar predicates that would be discarded by the next
+        // declared reconstruction. Retain a full construction fallback for
+        // references that need those later consequences; neither pass accepts
+        // a publication. The strict facade independently closes the final input.
+        for final_predicates in [false, true] {
+            let endpoints = draft
+                .references()
+                .iter()
+                .filter_map(|reference| {
+                    draft
+                        .candidate()
+                        .model()
+                        .navigation_slot(reference.relationship, reference.property)
+                        .and_then(|slot| {
+                            slot.value().values().find_map(|value| {
+                                if let Value::Reference(id) = value {
+                                    Some(((reference.relationship, reference.property), *id))
+                                } else {
+                                    None
+                                }
                             })
-                            .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
-                    },
-                    &extension,
-                    &mut batch_progress,
-                    &mut producer_progress,
-                )
-                .map_err(|error| {
-                    LibraryLoadError::Interpretation(format!(
-                        "Combined Systems construction producers: {error}"
-                    ))
-                })?;
-                production = Some(SystemsConstructionProduction {
-                    completeness: closure.completeness,
-                    converged: closure.converged,
-                    stages: closure.stages,
-                    counters: closure.counters,
-                });
-                current.set_semantic_candidate(closure.overlay);
-                Ok(current)
-            },
-            |current| {
-                Ok(systems_candidate_queries(
-                    current,
-                    &publication,
-                    BTreeSet::new(),
-                    &dependency_contract,
-                )?
-                .status_queries())
-            },
-            ReferenceRefinementStrategy::DependencyDriven,
-            progress,
-        )?;
+                        })
+                })
+                .collect();
+            // Reconstruct only declared records. Derived endpoints and ownership
+            // remain in a distinct unpublished overlay and are never copied back.
+            drop(draft);
+            draft = library::refinement::refine_from(
+                endpoints,
+                |resolved| {
+                    let mut current = construction::construct_on(
+                        &inputs,
+                        resolved,
+                        publication.profile(),
+                        base.clone(),
+                        None,
+                    )?;
+                    let roots: Vec<_> = current
+                        .roots()
+                        .iter()
+                        .chain(publication.roots())
+                        .copied()
+                        .collect();
+                    let extension = if final_predicates {
+                        agq_sysml_semantics::SysmlProducerExtension::new(
+                            semantic_profile,
+                            candidate_bindings.clone(),
+                            roots,
+                        )
+                    } else {
+                        agq_sysml_semantics::SysmlProducerExtension::for_reference_refinement(
+                            semantic_profile,
+                            candidate_bindings.clone(),
+                            roots,
+                        )
+                    };
+                    let closure = agq_kerml_semantics::close_construction_structure_with_extension(
+                        current.candidate_shared(),
+                        Default::default(),
+                        |overlay| {
+                            publication
+                                .complete_overlay()
+                                .project_construction_overlay_context(
+                                    overlay,
+                                    current.roots(),
+                                    BTreeSet::new(),
+                                    BTreeSet::new(),
+                                )
+                                .and_then(|context| {
+                                    context.with_semantic_extension_identity(
+                                        agq_sysml_semantics::SYSML_SEMANTIC_CONTEXT_DOMAIN,
+                                        dependency_contract.context_identity_digest(),
+                                    )
+                                })
+                                .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
+                        },
+                        &extension,
+                        &mut batch_progress,
+                        &mut producer_progress,
+                    )
+                    .map_err(|error| {
+                        LibraryLoadError::Interpretation(format!(
+                            "Combined Systems construction producers: {error}"
+                        ))
+                    })?;
+                    production = Some(SystemsConstructionProduction {
+                        final_predicates,
+                        completeness: closure.completeness,
+                        converged: closure.converged,
+                        stages: closure.stages,
+                        counters: closure.counters,
+                    });
+                    current.set_semantic_candidate(closure.overlay);
+                    Ok(current)
+                },
+                |current| {
+                    Ok(systems_candidate_queries(
+                        current,
+                        &publication,
+                        BTreeSet::new(),
+                        &dependency_contract,
+                    )?
+                    .status_queries())
+                },
+                ReferenceRefinementStrategy::DependencyDriven,
+                &mut progress,
+            )?;
+            if draft.candidate().obligations().is_empty() {
+                break;
+            }
+        }
     }
     Ok(SystemsLibraryCandidate {
         draft,

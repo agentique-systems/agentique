@@ -40,7 +40,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 round.structural_obligations,
                 round.references_evaluated,
                 round.references_reused
-            )
+            );
+            for (reference, candidates) in &round.withdrawn_endpoints {
+                println!("Systems: withdrawn reference={reference:?} candidates={candidates:?}");
+            }
         },
         |round, done, total, planned| {
             if done.is_multiple_of(256) || done == total {
@@ -155,7 +158,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .filter(|d| d.construction_gap.is_none())
         .count();
-    let report = json!({
+    let obligations = draft.candidate().obligations().len();
+    let mut report = json!({
         "format":"agq-sysml-systems-publication-audit/1",
         "sysml_profile":candidate.syntax_profile().id(),
         "accepted_kerml_digest":accepted.semantic_digest(),
@@ -170,25 +174,64 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "mandatory_references":{"total":draft.references().len(),"counts":counts,"failures":failures},
         "authority_targets":authority,
         "documents":candidate.documents().iter().map(|d|json!({"path":d.path,"document":d.document,"sha256":d.source_sha256,"profile":d.profile.id(),"parsed":d.parsed,"byte_exact":d.byte_exact,"recovery_count":d.recovery_count,"production_count":d.production_count,"construction_gap":d.construction_gap})).collect::<Vec<_>>(),
-        "producer_closure":candidate.production().map(|production|json!({"completeness":format!("{:?}",production.completeness),"converged":production.converged,"rounds":production.counters.fixed_point_rounds,"subjects_evaluated":production.counters.subjects_evaluated,"derived_elements":production.counters.new_elements_proposed,"diagnostics":production.stages.last().map(|stage|stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>())})), "publication_accepted":false,
+        "construction_producers":candidate.production().map(|production|json!({"final_predicates":production.final_predicates,"completeness":format!("{:?}",production.completeness),"converged":production.converged,"rounds":production.counters.fixed_point_rounds,"subjects_evaluated":production.counters.subjects_evaluated,"derived_elements":production.counters.new_elements_proposed,"diagnostics":production.stages.last().map(|stage|stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>())})), "publication_accepted":false,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
     });
+    drop(queries);
+    println!("Systems: evaluating immutable publication acceptance");
+    match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::publish(
+        candidate,
+        &sources,
+        Default::default(),
+        |round, done, total, planned| {
+            if done.is_multiple_of(256) || done == total {
+                println!(
+                    "Systems publication: round={round} evaluated={done}/{total} planned={planned}"
+                );
+            }
+        },
+        |stage| {
+            println!(
+                "Systems publication: frontier={} stratum={:?} added={} completeness={:?}",
+                stage.stage, stage.stratum, stage.added_elements, stage.completeness
+            )
+        },
+    ) {
+        Ok(publication) => {
+            report["publication_accepted"] = json!(true);
+            report["publication_digest"] = json!(publication.publication_digest());
+            report["semantic_digest"] = json!(publication.semantic_digest());
+            report["accepted_bindings"] = json!(publication.bindings().targets().len());
+            report["publication_gate"] = audit_report(publication.audit());
+        }
+        Err(agq_kerml_text::sysml::SystemsPublicationError::Rejected(audit)) => {
+            report["publication_gate"] = audit_report(&audit);
+        }
+        Err(error) => {
+            report["publication_error"] = json!(error.to_string());
+        }
+    }
+    report["elapsed_seconds"] = json!(started.elapsed().as_secs_f64());
     std::fs::create_dir_all(output.parent().ok_or("output parent")?)?;
     let mut file = std::fs::File::create(&output)?;
     file.write_all(&serde_json::to_vec_pretty(&report)?)?;
     file.sync_all()?;
     println!(
         "Systems: {parsed}/21 parsed; {constructed}/21 constructed; {} kernel obligations; {:.3}s",
-        draft.candidate().obligations().len(),
+        obligations,
         started.elapsed().as_secs_f64()
     );
-    if !candidate.construction_complete()
-        || !failures.is_empty()
-        || !candidate.production().is_some_and(|production| {
-            production.converged && production.completeness == Completeness::Complete
-        })
-    {
+    if report["publication_accepted"] != true {
         std::process::exit(1);
     }
     Ok(())
+}
+
+fn audit_report(audit: &agq_kerml_text::sysml::SystemsPublicationAudit) -> serde_json::Value {
+    json!({
+        "checked":audit.checked.iter().map(|(family,count)|(format!("{family:?}"),*count)).collect::<BTreeMap<_,_>>(),
+        "mandatory_references":audit.mandatory_references,
+        "complete_references":audit.complete_references,
+        "findings":audit.findings.iter().map(|finding|format!("{finding:?}")).collect::<Vec<_>>()
+    })
 }
