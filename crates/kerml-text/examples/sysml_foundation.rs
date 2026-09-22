@@ -71,23 +71,35 @@ fn assert_vertical(queries: &SysmlQueries<'_>, ids: [ElementId; 4]) {
         s::PART_USAGE
     );
     let types = queries.direct_usage_types(engine);
-    assert_eq!(types.completeness(), Completeness::Complete, "{types:?}");
+    assert_eq!(
+        types.completeness(),
+        Completeness::Complete,
+        "{:?}",
+        types.diagnostics
+    );
     assert_eq!(types.value(), &[engine_definition]);
     let part_types = queries.current_part_definitions(engine);
     assert_eq!(
         part_types.completeness(),
         Completeness::Complete,
-        "{part_types:?}"
+        "{:?}",
+        part_types.diagnostics
     );
     assert_eq!(part_types.value(), &[engine_definition]);
     let supers = queries.direct_specializations(sports_car);
-    assert_eq!(supers.completeness(), Completeness::Complete, "{supers:?}");
+    assert_eq!(
+        supers.completeness(),
+        Completeness::Complete,
+        "{:?}",
+        supers.diagnostics
+    );
     assert_eq!(supers.value(), &[vehicle]);
     let inherited = queries.current_effective_usages(sports_car);
     assert_eq!(
         inherited.completeness(),
         Completeness::Complete,
-        "{inherited:?}"
+        "{:?}",
+        inherited.diagnostics
     );
     assert_eq!(
         inherited.value(),
@@ -147,8 +159,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         started.elapsed().as_secs_f64()
     );
     let mut content = [0; 32];
+    let content_hex = sources
+        .content_set_id()
+        .strip_prefix("sha256:")
+        .ok_or("source content set must be a SHA-256 identity")?;
+    if content_hex.len() != 64 {
+        return Err("source content set digest must contain 64 hexadecimal digits".into());
+    }
     for (index, byte) in content.iter_mut().enumerate() {
-        *byte = u8::from_str_radix(&sources.content_set_id()[index * 2..index * 2 + 2], 16)?;
+        *byte = u8::from_str_radix(&content_hex[index * 2..index * 2 + 2], 16)?;
     }
     let systems_identity = SystemsLibraryIdentity::pinned(content);
     let bindings = StandardSysmlBindings::unbound(systems_identity.clone());
