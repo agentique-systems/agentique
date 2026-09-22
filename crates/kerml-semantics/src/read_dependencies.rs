@@ -21,6 +21,7 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
     match search {
         StructuralSearch::Element(id)
         | StructuralSearch::ElementIdentity(id)
+        | StructuralSearch::RelationshipStructure { element: id }
         | StructuralSearch::OwnedRelationships { owner: id, .. }
         | StructuralSearch::OwnedRelationshipsExcluding { owner: id, .. }
         | StructuralSearch::Property { element: id, .. }
@@ -257,6 +258,27 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
                 owner: *owner,
                 contract: kind.contract_id().into(),
             });
+        } else if let SearchDependency::NamespaceMembers { namespace }
+        | SearchDependency::ImportSet { namespace } = search
+        {
+            result.insert(StructuralSearch::RelationshipStructure {
+                element: *namespace,
+            });
+        } else if let SearchDependency::ImportedNamespace { import, namespace } = search {
+            result.extend(
+                [*import, *namespace]
+                    .map(|element| StructuralSearch::RelationshipStructure { element }),
+            );
+        } else if let SearchDependency::RedefinitionScope {
+            relationship,
+            namespace,
+            ..
+        } = search
+        {
+            result.extend(
+                [*relationship, *namespace]
+                    .map(|element| StructuralSearch::RelationshipStructure { element }),
+            );
         } else {
             result.extend(search_keys(search).map(|key| match key {
                 InvalidationKey::Element(id) => StructuralSearch::Element(id),

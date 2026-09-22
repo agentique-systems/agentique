@@ -2643,3 +2643,83 @@ fn excluded_relationship_populations_keep_unknown_writers_and_broad_reads_open()
         }
     }
 }
+
+#[test]
+fn namespace_proof_transport_retains_names_visibility_aliases_and_import_flags() {
+    use crate::producer_closure::{ProducerRead, effect_changes_read, producer_reads};
+    use crate::read_dependencies::{query_read_keys, structural_searches};
+    let mut f = Fixture::new();
+    f.create(1, c::PACKAGE);
+    f.member(1, 2, 3, c::PACKAGE, "local");
+    f.create(10, c::PACKAGE);
+    f.member(10, 11, 12, c::PACKAGE, "imported");
+    f.import(1, 4, 10, false);
+    f.create(5, c::MEMBERSHIP);
+    f.own(1, 5);
+    f.value(5, p::MEMBERSHIP_MEMBER_ELEMENT, Value::Reference(id(12)));
+    f.value(5, p::MEMBERSHIP_MEMBER_NAME, Value::String("alias".into()));
+    let snapshot = f.finish();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let native = q.namespace_members(id(1), MemberAccess::Public);
+    assert_eq!(
+        native.completeness,
+        Completeness::Complete,
+        "{:?}",
+        native.diagnostics
+    );
+    assert!(native.value.iter().any(|member| member.membership == id(5)));
+    assert!(
+        native
+            .search_dependencies
+            .contains(&SearchDependency::ImportedNamespace {
+                import: id(4),
+                namespace: id(10)
+            })
+    );
+    let mut persisted = native.clone();
+    persisted.clear_search_dependencies();
+    persisted.search_dependencies.extend(
+        structural_searches(&native)
+            .into_iter()
+            .map(SearchDependency::Kernel),
+    );
+    let before = producer_reads(&native, snapshot.model());
+    let after = producer_reads(&persisted, snapshot.model());
+    assert_eq!(
+        before, after,
+        "persistent proof must retain the exact native causal projection"
+    );
+    assert_eq!(
+        native.positive_dependencies,
+        persisted.positive_dependencies
+    );
+    assert_eq!(
+        query_read_keys(&native, snapshot.model()),
+        query_read_keys(&persisted, snapshot.model())
+    );
+    for (element, property) in [
+        (3, p::ELEMENT_DECLARED_NAME),
+        (2, p::MEMBERSHIP_VISIBILITY),
+        (5, p::MEMBERSHIP_MEMBER_NAME),
+        (5, p::MEMBERSHIP_MEMBER_SHORT_NAME),
+        (4, p::IMPORT_VISIBILITY),
+        (4, p::IMPORT_IS_RECURSIVE),
+        (4, p::IMPORT_IS_IMPORT_ALL),
+    ] {
+        let read = ProducerRead::Property(id(element), property);
+        assert!(after.contains(&read), "missing {element:?}/{property:?}");
+        assert!(effect_changes_read(
+            ProducerEffect::Scalar(property),
+            &read,
+            snapshot.model()
+        ));
+    }
+    assert!(!after.contains(&ProducerRead::Any(id(1))));
+    assert!(!after.iter().any(|read| effect_changes_read(
+        ProducerEffect::Scalar(p::FEATURE_IS_VARIABLE),
+        read,
+        snapshot.model()
+    )));
+}

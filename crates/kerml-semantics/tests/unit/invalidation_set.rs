@@ -1,6 +1,104 @@
 use super::*;
 
 #[test]
+fn relationship_structure_transport_preserves_native_reads_and_invalidation() {
+    use crate::producer_closure::{ProducerRead, effect_changes_read, producer_reads};
+    let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
+    let queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default()).unwrap(),
+    );
+    let first = ElementId::from_u128(1);
+    let second = ElementId::from_u128(2);
+    for (search, subjects) in [
+        (
+            SearchDependency::NamespaceMembers { namespace: first },
+            vec![first],
+        ),
+        (
+            SearchDependency::ImportSet { namespace: first },
+            vec![first],
+        ),
+        (
+            SearchDependency::ImportedNamespace {
+                import: first,
+                namespace: second,
+            },
+            vec![first, second],
+        ),
+        (
+            SearchDependency::RedefinitionScope {
+                relationship: first,
+                namespace: second,
+                path: RedefinitionRulePath::LexicalContaining,
+            },
+            vec![first, second],
+        ),
+    ] {
+        let mut answer = queries.result(());
+        answer.search_dependencies.insert(search);
+        let searches = structural_searches(&answer);
+        assert_eq!(
+            searches,
+            subjects
+                .iter()
+                .map(|&element| { StructuralSearch::RelationshipStructure { element } })
+                .collect()
+        );
+        let mut persisted = queries.result(());
+        persisted
+            .search_dependencies
+            .extend(searches.into_iter().map(SearchDependency::Kernel));
+        let native_reads = producer_reads(&answer, snapshot.model());
+        let persisted_reads = producer_reads(&persisted, snapshot.model());
+        assert_eq!(native_reads, persisted_reads);
+        assert!(
+            persisted_reads
+                .iter()
+                .all(|read| matches!(read, ProducerRead::Structural(_)))
+        );
+        for effect in [
+            ProducerEffect::Membership,
+            ProducerEffect::Naming,
+            ProducerEffect::Ownership,
+        ] {
+            assert!(persisted_reads.iter().any(|read| effect_changes_read(
+                effect,
+                read,
+                snapshot.model()
+            )));
+        }
+        assert!(!persisted_reads.iter().any(|read| effect_changes_read(
+            ProducerEffect::Scalar(agq_kerml::properties::FEATURE_IS_VARIABLE),
+            read,
+            snapshot.model()
+        )));
+        let keys = query_read_keys(&answer, snapshot.model());
+        assert_eq!(keys, query_read_keys(&persisted, snapshot.model()));
+        assert_eq!(
+            query_publication_provider_keys(&answer, snapshot.model()),
+            query_publication_provider_keys(&persisted, snapshot.model())
+        );
+        let compact = QueryInvalidationSet::from_keys(keys);
+        for subject in subjects {
+            assert!(compact.affected_by(&BTreeSet::from([subject]), false));
+        }
+        assert!(!compact.affected_by(&BTreeSet::from([ElementId::from_u128(99)]), false));
+        assert!(compact.affected_by(&BTreeSet::new(), true));
+    }
+    let mut broad = queries.result(());
+    broad
+        .search_dependencies
+        .insert(SearchDependency::Kernel(StructuralSearch::Element(first)));
+    assert!(producer_reads(&broad, snapshot.model()).contains(&ProducerRead::Any(first)));
+    assert!(effect_changes_read(
+        ProducerEffect::Scalar(agq_kerml::properties::FEATURE_IS_VARIABLE),
+        &ProducerRead::Any(first),
+        snapshot.model()
+    ));
+}
+
+
+#[test]
 fn owned_relationship_exclusions_survive_transport_and_owner_invalidation() {
     let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
     let queries = KerMlQueries::new(

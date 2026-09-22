@@ -174,6 +174,10 @@ impl Encoder {
                         self.id(class.as_u128());
                     }
                 }
+                StructuralSearch::RelationshipStructure { element } => {
+                    self.tag(12);
+                    self.id(element.as_u128());
+                }
             }
         }
     }

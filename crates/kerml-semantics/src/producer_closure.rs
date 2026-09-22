@@ -37,6 +37,9 @@ pub(crate) fn producer_reads<T>(
         K::Element(id) => {
             result.insert(ProducerRead::Any(*id));
         }
+        K::RelationshipStructure { element } => {
+            result.insert(ProducerRead::Structural(*element));
+        }
         K::ElementIdentity(id) => {
             if model.element(*id).is_none() {
                 result.insert(ProducerRead::Global);

@@ -910,6 +910,14 @@ pub enum StructuralSearch {
         class: MetaclassId,
         excluded: BTreeSet<MetaclassId>,
     },
+    /// Relationship structure anchored at one element, including population,
+    /// endpoint and traversal changes. This excludes primitive scalar values:
+    /// consumers retain observed names, visibility and flags as separate
+    /// `Property` searches. Unlike `Element`, an unrelated primitive scalar
+    /// contribution does not change this structural projection.
+    RelationshipStructure {
+        element: ElementId,
+    },
 }
 /// Explicit unsuccessful computation; never an empty value.
 #[derive(Clone, Debug, PartialEq, Eq)]
