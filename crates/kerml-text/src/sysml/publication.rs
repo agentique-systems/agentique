@@ -470,6 +470,33 @@ impl CanonicalSysmlSystemsLibrary {
     pub fn project_snapshot(&self) -> Snapshot {
         Snapshot::with_immutable_dependency(self.overlay.clone())
     }
+    /// Mountable producer proof for this exact accepted Systems/KerML graph.
+    /// Consumers share the overlay; no library producer is replayed or graph copied.
+    pub fn producer_closed_dependency(
+        &self,
+    ) -> Result<Arc<agq_kerml_semantics::ProducerClosedDependency>, SysmlContextError> {
+        let context = SysmlSemanticContext::for_overlay(
+            &self.overlay,
+            self.accepted_kerml.complete_overlay(),
+            &self.roots,
+            &self.identity.dependencies,
+            self.bindings.clone(),
+        )?
+        .with_producer_closure(self.producer_closure.clone())?;
+        let registry = agq_kerml_semantics::ProducerRegistry::new(
+            agq_kerml_semantics::ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(self.accepted_kerml.profile()))
+                .chain(agq_sysml_semantics::sysml_producer_descriptors()),
+        )
+        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
+        agq_kerml_semantics::ProducerClosedDependency::new(
+            self.overlay.clone(),
+            context.kerml_context(),
+            &registry,
+        )
+        .map_err(SysmlContextError::KerMl)
+    }
     pub fn queries(&self) -> KerMlQueries<'_> {
         KerMlQueries::new(
             self.accepted_kerml

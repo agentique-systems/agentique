@@ -521,7 +521,7 @@ fn primitive_scalar_writers_keep_naming_and_membership_requirements_open() {
                 context.id(),
                 &registry,
                 &table,
-                |_| false,
+                |_| None,
             );
             assert_eq!(
                 certificate.is_closed(id(2), requirement),
@@ -665,7 +665,7 @@ fn ownership_attachment_changes_queries_and_keeps_all_requirements_open() {
             context.id(),
             &registry,
             &table,
-            |_| false,
+            |_| None,
         );
         for requirement in SemanticClosureRequirement::ALL {
             assert!(requirement.requires(ProducerEffect::Ownership));
@@ -730,7 +730,7 @@ fn formal_owner_absence_requires_a_witness_until_delayed_attachment() {
             context.id(),
             &registry,
             table,
-            |_| false,
+            |_| None,
         ))
     };
     let pending = issue(&table);
@@ -1005,7 +1005,7 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert_eq!(
         certificate.evaluation(id(1), registry.index(TYPE).unwrap()),
@@ -1094,7 +1094,7 @@ fn pending_creator_cannot_hide_a_future_cross_subject_typing_family() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert!(
         !certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping),
@@ -1158,7 +1158,7 @@ fn immutable_record_reads_are_fixed_but_external_source_relationships_stay_open(
             context.id(),
             &registry,
             &table,
-            |subject| subject == id(2),
+            |subject| (subject == id(2)).then_some(ClosureSource::LocalProducerClosure),
         );
         assert_eq!(
             certificate.evaluation(id(3), registry.index(TYPE).unwrap()),
@@ -1272,7 +1272,11 @@ fn immutable_noncomposite_inverse_remains_open_to_local_carriers() {
             context.id(),
             &registry,
             &table,
-            |id| snapshot.is_dependency_element(id),
+            |id| {
+                snapshot
+                    .is_dependency_element(id)
+                    .then_some(ClosureSource::LocalProducerClosure)
+            },
         );
         assert_eq!(
             certificate.evaluation(id(5), registry.index(TYPE).unwrap()),
@@ -1351,7 +1355,7 @@ fn additive_scalar_facts_are_fixed_while_absence_and_collection_reads_remain_ope
             context.id(),
             &registry,
             &table,
-            |_| false,
+            |_| None,
         );
         assert_eq!(
             certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
@@ -1426,7 +1430,7 @@ fn declared_relationship_classes_bound_current_and_future_population_writes() {
                 context.id(),
                 &registry,
                 &table,
-                |_| false,
+                |_| None,
             );
             assert_eq!(
                 certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
@@ -1534,7 +1538,7 @@ fn owned_descendant_effects_do_not_retype_or_invalidate_the_producer_subject() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
     assert!(!certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
@@ -1628,7 +1632,7 @@ fn pending_ownership_can_activate_typing_on_a_currently_unowned_subject() {
             context.id(),
             &registry,
             &table,
-            |_| false,
+            |_| None,
         );
         assert!(
             !certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping),
@@ -1763,7 +1767,7 @@ fn positional_bounds_remain_open_to_future_scalar_producers() {
                     context.id(),
                     &registry,
                     &table,
-                    |_| false,
+                    |_| None,
                 );
                 let remains_open = !bounded
                     || future_property == Some(unknown_property)
@@ -1989,7 +1993,7 @@ fn incomplete_target_and_owning_producer_block_dependent_subject_typing() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     for subject in [1, 2, 3] {
         assert!(
@@ -2057,7 +2061,7 @@ fn ownership_derived_chain_and_reference_sources_propagate_target_incompleteness
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     for subject in [1, 2, 3] {
         assert!(
@@ -2114,7 +2118,7 @@ fn arbitrary_inverse_read_depends_on_producers_at_other_sources() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
 }
@@ -2169,7 +2173,7 @@ fn reference_scalar_writes_reopen_cross_subject_queries_and_requirement_masks() 
                 context.id(),
                 &registry,
                 &table,
-                |_| false,
+                |_| None,
             );
             let pending = property == p::FEATURE_FEATURE_TARGET;
             assert_eq!(
@@ -2248,7 +2252,7 @@ fn semantic_target_bounds_exclude_carriers_from_current_and_future_effects() {
                 context.id(),
                 &registry,
                 &table,
-                |_| false,
+                |_| None,
             );
             assert_eq!(
                 certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
@@ -2452,7 +2456,7 @@ fn scalar_producer_base_property_matches_effective_read_alias() {
             q.context(),
             &registry,
             &table,
-            |_| false,
+            |_| None,
         );
         assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
 
@@ -2553,7 +2557,7 @@ fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     eprintln!(
         "closure certificate: subjects=60000 families=80 applicable={} closed={} incomplete={} bytes={} build_ms={}",
@@ -2783,7 +2787,7 @@ fn excluded_relationship_populations_keep_unknown_writers_and_broad_reads_open()
                     q.context(),
                     &registry,
                     &table,
-                    |_| false,
+                    |_| None,
                 );
                 assert_eq!(
                     certificate.evaluation(id(1), registry.index(TYPE).unwrap()),
@@ -3081,7 +3085,7 @@ fn initial_pending_table_can_certify_only_producer_independent_requirements() {
     }
     let issue = |table: &ProducerEvaluationTable| {
         ProducerClosureCertificate::issue(snapshot.model(), context.id(), &registry, table, |_| {
-            false
+            None
         })
     };
     let certificate = issue(&empty);
@@ -3127,7 +3131,7 @@ fn initial_pending_table_can_certify_only_producer_independent_requirements() {
             context.id(),
             &registry,
             &empty,
-            |_| false,
+            |_| None,
         );
         assert!(
             !certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveOwnership),
@@ -3259,6 +3263,7 @@ fn accepted_dependency_population_is_closed_without_replaying_local_subject_writ
     // Exercise the private accepted-boundary marker independently of corpus restoration.
     // Production code only installs this marker after the accepted overlay pointer check.
     context.id.publication_dependency_digest = Some([7; 32]);
+    context.accepted_dependency = snapshot.immutable_dependency().cloned();
     let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
     for requirement in [
         SemanticClosureRequirement::EffectiveTyping,
@@ -3310,7 +3315,7 @@ fn closure_checkpoint_retains_unrelated_evaluations_and_reopens_changed_negative
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     let checkpoint = certificate.checkpoint(&context).unwrap();
     assert!(checkpoint.fingerprint_storage_bytes() <= snapshot.model().len() * 48);
@@ -3407,7 +3412,7 @@ fn new_writer_opportunities_reopen_equal_looking_conclusions() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert!(certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
     let checkpoint = certificate.checkpoint(&context).unwrap();
@@ -3479,7 +3484,7 @@ fn reconstruction_reopens_producer_when_detached_output_disappears() {
     );
     let certificate =
         ProducerClosureCertificate::issue(overlay.model(), context.id(), &registry, &table, |_| {
-            false
+            None
         });
     assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
     let checkpoint = certificate.checkpoint(&context).unwrap();
@@ -3669,7 +3674,7 @@ fn rebound_pending_provider_reopens_transitive_requirement_readers() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert!(certificate.is_closed(id(3), SemanticClosureRequirement::EffectiveTyping));
     let checkpoint = certificate.checkpoint(&context).unwrap();

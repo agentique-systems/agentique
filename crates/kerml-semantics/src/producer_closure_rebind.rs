@@ -32,7 +32,7 @@ impl ProducerClosureCertificate {
             context.id(),
             registry,
             &ProducerEvaluationTable::default(),
-            |id| accepted_dependency(context, id),
+            |id| context.dependency_closure_source(id),
         ))
     }
 
@@ -93,13 +93,6 @@ impl ProducerClosureCertificate {
             })
             .sum()
     }
-}
-
-pub(super) fn accepted_dependency(context: &SemanticContext<'_>, id: ElementId) -> bool {
-    context.id().publication_dependency_digest.is_some()
-        && context
-            .immutable_dependency
-            .is_some_and(|model| model.element(id).is_some())
 }
 
 pub(super) fn read_changed(read: &ProducerRead, affected: &BTreeSet<ElementId>) -> bool {
@@ -208,7 +201,7 @@ impl ProducerClosureCheckpoint {
         }
         let certificate =
             ProducerClosureCertificate::issue(new.model, new.id(), registry, &table, |id| {
-                accepted_dependency(new, id)
+                new.dependency_closure_source(id)
             });
         Ok(ReboundClosure {
             certificate: Arc::new(certificate),

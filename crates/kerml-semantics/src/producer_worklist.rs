@@ -914,10 +914,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                     next_context.id(),
                     registry,
                     &evaluations,
-                    |id| {
-                        next_context.id().publication_dependency_digest.is_some()
-                            && Overlay::is_dependency_element(input, id)
-                    },
+                    |id| next_context.dependency_closure_source(id),
                 ));
                 counters.applicable_subject_family_pairs = issued.applicable_pairs();
                 counters.closed_producer_pairs = issued.closed_pairs();
@@ -990,10 +987,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 next_context.id(),
                 registry,
                 &evaluations,
-                |id| {
-                    next_context.id().publication_dependency_digest.is_some()
-                        && Overlay::is_dependency_element(input, id)
-                },
+                |id| next_context.dependency_closure_source(id),
             ));
             counters.certificate_build_micros += started.elapsed().as_micros();
             counters.certificate_bytes = issued.storage_bytes();

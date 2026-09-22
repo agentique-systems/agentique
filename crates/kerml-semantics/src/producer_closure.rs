@@ -1275,8 +1275,9 @@ impl ProducerClosureCertificate {
         context: &SemanticContextId,
         registry: &ProducerRegistry,
         table: &ProducerEvaluationTable,
-        immutable: impl Fn(ElementId) -> bool,
+        immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
     ) -> Self {
+        let immutable = |id| immutable_source(id).is_some();
         use agq_kerml::{classes as c, properties as p};
         let subjects: Vec<_> = model.elements().map(|r| r.id()).collect();
         let positions: BTreeMap<_, _> = subjects
@@ -1520,7 +1521,7 @@ impl ProducerClosureCertificate {
             .enumerate()
             .map(|(i, mask)| {
                 (!mask & 63)
-                    | if immutable(subjects[i]) && context.publication_dependency_digest.is_some() {
+                    | if immutable_source(subjects[i]) == Some(ClosureSource::AcceptedDependency) {
                         128
                     } else {
                         0

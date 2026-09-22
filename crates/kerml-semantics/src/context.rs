@@ -91,6 +91,9 @@ pub struct SemanticContext<'m> {
     pub(crate) naming_extension: Option<(&'static str, Arc<dyn SemanticNamingExtension>)>,
     pub(crate) producer_closure: Option<Arc<crate::ProducerClosureCertificate>>,
     pub(crate) immutable_dependency: Option<&'m ModelView>,
+    /// Exact accepted ancestor, separate from a merely immutable outer layer.
+    pub(crate) accepted_dependency: Option<Arc<DerivedOverlay>>,
+    pub(crate) closed_dependency: Option<Arc<crate::ProducerClosedDependency>>,
 }
 
 impl SemanticContextId {
@@ -185,6 +188,10 @@ pub enum ContextError {
 }
 
 impl<'m> SemanticContext<'m> {
+    /// Borrow the exact immutable canonical view bound to this context.
+    pub fn model(&self) -> &'m ModelView {
+        self.model
+    }
     /// Share the same immutable input and complete identity with a fresh query
     /// evaluator. This does not rebind, revalidate or change any evidence scope.
     pub fn fork(&self) -> Self {
@@ -194,6 +201,8 @@ impl<'m> SemanticContext<'m> {
             naming_extension: self.naming_extension.clone(),
             producer_closure: self.producer_closure.clone(),
             immutable_dependency: self.immutable_dependency,
+            accepted_dependency: self.accepted_dependency.clone(),
+            closed_dependency: self.closed_dependency.clone(),
         }
     }
     /// Freeze the complete producer registry before attaching closure evidence.
@@ -226,6 +235,11 @@ impl<'m> SemanticContext<'m> {
     /// Shared evidence for this exact immutable graph and interpretation.
     pub fn producer_closure(&self) -> Option<&Arc<crate::ProducerClosureCertificate>> {
         self.producer_closure.as_ref()
+    }
+    /// Authenticated producer-closed immediate dependency, if one was mounted.
+    /// This witness does not confer standard-publication acceptance.
+    pub fn producer_closed_dependency(&self) -> Option<&Arc<crate::ProducerClosedDependency>> {
+        self.closed_dependency.as_ref()
     }
     pub(crate) fn discard_producer_closure(&mut self) {
         self.id.producer_closure_digest = None;
@@ -586,6 +600,8 @@ impl<'m> SemanticContext<'m> {
             naming_extension: None,
             producer_closure: None,
             immutable_dependency: None,
+            accepted_dependency: None,
+            closed_dependency: None,
             id: SemanticContextId {
                 revision,
                 model_digest,

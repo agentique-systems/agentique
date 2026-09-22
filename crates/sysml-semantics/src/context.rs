@@ -192,6 +192,38 @@ pub struct SysmlSemanticContext<'m> {
 }
 
 impl<'m> SysmlSemanticContext<'m> {
+    /// The composed KerML evaluator contract, including its runtime language
+    /// extension and authenticated dependency boundary.
+    pub fn kerml_context(&self) -> &SemanticContext<'m> {
+        &self.kerml
+    }
+
+    /// Compose a mounted producer-closed dependency. The supplied witness proves
+    /// closure, not standard-publication acceptance; public authored frontends
+    /// obtain it only from their accepted Systems publication facade.
+    pub fn for_closed_dependency(
+        kerml: SemanticContext<'m>,
+        expected: &SysmlDependencyContract,
+        bindings: StandardSysmlBindings,
+    ) -> Result<Self, SysmlContextError> {
+        let trusted =
+            SysmlDependencyContract::checked_in_for_profile(&bindings, expected.sysml_profile)?;
+        validate_contract(expected, &trusted)?;
+        if kerml.producer_closed_dependency().is_none() {
+            return Err(SysmlContextError::IdentityMismatch(
+                "producer-closed dependency witness",
+            ));
+        }
+        let registry = agq_kerml_semantics::ProducerRegistry::new(
+            agq_kerml_semantics::ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(kerml.id().options.baseline_profile))
+                .chain(crate::sysml_producer_descriptors()),
+        )
+        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
+        let kerml = kerml.with_producer_registry_digest(registry.digest())?;
+        Self::attach(kerml.model(), kerml, trusted, bindings)
+    }
     /// Attach scheduler evidence to the exact composed graph and dependency
     /// contract. This does not accept a library publication or waive pending
     /// SysML query capabilities. The complete expected KerML/SysML producer
@@ -301,7 +333,7 @@ impl<'m> SysmlSemanticContext<'m> {
                 "combined descriptor graph",
             ));
         }
-        if !bindings.valid_for(kerml.id()) {
+        if !bindings.valid_for_context(&kerml) {
             return Err(SysmlContextError::IdentityMismatch(
                 "standard SysML bindings graph",
             ));
@@ -309,7 +341,7 @@ impl<'m> SysmlSemanticContext<'m> {
         let kerml = kerml.with_naming_extension(
             crate::SYSML_SEMANTIC_CONTEXT_DOMAIN,
             trusted.context_identity_digest(),
-            Arc::new(crate::SysmlNamingExtension),
+            sysml_naming_extension(),
         )?;
         let id = SysmlSemanticContextId {
             kerml: kerml.id().clone(),
@@ -330,6 +362,13 @@ impl<'m> SysmlSemanticContext<'m> {
     pub fn model(&self) -> &'m ModelView {
         self.model
     }
+}
+
+fn sysml_naming_extension() -> Arc<dyn agq_kerml_semantics::SemanticNamingExtension> {
+    static EXTENSION: OnceLock<Arc<crate::SysmlNamingExtension>> = OnceLock::new();
+    EXTENSION
+        .get_or_init(|| Arc::new(crate::SysmlNamingExtension))
+        .clone()
 }
 
 fn validate_contract(

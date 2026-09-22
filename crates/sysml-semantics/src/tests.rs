@@ -6,6 +6,50 @@ mod producer_tests;
 mod structural_query_tests;
 #[path = "transition_tests.rs"]
 mod transition_tests;
+
+#[test]
+fn mounted_dependency_cannot_substitute_a_weaker_producer_registry() {
+    use agq_kerml_semantics::{
+        ProducerClosedDependency, ProducerClosureCertificate, ProducerRegistry,
+    };
+    let snapshot = Fixture::new().base;
+    let overlay = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(snapshot)
+            .build()
+            .unwrap(),
+    );
+    let registry = ProducerRegistry::new([]).unwrap();
+    let context = SemanticContext::for_overlay(
+        &overlay,
+        SemanticOptions {
+            baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+            ..Default::default()
+        },
+        BTreeSet::new(),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let context = context.with_producer_closure(certificate).unwrap();
+    let dependency = ProducerClosedDependency::new(overlay.clone(), &context, &registry).unwrap();
+    let snapshot = dependency.project_snapshot();
+    let context = dependency
+        .project_context(&snapshot, &[], BTreeSet::new(), BTreeSet::new())
+        .unwrap();
+    let bindings = StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32]));
+    let expected = SysmlDependencyContract::checked_in_for_profile(
+        &bindings,
+        SysmlBaselineProfile::OperationalV2,
+    )
+    .unwrap();
+    assert!(matches!(
+        SysmlSemanticContext::for_closed_dependency(context, &expected, bindings),
+        Err(SysmlContextError::KerMl(
+            agq_kerml_semantics::ContextError::ProducerRegistryIdentityMismatch
+        ))
+    ));
+}
 use super::*;
 use agq_kerml::{classes as kc, properties as kp};
 use agq_kerml_semantics::{Completeness, KerMlQueries, SemanticContext, SemanticOptions};

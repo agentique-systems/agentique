@@ -16,6 +16,10 @@ mod inheritance;
 mod namespaces;
 mod naming;
 mod ordering;
+mod producer_closed_dependency;
+#[cfg(test)]
+#[path = "../tests/unit/producer_closed_dependency.rs"]
+mod producer_closed_dependency_tests;
 mod producer_closure;
 #[cfg(test)]
 #[path = "../tests/unit/producer_closure.rs"]
@@ -50,6 +54,7 @@ pub use featuring::ConnectorFeaturing;
 pub use formal_targets::*;
 pub use namespaces::{MemberAccess, MemberMatch};
 pub use naming::EffectiveNames;
+pub use producer_closed_dependency::*;
 pub use producer_closure::*;
 pub use producer_worklist::*;
 pub use publication::*;
