@@ -32,7 +32,7 @@ Slice and accepted-publication reports additionally audit symbolic featuring and
 reference-result binding contexts. No bounds are numerically evaluated.
 
 ```powershell
-python verification/scripts/watchdog.py --name kerml-v9-slices --wall-seconds 1800 --private-mib 3500 --summary verification/summaries/kerml-v9-publication/commands.json -- target/release/examples/publication_slices.exe --slice=all --output=verification/generated/kerml-v9-publication/slices/slice-{slice}.json
+python verification/scripts/watchdog.py --name kerml-v9-slices --wall-seconds 1800 --private-mib 3500 --summary verification/summaries/kerml-v9-publication/commands.json -- target/release/examples/publication_slices.exe --slice=all "--output=verification/generated/kerml-v9-publication/slices/slice-{slice}.json"
 ```
 
 If any slice fails, fix that failure before proceeding. Review changes against the
