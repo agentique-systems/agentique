@@ -1928,6 +1928,49 @@ fn semantic_target_bound_audits_existing_source_not_new_relationship_class() {
 }
 
 #[test]
+fn semantic_target_bound_audits_existing_scalar_contribution() {
+    for class in [c::CLASSIFIER, c::PACKAGE] {
+        let mut fixture = Fixture::new();
+        fixture.create(1, class);
+        let snapshot = fixture.finish();
+        let queries = KerMlQueries::new(
+            SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+        );
+        let property = p::ELEMENT_QUALIFIED_NAME;
+        assert!(
+            snapshot
+                .model()
+                .registry()
+                .property(property)
+                .unwrap()
+                .derived
+        );
+        let mut descriptor = ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::Scalar(property)],
+            ProducerApplicability::Any,
+        );
+        descriptor.effect_targets = Some(BTreeSet::from([c::TYPE]));
+        let registry = ProducerRegistry::new([descriptor]).unwrap();
+        let mut plan = queries.plan_result_structure([]);
+        let evidence = queries.canonical_fact_evidence(FactKey::Element(id(1)));
+        plan.add_derived_property(
+            id(1),
+            property,
+            SlotValue::Scalar(Value::String("Mobility::fixture".into())),
+            RuleId::from_u128(99871),
+            &evidence,
+        )
+        .unwrap();
+        assert_eq!(
+            plan.validate_declared_effects(&[id(1)], &registry).is_ok(),
+            class == c::CLASSIFIER,
+            "the existing scalar subject must satisfy the declared target bound"
+        );
+    }
+}
+
+#[test]
 fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
     use crate::producer_closure::ProducerEvaluationTable;
     let mut f = Fixture::new();
