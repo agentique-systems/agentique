@@ -486,6 +486,32 @@
         "CARGO_PROFILE_RELEASE_LTO": "false",
         "CARGO_PROFILE_RELEASE_DEBUG": "0"
       }
+    },
+    {
+      "name": "binding-manifest-class-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9669349eab158d8dee15bf201c615dc70d5d3c5a",
+      "working_changes_sha256": "afdc76a9597410c544173ecae4178fa89398209f51f2957a3195e33059857bd4",
+      "output_sha256": "4bf7f91977197c4ddc902829da1915bd42b027ad3ae21886763690533230f328",
+      "duration_seconds": 10.7,
+      "output": "verification/generated/language-stability-bridge/binding-manifest-class-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }

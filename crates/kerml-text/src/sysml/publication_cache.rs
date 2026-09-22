@@ -46,6 +46,12 @@ impl CanonicalSysmlSystemsLibrary {
             .iter()
             .map(|(role, element)| {
                 let (path, expected) = role.specification();
+                let metaclass = self
+                    .overlay
+                    .model()
+                    .element(*element)
+                    .ok_or(SystemsPublicationCacheError::Mismatch("binding element"))?
+                    .metaclass();
                 let source = self
                     .bindings
                     .declaration_sources()
@@ -60,6 +66,7 @@ impl CanonicalSysmlSystemsLibrary {
                     "element":element,
                     "library":self.bindings.identity().library,
                     "qualified_path":path,
+                    "metaclass":metaclass,
                     "expected_metaclass":expected,
                     "visibility":"public",
                     "source":source,
