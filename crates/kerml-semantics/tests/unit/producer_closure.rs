@@ -4,6 +4,240 @@ include!("../common/result_fixture.rs");
 const ACTIVATE: ProducerFamilyId = ProducerFamilyId::new("Fixture.Activate");
 const TYPE: ProducerFamilyId = ProducerFamilyId::new("Fixture.Type");
 
+#[test]
+fn owned_end_population_ignores_only_proven_non_end_writers() {
+    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    f.create(3, c::FEATURE);
+    f.value(3, p::FEATURE_IS_END, Value::Boolean(true));
+    member(&mut f, 1, 2, 4, c::FEATURE_MEMBERSHIP);
+    member(&mut f, 1, 3, 5, c::FEATURE_MEMBERSHIP);
+    f.create(6, c::CLASSIFIER);
+    f.create(7, c::FEATURE);
+    f.value(7, p::FEATURE_IS_END, Value::Boolean(true));
+    member(&mut f, 6, 7, 8, c::FEATURE_MEMBERSHIP);
+    f.create(9, c::SUBCLASSIFICATION);
+    f.value(
+        9,
+        p::SUBCLASSIFICATION_SUBCLASSIFIER,
+        Value::Reference(id(1)),
+    );
+    f.value(
+        9,
+        p::SUBCLASSIFICATION_SUPERCLASSIFIER,
+        Value::Reference(id(6)),
+    );
+    f.own(1, 9);
+    let snapshot = f.finish();
+    let pending = SemanticContext::for_project_snapshot(
+        &snapshot,
+        Default::default(),
+        BTreeSet::new(),
+        BTreeSet::new(),
+        BTreeSet::from([id(1)]),
+    )
+    .unwrap();
+    assert_eq!(
+        KerMlQueries::new(pending)
+            .owned_end_features(id(1))
+            .completeness,
+        Completeness::Incomplete
+    );
+    for (effect, populations, expected_closed) in [
+        (ProducerEffect::Membership, Some(BTreeSet::new()), true),
+        (
+            ProducerEffect::Membership,
+            Some(BTreeSet::from([crate::FeaturePopulationKind::End])),
+            false,
+        ),
+        (ProducerEffect::Scalar(p::FEATURE_IS_END), None, false),
+    ] {
+        let mut writer = ProducerDescriptor::new(
+            ACTIVATE,
+            [effect],
+            ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+        );
+        writer.feature_populations = populations;
+        writer.relationship_classes = Some(BTreeSet::from([c::FEATURE_MEMBERSHIP]));
+        let reader = ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::Typing],
+            ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+        );
+        let registry = ProducerRegistry::new([writer, reader]).unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let q = KerMlQueries::for_production(context.fork());
+        let ends = q.owned_end_features(id(1));
+        assert_eq!(ends.value, vec![id(3)]);
+        assert_eq!(ends.completeness, Completeness::Complete);
+        let mut table = ProducerEvaluationTable::default();
+        for record in snapshot.model().elements() {
+            table.pending(record.id(), snapshot.model(), &registry);
+        }
+        table
+            .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+            .unwrap();
+        table
+            .record(&[(id(6), TYPE, Completeness::Complete)], &registry)
+            .unwrap();
+        table.record_reads(&[(id(6), TYPE, Vec::new().into())], &registry);
+        table.record_reads(
+            &[(id(1), TYPE, producer_reads(&ends, snapshot.model()))],
+            &registry,
+        );
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &table,
+            |_| None,
+        );
+        assert_eq!(
+            certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping),
+            expected_closed,
+            "{effect:?}"
+        );
+    }
+}
+
+#[test]
+fn inverse_ownership_uses_selected_edge_proof_and_keeps_derived_and_broad_reads() {
+    use crate::producer_closure::{ProducerRead, effect_changes_read, producer_reads};
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    for subject in [2, 5, 7, 8] {
+        f.create(subject, c::FEATURE);
+    }
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    member(&mut f, 1, 5, 4, c::FEATURE_MEMBERSHIP);
+    f.owned
+        .get_mut(&id(1))
+        .unwrap()
+        .retain(|v| *v != Value::Reference(id(4)));
+    f.create(9, c::FEATURE_TYPING);
+    f.value(9, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(2)));
+    f.value(9, p::FEATURE_TYPING_TYPE, Value::Reference(id(1)));
+    f.changes.set(
+        id(9),
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        SlotValue::Ordered(vec![Value::Reference(id(7))]),
+        origin(),
+    );
+    let snapshot = f.finish();
+    let requirement = SemanticClosureRequirement::EffectiveTyping;
+    let mut builder = DerivationBuilder::new(snapshot);
+    for (owner, property, target) in [
+        (1, p::ELEMENT_OWNED_RELATIONSHIP, 4),
+        (9, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, 8),
+    ] {
+        builder.extend_ordered_references(
+            id(owner),
+            property,
+            vec![id(target)],
+            agq_kernel::provenance::Explanation {
+                rule: RuleId::from_u128(99201),
+                dependencies: BTreeSet::new(),
+            },
+        );
+        builder.searches(
+            FactKey::Property {
+                element: id(owner),
+                property,
+            },
+            BTreeSet::from([StructuralSearch::ProducerClosure {
+                subject: id(5),
+                requirement: requirement.contract_id().into(),
+            }]),
+        );
+    }
+    let overlay = builder.build().unwrap();
+    for production in [false, true] {
+        let context =
+            SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap();
+        let q = if production {
+            KerMlQueries::for_production(context)
+        } else {
+            KerMlQueries::new(context)
+        };
+        for (selected, appended, owner, property, class, child) in [
+            (
+                q.owning_related_element(id(3)),
+                q.owning_related_element(id(4)),
+                1,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                c::ELEMENT,
+                3,
+            ),
+            (
+                q.owning_relationship(id(7)),
+                q.owning_relationship(id(8)),
+                9,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                c::RELATIONSHIP,
+                7,
+            ),
+        ] {
+            let fact = FactKey::Property {
+                element: id(owner),
+                property,
+            };
+            assert_eq!(selected.value, Some(id(owner)));
+            assert_eq!(selected.completeness, Completeness::Complete);
+            assert!(
+                selected
+                    .canonical_dependencies
+                    .contains(&Dependency::Declared(fact))
+            );
+            let reads = producer_reads(&selected, overlay.model());
+            assert!(!reads.contains(&ProducerRead::Requirement(id(5), requirement)));
+            let inverse = ProducerRead::Source(id(child), class, property);
+            assert!(reads.contains(&inverse));
+            assert!(effect_changes_read(
+                ProducerEffect::Ownership,
+                &inverse,
+                overlay.model()
+            ));
+            assert_eq!(appended.value, Some(id(owner)));
+            assert!(
+                appended
+                    .canonical_dependencies
+                    .contains(&Dependency::Derived(fact))
+            );
+            assert!(
+                producer_reads(&appended, overlay.model())
+                    .contains(&ProducerRead::Requirement(id(5), requirement))
+            );
+            for broad_first in [false, true] {
+                let mut combined = q.result(());
+                if broad_first {
+                    combined.merge(q.canonical_fact_evidence(fact));
+                }
+                combined.merge(selected.clone());
+                if !broad_first {
+                    combined.merge(q.canonical_fact_evidence(fact));
+                }
+                let reads = producer_reads(&combined, overlay.model());
+                assert!(reads.contains(&ProducerRead::Property(id(owner), property)));
+                assert!(reads.contains(&ProducerRead::Requirement(id(5), requirement)));
+                assert!(
+                    crate::read_dependencies::structural_searches(&combined).contains(
+                        &StructuralSearch::ProducerClosure {
+                            subject: id(5),
+                            requirement: requirement.contract_id().into(),
+                        }
+                    )
+                );
+            }
+        }
+    }
+}
+
 struct PendingScalar;
 impl PublicationProducerExtension for PendingScalar {
     fn descriptors(&self) -> Vec<ProducerDescriptor> {

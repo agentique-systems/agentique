@@ -318,7 +318,17 @@ impl<'m> KerMlQueries<'m> {
                     element: incoming.source,
                     property: storage,
                 };
-                self.fact(out, fact);
+                if matches!(
+                    storage,
+                    p::ELEMENT_OWNED_RELATIONSHIP | p::RELATIONSHIP_OWNED_RELATED_ELEMENT
+                ) {
+                    // This inverse projects one edge. Original support for that
+                    // edge must not import proofs from unrelated later siblings.
+                    // A newly derived edge still needs its current derived proof.
+                    self.selected_reference_fact(out, incoming.source, storage, &[element]);
+                } else {
+                    self.fact(out, fact);
+                }
                 evidence.push(Evidence::Fact(fact));
             }
         } else if self.model().navigation_slot(element, property).is_some()

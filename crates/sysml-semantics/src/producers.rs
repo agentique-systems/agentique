@@ -574,13 +574,8 @@ pub fn plan_sysml_producers(
                 usage_rule
             },
         );
-        let features = queries.direct_features(subject);
-        let mut ends = 0;
-        for &feature in &features.value {
-            if evaluator.boolean(&mut result.evidence, feature, kp::FEATURE_IS_END) == Some(true) {
-                ends += 1;
-            }
-        }
+        let features = queries.owned_end_features(subject);
+        let ends = features.value.len();
         result
             .evidence
             .merge_evidence(features)
@@ -600,12 +595,8 @@ pub fn plan_sysml_producers(
     }
     if evaluator.is(subject, sc::FLOW_USAGE) {
         let mut result = evaluator.result(subject, "checkFlowUsageFlowSpecialization");
-        let features = queries.direct_features(subject);
-        let mut has_end = false;
-        for &feature in &features.value {
-            has_end |=
-                evaluator.boolean(&mut result.evidence, feature, kp::FEATURE_IS_END) == Some(true);
-        }
+        let features = queries.owned_end_features(subject);
+        let has_end = !features.value.is_empty();
         result
             .evidence
             .merge_evidence(features)

@@ -165,3 +165,25 @@ Final source-binding verification at `7120fb7`:
 Raw package output is ignored at
 `verification/generated/language-stability-bridge/declared-source-binding-package-tests.log`.
 Actual Systems publication and language-readiness acceptance remain separate gates.
+
+Unnamed authored occurrence usages exposed two further causal-read defects. An
+inverse ownership query read its selected original edge but imported the whole
+parent collection's sibling append proofs. It now retains selected original
+support with the current inverse search; newly derived edges and explicit broad
+reads still retain derived evidence. Binary Connection/Interface and Flow end
+tests now use the same directly owned end population through `owned_end_features`.
+The existing end-population effect contract excludes proven non-end writers while
+keeping actual end writers, end-flag writes and pending source populations open.
+Inherited ends remain distinct from directly owned ends. Producer requirements,
+effects, standard identities and accepted KerML semantics are unchanged.
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib unnamed_constraint_and_connection_usages_close_under_occurrence_owner -- --nocapture` | Original regression incomplete; inverse correction alone cleared both constraint subjects but left the Connection end-population cycle. With both corrections, Complete and 1 passed in 19.39 seconds | 101, then 0 |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib producer_closure -- --nocapture` | 61 passed in 10.82 seconds, including selected inverse edge evidence, derived/broad fallback, pending owner providers, and end writer regressions; 60,000-subject proof remains 2,220,216 bytes | 0 |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib owned_end_population_ignores_only_proven_non_end_writers -- --nocapture` | Passed after adding explicit inherited-end exclusion and pending namespace source assertion | 0 |
+
+An initial inverse fixture used abstract Relationship and failed kernel construction;
+the fixture now uses a concrete FeatureTyping carrier. Broader package checks follow
+integration; these focused outcomes authorize another bounded Actions check, not
+publication acceptance.

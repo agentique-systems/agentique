@@ -398,6 +398,22 @@ impl KerMlQueries<'_> {
         out.value = self.positioned_features(&mut out, owner, Position::Parameter);
         out
     }
+    /// Directly owned end Features in canonical membership order. The retained
+    /// population search includes pending endpoints and end-flag writers while
+    /// excluding producers proven to create only non-end members.
+    pub fn owned_end_features(&self, owner: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        out.value = self.positioned_features(&mut out, owner, Position::End);
+        if self.context().pending_namespace_scopes.contains(&owner) {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_END_POPULATION",
+                owner,
+                "Pending source memberships may introduce additional owned end Features",
+            );
+        }
+        out
+    }
     pub(crate) fn implied_redefinitions(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
         let membership = self.owning_relationship(feature);
