@@ -181,7 +181,11 @@ impl CanonicalSysmlSystemsLibrary {
         stage_progress: impl FnMut(&PublicationStage),
     ) -> Result<Self, SystemsPublicationError> {
         let mut audit = SystemsPublicationAudit::default();
-        let profile = SysmlBaselineProfile::OperationalV1;
+        let profile = match candidate.syntax_profile() {
+            SysmlSyntaxProfile::Published => SysmlBaselineProfile::Published,
+            SysmlSyntaxProfile::OperationalV1 => SysmlBaselineProfile::OperationalV1,
+            SysmlSyntaxProfile::OperationalV2 => SysmlBaselineProfile::OperationalV2,
+        };
         let identity = SystemsLibraryIdentity::pinned(SystemsLibraryIdentity::SOURCE_CONTENT_SET);
         let empty_bindings = StandardSysmlBindings::unbound(identity.clone());
         let mut contract =
@@ -211,6 +215,7 @@ impl CanonicalSysmlSystemsLibrary {
             &declared,
             candidate.draft().source_map(),
             library,
+            candidate.syntax_profile(),
             &mut audit,
         );
         if !audit.findings.is_empty() {
@@ -484,7 +489,7 @@ fn audit_inputs(
             "candidate dependency contract",
         ),
         (
-            candidate.syntax_profile() == SysmlSyntaxProfile::OperationalV1,
+            candidate.syntax_profile() == SysmlSyntaxProfile::OperationalV2,
             "SysML syntax profile",
         ),
         (
@@ -548,7 +553,7 @@ fn audit_inputs(
         ));
     }
     for status in candidate.documents() {
-        let valid = status.profile == SysmlSyntaxProfile::OperationalV1
+        let valid = status.profile == SysmlSyntaxProfile::OperationalV2
             && status.parsed
             && status.byte_exact
             && status.recovery_count == 0
@@ -574,6 +579,7 @@ fn audit_source_provenance(
     declared: &Snapshot,
     source_map: &LibrarySourceMap,
     library: &VerifiedLibrary,
+    profile: SysmlSyntaxProfile,
     audit: &mut SystemsPublicationAudit,
 ) {
     let expected = Origin::Declared(DeclaredOrigin::StandardLibrary {
@@ -582,7 +588,7 @@ fn audit_source_provenance(
     let mut source_nodes = SourceNodes::new();
     for source in library.documents() {
         let syntax = agq_kerml_syntax::production::parse_sysml_with_profile(
-            SysmlSyntaxProfile::OperationalV1,
+            profile,
             source.document(),
             source.revision(),
             source.source(),
@@ -697,7 +703,7 @@ fn audit_sysml_population<'m>(
     subjects: &[ElementId],
     audit: &mut SystemsPublicationAudit,
 ) {
-    let profile = SysmlBaselineProfile::OperationalV1;
+    let profile = q.context().dependencies.sysml_profile;
     for &subject in subjects {
         let class = q
             .model()

@@ -94,11 +94,25 @@ fn operational_context_pins_both_manifests_and_preserves_published_target() {
         SysmlBaselineProfile::OPERATIONAL_V1,
     )
     .unwrap();
+    let operational_v2 = SysmlDependencyContract::checked_in_for_profile(
+        &bindings,
+        SysmlBaselineProfile::OPERATIONAL_V2,
+    )
+    .unwrap();
     assert_ne!(published, operational);
     assert!(published.grammar_compatibility_manifest_digest.is_none());
     assert!(operational.grammar_compatibility_manifest_digest.is_some());
     assert!(published.semantic_correction_manifest_digest.is_none());
     assert!(operational.semantic_correction_manifest_digest.is_some());
+    assert_ne!(operational, operational_v2);
+    assert_eq!(
+        operational.grammar_compatibility_manifest_digest,
+        operational_v2.grammar_compatibility_manifest_digest
+    );
+    assert_ne!(
+        operational.semantic_correction_manifest_digest,
+        operational_v2.semantic_correction_manifest_digest
+    );
     assert_eq!(
         SysmlBaselineProfile::PUBLISHED.composite_item_target(),
         ["Items", "Item", "subitem"]
@@ -560,6 +574,9 @@ fn corpus_anchor_fixture() -> (Fixture, BTreeMap<StandardSysmlRole, u128>) {
         StandardSysmlRole::OwnedStates,
         StandardSysmlRole::BinaryInterface,
         StandardSysmlRole::BinaryInterfaces,
+        StandardSysmlRole::BinaryConnection,
+        StandardSysmlRole::ViewpointCheck,
+        StandardSysmlRole::ViewpointChecks,
         StandardSysmlRole::Interfaces,
         StandardSysmlRole::Interface,
         StandardSysmlRole::Messages,
@@ -597,6 +614,88 @@ fn corpus_anchor_fixture() -> (Fixture, BTreeMap<StandardSysmlRole, u128>) {
     }
     f.origin = origin();
     (f, roles)
+}
+
+#[test]
+fn operational_v2_authority_matrix_corrects_only_the_three_pinned_targets() {
+    let (mut f, roles) = corpus_anchor_fixture();
+    for (subject, class) in [
+        (3000, sc::VIEWPOINT_DEFINITION),
+        (3001, sc::VIEWPOINT_USAGE),
+        (3002, sc::CONNECTION_DEFINITION),
+    ] {
+        // These deliberately arbitrary authored names prove selection is by
+        // structural rule and canonical target, never a source-library name.
+        f.create(subject, class, "arbitraryAuthoredSubject");
+    }
+    for end in [3003, 3004] {
+        f.create(end, sc::REFERENCE_USAGE, "arbitraryEnd");
+        f.member(3002, end, end + 10_000, kc::FEATURE_MEMBERSHIP);
+        f.value(end, kp::FEATURE_IS_END, Value::Boolean(true));
+    }
+    let snapshot = f.finish();
+    let context = crate::context::fixture_context(&snapshot, BTreeSet::new());
+    let queries = KerMlQueries::new(context.kerml);
+    for profile in [
+        SysmlBaselineProfile::PUBLISHED,
+        SysmlBaselineProfile::OPERATIONAL_V1,
+    ] {
+        for (subject, rule) in [
+            (3000, "checkViewpointDefinitionSpecialization"),
+            (3001, "checkViewpointUsageSpecialization"),
+            (3002, "checkConnectionDefinitionBinarySpecialization"),
+        ] {
+            let plan =
+                plan_sysml_producers(&queries, profile, &context.bindings, &[id(1)], id(subject));
+            let outcome = result(&plan, rule);
+            assert!(outcome.relationships.is_empty());
+            assert_eq!(outcome.evidence.completeness, Completeness::Incomplete);
+            assert!(
+                outcome
+                    .evidence
+                    .diagnostics
+                    .iter()
+                    .any(|d| d.code == "SQ_TARGET_MISSING")
+            );
+        }
+    }
+    for (subject, rule, target) in [
+        (
+            3000,
+            "checkViewpointDefinitionSpecialization",
+            StandardSysmlRole::ViewpointCheck,
+        ),
+        (
+            3001,
+            "checkViewpointUsageSpecialization",
+            StandardSysmlRole::ViewpointChecks,
+        ),
+        (
+            3002,
+            "checkConnectionDefinitionBinarySpecialization",
+            StandardSysmlRole::BinaryConnection,
+        ),
+    ] {
+        let plan = plan_sysml_producers(
+            &queries,
+            SysmlBaselineProfile::OPERATIONAL_V2,
+            &context.bindings,
+            &[id(1)],
+            id(subject),
+        );
+        let outcome = result(&plan, rule);
+        assert_eq!(
+            outcome.evidence.completeness,
+            Completeness::Complete,
+            "{rule}"
+        );
+        assert_eq!(outcome.relationships.len(), 1, "{rule}");
+        assert_eq!(
+            outcome.relationships[0].general,
+            id(roles[&target]),
+            "{rule}"
+        );
+    }
 }
 
 fn set_enum(f: &mut Fixture, subject: u128, property: PropertyId, name: &str) {

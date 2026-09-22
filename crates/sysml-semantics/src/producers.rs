@@ -193,8 +193,11 @@ pub fn plan_sysml_producers(
                     .any(|class| evaluator.is(owner, *class))
                 {
                     let target = if matches!(target, Target::PublishedSubitem)
-                        && profile == SysmlBaselineProfile::OPERATIONAL_V1
-                    {
+                        && matches!(
+                            profile,
+                            SysmlBaselineProfile::OPERATIONAL_V1
+                                | SysmlBaselineProfile::OPERATIONAL_V2
+                        ) {
                         Target::Sysml(R::Subitems)
                     } else {
                         target
@@ -1225,21 +1228,33 @@ impl Evaluator<'_, '_> {
             ),
             Target::MissingViewpoint => self.path(
                 subject,
-                &["Views", "Viewpoint"],
+                if self.profile == SysmlBaselineProfile::OPERATIONAL_V2 {
+                    &["Views", "ViewpointCheck"]
+                } else {
+                    &["Views", "Viewpoint"]
+                },
                 sc::VIEWPOINT_DEFINITION,
                 None,
                 SystemsLibraryIdentity::LIBRARY,
             ),
             Target::MissingViewpoints => self.path(
                 subject,
-                &["Views", "viewpoints"],
+                if self.profile == SysmlBaselineProfile::OPERATIONAL_V2 {
+                    &["Views", "viewpointChecks"]
+                } else {
+                    &["Views", "viewpoints"]
+                },
                 sc::VIEWPOINT_USAGE,
                 None,
                 SystemsLibraryIdentity::LIBRARY,
             ),
             Target::MissingBinaryConnections => self.path(
                 subject,
-                &["Connections", "BinaryConnections"],
+                if self.profile == SysmlBaselineProfile::OPERATIONAL_V2 {
+                    &["Connections", "BinaryConnection"]
+                } else {
+                    &["Connections", "BinaryConnections"]
+                },
                 sc::CONNECTION_DEFINITION,
                 None,
                 SystemsLibraryIdentity::LIBRARY,

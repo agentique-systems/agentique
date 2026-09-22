@@ -178,6 +178,9 @@ pub fn prepare_systems_library_with_semantic_progress(
         production::SysmlSyntaxProfile::OperationalV1 => {
             agq_sysml_semantics::SysmlBaselineProfile::OperationalV1
         }
+        production::SysmlSyntaxProfile::OperationalV2 => {
+            agq_sysml_semantics::SysmlBaselineProfile::OperationalV2
+        }
     };
     let candidate_bindings = agq_sysml_semantics::StandardSysmlBindings::unbound(
         agq_sysml_semantics::SystemsLibraryIdentity::pinned(
@@ -294,7 +297,13 @@ pub fn prepare_systems_library_with_semantic_progress(
         &mut progress,
     )?;
     let mut production = None;
-    if all_supported && profile == production::SysmlSyntaxProfile::OperationalV1 {
+    if all_supported
+        && matches!(
+            profile,
+            production::SysmlSyntaxProfile::OperationalV1
+                | production::SysmlSyntaxProfile::OperationalV2
+        )
+    {
         // Positive inheritance normally supplies source endpoints without
         // evaluating scalar predicates that would be discarded by the next
         // declared reconstruction. Retain a full construction fallback for

@@ -26,6 +26,31 @@ fn operational(source: &str) -> Document {
     .unwrap()
 }
 
+#[test]
+fn operational_v2_reuses_v1_grammar_with_a_distinct_profile_identity() {
+    let source = "part def Engine;";
+    let v1 = operational(source);
+    let v2 = production::parse_sysml_with_profile(
+        SysmlSyntaxProfile::OperationalV2,
+        DocumentId::new(),
+        SourceRevisionId::new(),
+        source,
+        Limits::default(),
+    )
+    .unwrap();
+    assert!(v2.is_complete(), "{:?}", v2.diagnostics());
+    assert_lossless(&v2, source);
+    assert_eq!(
+        SysmlSyntaxProfile::OperationalV1.grammar_compatibility_manifest_sha256(),
+        SysmlSyntaxProfile::OperationalV2.grammar_compatibility_manifest_sha256()
+    );
+    assert_ne!(
+        SysmlSyntaxProfile::OperationalV1.id(),
+        SysmlSyntaxProfile::OperationalV2.id()
+    );
+    assert_eq!(v1.nodes().count(), v2.nodes().count());
+}
+
 fn assert_lossless(doc: &Document, source: &str) {
     assert_eq!(doc.source(), source);
     let mut end = 0;

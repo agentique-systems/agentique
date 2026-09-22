@@ -7,16 +7,19 @@ pub enum SysmlBaselineProfile {
     #[default]
     Published,
     OperationalV1,
+    OperationalV2,
 }
 
 impl SysmlBaselineProfile {
     pub const PUBLISHED: Self = Self::Published;
     pub const OPERATIONAL_V1: Self = Self::OperationalV1;
+    pub const OPERATIONAL_V2: Self = Self::OperationalV2;
 
     pub const fn id(self) -> &'static str {
         match self {
             Self::Published => "omg-sysml-2.0-published/1",
             Self::OperationalV1 => "agentique-sysml-2.0-operational/1",
+            Self::OperationalV2 => "agentique-sysml-2.0-operational/2",
         }
     }
 
@@ -25,19 +28,24 @@ impl SysmlBaselineProfile {
         match self {
             Self::Published => &["Items", "Item", "subitem"],
             Self::OperationalV1 => &["Items", "Item", "subitems"],
+            Self::OperationalV2 => &["Items", "Item", "subitems"],
         }
     }
 
     pub fn semantic_correction_manifest_digest(self) -> Option<[u8; 32]> {
-        (self == Self::OperationalV1).then(|| {
-            manifest_digest(include_str!(
+        match self {
+            Self::Published => None,
+            Self::OperationalV1 => Some(manifest_digest(include_str!(
                 "../../../standards/sysml-2.0-operational-semantic-v1.json"
-            ))
-        })
+            ))),
+            Self::OperationalV2 => Some(manifest_digest(include_str!(
+                "../../../standards/sysml-2.0-operational-semantic-v2.json"
+            ))),
+        }
     }
 
     pub fn grammar_compatibility_manifest_digest(self) -> Option<[u8; 32]> {
-        (self == Self::OperationalV1).then(|| {
+        matches!(self, Self::OperationalV1 | Self::OperationalV2).then(|| {
             manifest_digest(include_str!(
                 "../../../standards/grammar/sysml-2.0-operational-v1.json"
             ))
