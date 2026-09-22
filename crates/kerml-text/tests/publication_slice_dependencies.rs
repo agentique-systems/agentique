@@ -74,6 +74,14 @@ impl Fixture {
             origin(),
         );
     }
+    fn name(&mut self, element: u128, name: &str) {
+        self.changes.set(
+            id(element),
+            p::ELEMENT_DECLARED_NAME,
+            SlotValue::Scalar(Value::String(name.into())),
+            origin(),
+        );
+    }
     fn own(&mut self, owner: u128, relationship: u128) {
         self.owned
             .entry(id(owner))
@@ -130,6 +138,47 @@ fn fixture() -> Snapshot {
     f.create(110, c::NAMESPACE_IMPORT);
     f.own(100, 110);
     f.reference(110, p::NAMESPACE_IMPORT_IMPORTED_NAMESPACE, 1);
+    f.finish()
+}
+
+// The imported Functions have result structure, but the local specialization
+// only reads their declared names until a qualified lookup enters a Function.
+fn lookup_fixture(unnamed_feature: bool) -> Snapshot {
+    let mut f = Fixture::new();
+    for (element, class, name) in [
+        (1, c::LIBRARY_PACKAGE, "Orchard"),
+        (2, c::FUNCTION, "Copper"),
+        (20, c::FEATURE, "answer"),
+        (30, c::EXPRESSION, "tide"),
+        (40, c::FEATURE, "foam"),
+        (60, c::FUNCTION, "Indigo"),
+        (62, c::FEATURE, "berry"),
+        (100, c::PACKAGE, "Workshop"),
+        (4, c::CLASSIFIER, "Needle"),
+        (90, c::DATA_TYPE, "Thread"),
+    ] {
+        f.create(element, class);
+        f.name(element, name);
+    }
+    f.member(1, 3, 2, c::OWNING_MEMBERSHIP);
+    f.member(2, 21, 20, c::RETURN_PARAMETER_MEMBERSHIP);
+    f.member(2, 31, 30, c::RESULT_EXPRESSION_MEMBERSHIP);
+    f.member(30, 41, 40, c::RETURN_PARAMETER_MEMBERSHIP);
+    f.member(1, 61, 60, c::OWNING_MEMBERSHIP);
+    f.member(60, 63, 62, c::RETURN_PARAMETER_MEMBERSHIP);
+    f.member(100, 6, 4, c::OWNING_MEMBERSHIP);
+    f.member(100, 91, 90, c::OWNING_MEMBERSHIP);
+    f.create(5, c::SPECIALIZATION);
+    f.own(4, 5);
+    f.reference(5, p::SPECIALIZATION_SPECIFIC, 4);
+    f.reference(5, p::SPECIALIZATION_GENERAL, 90);
+    f.create(110, c::NAMESPACE_IMPORT);
+    f.own(100, 110);
+    f.reference(110, p::NAMESPACE_IMPORT_IMPORTED_NAMESPACE, 1);
+    if unnamed_feature {
+        f.create(70, c::FEATURE);
+        f.member(1, 71, 70, c::OWNING_MEMBERSHIP);
+    }
     f.finish()
 }
 
@@ -274,32 +323,141 @@ fn concrete_context_anchors_keep_their_semantic_owner_dependencies() {
 }
 
 #[test]
-fn final_reference_reads_reject_an_omitted_semantic_provider() {
-    let snapshot = fixture();
+fn declared_imported_function_names_do_not_require_result_production() {
+    let snapshot = lookup_fixture(false);
     let overlay = agq_kernel::derived::DerivationBuilder::new(snapshot.clone())
         .build()
         .unwrap();
+    let population = subjects(overlay.model(), [id(4), id(110)]).unwrap();
+    let q = KerMlStatusQueries::new(context(&overlay).unwrap());
+    for (name, expected) in [("Copper", vec![id(2)]), ("Absent", vec![])] {
+        let answer = q.lookup_relationship_target_with_reads(
+            id(5),
+            p::SPECIALIZATION_GENERAL,
+            &QualifiedName {
+                absolute: false,
+                segments: vec![name.into()],
+            },
+        );
+        assert_eq!(answer.outcome.completeness, Completeness::Complete);
+        assert_eq!(
+            answer
+                .outcome
+                .value
+                .iter()
+                .map(|m| m.element)
+                .collect::<Vec<_>>(),
+            expected
+        );
+        let providers = answer.reads.publication_provider_reads(overlay.model());
+        let mut boundary = Boundary::from_graph(overlay.model(), &population).unwrap();
+        boundary.include_provider_reads(overlay.model(), &population, &providers);
+        assert!(
+            boundary.is_complete(),
+            "{name}: {:?}",
+            boundary.missing_subjects
+        );
+        for unrelated in [2, 20, 30, 40, 60, 62] {
+            assert!(!population.contains(&id(unrelated)));
+            assert!(!providers.bounded_elements().contains(&id(unrelated)));
+        }
+        // Those identity/name reads still invalidate queries across revisions.
+        assert!(answer.reads.affected_by(&BTreeSet::from([id(2)]), false));
+        assert!(answer.reads.affected_by(&BTreeSet::from([id(60)]), false));
+        let mut coarse = Boundary::default();
+        coarse.include_reads(overlay.model(), &population, &answer.reads);
+        assert!(coarse.missing_subjects.contains(&id(2)));
+        assert!(coarse.missing_subjects.contains(&id(60)));
+        let all_elements = overlay.model().elements().map(|r| r.id()).collect();
+        let mut complete_coarse = Boundary::default();
+        complete_coarse.include_invalidation(
+            overlay.model(),
+            &all_elements,
+            &answer.reads.into_invalidation(),
+        );
+        assert!(complete_coarse.is_complete());
+    }
+}
+
+#[test]
+fn a_qualified_result_lookup_still_requires_its_external_function() {
+    let snapshot = lookup_fixture(false);
+    let overlay = agq_kernel::derived::DerivationBuilder::new(snapshot.clone())
+        .build()
+        .unwrap();
+    let population = subjects(overlay.model(), [id(4), id(110)]).unwrap();
     let q = KerMlStatusQueries::new(context(&overlay).unwrap());
     let answer = q.lookup_relationship_target_with_reads(
         id(5),
-        p::SUBSETTING_SUBSETTED_FEATURE,
+        p::SPECIALIZATION_GENERAL,
         &QualifiedName {
             absolute: false,
-            segments: vec!["Missing".into()],
+            segments: vec!["Copper".into(), "answer".into()],
         },
     );
+    assert_eq!(answer.outcome.completeness, Completeness::Complete);
+    assert_eq!(answer.outcome.value.len(), 1);
+    assert_eq!(answer.outcome.value[0].element, id(20));
+    let providers = answer.reads.publication_provider_reads(overlay.model());
     let mut boundary = Boundary::default();
-    boundary.include_reads(overlay.model(), &BTreeSet::from([id(4)]), &answer.reads);
+    boundary.include_provider_reads(overlay.model(), &population, &providers);
     assert!(!boundary.is_complete());
     assert!(boundary.missing_subjects.contains(&id(2)));
-    let all_types = overlay.model().elements().map(|r| r.id()).collect();
+    assert!(!boundary.missing_subjects.contains(&id(60)));
+    let expanded =
+        expanded_subjects(overlay.model(), &population, &boundary.missing_subjects, 32).unwrap();
+    for required in [2, 20, 21, 30, 31, 40, 41] {
+        assert!(expanded.contains(&id(required)), "missing {required}");
+    }
+    assert!(!expanded.contains(&id(60)));
+}
+
+#[test]
+fn missing_elements_remain_publication_provider_obligations() {
+    let snapshot = lookup_fixture(false);
+    let overlay = agq_kernel::derived::DerivationBuilder::new(snapshot)
+        .build()
+        .unwrap();
+    let answer = KerMlStatusQueries::new(context(&overlay).unwrap())
+        .lookup_relationship_target_with_reads(
+            id(999),
+            p::SPECIALIZATION_GENERAL,
+            &QualifiedName {
+                absolute: false,
+                segments: vec!["Copper".into()],
+            },
+        );
+    assert_ne!(answer.outcome.completeness, Completeness::Complete);
+    let providers = answer.reads.publication_provider_reads(overlay.model());
+    let population = overlay.model().elements().map(|r| r.id()).collect();
     let mut boundary = Boundary::default();
-    boundary.include_invalidation(
-        overlay.model(),
-        &all_types,
-        &answer.reads.into_invalidation(),
-    );
-    assert!(boundary.is_complete());
+    boundary.include_provider_reads(overlay.model(), &population, &providers);
+    assert_eq!(boundary.missing_subjects, BTreeSet::from([id(999)]));
+}
+
+#[test]
+fn unnamed_features_keep_their_mutable_name_resolution_dependencies() {
+    let snapshot = lookup_fixture(true);
+    let overlay = agq_kernel::derived::DerivationBuilder::new(snapshot.clone())
+        .build()
+        .unwrap();
+    let population = subjects(overlay.model(), [id(4), id(110)]).unwrap();
+    let answer = KerMlStatusQueries::new(context(&overlay).unwrap())
+        .lookup_relationship_target_with_reads(
+            id(5),
+            p::SPECIALIZATION_GENERAL,
+            &QualifiedName {
+                absolute: false,
+                segments: vec!["Absent".into()],
+            },
+        );
+    let providers = answer.reads.publication_provider_reads(overlay.model());
+    let mut boundary = Boundary::default();
+    boundary.include_provider_reads(overlay.model(), &population, &providers);
+    assert!(!boundary.is_complete());
+    assert!(boundary.missing_subjects.contains(&id(70)));
+    assert!(!boundary.missing_subjects.contains(&id(2)));
+    assert!(!boundary.missing_subjects.contains(&id(60)));
 }
 
 #[test]

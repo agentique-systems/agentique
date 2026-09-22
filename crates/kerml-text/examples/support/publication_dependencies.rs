@@ -1,7 +1,7 @@
 //! Scoped producer dependencies. Lexical package environments stay immutable and
 //! available, while referenced Types and their semantic owners are scheduled.
 use agq_kerml::{classes as c, properties as p};
-use agq_kerml_semantics::{QueryInvalidationSet, QueryReadSet};
+use agq_kerml_semantics::{PublicationProviderReads, QueryInvalidationSet, QueryReadSet};
 use agq_kernel::{ElementId, ModelView};
 use std::collections::{BTreeSet, VecDeque};
 
@@ -132,6 +132,10 @@ impl Boundary {
     /// A whole-model read requires the complete producer-capable Type population.
     /// Reuse this boundary only with the same final graph and population: shared
     /// dependency subjects are checked once across the whole audit.
+    #[allow(
+        dead_code,
+        reason = "retained for scheduler boundary regression fixtures"
+    )]
     pub fn include_reads(
         &mut self,
         model: &ModelView,
@@ -153,6 +157,23 @@ impl Boundary {
         model: &ModelView,
         population: &BTreeSet<ElementId>,
         reads: &QueryInvalidationSet,
+    ) {
+        self.include_elements(
+            model,
+            population,
+            reads.bounded_elements().iter().copied(),
+            reads.reads_entire_model(),
+        );
+    }
+
+    /// Check the producer obligations of final semantic queries. Immutable
+    /// identity/name evidence still participates in query invalidation, but does
+    /// not request a Function body merely because its declared name was searched.
+    pub fn include_provider_reads(
+        &mut self,
+        model: &ModelView,
+        population: &BTreeSet<ElementId>,
+        reads: &PublicationProviderReads,
     ) {
         self.include_elements(
             model,

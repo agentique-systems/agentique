@@ -255,6 +255,8 @@ fn run_slice(
             );
         }
 
+        let mut capability_coarse_reads = 0;
+        let mut capability_provider_reads = 0;
         for (index, batch) in audit_subjects
             .iter()
             .copied()
@@ -264,7 +266,9 @@ fn run_slice(
         {
             let audit = KerMlQueries::new(context.fork())
                 .audit_publication_capabilities(batch.iter().copied());
-            scope_boundary.include_invalidation(model, &audit_subjects, &audit.read_dependencies);
+            capability_coarse_reads += audit.read_dependencies.bounded_elements().len();
+            capability_provider_reads += audit.provider_reads.bounded_elements().len();
+            scope_boundary.include_provider_reads(model, &audit_subjects, &audit.provider_reads);
             for (family, count) in audit.checked_items {
                 *counts.entry(family).or_default() += count;
             }
@@ -296,6 +300,8 @@ fn run_slice(
             .filter(|r| subjects.contains(&r.relationship))
             .collect();
         let mut reference_failures = Vec::new();
+        let mut reference_coarse_reads = 0;
+        let mut reference_provider_reads = 0;
         for batch in references.chunks(32) {
             let q = KerMlStatusQueries::new(context.fork());
             for reference in batch {
@@ -304,7 +310,10 @@ fn run_slice(
                     reference.property,
                     &reference.name,
                 );
-                scope_boundary.include_reads(model, &audit_subjects, &answer.reads);
+                let providers = answer.reads.publication_provider_reads(model);
+                reference_provider_reads += providers.bounded_elements().len();
+                scope_boundary.include_provider_reads(model, &audit_subjects, &providers);
+                reference_coarse_reads += answer.reads.into_invalidation().bounded_elements().len();
                 let answer = answer.outcome;
                 let stored: Vec<_> = model
                     .navigation_slot(reference.relationship, reference.property)
@@ -344,6 +353,11 @@ fn run_slice(
             }
         }
         let reference_missing = scope_boundary.missing_subjects.len();
+        let provider_read_counts = json!({
+            "counting":"Distinct read subjects per capability batch or reference query, summed across observations",
+            "capabilities":{"coarse_subject_occurrences":capability_coarse_reads,"provider_subject_occurrences":capability_provider_reads},
+            "references":{"coarse_subject_occurrences":reference_coarse_reads,"provider_subject_occurrences":reference_provider_reads},
+        });
         if !scope_boundary.is_complete() {
             subjects = expand_scope(
                 input,
@@ -353,7 +367,7 @@ fn run_slice(
                 maximum_subjects,
                 json!({"scope_attempt":scope_attempt,"phase":"capabilities_and_references","graph_missing":graph_missing,"producer_missing":producer_missing,
                 "capability_missing":capability_missing,"reference_missing":reference_missing,"elapsed_seconds":slice_start.elapsed().as_secs_f64(),
-                "capability_findings":failures,"reference_findings":reference_failures}),
+                "capability_findings":failures,"reference_findings":reference_failures,"provider_read_counts":provider_read_counts}),
                 &mut scope_log,
             )?;
             continue;
@@ -389,7 +403,7 @@ fn run_slice(
                     "missing_subject_count":scope_boundary.missing_subjects.len(),
                     "missing_subjects":scope_boundary.missing_subjects.iter().map(ToString::to_string).collect::<Vec<_>>(),
                     "missing_subject_details":scope_boundary.missing_subjects.iter().take(32).map(|&subject|subject_detail(model,&input.draft,sources,subject)).collect::<Vec<_>>(),
-                    "unbounded_reads":scope_boundary.unbounded_reads},
+                    "unbounded_reads":scope_boundary.unbounded_reads,"provider_read_counts":provider_read_counts},
                 "documents":document_counts, "subjects":subjects.len(), "audited_subjects":audit_subjects.len(),
                 "source_content_set":sources.content_set_id(), "converged":closure.converged,
                 "producer_completeness":format!("{:?}",closure.completeness), "passed":success,
