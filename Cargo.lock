@@ -92,6 +92,7 @@ dependencies = [
  "agq-kerml-syntax",
  "agq-kernel",
  "agq-standard-libraries",
+ "agq-sysml",
  "serde",
  "serde_json",
  "sha2",
