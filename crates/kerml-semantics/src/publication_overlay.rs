@@ -11,6 +11,10 @@ use agq_kernel::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "publication_restore.rs"]
+mod restoration;
+pub use restoration::{AcceptedPublicationReceipt, PublicationRestoreError};
+
 /// Publication capabilities are separate from executable validator coverage.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PublicationFamily {
@@ -60,7 +64,8 @@ pub struct PublicationStage {
     pub diagnostics: BTreeSet<Diagnostic>,
 }
 
-/// Closure evidence can only be issued by the canonical publication builder.
+/// Closure evidence is established by the canonical publication builder, or
+/// restored from the exact graph pinned by a checked-in acceptance receipt.
 /// Private fields prevent callers from promoting an arbitrary partial overlay.
 pub struct CompletePublicationOverlay {
     overlay: DerivedOverlay,
@@ -68,6 +73,7 @@ pub struct CompletePublicationOverlay {
     checked: BTreeMap<PublicationFamily, usize>,
     stages: Vec<PublicationStage>,
     counters: PublicationCounters,
+    restored_from_receipt: bool,
 }
 impl CompletePublicationOverlay {
     /// Bind an authored snapshot only when the kernel retains this exact immutable
@@ -122,6 +128,11 @@ impl CompletePublicationOverlay {
     pub fn stages(&self) -> &[PublicationStage] {
         &self.stages
     }
+    /// Restored publications retain semantic evidence, but do not replay resource
+    /// counters or stages from the original publication process.
+    pub fn restored_from_receipt(&self) -> bool {
+        self.restored_from_receipt
+    }
     pub fn queries(&self) -> KerMlQueries<'_> {
         KerMlQueries::new(SemanticContext {
             model: self.overlay.model(),
@@ -154,7 +165,7 @@ impl From<DerivationError> for PublicationOverlayError {
     }
 }
 
-/// The sole constructor for a complete publication overlay. It covers the
+/// The sole way to establish new publication acceptance. It covers the
 /// entire strict input and every produced subject under Operational v9. Callers
 /// cannot supply capability statuses or restrict the mandatory subject population.
 pub struct CanonicalPublicationBuilder<'a> {
@@ -310,6 +321,7 @@ impl<'a> CanonicalPublicationBuilder<'a> {
             checked,
             stages,
             counters,
+            restored_from_receipt: false,
         })
     }
 }

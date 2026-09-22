@@ -9,7 +9,7 @@ description = "Pure, evidence-bearing KerML semantic queries over immutable snap
 agq-kernel = { path = "../kernel" }
 agq-kerml = { path = "../kerml" }
 sha2.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 agq-sysml = { path = "../sysml" }
-serde_json.workspace = true

@@ -32,6 +32,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Output exists; use a fresh generated evidence path".into());
     }
     std::fs::create_dir_all(path.parent().ok_or("output parent")?)?;
+    let cache_path = std::env::args()
+        .find_map(|a| a.strip_prefix("--cache-output=").map(|p| root.join(p)))
+        .unwrap_or_else(|| path.with_extension("publication.zip"));
+    if cache_path.exists() {
+        return Err("Publication cache exists; use a fresh --cache-output path".into());
+    }
+    let generated_receipt = cache_path.with_extension("receipt.json");
+    if generated_receipt.exists() {
+        return Err("Publication cache receipt exists; use a fresh --cache-output path".into());
+    }
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
     let authority = publication_authority::conflicts(&root)?;
     let blockers = authority
@@ -148,14 +158,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Reuse the accepted in-memory publication; never launch a second corpus
     // closure merely to regenerate or stale-check its binding manifest.
     let accepted_manifest = publication.binding_manifest(&sources)?;
+    // Persist the already accepted facade once. ZIP deflation and the kernel
+    // codec stream graph/proof/search data without buffering a second corpus.
+    std::fs::create_dir_all(cache_path.parent().ok_or("cache parent")?)?;
+    let cache_file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&cache_path)?;
+    println!(
+        "accepted publication cache: streaming {}",
+        cache_path.display()
+    );
+    let cache_receipt = publication.write_cache(&cache_file, &sources)?;
+    cache_file.sync_all()?;
+    println!(
+        "accepted publication cache: {} compressed bytes",
+        cache_file.metadata()?.len()
+    );
+    let receipt_path = root.join("standards/kerml-accepted-publication.json");
+    // A receipt beside the generated cache is evidence only. Restoration trusts
+    // the separately checked-in standards receipt and binding manifest.
+    write_new_json(&generated_receipt, &cache_receipt)?;
     let manifest_path = root.join("standards/kerml-standard-bindings.json");
     let write_bindings = std::env::args().any(|a| a == "--write-bindings");
     let check_bindings = write_bindings || std::env::args().any(|a| a == "--check-bindings");
     if write_bindings {
-        std::fs::write(
-            &manifest_path,
-            format!("{}\n", serde_json::to_string_pretty(&accepted_manifest)?),
-        )?;
+        let staged_manifest = manifest_path.with_extension("json.pending");
+        let staged_receipt = receipt_path.with_extension("json.pending");
+        write_new_json(&staged_manifest, &accepted_manifest)?;
+        write_new_json(&staged_receipt, &cache_receipt)?;
+        // Each file replacement is atomic. A crash between them leaves a
+        // mismatched pair, which restoration rejects before reading the graph.
+        std::fs::rename(staged_manifest, &manifest_path)?;
+        std::fs::rename(staged_receipt, &receipt_path)?;
     }
     if check_bindings {
         publication.check_binding_manifest(
@@ -194,6 +229,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "preflight_symbolic_population":preflight_population,
             "accepted_binding_manifest":{"format":accepted_manifest["format"],"roles":accepted_manifest["entries"].as_array().map(Vec::len),
                 "written":write_bindings,"stale_check_passed":check_bindings,"path":"standards/kerml-standard-bindings.json"},
+            "publication_cache":{"path":cache_path,"receipt":receipt_path,"trusted_receipt_written":write_bindings,
+                "archive_bytes":std::fs::metadata(&cache_path)?.len(),"graph_bytes":cache_receipt["complete_overlay"]["graph_bytes"]},
             "multiplicity_bounds":bounds,
             "kernel_construction_obligations":0,"publication_blocking_authority_conflicts":blockers,
             "mandatory_references":{"total":publication.mandatory_reference_count(),"unresolved":0,"incomplete":0,"ambiguous":0,"invalid":0,"stored_endpoint_mismatch":0},
@@ -266,5 +303,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
     println!("KERML CANONICAL LIBRARY PUBLICATION COMPLETE");
+    Ok(())
+}
+
+fn write_new_json(
+    path: &Path,
+    value: &serde_json::Value,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)?;
+    serde_json::to_writer_pretty(&mut file, value)?;
+    writeln!(file)?;
+    file.sync_all()?;
     Ok(())
 }

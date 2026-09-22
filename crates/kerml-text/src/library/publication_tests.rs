@@ -139,7 +139,7 @@ impl Fixture {
     }
 }
 
-fn synthetic_publication() -> Arc<CanonicalKermlStandardLibraries> {
+pub(super) fn synthetic_publication() -> Arc<CanonicalKermlStandardLibraries> {
     static FIXTURE: OnceLock<Arc<CanonicalKermlStandardLibraries>> = OnceLock::new();
     FIXTURE
         .get_or_init(|| {

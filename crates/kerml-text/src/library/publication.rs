@@ -14,6 +14,10 @@ use std::sync::Arc;
 #[path = "publication_tests.rs"]
 mod tests;
 
+#[path = "publication_cache.rs"]
+mod cache;
+pub use cache::PublicationCacheError;
+
 /// A mandatory reference must have one Complete answer matching its stored endpoint.
 #[derive(Clone, Debug)]
 pub struct PublicationReferenceFailure {

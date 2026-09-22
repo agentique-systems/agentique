@@ -92,8 +92,10 @@ dependencies = [
  "agq-standard-libraries",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror",
  "uuid",
+ "zip",
 ]
 
 [[package]]

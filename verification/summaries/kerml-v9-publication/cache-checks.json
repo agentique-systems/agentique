@@ -1,0 +1,153 @@
+{
+  "format": "agq-kerml-publication-cache-checks/1",
+  "base_revision": "0dfe4d27538257a067aece6c0d96f4a17f03a877",
+  "source_files_sha256": {
+    "Cargo.lock": "a3057ce685f1058143d0f34f2505c74ad05e9b93a09019598a7a01aea3282e09",
+    "crates/kerml-semantics/Cargo.toml": "174d5d5de2ddd4d6c2e38642a810637d9c9c8e61ed4c9f47bf4367b201d747f8",
+    "crates/kerml-semantics/src/publication_overlay.rs": "2b19d340c5971483558569ed0ab7cf0aa8d297ed3f9aed959c7967afe3f892ee",
+    "crates/kerml-semantics/src/publication_restore.rs": "9263f6de0d077050d34b57b2b1201a746ce1c39212298109c3c36150103000a8",
+    "crates/kerml-semantics/src/publication_restore_tests.rs": "91268c2766e9495c75aa1d627051a7b4cb59b6800c95b589353e6888d69e1405",
+    "crates/kerml-text/Cargo.toml": "c5813a5f16cada2d8596ac41be53ec19e86a4dae7f2feb857ee45638c7bb5ad4",
+    "crates/kerml-text/examples/canonical_publication.rs": "b6e5a6a4e060c3d4899211dc08a6fdea374ccb5db45df13eda142b8324e3ad38",
+    "crates/kerml-text/examples/restore_publication.rs": "92c2d601de3f0038432220ddeb8548a3ed89365197da59eb5a776eb363792aa7",
+    "crates/kerml-text/src/library/publication.rs": "a5d86a85663b6be03b2647e6f7be66874fbad31b2775e4cd010ecb4e034f5cd8",
+    "crates/kerml-text/src/library/publication_cache.rs": "a8555a02d9ea038c1458bd455f49b43cd5270110bcba12c14db79a4ce0b80a25",
+    "crates/kerml-text/src/library/publication_tests.rs": "4938cb0330070ae4cf8eff2f2cf7d153538bdb5fb4f20b23afafedcfac1cd373",
+    "standards/kerml-accepted-publication.json": "c5f8c37a9b68c8ed8ba46687f0bada3645629e866eeaaf6458cd8245dd329a94"
+  },
+  "environment": {
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "publication_overlay::restoration",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.875,
+      "log_sha256": "69e5a866599bb9dca1673d66bcef44dd4dfad83141e3ade11792d164c9a142e9",
+      "output_tail": [
+        "running 4 tests",
+        "test publication_overlay::restoration::tests::success_labels_cannot_establish_trusted_acceptance ... ok",
+        "test publication_overlay::restoration::tests::accepted_graph_roundtrip_retains_context_and_protected_dependency ... ok",
+        "test publication_overlay::restoration::tests::restoration_requires_each_capability_family_once_and_all_standard_roles ... ok",
+        "test publication_overlay::restoration::tests::restoration_rejects_graph_profile_rules_descriptor_library_and_source_tampering ... ok",
+        "",
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 39 filtered out; finished in 1.93s",
+        ""
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "library::publication::cache",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 8.906,
+      "log_sha256": "a662a2758cbc5ae39aed19a7aaa26a005dc95679d1d9a4bdf3181e6d3a782be1",
+      "output_tail": [
+        "",
+        "running 3 tests",
+        "test library::publication::cache::tests::bounded_stream_hash_rejects_short_and_excess_input_without_reading_past_limit ... ok",
+        "test library::publication::cache::tests::caller_cache_cannot_replace_the_checked_in_acceptance_receipt ... ok",
+        "test library::publication::cache::tests::compressed_facade_roundtrip_preserves_sources_roots_references_and_authored_readers ... ok",
+        "",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 1.86s",
+        ""
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.641,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_tail": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 6.094,
+      "log_sha256": "70944fca9b8bfec385743af1ae7f8c439527a86149400654e42ddc1d1abaa7a6",
+      "output_tail": [
+        "    Checking agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kerml-semantics)",
+        "    Checking agq-kerml-text v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kerml-text)",
+        "    Finished `dev` profile [unoptimized] target(s) in 5.89s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 9.437,
+      "log_sha256": "cd9b4ff074dae131c84b206acf529766fc1786b42cfb153a21bcc1a747f75a72",
+      "output_tail": [
+        "    Checking agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kerml-semantics)",
+        " Documenting agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kerml-semantics)",
+        " Documenting agq-kerml-text v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kerml-text)",
+        "    Finished `dev` profile [unoptimized] target(s) in 9.36s",
+        "   Generated C:/Users/phili/github/agentique-systems/agentique/target\\doc\\agq_kerml_semantics\\index.html and 1 other file"
+      ],
+      "RUSTDOCFLAGS": "-D warnings"
+    }
+  ],
+  "status": "pass",
+  "scope": "Synthetic sealed-publication restoration, tampering, compressed source-map facade and protected authored dependency; no corpus publication or alias activation.",
+  "trusted_corpus_restoration": "disabled until real K9 writes accepted binding manifest and separate trusted receipt; actual restored corpus smoke required afterward",
+  "source_content_digest": "8caf87292ae6991ab22d768d058ad16d8682e13ad4df919940daba6eeec74240"
+}
