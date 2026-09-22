@@ -87,6 +87,13 @@ pub enum SearchDependency {
         owner: ElementId,
         class: MetaclassId,
     },
+    /// Direct owned member population selected by an exact structural projection.
+    /// Canonical carrier facts remain proof support; this records the population
+    /// whose future changes can alter the projected result, including absence.
+    StructuralFeaturePopulation {
+        owner: ElementId,
+        kind: FeaturePopulationKind,
+    },
     /// Owned membership population, including endpoint, visibility and name changes.
     NamespaceMembers {
         namespace: ElementId,

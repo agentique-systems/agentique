@@ -156,6 +156,11 @@ impl Encoder {
                     self.id(owner.as_u128());
                     self.id(class.as_u128());
                 }
+                StructuralSearch::OwnedMemberProjection { owner, contract } => {
+                    self.tag(10);
+                    self.id(owner.as_u128());
+                    self.text(contract);
+                }
             }
         }
     }

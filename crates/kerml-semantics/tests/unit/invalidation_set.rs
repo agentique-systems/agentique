@@ -1,6 +1,75 @@
 use super::*;
 
 #[test]
+fn structural_feature_population_survives_transport_and_owner_invalidation() {
+    let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
+    let queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default()).unwrap(),
+    );
+    let owner = ElementId::from_u128(1);
+    for kind in [
+        FeaturePopulationKind::Parameter,
+        FeaturePopulationKind::End,
+        FeaturePopulationKind::Result,
+    ] {
+        assert_eq!(
+            FeaturePopulationKind::from_contract_id(kind.contract_id()),
+            Some(kind)
+        );
+        let mut answer = queries.result(());
+        answer
+            .search_dependencies
+            .insert(SearchDependency::StructuralFeaturePopulation { owner, kind });
+        let searches = structural_searches(&answer);
+        assert_eq!(
+            searches,
+            BTreeSet::from([StructuralSearch::OwnedMemberProjection {
+                owner,
+                contract: kind.contract_id().into(),
+            }])
+        );
+        let keys = query_read_keys(&answer, snapshot.model());
+        assert_eq!(keys, BTreeSet::from([InvalidationKey::Element(owner)]));
+        assert_eq!(
+            searches
+                .iter()
+                .filter_map(structural_search_key)
+                .collect::<BTreeSet<_>>(),
+            keys
+        );
+        assert_eq!(
+            query_publication_provider_keys(&answer, snapshot.model()),
+            keys
+        );
+        assert!(
+            answer.canonical_dependencies.is_empty(),
+            "a projection boundary is not a FactKey"
+        );
+        let compact = QueryInvalidationSet::from_keys(keys);
+        assert!(compact.affected_by(&BTreeSet::from([owner]), false));
+        assert!(!compact.affected_by(&BTreeSet::from([ElementId::from_u128(99)]), false));
+    }
+    for contract in ["agq-feature-population/Parameter/2", "unknown-projection/1"] {
+        assert_eq!(FeaturePopulationKind::from_contract_id(contract), None);
+        let mut answer = queries.result(());
+        answer.search_dependencies.insert(SearchDependency::Kernel(
+            StructuralSearch::OwnedMemberProjection {
+                owner,
+                contract: contract.into(),
+            },
+        ));
+        assert_eq!(
+            query_read_keys(&answer, snapshot.model()),
+            BTreeSet::from([InvalidationKey::Global])
+        );
+        assert_eq!(
+            query_publication_provider_keys(&answer, snapshot.model()),
+            BTreeSet::from([InvalidationKey::Global])
+        );
+    }
+}
+
+#[test]
 fn owned_relationship_class_search_survives_transport_and_owner_invalidation() {
     let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
     let queries = KerMlQueries::new(

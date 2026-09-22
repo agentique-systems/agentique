@@ -314,6 +314,19 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
         }),
         false,
     );
+    let member_projection = |owner, contract: &str| {
+        build(
+            None,
+            Some(StructuralSearch::OwnedMemberProjection {
+                owner,
+                contract: contract.into(),
+            }),
+            false,
+        )
+    };
+    let parameters = member_projection(id(2), "agq-feature-population/Parameter/1");
+    let other_parameters = member_projection(id(3), "agq-feature-population/Parameter/1");
+    let ends = member_projection(id(2), "agq-feature-population/End/1");
     let digests: BTreeSet<_> = [
         &plain,
         &extra,
@@ -326,11 +339,14 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
         &other_owned_search,
         &source_search,
         &other_source_search,
+        &parameters,
+        &other_parameters,
+        &ends,
     ]
     .into_iter()
     .map(|overlay| model_digest(overlay.model()))
     .collect();
-    assert_eq!(digests.len(), 11);
+    assert_eq!(digests.len(), 14);
     let failures = [
         ComputationFailure::Incomplete {
             reason: IncompleteReason::MissingInput,

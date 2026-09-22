@@ -67,6 +67,10 @@ fn overlay() -> DerivedOverlay {
             owner: VEHICLE,
             class: SPECIALIZATION,
         },
+        StructuralSearch::OwnedMemberProjection {
+            owner: VEHICLE,
+            contract: "fixture-owned-member-projection/1".into(),
+        },
     ]));
     for output in 1..=40 {
         build.element_with_explanation(

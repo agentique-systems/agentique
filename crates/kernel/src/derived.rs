@@ -893,6 +893,14 @@ pub enum StructuralSearch {
         owner: ElementId,
         class: MetaclassId,
     },
+    /// A language-defined projection of an owner's direct member population.
+    /// The opaque versioned contract specifies qualifying membership and member
+    /// roles. Canonical carrier facts remain separate proof dependencies. Readers
+    /// that do not recognize the contract must handle it conservatively.
+    OwnedMemberProjection {
+        owner: ElementId,
+        contract: String,
+    },
 }
 /// Explicit unsuccessful computation; never an empty value.
 #[derive(Clone, Debug, PartialEq, Eq)]
