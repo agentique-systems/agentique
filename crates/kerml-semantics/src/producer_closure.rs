@@ -14,6 +14,7 @@ pub(crate) enum ProducerRead {
     Property(ElementId, PropertyId),
     Structural(ElementId),
     Source(ElementId, MetaclassId, PropertyId),
+    Owned(ElementId, MetaclassId),
     Inverse,
     Any(ElementId),
     Global,
@@ -48,6 +49,9 @@ pub(crate) fn producer_reads<T>(
             property,
         } => {
             result.insert(ProducerRead::Source(*source, *class, *property));
+        }
+        K::OwnedRelationships { owner, class } => {
+            result.insert(ProducerRead::Owned(*owner, *class));
         }
         K::ProducerClosure {
             subject,
@@ -88,6 +92,9 @@ pub(crate) fn producer_reads<T>(
             } => {
                 result.insert(ProducerRead::Source(*source, *class, *property));
             }
+            S::OwnedRelationships { owner, class } => {
+                result.insert(ProducerRead::Owned(*owner, *class));
+            }
             S::NamespaceMembers { namespace } | S::ImportSet { namespace } => {
                 result.insert(ProducerRead::Structural(*namespace));
             }
@@ -121,6 +128,14 @@ pub(crate) fn producer_reads<T>(
     }
     for fact in &answer.positive_dependencies {
         if let FactKey::Property { element, property } = fact {
+            if *property == agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP
+                && result
+                    .iter()
+                    .any(|read| matches!(read, ProducerRead::Owned(owner, _) if owner == element))
+                && !result.contains(&ProducerRead::Property(*element, *property))
+            {
+                continue;
+            }
             result.insert(ProducerRead::Property(*element, *property));
         }
     }
@@ -184,10 +199,18 @@ impl ProducerApplicability {
 pub enum ProducerEffectScope {
     Subject,
     SubjectAndOwned,
+    /// Subject and current transitive canonical owners. If the registry can
+    /// change an existing subject's ownership, this expands to `Model`.
+    SubjectAndOwners,
     Model,
 }
 
 /// Immutable declaration under one semantic rule-set identity.
+///
+/// This is a trusted implementation contract. Every potential existing-subject
+/// write must be covered regardless of whether an observed evaluation emits it.
+/// Registering an extension changes the context identity; effect audit checks
+/// provide defense in depth and cannot establish this promise by observation.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ProducerDescriptor {
     pub id: ProducerFamilyId,
@@ -425,6 +448,7 @@ impl ProducerEvaluationTable {
                             ProducerRead::Inverse => inverse.push(pair),
                             ProducerRead::Property(id, _)
                             | ProducerRead::Source(id, _, _)
+                            | ProducerRead::Owned(id, _)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Any(id)
                             | ProducerRead::Requirement(id, _) => {
@@ -439,6 +463,11 @@ impl ProducerEvaluationTable {
         }
         use agq_kerml::properties as p;
         let mut owned: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
+        let mut owners: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
+        let ownership_mutable = registry
+            .descriptors
+            .iter()
+            .any(|descriptor| descriptor.effects.contains(&ProducerEffect::Ownership));
         for record in model.elements() {
             for property in [
                 p::ELEMENT_OWNED_RELATIONSHIP,
@@ -448,6 +477,7 @@ impl ProducerEvaluationTable {
                     for value in slot.value().values() {
                         if let agq_kernel::value::Value::Reference(child) = value {
                             owned.entry(record.id()).or_default().push(*child);
+                            owners.entry(*child).or_default().push(record.id());
                         }
                     }
                 }
@@ -480,7 +510,9 @@ impl ProducerEvaluationTable {
                     }
                 }
             };
-            if descriptor.scope == ProducerEffectScope::Model {
+            if descriptor.scope == ProducerEffectScope::Model
+                || (ownership_mutable && descriptor.scope == ProducerEffectScope::SubjectAndOwners)
+            {
                 for reads in readers.values() {
                     consume(reads);
                 }
@@ -498,6 +530,11 @@ impl ProducerEvaluationTable {
                         && let Some(children) = owned.get(&source)
                     {
                         scope.extend(children);
+                    }
+                    if descriptor.scope == ProducerEffectScope::SubjectAndOwners
+                        && let Some(parents) = owners.get(&source)
+                    {
+                        scope.extend(parents);
                     }
                 }
             }
@@ -785,6 +822,11 @@ impl ProducerClosureCertificate {
         let mut states = vec![0; (subjects.len() * families).div_ceil(4)];
         let mut blocked = vec![0_u8; subjects.len()];
         let mut inherited_blocks = vec![0_u8; subjects.len()];
+        let mut owner_blocks = vec![0_u8; subjects.len()];
+        let ownership_mutable = registry
+            .descriptors
+            .iter()
+            .any(|descriptor| descriptor.effects.contains(&ProducerEffect::Ownership));
         let mut global_block = 0;
         let mut applicable_pairs = 0;
         let mut closed_pairs = 0;
@@ -836,6 +878,10 @@ impl ProducerClosureCertificate {
                     match descriptor.scope {
                         ProducerEffectScope::Model => global_block |= mask,
                         ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
+                        ProducerEffectScope::SubjectAndOwners if ownership_mutable => {
+                            global_block |= mask
+                        }
+                        ProducerEffectScope::SubjectAndOwners => owner_blocks[i] |= mask,
                         ProducerEffectScope::Subject => blocked[i] |= mask,
                     }
                 }
@@ -870,6 +916,7 @@ impl ProducerClosureCertificate {
         };
         // Propagate a producer's declared write scope down canonical ownership.
         let mut owned_by = vec![Vec::new(); subjects.len()];
+        let mut owners_of = vec![Vec::new(); subjects.len()];
         for (i, &subject) in subjects.iter().enumerate() {
             for property in [
                 p::ELEMENT_OWNED_RELATIONSHIP,
@@ -878,13 +925,15 @@ impl ProducerClosureCertificate {
                 for child in refs(subject, property) {
                     if let Some(&j) = positions.get(&child) {
                         owned_by[i].push(j);
+                        owners_of[j].push(i);
                     }
                 }
             }
         }
         propagate(&mut inherited_blocks, &owned_by);
+        propagate(&mut owner_blocks, &owners_of);
         for (i, mask) in inherited_blocks.into_iter().enumerate() {
-            blocked[i] |= mask | global_block;
+            blocked[i] |= mask | owner_blocks[i] | global_block;
         }
         // Exhaustive typing follows canonical specialization/conjugation/chains.
         // Include all specialization subtypes conservatively, including incoming
@@ -1023,7 +1072,7 @@ fn effect_changes_read(effect: ProducerEffect, read: &ProducerRead, model: &Mode
         ProducerRead::Structural(_) | ProducerRead::Inverse => {
             !matches!(effect, ProducerEffect::Scalar(_))
         }
-        ProducerRead::Source(_, class, _) => {
+        ProducerRead::Source(_, class, _) | ProducerRead::Owned(_, class) => {
             use agq_kerml::classes as c;
             let potential: &[MetaclassId] = match effect {
                 ProducerEffect::Typing => &[c::FEATURE_TYPING],

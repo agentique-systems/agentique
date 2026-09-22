@@ -230,7 +230,7 @@ impl ProducerFamily {
             descriptor.minimum_stratum = ResultStructureStratum::ContextualBindings;
         }
         descriptor.scope = match self {
-            Self::VariableFeaturing => ProducerEffectScope::Model,
+            Self::VariableFeaturing => ProducerEffectScope::SubjectAndOwners,
             Self::Invocation | Self::FeatureChainExpression | Self::IndexSelectResult => {
                 ProducerEffectScope::SubjectAndOwned
             }

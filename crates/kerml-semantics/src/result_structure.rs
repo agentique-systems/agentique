@@ -1661,7 +1661,9 @@ pub struct ResultStructurePlan<'m> {
     pub contextual_results: Vec<ContextualResult>,
 }
 impl ResultStructurePlan<'_> {
-    /// Check declared potential effects against actual new relationship sources.
+    /// Defense-in-depth check against the batch's declared effect envelope.
+    /// Descriptors remain trusted producer implementation contracts: this does
+    /// not infer effects from observed output or authenticate per-family origin.
     /// In particular a fresh relationship targeting an existing semantic subject
     /// is an existing-subject effect, never a fresh-output exemption.
     pub(crate) fn validate_declared_effects(
@@ -1686,6 +1688,25 @@ impl ResultStructurePlan<'_> {
         for (&relationship, record) in &self.graph.records {
             if model.element(relationship).is_some() {
                 continue;
+            }
+            if let Some(children) = record.slots.get(&p::RELATIONSHIP_OWNED_RELATED_ELEMENT) {
+                for child in children.values().filter_map(|value| match value {
+                    Value::Reference(child) if model.element(*child).is_some() => Some(*child),
+                    _ => None,
+                }) {
+                    let permitted = descriptors.iter().any(|&(subject, descriptor)| {
+                        descriptor.effects.contains(&ProducerEffect::Ownership)
+                            && (descriptor.scope == ProducerEffectScope::Model
+                                || subject == child
+                                || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
+                                    && owned_below(model, child, subject))
+                                || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
+                                    && owned_below(model, subject, child)))
+                    });
+                    if !permitted {
+                        return Err(DerivationError::InputContextMismatch);
+                    }
+                }
             }
             let is = |base| {
                 model
@@ -1764,7 +1785,9 @@ impl ResultStructurePlan<'_> {
                             || descriptor.scope == ProducerEffectScope::Model
                             || subject == source
                             || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
-                                && owned_below(model, source, subject))))
+                                && owned_below(model, source, subject))
+                            || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
+                                && owned_below(model, subject, source))))
             });
             if !permitted {
                 return Err(DerivationError::InputContextMismatch);
