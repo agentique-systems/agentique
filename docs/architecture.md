@@ -33,8 +33,9 @@ multiplicity-bound reference demonstrated a publication-blocking consequence
 of the retained v8 domain decision. Operational v9 adds exactly the authorized
 KERML11-4 owning-Namespace and KERML11-3 cross-multiplicity interpretations.
 Published through v8 retain their semantics. Accepted canonical publication
-permits advancing the operational default to v9. Accepted bindings and authored
-integration finish the substrate before SysML production work begins; see
+permits advancing the operational default to v9. All 31 accepted bindings and
+actual two-project authored integration have passed. The substrate is complete;
+SysML textual and semantic foundation work has begun. See
 [ADR 0023](adr/0023-operational-multiplicity-context-v9.md) and the
 [v9 evidence](../verification/summaries/kerml-v9-publication/README.md).
 See the historical

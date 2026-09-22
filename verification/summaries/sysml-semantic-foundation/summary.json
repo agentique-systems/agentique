@@ -1,8 +1,8 @@
 {
   "format": "agentique-sysml-foundation-preparation/1",
   "source_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
-  "branch": "foundation/sysml-inventory",
-  "status": "preparation-complete-semantic-foundation-not-started",
+  "branch": "foundation/kerml-v9-to-sysml-semantics",
+  "status": "implementation-in-progress",
   "implementation": [
     "Reproducible offline Systems KPAR inventory using existing verifier and lossless lexer",
     "Per-document identities, import targets/visibility/ranges, construct families and grammar work surfaces",
@@ -16,10 +16,11 @@
     "definition_introducers": 165,
     "family_usage_keyword_surfaces": 424,
     "lossless_lexed_documents": 21,
-    "sysml_parsed_documents": 0,
+    "sysml_parsed_documents": 13,
     "semantic_dependency_attached": false,
     "path": "verification/summaries/sysml-semantic-foundation/corpus-inventory.json",
-    "sha256": "fdebbcd861073f5777e6656d97a5aca767edd615aaadedf7c6a4631b7d4c1b6c"
+    "sha256": "fdebbcd861073f5777e6656d97a5aca767edd615aaadedf7c6a4631b7d4c1b6c",
+    "exact_byte_preservation_documents": 21
   },
   "tested_implementation": {
     "path": "crates/standard-libraries/examples/sysml_foundation_inventory.rs",
@@ -55,10 +56,14 @@
       "output_excerpt": "No output."
     }
   ],
-  "verification_boundary": "No runtime semantic code changed. Full integration clippy/tests/runtime gates/frontend checks belong to the lead integration record. Builds paused during Agent A's focused checks because disk space was low; no acceptance inferred from omitted checks.",
+  "verification_boundary": "Inventory remains historical preparation evidence; frontend-status.json and commands.json record subsequent implementation. SysML semantic and lowering work remains in progress.",
   "workspace_event": {
     "action": "Remove only the new inventory worktree target after retaining its executable and verifying the absolute workspace-bounded target",
     "result": "Automatic approval review rejected the action: blocked by policy. No bypass or retry; newly generated build files left in place."
   },
-  "generation_1_release_obligations": "unchanged"
+  "generation_1_release_obligations": "unchanged",
+  "accepted_kerml_publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+  "accepted_kerml_profile": "agentique-kerml-1.0-operational/9",
+  "implementation_commands": "commands.json",
+  "frontend_report": "frontend-status.json"
 }

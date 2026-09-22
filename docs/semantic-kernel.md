@@ -61,6 +61,16 @@ explanation DAG, including declared evidence beneath extended collections. This
 kernel operation does not certify that a dependency is an accepted language
 publication; that remains the language facade's responsibility.
 
+`Snapshot::with_immutable_dependency_in_registry` validates an extension of the
+dependency registry, rebuilds project indexes and retains the exact original
+dependency and record Arcs. Existing descriptors, sources, effective class
+contracts and storage interpretations cannot change. New SysML classes can
+redefine inherited properties in their own contexts. Construction previews also
+retain the protected dependency; `project_construction_context` binds incomplete
+local roots without making accepted library roots see authored declarations.
+Generic registry compatibility and language profile/publication authentication
+remain separate checks.
+
 The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
 under Operational v9 by default, with explicit historical profile selection.
 A metaclass applicability index excludes unrelated records;
@@ -213,7 +223,9 @@ or SysML validation. The compatibility target is KerML 1.0 / SysML 2.0; the
 invariants and deferred work. The earlier application still uses its original
 crates. New language work targets generation 2; see the
 [architecture](architecture.md) and [status register](../standards/v2-coverage.json).
-The kernel has only `uuid` and `thiserror` as direct dependencies.
+The kernel remains language-agnostic; its archive and exact numeric carriers add
+serialization, hashing and arbitrary-precision dependencies without parser or
+language-crate dependencies.
 
 ## Where to start
 

@@ -2,7 +2,7 @@
   "format": "agentique-foundation-milestone/1",
   "base_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
   "branch": "foundation/kerml-v9-to-sysml-semantics",
-  "status": "canonical-publication-accepted-postchecks-running",
+  "status": "complete-ready-for-sysml-semantic-foundation",
   "profile": "agentique-kerml-1.0-operational/9",
   "operational_default": "agentique-kerml-1.0-operational/9",
   "rule_set": "agq-kerml-query/26",
@@ -19,7 +19,7 @@
   "full_publication_attempts": 1,
   "accepted_publication": true,
   "accepted_bindings_regenerated": true,
-  "sysml_production_phase": "not_started",
+  "sysml_production_phase": "started",
   "conformance_coverage": "incomplete",
   "workspace_verification": {
     "source_commit": "d322c1df0c5cbbe09d4ae889a78251399523b59c",
@@ -38,5 +38,45 @@
     "producer_performance": "scale-checks.json"
   },
   "slices_complete": 5,
-  "retained_symbolic_references_complete": 15
+  "retained_symbolic_references_complete": 15,
+  "authored_accepted_library_consumption": true,
+  "canonical_publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+  "mandatory_references": {
+    "ambiguous": 0,
+    "incomplete": 0,
+    "invalid": 0,
+    "stored_endpoint_mismatch": 0,
+    "total": 4000,
+    "unresolved": 0
+  },
+  "accepted_binding_roles": 31,
+  "accepted_binding_stale_check_passed": true,
+  "whole_corpus": {
+    "publication_attempts": 1,
+    "producer_closure": "Complete",
+    "capability_subjects": 61718,
+    "capability_findings": 0,
+    "command_exit_code": 124,
+    "duration_seconds": 2216.593,
+    "peak_private_bytes": 5443399680,
+    "stop": "Requested only after durable canonical acceptance/cache/bindings, to fix repeated work in post-publication tooling"
+  },
+  "accepted_cache_postchecks": {
+    "exit_code": 0,
+    "duration_seconds": 153.297,
+    "peak_private_bytes": 4200882176,
+    "producer_closure_rerun": false,
+    "authored_integration": "Passed",
+    "symbolic_references_complete": 15,
+    "source_ranges": 1498,
+    "bound_counts": {
+      "cross_feature_multiplicity_reference_bounds": 6,
+      "literal_bounds": 1716,
+      "ordinary_multiplicity_reference_bounds": 9,
+      "other_expression_bounds": 0,
+      "unbounded_bounds": 365
+    },
+    "cache_bytes": 540739848,
+    "neutral_graph_bytes": 2176394780
+  }
 }

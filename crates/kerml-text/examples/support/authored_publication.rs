@@ -58,6 +58,7 @@ pub fn verify(
     publication: Arc<CanonicalKermlStandardLibraries>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let digest = publication.semantic_digest();
+    println!("Authored integration: creating two immutable publication readers");
     let mut project = SourceProject::with_standard_libraries(publication.clone())?;
     let mut second = SourceProject::with_standard_libraries(publication.clone())?;
     assert!(Arc::ptr_eq(
@@ -65,6 +66,7 @@ pub fn verify(
         second.standard_libraries().unwrap()
     ));
     assert_eq!(project.baseline_profile(), BaselineProfile::OPERATIONAL_V9);
+    println!("Authored integration: constructing the first source project");
     let first = project.apply(
         project.current().revision(),
         [add(
@@ -95,6 +97,7 @@ pub fn verify(
         .into());
     }
     let anything = publication.bindings().get(StandardRole::Anything);
+    println!("Authored integration: checking imports, typing and specialization");
     let things = publication.bindings().get(StandardRole::Things);
     assert_eq!(lookup(&project, &["User", "Universe"])?, anything);
     let special = lookup(&project, &["User", "Special"])?;
@@ -147,6 +150,7 @@ pub fn verify(
         ));
     }
     assert!(second.current().documents().next().is_none());
+    println!("Authored integration: constructing the independent source project");
     let independent = second.apply(second.current().revision(), [add(
         "independent.kerml",
         "namespace Independent { private import Base::*; alias Universe for Anything; feature other : Universe subsets things; }",
@@ -171,6 +175,7 @@ pub fn verify(
             .is_none()
     );
     assert!(independent.snapshot().model().element(value).is_none());
+    println!("Authored integration: editing the first project and checking isolation");
     let next = project.apply(
         first.revision(),
         [
@@ -252,6 +257,7 @@ pub fn verify(
     // This is a library-consumption regression; authored chain syntax remains a
     // separate frontend capability.
     let model = publication.overlay().model();
+    println!("Authored integration: checking accepted feature chains in each reader");
     let chain_owners: std::collections::BTreeSet<_> = model
         .instances(c::FEATURE_CHAINING, true)?
         .filter_map(|relationship| {
@@ -265,12 +271,18 @@ pub fn verify(
         !chain_owners.is_empty(),
         "accepted corpus includes feature chains"
     );
+    // Bind each immutable revision once. Rebinding hashes its entire graph;
+    // bounded forks retain that identity while releasing per-chain proof caches.
+    let chain_readers = [first.queries(), next.queries(), independent.queries()];
     for owner in chain_owners {
         let expected = complete_value(publication.queries().chaining_features(owner))?;
         assert!(!expected.is_empty());
-        for revision in [&first, &next, &independent] {
+        for (revision, queries) in [&first, &next, &independent]
+            .into_iter()
+            .zip(&chain_readers)
+        {
             assert_eq!(
-                complete_value(revision.queries().chaining_features(owner))?,
+                complete_value(queries.fork().chaining_features(owner))?,
                 expected
             );
             assert!(std::ptr::eq(
@@ -280,6 +292,7 @@ pub fn verify(
         }
     }
     // A dependency cannot be rebound under an earlier interpretation authority.
+    println!("Authored integration: checking profile, parallel readers and mutation guards");
     assert!(
         SemanticContext::for_snapshot(
             next.snapshot(),

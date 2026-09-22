@@ -1,13 +1,17 @@
-# SysML semantic foundation preparation
+# SysML semantic foundation
 
-Status: **SYSML SYSTEMS LIBRARY FOUNDATION INCOMPLETE**. This record prepares
-S0–S5 while the lead works on KerML publication. It does not start a SysML
-production semantic path or establish an accepted KerML dependency.
+Status: **implementation in progress**. Canonical KerML publication, accepted
+bindings, the v9 default and actual authored integration have passed; see the
+[KerML completion record](../kerml-v9-publication/README.md). SysML production
+work now composes that exact immutable dependency over the same kernel graph.
 
 The offline inventory covers **21/21 original pinned Systems Library documents,
 86,538 source bytes, 154 imports and 165 definition introducers**. Shared lossless
-lexing preserves every source byte. **SysML parse acceptance remains 0/21**:
-keyword surfaces are implementation requirements, not successful productions.
+lexing preserves every source byte. The shared production frontend now parses
+**13/21** against the printed final grammar and preserves **21/21** byte for byte.
+The eight failures match four recorded, unadopted grammar interpretations;
+[frontend evidence](frontend-implementation.md) distinguishes them from unsupported
+implementation. The original inventory's
 The 424 family usage keyword surfaces are not canonical Usage counts; implicit
 usages, anonymous parameters, specialized constructs and member wrappers require
 the actual SysML grammar and canonical lowering.
@@ -66,6 +70,9 @@ reported as a SysML parse result. Every quoted name, string, comment and note is
 excluded from keyword counts. Family definition counts are cross-checked against
 every unquoted `def` token. This tooling is an inventory, not library ingestion.
 
-The existing `FrontendUnavailable` behavior and generation-1 release obligations
-remain unchanged. Canonical lowering, mixed project resolution, Definition/Usage
-queries, the authored vertical and Systems Library publication remain unfinished.
+The kernel can mount the accepted library under a compatible larger registry
+without copying records or changing the original dependency. Candidate contexts
+retain missing obligations and asymmetric root visibility. Canonical lowering,
+mixed projects, Definition/Usage queries and the authored vertical are being
+integrated. Systems Library publication is still incomplete. Generation-1 release
+obligations remain separate and unchanged.

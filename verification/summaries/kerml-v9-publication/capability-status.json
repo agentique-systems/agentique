@@ -18,10 +18,10 @@
   "complete_publication_overlay": true,
   "canonical_facade_accepted": true,
   "accepted_bindings_regenerated": true,
-  "authored_accepted_library_consumption": false,
+  "authored_accepted_library_consumption": true,
   "operational_default": "agentique-kerml-1.0-operational/9",
   "conformance_coverage": "Incomplete",
-  "sysml_semantic_phase": "not_started",
+  "sysml_semantic_phase": "started",
   "slice_attempts": [
     {
       "slice": "A",
@@ -177,5 +177,75 @@
     "required": 15,
     "complete": 15,
     "missing": []
-  }
+  },
+  "accepted_binding_stale_check_passed": true,
+  "capability_families": [
+    {
+      "checked_items": 19378,
+      "family": "NamespaceImports",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 19303,
+      "family": "EffectiveMembership",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 19303,
+      "family": "Specialization",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 18795,
+      "family": "Typing",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 18795,
+      "family": "Featuring",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 37590,
+      "family": "FeatureChains",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 19403,
+      "family": "CrossFeatures",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 1976,
+      "family": "ConnectorsAssociations",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 3901,
+      "family": "ExpressionResults",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 1144,
+      "family": "FeatureValues",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 1499,
+      "family": "Multiplicity",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 31,
+      "family": "StandardBindings",
+      "status": "Complete"
+    },
+    {
+      "checked_items": 256450,
+      "family": "IdentityProvenance",
+      "status": "Complete"
+    }
+  ],
+  "full_symbolic_bound_audit": "Complete: 9 ordinary, 6 owned cross; no missing historical IDs",
+  "trusted_cache_restore": "Complete without producer replay"
 }

@@ -195,6 +195,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         staged_receipt.replace(&receipt_path)?;
     }
     if check_bindings {
+        println!("Accepted binding manifest: checking all standard roles");
         publication.check_binding_manifest(
             &sources,
             &serde_json::from_slice(&std::fs::read(&manifest_path)?)?,
@@ -202,6 +203,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let complete = publication.complete_overlay();
     let model = publication.overlay().model();
+    println!("Multiplicity inventory: auditing the accepted publication");
     let mut bounds = multiplicity_inventory::collect(
         model,
         &publication.queries(),
@@ -214,6 +216,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         multiplicity_inventory::historical_population(&bounds, &root)?;
     let bound_population_complete =
         bounds["complete"] == true && bounds["historical_population"]["complete"] == true;
+    println!("Multiplicity inventory: complete={bound_population_complete}");
     let authored = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         authored_publication::verify(publication.clone())
     }))

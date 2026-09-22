@@ -32,7 +32,12 @@ fn source(element: ElementId, map: &LibrarySourceMap, sources: &VerifiedLibraryS
         "text":&document.source()[origin.range.start() as usize..origin.range.end() as usize]})
 }
 
-fn path(model: &ModelView, queries: &KerMlQueries<'_>, element: ElementId) -> String {
+fn path(
+    model: &ModelView,
+    queries: &KerMlQueries<'_>,
+    element: ElementId,
+    display_owners: &mut BTreeMap<ElementId, Option<ElementId>>,
+) -> String {
     let mut names = Vec::new();
     let mut next = Some(element);
     let mut seen = BTreeSet::new();
@@ -49,7 +54,11 @@ fn path(model: &ModelView, queries: &KerMlQueries<'_>, element: ElementId) -> St
                 }
             }
         }
-        next = queries.owner(element).value;
+        // Presentation-only cache over this exact immutable input. Semantic
+        // ownership/completeness checks below still run for every range.
+        next = *display_owners
+            .entry(element)
+            .or_insert_with(|| queries.owner(element).value);
     }
     names.reverse();
     names.join("::")
@@ -104,6 +113,7 @@ pub fn collect(
     let mut incomplete = Vec::new();
     let mut reference_ids = BTreeSet::new();
     let mut ranges = 0;
+    let mut display_owners = BTreeMap::new();
     for record in model.instances(c::MULTIPLICITY_RANGE, true)? {
         let multiplicity = record.id();
         if !map.contains_key(&FactKey::Element(multiplicity))
@@ -112,9 +122,17 @@ pub fn collect(
             continue;
         }
         ranges += 1;
+        if audit && ranges % 128 == 0 {
+            println!(
+                "Multiplicity inventory: {ranges} ranges; {} findings",
+                incomplete.len()
+            );
+        }
         // Keep ordinary proof caches bounded to one MultiplicityRange.
         let q = queries.fork();
         let owner = q.owner(multiplicity);
+        display_owners.insert(multiplicity, owner.value);
+        let qualified_path = path(model, &q, multiplicity, &mut display_owners);
         let bounds = q.multiplicity_bounds(multiplicity);
         if owner.completeness != Completeness::Complete
             || bounds.completeness != Completeness::Complete
@@ -204,7 +222,7 @@ pub fn collect(
                 incomplete.push(json!({"bound":bound.to_string(), "findings":findings}));
             }
             rows.push(json!({"multiplicity":multiplicity.to_string(), "bound":bound.to_string(),
-                "owner":owner.value.map(|id|id.to_string()), "qualified_path":path(model,&q,multiplicity),
+                "owner":owner.value.map(|id|id.to_string()), "qualified_path":qualified_path,
                 "category":category, "source":source(bound,map,sources), "references":reference_rows}));
         }
     }

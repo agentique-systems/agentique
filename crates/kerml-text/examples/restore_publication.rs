@@ -6,6 +6,8 @@ use std::{path::Path, sync::Arc};
 
 #[path = "support/authored_publication.rs"]
 mod authored_publication;
+#[path = "support/multiplicity_inventory.rs"]
+mod multiplicity_inventory;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -28,6 +30,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &sources,
     )?);
     let authored = authored_publication::verify(publication.clone());
+    let bounds = if std::env::args().any(|arg| arg == "--audit-bounds") {
+        println!("Multiplicity inventory: auditing restored accepted publication");
+        let mut report = multiplicity_inventory::collect(
+            publication.overlay().model(),
+            &publication.queries(),
+            publication.source_map(),
+            &sources,
+            None,
+            true,
+        )?;
+        report["historical_population"] =
+            multiplicity_inventory::historical_population(&report, &root)?;
+        Some(report)
+    } else {
+        None
+    };
+    let bounds_complete = bounds.as_ref().is_none_or(|report| {
+        report["complete"] == true && report["historical_population"]["complete"] == true
+    });
     std::fs::create_dir_all(output.parent().ok_or("output parent")?)?;
     std::fs::write(
         output,
@@ -46,9 +67,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "producer_closure_rerun":false,
             "authored_consumption_verified":authored.is_ok(),
             "authored_failure":authored.as_ref().err().map(ToString::to_string),
+            "multiplicity_bounds":bounds,
         }))?,
     )?;
     authored?;
+    if !bounds_complete {
+        return Err("Accepted publication multiplicity audit is incomplete".into());
+    }
     println!("Accepted publication restored; authored consumption verified");
     Ok(())
 }

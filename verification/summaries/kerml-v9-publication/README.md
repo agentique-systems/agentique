@@ -24,9 +24,27 @@ references are Complete, with zero unresolved, incomplete, ambiguous, invalid
 or mismatched endpoints. The complete overlay and canonical facade are sealed.
 The 31-role version-2 binding manifest and trusted receipt are saved, together
 with the ignored 540,739,848-byte publication cache. Post-publication symbolic
-inventory and authored integration checks are still running under the same
-90-minute / 6-GiB monitor; this does not rerun producer closure.
+inventory and authored integration checks passed through trusted-cache restoration,
+with no producer replay. All 1,498 source ranges and all 15 retained symbolic
+references were audited; no historical reference is missing.
 Conformance coverage is incomplete and independent of publication acceptance.
+
+The publication command was deliberately stopped **after durable acceptance**,
+at 2,216.59 seconds (exit 124, requested stop), with 5,443,399,680 peak private
+bytes. Its post-check tooling repeated ancestor-proof work for display paths
+and rebound/hash-checked whole authored graphs for every chain comparison.
+Display-owner memoization and one query context per immutable revision remove
+that repeated work while retaining every assertion. The accepted-cache command
+then exited 0 in **153.30 seconds**, peaking at 4,200,882,176 private bytes.
+This was a post-check continuation, not a second whole-corpus publication attempt.
+
+The two actual authored SourceProjects passed imports, aliases, typing,
+specialization, subsetting, redefinition, visibility, shadowing, canonical
+library-chain consumption, stable IDs, parallel readers, edits/isolation and
+profile mismatch checks. Cache restoration also stale-checks all accepted
+bindings against the trusted receipt and exact source identities. Explicit
+Published/v1–v9 selection remains available; 29 activated-default regressions
+and both pinned runtime gates passed. KerML work for this phase is complete.
 
 | Slice | Scoped declarations | Audited subjects | Complete mandatory references | Slice seconds |
 | --- | ---: | ---: | ---: | ---: |

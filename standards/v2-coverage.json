@@ -476,7 +476,7 @@
     "remaining": "Separate reviewed library-source authority correction; remaining structural/derived/implied constraints and any reported ordinary query obligations; accepted semantic publication, facade, bindings and authored library dependencies. No SysML semantic readiness."
   },
   "kerml_canonical_publication": {
-    "status": "canonical-publication-accepted-postchecks-running",
+    "status": "complete-ready-for-sysml-semantic-foundation",
     "profile": "agentique-kerml-1.0-operational/9",
     "evidence": "verification/summaries/kerml-v9-publication/README.md",
     "capabilities": "verification/summaries/kerml-v9-publication/capability-status.json",
@@ -485,16 +485,25 @@
     "conformance_coverage": "Incomplete",
     "validator_coverage_is_publication_gate": false,
     "accepted_bindings_regenerated": true,
-    "authored_accepted_library_consumption": false,
+    "authored_accepted_library_consumption": true,
     "publication_blocker": null,
     "operational_default": "agentique-kerml-1.0-operational/9",
-    "mandatory_references": { "total": 4000, "unresolved": 0, "incomplete": 0, "ambiguous": 0, "invalid": 0, "endpoint_mismatch": 0 },
-    "post_publication_checks": "Authored integration running; accepted cache and 31-role binding manifest saved",
+    "mandatory_references": {
+      "total": 4000,
+      "unresolved": 0,
+      "incomplete": 0,
+      "ambiguous": 0,
+      "invalid": 0,
+      "endpoint_mismatch": 0
+    },
+    "post_publication_checks": "All passed via trusted-cache restoration; no second producer closure",
     "historical_v8_blocker": "The retained v8 multiplicity domain leaves Transfers::Transfer::instant[instantNum] without a permitted reference-binding context; worklist and independent full-scan fixtures agree. Published through v8 remain unchanged.",
     "generation_1_release_obligations": "unchanged",
     "semantic_rule_set": "agq-kerml-query/26",
     "derivation_infrastructure": "Dependency-driven immutable producer frontiers, metaclass applicability, positive and negative query read dependencies, compact status queries, persistent proof and search-set sharing, factored cycle validation, consumed additive overlays and validated empty-frontier reuse; all five scoped preflights and one whole-corpus acceptance passed",
-    "convergence_evidence": "verification/summaries/overnight-convergence/README.md"
+    "convergence_evidence": "verification/summaries/overnight-convergence/README.md",
+    "accepted_binding_roles": 31,
+    "canonical_publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12"
   },
   "kerml_publication_convergence": {
     "historical": true,
@@ -508,6 +517,20 @@
     "conformance_coverage": "Incomplete",
     "validator_coverage_is_publication_gate": false,
     "remaining": "Graph-affecting authority choices, mandatory reference closure, effective membership, essential derived/producer closure, accepted bindings and authored dependency integration.",
+    "generation_1_release_obligations": "unchanged"
+  },
+  "sysml_semantic_foundation_phase_1": {
+    "status": "implementation-in-progress",
+    "kerML_dependency": "accepted canonical Operational v9",
+    "evidence": "verification/summaries/sysml-semantic-foundation/README.md",
+    "frontend": "shared lossless KerML/SysML production arena",
+    "systems_documents": 21,
+    "strict_documents_parsed": 13,
+    "byte_preservation": "21/21",
+    "grammar_authority_gaps": "Eight documents require four recorded interpretations; none adopted",
+    "kernel_registry_extension": "implemented; protected exact dependency, shared records, validated old contracts",
+    "semantic_crate": "implementation in isolated worktree",
+    "candidate_lowering": "implementation in isolated worktree",
     "generation_1_release_obligations": "unchanged"
   }
 }
