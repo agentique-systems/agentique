@@ -216,6 +216,9 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
                 effects,
                 ProducerApplicability::Subtypes(classes),
             );
+            if rule != "checkTransitionUsagePayloadSpecialization" {
+                descriptor.scope = agq_kerml_semantics::ProducerEffectScope::Subject;
+            }
             if rule == "deriveUsageMayTimeVary" {
                 descriptor.minimum_stratum = ResultStructureStratum::StableProperties;
             }

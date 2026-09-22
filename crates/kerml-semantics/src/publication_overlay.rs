@@ -74,6 +74,7 @@ pub struct CompletePublicationOverlay {
     stages: Vec<PublicationStage>,
     counters: PublicationCounters,
     restored_from_receipt: bool,
+    certificate: Option<std::sync::Arc<ProducerClosureCertificate>>,
 }
 impl CompletePublicationOverlay {
     /// Bind an authored snapshot only when the kernel retains this exact immutable
@@ -222,7 +223,7 @@ impl CompletePublicationOverlay {
             model: self.overlay.model(),
             id: self.context.clone(),
             naming_extension: None,
-            producer_closure: None,
+            producer_closure: self.certificate.clone(),
         })
     }
 }
@@ -376,9 +377,16 @@ impl<'a> CanonicalPublicationBuilder<'a> {
             overlay,
             stages,
             counters,
+            certificate,
             ..
         } = closure;
-        let context = self.context(&overlay)?;
+        let mut context = self.context(&overlay)?;
+        if let Some(witness) = &certificate {
+            context = context
+                .with_producer_registry_digest(witness.registry_digest())
+                .and_then(|context| context.with_producer_closure(witness.clone()))
+                .map_err(PublicationOverlayError::Context)?;
+        }
         let mut checks = PublicationChecks::new(overlay.model(), false);
         let subjects: Vec<_> = overlay.model().elements().map(|r| r.id()).collect();
         for (index, batch) in subjects.chunks(32).enumerate() {
@@ -408,6 +416,7 @@ impl<'a> CanonicalPublicationBuilder<'a> {
             stages,
             counters,
             restored_from_receipt: false,
+            certificate,
         })
     }
 }
@@ -747,6 +756,7 @@ mod construction_context_tests {
             stages: Vec::new(),
             counters: Default::default(),
             restored_from_receipt: false,
+            certificate: None,
         }
     }
 

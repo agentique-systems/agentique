@@ -159,7 +159,7 @@ impl CompletePublicationOverlay {
         };
         agq_kernel::archive::write_overlay(&self.overlay, &mut writer)?;
         let graph_sha256: [u8; 32] = writer.digest.finalize().into();
-        Ok(json!({
+        let mut receipt = json!({
             "format": "agq-kerml-sealed-graph/1",
             "graph_sha256": graph_sha256,
             "graph_bytes": writer.bytes,
@@ -167,7 +167,11 @@ impl CompletePublicationOverlay {
             "checked": self.checked.iter().map(|(family, count)| json!({
                 "family":format!("{family:?}"), "count":count,
             })).collect::<Vec<_>>(),
-        }))
+        });
+        if let Some(certificate) = &self.certificate {
+            receipt["producer_closure"] = certificate.receipt_value();
+        }
+        Ok(receipt)
     }
 
     /// Restore the exact previously accepted graph without rerunning producers.
@@ -201,6 +205,28 @@ impl CompletePublicationOverlay {
             .id()
             .clone();
         context.derivation_phase = DerivationPhase::CompletePublicationOverlay;
+        let certificate = if let Some(proof) = expected.get("producer_closure") {
+            let registry = ProducerRegistry::new(
+                ProducerFamily::ALL
+                    .into_iter()
+                    .map(|family| family.descriptor(context.options.baseline_profile)),
+            )
+            .map_err(|_| PublicationRestoreError::Mismatch("producer registry"))?;
+            context.producer_registry_digest = Some(registry.digest());
+            let certificate = ProducerClosureCertificate::from_trusted_receipt(
+                proof,
+                &context,
+                &registry,
+                overlay.model(),
+            )
+            .ok_or(PublicationRestoreError::Mismatch(
+                "producer closure certificate",
+            ))?;
+            context.producer_closure_digest = Some(certificate.digest());
+            Some(std::sync::Arc::new(certificate))
+        } else {
+            None
+        };
         if expected["identity"] != context_identity(&context) {
             return Err(PublicationRestoreError::Mismatch("semantic context"));
         }
@@ -236,6 +262,7 @@ impl CompletePublicationOverlay {
             stages: vec![],
             counters: PublicationCounters::default(),
             restored_from_receipt: true,
+            certificate,
         })
     }
 }

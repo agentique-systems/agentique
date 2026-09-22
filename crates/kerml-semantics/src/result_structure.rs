@@ -1649,6 +1649,11 @@ pub struct ResultStructurePlan<'m> {
     graph: Graph<'m>,
     pub(crate) producer_families_attempted: usize,
     pub(crate) producer_evaluations: Vec<(ElementId, ProducerFamilyId, Completeness)>,
+    pub(crate) producer_reads: Vec<(
+        ElementId,
+        ProducerFamilyId,
+        crate::producer_closure::ProducerReads,
+    )>,
     pub(crate) deferred_bindings: BTreeSet<ElementId>,
     /// Exact input identity, including unresolved construction obligations.
     pub context: SemanticContextId,
@@ -1656,6 +1661,132 @@ pub struct ResultStructurePlan<'m> {
     pub contextual_results: Vec<ContextualResult>,
 }
 impl ResultStructurePlan<'_> {
+    /// Check declared potential effects against actual new relationship sources.
+    /// In particular a fresh relationship targeting an existing semantic subject
+    /// is an existing-subject effect, never a fresh-output exemption.
+    pub(crate) fn validate_declared_effects(
+        &self,
+        subjects: &[ElementId],
+        registry: &ProducerRegistry,
+    ) -> Result<(), DerivationError> {
+        let model = self.graph.model;
+        let descriptors: Vec<_> = subjects
+            .iter()
+            .flat_map(|&subject| {
+                registry.descriptors().iter().filter_map(move |descriptor| {
+                    model
+                        .element(subject)
+                        .filter(|record| {
+                            descriptor.applicability.applies(model, record.metaclass())
+                        })
+                        .map(|_| (subject, descriptor))
+                })
+            })
+            .collect();
+        for (&relationship, record) in &self.graph.records {
+            if model.element(relationship).is_some() {
+                continue;
+            }
+            let is = |base| {
+                model
+                    .registry()
+                    .is_subtype(record.class, base)
+                    .unwrap_or(false)
+            };
+            let effect_role = if is(c::FEATURE_TYPING) {
+                Some((ProducerEffect::Typing, p::FEATURE_TYPING_TYPED_FEATURE))
+            } else if is(c::REDEFINITION) {
+                Some((
+                    ProducerEffect::Redefinition,
+                    p::REDEFINITION_REDEFINING_FEATURE,
+                ))
+            } else if is(c::SUBSETTING) {
+                Some((ProducerEffect::Subsetting, p::SUBSETTING_SUBSETTING_FEATURE))
+            } else if is(c::SPECIALIZATION) {
+                Some((ProducerEffect::Specialization, p::SPECIALIZATION_SPECIFIC))
+            } else if is(c::TYPE_FEATURING) {
+                Some((ProducerEffect::Featuring, p::TYPE_FEATURING_FEATURE_OF_TYPE))
+            } else if is(c::FEATURE_CHAINING) {
+                Some((
+                    ProducerEffect::FeatureChain,
+                    p::FEATURE_CHAINING_FEATURE_CHAINED,
+                ))
+            } else if is(c::MEMBERSHIP) {
+                Some((
+                    ProducerEffect::Membership,
+                    p::MEMBERSHIP_MEMBERSHIP_OWNING_NAMESPACE,
+                ))
+            } else {
+                None
+            };
+            let Some((effect, property)) = effect_role else {
+                continue;
+            };
+            let source = record
+                .slots
+                .get(&property)
+                .and_then(|value| {
+                    value.values().find_map(|value| {
+                        if let Value::Reference(source) = value {
+                            Some(*source)
+                        } else {
+                            None
+                        }
+                    })
+                })
+                .or_else(|| {
+                    self.graph
+                        .attachments
+                        .iter()
+                        .find_map(|(&owner, owned)| owned.contains(&relationship).then_some(owner))
+                })
+                .or_else(|| {
+                    self.graph.records.iter().find_map(|(&owner, candidate)| {
+                        candidate
+                            .slots
+                            .get(&p::ELEMENT_OWNED_RELATIONSHIP)
+                            .is_some_and(|values| {
+                                values
+                                    .values()
+                                    .any(|value| *value == Value::Reference(relationship))
+                            })
+                            .then_some(owner)
+                    })
+                });
+            let Some(source) = source else {
+                continue;
+            };
+            let fresh = model.element(source).is_none();
+            let permitted = descriptors.iter().any(|&(subject, descriptor)| {
+                (fresh && descriptor.fresh_effects.contains(&effect))
+                    || (descriptor.effects.contains(&effect)
+                        && (fresh
+                            || descriptor.scope == ProducerEffectScope::Model
+                            || subject == source
+                            || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
+                                && owned_below(model, source, subject))))
+            });
+            if !permitted {
+                return Err(DerivationError::InputContextMismatch);
+            }
+        }
+        Ok(())
+    }
+    /// Record one family's exact query reads as well as evaluation status.
+    pub fn record_producer_evaluation_evidence<T>(
+        &mut self,
+        subject: ElementId,
+        family: ProducerFamilyId,
+        evidence: &QueryResult<T>,
+    ) {
+        self.record_producer_evaluation(subject, family, evidence.completeness);
+        self.producer_reads.push((
+            subject,
+            family,
+            crate::producer_closure::producer_reads(evidence, self.graph.model),
+        ));
+    }
+
     /// Record one extension family's complete evaluation, including a false
     /// dynamic antecedent. The scheduler authenticates this against the registry.
     pub fn record_producer_evaluation(
@@ -1830,6 +1961,7 @@ impl ResultStructurePlan<'_> {
             .extend(other.graph.direct_searches);
         self.producer_families_attempted += other.producer_families_attempted;
         self.producer_evaluations.extend(other.producer_evaluations);
+        self.producer_reads.extend(other.producer_reads);
         self.deferred_bindings.extend(other.deferred_bindings);
         self.graph.assignments.extend(other.graph.assignments);
         for (owner, additions) in other.graph.attachments {
@@ -1886,6 +2018,30 @@ impl ResultStructurePlan<'_> {
             contextual_results: self.contextual_results,
         })
     }
+}
+
+fn owned_below(model: &agq_kernel::ModelView, source: ElementId, ancestor: ElementId) -> bool {
+    let mut seen = BTreeSet::new();
+    let mut pending = vec![source];
+    while let Some(current) = pending.pop() {
+        if !seen.insert(current) {
+            continue;
+        }
+        if current == ancestor {
+            return true;
+        }
+        for property in [
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        ] {
+            pending.extend(
+                model
+                    .incoming_for_property(current, property)
+                    .map(|reference| reference.source),
+            );
+        }
+    }
+    false
 }
 
 impl<'m> KerMlQueries<'m> {
@@ -2001,6 +2157,7 @@ impl<'m> KerMlQueries<'m> {
         let mut contextual_results = vec![];
         let mut producer_families_attempted = 0;
         let mut producer_evaluations = vec![];
+        let mut producer_reads = vec![];
         let mut deferred_bindings = BTreeSet::new();
         for subject in subjects.into_iter().collect::<BTreeSet<_>>() {
             let mut production = self.result(vec![]);
@@ -2036,6 +2193,11 @@ impl<'m> KerMlQueries<'m> {
                         ProducerFamily::OwnedInstantiationResult.id(),
                         proof.completeness,
                     ));
+                    producer_reads.push((
+                        subject,
+                        ProducerFamily::OwnedInstantiationResult.id(),
+                        crate::producer_closure::producer_reads(&proof, self.model()),
+                    ));
                     production.merge(proof);
                     graph.finish_subject(&mut production, &mut aggregate);
                     continue;
@@ -2044,6 +2206,11 @@ impl<'m> KerMlQueries<'m> {
                     subject,
                     ProducerFamily::OwnedInstantiationResult.id(),
                     proof.completeness,
+                ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::OwnedInstantiationResult.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
                 ));
             }
             if profile.supports_publication_producers() && self.is(subject, c::FEATURE) {
@@ -2084,6 +2251,11 @@ impl<'m> KerMlQueries<'m> {
                     subject,
                     ProducerFamily::PositionalRedefinition.id(),
                     redefinitions.completeness,
+                ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::PositionalRedefinition.id(),
+                    crate::producer_closure::producer_reads(&redefinitions, self.model()),
                 ));
                 production.merge(redefinitions);
                 let mut proof = self.result(());
@@ -2158,6 +2330,11 @@ impl<'m> KerMlQueries<'m> {
                     ProducerFamily::VariableFeaturing.id(),
                     proof.completeness,
                 ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::VariableFeaturing.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
+                ));
                 production.merge(proof);
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
@@ -2228,6 +2405,11 @@ impl<'m> KerMlQueries<'m> {
                     ProducerFamily::OwnedCrossing.id(),
                     proof.completeness,
                 ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::OwnedCrossing.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
+                ));
                 production.merge(proof);
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
@@ -2268,6 +2450,11 @@ impl<'m> KerMlQueries<'m> {
                     subject,
                     ProducerFamily::CrossDomain.id(),
                     proof.completeness,
+                ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::CrossDomain.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
                 ));
                 production.merge(proof);
             }
@@ -2321,6 +2508,11 @@ impl<'m> KerMlQueries<'m> {
                     ProducerFamily::Invocation.id(),
                     proof.completeness,
                 ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::Invocation.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
+                ));
                 production.merge(proof);
             }
             if profile.supports_publication_producers()
@@ -2365,6 +2557,11 @@ impl<'m> KerMlQueries<'m> {
                     ProducerFamily::FeatureChainExpression.id(),
                     proof.completeness,
                 ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::FeatureChainExpression.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
+                ));
                 production.merge(proof);
             }
             if self.is(subject, c::FEATURE_REFERENCE_EXPRESSION) {
@@ -2395,6 +2592,11 @@ impl<'m> KerMlQueries<'m> {
                         subject,
                         ProducerFamily::FeatureReferenceExpression.id(),
                         proof.completeness,
+                    ));
+                    producer_reads.push((
+                        subject,
+                        ProducerFamily::FeatureReferenceExpression.id(),
+                        crate::producer_closure::producer_reads(&proof, self.model()),
                     ));
                     production.merge(proof);
                 }
@@ -2456,6 +2658,11 @@ impl<'m> KerMlQueries<'m> {
                     subject,
                     ProducerFamily::ExpressionResult.id(),
                     proof.completeness,
+                ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::ExpressionResult.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
                 ));
                 production.merge(proof);
             }
@@ -2627,6 +2834,11 @@ impl<'m> KerMlQueries<'m> {
                     ProducerFamily::FeatureValue.id(),
                     proof.completeness,
                 ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::FeatureValue.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
+                ));
                 production.merge(proof);
             }
             if self.is(subject, c::INDEX_EXPRESSION) || self.is(subject, c::SELECT_EXPRESSION) {
@@ -2711,6 +2923,11 @@ impl<'m> KerMlQueries<'m> {
                     ProducerFamily::IndexSelectResult.id(),
                     proof.completeness,
                 ));
+                producer_reads.push((
+                    subject,
+                    ProducerFamily::IndexSelectResult.id(),
+                    crate::producer_closure::producer_reads(&proof, self.model()),
+                ));
                 production.merge(proof);
             }
             graph.finish_subject(&mut production, &mut aggregate);
@@ -2730,6 +2947,7 @@ impl<'m> KerMlQueries<'m> {
             graph,
             producer_families_attempted,
             producer_evaluations,
+            producer_reads,
             deferred_bindings,
             context: self.context().clone(),
             production,

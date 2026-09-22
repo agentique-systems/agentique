@@ -196,7 +196,6 @@ impl KerMlQueries<'_> {
     /// these separate avoids circularly testing an owner-typing antecedent
     /// before applying the mandatory Step/Expression base that supplies typing.
     pub(crate) fn metaclass_library_bases(&self, source: ElementId) -> QueryResult<Vec<ElementId>> {
-        use StandardRole as R;
         let mut out = self.result(vec![]);
         let Some(bindings) = &self.context().standard_bindings else {
             return out;
@@ -204,25 +203,7 @@ impl KerMlQueries<'_> {
         out.search_dependencies
             .insert(SearchDependency::StandardLibraries);
         self.fact(&mut out, agq_kernel::provenance::FactKey::Element(source));
-        for (class, role) in [
-            (c::TYPE, R::Anything),
-            (c::DATA_TYPE, R::DataValue),
-            (c::CLASS, R::Occurrence),
-            (c::STRUCTURE, R::Object),
-            (c::ASSOCIATION, R::Link),
-            (c::METACLASS, R::Metaobject),
-            (c::BEHAVIOR, R::Performance),
-            (c::FUNCTION, R::Evaluation),
-            (c::PREDICATE, R::BooleanEvaluation),
-            (c::FEATURE, R::Things),
-            (c::STEP, R::Performances),
-            (c::EXPRESSION, R::Evaluations),
-            (c::BOOLEAN_EXPRESSION, R::BooleanEvaluations),
-            (c::MULTIPLICITY, R::Naturals),
-            (c::METADATA_FEATURE, R::Metaobjects),
-            (c::CONNECTOR, R::Links),
-            (c::BINDING_CONNECTOR, R::SelfLinks),
-        ] {
+        for (class, role) in metaclass_library_role_specs() {
             if self.is(source, class) {
                 let target = bindings.get(role);
                 if target != source {
@@ -671,3 +652,27 @@ fn complete_owned_position_cycles(
 #[cfg(test)]
 #[path = "../tests/unit/owned_position_cycles.rs"]
 mod owned_position_cycles;
+
+/// Shared query/certificate dependency contract for implicit library bases.
+pub(crate) fn metaclass_library_role_specs() -> [(agq_kernel::MetaclassId, StandardRole); 17] {
+    use StandardRole as R;
+    [
+        (c::TYPE, R::Anything),
+        (c::DATA_TYPE, R::DataValue),
+        (c::CLASS, R::Occurrence),
+        (c::STRUCTURE, R::Object),
+        (c::ASSOCIATION, R::Link),
+        (c::METACLASS, R::Metaobject),
+        (c::BEHAVIOR, R::Performance),
+        (c::FUNCTION, R::Evaluation),
+        (c::PREDICATE, R::BooleanEvaluation),
+        (c::FEATURE, R::Things),
+        (c::STEP, R::Performances),
+        (c::EXPRESSION, R::Evaluations),
+        (c::BOOLEAN_EXPRESSION, R::BooleanEvaluations),
+        (c::MULTIPLICITY, R::Naturals),
+        (c::METADATA_FEATURE, R::Metaobjects),
+        (c::CONNECTOR, R::Links),
+        (c::BINDING_CONNECTOR, R::SelfLinks),
+    ]
+}

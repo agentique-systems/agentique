@@ -17,6 +17,9 @@ mod namespaces;
 mod naming;
 mod ordering;
 mod producer_closure;
+#[cfg(test)]
+#[path = "../tests/unit/producer_closure.rs"]
+mod producer_closure_tests;
 mod producer_worklist;
 mod publication;
 mod publication_overlay;

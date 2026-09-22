@@ -1,0 +1,651 @@
+use crate as agq_kerml_semantics;
+include!("../common/result_fixture.rs");
+
+const ACTIVATE: ProducerFamilyId = ProducerFamilyId::new("Fixture.Activate");
+const TYPE: ProducerFamilyId = ProducerFamilyId::new("Fixture.Type");
+
+struct PendingScalar;
+impl PublicationProducerExtension for PendingScalar {
+    fn descriptors(&self) -> Vec<ProducerDescriptor> {
+        vec![
+            ProducerDescriptor::new(
+                ACTIVATE,
+                [ProducerEffect::Scalar(p::FEATURE_FEATURE_TARGET)],
+                ProducerApplicability::Subtypes(vec![c::FEATURE]),
+            ),
+            ProducerDescriptor::new(
+                TYPE,
+                [ProducerEffect::Typing],
+                ProducerApplicability::Subtypes(vec![c::FEATURE]),
+            ),
+        ]
+    }
+    fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
+        model.registry().is_subtype(class, c::FEATURE).unwrap()
+    }
+    fn contribute<'m>(
+        &self,
+        q: &KerMlQueries<'m>,
+        subject: ElementId,
+        _: ResultStructureStratum,
+        plan: &mut ResultStructurePlan<'m>,
+    ) -> Result<(), agq_kernel::derived::DerivationError> {
+        let mut scalar = q.canonical_fact_evidence(FactKey::Element(subject));
+        scalar.problem(
+            Completeness::Incomplete,
+            "FIXTURE_SCALAR",
+            subject,
+            "A future scalar may activate typing",
+        );
+        plan.record_producer_evaluation_evidence(subject, ACTIVATE, &scalar);
+        plan.observe_evidence(scalar)?;
+        let mut typing = q.canonical_fact_evidence(FactKey::Element(subject));
+        let _flag = q.read_reference(&mut typing, subject, p::FEATURE_FEATURE_TARGET);
+        assert_eq!(typing.completeness, Completeness::Complete);
+        plan.record_producer_evaluation_evidence(subject, TYPE, &typing);
+        plan.observe_evidence(typing)
+    }
+}
+
+struct DelayedTyping {
+    incomplete: bool,
+}
+impl PublicationProducerExtension for DelayedTyping {
+    fn descriptors(&self) -> Vec<ProducerDescriptor> {
+        vec![
+            ProducerDescriptor::new(
+                ACTIVATE,
+                [ProducerEffect::Featuring],
+                ProducerApplicability::Subtypes(vec![c::FEATURE]),
+            ),
+            ProducerDescriptor::new(
+                TYPE,
+                [ProducerEffect::Typing],
+                ProducerApplicability::Subtypes(vec![c::FEATURE]),
+            ),
+        ]
+    }
+    fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
+        model.registry().is_subtype(class, c::FEATURE).unwrap()
+    }
+    fn contribute<'m>(
+        &self,
+        q: &KerMlQueries<'m>,
+        subject: ElementId,
+        _: ResultStructureStratum,
+        plan: &mut ResultStructurePlan<'m>,
+    ) -> Result<(), agq_kernel::derived::DerivationError> {
+        let mut evidence = q.canonical_fact_evidence(FactKey::Element(subject));
+        plan.record_producer_evaluation_evidence(subject, ACTIVATE, &evidence);
+        plan.add_derived_element(
+            DerivationKey {
+                rule: RuleId::from_u128(99001),
+                subject,
+                output: OutputKey::from_u128(99004),
+            },
+            c::TYPE_FEATURING,
+            BTreeMap::from([
+                (
+                    p::TYPE_FEATURING_FEATURE_OF_TYPE,
+                    SlotValue::Scalar(Value::Reference(subject)),
+                ),
+                (
+                    p::TYPE_FEATURING_FEATURING_TYPE,
+                    SlotValue::Scalar(Value::Reference(id(3))),
+                ),
+            ]),
+            Some(subject),
+            &evidence,
+        )?;
+        let relationships = q.owned_relationships(subject);
+        let active = relationships.value.iter().any(|&relationship| {
+            q.model()
+                .element(relationship)
+                .is_some_and(|record| record.metaclass() == c::TYPE_FEATURING)
+        });
+        evidence.merge(relationships);
+        if !active || self.incomplete {
+            evidence.problem(
+                Completeness::Incomplete,
+                "FIXTURE_PENDING",
+                subject,
+                "Delayed typing family is not yet complete",
+            );
+        } else {
+            plan.add_derived_element(
+                DerivationKey {
+                    rule: RuleId::from_u128(99002),
+                    subject,
+                    output: OutputKey::from_u128(99003),
+                },
+                c::FEATURE_TYPING,
+                BTreeMap::from([
+                    (
+                        p::FEATURE_TYPING_TYPED_FEATURE,
+                        SlotValue::Scalar(Value::Reference(subject)),
+                    ),
+                    (
+                        p::FEATURE_TYPING_TYPE,
+                        SlotValue::Scalar(Value::Reference(id(2))),
+                    ),
+                ]),
+                Some(subject),
+                &evidence,
+            )?;
+        }
+        plan.record_producer_evaluation_evidence(subject, TYPE, &evidence);
+        plan.observe_evidence(evidence)
+    }
+}
+fn fixture() -> Snapshot {
+    let mut f = Fixture::new();
+    f.create(1, c::FEATURE);
+    f.create(2, c::CLASSIFIER);
+    f.create(3, c::CLASSIFIER);
+    f.finish()
+}
+fn run(
+    snapshot: &Snapshot,
+    incomplete: bool,
+    options: PublicationClosureOptions,
+) -> PublicationClosure {
+    close_result_structure_with_extension(
+        snapshot,
+        options,
+        |overlay| {
+            SemanticContext::for_overlay(overlay, Default::default(), BTreeSet::new())
+                .map_err(PublicationOverlayError::Context)
+        },
+        &DelayedTyping { incomplete },
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap()
+}
+
+#[test]
+fn delayed_producer_requires_witness_and_closes_after_dependency_activation() {
+    let snapshot = fixture();
+    let initial = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    assert!(initial.feature_types(id(1)).value.is_empty());
+    assert_eq!(
+        initial
+            .producer_closure(id(1), SemanticClosureRequirement::EffectiveTyping)
+            .completeness,
+        Completeness::Incomplete
+    );
+    let partial = run(
+        &snapshot,
+        false,
+        PublicationClosureOptions {
+            max_rounds: 1,
+            ..Default::default()
+        },
+    );
+    assert!(!partial.converged);
+    assert!(partial.certificate.is_none());
+    let result = run(&snapshot, false, Default::default());
+    assert!(result.converged);
+    assert_eq!(
+        result.completeness,
+        Completeness::Complete,
+        "{:?}",
+        result.stages
+    );
+    let certificate = result.certificate.unwrap();
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    let context =
+        SemanticContext::for_overlay(&result.overlay, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(certificate.registry_digest())
+            .unwrap()
+            .with_producer_closure(certificate.clone())
+            .unwrap();
+    let q = KerMlQueries::new(context);
+    assert_eq!(q.feature_types(id(1)).value, vec![id(2)]);
+    assert_eq!(
+        q.producer_closure(id(1), SemanticClosureRequirement::EffectiveTyping)
+            .completeness,
+        Completeness::Complete
+    );
+    assert!(!q.feature_types(id(1)).value.contains(&id(3)));
+}
+
+#[test]
+fn incomplete_typing_family_blocks_its_subject_but_inapplicability_does_not() {
+    let result = run(&fixture(), true, Default::default());
+    assert_eq!(result.completeness, Completeness::Incomplete);
+    let certificate = result.certificate.unwrap();
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    assert!(certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
+    assert!(certificate.incomplete_pairs() > 0);
+}
+
+#[test]
+fn complete_empty_typing_evaluation_is_not_closed_while_scalar_dependency_is_pending() {
+    let snapshot = fixture();
+    let result = close_result_structure_with_extension(
+        &snapshot,
+        Default::default(),
+        |overlay| {
+            SemanticContext::for_overlay(overlay, Default::default(), BTreeSet::new())
+                .map_err(PublicationOverlayError::Context)
+        },
+        &PendingScalar,
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(result.converged);
+    assert_eq!(result.completeness, Completeness::Incomplete);
+    let certificate = result.certificate.unwrap();
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    assert!(certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
+}
+
+#[test]
+fn certificate_is_identical_across_frontier_orders_batches_and_reference_scan() {
+    let snapshot = fixture();
+    let expected = run(&snapshot, false, Default::default())
+        .certificate
+        .unwrap();
+    for order in [
+        PublicationWorklistOrder::Fifo,
+        PublicationWorklistOrder::Lifo,
+        PublicationWorklistOrder::ReversedInitial,
+        PublicationWorklistOrder::Partitioned,
+    ] {
+        for batch_size in [1, 7] {
+            for strategy in [
+                PublicationClosureStrategy::Worklist,
+                PublicationClosureStrategy::ReferenceFullScan,
+            ] {
+                let actual = run(
+                    &snapshot,
+                    false,
+                    PublicationClosureOptions {
+                        order,
+                        batch_size,
+                        strategy,
+                        ..Default::default()
+                    },
+                )
+                .certificate
+                .unwrap();
+                assert_eq!(
+                    actual.digest(),
+                    expected.digest(),
+                    "{order:?}, {batch_size}, {strategy:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn registry_and_graph_changes_reject_previous_certificate() {
+    let snapshot = fixture();
+    let result = run(&snapshot, false, Default::default());
+    let certificate = result.certificate.unwrap();
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        ProducerFamilyId::new("Fixture.Added"),
+        [ProducerEffect::Typing],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    let changed_registry =
+        SemanticContext::for_overlay(&result.overlay, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+    assert!(matches!(
+        changed_registry.with_producer_closure(certificate.clone()),
+        Err(ContextError::ProducerClosureMismatch)
+    ));
+    let changed_graph =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(certificate.registry_digest())
+            .unwrap();
+    assert!(matches!(
+        changed_graph.with_producer_closure(certificate),
+        Err(ContextError::ProducerClosureMismatch)
+    ));
+}
+
+#[test]
+fn requirements_name_exact_typing_effect_dependencies() {
+    use ProducerEffect as E;
+    let requirement = SemanticClosureRequirement::EffectiveTyping;
+    for effect in [
+        E::Typing,
+        E::Subsetting,
+        E::Redefinition,
+        E::Specialization,
+        E::FeatureChain,
+    ] {
+        assert!(requirement.requires(effect));
+    }
+    for effect in [
+        E::ValueBinding,
+        E::Scalar(p::FEATURE_IS_VARIABLE),
+        E::Featuring,
+    ] {
+        assert!(!requirement.requires(effect));
+    }
+}
+
+#[test]
+fn fresh_relationship_does_not_exempt_an_existing_semantic_source() {
+    let snapshot = fixture();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let mut plan = q.plan_result_structure([]);
+    let evidence = q.canonical_fact_evidence(FactKey::Element(id(1)));
+    plan.add_derived_element(
+        DerivationKey {
+            rule: RuleId::from_u128(17),
+            subject: id(2),
+            output: OutputKey::from_u128(18),
+        },
+        c::FEATURE_TYPING,
+        BTreeMap::from([
+            (
+                p::FEATURE_TYPING_TYPED_FEATURE,
+                SlotValue::Scalar(Value::Reference(id(1))),
+            ),
+            (
+                p::FEATURE_TYPING_TYPE,
+                SlotValue::Scalar(Value::Reference(id(2))),
+            ),
+        ]),
+        Some(id(1)),
+        &evidence,
+    )
+    .unwrap();
+    let mut descriptor = ProducerDescriptor::new(TYPE, [], ProducerApplicability::Any);
+    descriptor.fresh_effects.insert(ProducerEffect::Typing);
+    let registry = ProducerRegistry::new([descriptor.clone()]).unwrap();
+    assert!(plan.validate_declared_effects(&[id(2)], &registry).is_err());
+    descriptor.effects.insert(ProducerEffect::Typing);
+    let registry = ProducerRegistry::new([descriptor.clone()]).unwrap();
+    assert!(
+        plan.validate_declared_effects(&[id(2)], &registry).is_err(),
+        "a different existing source exceeds SubjectAndOwned"
+    );
+    descriptor.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    plan.validate_declared_effects(&[id(2)], &registry).unwrap();
+}
+
+#[test]
+fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
+    let descriptor =
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);
+    assert!(ProducerRegistry::new([descriptor.clone(), descriptor.clone()]).is_err());
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    let snapshot = fixture();
+    let mut table = crate::producer_closure::ProducerEvaluationTable::default();
+    table.pending(id(1), snapshot.model(), &registry);
+    assert!(
+        table
+            .record(&[(id(1), ACTIVATE, Completeness::Complete)], &registry)
+            .is_err()
+    );
+}
+
+#[test]
+fn populated_overlay_revalidation_keeps_graph_and_certificate_identity() {
+    let original = run(&fixture(), false, Default::default());
+    let expected = original.certificate.unwrap();
+    let repeated = close_result_structure_on_overlay_with_extension(
+        original.overlay,
+        Default::default(),
+        |overlay| {
+            SemanticContext::for_overlay(overlay, Default::default(), BTreeSet::new())
+                .map_err(PublicationOverlayError::Context)
+        },
+        &DelayedTyping { incomplete: false },
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(repeated.converged);
+    assert_eq!(repeated.completeness, Completeness::Complete);
+    assert_eq!(repeated.certificate.unwrap().digest(), expected.digest());
+    assert_eq!(repeated.counters.new_elements_proposed, 0);
+    assert_eq!(repeated.counters.fixed_point_rounds, 1);
+}
+
+#[test]
+fn incomplete_target_and_owning_producer_block_dependent_subject_typing() {
+    let mut f = Fixture::new();
+    for subject in [1, 2, 3, 4] {
+        f.create(subject, c::FEATURE);
+    }
+    subset(&mut f, 1, 2, 20);
+    member(&mut f, 2, 3, 30, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    )])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = crate::producer_closure::ProducerEvaluationTable::default();
+    for subject in [1, 2, 3, 4] {
+        table.pending(id(subject), snapshot.model(), &registry);
+        table.record_reads(&[(id(subject), TYPE, Vec::new().into())], &registry);
+        table
+            .record(
+                &[(
+                    id(subject),
+                    TYPE,
+                    if subject == 2 {
+                        Completeness::Incomplete
+                    } else {
+                        Completeness::Complete
+                    },
+                )],
+                &registry,
+            )
+            .unwrap();
+    }
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    for subject in [1, 2, 3] {
+        assert!(
+            !certificate.is_closed(id(subject), SemanticClosureRequirement::EffectiveTyping),
+            "{subject}"
+        );
+    }
+    assert!(certificate.is_closed(id(4), SemanticClosureRequirement::EffectiveTyping));
+}
+
+#[test]
+fn ownership_derived_chain_and_reference_sources_propagate_target_incompleteness() {
+    let mut f = Fixture::new();
+    for subject in [1, 2, 3] {
+        f.create(subject, c::FEATURE);
+    }
+    relation(
+        &mut f,
+        1,
+        2,
+        10,
+        c::FEATURE_CHAINING,
+        p::FEATURE_CHAINING_CHAINING_FEATURE,
+    );
+    relation(
+        &mut f,
+        3,
+        2,
+        11,
+        c::REFERENCE_SUBSETTING,
+        p::REFERENCE_SUBSETTING_REFERENCED_FEATURE,
+    );
+    let snapshot = f.finish();
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    )])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = crate::producer_closure::ProducerEvaluationTable::default();
+    for subject in [1, 2, 3] {
+        table.pending(id(subject), snapshot.model(), &registry);
+        table
+            .record(
+                &[(
+                    id(subject),
+                    TYPE,
+                    if subject == 2 {
+                        Completeness::Incomplete
+                    } else {
+                        Completeness::Complete
+                    },
+                )],
+                &registry,
+            )
+            .unwrap();
+        table.record_reads(&[(id(subject), TYPE, Vec::new().into())], &registry);
+    }
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    for subject in [1, 2, 3] {
+        assert!(
+            !certificate.is_closed(id(subject), SemanticClosureRequirement::EffectiveTyping),
+            "{subject}"
+        );
+    }
+}
+
+#[test]
+fn arbitrary_inverse_read_depends_on_producers_at_other_sources() {
+    let snapshot = fixture();
+    let registry = ProducerRegistry::new([
+        ProducerDescriptor::new(
+            ACTIVATE,
+            [ProducerEffect::Subsetting],
+            ProducerApplicability::Any,
+        ),
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any),
+    ])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = crate::producer_closure::ProducerEvaluationTable::default();
+    for subject in [1, 2, 3] {
+        table.pending(id(subject), snapshot.model(), &registry);
+        for family in [ACTIVATE, TYPE] {
+            table
+                .record(
+                    &[(
+                        id(subject),
+                        family,
+                        if subject == 2 && family == ACTIVATE {
+                            Completeness::Incomplete
+                        } else {
+                            Completeness::Complete
+                        },
+                    )],
+                    &registry,
+                )
+                .unwrap();
+            let reads = if subject == 1 && family == TYPE {
+                vec![crate::producer_closure::ProducerRead::Inverse]
+            } else {
+                vec![]
+            };
+            table.record_reads(&[(id(subject), family, reads.into())], &registry);
+        }
+    }
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+}
+
+#[test]
+fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
+    use crate::producer_closure::ProducerEvaluationTable;
+    let mut f = Fixture::new();
+    for n in 1..=60_000 {
+        f.create(n, c::CLASSIFIER);
+    }
+    let snapshot = f.finish();
+    let families = [
+        "f00", "f01", "f02", "f03", "f04", "f05", "f06", "f07", "f08", "f09", "f10", "f11", "f12",
+        "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24", "f25",
+        "f26", "f27", "f28", "f29", "f30", "f31", "f32", "f33", "f34", "f35", "f36", "f37", "f38",
+        "f39", "f40", "f41", "f42", "f43", "f44", "f45", "f46", "f47", "f48", "f49", "f50", "f51",
+        "f52", "f53", "f54", "f55", "f56", "f57", "f58", "f59", "f60", "f61", "f62", "f63", "f64",
+        "f65", "f66", "f67", "f68", "f69", "f70", "f71", "f72", "f73", "f74", "f75", "f76", "f77",
+        "f78", "f79",
+    ];
+    let registry = ProducerRegistry::new(families.into_iter().map(|name| {
+        ProducerDescriptor::new(
+            ProducerFamilyId::new(name),
+            [ProducerEffect::Typing],
+            ProducerApplicability::Any,
+        )
+    }))
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    for n in 1..=60_000 {
+        table.pending(id(n), snapshot.model(), &registry);
+        let evaluations: Vec<_> = registry
+            .descriptors()
+            .iter()
+            .map(|d| (id(n), d.id, Completeness::Complete))
+            .collect();
+        table.record(&evaluations, &registry).unwrap();
+    }
+    let started = std::time::Instant::now();
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    eprintln!(
+        "closure certificate: subjects=60000 families=80 bytes={} build_ms={}",
+        certificate.storage_bytes(),
+        started.elapsed().as_millis()
+    );
+    assert_eq!(certificate.closed_pairs(), 4_800_000);
+    assert!(certificate.storage_bytes() < 2_300_000);
+    assert!(certificate.is_closed(id(60_000), SemanticClosureRequirement::EffectiveTyping));
+}

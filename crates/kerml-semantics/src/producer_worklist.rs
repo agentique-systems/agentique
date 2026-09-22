@@ -113,7 +113,14 @@ impl ProducerFamily {
             ),
             Self::Invocation => (
                 vec![c::INVOCATION_EXPRESSION],
-                vec![E::Specialization, E::ValueBinding, E::ConnectorStructure],
+                vec![
+                    E::Specialization,
+                    E::Subsetting,
+                    E::Typing,
+                    E::Membership,
+                    E::ValueBinding,
+                    E::ConnectorStructure,
+                ],
             ),
             Self::FeatureChainExpression => (
                 vec![c::FEATURE_CHAIN_EXPRESSION],
@@ -178,12 +185,57 @@ impl ProducerFamily {
                 ProducerApplicability::Never
             },
         );
+        descriptor.fresh_effects = match self {
+            Self::OwnedInstantiationResult => {
+                vec![E::Scalar(agq_kerml::properties::FEATURE_DIRECTION)]
+            }
+            Self::PositionalRedefinition => vec![],
+            Self::VariableFeaturing => vec![
+                E::Redefinition,
+                E::Subsetting,
+                E::Specialization,
+                E::Membership,
+                E::ResultStructure,
+            ],
+            Self::OwnedCrossing => vec![E::Typing, E::Featuring, E::FeatureChain, E::Membership],
+            Self::CrossDomain => vec![
+                E::Typing,
+                E::Featuring,
+                E::Subsetting,
+                E::Specialization,
+                E::Membership,
+            ],
+            Self::FeatureChainExpression => vec![E::FeatureChain, E::Redefinition, E::Membership],
+            Self::Invocation
+            | Self::FeatureReferenceExpression
+            | Self::ExpressionResult
+            | Self::FeatureValue => vec![
+                E::Subsetting,
+                E::Featuring,
+                E::Membership,
+                E::FeatureChain,
+                E::Scalar(agq_kerml::properties::FEATURE_IS_END),
+            ],
+            Self::IndexSelectResult => vec![E::FeatureChain, E::Membership],
+        }
+        .into_iter()
+        .collect();
+        if self == Self::FeatureChainExpression {
+            descriptor.effects.insert(E::Subsetting);
+        }
+        if self == Self::FeatureReferenceExpression {
+            descriptor.effects.insert(E::Membership);
+        }
         if self == Self::FeatureReferenceExpression {
             descriptor.minimum_stratum = ResultStructureStratum::ContextualBindings;
         }
-        if self == Self::VariableFeaturing {
-            descriptor.scope = ProducerEffectScope::Model;
-        }
+        descriptor.scope = match self {
+            Self::VariableFeaturing => ProducerEffectScope::Model,
+            Self::Invocation | Self::FeatureChainExpression | Self::IndexSelectResult => {
+                ProducerEffectScope::SubjectAndOwned
+            }
+            _ => ProducerEffectScope::Subject,
+        };
         descriptor
     }
     pub const ALL: [Self; 11] = [
@@ -269,6 +321,7 @@ impl Default for PublicationClosureOptions {
 /// the external watchdog; none of these counters participates in acceptance.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PublicationCounters {
+    pub negative_queries_certified: usize,
     pub families_registered: usize,
     pub applicable_subject_family_pairs: usize,
     pub closed_producer_pairs: usize,
@@ -425,6 +478,33 @@ pub fn close_result_structure_with_extension(
 ) -> Result<PublicationClosure, PublicationOverlayError> {
     close_frontiers::<DerivedOverlay>(
         snapshot,
+        None,
+        options,
+        context,
+        extension,
+        batch_progress,
+        progress,
+    )
+}
+
+/// Reevaluate the complete producer registry over an existing strictly
+/// validated overlay. Existing generated subjects are included. This preserves
+/// immutable graph sharing while issuing fresh evidence under the caller's
+/// exact current contract; no previous evaluation status is trusted.
+pub fn close_result_structure_on_overlay_with_extension(
+    overlay: DerivedOverlay,
+    options: PublicationClosureOptions,
+    context: impl for<'m> FnMut(
+        &'m DerivedOverlay,
+    ) -> Result<SemanticContext<'m>, PublicationOverlayError>,
+    extension: &impl PublicationProducerExtension,
+    batch_progress: impl FnMut(usize, usize, usize, usize),
+    progress: impl FnMut(&PublicationStage),
+) -> Result<PublicationClosure, PublicationOverlayError> {
+    let snapshot = overlay.declared().clone();
+    close_frontiers::<DerivedOverlay>(
+        &snapshot,
+        Some(overlay),
         options,
         context,
         extension,
@@ -448,6 +528,7 @@ pub fn close_construction_structure_with_extension(
 ) -> Result<PublicationClosure<agq_kernel::derived::ConstructionOverlay>, PublicationOverlayError> {
     close_frontiers::<agq_kernel::derived::ConstructionOverlay>(
         candidate,
+        None,
         options,
         context,
         extension,
@@ -458,6 +539,7 @@ pub fn close_construction_structure_with_extension(
 
 fn close_frontiers<Overlay: ProducerFrontier>(
     input: &Overlay::Input,
+    initial_overlay: Option<Overlay>,
     options: PublicationClosureOptions,
     mut context_factory: impl for<'m> FnMut(
         &'m Overlay,
@@ -466,7 +548,11 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     mut batch_progress: impl FnMut(usize, usize, usize, usize),
     mut progress: impl FnMut(&PublicationStage),
 ) -> Result<PublicationClosure<Overlay>, PublicationOverlayError> {
-    let mut overlay = Overlay::empty(input)?;
+    let mut overlay = if let Some(overlay) = initial_overlay {
+        overlay
+    } else {
+        Overlay::empty(input)?
+    };
     let declared_model = Overlay::input_model(input);
     let mut counters = PublicationCounters {
         declared_subjects: declared_model
@@ -488,7 +574,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     let mut population: BTreeSet<_> = options
         .initial_subjects
         .clone()
-        .unwrap_or_else(|| declared_model.elements().map(|r| r.id()).collect());
+        .unwrap_or_else(|| overlay.model().elements().map(|r| r.id()).collect());
     population.retain(|id| !Overlay::is_dependency_element(input, *id));
     let mut worklist = population.clone();
     let mut seen = BTreeSet::new();
@@ -647,7 +733,12 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                         ),
                     );
                 }
-                evaluations.record(&part.producer_evaluations, registry);
+                if !unregistered_extension {
+                    part.validate_declared_effects(batch, registry)?;
+                }
+                evaluations.record(&part.producer_evaluations, registry)?;
+                evaluations.record_reads(&part.producer_reads, registry);
+                part.producer_reads.clear();
                 part.producer_evaluations.clear();
                 part.discard_aggregate_proof();
                 plan.merge(part)?;
@@ -675,12 +766,18 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                             part.production.diagnostics.clone(),
                         ),
                     );
-                    evaluations.record(&part.producer_evaluations, registry);
+                    if !unregistered_extension {
+                        part.validate_declared_effects(&[subject], registry)?;
+                    }
+                    evaluations.record(&part.producer_evaluations, registry)?;
+                    evaluations.record_reads(&part.producer_reads, registry);
+                    part.producer_reads.clear();
                     part.producer_evaluations.clear();
                     part.discard_aggregate_proof();
                     plan.merge(part)?;
                 }
             }
+            counters.negative_queries_certified += q.negative_queries_certified();
             batch_progress(
                 round,
                 ((batch_index + 1) * options.batch_size.max(1)).min(subjects.len()),
