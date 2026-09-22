@@ -192,6 +192,21 @@ pub struct SysmlSemanticContext<'m> {
 }
 
 impl<'m> SysmlSemanticContext<'m> {
+    /// Attach scheduler evidence to the exact composed graph and dependency
+    /// contract. This does not accept a library publication or waive pending
+    /// SysML query capabilities.
+    pub fn with_producer_closure(
+        mut self,
+        certificate: Arc<agq_kerml_semantics::ProducerClosureCertificate>,
+    ) -> Result<Self, SysmlContextError> {
+        self.kerml = self
+            .kerml
+            .with_producer_registry_digest(certificate.registry_digest())?
+            .with_producer_closure(certificate)?;
+        self.id.kerml = self.kerml.id().clone();
+        Ok(self)
+    }
+
     /// Start an independent query cache over the same borrowed model and frozen
     /// dependency identity, without repeating graph fingerprinting.
     pub fn fork(&self) -> Self {

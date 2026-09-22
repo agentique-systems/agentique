@@ -391,7 +391,8 @@ impl CanonicalSysmlSystemsLibrary {
                 &inputs.roots,
                 &contract,
                 bindings.clone(),
-            )?;
+            )?
+            .with_producer_closure(certificate.clone())?;
             for batch in local.chunks(32) {
                 audit_sysml_population(&SysmlQueries::new(context.fork()), batch, &mut audit);
             }

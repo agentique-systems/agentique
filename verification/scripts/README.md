@@ -12,12 +12,16 @@ failure; a workflow stop returns 124 and a monitoring failure returns 125.
 `low_artifact.py` wraps `run.py` with a disk preflight and the low-artifact Cargo
 environment. It records the resolved target directory, current target size and
 free bytes under generated evidence, refuses builds below its reserve, and never
-deletes caches. Its default target is `target/foundation`; normal developer Cargo
+deletes caches. Its default target is `target/foundation-integration`; normal developer Cargo
 profiles remain unchanged. For example:
 
 ```powershell
 python verification/scripts/low_artifact.py --name workspace-tests -- cargo test --workspace
 ```
+
+Isolated worktrees must use distinct target directories (the wrapper's `--target`
+argument). A shared Cargo lock serializes builds but does not make one worktree's
+artifacts suitable as another worktree's verification evidence.
 
 The language-closure milestone's full Systems attempt uses the watchdog with
 `--wall-seconds 2100 --private-mib 6656 --min-free-mib 1024`. Run the targeted

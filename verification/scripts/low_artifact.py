@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--name", required=True)
     parser.add_argument("--summary", default="verification/summaries/producer-closure-certificate/summary.json")
-    parser.add_argument("--target", default="target/foundation")
+    parser.add_argument("--target", default="target/foundation-integration")
     parser.add_argument("--min-free-mib", type=int, default=4096)
     parser.add_argument("--env", action="append", default=[])
     parser.add_argument("command", nargs=argparse.REMAINDER)
