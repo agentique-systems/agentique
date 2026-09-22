@@ -6,6 +6,7 @@ use agq_kernel::{
     value::Value,
 };
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 #[cfg(test)]
@@ -14,6 +15,7 @@ mod shared_search_tests;
 
 /// An immutable evaluator; per-invocation traversal state is always discardable.
 pub struct KerMlQueries<'m> {
+    negative_queries_certified: AtomicUsize,
     producer_evidence: bool,
     pub(crate) context: SemanticContext<'m>,
     pub(crate) namespace_cache: crate::namespaces::NamespaceCache,
@@ -31,6 +33,7 @@ pub struct KerMlQueries<'m> {
 impl<'m> KerMlQueries<'m> {
     pub fn new(context: SemanticContext<'m>) -> Self {
         Self {
+            negative_queries_certified: AtomicUsize::new(0),
             producer_evidence: false,
             context,
             namespace_cache: Default::default(),
@@ -65,6 +68,11 @@ impl<'m> KerMlQueries<'m> {
     pub fn model(&self) -> &'m ModelView {
         self.context.model
     }
+    /// Successful producer-closure checks by this evaluator. This resource
+    /// counter is independent of immutable evidence and semantic identity.
+    pub fn negative_queries_certified(&self) -> usize {
+        self.negative_queries_certified.load(Ordering::Relaxed)
+    }
     /// Prove that every registered producer capable of changing this answer is
     /// closed. Missing evidence remains an explicit dependency and incomplete
     /// result. This query never treats graph quiescence as an absence proof.
@@ -84,6 +92,8 @@ impl<'m> KerMlQueries<'m> {
         answer.value =
             certificate.is_some_and(|certificate| certificate.is_closed(subject, requirement));
         if answer.value {
+            self.negative_queries_certified
+                .fetch_add(1, Ordering::Relaxed);
             answer.prove(
                 QueryKind::ProducerClosure(requirement),
                 subject,
