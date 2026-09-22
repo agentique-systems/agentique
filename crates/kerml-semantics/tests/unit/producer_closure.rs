@@ -10,7 +10,7 @@ impl PublicationProducerExtension for PendingScalar {
         vec![
             ProducerDescriptor::new(
                 ACTIVATE,
-                [ProducerEffect::Scalar(p::FEATURE_FEATURE_TARGET)],
+                [ProducerEffect::Scalar(p::ELEMENT_DECLARED_SHORT_NAME)],
                 ProducerApplicability::Subtypes(vec![c::FEATURE]),
             ),
             ProducerDescriptor::new(
@@ -40,7 +40,7 @@ impl PublicationProducerExtension for PendingScalar {
         plan.record_producer_evaluation_evidence(subject, ACTIVATE, &scalar);
         plan.observe_evidence(scalar)?;
         let mut typing = q.canonical_fact_evidence(FactKey::Element(subject));
-        let _flag = q.read_reference(&mut typing, subject, p::FEATURE_FEATURE_TARGET);
+        let _flag = q.read_value(&mut typing, subject, p::ELEMENT_DECLARED_SHORT_NAME);
         assert_eq!(typing.completeness, Completeness::Complete);
         plan.record_producer_evaluation_evidence(subject, TYPE, &typing);
         plan.observe_evidence(typing)
@@ -1402,6 +1402,7 @@ fn positional_bounds_remain_open_to_future_scalar_producers() {
                     |_| false,
                 );
                 let remains_open = !bounded
+                    || future_property == Some(unknown_property)
                     || matches!((kind, future_property), (K::Parameter, Some(property)) if [p::FEATURE_DIRECTION, direction_alias, unknown_property].contains(&property))
                     || matches!((kind, future_property), (K::End, Some(property)) if [p::FEATURE_IS_END, end_alias, unknown_property].contains(&property));
                 assert_eq!(
@@ -1738,6 +1739,75 @@ fn arbitrary_inverse_read_depends_on_producers_at_other_sources() {
         |_| false,
     );
     assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+}
+
+#[test]
+fn reference_scalar_writes_reopen_cross_subject_queries_and_requirement_masks() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    for property in [p::FEATURE_FEATURE_TARGET, p::FEATURE_IS_VARIABLE] {
+        let mut writer = ProducerDescriptor::new(
+            ACTIVATE,
+            [ProducerEffect::Scalar(property)],
+            ProducerApplicability::Subtypes(vec![c::FEATURE]),
+        );
+        writer.scope = ProducerEffectScope::Subject;
+        let registry = ProducerRegistry::new([
+            writer,
+            ProducerDescriptor::new(
+                TYPE,
+                [ProducerEffect::Typing],
+                ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+            ),
+        ])
+        .unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        for read in [
+            ProducerRead::Inverse,
+            ProducerRead::Source(id(3), c::FEATURE_TYPING, p::FEATURE_TYPING_TYPE),
+            ProducerRead::Owned(id(3), c::FEATURE_TYPING),
+            ProducerRead::Requirement(id(3), SemanticClosureRequirement::EffectiveTyping),
+        ] {
+            let mut table = ProducerEvaluationTable::default();
+            for record in snapshot.model().elements() {
+                table.pending(record.id(), snapshot.model(), &registry);
+                if record.id() == id(1) {
+                    table
+                        .record(&[(id(1), ACTIVATE, Completeness::Incomplete)], &registry)
+                        .unwrap();
+                } else {
+                    table
+                        .record(&[(record.id(), TYPE, Completeness::Complete)], &registry)
+                        .unwrap();
+                    table.record_reads(&[(record.id(), TYPE, Vec::new().into())], &registry);
+                }
+            }
+            table.record_reads(&[(id(2), TYPE, vec![read].into())], &registry);
+            let certificate = ProducerClosureCertificate::issue(
+                snapshot.model(),
+                context.id(),
+                &registry,
+                &table,
+                |_| false,
+            );
+            let pending = property == p::FEATURE_FEATURE_TARGET;
+            assert_eq!(
+                certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
+                Some(if pending {
+                    ProducerEvaluationState::Pending
+                } else {
+                    ProducerEvaluationState::EvaluatedComplete
+                })
+            );
+            assert_eq!(
+                certificate.is_closed(id(3), SemanticClosureRequirement::EffectiveTyping),
+                !pending
+            );
+        }
+    }
 }
 
 #[test]

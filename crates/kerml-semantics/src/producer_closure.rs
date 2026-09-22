@@ -240,6 +240,8 @@ pub enum ProducerEffect {
     ResultStructure,
     ValueBinding,
     ConnectorStructure,
+    /// Exact property assignment. Reference-valued or unclassified properties
+    /// conservatively affect cross-subject semantic closure.
     Scalar(PropertyId),
 }
 
@@ -340,24 +342,29 @@ impl ProducerDescriptor {
 
 /// A pending creator can activate families with no subjects in the current
 /// frontier. Their cross-subject effects cannot be omitted from the witness.
-fn future_cross_subject_effects(registry: &ProducerRegistry) -> BTreeSet<ProducerEffect> {
-    future_cross_subject_families(registry)
+fn future_cross_subject_effects(
+    registry: &ProducerRegistry,
+    model: &ModelView,
+) -> BTreeSet<ProducerEffect> {
+    future_cross_subject_families(registry, model)
         .flat_map(|descriptor| descriptor.effects.iter().copied())
         .collect()
 }
-fn future_cross_subject_families(
-    registry: &ProducerRegistry,
-) -> impl Iterator<Item = &ProducerDescriptor> {
-    let ownership_mutable = registry
-        .descriptors
-        .iter()
-        .any(|descriptor| descriptor.effects.contains(&ProducerEffect::Ownership));
+fn future_cross_subject_families<'a>(
+    registry: &'a ProducerRegistry,
+    model: &'a ModelView,
+) -> impl Iterator<Item = &'a ProducerDescriptor> {
+    let ownership_mutable = registry.descriptors.iter().any(|descriptor| {
+        descriptor.effects.contains(&ProducerEffect::Ownership)
+            || has_reference_scalar(descriptor, model)
+    });
     registry.descriptors.iter().filter(move |descriptor| {
         descriptor.applicability != ProducerApplicability::Never
             && (matches!(
                 descriptor.scope,
                 ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
-            ) || (ownership_mutable && descriptor.scope.depends_on_ownership()))
+            ) || has_reference_scalar(descriptor, model)
+                || (ownership_mutable && descriptor.scope.depends_on_ownership()))
     })
 }
 
@@ -447,6 +454,9 @@ impl SemanticClosureRequirement {
             }
         }
     }
+    fn requires_in_model(self, effect: ProducerEffect, model: &ModelView) -> bool {
+        self.requires(effect) || reference_scalar(effect, model)
+    }
     fn bit(self) -> u8 {
         1 << self as u8
     }
@@ -487,7 +497,7 @@ impl ProducerRegistry {
             }
         }
         let mut hash = Sha256::new();
-        hash.update(b"agq-producer-registry/2");
+        hash.update(b"agq-producer-registry/3");
         // Debug is deterministic for these ordered value-only declarations;
         // its encoding is versioned by the registry schema above.
         hash.update(format!("{descriptors:?}").as_bytes());
@@ -541,8 +551,8 @@ impl ProducerEvaluationTable {
         immutable: &impl Fn(ElementId) -> bool,
     ) -> BTreeSet<usize> {
         let families = registry.descriptors.len();
-        let future_effects = future_cross_subject_effects(registry);
-        let future_families: Vec<_> = future_cross_subject_families(registry).collect();
+        let future_effects = future_cross_subject_effects(registry, model);
+        let future_families: Vec<_> = future_cross_subject_families(registry, model).collect();
         let mutable_feature_populations: BTreeSet<_> = registry
             .descriptors
             .iter()
@@ -684,10 +694,10 @@ impl ProducerEvaluationTable {
         use agq_kerml::properties as p;
         let mut owned: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
         let mut owners: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
-        let ownership_mutable = registry
-            .descriptors
-            .iter()
-            .any(|descriptor| descriptor.effects.contains(&ProducerEffect::Ownership));
+        let ownership_mutable = registry.descriptors.iter().any(|descriptor| {
+            descriptor.effects.contains(&ProducerEffect::Ownership)
+                || has_reference_scalar(descriptor, model)
+        });
         for record in model.elements() {
             for property in [
                 p::ELEMENT_OWNED_RELATIONSHIP,
@@ -747,7 +757,9 @@ impl ProducerEvaluationTable {
                 .effects
                 .iter()
                 .chain(&descriptor.fresh_effects)
-                .any(|effect| !matches!(effect, ProducerEffect::Scalar(_)))
+                .any(|&effect| {
+                    !matches!(effect, ProducerEffect::Scalar(_)) || reference_scalar(effect, model)
+                })
             {
                 affected.append(&mut inverse);
             }
@@ -775,6 +787,7 @@ impl ProducerEvaluationTable {
                 }
             };
             if descriptor.scope == ProducerEffectScope::Model
+                || has_reference_scalar(descriptor, model)
                 || (ownership_mutable && descriptor.scope.depends_on_ownership())
             {
                 for reads in readers.values() {
@@ -1089,16 +1102,16 @@ impl ProducerClosureCertificate {
             .map(|(i, id)| (id, i))
             .collect();
         let families = registry.descriptors.len();
-        let future_effects = future_cross_subject_effects(registry);
+        let future_effects = future_cross_subject_effects(registry, model);
         let mut states = vec![0; (subjects.len() * families).div_ceil(4)];
         let mut blocked = vec![0_u8; subjects.len()];
         let mut inherited_blocks = vec![0_u8; subjects.len()];
         let mut descendant_blocks = vec![0_u8; subjects.len()];
         let mut owner_blocks = vec![0_u8; subjects.len()];
-        let ownership_mutable = registry
-            .descriptors
-            .iter()
-            .any(|descriptor| descriptor.effects.contains(&ProducerEffect::Ownership));
+        let ownership_mutable = registry.descriptors.iter().any(|descriptor| {
+            descriptor.effects.contains(&ProducerEffect::Ownership)
+                || has_reference_scalar(descriptor, model)
+        });
         let mut global_block = 0;
         let mut applicable_pairs = 0;
         let mut closed_pairs = 0;
@@ -1142,7 +1155,7 @@ impl ProducerClosureCertificate {
                         for requirement in SemanticClosureRequirement::ALL {
                             if future_effects
                                 .iter()
-                                .any(|&effect| requirement.requires(effect))
+                                .any(|&effect| requirement.requires_in_model(effect, model))
                             {
                                 global_block |= requirement.bit();
                             }
@@ -1150,7 +1163,12 @@ impl ProducerClosureCertificate {
                     }
                     let mask = SemanticClosureRequirement::ALL
                         .into_iter()
-                        .filter(|r| descriptor.effects.iter().any(|&e| r.requires(e)))
+                        .filter(|r| {
+                            descriptor
+                                .effects
+                                .iter()
+                                .any(|&e| r.requires_in_model(e, model))
+                        })
                         .fold(0, |mask, r| mask | r.bit());
                     // Other query families have additional domain/member dependencies.
                     // Until their precise footprint traversal is implemented,
@@ -1158,6 +1176,7 @@ impl ProducerClosureCertificate {
                     // throughout the graph instead of claiming local absence.
                     global_block |= mask & !SemanticClosureRequirement::EffectiveTyping.bit();
                     match descriptor.scope {
+                        _ if has_reference_scalar(descriptor, model) => global_block |= mask,
                         scope if ownership_mutable && scope.depends_on_ownership() => {
                             global_block |= mask
                         }
@@ -1419,15 +1438,16 @@ pub(crate) fn effect_changes_read(
 ) -> bool {
     match read {
         ProducerRead::Global | ProducerRead::Any(_) => true,
-        ProducerRead::Requirement(_, requirement) => requirement.requires(effect),
+        ProducerRead::Requirement(_, requirement) => requirement.requires_in_model(effect, model),
         ProducerRead::FeaturePopulation(_, kind) => {
             effect == ProducerEffect::Membership
                 || effect == ProducerEffect::Ownership
+                || reference_scalar(effect, model)
                 || matches!(effect, ProducerEffect::Scalar(property)
                     if scalar_changes_feature_population(property, *kind, model))
         }
         ProducerRead::Structural(_) | ProducerRead::Inverse => {
-            !matches!(effect, ProducerEffect::Scalar(_))
+            !matches!(effect, ProducerEffect::Scalar(_)) || reference_scalar(effect, model)
         }
         ProducerRead::Source(_, _, property)
             if [
@@ -1437,9 +1457,13 @@ pub(crate) fn effect_changes_read(
             .contains(property) =>
         {
             effect == ProducerEffect::Ownership
+                || reference_scalar(effect, model)
                 || matches!(effect, ProducerEffect::Scalar(written) if written == *property)
         }
         ProducerRead::Source(_, class, _) | ProducerRead::Owned(_, class) => {
+            if reference_scalar(effect, model) {
+                return true;
+            }
             use agq_kerml::classes as c;
             let potential: &[MetaclassId] = match effect {
                 ProducerEffect::Typing => &[c::FEATURE_TYPING],
@@ -1477,7 +1501,9 @@ pub(crate) fn effect_changes_read(
                 })
                 .map_or(*property, |descriptor| descriptor.id);
             if let ProducerEffect::Scalar(written) = effect {
-                return written == *property || written == resolved;
+                return written == *property
+                    || written == resolved
+                    || reference_scalar(effect, model);
             }
             if [
                 agq_kerml::properties::ELEMENT_OWNING_RELATIONSHIP,
@@ -1498,6 +1524,29 @@ pub(crate) fn effect_changes_read(
             })
         }
     }
+}
+
+/// A scalar reference can fill a relationship endpoint and affect semantic
+/// subjects other than the record carrying the slot. Unclassified properties
+/// must not prove an absence. Primitive scalar effects retain exact matching.
+fn reference_scalar(effect: ProducerEffect, model: &ModelView) -> bool {
+    let ProducerEffect::Scalar(property) = effect else {
+        return false;
+    };
+    model
+        .registry()
+        .property(property)
+        .and_then(|property| model.registry().storage_kind(property.value_kind))
+        .map_or(true, |kind| {
+            matches!(kind, agq_kernel::metamodel::ValueKind::Reference(_))
+        })
+}
+
+fn has_reference_scalar(descriptor: &ProducerDescriptor, model: &ModelView) -> bool {
+    descriptor
+        .effects
+        .iter()
+        .any(|&effect| reference_scalar(effect, model))
 }
 
 fn scalar_changes_feature_population(
