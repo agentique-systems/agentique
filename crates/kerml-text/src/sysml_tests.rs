@@ -17,6 +17,8 @@ mod rich_vertical;
 #[path = "sysml_programmatic_vertical_tests.rs"]
 mod programmatic_vertical;
 
+#[path = "accepted_self_model_tests.rs"]
+mod accepted_self_model;
 #[path = "agentique_self_model_tests.rs"]
 mod agentique_self_model;
 

@@ -3,7 +3,7 @@
 use super::*;
 use std::collections::BTreeMap;
 
-const DOCUMENTS: [(&str, &str); 5] = [
+pub(super) const DOCUMENTS: [(&str, &str); 5] = [
     (
         "Contracts.sysml",
         include_str!("../../../models/agentique/Contracts.sysml"),

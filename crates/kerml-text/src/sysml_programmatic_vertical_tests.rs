@@ -17,6 +17,10 @@ impl VehicleBuilder {
         let base = Snapshot::new(Arc::new(
             agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
         ));
+        Self::on(base)
+    }
+
+    fn on(base: Snapshot) -> Self {
         Self {
             changes: base.change_set(),
             base,
@@ -357,7 +361,14 @@ fn programmatic_vehicle() -> Snapshot {
 /// Independently authored architecture slice: these commands do not read SysML
 /// syntax, a textual snapshot, or its IDs. The full model is checked separately.
 pub(super) fn programmatic_platform() -> Snapshot {
-    let mut builder = VehicleBuilder::new();
+    programmatic_platform_with_builder(VehicleBuilder::new())
+}
+
+pub(super) fn programmatic_platform_on(base: Snapshot) -> Snapshot {
+    programmatic_platform_with_builder(VehicleBuilder::on(base))
+}
+
+fn programmatic_platform_with_builder(mut builder: VehicleBuilder) -> Snapshot {
     let root = builder.create(c::NAMESPACE, None);
     for package in [
         "ArchitectureContracts",
@@ -374,6 +385,7 @@ pub(super) fn programmatic_platform() -> Snapshot {
             s::ATTRIBUTE_DEFINITION,
         ),
         ("ArchitectureContracts", "SemanticState", s::ITEM_DEFINITION),
+        ("ArchitectureContracts", "Diagnostic", s::ITEM_DEFINITION),
         (
             "ArchitectureContracts",
             "ValidatedSemanticState",
@@ -435,6 +447,29 @@ pub(super) fn programmatic_platform() -> Snapshot {
     ] {
         let id = builder.create(class, Some(name));
         builder.member(builder.names[package], id, c::OWNING_MEMBERSHIP);
+    }
+    builder.relationship(
+        c::SUBCLASSIFICATION,
+        builder.names["ValidatedSemanticState"],
+        builder.names["SemanticState"],
+        Some(p::SUBCLASSIFICATION_SUBCLASSIFIER),
+        p::SUBCLASSIFICATION_SUPERCLASSIFIER,
+    );
+    for (owner, name, definition) in [
+        ("SemanticQuery", "semanticAnswer", "SemanticState"),
+        ("ModelRevision", "revisionState", "SemanticState"),
+        ("DiagnosticStream", "diagnostic", "Diagnostic"),
+    ] {
+        let child = builder.create(s::ITEM_USAGE, Some(name));
+        builder.member(builder.names[owner], child, c::FEATURE_MEMBERSHIP);
+        builder.enumeration(child, p::FEATURE_DIRECTION, "out");
+        builder.relationship(
+            c::FEATURE_TYPING,
+            child,
+            builder.names[definition],
+            Some(p::FEATURE_TYPING_TYPED_FEATURE),
+            p::FEATURE_TYPING_TYPE,
+        );
     }
     for (owner, name, class, definition, composite) in [
         (

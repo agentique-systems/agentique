@@ -14,6 +14,17 @@ low-disk profile recorded in `closed-dependency.md`:
 | `cargo clippy -p agq-kerml-text --all-targets -- -D warnings` | exit 0 |
 | `cargo fmt --all -- --check` | exit 0 |
 | `git diff --check` | exit 0 |
+| `cargo test -p agq-kerml-text --test project` | exit 0; 13 passed after shared-document storage change |
+| `cargo test -p agq-kerml-text --test project edit_preserves_other_document` | exit 0; strengthened pointer-sharing assertion passed |
+| `RUSTDOCFLAGS="-D warnings" cargo doc -p agq-kerml-text --no-deps` | exit 0 |
+
+The separate ignored harness requires `AGENTIQUE_KERML_CACHE` and
+`AGENTIQUE_SYSTEMS_CACHE`, restores only trusted receipts, and compares effective
+queries against a directly authored ChangeSet fixture sharing the same standards.
+It also checks edits, retained canonical IDs, original inherited-member identity,
+ordered endpoints, architectural dependencies, shared syntax arenas and parallel
+reads. See the model README for the exact command. No requested accepted run was
+reported as successful while the Systems receipt was unavailable.
 
 The self-model's ordinary structural tests remain real frontend and canonical
 query tests. Their success does not substitute for the accepted-cache gate.

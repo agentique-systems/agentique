@@ -27,3 +27,20 @@ The structural tests live in `crates/kerml-text/src/agentique_self_model_tests.r
 They distinguish current-graph acceptance from accepted Systems publication and
 producer closure. The latter remains an explicit integration gate until the
 accepted Systems dependency can be consumed by authored projects.
+
+The prepared accepted-publication gate is
+`crates/kerml-text/src/accepted_self_model_tests.rs`. It uses the additive accepted
+`SourceProject` constructor and requires exact trusted caches supplied explicitly:
+
+```powershell
+$env:AGENTIQUE_KERML_CACHE = '<accepted KerML cache path>'
+$env:AGENTIQUE_SYSTEMS_CACHE = '<accepted Systems cache path>'
+cargo test -p agq-kerml-text --lib accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_semantics -- --ignored --nocapture
+```
+
+Requesting this gate with absent or unaccepted cache files fails. It never
+rebuilds either standard publication. A passing run must establish combined
+producer closure, all mandatory references, effective architecture queries,
+independent programmatic equivalence, shared standard and syntax objects, and
+three immutable edit revisions with parallel readers. The test remains explicitly
+ignored in routine unit tests until those accepted artifacts are available.
