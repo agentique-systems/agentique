@@ -21,8 +21,17 @@ passes, and generic scheduling tests preserve the final one-shot graph/provenanc
 
 A nested State/Transition reproduction also exposed an overbroad source-feature
 search. The pinned query excludes FeatureMembership subtypes; the generic search
-contract now represents this excluded population explicitly. Its closure matcher
-and combined regression are the remaining gate before the next bounded run.
+contract and closure matcher now represent this excluded population explicitly.
+The remaining fixture failure traces native namespace/import structure searches
+being widened to arbitrary element reads during canonical proof persistence.
+That transport repair and its combined regression gate the next bounded run.
+
+The integrated KerML semantics package passed 280 tests (two existing scale
+probes ignored) at `18d5147`, after updating the context-rejection assertion to
+check the new exact `formal_constraint_targets` diagnostic. The corresponding
+command and output identity are in the producer-closure summary. A separate real
+additive-ownership regression established and repaired missing Ownership effects
+in all six closure requirement masks; its generic matrix passed 38 tests.
 
 Neither issue is a grammar or normative authority conflict. No medium or full
 Systems publication attempt has run; the full-publication attempt budget is unused.

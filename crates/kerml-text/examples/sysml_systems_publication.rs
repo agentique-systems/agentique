@@ -112,6 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             last_producer_stage = Some(json!({
                 "stage":stage.stage,"stratum":format!("{:?}",stage.stratum),
                 "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
+                "closure_counters":closure_counters(&stage.counters),
                 "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>()
             }));
             println!(
