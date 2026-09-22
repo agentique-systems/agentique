@@ -1,0 +1,562 @@
+{
+  "format": "agentique-sysml-operational-syntax-status/1",
+  "source_commit": "e769525d2b9298feee78916fa21207a571911201",
+  "systems_artifact_sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+  "source_documents": 21,
+  "source_bytes": 86538,
+  "shared_production_kinds": 535,
+  "grammar_alternatives": {
+    "kerml": 1118,
+    "sysml_published": 2032,
+    "sysml_operational_v1": 2040
+  },
+  "profiles": [
+    {
+      "profile": "omg-sysml-2.0-published/1",
+      "documents_parsed": 13,
+      "documents_total": 21,
+      "byte_exact_documents": 21,
+      "recovery_regions": 8,
+      "grammar_compatibility_manifest_sha256": null,
+      "documents": [
+        {
+          "path": "Systems Library/Actions.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 3300
+        },
+        {
+          "path": "Systems Library/Allocations.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": false,
+          "recovery_regions": 1,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1,
+          "retained_failure": {
+            "code": "SG_RECOVERY",
+            "byte_range": [
+              246,
+              249
+            ],
+            "token": "def"
+          }
+        },
+        {
+          "path": "Systems Library/AnalysisCases.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 213
+        },
+        {
+          "path": "Systems Library/Attributes.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 48
+        },
+        {
+          "path": "Systems Library/Calculations.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 189
+        },
+        {
+          "path": "Systems Library/Cases.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": false,
+          "recovery_regions": 1,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1,
+          "retained_failure": {
+            "code": "SG_RECOVERY",
+            "byte_range": [
+              1183,
+              1189
+            ],
+            "token": "return"
+          }
+        },
+        {
+          "path": "Systems Library/Connections.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": false,
+          "recovery_regions": 1,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1,
+          "retained_failure": {
+            "code": "SG_RECOVERY",
+            "byte_range": [
+              1630,
+              1631
+            ],
+            "token": ";"
+          }
+        },
+        {
+          "path": "Systems Library/Constraints.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 209
+        },
+        {
+          "path": "Systems Library/Flows.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": false,
+          "recovery_regions": 1,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1,
+          "retained_failure": {
+            "code": "SG_RECOVERY",
+            "byte_range": [
+              1476,
+              1486
+            ],
+            "token": "occurrence"
+          }
+        },
+        {
+          "path": "Systems Library/Interfaces.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": false,
+          "recovery_regions": 1,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1,
+          "retained_failure": {
+            "code": "SG_RECOVERY",
+            "byte_range": [
+              2934,
+              2938
+            ],
+            "token": "port"
+          }
+        },
+        {
+          "path": "Systems Library/Items.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": false,
+          "recovery_regions": 1,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1,
+          "retained_failure": {
+            "code": "SG_RECOVERY",
+            "byte_range": [
+              3681,
+              3685
+            ],
+            "token": "item"
+          }
+        },
+        {
+          "path": "Systems Library/Metadata.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 114
+        },
+        {
+          "path": "Systems Library/Parts.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 529
+        },
+        {
+          "path": "Systems Library/Ports.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 255
+        },
+        {
+          "path": "Systems Library/Requirements.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 986
+        },
+        {
+          "path": "Systems Library/StandardViewDefinitions.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 167
+        },
+        {
+          "path": "Systems Library/States.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 819
+        },
+        {
+          "path": "Systems Library/SysML.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 9489
+        },
+        {
+          "path": "Systems Library/UseCases.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 328
+        },
+        {
+          "path": "Systems Library/VerificationCases.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": false,
+          "recovery_regions": 1,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1,
+          "retained_failure": {
+            "code": "SG_RECOVERY",
+            "byte_range": [
+              669,
+              675
+            ],
+            "token": "return"
+          }
+        },
+        {
+          "path": "Systems Library/Views.sysml",
+          "profile": "omg-sysml-2.0-published/1",
+          "complete": false,
+          "recovery_regions": 1,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1,
+          "retained_failure": {
+            "code": "SG_RECOVERY",
+            "byte_range": [
+              846,
+              853
+            ],
+            "token": "satisfy"
+          }
+        }
+      ]
+    },
+    {
+      "profile": "agentique-sysml-2.0-operational/1",
+      "documents_parsed": 21,
+      "documents_total": 21,
+      "byte_exact_documents": 21,
+      "recovery_regions": 0,
+      "grammar_compatibility_manifest_sha256": "150aeac2ad97e803ba8b7823e1c3d07285efda9b9fd8670c877880647cd135ea",
+      "documents": [
+        {
+          "path": "Systems Library/Actions.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 3351
+        },
+        {
+          "path": "Systems Library/Allocations.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 149
+        },
+        {
+          "path": "Systems Library/AnalysisCases.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 216
+        },
+        {
+          "path": "Systems Library/Attributes.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 48
+        },
+        {
+          "path": "Systems Library/Calculations.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 192
+        },
+        {
+          "path": "Systems Library/Cases.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 365
+        },
+        {
+          "path": "Systems Library/Connections.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 336
+        },
+        {
+          "path": "Systems Library/Constraints.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 213
+        },
+        {
+          "path": "Systems Library/Flows.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1271
+        },
+        {
+          "path": "Systems Library/Interfaces.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 718
+        },
+        {
+          "path": "Systems Library/Items.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1596
+        },
+        {
+          "path": "Systems Library/Metadata.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 115
+        },
+        {
+          "path": "Systems Library/Parts.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 538
+        },
+        {
+          "path": "Systems Library/Ports.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 258
+        },
+        {
+          "path": "Systems Library/Requirements.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 1000
+        },
+        {
+          "path": "Systems Library/StandardViewDefinitions.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 167
+        },
+        {
+          "path": "Systems Library/States.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 828
+        },
+        {
+          "path": "Systems Library/SysML.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 9681
+        },
+        {
+          "path": "Systems Library/UseCases.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 334
+        },
+        {
+          "path": "Systems Library/VerificationCases.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 637
+        },
+        {
+          "path": "Systems Library/Views.sysml",
+          "profile": "agentique-sysml-2.0-operational/1",
+          "complete": true,
+          "recovery_regions": 0,
+          "exact_byte_preservation": true,
+          "root_productions": [
+            "RootNamespace"
+          ],
+          "production_nodes": 933
+        }
+      ]
+    }
+  ],
+  "semantic_publication_claim": false
+}

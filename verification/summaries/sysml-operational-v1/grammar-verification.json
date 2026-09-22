@@ -1,0 +1,85 @@
+{
+  "format": "agentique-sysml-operational-syntax-verification/1",
+  "source_commit": "e769525d2b9298feee78916fa21207a571911201",
+  "scope": "Parts A/C: syntax profiles, exact grammar compatibility, lossless corpus closure; semantic construction and publication are separate gates.",
+  "tools": {
+    "rustc": "1.92.0 (ded5c06cf 2025-12-08)",
+    "cargo": "1.92.0 (344c4567c 2025-10-21)",
+    "python": "3.12.10"
+  },
+  "environment": {
+    "CARGO_TARGET_DIR": "target-parser",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "RUSTDOCFLAGS": "-D warnings (Rustdoc check)"
+  },
+  "grammar_manifest": {
+    "path": "standards/grammar/sysml-2.0-operational-v1.json",
+    "sha256": "150aeac2ad97e803ba8b7823e1c3d07285efda9b9fd8670c877880647cd135ea",
+    "encoding": "UTF-8 with LF"
+  },
+  "commands": [
+    {
+      "command": "python tools/kerml-grammar/generate.py",
+      "exit_code": 0,
+      "output_summary": "535 kinds; 1118 alternatives; unchanged KerML tables current"
+    },
+    {
+      "command": "python tools/sysml-grammar/generate.py",
+      "exit_code": 0,
+      "output_summary": "535 kinds; 2032 Published and 2040 Operational alternatives; both tables current"
+    },
+    {
+      "command": "python tools/kerml-grammar/test_inventory.py",
+      "exit_code": 0,
+      "output_summary": "3 Python tests passed"
+    },
+    {
+      "command": "python tools/sysml-grammar/test_generate.py",
+      "exit_code": 0,
+      "output_summary": "5 Python tests passed"
+    },
+    {
+      "command": "cargo fmt -p agq-kerml-syntax -- --check",
+      "exit_code": 0,
+      "output_summary": "Formatting current"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-syntax",
+      "exit_code": 0,
+      "output_summary": "15 Rust tests passed, including exact strict 13/21 and operational 21/21 corpus matrix"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-kerml-syntax --all-targets -- -D warnings",
+      "exit_code": 0,
+      "output_summary": "No warnings"
+    },
+    {
+      "command": "cargo doc --locked --offline -p agq-kerml-syntax --no-deps",
+      "exit_code": 0,
+      "output_summary": "Rustdoc completed with RUSTDOCFLAGS=-D warnings"
+    },
+    {
+      "command": "cargo run --locked --offline -p agq-kerml-syntax --example sysml_corpus",
+      "exit_code": 0,
+      "output_summary": "Published 13/21; Operational v1 21/21; all 42 profile/document results byte exact"
+    }
+  ],
+  "raw_output": "verification/generated/sysml-operational-v1/commands.log (ignored)",
+  "corpus_reproduction": "cargo run --locked --offline -p agq-kerml-syntax --example sysml_corpus",
+  "previous_failed_attempt": {
+    "command": "cargo test --locked --offline -p agq-kerml-syntax --test sysml",
+    "exit_code": 1,
+    "output_excerpt": "failed to build archive libagq_kernel: There is not enough space on the disk. (os error 112)",
+    "disposition": "Disk space restored; truncated test file restored; all final package checks above passed."
+  },
+  "preserved_inputs": [
+    "SysML.pdf",
+    "standards/artifacts/Systems-Library.kpar",
+    "standards/grammar/sysml-2.0.ebnf",
+    "standards/grammar/sysml-2.0-source.json",
+    "crates/kerml-syntax/src/production/generated.rs",
+    "crates/kerml-syntax/src/production/generated_sysml.rs"
+  ]
+}
