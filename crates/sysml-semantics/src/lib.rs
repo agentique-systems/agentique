@@ -8,10 +8,14 @@
 
 mod bindings;
 mod context;
+mod producers;
+mod profile;
 mod queries;
 
 pub use bindings::*;
 pub use context::*;
+pub use producers::*;
+pub use profile::*;
 pub use queries::*;
 
 #[cfg(test)]

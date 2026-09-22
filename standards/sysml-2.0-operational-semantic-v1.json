@@ -1,0 +1,31 @@
+{
+  "format": "agentique-sysml-semantic-corrections/1",
+  "profile": "agentique-sysml-2.0-operational/1",
+  "published_profile": "omg-sysml-2.0-published/1",
+  "specification": {
+    "path": "SysML.pdf",
+    "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a"
+  },
+  "systems_library_sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+  "corrections": [
+    {
+      "id": "AGQ-SYSML20-001",
+      "rule": "Systems-Items-ItemUsage-checkItemUsageSubitemSpecialization",
+      "published_target": "Items::Item::subitem",
+      "operational_target": "Items::Item::subitems",
+      "antecedent": "isComposite and owningType <> null and (owningType.oclIsKindOf(ItemDefinition) or owningType.oclIsKindOf(ItemUsage))",
+      "authority": "Explicit milestone authorization; pinned Items.sysml declaration; OMG SYSML21-46 identifies subitems",
+      "scope": "Target substitution only. Retain the exact antecedent and canonical declaration identity. No alias or source edit."
+    }
+  ],
+  "precedence_decisions": [
+    {
+      "rule": "Systems-Attributes-AttributeUsage-checkAttributeUsageSpecialization",
+      "formal_target": "Base::dataValues",
+      "prose": "8.4.3.2 agrees with the formal rule and the original Attributes.sysml alias",
+      "table_32_target": "Attributes::attributes",
+      "disposition": "Documentation summary inconsistency. The formal target is unchanged in both semantic profiles; no new declaration is authorized."
+    }
+  ],
+  "identity_encoding": "SHA-256 of UTF-8 manifest bytes with CRLF normalized to LF"
+}

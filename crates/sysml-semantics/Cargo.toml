@@ -10,5 +10,6 @@ agq-kernel = { path = "../kernel" }
 agq-kerml = { path = "../kerml" }
 agq-kerml-semantics.workspace = true
 agq-sysml = { path = "../sysml" }
+agq-standard-libraries = { path = "../standard-libraries" }
 serde_json.workspace = true
-
+sha2.workspace = true

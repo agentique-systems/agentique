@@ -231,8 +231,10 @@ dependencies = [
  "agq-kerml",
  "agq-kerml-semantics",
  "agq-kernel",
+ "agq-standard-libraries",
  "agq-sysml",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]

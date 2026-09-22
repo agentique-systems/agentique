@@ -1,0 +1,68 @@
+{
+  "format": "agentique-verification-summary/1",
+  "scope": "SysML Operational v1 semantic profile and composable producers",
+  "base_commit": "7cb44177746de5c87e7c41de6ecbd1a785d19f1b",
+  "implementation_inputs_sha256": "c4694442fd6f94220cd41a2632d211cbfe639cf1da08a91b29278b406fa2dd99",
+  "toolchain": {
+    "rustc": "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+    "cargo": "cargo 1.92.0 (344c4567c 2025-10-21)"
+  },
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_TARGET_DIR": "separate target-sysml-producers"
+  },
+  "integration_dependencies": [
+    "Parser agent grammar manifest standards/grammar/sysml-2.0-operational-v1.json",
+    "Lead QueryResult::merge_evidence preserving compact query reads"
+  ],
+  "commands": [
+    {
+      "command": "cargo check -p agq-sysml-semantics",
+      "exit": 0,
+      "output": "Finished dev profile in 13.47s; initial implementation stage"
+    },
+    {
+      "command": "cargo test -p agq-sysml-semantics",
+      "exit": 1,
+      "output": "21 passed; 5 failed: new fixture used generic Specialization specific storage for Subsetting. Corrected fixture to SUBSETTING_SUBSETTING_FEATURE."
+    },
+    {
+      "command": "cargo test -p agq-sysml-semantics",
+      "exit": 0,
+      "output": "28 passed; 0 failed; doc-tests 0; finished test execution in 2.23s"
+    },
+    {
+      "command": "cargo clippy -p agq-sysml-semantics --all-targets -- -D warnings",
+      "exit": 0,
+      "output": "Finished dev profile in 10.34s"
+    },
+    {
+      "command": "cargo fmt -p agq-sysml-semantics -- --check",
+      "exit": 0,
+      "output": "No formatting differences"
+    },
+    {
+      "command": "RUSTDOCFLAGS=-D warnings cargo doc -p agq-sysml-semantics --no-deps",
+      "exit": 0,
+      "output": "Generated agq_sysml_semantics/index.html; finished in 7.18s"
+    }
+  ],
+  "verified": [
+    "Published and Operational v1 identities and manifest distinctions",
+    "Accepted KerML v9 receipt unchanged",
+    "Canonical Subclassification/Subsetting proposals with deterministic IDs and transitive redundancy suppression",
+    "Corrected composite Item subitems identity with published missing-target behavior retained",
+    "Exact mayTimeVary antecedents and exclusion matrix; incomplete predicates yield no scalar",
+    "Missing-anchor negative search dependencies and pending input suppression",
+    "Nested binding exact metaclass paths and separate source acceptance gate"
+  ],
+  "limitations": [
+    "Combined producer scheduler integration and full Systems corpus are lead-agent gates",
+    "Current/effective query distinction preserved: this package does not itself issue a closure certificate",
+    "Viewpoint/Viewpoints/BinaryConnections formal target discrepancies remain explicit; no unauthorized aliases or corrections"
+  ],
+  "systems_publication": "not-certified-by-this-summary",
+  "sysml_conformance": "incomplete"
+}

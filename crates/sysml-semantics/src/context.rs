@@ -1,4 +1,6 @@
-use crate::{StandardSysmlBindings, StandardSysmlRole, SystemsLibraryIdentity};
+use crate::{
+    StandardSysmlBindings, StandardSysmlRole, SysmlBaselineProfile, SystemsLibraryIdentity,
+};
 use agq_kerml::BaselineProfile;
 use agq_kerml_semantics::{
     AcceptedPublicationReceipt, CompletePublicationOverlay, ContextError, LibraryPin,
@@ -9,11 +11,11 @@ use agq_kernel::{ElementId, ModelView, Snapshot};
 use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, BTreeSet},
-    sync::Arc,
+    sync::{Arc, OnceLock},
 };
 
 /// Identity of the implemented SysML query contract, independently of KerML rules.
-pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/1";
+pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/2";
 /// Final SysML 2.0 formal descriptor authority, not a preliminary revision.
 pub const SYSML_METAMODEL_VERSION: &str =
     "SysML/2.0;XMI:caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f";
@@ -30,6 +32,9 @@ pub struct SysmlDependencyContract {
     pub kerml_descriptor_digest: [u8; 32],
     pub combined_descriptor_digest: [u8; 32],
     pub sysml_rule_set: String,
+    pub sysml_profile: SysmlBaselineProfile,
+    pub grammar_compatibility_manifest_digest: Option<[u8; 32]>,
+    pub semantic_correction_manifest_digest: Option<[u8; 32]>,
     pub systems_library: SystemsLibraryIdentity,
     pub standard_bindings: BTreeMap<StandardSysmlRole, ElementId>,
 }
@@ -58,9 +63,32 @@ impl SysmlDependencyContract {
     /// pinned combined descriptor graph. Systems Library construction is still
     /// a candidate; this method does not assert its semantic publication.
     pub fn checked_in(bindings: &StandardSysmlBindings) -> Result<Self, SysmlContextError> {
+        Self::checked_in_for_profile(bindings, SysmlBaselineProfile::PUBLISHED)
+    }
+
+    /// Select interpretation explicitly; descriptor authority remains final SysML 2.0.
+    /// The large descriptor registries are fingerprinted once per process, then
+    /// discarded. Every project shares these trusted identities.
+    pub fn checked_in_for_profile(
+        bindings: &StandardSysmlBindings,
+        profile: SysmlBaselineProfile,
+    ) -> Result<Self, SysmlContextError> {
         if !bindings.identity().is_pinned() {
             return Err(SysmlContextError::IdentityMismatch("Systems Library pin"));
         }
+        static TRUSTED: OnceLock<Result<SysmlDependencyContract, SysmlContextError>> =
+            OnceLock::new();
+        let mut trusted = TRUSTED.get_or_init(Self::load_trusted).clone()?;
+        trusted.systems_library = bindings.identity().clone();
+        trusted.standard_bindings = bindings.targets().clone();
+        trusted.sysml_profile = profile;
+        trusted.grammar_compatibility_manifest_digest =
+            profile.grammar_compatibility_manifest_digest();
+        trusted.semantic_correction_manifest_digest = profile.semantic_correction_manifest_digest();
+        Ok(trusted)
+    }
+
+    fn load_trusted() -> Result<Self, SysmlContextError> {
         let receipt = AcceptedPublicationReceipt::checked_in()
             .map_err(|_| SysmlContextError::AcceptanceUnavailable)?;
         let manifest = receipt.binding_manifest();
@@ -104,8 +132,11 @@ impl SysmlDependencyContract {
             kerml_descriptor_digest: kerml_context.id().descriptor_digest,
             combined_descriptor_digest: context.id().descriptor_digest,
             sysml_rule_set: SYSML_RULE_SET_VERSION.to_owned(),
-            systems_library: bindings.identity().clone(),
-            standard_bindings: bindings.targets().clone(),
+            sysml_profile: SysmlBaselineProfile::PUBLISHED,
+            grammar_compatibility_manifest_digest: None,
+            semantic_correction_manifest_digest: None,
+            systems_library: SystemsLibraryIdentity::pinned([0; 32]),
+            standard_bindings: BTreeMap::new(),
         })
     }
 }
@@ -172,7 +203,8 @@ impl<'m> SysmlSemanticContext<'m> {
         expected: &SysmlDependencyContract,
         bindings: StandardSysmlBindings,
     ) -> Result<Self, SysmlContextError> {
-        let trusted = SysmlDependencyContract::checked_in(&bindings)?;
+        let trusted =
+            SysmlDependencyContract::checked_in_for_profile(&bindings, expected.sysml_profile)?;
         validate_contract(expected, &trusted)?;
         validate_accepted(accepted.context(), &trusted)?;
         let kerml = accepted.project_context(
@@ -195,7 +227,8 @@ impl<'m> SysmlSemanticContext<'m> {
         expected: &SysmlDependencyContract,
         bindings: StandardSysmlBindings,
     ) -> Result<Self, SysmlContextError> {
-        let trusted = SysmlDependencyContract::checked_in(&bindings)?;
+        let trusted =
+            SysmlDependencyContract::checked_in_for_profile(&bindings, expected.sysml_profile)?;
         validate_contract(expected, &trusted)?;
         validate_accepted(accepted.context(), &trusted)?;
         let kerml = accepted.project_construction_context(
@@ -279,6 +312,20 @@ fn validate_contract(
         (
             expected.sysml_rule_set == actual.sysml_rule_set,
             "SysML rule set",
+        ),
+        (
+            expected.sysml_profile == actual.sysml_profile,
+            "SysML operational profile",
+        ),
+        (
+            expected.grammar_compatibility_manifest_digest
+                == actual.grammar_compatibility_manifest_digest,
+            "SysML grammar compatibility manifest",
+        ),
+        (
+            expected.semantic_correction_manifest_digest
+                == actual.semantic_correction_manifest_digest,
+            "SysML semantic correction manifest",
         ),
         (
             expected.systems_library == actual.systems_library,
@@ -372,7 +419,7 @@ mod contract_tests {
         let b = StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([3; 32]));
         let actual = SysmlDependencyContract::checked_in(&b).unwrap();
         assert!(validate_contract(&actual, &actual).is_ok());
-        for index in 0..10 {
+        for index in 0..13 {
             let mut wrong = actual.clone();
             match index {
                 0 => wrong.kerml_publication_digest[0] ^= 1,
@@ -384,11 +431,14 @@ mod contract_tests {
                 6 => wrong.sysml_rule_set.push('x'),
                 7 => wrong.systems_library.source_content_set[0] ^= 1,
                 8 => wrong.kerml_descriptor_digest[0] ^= 1,
-                _ => {
+                9 => {
                     wrong
                         .standard_bindings
                         .insert(StandardSysmlRole::Part, ElementId::new());
                 }
+                10 => wrong.sysml_profile = SysmlBaselineProfile::OPERATIONAL_V1,
+                11 => wrong.grammar_compatibility_manifest_digest = Some([1; 32]),
+                _ => wrong.semantic_correction_manifest_digest = Some([2; 32]),
             }
             assert!(validate_contract(&wrong, &actual).is_err(), "{index}");
         }

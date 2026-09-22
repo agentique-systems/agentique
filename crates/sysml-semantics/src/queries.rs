@@ -131,6 +131,33 @@ impl<'m> SysmlQueries<'m> {
         self.model
     }
 
+    /// Plan positive SysML contributions over this exact current graph. The
+    /// caller supplies publication roots and schedules resulting canonical facts.
+    pub fn producer_plan(&self, roots: &[ElementId], subject: ElementId) -> SysmlProducerPlan {
+        plan_sysml_producers(
+            &self.kerml,
+            self.context.dependencies.sysml_profile,
+            &self.bindings,
+            roots,
+            subject,
+        )
+    }
+
+    /// Structural derivation over the current graph, without a closure claim.
+    pub fn current_may_time_vary(
+        &self,
+        roots: &[ElementId],
+        usage: ElementId,
+    ) -> SysmlQueryResult<Option<bool>> {
+        self.wrap(current_usage_may_time_vary(
+            &self.kerml,
+            self.context.dependencies.sysml_profile,
+            &self.bindings,
+            roots,
+            usage,
+        ))
+    }
+
     fn wrap<T>(&self, kerml: QueryResult<T>) -> SysmlQueryResult<T> {
         SysmlQueryResult {
             context: self.context.clone(),
@@ -737,7 +764,8 @@ impl<'m> SysmlQueries<'m> {
                 out.pending.insert((subject, PendingSysmlRule::MayTimeVary));
             }
         }
-        if self.is(subject, sc::ITEM_USAGE)
+        if self.context.dependencies.sysml_profile == SysmlBaselineProfile::PUBLISHED
+            && self.is(subject, sc::ITEM_USAGE)
             && self.boolean(out, subject, kp::FEATURE_IS_COMPOSITE) == Some(true)
         {
             let owner = self.kerml.owning_type(subject);

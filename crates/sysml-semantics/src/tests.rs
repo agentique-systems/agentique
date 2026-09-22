@@ -1,5 +1,7 @@
 //! Synthetic canonical fixtures deliberately bypass production acceptance only
 //! through a private cfg(test) constructor. Real-cache integration is separate.
+#[path = "producer_tests.rs"]
+mod producer_tests;
 use super::*;
 use agq_kerml::{classes as kc, properties as kp};
 use agq_kerml_semantics::{Completeness, KerMlQueries, SemanticContext, SemanticOptions};
@@ -150,6 +152,8 @@ impl Fixture {
             kp::REDEFINITION_REDEFINING_FEATURE
         } else if class == kc::SUBCLASSIFICATION {
             kp::SUBCLASSIFICATION_SUBCLASSIFIER
+        } else if class == kc::SUBSETTING {
+            kp::SUBSETTING_SUBSETTING_FEATURE
         } else {
             kp::SPECIALIZATION_SPECIFIC
         };
