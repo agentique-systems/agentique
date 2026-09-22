@@ -280,7 +280,8 @@ pub struct QueryResult<T> {
     pub(crate) producer_evidence: bool,
     // A positive fact may cite only its original declared contribution. Keep
     // current derived-origin expansion separate so a later broad read is never
-    // suppressed by that narrower proof. This is a private traversal cache.
+    // suppressed by that narrower proof. Includes direct current roots even
+    // before a derived append; original selected support is not a current root.
     pub(crate) producer_expanded_facts: BTreeSet<FactKey>,
     // Only private producer/status evaluators defer kernel search expansion.
     // Public evidence fields are populated eagerly by ordinary query evaluators.
@@ -363,9 +364,9 @@ impl<T> QueryResult<T> {
         self.positive_dependencies
             .extend(other.positive_dependencies);
         self.search_dependencies.extend(other.search_dependencies);
+        self.producer_expanded_facts
+            .extend(other.producer_expanded_facts);
         if self.producer_evidence {
-            self.producer_expanded_facts
-                .extend(other.producer_expanded_facts);
             self.shared_search_dependencies
                 .merge(other.shared_search_dependencies);
         } else {

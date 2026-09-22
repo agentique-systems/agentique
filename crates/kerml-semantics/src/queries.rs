@@ -445,8 +445,12 @@ impl<'m> KerMlQueries<'m> {
                     _ => {}
                 }
             }
+            // A current whole-slot read remains current even before its first
+            // derived append. Original selected support bypasses this method.
+            out.producer_expanded_facts.insert(key);
             return;
         }
+        out.producer_expanded_facts.insert(key);
         let mut queue = vec![(key, false)];
         while let Some((key, declared)) = queue.pop() {
             if declared {

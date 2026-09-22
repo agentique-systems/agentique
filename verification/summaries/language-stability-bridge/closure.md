@@ -78,6 +78,22 @@ Final query contexts include the same authenticated dependency contract.
 | `cargo test --locked --offline -p agq-sysml-semantics --lib actions_micro_closes -- --nocapture` | Initial adaptation caught Arc type/error conversion/receiver lifetime mistakes; corrected locally; focused test then passed | 101, then 0 |
 | `cargo test --locked --offline -p agq-sysml-semantics` | 60 passed, 0 failed, 33.15 seconds; doc tests passed | 0 |
 | `cargo fmt --all -- --check` | No output | 0 |
+
+Focused reconstruction review found two declared-source proof aliases: an equal
+aggregate can hide changed original ownership, and a mixed current/original read
+can precede the first derived append. Producer registry attachment now opts into
+a distinct graph digest that includes original stored-slot content. Historical
+KerML graph encoding and rule-set 26 remain unchanged. Checkpoint fingerprints
+bind the same original content, and repeated registry attachment is idempotent.
+Mixed evidence retains direct current roots and persists its broader property
+search. The dependent archive preserves original populations and exact shared
+dependency identity. Review counterexamples are retained in
+`declared-evidence-review.json` and the permanent closure tests.
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib declared_ -- --nocapture` | 10 passed, including both adversarial regressions | 0 |
+| `cargo test --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics` | First run: 144 KerML unit tests passed, 2 ignored, 1 old identity assertion failed because producer opt-in now changes the digest domain. Assertion now checks unchanged graph pointer and distinct optional digest. Package rerun recorded below after completion | 101 |
 | `cargo clippy --locked --offline -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings after witness fixture correction | 0 |
 
 Declared-source target lookup follow-up (2026-09-23): a pending membership writer

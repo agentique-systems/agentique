@@ -222,7 +222,19 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
     // endpoints. New inverse carriers therefore invalidate an earlier empty search.
     let records: BTreeMap<_, [u8; 32]> = model
         .elements()
-        .map(|record| (record.id(), hash_debug(record)))
+        .map(|record| {
+            let mut hash = Sha256::new();
+            hash.update(hash_debug(record));
+            // Equal aggregate values can conceal a different original source
+            // population after reconstruction. DeclaredProperty reads observe it.
+            for (property, _) in record.slots() {
+                hash.update(hash_debug(&(
+                    property,
+                    model.declared_slot(record.id(), property),
+                )));
+            }
+            (record.id(), hash.finalize().into())
+        })
         .collect();
     let mut hashes: BTreeMap<_, _> = records
         .iter()

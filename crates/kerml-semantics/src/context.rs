@@ -31,6 +31,8 @@ pub struct SemanticOptions {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SemanticContextId {
     pub revision: RevisionId,
+    /// Canonical aggregate identity. Opting into producers additionally binds
+    /// the original stored-slot population under a distinct digest domain.
     pub model_digest: [u8; 32],
     pub baseline_profile_id: &'static str,
     pub metamodel_version: &'static str,
@@ -206,6 +208,8 @@ impl<'m> SemanticContext<'m> {
         }
     }
     /// Freeze the complete producer registry before attaching closure evidence.
+    /// The optional producer graph identity also binds original declared slots;
+    /// reattaching the same registry preserves that identity exactly.
     pub fn with_producer_registry_digest(mut self, digest: [u8; 32]) -> Result<Self, ContextError> {
         match self.id.producer_registry_digest {
             Some(existing) if existing != digest => {
@@ -214,6 +218,8 @@ impl<'m> SemanticContext<'m> {
             Some(_) => {}
             None => {
                 self.discard_producer_closure();
+                self.id.model_digest =
+                    crate::context_digest::producer_model_digest(self.model, self.id.model_digest);
                 self.id.producer_registry_digest = Some(digest);
             }
         }

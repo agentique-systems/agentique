@@ -6,6 +6,28 @@ fn snapshot() -> Snapshot {
 }
 
 #[test]
+fn producer_source_identity_is_opt_in_and_registry_reattachment_is_idempotent() {
+    let snapshot = snapshot();
+    let original =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
+    let historical_digest = crate::context_digest::model_digest(snapshot.model());
+    assert_eq!(original.id().model_digest, historical_digest);
+    let registry = crate::ProducerRegistry::new([]).unwrap();
+    let attached = original
+        .fork()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    assert_ne!(attached.id().model_digest, historical_digest);
+    let repeated = attached
+        .fork()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    assert_eq!(attached.id(), repeated.id());
+    assert_eq!(original.id().model_digest, historical_digest);
+    assert!(std::ptr::eq(original.model, attached.model));
+}
+
+#[test]
 fn context_mismatch_diagnostics_name_only_changed_identity_fields() {
     let snapshot = snapshot();
     let context =
@@ -94,7 +116,8 @@ fn producer_registry_and_closure_change_query_identity_without_model_changes() {
     let base =
         SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
     let first = base.fork().with_producer_registry_digest([1; 32]).unwrap();
-    assert_eq!(base.id().model_digest, first.id().model_digest);
+    assert!(std::ptr::eq(base.model, first.model));
+    assert_ne!(base.id().model_digest, first.id().model_digest);
     assert!(!QueryReadSet::context_compatible(base.id(), first.id()));
     assert_eq!(
         first.id(),

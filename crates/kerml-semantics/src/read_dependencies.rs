@@ -289,6 +289,26 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
             }));
         }
     }
+    // Persist the broader contract when selected original support was combined
+    // with a whole current-slot read, including before its first derived append.
+    let mixed: Vec<_> = result
+        .iter()
+        .filter_map(|search| match search {
+            StructuralSearch::DeclaredProperty { element, property }
+                if answer.producer_expanded_facts.contains(&FactKey::Property {
+                    element: *element,
+                    property: *property,
+                }) =>
+            {
+                Some(StructuralSearch::Property {
+                    element: *element,
+                    property: *property,
+                })
+            }
+            _ => None,
+        })
+        .collect();
+    result.extend(mixed);
     result
 }
 pub(crate) fn query_read_keys<T>(

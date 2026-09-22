@@ -200,7 +200,7 @@ impl ProducerClosedDependency {
             .id
             .semantic_extensions
             .insert(DEPENDENCY_DOMAIN, self.certificate.digest());
-        context.id.producer_registry_digest = Some(self.certificate.registry_digest());
+        context = context.with_producer_registry_digest(self.certificate.registry_digest())?;
         context.naming_extension = self.naming_extension.clone();
         context.accepted_dependency = self.accepted_ancestor.clone();
         context.closed_dependency = Some(self.clone());

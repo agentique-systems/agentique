@@ -4108,34 +4108,46 @@ fn mixed_declared_and_current_fact_reads_remain_current_before_first_append() {
     f.create(2, c::FEATURE);
     member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
     let snapshot = f.finish();
-    let q = KerMlQueries::new(
-        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
-    );
-    let source = q.declared_owned_relationships(id(1));
-    let mut current = q.result(());
-    q.fact(
-        &mut current,
-        FactKey::Property {
-            element: id(1),
-            property: p::ELEMENT_OWNED_RELATIONSHIP,
-        },
-    );
-    for source_first in [false, true] {
-        let mut combined = q.result(());
-        if source_first {
-            combined.merge(source.clone());
-        }
-        combined.merge(current.clone());
-        if !source_first {
-            combined.merge(source.clone());
-        }
-        assert!(
-            producer_reads(&combined, snapshot.model()).contains(&ProducerRead::Property(
-                id(1),
-                p::ELEMENT_OWNED_RELATIONSHIP
-            )),
-            "a broad current fact read must still reopen on the first derived append; source_first={source_first}"
+    let context =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
+    for q in [
+        KerMlQueries::new(context.fork()),
+        KerMlQueries::for_production(context),
+    ] {
+        let source = q.declared_owned_relationships(id(1));
+        let mut current = q.result(());
+        q.fact(
+            &mut current,
+            FactKey::Property {
+                element: id(1),
+                property: p::ELEMENT_OWNED_RELATIONSHIP,
+            },
         );
+        for source_first in [false, true] {
+            let mut combined = q.result(());
+            if source_first {
+                combined.merge(source.clone());
+            }
+            combined.merge(current.clone());
+            if !source_first {
+                combined.merge(source.clone());
+            }
+            assert!(
+                producer_reads(&combined, snapshot.model()).contains(&ProducerRead::Property(
+                    id(1),
+                    p::ELEMENT_OWNED_RELATIONSHIP
+                )),
+                "a broad current fact read must still reopen on the first derived append; source_first={source_first}"
+            );
+            assert!(
+                crate::read_dependencies::structural_searches(&combined).contains(
+                    &agq_kernel::derived::StructuralSearch::Property {
+                        element: id(1),
+                        property: p::ELEMENT_OWNED_RELATIONSHIP,
+                    }
+                )
+            );
+        }
     }
 }
 

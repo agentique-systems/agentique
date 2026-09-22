@@ -212,6 +212,8 @@ impl CompletePublicationOverlay {
                     .map(|family| family.descriptor(context.options.baseline_profile)),
             )
             .map_err(|_| PublicationRestoreError::Mismatch("producer registry"))?;
+            context.model_digest =
+                crate::context_digest::producer_model_digest(overlay.model(), context.model_digest);
             context.producer_registry_digest = Some(registry.digest());
             let certificate = ProducerClosureCertificate::from_trusted_receipt(
                 proof,
