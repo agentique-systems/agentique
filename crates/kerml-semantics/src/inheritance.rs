@@ -262,15 +262,16 @@ impl KerMlQueries<'_> {
                     continue;
                 }
                 result.insert(feature, membership);
+                let mut premises = vec![claim(QueryKind::InheritedFeature, current, feature)];
+                // Reuse the actual inverse projection evidence. Its precise
+                // ownership search need not be a broad incoming-edge search.
+                premises.extend(self.property(&mut out, feature, p::ELEMENT_OWNING_RELATIONSHIP));
                 out.prove(
                     QueryKind::EffectiveFeatures,
                     current,
                     feature,
                     Rule::InheritedFeature,
-                    [
-                        claim(QueryKind::InheritedFeature, current, feature),
-                        Evidence::Search(SearchDependency::Incoming { target: feature }),
-                    ],
+                    premises,
                 );
             }
             effective.insert(current, result);
