@@ -39,3 +39,10 @@ cargo run --locked --offline -p agq-kerml-syntax --example sysml_corpus
 
 This evidence establishes textual recognition. Canonical lowering, semantic
 authority, combined producer closure and Systems publication have separate gates.
+
+[context-identity.json](context-identity.json) records the shared query-context
+identity contract and seven passing focused regressions. SysML profile, manifests,
+descriptors, library pins, bindings and the accepted KerML dependency contribute
+to one deterministic digest. Query caches reject a changed interpretation even
+when graph records are unchanged. Existing KerML-only publication receipts retain
+their original encoding. This context evidence does not establish producer closure.

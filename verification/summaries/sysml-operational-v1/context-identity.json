@@ -1,0 +1,79 @@
+{
+  "format": "agentique-sysml-context-identity-verification/1",
+  "source_commit": "25dfe2958d6b0b0b529c78251ff2a00d60660fb6",
+  "scope": "Shared query-context identity only; no claim of Systems publication or combined producer closure.",
+  "support_prerequisite": "QueryResult::merge_evidence from 6fd9d9dbbe550d7d5422d5170c5877308f0cabe1, copied only for focused compilation and excluded from the source commit.",
+  "contract": {
+    "domain": "agentique-sysml-dependency-context/1",
+    "encoding": "SHA-256 of explicit versioned JSON with ordered maps and scalar canonical identities",
+    "inputs": [
+      "accepted KerML publication digest",
+      "KerML operational profile, rule set, libraries, artifact pins and source content set",
+      "KerML descriptor graph and combined SysML descriptor graph",
+      "final SysML metamodel identity",
+      "SysML profile and rule set",
+      "grammar compatibility and semantic correction manifest digests",
+      "Systems LibraryId, KPAR digest and source content set",
+      "standard binding roles, exact paths, concrete metaclasses and canonical element identities"
+    ],
+    "authentication": "The digest identifies a contract; existing checked-in dependency validation authenticates it.",
+    "historical_receipts": "An empty semantic extension map is omitted, preserving the original KerML-only receipt encoding.",
+    "integration": "SysmlSemanticContext attachment binds the digest. Raw combined producer and candidate query contexts must explicitly bind the same validated contract through SemanticContext::with_semantic_extension_identity."
+  },
+  "environment": {
+    "CARGO_TARGET_DIR": "target-parser; target-parser-doc for Rustdoc",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "RUSTDOCFLAGS": "-D warnings for Rustdoc"
+  },
+  "commands": [
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-semantics --lib context::extension_tests -- --nocapture",
+      "exit_code": 0,
+      "output_summary": "2 passed: immutable and idempotent binding, conflicting digest rejection, shared model borrow, answer propagation, and cache invalidation on unchanged graph content."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-semantics --lib accepted_graph_roundtrip_retains_context_and_protected_dependency -- --nocapture",
+      "exit_code": 0,
+      "output_summary": "1 passed: existing accepted-publication fixture round trip, absent historical extension field, and explicit nonempty extension encoding."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib context_identity -- --nocapture",
+      "exit_code": 0,
+      "output_summary": "3 passed: all 13 contract fields covered through 17 dependency mutations, stable binding insertion order, distinct role/endpoint/profile identity, and SysML contract propagation into KerML query answers."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib every_expected_dependency_is_checked_without_silent_rebinding -- --nocapture",
+      "exit_code": 0,
+      "output_summary": "1 passed: existing trusted-dependency mismatch regression."
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --lib --tests -- -D warnings",
+      "exit_code": 0,
+      "output_summary": "No warnings."
+    },
+    {
+      "command": "cargo fmt -p agq-kerml-semantics -p agq-sysml-semantics -- --check",
+      "exit_code": 0,
+      "output_summary": "Formatting current."
+    },
+    {
+      "command": "cargo doc --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --no-deps",
+      "exit_code": 0,
+      "output_summary": "Strict Rustdoc passed."
+    }
+  ],
+  "development_failures": [
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-semantics --lib accepted_graph_roundtrip_retains_context_and_protected_dependency -- --nocapture",
+      "exit_code": 1,
+      "output_summary": "Invalid repeat expression inside json! test fixture; replaced with a vector expression before the passing rerun."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib context_identity -- --nocapture",
+      "exit_code": 1,
+      "output_summary": "Two attempts encountered the producer branch's missing merge_evidence prerequisite. The second had a stale copied source timestamp. Copied the exact root support API and refreshed its timestamp; focused rerun passed."
+    }
+  ]
+}
