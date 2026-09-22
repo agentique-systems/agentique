@@ -187,6 +187,8 @@ pub enum Rule {
     InheritedResult,
     OrderedNamingFeature,
     ImpliedNamingAgreement,
+    /// Normative naming override supplied by the context's composed language.
+    ExtensionNamingFeature(&'static str),
     PublishedRedefinitionEndConformance,
     /// AGQ-KERML10-004 / KERML11-68; operational v4 and successors.
     OperationalRedefinitionEndConformanceV1,

@@ -221,6 +221,7 @@ impl CompletePublicationOverlay {
         KerMlQueries::new(SemanticContext {
             model: self.overlay.model(),
             id: self.context.clone(),
+            naming_extension: None,
         })
     }
 }

@@ -82,6 +82,18 @@ pub struct SemanticContextId {
 pub struct SemanticContext<'m> {
     pub(crate) model: &'m ModelView,
     pub(crate) id: SemanticContextId,
+    pub(crate) naming_extension: Option<(&'static str, Arc<dyn SemanticNamingExtension>)>,
+}
+
+/// A composed language's normative override of Feature::namingFeature.
+/// The outer `None` delegates to KerML; `Some(None)` establishes that the
+/// override has no naming source. Reads must be retained even when delegating.
+pub trait SemanticNamingExtension: Send + Sync {
+    fn naming_source(
+        &self,
+        queries: &crate::KerMlQueries<'_>,
+        subject: ElementId,
+    ) -> crate::QueryResult<Option<Option<ElementId>>>;
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -102,7 +114,28 @@ impl<'m> SemanticContext<'m> {
         Self {
             model: self.model,
             id: self.id.clone(),
+            naming_extension: self.naming_extension.clone(),
         }
+    }
+    /// Install a language query implementation under its frozen interpretation
+    /// identity. The callback is runtime behavior, not an additional graph.
+    /// Independent language facades authenticate the supplied contract digest.
+    pub fn with_naming_extension(
+        self,
+        domain: &'static str,
+        digest: [u8; 32],
+        extension: Arc<dyn SemanticNamingExtension>,
+    ) -> Result<Self, ContextError> {
+        let mut context = self
+            .with_semantic_extension_identity(domain, digest)?
+            .with_semantic_extension_identity("agq-semantic-naming/1", digest)?;
+        if let Some((existing_domain, existing)) = &context.naming_extension
+            && (*existing_domain != domain || !Arc::ptr_eq(existing, &extension))
+        {
+            return Err(ContextError::SemanticExtensionIdentityMismatch(domain));
+        }
+        context.naming_extension = Some((domain, extension));
+        Ok(context)
     }
     /// Bind a frozen language interpretation to every query and producer answer.
     /// Reattaching the same identity is idempotent; replacing it is rejected.
@@ -413,6 +446,7 @@ impl<'m> SemanticContext<'m> {
         let model_digest = crate::context_digest::model_digest(model);
         Ok(Self {
             model,
+            naming_extension: None,
             id: SemanticContextId {
                 revision,
                 model_digest,

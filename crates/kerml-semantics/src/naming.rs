@@ -61,27 +61,45 @@ impl KerMlQueries<'_> {
                 graph.insert(id, vec![]);
                 continue;
             }
-            let owned = self.owned_relationships(id);
-            let (targets, rule) = if let Some(&r) =
-                owned.value.iter().find(|r| self.is(**r, c::REDEFINITION))
-            {
-                let target = self.read_reference(&mut out, r, p::REDEFINITION_REDEFINED_FEATURE);
-                if target.is_none() {
-                    out.problem(
-                        Completeness::Incomplete,
-                        "KQ_NAMING_TARGET",
-                        r,
-                        "The first owned Redefinition has no established target",
-                    );
-                }
-                (target.into_iter().collect(), Rule::OrderedNamingFeature)
+            let extension =
+                self.context
+                    .naming_extension
+                    .as_ref()
+                    .and_then(|(domain, extension)| {
+                        let answer = extension.naming_source(self, id);
+                        let source = answer.value;
+                        out.merge(answer);
+                        source.map(|target| (target, *domain))
+                    });
+            let (targets, rule) = if let Some((target, domain)) = extension {
+                (
+                    target.into_iter().collect(),
+                    Rule::ExtensionNamingFeature(domain),
+                )
             } else {
-                let implied = self.implied_redefinitions(id);
-                let targets = implied.value.clone();
-                out.merge(implied);
-                (targets, Rule::ImpliedNamingAgreement)
+                let owned = self.owned_relationships(id);
+                let result =
+                    if let Some(&r) = owned.value.iter().find(|r| self.is(**r, c::REDEFINITION)) {
+                        let target =
+                            self.read_reference(&mut out, r, p::REDEFINITION_REDEFINED_FEATURE);
+                        if target.is_none() {
+                            out.problem(
+                                Completeness::Incomplete,
+                                "KQ_NAMING_TARGET",
+                                r,
+                                "The first owned Redefinition has no established target",
+                            );
+                        }
+                        (target.into_iter().collect(), Rule::OrderedNamingFeature)
+                    } else {
+                        let implied = self.implied_redefinitions(id);
+                        let targets = implied.value.clone();
+                        out.merge(implied);
+                        (targets, Rule::ImpliedNamingAgreement)
+                    };
+                out.merge(owned);
+                result
             };
-            out.merge(owned);
             let premises: Vec<_> = out
                 .positive_dependencies
                 .iter()
