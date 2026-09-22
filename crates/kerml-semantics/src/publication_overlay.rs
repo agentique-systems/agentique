@@ -132,6 +132,7 @@ impl CompletePublicationOverlay {
 /// findings are collected separately by `KerMlConformanceReport`.
 #[derive(Debug)]
 pub enum PublicationOverlayError {
+    UnsupportedProfile(BaselineProfile),
     Context(ContextError),
     Bindings(BindingError),
     Derivation(DerivationError),
@@ -152,12 +153,13 @@ impl From<DerivationError> for PublicationOverlayError {
 }
 
 /// The sole constructor for a complete publication overlay. It covers the
-/// entire strict input and every produced subject under Operational v8. Callers
+/// entire strict input and every produced subject under Operational v9. Callers
 /// cannot supply capability statuses or restrict the mandatory subject population.
 pub struct CanonicalPublicationBuilder<'a> {
     snapshot: &'a Snapshot,
     roots: &'a [ElementId],
     library_set: &'a LibrarySetIdentity,
+    profile: BaselineProfile,
 }
 impl<'a> CanonicalPublicationBuilder<'a> {
     pub fn new(
@@ -169,7 +171,20 @@ impl<'a> CanonicalPublicationBuilder<'a> {
             snapshot,
             roots,
             library_set,
+            profile: BaselineProfile::OPERATIONAL_V9,
         }
+    }
+    /// Reproduce a historical publication-capable profile explicitly. The
+    /// operational construction alias remains independently frozen until acceptance.
+    pub fn with_profile(
+        mut self,
+        profile: BaselineProfile,
+    ) -> Result<Self, PublicationOverlayError> {
+        if !profile.supports_publication_producers() {
+            return Err(PublicationOverlayError::UnsupportedProfile(profile));
+        }
+        self.profile = profile;
+        Ok(self)
     }
     fn context<'m>(
         &self,
@@ -179,7 +194,7 @@ impl<'a> CanonicalPublicationBuilder<'a> {
         let context = SemanticContext::for_overlay(
             overlay,
             SemanticOptions {
-                baseline_profile: BaselineProfile::OPERATIONAL_V8,
+                baseline_profile: self.profile,
                 exclude_implied: false,
             },
             self.library_set.pins.clone(),

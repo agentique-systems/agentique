@@ -150,6 +150,7 @@ impl KerMlQueries<'_> {
         let mut out = self.result(vec![]);
         let mut pending = vec![feature];
         let mut visited = BTreeSet::new();
+        let mut explicit_multiplicity_domains = vec![];
         while let Some(current) = pending.pop() {
             if !visited.insert(current) {
                 continue;
@@ -158,6 +159,38 @@ impl KerMlQueries<'_> {
                 continue;
             }
             self.fact(&mut out, FactKey::Element(current));
+            if self
+                .context()
+                .options
+                .baseline_profile
+                .corrects_multiplicity_context()
+                && self.is(current, c::MULTIPLICITY)
+            {
+                let owned = self.owned_relationships(current);
+                for &relationship in &owned.value {
+                    if self.is(relationship, c::TYPE_FEATURING) {
+                        if let Some(domain) = self.read_reference(
+                            &mut out,
+                            relationship,
+                            p::TYPE_FEATURING_FEATURING_TYPE,
+                        ) {
+                            explicit_multiplicity_domains.push((current, domain));
+                        } else {
+                            out.problem(
+                                Completeness::Incomplete,
+                                "KQ_FEATURING_ENDPOINT",
+                                relationship,
+                                "Missing featuring type",
+                            );
+                        }
+                    }
+                }
+                out.merge(owned);
+                let context = self.multiplicity_context_feature(current);
+                pending.extend(context.value);
+                out.merge(context);
+                continue;
+            }
             let owned = self.owned_relationships(current);
             let mut explicit = false;
             for &r in &owned.value {
@@ -254,11 +287,49 @@ impl KerMlQueries<'_> {
                     pending.extend(owner.value);
                     out.merge(owner);
                 }
+                if self
+                    .context()
+                    .options
+                    .baseline_profile
+                    .corrects_multiplicity_context()
+                    && let Some(membership) = membership
+                        .value
+                        .filter(|m| self.is(*m, c::OWNING_MEMBERSHIP))
+                {
+                    let owner = self.owning_related_element(membership);
+                    if let Some(range) = owner
+                        .value
+                        .filter(|owner| self.is(*owner, c::MULTIPLICITY_RANGE))
+                    {
+                        let bounds = self.multiplicity_bounds(range);
+                        if bounds.value.bound.contains(&current) {
+                            pending.push(range);
+                        }
+                        out.merge(bounds);
+                        out.search_dependencies
+                            .insert(SearchDependency::ValidationRule(
+                                "checkMultiplicityRangeExpressionTypeFeaturing",
+                            ));
+                    }
+                    out.merge(owner);
+                }
                 out.merge(membership);
             }
         }
         out.value.sort();
         out.value.dedup();
+        if out.completeness == Completeness::Complete {
+            for (multiplicity, domain) in explicit_multiplicity_domains {
+                if !out.value.contains(&domain) {
+                    out.problem(
+                        Completeness::Invalid,
+                        "KQ_MULTIPLICITY_FEATURING_CONFLICT",
+                        multiplicity,
+                        "Explicit TypeFeaturing conflicts with the required multiplicity context",
+                    );
+                }
+            }
+        }
         out
     }
 

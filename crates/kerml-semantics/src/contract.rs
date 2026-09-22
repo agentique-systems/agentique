@@ -80,6 +80,7 @@ pub struct Diagnostic {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum QueryKind {
+    MultiplicityFeaturingContext,
     ImportedMemberships,
     ImportedMembershipPopulation,
     MultiplicityBound,
@@ -140,6 +141,7 @@ pub enum Evidence {
 /// Stable within RULE_SET_VERSION. Exact normative anchors are in ADR 0005.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
+    MultiplicityFeaturingContext,
     PublishedImportedMemberships,
     OperationalImportedMembershipsV1,
     MultiplicityBound,

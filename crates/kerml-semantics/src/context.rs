@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Change whenever rules, proof construction, dependency semantics or digest encoding change.
-pub const RULE_SET_VERSION: &str = "agq-kerml-query/23";
+pub const RULE_SET_VERSION: &str = "agq-kerml-query/24";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
 
@@ -40,6 +40,9 @@ pub struct SemanticContextId {
     pub owned_cross_feature_manifest_digest: Option<[u8; 32]>,
     pub owned_cross_domain_manifest_digest: Option<[u8; 32]>,
     pub import_collision_manifest_digest: Option<[u8; 32]>,
+    /// Independent KERML11-4 and KERML11-3 operational authority identities.
+    pub multiplicity_context_manifest_digest: Option<[u8; 32]>,
+    pub cross_multiplicity_context_manifest_digest: Option<[u8; 32]>,
     pub descriptor_digest: [u8; 32],
     pub rule_set_version: &'static str,
     pub pinned_libraries: BTreeSet<LibraryPin>,
@@ -329,6 +332,10 @@ impl<'m> SemanticContext<'m> {
                 owned_cross_feature_manifest_digest: profile.owned_cross_feature_manifest_sha256(),
                 owned_cross_domain_manifest_digest: profile.owned_cross_domain_manifest_sha256(),
                 import_collision_manifest_digest: profile.import_collision_manifest_sha256(),
+                multiplicity_context_manifest_digest: profile
+                    .multiplicity_context_manifest_sha256(),
+                cross_multiplicity_context_manifest_digest: profile
+                    .cross_multiplicity_context_manifest_sha256(),
                 descriptor_digest: Sha256::digest(descriptors.as_bytes()).into(),
                 rule_set_version: RULE_SET_VERSION,
                 pinned_libraries,

@@ -12,6 +12,88 @@ pub struct MultiplicityBounds {
 }
 
 impl KerMlQueries<'_> {
+    /// Structural featuring context of a Multiplicity, with no bound evaluation.
+    /// Operational v9 follows owningNamespace and, for an owned cross Feature,
+    /// its owning end Feature. Historical profiles retain their existing domain.
+    pub fn multiplicity_featuring_context(
+        &self,
+        multiplicity: ElementId,
+    ) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        if self
+            .checked::<views::Multiplicity, _>(&mut out, multiplicity)
+            .is_none()
+        {
+            return out;
+        }
+        let domains = self.featuring_types(multiplicity);
+        out.value = domains.value.clone();
+        out.merge(domains);
+        for domain in out.value.clone() {
+            out.prove(
+                QueryKind::MultiplicityFeaturingContext,
+                multiplicity,
+                domain,
+                Rule::MultiplicityFeaturingContext,
+                evidence(&out),
+            );
+        }
+        out
+    }
+
+    // One canonical v9 context-source operation, used by the iterative featuring
+    // traversal. It selects ownership structurally, never by a lexical namespace
+    // or by ordering candidate ElementIds. Traversal itself supplies the domain.
+    pub(crate) fn multiplicity_context_feature(
+        &self,
+        multiplicity: ElementId,
+    ) -> QueryResult<Option<ElementId>> {
+        let mut out = self.result(None);
+        out.search_dependencies
+            .insert(SearchDependency::ValidationRule(
+                "agentique-kerml10-multiplicity-context/1",
+            ));
+        let relationship = self.owning_relationship(multiplicity);
+        let has_namespace = relationship
+            .value
+            .is_some_and(|r| self.is(r, c::OWNING_MEMBERSHIP));
+        out.merge(relationship);
+        if !has_namespace {
+            return out;
+        }
+        let namespace = self.owner(multiplicity);
+        let owner = namespace.value.filter(|owner| self.is(*owner, c::FEATURE));
+        out.merge(namespace);
+        let Some(owner) = owner else {
+            return out;
+        };
+        let cross = self.is_owned_cross_feature(owner);
+        if cross.completeness == Completeness::Complete {
+            if cross.value {
+                out.search_dependencies
+                    .insert(SearchDependency::ValidationRule(
+                        "agentique-kerml10-cross-multiplicity-context/1",
+                    ));
+                let end = self.owner(owner);
+                if let Some(end) = end.value.filter(|end| self.is(*end, c::FEATURE)) {
+                    out.value = Some(end);
+                } else if end.completeness == Completeness::Complete {
+                    out.problem(
+                        Completeness::Invalid,
+                        "KQ_MULTIPLICITY_CROSS_OWNER",
+                        owner,
+                        "An owned cross Feature must have an owning end Feature",
+                    );
+                }
+                out.merge(end);
+            } else {
+                out.value = Some(owner);
+            }
+        }
+        out.merge(cross);
+        out
+    }
+
     /// KerML deriveMultiplicityRangeLowerBound/UpperBound/Bound in owned-member order.
     pub fn multiplicity_bounds(&self, multiplicity: ElementId) -> QueryResult<MultiplicityBounds> {
         let mut out = self.result(MultiplicityBounds {

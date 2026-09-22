@@ -1,0 +1,28 @@
+{
+  "format": "agentique-operational-semantic-errata/1",
+  "profile_id": "agentique-kerml-1.0-operational/9",
+  "issue": "KERML11-3",
+  "issue_url": "https://issues.omg.org/issues/KERML11-3",
+  "authority": "Agentique operational interpretation explicitly authorized for v9; outside the published KerML 1.0 baseline",
+  "algorithm": "agentique-kerml10-cross-multiplicity-context/1",
+  "pinned_artifact": {
+    "uri": "https://www.omg.org/spec/KerML/20250201/KerML.xmi",
+    "sha256": "45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466"
+  },
+  "interpretation": {
+    "rule": "checkMultiplicityRangeExpressionTypeFeaturing",
+    "xmi_id": "Kernel-Multiplicities-MultiplicityRange-checkMultiplicityRangeExpressionTypeFeaturing",
+    "published": "bound->forAll(b | b.featuringType = self.featuringType)",
+    "operational": "When a Multiplicity owningNamespace is an owned cross Feature, inherit the featuringType of that cross Feature owning end Feature. Every bound Expression inherits the same context."
+  },
+  "historical_profiles": "Published and operational v1-v8 remain unchanged",
+  "reference_behavior": {
+    "repository": "https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation",
+    "commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+    "ordinary": "MultiplicityAdapter.doTransform invokes FeatureAdapter.addImplicitFeaturingTypesIfNecessary, using owningNamespace when it is a Feature",
+    "owned_cross_bound": "ExpressionAdapter.addImplicitFeaturingTypesIfNecessary selects the owning end featuringType for a MultiplicityRange bound owned by a cross Feature",
+    "operational_scope": "Authorized v9 applies that cross correction consistently to both the Multiplicity and its bounds"
+  },
+  "source_bytes_changed": false,
+  "descriptor_graph_changed": false
+}

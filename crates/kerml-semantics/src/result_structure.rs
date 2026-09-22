@@ -319,6 +319,7 @@ pub(crate) fn structural_rule_profile(rule: RuleId) -> Option<BaselineProfile> {
                 P::OPERATIONAL_V6,
                 P::OPERATIONAL_V7,
                 P::OPERATIONAL_V8,
+                P::OPERATIONAL_V9,
             ]
             .into_iter()
             .flat_map(|profile| {
@@ -1759,7 +1760,11 @@ impl<'m> KerMlQueries<'m> {
         expression: ElementId,
     ) -> Option<ElementId> {
         let result = self.expression_result(out, expression);
-        if self.context().options.baseline_profile == BaselineProfile::OPERATIONAL_V8
+        if self
+            .context()
+            .options
+            .baseline_profile
+            .supports_publication_producers()
             && self.is(expression, c::INSTANTIATION_EXPRESSION)
             && let Some(result) = result
         {
@@ -1872,7 +1877,7 @@ impl<'m> KerMlQueries<'m> {
                 graph.finish_subject(&mut production, &mut aggregate);
                 continue;
             }
-            if profile == BaselineProfile::OPERATIONAL_V8
+            if profile.supports_publication_producers()
                 && self.is(subject, c::INSTANTIATION_EXPRESSION)
             {
                 producer_families_attempted += 1;
@@ -1894,7 +1899,7 @@ impl<'m> KerMlQueries<'m> {
                     continue;
                 }
             }
-            if profile == BaselineProfile::OPERATIONAL_V8 && self.is(subject, c::FEATURE) {
+            if profile.supports_publication_producers() && self.is(subject, c::FEATURE) {
                 producer_families_attempted += 2;
                 let redefinitions = self.implied_redefinitions(subject);
                 if redefinitions.completeness == Completeness::Complete {
@@ -2099,7 +2104,7 @@ impl<'m> KerMlQueries<'m> {
                 }
                 production.merge(proof);
             }
-            if profile == BaselineProfile::OPERATIONAL_V8
+            if profile.supports_publication_producers()
                 && self.is(subject, c::INVOCATION_EXPRESSION)
             {
                 producer_families_attempted += 1;
@@ -2146,7 +2151,7 @@ impl<'m> KerMlQueries<'m> {
                 }
                 production.merge(proof);
             }
-            if profile == BaselineProfile::OPERATIONAL_V8
+            if profile.supports_publication_producers()
                 && self.is(subject, c::FEATURE_CHAIN_EXPRESSION)
             {
                 producer_families_attempted += 1;
@@ -2345,7 +2350,7 @@ impl<'m> KerMlQueries<'m> {
                                 deferred_bindings.insert(subject);
                             } else {
                                 let domains = self.featuring_types(subject);
-                                if initial && profile == BaselineProfile::OPERATIONAL_V8 {
+                                if initial && profile.supports_publication_producers() {
                                     let that = self.standard_role(StandardRole::ThingsThat);
                                     let start =
                                         self.standard_role(StandardRole::OccurrenceStartShot);
@@ -2440,7 +2445,7 @@ impl<'m> KerMlQueries<'m> {
                     let result = self.required_structural_result(&mut proof, subject);
                     if let (Some(raw), Some(result)) = (raw, result) {
                         let index = self.is(subject, c::INDEX_EXPRESSION);
-                        let applies = if index && profile == BaselineProfile::OPERATIONAL_V8 {
+                        let applies = if index && profile.supports_publication_producers() {
                             let array = self.standard_role(StandardRole::CollectionsArray);
                             let mut applies = false;
                             if let Some(array) = array.value {

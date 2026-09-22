@@ -45,19 +45,19 @@ impl ProducerFamily {
         let is = |parent| model.registry().is_subtype(class, parent).unwrap_or(false);
         match self {
             Self::OwnedInstantiationResult => {
-                profile == BaselineProfile::OPERATIONAL_V8 && is(c::INSTANTIATION_EXPRESSION)
+                profile.supports_publication_producers() && is(c::INSTANTIATION_EXPRESSION)
             }
             Self::PositionalRedefinition | Self::VariableFeaturing => {
-                profile == BaselineProfile::OPERATIONAL_V8 && is(c::FEATURE)
+                profile.supports_publication_producers() && is(c::FEATURE)
             }
             Self::OwnedCrossing | Self::CrossDomain => {
                 profile.corrects_owned_cross_domain() && is(c::FEATURE)
             }
             Self::Invocation => {
-                profile == BaselineProfile::OPERATIONAL_V8 && is(c::INVOCATION_EXPRESSION)
+                profile.supports_publication_producers() && is(c::INVOCATION_EXPRESSION)
             }
             Self::FeatureChainExpression => {
-                profile == BaselineProfile::OPERATIONAL_V8 && is(c::FEATURE_CHAIN_EXPRESSION)
+                profile.supports_publication_producers() && is(c::FEATURE_CHAIN_EXPRESSION)
             }
             Self::FeatureReferenceExpression => is(c::FEATURE_REFERENCE_EXPRESSION),
             Self::ExpressionResult => is(c::EXPRESSION) || is(c::FUNCTION),
@@ -295,7 +295,7 @@ pub fn close_result_structure(
         // Only v8 establishes the required isolation: these binding roles use
         // OwningMembership, and BindingConnector is excluded from owned-cross
         // production. Historical profiles retain their existing closure policy.
-        if profile != BaselineProfile::OPERATIONAL_V8 {
+        if !profile.supports_publication_producers() {
             stratum = ResultStructureStratum::ContextualBindings;
         }
         counters.maximum_worklist_size = counters.maximum_worklist_size.max(worklist.len());
