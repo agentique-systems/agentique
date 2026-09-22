@@ -194,14 +194,22 @@ pub struct SysmlSemanticContext<'m> {
 impl<'m> SysmlSemanticContext<'m> {
     /// Attach scheduler evidence to the exact composed graph and dependency
     /// contract. This does not accept a library publication or waive pending
-    /// SysML query capabilities.
+    /// SysML query capabilities. The complete expected KerML/SysML producer
+    /// registry is established independently of the supplied certificate.
     pub fn with_producer_closure(
         mut self,
         certificate: Arc<agq_kerml_semantics::ProducerClosureCertificate>,
     ) -> Result<Self, SysmlContextError> {
+        let registry = agq_kerml_semantics::ProducerRegistry::new(
+            agq_kerml_semantics::ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(self.kerml.id().options.baseline_profile))
+                .chain(crate::sysml_producer_descriptors()),
+        )
+        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
         self.kerml = self
             .kerml
-            .with_producer_registry_digest(certificate.registry_digest())?
+            .with_producer_registry_digest(registry.digest())?
             .with_producer_closure(certificate)?;
         self.id.kerml = self.kerml.id().clone();
         Ok(self)

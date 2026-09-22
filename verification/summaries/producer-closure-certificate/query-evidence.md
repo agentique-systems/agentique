@@ -50,3 +50,14 @@ expected an uncertified exhaustive negative to be Complete, and a stale-graph
 test initially created a Class without required scalar defaults. The latter now
 adds an authored name to an existing valid record. No Systems publication was
 run by this workstream.
+
+The SysML facade independently derives its expected combined producer registry
+from KerML family descriptors for the selected profile and all SysML producer
+descriptors. It cannot adopt the supplied certificate's own registry as authority.
+A regression obtains genuine KerML-only and combined scheduler certificates for
+the same graph and SysML interpretation: the weaker registry is rejected; the
+combined certificate is accepted and remains shared. Focused verification:
+`cargo test --locked --offline -p agq-sysml-semantics context::overlay_tests`
+passed all 4 tests; `cargo clippy --locked --offline -p agq-sysml-semantics --all-targets -- -D warnings`
+exited 0. An initial fixture closure required an explicit lifetime-bearing helper;
+the compiled regression uses that helper and passes.

@@ -21,6 +21,96 @@ fn current_context(overlay: &DerivedOverlay) -> SemanticContext<'_> {
 }
 
 #[test]
+fn sysml_facade_rejects_weaker_registry_on_the_same_graph_and_interpretation() {
+    use agq_kerml_semantics::{
+        Completeness, PublicationOverlayError, close_result_structure_with_extension,
+    };
+    let declared = Snapshot::new(Arc::new(
+        agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
+    ));
+    let profile = SysmlBaselineProfile::OPERATIONAL_V2;
+    let bindings = bindings();
+    let trusted = SysmlDependencyContract::checked_in_for_profile(&bindings, profile).unwrap();
+    fn context_for<'m>(
+        overlay: &'m DerivedOverlay,
+        trusted: &SysmlDependencyContract,
+        bindings: &StandardSysmlBindings,
+    ) -> Result<SemanticContext<'m>, PublicationOverlayError> {
+        SysmlSemanticContext::attach(
+            overlay.model(),
+            current_context(overlay),
+            trusted.clone(),
+            bindings.clone(),
+        )
+        .map(|context| context.kerml)
+        .map_err(|error| match error {
+            SysmlContextError::KerMl(error) => PublicationOverlayError::Context(error),
+            _ => panic!("fixture context: {error}"),
+        })
+    }
+    // Both are real scheduler runs over the exact same combined descriptor
+    // graph and SysML naming/profile contract. Only the registry differs.
+    let weaker = close_result_structure_with_extension(
+        &declared,
+        Default::default(),
+        |overlay| context_for(overlay, &trusted, &bindings),
+        &(),
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    let combined = close_result_structure_with_extension(
+        &declared,
+        Default::default(),
+        |overlay| context_for(overlay, &trusted, &bindings),
+        &crate::SysmlProducerExtension::new(profile, bindings.clone(), vec![]),
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert_eq!(weaker.completeness, Completeness::Complete);
+    assert_eq!(combined.completeness, Completeness::Complete);
+    let weaker_certificate = weaker.certificate.unwrap();
+    let combined_certificate = combined.certificate.unwrap();
+    assert_eq!(
+        weaker_certificate.model_digest(),
+        combined_certificate.model_digest()
+    );
+    assert_ne!(
+        weaker_certificate.registry_digest(),
+        combined_certificate.registry_digest()
+    );
+    let context = SysmlSemanticContext::attach(
+        combined.overlay.model(),
+        current_context(&combined.overlay),
+        trusted,
+        bindings,
+    )
+    .unwrap();
+    assert!(matches!(
+        context.fork().with_producer_closure(weaker_certificate),
+        Err(SysmlContextError::KerMl(
+            ContextError::ProducerClosureMismatch
+        ))
+    ));
+    let accepted = context
+        .with_producer_closure(combined_certificate.clone())
+        .unwrap();
+    assert_eq!(
+        accepted.id().kerml.producer_registry_digest,
+        Some(combined_certificate.registry_digest())
+    );
+    assert_eq!(
+        accepted.id().kerml.producer_closure_digest,
+        Some(combined_certificate.digest())
+    );
+    assert!(Arc::ptr_eq(
+        accepted.kerml.producer_closure().unwrap(),
+        &combined_certificate
+    ));
+}
+
+#[test]
 fn overlay_attachment_preserves_current_graph_phase_and_explicit_profile() {
     let declared = Snapshot::new(Arc::new(
         agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
