@@ -69,11 +69,21 @@ and borrowed language evaluators without copying inherited members or extending
 syntax lifetimes into canonical storage. Declared, current-graph and effective
 answers retain their distinct contracts.
 
+The implementation plan and acceptance matrix are in
+[the phase-1 design](../modeling-workspace-phase1-design.md). In particular, a
+Working revision needs an explicit construction-backed representation: the
+current mixed `SourceProject::apply` rejects recovered syntax and lowering needs
+a strict snapshot. Wrapping it unchanged cannot retain incomplete user edits.
+An accepted document operation advances the Working head even when language
+validation fails; operational failures such as a stale base or invalid edit span
+leave the head unchanged. Neither outcome mutates a previously validated handle.
+
 ## Acceptance fixture
 
-Use the rich authored Vehicle/SportsCar vertical. Revision 1 contains nested
-parts, attributes, inherited ports, connections, redefinition, action/state and
-requirement/constraint structure. Editing Vehicle creates revision 2; revision 1
+Use the Agentique self-model and the rich authored modeling-server vertical.
+Revision 1 contains nested parts, attributes, inherited ports, connections,
+redefinition, action/state and requirement/constraint structure. Editing the
+workspace subsystem creates revision 2; revision 1
 remains readable and unchanged. Standard ElementIds and publication Arcs remain
 identical. Unchanged authored identities are preserved where syntax reconciliation
 permits. An unresolved edit produces Working, and cannot produce Validated.

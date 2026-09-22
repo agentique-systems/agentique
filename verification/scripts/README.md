@@ -9,6 +9,15 @@ process tree, samples working set and private memory, and stops on workflow limi
 These limits never establish semantic success. A nonzero child exit remains a
 failure; a workflow stop returns 124 and a monitoring failure returns 125.
 
+`generation_boundary.py` runs offline Cargo metadata without a build and checks
+declared workspace dependency paths from Gen2 into Gen1, including development,
+build, optional, target-specific and renamed dependencies. It also checks that
+the kernel has no path to language or modeling-workspace crates. Run its focused
+adversarial tests with `python -m unittest discover -s verification/scripts -p
+test_generation_boundary.py`. See the
+[architecture audit](../../docs/gen1-gen2-architecture-audit.md) for scope and
+migration dispositions; this check is separate from semantic self-model tests.
+
 `low_artifact.py` wraps `run.py` with a disk preflight and the low-artifact Cargo
 environment. It records the resolved target directory, current target size and
 free bytes under generated evidence, refuses builds below its reserve, and never
