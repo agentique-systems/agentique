@@ -1,0 +1,230 @@
+{
+  "accepted_kerml_digest": [
+    129,
+    85,
+    115,
+    53,
+    57,
+    115,
+    96,
+    123,
+    198,
+    42,
+    37,
+    25,
+    94,
+    212,
+    70,
+    22,
+    69,
+    24,
+    32,
+    39,
+    64,
+    127,
+    132,
+    118,
+    190,
+    82,
+    31,
+    252,
+    153,
+    23,
+    79,
+    18
+  ],
+  "accepted_profile": "agentique-kerml-1.0-operational/9",
+  "authored_edit_isolation": true,
+  "authored_local_elements": 22,
+  "authored_vertical": true,
+  "dependency_contract_rejections": 4,
+  "documents": [
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production ActionDefinition at ByteRange { start: 1331, end: 4671 }",
+      "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+      "parsed": true,
+      "path": "Systems Library/Actions.sysml",
+      "source_sha256": "541e019ff4a827fc5f2139987d2a96f8735e9423d623859fb0e93281371eafb5"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "Strict final SysML grammar requires recovery at [ByteRange { start: 0, end: 788 }]",
+      "document": "f4f235c1-75d6-50e9-b3c9-6c791f63eacb",
+      "parsed": false,
+      "path": "Systems Library/Allocations.sysml",
+      "source_sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production AnalysisCaseDefinition at ByteRange { start: 365, end: 873 }",
+      "document": "bd6e1341-4d9a-598a-ae74-3356c5295541",
+      "parsed": true,
+      "path": "Systems Library/AnalysisCases.sysml",
+      "source_sha256": "2bb88f61178f2cefd5441600d2d980ed1e1a4ffc5cb7b3ca9207edee5c350f87"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": null,
+      "document": "d4b0bce6-0650-5ca9-b4c1-123406ee7ad6",
+      "parsed": true,
+      "path": "Systems Library/Attributes.sysml",
+      "source_sha256": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production CalculationDefinition at ByteRange { start: 326, end: 818 }",
+      "document": "1353da88-7307-5076-90eb-0e8137b11bae",
+      "parsed": true,
+      "path": "Systems Library/Calculations.sysml",
+      "source_sha256": "19f5c2ac553c0a034550292de6bfa601e6948fc81d5af781b59c940eee2e5f72"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "Strict final SysML grammar requires recovery at [ByteRange { start: 0, end: 1619 }]",
+      "document": "e78a99fd-3875-5781-a4ab-4a05b29cf291",
+      "parsed": false,
+      "path": "Systems Library/Cases.sysml",
+      "source_sha256": "2c4c0cbaaa466f9f720ba69af3a019517ca0a7741a561f7880006bae946bf24f"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "Strict final SysML grammar requires recovery at [ByteRange { start: 0, end: 2133 }]",
+      "document": "54160c33-fbae-52a0-8a59-e32ee8a8752f",
+      "parsed": false,
+      "path": "Systems Library/Connections.sysml",
+      "source_sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production ConstraintDefinition at ByteRange { start: 355, end: 647 }",
+      "document": "02523915-5c75-5840-9a07-1b2c00b781f1",
+      "parsed": true,
+      "path": "Systems Library/Constraints.sysml",
+      "source_sha256": "84dd65984abd0c35c37b75ef5766bfa63c836aa75a1c75a9d3eb5f4230fa8fdd"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "Strict final SysML grammar requires recovery at [ByteRange { start: 0, end: 4987 }]",
+      "document": "24be0e02-4ed9-5306-aeaa-de836c2f50ce",
+      "parsed": false,
+      "path": "Systems Library/Flows.sysml",
+      "source_sha256": "4e65e6a45060d634db8ba16767d7692e7704c62c84b579fdb2e56b18bd0f8a34"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "Strict final SysML grammar requires recovery at [ByteRange { start: 0, end: 3467 }]",
+      "document": "2a80d641-a037-5a99-b151-18036e3d273e",
+      "parsed": false,
+      "path": "Systems Library/Interfaces.sysml",
+      "source_sha256": "62b5c3c2bc3960e8d25633231c3933a81e422b3a904dc9541b8787113d076c66"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "Strict final SysML grammar requires recovery at [ByteRange { start: 0, end: 3946 }]",
+      "document": "58deefe8-d1ca-5a88-83d9-efb8b07e074e",
+      "parsed": false,
+      "path": "Systems Library/Items.sysml",
+      "source_sha256": "3a344edb7def2276fa15e410c363531e5098d93bdf33a583418151fa87f538b3"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production MetadataDefinition at ByteRange { start: 317, end: 538 }",
+      "document": "ba15f023-7c02-5e13-a9d9-c9698c313654",
+      "parsed": true,
+      "path": "Systems Library/Metadata.sysml",
+      "source_sha256": "6ad7a7857fad81570c84fac73981f8cce5aacab79bee2619644670bb792b2474"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production ActionUsage at ByteRange { start: 928, end: 1083 }",
+      "document": "8c7eb7dd-a3a2-5d0c-bac3-d8d66a69d0a4",
+      "parsed": true,
+      "path": "Systems Library/Parts.sysml",
+      "source_sha256": "ccaaee608c1eb372c47cfdfc011c5f4f48cc5bcca5fb8b2441587ec26fd0fdaa"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": null,
+      "document": "fe2608aa-5aca-541c-b702-893347cd9e9b",
+      "parsed": true,
+      "path": "Systems Library/Ports.sysml",
+      "source_sha256": "401b2cb745bc0efb9df386d0435bddffa0e23d1eb6511cbe824734169b6a9566"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production ConstraintDefinition at ByteRange { start: 611, end: 1431 }",
+      "document": "1eb31772-876d-5715-b642-94c0edac7c4f",
+      "parsed": true,
+      "path": "Systems Library/Requirements.sysml",
+      "source_sha256": "c436a8fe2959b380ee3d8ae7c1c206311aa9c1215d13800b215f9952e1216632"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production ViewDefinition at ByteRange { start: 193, end: 1531 }",
+      "document": "fd9aaa5c-751b-52a4-960b-b08ac3ad3b68",
+      "parsed": true,
+      "path": "Systems Library/StandardViewDefinitions.sysml",
+      "source_sha256": "b29882b0240e3cc2721b66c6bc9fd1d2d2431a34e80e170cd465911ff8d833a5"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production StateDefinition at ByteRange { start: 598, end: 2645 }",
+      "document": "869ab9ca-e736-5d27-b49c-f697f22b25b9",
+      "parsed": true,
+      "path": "Systems Library/States.sysml",
+      "source_sha256": "9524f4c6d4dd10550faf6692dfdef3975e9e7f8514368e92032e8a17199f4980"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production MetadataDefinition at ByteRange { start: 252, end: 521 }",
+      "document": "325305b9-b018-5559-acd5-8592e2e60015",
+      "parsed": true,
+      "path": "Systems Library/SysML.sysml",
+      "source_sha256": "badb9f49bd280d0273a5f55fd6572fe2b332df6c8f3888415c04589fb314b900"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "unsupported canonical grammar interpretation: SysML canonical production UseCaseDefinition at ByteRange { start: 224, end: 1135 }",
+      "document": "ce273c67-cc1f-5cec-a3b0-847c964cdba3",
+      "parsed": true,
+      "path": "Systems Library/UseCases.sysml",
+      "source_sha256": "242e51944c32032215d76a9ff1fd967d8ba36efffd9d78da1c423a5b102a2cf6"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "Strict final SysML grammar requires recovery at [ByteRange { start: 0, end: 2488 }]",
+      "document": "9e3730df-148c-5a36-9195-a23cc1b824ea",
+      "parsed": false,
+      "path": "Systems Library/VerificationCases.sysml",
+      "source_sha256": "dbee7255e16df9c5cf0bded96c43cb60b1e5026b6973c5fb1176316902ac47b9"
+    },
+    {
+      "byte_exact": true,
+      "construction_gap": "Strict final SysML grammar requires recovery at [ByteRange { start: 0, end: 3845 }]",
+      "document": "78215481-452f-5123-9500-4ec748094e73",
+      "parsed": false,
+      "path": "Systems Library/Views.sysml",
+      "source_sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25"
+    }
+  ],
+  "elapsed_seconds": 78.6702151,
+  "format": "agq-sysml-foundation-check/1",
+  "inherited_usage_copied": false,
+  "mixed_kerml_sysml_resolution": true,
+  "producer_closure_rerun": false,
+  "programmatic_equivalence": true,
+  "restored_from_checked_in_receipt": true,
+  "status": "SYSML SYSTEMS LIBRARY FOUNDATION INCOMPLETE",
+  "sysml_producer_closure_complete": false,
+  "systems_anchor_validation": {
+    "Err": "Incomplete(Item)"
+  },
+  "systems_construction_complete": false,
+  "systems_documents_byte_exact": 21,
+  "systems_documents_constructed": 2,
+  "systems_documents_parsed": 13,
+  "systems_kernel_obligations": 17,
+  "systems_publication_accepted": false,
+  "systems_reference_assertions": 19
+}

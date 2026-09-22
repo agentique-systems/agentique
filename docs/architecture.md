@@ -68,15 +68,16 @@ use [generation-2 status](../standards/v2-coverage.json) for new engine capabili
 
 The shared importer and runtime descriptors cover the pinned SysML 2.0 graph.
 The [published-property blocker](sysml-v2-runtime-blocker.md) records an earlier
-stage; SysML semantics and textual projects remain the next language phase.
+stage; the current SysML textual and semantic foundation is described below.
 
 [ADR 0008](adr/0008-property-subsetting-cycle-semantics.md) corrects the former
 combined property-cycle invariant: cyclic subsetting is representable and exact
-source anomalies are separately reported. Runtime readiness now exposes an
-independent invalid redefinition context in the required SysML closure.
+source anomalies are separately reported. That earlier runtime review exposed an
+independent invalid redefinition context in the required SysML closure; the
+subsequent structural runtime milestone superseded that blocker.
 
-The modeling-platform milestone's prerequisite check reproduced this blocker on
-fetched `main`; its stages 0-6 have not begun. See the
+The historical modeling-platform milestone's prerequisite check reproduced this
+blocker on its fetched `main`; its stages 0-6 have not begun. See the
 [platform prerequisite record](../verification/modeling-platform-v2/README.md)
 for the exact base, commands and resumption conditions. Repository, API, view and
 transformation boundaries must be designed against the completed generation-2
@@ -84,9 +85,9 @@ language stack before they are shown as implemented components here.
 
 ## Generation 2: language engine under development
 
-Arrows point from a consumer to its dependency. Dashed nodes are planned semantic
-and textual layers. The generator is maintenance tooling and emits
-checked-in descriptors; it is never a runtime or build-script dependency.
+Arrows point from a consumer to its dependency. The generator is maintenance
+tooling and emits checked-in descriptors; it is never a runtime or build-script
+dependency.
 
 ```mermaid
 flowchart BT
@@ -97,11 +98,9 @@ flowchart BT
   text --> kerml
   syntax --> kernel
   sysml[agq-sysml: descriptors and views] --> kerml
-  sysmlsem[agq-sysml-semantics: planned] --> sysml
+  sysmlsem[agq-sysml-semantics] --> sysml
   sysmlsem --> semantics
-  sysmltext[SysML text: planned] --> sysmlsem
-  classDef planned stroke-dasharray: 5 5
-  class sysmlsem,sysmltext planned
+  text --> sysml
 ```
 
 Canonical data lives in generic immutable kernel records. Borrowed typed views
@@ -110,6 +109,23 @@ reuse evidence-bearing queries; inherited elements retain their original identit
 Parsers preserve text and supply declarations/references, never canonical truth or
 name denotation. Source identity and semantic identity remain distinct. Unsupported
 syntax, unresolved references and unimplemented semantic rules remain explicit.
+
+The SysML dialect extends the existing lossless production arena in
+`agq-kerml-syntax`; `agq-kerml-text` constructs its supported declarations through
+the same kernel change sets and reference refinement. `agq-sysml-semantics` has
+no parser dependency. It composes the accepted KerML context and checks the
+publication, profile, library set, descriptors and SysML dependency contract.
+Definition/Usage typing, specialization, ownership, inherited identity sets,
+subsetting, redefinition and names reuse KerML queries. Attribute/Item/Part
+projections and structural Port/Connector projections retain their evidence.
+Current-graph answers do not certify unfinished SysML producer closure.
+
+The pinned Systems Library has 21 documents. The strict final-grammar frontend
+currently accepts 13 and preserves all 21 byte for byte. Four unapproved grammar
+interpretations explain the other eight; unsupported canonical construction and
+semantic implications remain explicit. See the
+[SysML foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md)
+for the actual corpus and authored acceptance boundary.
 
 Normative targets are KerML 1.0 and SysML 2.0. Metamodel import, runtime descriptor
 closure, semantic queries, textual grammar and library ingestion have distinct
@@ -292,7 +308,7 @@ under `/api/agentique`.
 ## Standards-driven foundation
 
 The additive generic `agq-kernel` foundation is described in ADR 0001. The intended
-runtime dependency direction is `agq-kernel` <- `agq-kerml` <- future `agq-sysml`.
+runtime dependency direction is `agq-kernel` <- `agq-kerml` <- `agq-sysml`.
 Language-specific descriptors and rules belong above the kernel.
 
 [`tools/metamodel-gen`](../tools/metamodel-gen/) imports hash-pinned KerML 1.0 MOF
@@ -345,8 +361,8 @@ valid incomplete bodies can still form a working model. Unresolved/ambiguous
 references remain explicit assertions outside the structurally valid snapshot.
 `validate_slice` distinguishes this working state from successful bounded syntax,
 resolution and semantic-query checks. It is not full KerML validation or executable
-verification. Full imports/inheritance name resolution, library implication and
-additional descriptors are required before broadening into SysML. Application,
+verification. This historical bounded slice is extended by the canonical KerML
+publication and shared SysML frontend described above. Application,
 HTTP and simulation continue to use their existing implementation.
 
 
@@ -354,8 +370,10 @@ HTTP and simulation continue to use their existing implementation.
 
 The complete KerML 1.0 descriptor graph is now the production `agq-kerml`
 registration boundary. `agq-sysml` adds all 93 SysML 2.0 classes using the same
-KerML identities; both depend inward on the generic kernel. No SysML semantic
-rule layer, parser, library ingestion or application migration is included.
+KerML identities; both depend inward on the generic kernel. This historical
+structural milestone did not include a SysML semantic rule layer, parser,
+library ingestion or application migration. The current foundation adds the
+textual and query layers described above; application migration remains separate.
 
 [ADR 0011](adr/0011-structural-registration-vs-metamodel-conformance.md) separates
 atomic structural registration from metamodel-authoring conformance. Exact source

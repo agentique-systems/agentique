@@ -1,13 +1,15 @@
 {
-  "format": "agentique-sysml-foundation-preparation/1",
-  "source_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
+  "format": "agentique-sysml-foundation-summary/2",
   "branch": "foundation/kerml-v9-to-sysml-semantics",
-  "status": "implementation-in-progress",
+  "status": "SYSML SYSTEMS LIBRARY FOUNDATION INCOMPLETE",
   "implementation": [
-    "Reproducible offline Systems KPAR inventory using existing verifier and lossless lexer",
-    "Per-document identities, import targets/visibility/ranges, construct families and grammar work surfaces",
-    "Concrete shared frontend, canonical lowering and composed semantic-context plan",
-    "Pinned final SysML 2.0 authority and preserved source/grammar findings"
+    "Shared lossless SysML production arena over the existing lexer, source identities and KerML productions",
+    "Protected accepted KerML dependency under the compatible combined descriptor registry",
+    "Canonical Attribute/Item/Part/Port Definition and Usage construction with explicit unsupported production gaps",
+    "Parser-free agq-sysml-semantics with checked publication/profile/library/descriptor contracts",
+    "Evidence-bearing current-graph Definition/Usage queries; inherited usages retain original kernel identities",
+    "Scoped Item/Part standard binding validation; unfinished SysML producer implications stay explicit",
+    "Actual accepted-cache authored vertical, independent kernel equivalence, mixed resolution and edit isolation"
   ],
   "inventory": {
     "documents": 21,
@@ -17,14 +19,12 @@
     "family_usage_keyword_surfaces": 424,
     "lossless_lexed_documents": 21,
     "sysml_parsed_documents": 13,
-    "semantic_dependency_attached": false,
+    "semantic_dependency_attached": true,
     "path": "verification/summaries/sysml-semantic-foundation/corpus-inventory.json",
     "sha256": "fdebbcd861073f5777e6656d97a5aca767edd615aaadedf7c6a4631b7d4c1b6c",
-    "exact_byte_preservation_documents": 21
-  },
-  "tested_implementation": {
-    "path": "crates/standard-libraries/examples/sysml_foundation_inventory.rs",
-    "sha256": "6b0c5fea417e6f02f23059cf3bd2ee1db7e8abd774e380dd9c99375047e153a5"
+    "exact_byte_preservation_documents": 21,
+    "systems_documents_constructed": 2,
+    "systems_construction_complete": false
   },
   "tools": {
     "cargo": "cargo 1.92.0 (344c4567c 2025-10-21)",
@@ -56,7 +56,7 @@
       "output_excerpt": "No output."
     }
   ],
-  "verification_boundary": "Inventory remains historical preparation evidence; frontend-status.json and commands.json record subsequent implementation. SysML semantic and lowering work remains in progress.",
+  "verification_boundary": "Original inventory commands remain historical preparation evidence. Frontend, lowering, semantic-crate and integration records describe subsequent production implementation; no Systems Library acceptance or effective SysML producer closure is claimed.",
   "workspace_event": {
     "action": "Remove only the new inventory worktree target after retaining its executable and verifying the absolute workspace-bounded target",
     "result": "Automatic approval review rejected the action: blocked by policy. No bypass or retry; newly generated build files left in place."
@@ -65,5 +65,129 @@
   "accepted_kerml_publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
   "accepted_kerml_profile": "agentique-kerml-1.0-operational/9",
   "implementation_commands": "commands.json",
-  "frontend_report": "frontend-status.json"
+  "frontend_report": "frontend-status.json",
+  "accepted_dependency_vertical": {
+    "accepted_kerml_digest": [
+      129,
+      85,
+      115,
+      53,
+      57,
+      115,
+      96,
+      123,
+      198,
+      42,
+      37,
+      25,
+      94,
+      212,
+      70,
+      22,
+      69,
+      24,
+      32,
+      39,
+      64,
+      127,
+      132,
+      118,
+      190,
+      82,
+      31,
+      252,
+      153,
+      23,
+      79,
+      18
+    ],
+    "accepted_profile": "agentique-kerml-1.0-operational/9",
+    "authored_edit_isolation": true,
+    "authored_local_elements": 22,
+    "authored_vertical": true,
+    "dependency_contract_rejections": 4,
+    "elapsed_seconds": 78.6702151,
+    "format": "agq-sysml-foundation-check/1",
+    "inherited_usage_copied": false,
+    "mixed_kerml_sysml_resolution": true,
+    "producer_closure_rerun": false,
+    "programmatic_equivalence": true,
+    "restored_from_checked_in_receipt": true,
+    "status": "SYSML SYSTEMS LIBRARY FOUNDATION INCOMPLETE",
+    "sysml_producer_closure_complete": false,
+    "systems_anchor_validation": {
+      "Err": "Incomplete(Item)"
+    },
+    "systems_construction_complete": false,
+    "systems_documents_byte_exact": 21,
+    "systems_documents_constructed": 2,
+    "systems_documents_parsed": 13,
+    "systems_kernel_obligations": 17,
+    "systems_publication_accepted": false,
+    "systems_reference_assertions": 19
+  },
+  "current_implementation": "crates/kerml-text/examples/sysml_foundation.rs",
+  "candidate_report": "candidate-status.json",
+  "integration_findings": [
+    {
+      "finding": "Typed projection treated a proven general KerML ancestor as an invalid SysML endpoint",
+      "disposition": "Fixed in 95b6820 using existing KerML ancestry proofs and distinct Item/Part subset projections; no KerML rule change"
+    },
+    {
+      "finding": "Real-cache fixture incorrectly required the authored engine to be the sole KerML Feature",
+      "disposition": "Fixed in 702ed6d: retain accepted library Features, require exact inherited engine identity and exact SysML Usage projection"
+    },
+    {
+      "finding": "Original declaration fixture assumed all default-profile facts had syntax origins",
+      "disposition": "Fixed in 160a1d4: independently verify original source facts and exact retained-v3 ReviewedCorrection manifest provenance under default v9; no production change"
+    }
+  ],
+  "accepted_dependency_verification": {
+    "command": "sysml-accepted-vertical-library-features",
+    "exit_code": 0,
+    "duration_seconds": 81.281,
+    "peak_private_bytes": 4228792320,
+    "resource_stop": null
+  },
+  "base_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
+  "historical_inventory_implementation": {
+    "path": "crates/standard-libraries/examples/sysml_foundation_inventory.rs",
+    "sha256": "6b0c5fea417e6f02f23059cf3bd2ee1db7e8abd774e380dd9c99375047e153a5"
+  },
+  "evidence_identity": "Exact source commits, working-change hashes, commands, output hashes and exit codes are retained in commands.json and the focused check records.",
+  "final_verification": {
+    "source_commit": "160a1d4",
+    "workspace_tests": {
+      "command": "cargo test --locked --offline -j2 --workspace",
+      "exit_code": 0,
+      "passed": 514,
+      "failed": 0,
+      "ignored": 2,
+      "duration_seconds": 272.56
+    },
+    "workspace_clippy": 0,
+    "format": 0,
+    "strict_rustdoc_touched_generation_2_crates": 0,
+    "kerml_runtime_gate": 0,
+    "sysml_runtime_gate": 0,
+    "metamodel_stale_check": 0,
+    "frontend_check": 0,
+    "frontend_build": 0,
+    "frontend_tests": 0,
+    "standards_check": 0,
+    "grammar_stale_checks": {
+      "kerml": 0,
+      "sysml": 0
+    },
+    "grammar_generator_tests": 0,
+    "protected_authority_bytes": 0,
+    "browser_checks": {
+      "exit_code": 0,
+      "passed": 4,
+      "evidence": "../kerml-v9-publication/commands.json",
+      "scope": "Run at the KerML integration stage; not repeated for subsequent semantic-only edits"
+    },
+    "command_records": "commands.json",
+    "initial_failures": "Retained with dispositions in integration_findings and raw output hashes in commands.json"
+  }
 }

@@ -46,6 +46,13 @@ bindings against the trusted receipt and exact source identities. Explicit
 Published/v1–v9 selection remains available; 29 activated-default regressions
 and both pinned runtime gates passed. KerML work for this phase is complete.
 
+After integrating the SysML foundation, final workspace verification passed
+**514 tests with zero failures and two intentionally ignored**, along with
+Clippy, formatting, strict generation-2 Rustdoc and both runtime gates. See the
+[integrated verification](../sysml-semantic-foundation/summary.json). The v9
+default's retained correction provenance is now covered by the corpus declaration
+fixture. No additional whole-corpus KerML publication attempt was run.
+
 | Slice | Scoped declarations | Audited subjects | Complete mandatory references | Slice seconds |
 | --- | ---: | ---: | ---: | ---: |
 | A | 11,227 | 21,656 | 1,629 | 817.27 |

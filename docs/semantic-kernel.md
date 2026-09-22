@@ -71,6 +71,16 @@ local roots without making accepted library roots see authored declarations.
 Generic registry compatibility and language profile/publication authentication
 remain separate checks.
 
+`agq-sysml-semantics` composes that KerML context with a separate SysML rule-set
+identity, the combined descriptor digest, Systems Library identity and scoped
+standard bindings. Attachment authenticates the checked-in accepted receipt as
+well as the caller's expected dependency contract. `canonical_fact_evidence`
+lets composed queries retain the existing proof/search dependencies and failed
+or incomplete property observations. SysML projections do not implement a
+second provenance walker or copy inherited usages. Direct and current-graph
+queries remain distinct from effective queries that report unfinished SysML
+producer obligations. Systems candidate construction is not semantic acceptance.
+
 The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
 under Operational v9 by default, with explicit historical profile selection.
 A metaclass applicability index excludes unrelated records;
@@ -399,10 +409,13 @@ typing and effective-feature queries. ADR 0006 adds lossless KerML text lowering
 and declared lexical name resolution. These later decisions refine the earlier
 milestones; their historical limitations are not the current capability boundary.
 
-General association storage, full numeric domains, complete constraints, imports
-and inherited name resolution, multi-document projects, generation-2 library
-ingestion and SysML remain open. Source parsing exists for the bounded KerML slice;
-application migration, persistence, API and execution remain separate future work.
+The preceding bounded milestone left association storage, numeric domains,
+constraints, imports, inherited name resolution, multi-document projects and
+library ingestion open. Later structural and canonical-publication milestones
+supersede those limits. The current SysML foundation composes the accepted KerML
+publication and shared textual frontend; its remaining corpus and semantic gaps
+are recorded in the [foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md).
+Application migration, persistence, API and execution remain separate future work.
 
 
 ## Completion v3: current structural boundary

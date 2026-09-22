@@ -1,6 +1,7 @@
 # SysML semantic foundation
 
-Status: **implementation in progress**. Canonical KerML publication, accepted
+Status: **SYSML SYSTEMS LIBRARY FOUNDATION INCOMPLETE**. The textual and query
+foundation is implemented. Canonical KerML publication, accepted
 bindings, the v9 default and actual authored integration have passed; see the
 [KerML completion record](../kerml-v9-publication/README.md). SysML production
 work now composes that exact immutable dependency over the same kernel graph.
@@ -11,8 +12,8 @@ lexing preserves every source byte. The shared production frontend now parses
 **13/21** against the printed final grammar and preserves **21/21** byte for byte.
 The eight failures match four recorded, unadopted grammar interpretations;
 [frontend evidence](frontend-implementation.md) distinguishes them from unsupported
-implementation. The original inventory's
-The 424 family usage keyword surfaces are not canonical Usage counts; implicit
+implementation. The original inventory's 424 family usage keyword surfaces are
+not canonical Usage counts; implicit
 usages, anonymous parameters, specialized constructs and member wrappers require
 the actual SysML grammar and canonical lowering.
 
@@ -26,6 +27,8 @@ the actual SysML grammar and canonical lowering.
   preserved archive metadata discrepancy and one specific grammar review item.
 - [Summary](summary.json) and [capability status](capability-status.json): scope,
   actual command results and explicit unimplemented semantic obligations.
+- [Candidate status](candidate-status.json): all 21 document construction outcomes
+  and the actual accepted-publication vertical result.
 
 | Document | Bytes | Imports | Definition introducers | Required extension surfaces |
 | --- | ---: | ---: | ---: | --- |
@@ -72,7 +75,49 @@ every unquoted `def` token. This tooling is an inventory, not library ingestion.
 
 The kernel can mount the accepted library under a compatible larger registry
 without copying records or changing the original dependency. Candidate contexts
-retain missing obligations and asymmetric root visibility. Canonical lowering,
-mixed projects, Definition/Usage queries and the authored vertical are being
-integrated. Systems Library publication is still incomplete. Generation-1 release
-obligations remain separate and unchanged.
+retain missing obligations and asymmetric root visibility. The shared textual
+constructor supports ordinary Attribute/Item/Part/Port definitions and usages,
+canonical relationships, stable source identities and authored edit isolation.
+Unsupported actions, states and other production families remain explicit gaps.
+
+The parser-free `agq-sysml-semantics` crate authenticates the accepted KerML
+publication and composes Definition/Usage typing, specialization, ownership,
+inherited identity sets, subsetting, redefinition and names. Item/Part subset
+projections preserve valid additional types; Attribute/Port narrowed domains
+remain distinct. Hierarchy, provenance, search dependencies and completeness come
+from KerML queries. Binding uniqueness accounts for pending namespace contents.
+Current-graph answers are separate from unfinished effective SysML implications.
+
+The actual accepted-cache integration passed the Engine/Vehicle/SportsCar authored
+vertical and its independently constructed kernel equivalent. Both preserve the
+original inherited `engine` identity, explicit typing, specialization and qualified
+name. Mixed authored KerML/SysML resolution, stable IDs, immutable edit isolation
+and four dependency-contract mismatch rejections passed. The monitored run exited
+0 in **81.28 seconds**, peaking at **4,228,792,320 private bytes**, with no resource
+stop and no KerML producer replay. Earlier runs exposed a typed-projection defect
+and a fixture assertion that excluded valid inherited standard-library Features;
+both were corrected, with their failed commands retained in `commands.json`.
+
+The unpublished Systems candidate constructs **Attributes.sysml and Ports.sysml**.
+It retains **17 kernel obligations and 19 reference assertions**. Eight documents
+need the four unapproved grammar interpretations; eleven other documents require
+canonical construction for actions, states, constraints, calculations, metadata,
+case or view families. Missing Item/Part anchors and candidate reference refinement
+remain explicit. The candidate is not mounted as an accepted Systems dependency.
+
+Effective SysML producer closure remains incomplete, including standard base
+relationships, `mayTimeVary`, conditional implications and the unapproved composite
+Item `subitem`/`subitems` authority discrepancy. Broader Port/Connection/Interface
+and conjugated-port semantics remain separate work. No original library bytes or
+final grammar authority were changed. Generation-1 release obligations remain
+separate and unchanged.
+
+Final integration verification passed: **514 workspace tests, zero failures,
+two intentionally ignored**, workspace Clippy with warnings denied, formatting,
+strict Rustdoc for the touched generation-2 crates, both runtime generation gates,
+metamodel and grammar stale checks, frontend check/build/tests and standards
+checks. The four browser tests passed at the KerML integration stage and were not
+repeated for semantic-only edits. The source/correction provenance fixture was
+strengthened after activating the v9 default; the earlier failed workspace run
+and successful rerun remain in [commands.json](commands.json). Original authority
+and library bytes also match the fetched base.

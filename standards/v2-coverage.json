@@ -118,7 +118,7 @@
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "claim": "Complete generation-2 structural runtime; no full UML certification, SysML semantic rules, application migration or execution claim.",
+  "claim": "Complete generation-2 structural runtime and accepted canonical KerML publication; partial SysML textual and semantic query foundation. No full language conformance, modeling platform, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": {
     "stage": "structural-runtime-v3",
@@ -137,15 +137,22 @@
   "modeling_platform_gate": {
     "stage": "prerequisite",
     "result": "blocked",
-    "evidence": "verification/sysml-semantic-foundation-v1/README.md",
+    "evidence": "verification/summaries/sysml-semantic-foundation/README.md",
     "completed_stages": [],
-    "reason": "SysML semantic foundation v1 is incomplete: canonical standard-library ingestion, mixed-language resolution, SysML semantic rules and SysML textual lowering remain unimplemented.",
+    "reason": "Canonical KerML is accepted and the SysML textual/query vertical is implemented. Systems Library construction, reference closure and effective SysML producer semantics remain incomplete.",
     "previous_milestone": {
       "stage": "prerequisite",
       "result": "blocked",
-      "evidence": "verification/modeling-platform-v2/README.md",
+      "evidence": "verification/sysml-semantic-foundation-v1/README.md",
       "completed_stages": [],
-      "reason": "Pack 2A remains incomplete: SysML runtime closure fails redefinition context validation after the subset invariant correction."
+      "reason": "SysML semantic foundation v1 is incomplete: canonical standard-library ingestion, mixed-language resolution, SysML semantic rules and SysML textual lowering remain unimplemented.",
+      "previous_milestone": {
+        "stage": "prerequisite",
+        "result": "blocked",
+        "evidence": "verification/modeling-platform-v2/README.md",
+        "completed_stages": [],
+        "reason": "Pack 2A remains incomplete: SysML runtime closure fails redefinition context validation after the subset invariant correction."
+      }
     }
   },
   "status_meaning": {
@@ -431,7 +438,9 @@
         "sysml-2.0": 1
       },
       "library_semantic_quality_exit_code": 1
-    }
+    },
+    "historical": true,
+    "superseded_by": "sysml_semantic_foundation_phase_1"
   },
   "kerml_operational_errata_publication_v3": {
     "status": "incomplete-authority-conflict",
@@ -520,7 +529,7 @@
     "generation_1_release_obligations": "unchanged"
   },
   "sysml_semantic_foundation_phase_1": {
-    "status": "implementation-in-progress",
+    "status": "started-foundation-incomplete",
     "kerML_dependency": "accepted canonical Operational v9",
     "evidence": "verification/summaries/sysml-semantic-foundation/README.md",
     "frontend": "shared lossless KerML/SysML production arena",
@@ -529,8 +538,12 @@
     "byte_preservation": "21/21",
     "grammar_authority_gaps": "Eight documents require four recorded interpretations; none adopted",
     "kernel_registry_extension": "implemented; protected exact dependency, shared records, validated old contracts",
-    "semantic_crate": "implementation in isolated worktree",
-    "candidate_lowering": "implementation in isolated worktree",
-    "generation_1_release_obligations": "unchanged"
+    "semantic_crate": "agq-sysml-semantics implemented; checked accepted dependency and current-graph queries",
+    "candidate_lowering": "2/21 supported source documents; per-document gaps retained",
+    "generation_1_release_obligations": "unchanged",
+    "authored_vertical": "passed against actual accepted publication",
+    "programmatic_equivalence": "passed without requiring syntax IDs to match",
+    "effective_sysml_producer_closure": "incomplete; pending implications retained",
+    "systems_publication": "not accepted"
   }
 }

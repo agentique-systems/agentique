@@ -257,6 +257,579 @@
         "CARGO_PROFILE_DEV_DEBUG": "0",
         "CARGO_INCREMENTAL": "0"
       }
+    },
+    {
+      "name": "sysml-grammar-generator-tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/sysml-grammar",
+        "-p",
+        "test_generate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "0ff6e794e0040d3a9052c2e050d597eb19e0862d",
+      "working_changes_sha256": "dade31163df2bcdab0454c926ef21836c0b42e3347eac55db4932eea8fd2461b",
+      "output_sha256": "caa7c4ec30f526b2b2cba7e4d62ab9263d1fce419ea700baa4cdb37a4d541f25",
+      "duration_seconds": 0.19,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-grammar-generator-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-standards-check",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "0ff6e794e0040d3a9052c2e050d597eb19e0862d",
+      "working_changes_sha256": "dade31163df2bcdab0454c926ef21836c0b42e3347eac55db4932eea8fd2461b",
+      "output_sha256": "b223dc162d56a807772013bf40a1628cc297a34d600eeb877bd9b289baa0a587",
+      "duration_seconds": 0.84,
+      "output": "verification/generated/sysml-semantic-foundation/final-standards-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-accepted-vertical-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_foundation"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0ff6e794e0040d3a9052c2e050d597eb19e0862d",
+      "working_changes_sha256": "b98b047e0cab7296eace515ff84f03d1aac9e585cab68070f9d97b21f64b36e8",
+      "output_sha256": "a417f46e8c1336dde7552ff1a68b8dce100aa76d79bf99f8a3a9f7cef836429f",
+      "duration_seconds": 260.61,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-accepted-vertical-build.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-accepted-vertical",
+      "command": [
+        "target/release/examples/sysml_foundation.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/sysml-semantic-foundation/accepted-vertical.json"
+      ],
+      "source_commit": "7abd76d0da16219958375172b862549906f7526c",
+      "working_changes_sha256": "a735f8b0f2afd6e75e3beb2ab1e043d127849d68de988e62837b8a6a9d22d0eb",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/sysml-accepted-vertical",
+      "exit_code": 101,
+      "command_exit_code": 101,
+      "command_pid": 29308,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 4153249792,
+      "safety_stop": null,
+      "duration_seconds": 49.265,
+      "peak_rss_bytes": 3869466624,
+      "peak_private_bytes": 3943518208,
+      "samples": 50,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 6442450944,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "57ed5f98970dc21f0703b29e129c15e1171860c80919b6d3ed766706c2c883e5"
+    },
+    {
+      "name": "kerml-grammar-stale-check",
+      "command": [
+        "python",
+        "tools/kerml-grammar/generate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "cc0fa03d017d3d7e5fea07a771c3ea876498bf9a",
+      "working_changes_sha256": "ffac99fda53cfb3333c3448a95a3feea67b619aadc95a7363cd93415f8465d80",
+      "output_sha256": "f3a599a056523d9072af76571f2157b7cc271a5afa80cad15b482498f51df7c6",
+      "duration_seconds": 0.23,
+      "output": "verification/generated/sysml-semantic-foundation/kerml-grammar-stale-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-grammar-stale-check",
+      "command": [
+        "python",
+        "tools/sysml-grammar/generate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "cc0fa03d017d3d7e5fea07a771c3ea876498bf9a",
+      "working_changes_sha256": "ffac99fda53cfb3333c3448a95a3feea67b619aadc95a7363cd93415f8465d80",
+      "output_sha256": "ec392907cb5eaf9f5211d2743ab61a3cc243ece1541ddc67432aed8f3f2f991a",
+      "duration_seconds": 0.28,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-grammar-stale-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-frontend-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "cc0fa03d017d3d7e5fea07a771c3ea876498bf9a",
+      "working_changes_sha256": "0404db44772db3daea5805a0a58e3172642d33be85874a25aa97e6153df965de",
+      "output_sha256": "87767567b6c645ff81a7732230a67d2f362d4921af18c1eb87681d5c32b4d568",
+      "duration_seconds": 0.61,
+      "output": "verification/generated/sysml-semantic-foundation/final-frontend-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "cc0fa03d017d3d7e5fea07a771c3ea876498bf9a",
+      "working_changes_sha256": "0404db44772db3daea5805a0a58e3172642d33be85874a25aa97e6153df965de",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 1.83,
+      "output": "verification/generated/sysml-semantic-foundation/final-frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "cc0fa03d017d3d7e5fea07a771c3ea876498bf9a",
+      "working_changes_sha256": "0404db44772db3daea5805a0a58e3172642d33be85874a25aa97e6153df965de",
+      "output_sha256": "6d09fe887a6352ca49e986e7420dd5e3fe4bf12d98ba3c99092ce5ecbedb75cf",
+      "duration_seconds": 2.14,
+      "output": "verification/generated/sysml-semantic-foundation/final-frontend-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-accepted-vertical-final-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_foundation"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "22dbedce043460454171ab284d7ce60102d72472",
+      "working_changes_sha256": "86c2586b5110d0bc0d6d3a51ed91d57e709dc6ad18c6833a1791dc1e2f2ff9f0",
+      "output_sha256": "a744a65d2ee84d05672225ad1e532089da6917c828c8027c0b9c1b455e21ac5c",
+      "duration_seconds": 12.49,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-accepted-vertical-final-build.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "final-workspace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j2",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "22dbedce043460454171ab284d7ce60102d72472",
+      "working_changes_sha256": "86c2586b5110d0bc0d6d3a51ed91d57e709dc6ad18c6833a1791dc1e2f2ff9f0",
+      "output_sha256": "03580706f0a2ac97db1b62a08e93f572e0ea000e91d426624a45246577e6f1e1",
+      "duration_seconds": 25.98,
+      "output": "verification/generated/sysml-semantic-foundation/final-workspace-clippy.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-accepted-vertical-after-projection-fix",
+      "command": [
+        "target/release/examples/sysml_foundation.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/sysml-semantic-foundation/accepted-vertical-complete.json"
+      ],
+      "source_commit": "22dbedce043460454171ab284d7ce60102d72472",
+      "working_changes_sha256": "86c2586b5110d0bc0d6d3a51ed91d57e709dc6ad18c6833a1791dc1e2f2ff9f0",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/sysml-accepted-vertical-after-projection-fix",
+      "exit_code": 101,
+      "command_exit_code": 101,
+      "command_pid": 30552,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 4143136768,
+      "safety_stop": null,
+      "duration_seconds": 50.25,
+      "peak_rss_bytes": 3861135360,
+      "peak_private_bytes": 3936575488,
+      "samples": 51,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 6442450944,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "23d41e0c4c6108ed9491f221fd49eca51c3a08babc14b3e80f1c135f17856e0c"
+    },
+    {
+      "name": "sysml-vertical-library-features-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_foundation"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "86c2586b5110d0bc0d6d3a51ed91d57e709dc6ad18c6833a1791dc1e2f2ff9f0",
+      "output_sha256": "1a1737f09a8405ad942498b15913f182f3811d27db76901bdaf04bf04ce11193",
+      "duration_seconds": 9.02,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-vertical-library-features-build.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-accepted-vertical-library-features",
+      "command": [
+        "target/release/examples/sysml_foundation.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/sysml-semantic-foundation/accepted-vertical-result.json"
+      ],
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "86c2586b5110d0bc0d6d3a51ed91d57e709dc6ad18c6833a1791dc1e2f2ff9f0",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/sysml-accepted-vertical-library-features",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 3300,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 3996065792,
+      "safety_stop": null,
+      "duration_seconds": 81.281,
+      "peak_rss_bytes": 4150407168,
+      "peak_private_bytes": 4228792320,
+      "samples": 82,
+      "limits": {
+        "wall_seconds": 900.0,
+        "private_bytes": 6442450944,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 209715200
+      },
+      "output_sha256": "93ecdfd5011fd88e1536a855832a3257850a2ffaaa5c336caad32ed14c571eb1"
+    },
+    {
+      "name": "final-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j2",
+        "--workspace"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "86c2586b5110d0bc0d6d3a51ed91d57e709dc6ad18c6833a1791dc1e2f2ff9f0",
+      "output_sha256": "1b35951e24eb868b807ba55b283ad6789ab73e5fe947f57c7655179372899999",
+      "duration_seconds": 244.69,
+      "output": "verification/generated/sysml-semantic-foundation/final-workspace-tests.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "final-kerml-runtime-gate",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "0d8e2d3762f52ad55c6517e85b86d6fd4f0e88c55cd492669adebe8e1f87c07d",
+      "output_sha256": "10949639c799373f78467869209514ba1d706895e93aed12b6d4e79cd3c47e7d",
+      "duration_seconds": 6.53,
+      "output": "verification/generated/sysml-semantic-foundation/final-kerml-runtime-gate.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "final-sysml-runtime-gate",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "0d8e2d3762f52ad55c6517e85b86d6fd4f0e88c55cd492669adebe8e1f87c07d",
+      "output_sha256": "161fd2168bdedc7ae75039128a495e02159727415072c82ca42b3fbdacff1210",
+      "duration_seconds": 2.78,
+      "output": "verification/generated/sysml-semantic-foundation/final-sysml-runtime-gate.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "final-metamodel-stale-check",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-j2",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "0d8e2d3762f52ad55c6517e85b86d6fd4f0e88c55cd492669adebe8e1f87c07d",
+      "output_sha256": "e0f01c369f7ccee9fb035d2bccbe6aa51d205fba438a96cec55db5a5b3c5f295",
+      "duration_seconds": 4.02,
+      "output": "verification/generated/sysml-semantic-foundation/final-metamodel-stale-check.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "final-generation2-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "-j2",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-standard-libraries"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "0d8e2d3762f52ad55c6517e85b86d6fd4f0e88c55cd492669adebe8e1f87c07d",
+      "output_sha256": "04c7b303e273bb18c211e5541f7c5dae964e98798760570c07df8edc9b42956c",
+      "duration_seconds": 32.58,
+      "output": "verification/generated/sysml-semantic-foundation/final-generation2-rustdoc.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "RUSTDOCFLAGS": "-Dwarnings"
+      }
+    },
+    {
+      "name": "integrated-standards-check",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "0d8e2d3762f52ad55c6517e85b86d6fd4f0e88c55cd492669adebe8e1f87c07d",
+      "output_sha256": "e432546d6d3f90c561fe3344f9730fd46b02724f72b5c0cf1502cba1865acda9",
+      "duration_seconds": 0.55,
+      "output": "verification/generated/sysml-semantic-foundation/integrated-standards-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "protected-authority-bytes-unchanged",
+      "command": [
+        "git",
+        "diff",
+        "--exit-code",
+        "150d97879b84ea3ebc9978256a5c93e391602244",
+        "--",
+        ":(glob)**/*.pdf",
+        ":(glob)**/*.html",
+        "standards/artifacts",
+        "standards/normative"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "702ed6da496d3cb429c8c5636d7f5641841a02d8",
+      "working_changes_sha256": "0d8e2d3762f52ad55c6517e85b86d6fd4f0e88c55cd492669adebe8e1f87c07d",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.03,
+      "output": "verification/generated/sysml-semantic-foundation/protected-authority-bytes-unchanged.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-format-check",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "160a1d440dd9f87eadecd2b6d2fbc35b8d639276",
+      "working_changes_sha256": "e88a70556ceb4e90a00e25b4d91f7dbe61d0fc4e13cc35ae8badf24f40ac55c4",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 1.8,
+      "output": "verification/generated/sysml-semantic-foundation/final-format-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-workspace-tests-v9-provenance",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j2",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "160a1d440dd9f87eadecd2b6d2fbc35b8d639276",
+      "working_changes_sha256": "0d8e2d3762f52ad55c6517e85b86d6fd4f0e88c55cd492669adebe8e1f87c07d",
+      "output_sha256": "d0c755ae06cb5ef91fddd53aea63f10c1d0bd55e9284fce2c0db28b50ffa73de",
+      "duration_seconds": 272.56,
+      "output": "verification/generated/sysml-semantic-foundation/final-workspace-tests-v9-provenance.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "integrated-workspace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j2",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "160a1d440dd9f87eadecd2b6d2fbc35b8d639276",
+      "working_changes_sha256": "668e6a668e4f3cbe48796ee8244c3aa431c0ff6507fd1ff083d95d49f6c394de",
+      "output_sha256": "be8d355b06c2dbaf211def99db9eabefea34001365efb6dbe156e412df5b32a8",
+      "duration_seconds": 2.78,
+      "output": "verification/generated/sysml-semantic-foundation/integrated-workspace-clippy.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
     }
   ]
 }

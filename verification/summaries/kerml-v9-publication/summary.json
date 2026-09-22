@@ -78,5 +78,16 @@
     },
     "cache_bytes": 540739848,
     "neutral_graph_bytes": 2176394780
+  },
+  "final_integrated_verification": {
+    "evidence": "../sysml-semantic-foundation/summary.json",
+    "workspace_tests_passed": 514,
+    "workspace_tests_failed": 0,
+    "workspace_tests_ignored": 2,
+    "workspace_clippy_exit_code": 0,
+    "format_exit_code": 0,
+    "strict_generation_2_rustdoc_exit_code": 0,
+    "both_runtime_gate_exit_codes": 0,
+    "additional_whole_corpus_publication_attempts": 0
   }
 }

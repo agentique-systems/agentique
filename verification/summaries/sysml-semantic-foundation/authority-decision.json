@@ -1,6 +1,6 @@
 {
   "format": "agentique-sysml-foundation-authority/1",
-  "status": "preparation-only-no-new-standard-correction-adopted",
+  "status": "implemented-pinned-final-baseline-no-new-standard-correction-adopted",
   "specification": {
     "name": "SysML",
     "version": "2.0",
@@ -49,13 +49,29 @@
       "printed_prefix": "OccurrenceUsagePrefix 'assert' ( isNegated ?= 'not' ) 'satisfy'",
       "source_document": "Systems Library/Views.sysml",
       "source_sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
-      "source_byte_range": [846, 896],
+      "source_byte_range": [
+        846,
+        896
+      ],
       "source_text": "satisfy requirement viewpointConformance by that {",
       "disposition": "The source omits the printed assert terminal. Retain as a specific grammar compatibility review item before claiming this document parsed. No permissive recovery, source rewriting or operational correction adopted. Not a KerML publication blocker."
     }
   ],
   "kerML_semantic_dependency": {
-    "status": "not-attached",
-    "reason": "Preparation runs independently while canonical KerML acceptance is pending. Only the lead can establish K10-K13 acceptance."
+    "status": "attached-accepted-canonical-operational-v9",
+    "publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+    "evidence": "../kerml-v9-publication/README.md"
+  },
+  "pending_grammar_interpretations": {
+    "status": "not-adopted-awaiting-user-authority",
+    "review": "grammar-preparation-review.json",
+    "count": 4,
+    "affected_documents": 8
+  },
+  "pending_composite_item_interpretation": {
+    "status": "not-adopted-awaiting-user-authority",
+    "review": "query-contract-plan.md",
+    "formal_target": "Items::Item::subitem",
+    "pinned_library_target": "Items::Item::subitems"
   }
 }
