@@ -601,7 +601,7 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
     let snapshot = f.finish();
     let mut writer = ProducerDescriptor::new(
         ACTIVATE,
-        [ProducerEffect::Scalar(p::TYPE_IS_ABSTRACT)],
+        [ProducerEffect::Scalar(p::ELEMENT_DECLARED_NAME)],
         ProducerApplicability::Subtypes(vec![c::FEATURE]),
     );
     writer.scope = ProducerEffectScope::SubjectAndOwners;
@@ -609,7 +609,7 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
         writer,
         ProducerDescriptor::new(
             TYPE,
-            [ProducerEffect::Scalar(p::TYPE_IS_SUFFICIENT)],
+            [ProducerEffect::Scalar(p::ELEMENT_DECLARED_SHORT_NAME)],
             ProducerApplicability::Any,
         ),
     ])
@@ -628,7 +628,7 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
             &[(
                 subject,
                 TYPE,
-                vec![ProducerRead::Property(subject, p::TYPE_IS_ABSTRACT)].into(),
+                vec![ProducerRead::Property(subject, p::ELEMENT_DECLARED_NAME)].into(),
             )],
             &registry,
         );
@@ -787,6 +787,85 @@ fn immutable_record_reads_are_fixed_but_external_source_relationships_stay_open(
         assert!(
             !certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping),
             "a new local nonowned typing may still reference the dependency source"
+        );
+    }
+}
+
+#[test]
+fn additive_scalar_facts_are_fixed_while_absence_and_collection_reads_remain_open() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let mut f = Fixture::new();
+    f.create(1, c::FEATURE);
+    f.create(2, c::CLASSIFIER);
+    f.create(3, c::FEATURE_TYPING);
+    f.own(1, 3);
+    f.value(3, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(1)));
+    f.value(3, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+    f.value(1, p::ELEMENT_DECLARED_NAME, Value::String("fixed".into()));
+    let snapshot = f.finish();
+    let registry = ProducerRegistry::new([
+        ProducerDescriptor::new(
+            ACTIVATE,
+            [
+                ProducerEffect::Scalar(p::ELEMENT_DECLARED_NAME),
+                ProducerEffect::Scalar(p::ELEMENT_DECLARED_SHORT_NAME),
+                ProducerEffect::Membership,
+            ],
+            ProducerApplicability::Subtypes(vec![c::FEATURE]),
+        ),
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any),
+    ])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    for (property, expected) in [
+        (
+            p::ELEMENT_DECLARED_NAME,
+            ProducerEvaluationState::EvaluatedComplete,
+        ),
+        (
+            p::ELEMENT_DECLARED_SHORT_NAME,
+            ProducerEvaluationState::Pending,
+        ),
+        (
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            ProducerEvaluationState::Pending,
+        ),
+    ] {
+        let mut table = ProducerEvaluationTable::default();
+        for record in snapshot.model().elements() {
+            table.pending(record.id(), snapshot.model(), &registry);
+            table
+                .record(&[(record.id(), TYPE, Completeness::Complete)], &registry)
+                .unwrap();
+            table.record_reads(
+                &[(
+                    record.id(),
+                    TYPE,
+                    if record.id() == id(2) {
+                        vec![ProducerRead::Property(id(1), property)].into()
+                    } else {
+                        Vec::new().into()
+                    },
+                )],
+                &registry,
+            );
+        }
+        table
+            .record(&[(id(1), ACTIVATE, Completeness::Incomplete)], &registry)
+            .unwrap();
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &table,
+            |_| false,
+        );
+        assert_eq!(
+            certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
+            Some(expected)
         );
     }
 }
