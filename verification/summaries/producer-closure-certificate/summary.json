@@ -875,6 +875,32 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "systems-text-preflight",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "76934a0d86cce0d9f7f2f69546ba44fc2be72fdb",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "7c93d450600993b0b92dfb0090d895470c01c9e006f4b290eff38fb226d137c1",
+      "duration_seconds": 32.16,
+      "output": "verification/generated/producer-closure-certificate/systems-text-preflight.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }
