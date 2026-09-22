@@ -191,14 +191,85 @@ fn port_synthesis_and_reference_modifiers_use_canonical_storage() {
 }
 
 #[test]
-fn unsupported_sysml_semantics_is_rejected_without_fabricating_plain_features() {
-    let syntax = parse("action def Work;");
-    assert!(
-        construction::check_supported_sysml(&syntax)
-            .unwrap_err()
-            .to_string()
-            .contains("ActionDefinition")
-    );
+fn all_pinned_systems_documents_construct_with_source_provenance() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
+    let base = Snapshot::new(Arc::new(
+        agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
+    ));
+    let mut constructed = 0;
+    let mut structural_deficits = 0;
+    for source in sources
+        .documents()
+        .filter(|source| source.language() == LibraryLanguage::SysMl)
+    {
+        let syntax = production::parse_sysml_with_profile(
+            production::SysmlSyntaxProfile::OperationalV1,
+            source.document(),
+            source.revision(),
+            source.source(),
+            Default::default(),
+        )
+        .unwrap();
+        assert!(
+            syntax.is_complete(),
+            "{}: {:?}",
+            source.path(),
+            syntax.diagnostics()
+        );
+        let result = construction::construct_on(
+            &[SourceInput {
+                syntax: &syntax,
+                library: Some(source),
+                sysml: true,
+            }],
+            &Default::default(),
+            BaselineProfile::OPERATIONAL_V9,
+            base.clone(),
+            None,
+        );
+        match result {
+            Ok(draft) => {
+                constructed += 1;
+                let model = draft.candidate().model();
+                println!(
+                    "{}: constructed {} elements, {} references, {} obligations",
+                    source.path(),
+                    model.elements().count(),
+                    draft.references().len(),
+                    draft.candidate().obligations().len()
+                );
+                for obligation in draft.candidate().obligations() {
+                    if !draft.references().iter().any(|reference| {
+                        reference.relationship == obligation.element
+                            && reference.property == obligation.property
+                    }) {
+                        structural_deficits += 1;
+                        let element = model.element(obligation.element).unwrap();
+                        println!(
+                            "  non-reference obligation: {}.{} {:?}",
+                            model.registry().class(element.metaclass()).unwrap().name,
+                            model.registry().property(obligation.property).unwrap().name,
+                            draft.source_map()[&FactKey::Element(element.id())]
+                        );
+                    }
+                }
+                for element in model.elements() {
+                    assert!(matches!(
+                        element.origin(),
+                        Origin::Declared(DeclaredOrigin::StandardLibrary { .. })
+                    ));
+                    let origin = &draft.source_map()[&FactKey::Element(element.id())];
+                    assert_eq!(origin.document, source.document());
+                    assert_eq!(origin.revision, source.revision());
+                    assert!(origin.syntax_node.is_some());
+                }
+            }
+            Err(error) => println!("{}: {}", source.path(), error),
+        }
+    }
+    assert_eq!(constructed, 21);
+    assert_eq!(structural_deficits, 0);
 }
 
 #[test]
@@ -624,4 +695,178 @@ fn textual_and_direct_changeset_graphs_have_equivalent_semantic_answers() {
             vec!["Vehicle".into()]
         )
     );
+}
+
+#[test]
+fn behavior_and_requirement_members_preserve_roles_and_referential_parameters() {
+    let syntax = parse(
+        r#"
+        attribute def Number;
+        calc def Measure { in attribute input : Number; return attribute answer : Number; }
+        state def Ready { entry action entering; do action working; exit action leaving; }
+        requirement def Check { subject target; actor observer; require constraint predicate { true } }
+        analysis def Analysis { subject analyzed; objective goal; }
+    "#,
+    );
+    let draft = lower(&syntax);
+    let snapshot = draft.strict_snapshot().unwrap();
+    let model = snapshot.model();
+    for (name, class) in [
+        ("Measure", s::CALCULATION_DEFINITION),
+        ("Ready", s::STATE_DEFINITION),
+        ("Check", s::REQUIREMENT_DEFINITION),
+        ("Analysis", s::ANALYSIS_CASE_DEFINITION),
+        ("goal", s::REQUIREMENT_USAGE),
+        ("observer", s::PART_USAGE),
+    ] {
+        assert_eq!(
+            model.element(named(model, name)).unwrap().metaclass(),
+            class,
+            "{name}"
+        );
+    }
+    for (class, expected) in [
+        (s::STATE_SUBACTION_MEMBERSHIP, 3),
+        (s::SUBJECT_MEMBERSHIP, 2),
+        (s::ACTOR_MEMBERSHIP, 1),
+        (s::OBJECTIVE_MEMBERSHIP, 1),
+        (s::REQUIREMENT_CONSTRAINT_MEMBERSHIP, 1),
+    ] {
+        assert_eq!(model.instances(class, false).unwrap().count(), expected);
+    }
+    let states: BTreeSet<_> = model
+        .instances(s::STATE_SUBACTION_MEMBERSHIP, false)
+        .unwrap()
+        .map(|membership| {
+            model
+                .navigation_slot(membership.id(), sp::STATE_SUBACTION_MEMBERSHIP_KIND)
+                .unwrap()
+                .value()
+                .values()
+                .find_map(|value| match value {
+                    Value::Enumeration(id) => Some(*id),
+                    _ => None,
+                })
+                .unwrap()
+        })
+        .collect();
+    assert_eq!(states.len(), 3, "entry/do/exit remain distinct enum values");
+    for name in ["input", "answer", "target", "observer", "analyzed"] {
+        assert_eq!(
+            model
+                .navigation_slot(named(model, name), p::FEATURE_IS_COMPOSITE)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Boolean(false)),
+            "directed parameter {name}"
+        );
+    }
+    let returns: Vec<_> = model
+        .instances(c::RETURN_PARAMETER_MEMBERSHIP, true)
+        .unwrap()
+        .filter(|membership| {
+            q(&snapshot).owning_related_element(membership.id()).value
+                == Some(named(model, "Measure"))
+        })
+        .map(|membership| membership.id())
+        .collect();
+    assert_eq!(
+        returns.len(),
+        1,
+        "explicit result has one canonical membership"
+    );
+}
+
+#[test]
+fn operational_connection_interface_and_payload_preserve_canonical_families() {
+    let syntax = production::parse_sysml_with_profile(
+        production::SysmlSyntaxProfile::OperationalV1,
+        DocumentId::new(),
+        SourceRevisionId::new(),
+        r#"
+        part def Unit;
+        port def Socket;
+        connection def Cable { end source : Unit; end target : Unit; }
+        interface def Pair { end port left : Socket; end port right : Socket; }
+        part def Assembly {
+            part firstUnit : Unit; part secondUnit : Unit;
+            connection cable : Cable connect firstUnit to secondUnit;
+            event occurrence happened;
+            flow transfer of Unit;
+        }
+        "#,
+        Default::default(),
+    )
+    .unwrap();
+    assert!(syntax.is_complete(), "{:?}", syntax.diagnostics());
+    let draft = lower(&syntax);
+    let snapshot = draft.strict_snapshot().unwrap();
+    let model = snapshot.model();
+    for (name, class) in [
+        ("Cable", s::CONNECTION_DEFINITION),
+        ("Pair", s::INTERFACE_DEFINITION),
+        ("left", s::PORT_USAGE),
+        ("right", s::PORT_USAGE),
+        ("cable", s::CONNECTION_USAGE),
+        ("transfer", s::FLOW_USAGE),
+    ] {
+        assert_eq!(
+            model.element(named(model, name)).unwrap().metaclass(),
+            class,
+            "{name}"
+        );
+    }
+    for name in ["source", "target", "left", "right"] {
+        assert_eq!(
+            model
+                .navigation_slot(named(model, name), p::FEATURE_IS_END)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Boolean(true)),
+            "{name}"
+        );
+    }
+    assert_eq!(
+        model
+            .navigation_slot(named(model, "happened"), p::FEATURE_IS_COMPOSITE)
+            .unwrap()
+            .value(),
+        &SlotValue::Scalar(Value::Boolean(false))
+    );
+    let endpoints = q(&snapshot).connector_endpoints(named(model, "cable"));
+    assert_eq!(endpoints.completeness, Completeness::Complete);
+    assert_eq!(
+        endpoints.value,
+        vec![named(model, "firstUnit"), named(model, "secondUnit")]
+    );
+    assert_eq!(
+        model.instances(c::PAYLOAD_FEATURE, false).unwrap().count(),
+        1
+    );
+}
+
+#[test]
+fn end_cross_feature_modifiers_do_not_leak_to_the_end_usage() {
+    let syntax = production::parse_sysml_with_profile(
+        production::SysmlSyntaxProfile::OperationalV1,
+        DocumentId::new(),
+        SourceRevisionId::new(),
+        "item def Container { end abstract crossing item endValue; }",
+        Default::default(),
+    )
+    .unwrap();
+    assert!(syntax.is_complete(), "{:?}", syntax.diagnostics());
+    let draft = lower(&syntax);
+    let snapshot = draft.strict_snapshot().unwrap();
+    for (name, expected) in [("crossing", true), ("endValue", false)] {
+        assert_eq!(
+            snapshot
+                .model()
+                .navigation_slot(named(snapshot.model(), name), p::TYPE_IS_ABSTRACT)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Boolean(expected)),
+            "{name}"
+        );
+    }
 }

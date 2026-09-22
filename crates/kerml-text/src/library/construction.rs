@@ -179,6 +179,12 @@ pub(crate) fn construct_on(
                 })
             } else if matches!(node.kind(), P::MembershipImport | P::NamespaceImport)
                 || (node.kind() == P::FeatureChain && job.inline_chain)
+                || (input.sysml
+                    && node.kind() == P::PayloadFeature
+                    && job.owner.is_some_and(|owner| {
+                        builder.is_class(builder.records[&owner].class, agq_sysml::classes::USAGE)
+                            || builder.records[&owner].class == c::PAYLOAD_FEATURE
+                    }))
             {
                 None
             } else if input.sysml {
@@ -369,7 +375,14 @@ impl Builder {
             .filter(|id| self.is_class(self.records[id].class, c::EXPRESSION))
             .collect();
         for expression in expressions {
-            if self.has_result(expression) {
+            if self.has_result(expression)
+                || self
+                    .base
+                    .model()
+                    .registry()
+                    .is_subtype(self.records[&expression].class, agq_sysml::classes::USAGE)
+                    .unwrap_or(false)
+            {
                 continue;
             }
             if self.records[&expression]
