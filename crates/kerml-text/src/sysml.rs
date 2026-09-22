@@ -63,6 +63,10 @@ pub struct SystemsConstructionProduction {
     pub converged: bool,
     pub stages: Vec<agq_kerml_semantics::PublicationStage>,
     pub counters: agq_kerml_semantics::PublicationCounters,
+    /// Revalidated evaluations from the previous declared reconstruction.
+    pub retained_closure_evaluations: usize,
+    /// Previous evaluations reopened because their semantic inputs changed.
+    pub reopened_closure_evaluations: usize,
 }
 impl SystemsConstructionProduction {
     /// Known pinned authority conflicts on the final frontier. Transient
@@ -372,6 +376,11 @@ fn prepare_systems_library_scope(
         // references that need those later consequences; neither pass accepts
         // a publication. The strict facade independently closes the final input.
         for final_predicates in [false, true] {
+            let registry = systems_producer_registry(publication.profile());
+            // A compact checkpoint survives releasing the previous graph. It
+            // carries semantic read fingerprints, never stale derived records.
+            let mut closure_checkpoint: Option<agq_kerml_semantics::ProducerClosureCheckpoint> =
+                None;
             let endpoints = draft
                 .references()
                 .iter()
@@ -423,38 +432,62 @@ fn prepare_systems_library_scope(
                             roots,
                         )
                     };
+                    let mut seed = closure_checkpoint.take();
+                    let mut retained_closure_evaluations = 0;
+                    let mut reopened_closure_evaluations = 0;
                     let closure = agq_kerml_semantics::close_construction_structure_with_extension(
                         current.candidate_shared(),
                         Default::default(),
                         |overlay| {
-                            publication
-                                .complete_overlay()
-                                .project_construction_overlay_context(
-                                    overlay,
-                                    current.roots(),
-                                    BTreeSet::new(),
-                                    BTreeSet::new(),
-                                )
-                                .and_then(|context| {
-                                    context.with_naming_extension(
-                                        agq_sysml_semantics::SYSML_SEMANTIC_CONTEXT_DOMAIN,
-                                        dependency_contract.context_identity_digest(),
-                                        Arc::new(agq_sysml_semantics::SysmlNamingExtension),
-                                    )
-                                })
-                                .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
+                            let context = systems_overlay_context(
+                                overlay,
+                                &publication,
+                                current.roots(),
+                                &dependency_contract,
+                            )?
+                            .with_producer_registry_digest(registry.digest())
+                            .map_err(agq_kerml_semantics::PublicationOverlayError::Context)?;
+                            if let Some(checkpoint) = seed.take() {
+                                let rebound = checkpoint.rebind(&context, &registry).map_err(
+                                    agq_kerml_semantics::PublicationOverlayError::Context,
+                                )?;
+                                retained_closure_evaluations = rebound.retained_evaluations;
+                                reopened_closure_evaluations = rebound.reopened_evaluations;
+                                context
+                                    .with_producer_closure(rebound.certificate)
+                                    .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
+                            } else {
+                                Ok(context)
+                            }
                         },
                         &extension,
                         &mut batch_progress,
                         &mut producer_progress,
                     )
                     .map_err(LibraryLoadError::ProducerClosure)?;
+                    if let Some(certificate) = &closure.certificate {
+                        let context = systems_overlay_context(
+                            &closure.overlay,
+                            &publication,
+                            current.roots(),
+                            &dependency_contract,
+                        )
+                        .map_err(LibraryLoadError::ProducerClosure)?
+                        .with_producer_registry_digest(registry.digest())
+                        .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
+                        closure_checkpoint =
+                            Some(certificate.checkpoint(&context).map_err(|error| {
+                                LibraryLoadError::Interpretation(format!("{error:?}"))
+                            })?);
+                    }
                     production = Some(SystemsConstructionProduction {
                         final_predicates,
                         completeness: closure.completeness,
                         converged: closure.converged,
                         stages: closure.stages,
                         counters: closure.counters,
+                        retained_closure_evaluations,
+                        reopened_closure_evaluations,
                     });
                     current.set_semantic_candidate(closure.overlay);
                     current.set_producer_closure(closure.certificate);
@@ -490,12 +523,58 @@ fn prepare_systems_library_scope(
     })
 }
 
+fn systems_overlay_context<'m>(
+    overlay: &'m agq_kernel::derived::ConstructionOverlay,
+    publication: &CanonicalKermlStandardLibraries,
+    roots: &[ElementId],
+    contract: &agq_sysml_semantics::SysmlDependencyContract,
+) -> Result<agq_kerml_semantics::SemanticContext<'m>, agq_kerml_semantics::PublicationOverlayError>
+{
+    publication
+        .complete_overlay()
+        .project_construction_overlay_context(overlay, roots, BTreeSet::new(), BTreeSet::new())
+        .and_then(|context| {
+            context.with_naming_extension(
+                agq_sysml_semantics::SYSML_SEMANTIC_CONTEXT_DOMAIN,
+                contract.context_identity_digest(),
+                Arc::new(agq_sysml_semantics::SysmlNamingExtension),
+            )
+        })
+        .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
+}
+
 fn systems_candidate_queries<'m>(
     draft: &'m LibraryDraft,
     publication: &CanonicalKermlStandardLibraries,
     pending: BTreeSet<ElementId>,
     dependency_contract: &agq_sysml_semantics::SysmlDependencyContract,
 ) -> Result<KerMlQueries<'m>, LibraryLoadError> {
+    Ok(KerMlQueries::new(systems_candidate_context(
+        draft,
+        publication,
+        pending,
+        dependency_contract,
+    )?))
+}
+
+fn systems_producer_registry(
+    profile: agq_kerml::BaselineProfile,
+) -> agq_kerml_semantics::ProducerRegistry {
+    agq_kerml_semantics::ProducerRegistry::new(
+        agq_kerml_semantics::ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(profile))
+            .chain(agq_sysml_semantics::sysml_producer_descriptors()),
+    )
+    .expect("combined producer identities are unique")
+}
+
+fn systems_candidate_context<'m>(
+    draft: &'m LibraryDraft,
+    publication: &CanonicalKermlStandardLibraries,
+    pending: BTreeSet<ElementId>,
+    dependency_contract: &agq_sysml_semantics::SysmlDependencyContract,
+) -> Result<agq_kerml_semantics::SemanticContext<'m>, LibraryLoadError> {
     let context = if let Some(overlay) = draft.semantic_candidate() {
         publication
             .complete_overlay()
@@ -516,15 +595,24 @@ fn systems_candidate_queries<'m>(
         )
     })
     .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
-    let context = if let Some(certificate) = draft.producer_closure() {
-        context
-            .with_producer_registry_digest(certificate.registry_digest())
-            .and_then(|context| context.with_producer_closure(certificate.clone()))
-            .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?
+    // Establish the registry independently of supplied evidence. Even the
+    // initial declared refinement can certify zero-writer populations without
+    // scheduling an otherwise useless producer round.
+    let registry = systems_producer_registry(publication.profile());
+    let context = context
+        .with_producer_registry_digest(registry.digest())
+        .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
+    let certificate = if let Some(certificate) = draft.producer_closure() {
+        certificate.clone()
     } else {
-        context
+        Arc::new(
+            agq_kerml_semantics::ProducerClosureCertificate::initial(&context, &registry)
+                .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?,
+        )
     };
-    Ok(KerMlQueries::new(context))
+    context
+        .with_producer_closure(certificate)
+        .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))
 }
 
 #[derive(Debug)]

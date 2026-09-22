@@ -24,6 +24,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cache =
         argument("--cache=").ok_or("--cache=<accepted KerML publication cache> is required")?;
     let output = argument("--output=").ok_or("--output=<report path> is required")?;
+    std::fs::create_dir_all(output.parent().ok_or("output parent")?)?;
+    let mut stages = std::fs::File::create(output.with_extension("stages.jsonl"))?;
     let started = Instant::now();
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
     let selected =
@@ -110,11 +112,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 *diagnostic_counts.entry(diagnostic.code).or_default() += 1;
             }
             last_producer_stage = Some(json!({
+                "phase":"construction",
                 "stage":stage.stage,"stratum":format!("{:?}",stage.stratum),
                 "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
                 "closure_counters":closure_counters(&stage.counters),
                 "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>()
             }));
+            // Persist each completed frontier so a watchdog stop still retains
+            // its diagnostics. This is observational evidence, never acceptance.
+            if let Some(stage) = &last_producer_stage {
+                writeln!(stages, "{stage}").expect("write producer stage evidence");
+                stages.flush().expect("flush producer stage evidence");
+            }
             println!(
                 "Systems: producer frontier={} stratum={:?} added={} completeness={:?} diagnostics={}",
                 stage.stage,
@@ -277,16 +286,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "construction_complete":candidate.construction_complete(),
         "producer_closure":draft.producer_closure().map(|certificate|json!({
             "digest":certificate.digest(),
+            "semantic_closure_digest":certificate.semantic_closure_digest(),
             "model_digest":certificate.model_digest(),
             "producer_registry_digest":certificate.registry_digest(),
             "context_contract_digest":certificate.context_contract_digest(),
             "certificate_bytes":certificate.storage_bytes(),
+            "revalidation_bytes":certificate.revalidation_storage_bytes(),
             "applicable_pairs":certificate.applicable_pairs(),
             "closed_pairs":certificate.closed_pairs(),
             "incomplete_pairs":certificate.incomplete_pairs(),
             "closed_requirements":certificate.closed_effects(),
         })),
         "kernel_obligations":draft.candidate().obligations().len(),
+        "kernel_obligation_details":draft.candidate().obligations().iter().map(|obligation|
+            json!({"element":obligation.element,"property":obligation.property,"actual":obligation.actual})
+        ).collect::<Vec<_>>(),
+        "last_reference_round":last_reference_round,
+        "closure_transport":candidate.production().map(|production|json!({
+            "retained_evaluations":production.retained_closure_evaluations,
+            "reopened_evaluations":production.reopened_closure_evaluations,
+        })),
         "local_elements":model.elements().filter(|r|accepted.overlay().model().element(r.id()).is_none()).count(),
         "mandatory_references":{"total":draft.references().len(),"counts":counts,"failures":failures},
         "authority_targets":authority,
@@ -329,6 +348,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         },
         |stage| {
+            let evidence = json!({
+                "phase":"publication","stage":stage.stage,
+                "stratum":format!("{:?}",stage.stratum),
+                "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
+                "closure_counters":closure_counters(&stage.counters),
+                "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>()
+            });
+            writeln!(stages, "{evidence}").expect("write publication stage evidence");
+            stages.flush().expect("flush publication stage evidence");
             println!(
                 "Systems publication: frontier={} stratum={:?} added={} completeness={:?}",
                 stage.stage, stage.stratum, stage.added_elements, stage.completeness
