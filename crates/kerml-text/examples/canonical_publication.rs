@@ -47,13 +47,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .ok_or(
             "--slice-evidence=<directory containing slice-A.json through slice-E.json> is required",
         )?;
-    publication_preflight::check(
+    let preflight_references = publication_preflight::check(
         &root.join(slice_evidence),
         &publication_preflight::identity(
             draft.queries(&sources)?.context(),
             sources.content_set_id(),
         ),
     )?;
+    let preflight_population = multiplicity_inventory::historical_population(
+        &json!({"reference_expression_ids":preflight_references}),
+        &root,
+    )?;
+    if preflight_population["complete"] != true {
+        return Err(format!(
+            "Slices A-E did not complete every retained symbolic multiplicity reference: {}",
+            preflight_population["missing"]
+        )
+        .into());
+    }
     let construction_obligations = draft.candidate().obligations().len();
     let mut stages = vec![];
     let mut stage_log = std::fs::OpenOptions::new()
@@ -118,17 +129,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     let publication = Arc::new(publication);
+    // Preserve the accepted core result before binding I/O or authored regressions.
+    // A later tool failure must remain distinguishable from a failed publication.
+    std::fs::write(
+        &path,
+        serde_json::to_vec_pretty(&json!({
+            "format":"agq-kerml-complete-publication/1", "profile":publication.profile().id(),
+            "input_set":sources.content_set_id(), "overlay":"CompletePublicationOverlay",
+            "accepted_overlay_and_references":true, "canonical_facade_accepted":true,
+            "publication_blocking_authority_conflicts":blockers,
+            "mandatory_references":{"total":publication.mandatory_reference_count(),"unresolved":0,"incomplete":0,"ambiguous":0,"invalid":0,"stored_endpoint_mismatch":0},
+            "semantic_digest":publication.semantic_digest(), "stages":stages,
+            "capabilities":publication.complete_overlay().checked_items().iter().map(|(family,count)|json!({"family":format!("{family:?}"),"checked_items":count,"status":"Complete"})).collect::<Vec<_>>(),
+            "accepted_binding_manifest":{"status":"pending"}, "authored_consumption_verified":false,
+            "post_publication_checks":"pending"
+        }))?,
+    )?;
     // Reuse the accepted in-memory publication; never launch a second corpus
     // closure merely to regenerate or stale-check its binding manifest.
     let accepted_manifest = publication.binding_manifest(&sources)?;
     let manifest_path = root.join("standards/kerml-standard-bindings.json");
-    if std::env::args().any(|a| a == "--write-bindings") {
+    let write_bindings = std::env::args().any(|a| a == "--write-bindings");
+    let check_bindings = write_bindings || std::env::args().any(|a| a == "--check-bindings");
+    if write_bindings {
         std::fs::write(
             &manifest_path,
             format!("{}\n", serde_json::to_string_pretty(&accepted_manifest)?),
         )?;
     }
-    if std::env::args().any(|a| a == "--write-bindings" || a == "--check-bindings") {
+    if check_bindings {
         publication.check_binding_manifest(
             &sources,
             &serde_json::from_slice(&std::fs::read(&manifest_path)?)?,
@@ -154,17 +183,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .unwrap_or_else(|_| {
         Err("Authored publication regression assertion failed; see raw output".into())
     });
-    let accepted = authored.is_ok() && bound_population_complete;
+
     std::fs::write(
         &path,
         serde_json::to_vec_pretty(&json!({
             "format":"agq-kerml-complete-publication/1", "profile":BaselineProfile::OPERATIONAL_V9.id(),
             "input_set":sources.content_set_id(), "overlay":"CompletePublicationOverlay", "accepted_overlay_and_references":true,
             "reference_refinement":refinement,
+            "post_publication_checks":"finished",
+            "preflight_symbolic_population":preflight_population,
+            "accepted_binding_manifest":{"format":accepted_manifest["format"],"roles":accepted_manifest["entries"].as_array().map(Vec::len),
+                "written":write_bindings,"stale_check_passed":check_bindings,"path":"standards/kerml-standard-bindings.json"},
             "multiplicity_bounds":bounds,
             "kernel_construction_obligations":0,"publication_blocking_authority_conflicts":blockers,
             "mandatory_references":{"total":publication.mandatory_reference_count(),"unresolved":0,"incomplete":0,"ambiguous":0,"invalid":0,"stored_endpoint_mismatch":0},
-            "reference_findings":[],"canonical_facade_accepted":true,"authored_consumption_verified":accepted,"authored_failure":authored.as_ref().err().map(|e| format!("{e}")),"stages":stages,"source_elements":publication.snapshot().model().len(),"expanded_elements":model.len(),"derived_facts":complete.overlay().facts().count(),
+            "reference_findings":[],"canonical_facade_accepted":true,"authored_consumption_verified":authored.is_ok(),"symbolic_multiplicity_audit_passed":bound_population_complete,"authored_failure":authored.as_ref().err().map(|e| format!("{e}")),"stages":stages,"source_elements":publication.snapshot().model().len(),"expanded_elements":model.len(),"derived_facts":complete.overlay().facts().count(),
             "capabilities":complete.checked_items().iter().map(|(family,count)|json!({"family":format!("{family:?}"),"checked_items":count,"status":"Complete"})).collect::<Vec<_>>(),
             "semantic_digest":complete.context().model_digest,
             "counters":publication_metrics::counters(complete.counters()),

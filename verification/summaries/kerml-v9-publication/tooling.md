@@ -85,3 +85,16 @@ focused Clippy passed with warnings denied. The regression proves that an omitte
 Function producer is included on retry, its result binding is then produced, the
 boundary closes, and an unrelated Function stays excluded. A too-small population
 limit rejects expansion without relaxing acceptance.
+
+The final preflight compares the union of Complete per-bound reference audit rows
+with all 15 retained historical identities. A summary flag alone cannot satisfy
+that population check. The accepted core result is persisted before post-publication
+binding I/O and authored checks, and the final report records binding format, role
+count, generation and stale-check status separately. Both authored SourceProjects
+are populated before one is edited; the checks retain the second revision, IDs and
+semantic results and reject namespace leakage between projects.
+
+Both acceptance preflight regressions passed, including rejection of an incomplete
+row or a missing identity despite a successful summary flag. Focused Clippy passed
+with warnings denied. These checks compile the real authored-consumption helper;
+its corpus-dependent assertions run only against the accepted publication.

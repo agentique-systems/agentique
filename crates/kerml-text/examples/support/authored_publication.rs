@@ -146,6 +146,31 @@ pub fn verify(
             first.snapshot().model().element(*id).unwrap()
         ));
     }
+    assert!(second.current().documents().next().is_none());
+    let independent = second.apply(second.current().revision(), [add(
+        "independent.kerml",
+        "namespace Independent { private import Base::*; alias Universe for Anything; feature other : Universe subsets things; }",
+    )])?;
+    assert!(
+        independent.is_complete_slice(),
+        "{:?}",
+        independent.semantic_diagnostics()
+    );
+    assert_eq!(lookup(&second, &["Independent", "Universe"])?, anything);
+    let second_revision = second.current().revision();
+    let independent_feature = lookup(&second, &["Independent", "other"])?;
+    assert_eq!(
+        complete_value(independent.queries().feature_types(independent_feature))?,
+        vec![anything]
+    );
+    assert!(
+        first
+            .snapshot()
+            .model()
+            .element(independent_feature)
+            .is_none()
+    );
+    assert!(independent.snapshot().model().element(value).is_none());
     let next = project.apply(
         first.revision(),
         [
@@ -179,17 +204,6 @@ pub fn verify(
         )?,
         vec![anything]
     );
-    assert!(second.current().documents().next().is_none());
-    let independent = second.apply(second.current().revision(), [add(
-        "independent.kerml",
-        "namespace Independent { private import Base::*; alias Universe for Anything; feature other : Universe subsets things; }",
-    )])?;
-    assert!(
-        independent.is_complete_slice(),
-        "{:?}",
-        independent.semantic_diagnostics()
-    );
-    assert_eq!(lookup(&second, &["Independent", "Universe"])?, anything);
     assert_eq!(
         stable_ids,
         next.queries()
@@ -200,6 +214,40 @@ pub fn verify(
             .iter()
             .collect::<Vec<_>>()
     );
+    assert_eq!(second.current().revision(), second_revision);
+    assert_eq!(
+        lookup(&second, &["Independent", "other"])?,
+        independent_feature
+    );
+    assert_eq!(
+        complete_value(
+            second
+                .current()
+                .queries()
+                .feature_types(independent_feature)
+        )?,
+        vec![anything]
+    );
+    assert!(
+        next.snapshot()
+            .model()
+            .element(independent_feature)
+            .is_none()
+    );
+    for (revision, unavailable) in [(&next, "Independent"), (&independent, "Edited")] {
+        let absent = revision.queries().lookup_path(
+            revision.root(),
+            &QualifiedName {
+                absolute: false,
+                segments: vec![unavailable.into()],
+            },
+        );
+        assert_eq!(absent.completeness, Completeness::Complete);
+        assert!(
+            absent.value.is_empty(),
+            "authored namespace leaked across SourceProjects"
+        );
+    }
     // Every authored context exposes accepted canonical chain identity and order.
     // This is a library-consumption regression; authored chain syntax remains a
     // separate frontend capability.

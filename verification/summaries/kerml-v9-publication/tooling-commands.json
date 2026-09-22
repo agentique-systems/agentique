@@ -252,6 +252,131 @@
         "min_free_disk_bytes": 0
       },
       "output_sha256": "b807a9c876e6e865c1a67bd761ab88dc7822073c25ed9cb9184fd5d2e5f34b30"
+    },
+    {
+      "name": "publication-acceptance-preflight-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "canonical_publication"
+      ],
+      "source_commit": "668f51270351bc0940ed5ce4e97593e05275c5de",
+      "working_changes_sha256": "13cc2b0357a857743ca397b5a37e5a2ec2213db527e29f3702e2ad996a4af5dc",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-acceptance-preflight-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 16080,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 1.031,
+      "peak_rss_bytes": 1572864,
+      "peak_private_bytes": 310796288,
+      "samples": 2,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "bc51f5ebe8e7dc9130ebb3837f121d0b10eecf289d76045a44fd9502075ab7af"
+    },
+    {
+      "name": "publication-acceptance-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "canonical_publication",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "668f51270351bc0940ed5ce4e97593e05275c5de",
+      "working_changes_sha256": "13cc2b0357a857743ca397b5a37e5a2ec2213db527e29f3702e2ad996a4af5dc",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-acceptance-clippy",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 12580,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 1.032,
+      "peak_rss_bytes": 1568768,
+      "peak_private_bytes": 225300480,
+      "samples": 2,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "19c3341ea6675f280900737b595f8883513fd511114cab68364d7fffd919a731"
+    },
+    {
+      "name": "publication-acceptance-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "source_commit": "668f51270351bc0940ed5ce4e97593e05275c5de",
+      "working_changes_sha256": "6ab08b736d4e2c36b2c8ddfa017036c8d0b7636d4f68897979445fc89f0a6b92",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/publication-acceptance-fmt",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 15700,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 2.031,
+      "peak_rss_bytes": 72839168,
+      "peak_private_bytes": 191987712,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ]
 }
