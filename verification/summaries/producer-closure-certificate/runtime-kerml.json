@@ -1,0 +1,23 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "kerml-runtime-gate",
+      "command": [
+        "target/foundation-integration/debug/metamodel-gen.exe",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "metamodel-gen: unknown argument --version",
+      "source_commit": "37e410042b20adcfbac74d8e33c2406f2f0b6644",
+      "working_changes_sha256": "d216f7ff90c0665f33c3cb9ea8ff9732c41c87bd1733664d982d99b001b394c7",
+      "output_sha256": "9987e0d2e5fc0c7f170046fc2b3ac6115b62adca548b42ca48dc303268a4cddf",
+      "duration_seconds": 1.36,
+      "output": "verification/generated/producer-closure-certificate/kerml-runtime-gate.log",
+      "environment_overrides": {}
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "sysml-runtime-gate",
+      "command": [
+        "target/foundation-integration/debug/metamodel-gen.exe",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "metamodel-gen: unknown argument --version",
+      "source_commit": "37e410042b20adcfbac74d8e33c2406f2f0b6644",
+      "working_changes_sha256": "d216f7ff90c0665f33c3cb9ea8ff9732c41c87bd1733664d982d99b001b394c7",
+      "output_sha256": "dc65bf266dbda4e5ebdd4e2bd1f161e8d3b9091d5c98677221d425a5c484fbb9",
+      "duration_seconds": 3.06,
+      "output": "verification/generated/producer-closure-certificate/sysml-runtime-gate.log",
+      "environment_overrides": {}
+    }
+  ]
+}

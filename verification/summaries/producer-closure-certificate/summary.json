@@ -1,0 +1,666 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "67fdddc81e5aceacea7cb407cdb2f45d621fd674",
+      "working_changes_sha256": "ec4c88aecde84eaf3714be3f7a7b9c5be5c20dcedb65943b1da30d3c7a111b82",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.08,
+      "output": "verification/generated/producer-closure-certificate/frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "watchdog-tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_watchdog.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "67fdddc81e5aceacea7cb407cdb2f45d621fd674",
+      "working_changes_sha256": "ec4c88aecde84eaf3714be3f7a7b9c5be5c20dcedb65943b1da30d3c7a111b82",
+      "output_sha256": "3cadcbd76099cf522501ff3193e149552555854aae15f6fc272aa5c1f7a69355",
+      "duration_seconds": 4.42,
+      "output": "verification/generated/producer-closure-certificate/watchdog-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "67fdddc81e5aceacea7cb407cdb2f45d621fd674",
+      "working_changes_sha256": "ec4c88aecde84eaf3714be3f7a7b9c5be5c20dcedb65943b1da30d3c7a111b82",
+      "output_sha256": "da8d50289b45f4d505e7e2d08832ca0739a60749949410953fa9ade584f1df5a",
+      "duration_seconds": 2.05,
+      "output": "verification/generated/producer-closure-certificate/frontend-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "67fdddc81e5aceacea7cb407cdb2f45d621fd674",
+      "working_changes_sha256": "ec4c88aecde84eaf3714be3f7a7b9c5be5c20dcedb65943b1da30d3c7a111b82",
+      "output_sha256": "3792b4131b66264c5c01c183c4e1d17cc8bb3057a7a4a78be9224d9136fa503d",
+      "duration_seconds": 0.59,
+      "output": "verification/generated/producer-closure-certificate/frontend-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "audit-slice-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "67fdddc81e5aceacea7cb407cdb2f45d621fd674",
+      "working_changes_sha256": "ec4c88aecde84eaf3714be3f7a7b9c5be5c20dcedb65943b1da30d3c7a111b82",
+      "output_sha256": "4cde2bc3861b9be1771ab412a27f1a5ae86592d26516a164a81e4e040eee2d04",
+      "duration_seconds": 21.84,
+      "output": "verification/generated/producer-closure-certificate/audit-slice-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation"
+      }
+    },
+    {
+      "name": "integrated-closure-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "17e1512347d7f0a1b06a3226a299400df6bb44e2",
+      "working_changes_sha256": "e8fa221185bd5ef58932485947b323843a37ad3543d9686b207afca2d161feb6",
+      "output_sha256": "3850376d2727bf8253fc774272f99141d11b710608e1f749a2574a46e07cd6b7",
+      "duration_seconds": 2.45,
+      "output": "verification/generated/producer-closure-certificate/integrated-closure-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation"
+      }
+    },
+    {
+      "name": "kerml-unit-stage",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "17e1512347d7f0a1b06a3226a299400df6bb44e2",
+      "working_changes_sha256": "e8fa221185bd5ef58932485947b323843a37ad3543d9686b207afca2d161feb6",
+      "output_sha256": "ae43fd4748527473f7c09b012ceb6a43ae53fec392c0109d0caf0ac5628425fd",
+      "duration_seconds": 34.45,
+      "output": "verification/generated/producer-closure-certificate/kerml-unit-stage.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation"
+      }
+    },
+    {
+      "name": "sysml-unit-stage",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d8c19b4a5ddf2d70dae4e2952694b9cb14ee09b1",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "9a807df1c8fc67b094860dcd0c1704a9ceb5284d11cf659d8a526779be1f2445",
+      "duration_seconds": 5.89,
+      "output": "verification/generated/producer-closure-certificate/sysml-unit-stage.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation"
+      }
+    },
+    {
+      "name": "integrated-text-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d8c19b4a5ddf2d70dae4e2952694b9cb14ee09b1",
+      "working_changes_sha256": "e3d4fd77977faa3ad7e8cd90771894f95f936f81c455a4ed5a0e81871e8c8bd7",
+      "output_sha256": "3ae91f64f0a58c76499c4df3b612785df9990b82c5a95c588ec6a1809884d09e",
+      "duration_seconds": 46.36,
+      "output": "verification/generated/producer-closure-certificate/integrated-text-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "kerml-grammar-stale",
+      "command": [
+        "python",
+        "tools/kerml-grammar/generate.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "a1b4d5d4bf00df24fc5597ad5e2bb5520cffdbe0",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "f3a599a056523d9072af76571f2157b7cc271a5afa80cad15b482498f51df7c6",
+      "duration_seconds": 0.27,
+      "output": "verification/generated/producer-closure-certificate/kerml-grammar-stale.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-grammar-stale",
+      "command": [
+        "python",
+        "tools/sysml-grammar/generate.py",
+        "--check"
+      ],
+      "exit_code": 2,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "a1b4d5d4bf00df24fc5597ad5e2bb5520cffdbe0",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "5d72e48f93dce6c480a0328a797eae589a9ece0dd7209b94444b8cdb3bb807a1",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/producer-closure-certificate/sysml-grammar-stale.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-grammar-stale-correct-command",
+      "command": [
+        "python",
+        "tools/sysml-grammar/generate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "a1b4d5d4bf00df24fc5597ad5e2bb5520cffdbe0",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "29106a270ab4b808a4289843a999b02e9f3950df2ba0954fb1a90611cea9d2b4",
+      "duration_seconds": 0.91,
+      "output": "verification/generated/producer-closure-certificate/sysml-grammar-stale-correct-command.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "standards-integrity-stage",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "b3ddaab95718ce1dc791531e9215965fdf9d6804",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "75a7a4b667db9fb54fc51436773a4b7bb917206e7eb0f60ceba1447278cef813",
+      "duration_seconds": 0.88,
+      "output": "verification/generated/producer-closure-certificate/standards-integrity-stage.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "systems-audit-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d8c19b4a5ddf2d70dae4e2952694b9cb14ee09b1",
+      "working_changes_sha256": "e3d4fd77977faa3ad7e8cd90771894f95f936f81c455a4ed5a0e81871e8c8bd7",
+      "output_sha256": "b6a1ddad29e78f9666b8fa68ef118c05c5bdd823dfbccff68de5e7d8547b5f91",
+      "duration_seconds": 488.17,
+      "output": "verification/generated/producer-closure-certificate/systems-audit-release-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "strict-overlay-kernel-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kernel"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "ddfe8e2964eeaef9c269ce7e957095abe3bc91bf",
+      "working_changes_sha256": "735a1ecb4b819a9ad52b4e61821a1f9ca147e2fbec2635433c959151f10953ca",
+      "output_sha256": "555f2db586831c20d4c5de2193dc8f5202ef1ea3915ededda24eecbc0262b151",
+      "duration_seconds": 16.84,
+      "output": "verification/generated/producer-closure-certificate/strict-overlay-kernel-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "integrated-dependent-archive",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "archive"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "37e410042b20adcfbac74d8e33c2406f2f0b6644",
+      "working_changes_sha256": "c6facac733e9f8ea9198f65273610728ed96e2c6f86ab1990d8346e427c271e7",
+      "output_sha256": "ec83b7bbb1e9286af672098699f486a361f9a3c10f7df709293cecdb07d53598",
+      "duration_seconds": 4.69,
+      "output": "verification/generated/producer-closure-certificate/integrated-dependent-archive.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "metamodel-stale",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "37e410042b20adcfbac74d8e33c2406f2f0b6644",
+      "working_changes_sha256": "c6facac733e9f8ea9198f65273610728ed96e2c6f86ab1990d8346e427c271e7",
+      "output_sha256": "5a027a9fd830bef958f8afa1493d290989f8f157818c7593b835254046f13ee6",
+      "duration_seconds": 10.16,
+      "output": "verification/generated/producer-closure-certificate/metamodel-stale.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "integrated-publication-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7d7ae9d05ea74ab688f2972e7ab79776d706629a",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "4a0f235b2776e2a4a1b6746f80d7bde81db2dc171e643d2597ba07cf24fb11da",
+      "duration_seconds": 11.0,
+      "output": "verification/generated/producer-closure-certificate/integrated-publication-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "integrated-publication-check-causal",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "564339bb7d1483eb26ab8dd00282a5d7952f4cdb",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "90c8bc4e1a20236936fd7bb93a3d04c198bd82e9146b5cf896056387ebb4ac92",
+      "duration_seconds": 2.98,
+      "output": "verification/generated/producer-closure-certificate/integrated-publication-check-causal.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "integrated-causal-closure",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_closure",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "564339bb7d1483eb26ab8dd00282a5d7952f4cdb",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "21b5492e45a61594ac6877d971ea2d88ab47819a500ced542a176f33695a521c",
+      "duration_seconds": 38.22,
+      "output": "verification/generated/producer-closure-certificate/integrated-causal-closure.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "systems-release-causal-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "6cade412af390e017132c10f5030d86061db74f7",
+      "working_changes_sha256": "ce2ae27f02731b7499ecdd5a9171805253ded697b8df5784b3805bae1d9a5b1e",
+      "output_sha256": "ef64fb486af20b08b9ca74984cbeef99585fbff472fca09c4bacc335a90a23a0",
+      "duration_seconds": 524.81,
+      "output": "verification/generated/producer-closure-certificate/systems-release-causal-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "integrated-rich-vehicle-current",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "rich_vehicle"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "55820319474fb4dd84d2347aeaea60df6dc8b409",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "ee7a088fccc52421a7b7f0bffe1749e59033830c3bc279da061515cb23ad2063",
+      "duration_seconds": 22.67,
+      "output": "verification/generated/producer-closure-certificate/integrated-rich-vehicle-current.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "systems-release-bounded-reads",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "88b1e0929a738a2a90d06731cd8cc489f262fcf3",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "cecdbf3fda5b81bfb8683fb936ac12a5fbb661a22865976dd73e004f93f04f90",
+      "duration_seconds": 361.39,
+      "output": "verification/generated/producer-closure-certificate/systems-release-bounded-reads.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "integrated-kernel-final",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kernel"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "776a7458ffd07ffd14be5dca448f2dbb2f80ec6a",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "d2c720e312dc60eb5eec6c77eab739890091e4bc41cfb733313fbb5a5797a1d5",
+      "duration_seconds": 17.28,
+      "output": "verification/generated/producer-closure-certificate/integrated-kernel-final.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "integrated-kerml-semantics",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "fb6dc87f2d0de7ca742bc55e3f561d9a99879271",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "9daee3f185d9f8e69c9dc91ad11fb2673617665afe7e7088137bd0b86bbaa473",
+      "duration_seconds": 79.53,
+      "output": "verification/generated/producer-closure-certificate/integrated-kerml-semantics.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "inherited-proof-search",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "foundation"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d7b1df940ea296a4ffa183e67958127027846c6b",
+      "working_changes_sha256": "49425c2ccaa5070fb7f68a22d71533c4eecbf19adcf31a2f2994d92238dc3d0c",
+      "output_sha256": "c1bc0d61ac1fa4781da91ef2073dfd9fb479efef8f5b4096902ac80b18c93044",
+      "duration_seconds": 7.06,
+      "output": "verification/generated/producer-closure-certificate/inherited-proof-search.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "integrated-kerml-semantics-proof-fix",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c2a701678ff670774d93e992d66ecb69d0946a8d",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "95a4cceda295218dd0b7fda27a17829ebd6daed6b31d335ae881a369e78af5c4",
+      "duration_seconds": 123.53,
+      "output": "verification/generated/producer-closure-certificate/integrated-kerml-semantics-proof-fix.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "format-integration",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "335742123c81742c6a233266c023b4f029608093",
+      "working_changes_sha256": "4bf1331d90329b5c7ecd4f8bc0b7b5465845fa3e86998933ca45b89dc35d84f9",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.23,
+      "output": "verification/generated/producer-closure-certificate/format-integration.log",
+      "environment_overrides": {}
+    }
+  ]
+}
