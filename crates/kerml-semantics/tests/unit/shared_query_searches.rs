@@ -10,6 +10,67 @@ fn context(overlay: &agq_kernel::derived::DerivedOverlay) -> SemanticContext<'_>
 }
 
 #[test]
+fn composed_fact_observation_retains_failed_and_absent_read_evidence() {
+    let mut fixture = Fixture::new();
+    fixture.create(1, c::TYPE);
+    let snapshot = fixture.finish();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, SemanticOptions::default(), BTreeSet::new())
+            .unwrap(),
+    );
+    let property = FactKey::Property {
+        element: id(1),
+        property: p::TYPE_IS_CONJUGATED,
+    };
+    assert_eq!(
+        q.canonical_fact_evidence(property).completeness,
+        Completeness::Incomplete
+    );
+    let missing = q.canonical_fact_evidence(FactKey::Element(id(999)));
+    assert_eq!(missing.completeness, Completeness::Complete);
+    assert!(
+        missing
+            .search_dependencies
+            .contains(&SearchDependency::Element(id(999)))
+    );
+    assert!(missing.fact_origins.is_empty());
+    let mut builder = DerivationBuilder::new(snapshot);
+    builder
+        .failure(
+            id(1),
+            p::TYPE_IS_CONJUGATED,
+            ComputationFailure::Incomplete {
+                reason: IncompleteReason::MissingInput,
+                explanation: agq_kernel::provenance::Explanation {
+                    rule: RuleId::from_u128(987),
+                    dependencies: BTreeSet::from([Dependency::Declared(FactKey::Element(id(1)))]),
+                },
+                searches: BTreeSet::from([StructuralSearch::Incoming(id(999))]),
+            },
+        )
+        .unwrap();
+    let overlay = builder.build().unwrap();
+    let q = KerMlQueries::new(context(&overlay));
+    let observed = q.canonical_fact_evidence(property);
+    assert_eq!(observed.completeness, Completeness::Incomplete);
+    assert!(observed.fact_origins.contains_key(&FactKey::Element(id(1))));
+    assert!(observed.fact_origins.contains_key(&property));
+    assert!(
+        observed
+            .search_dependencies
+            .contains(&SearchDependency::Kernel(StructuralSearch::Incoming(id(
+                999
+            ))))
+    );
+    assert!(
+        observed
+            .canonical_dependencies
+            .contains(&Dependency::Derived(property))
+    );
+    assert_eq!(observed.clone().map(|_| 42).map(|_| ()), observed);
+}
+
+#[test]
 fn a_million_logical_search_entries_stay_shared_through_subquery_merges() {
     let mut fixture = Fixture::new();
     fixture.create(1, c::TYPE);

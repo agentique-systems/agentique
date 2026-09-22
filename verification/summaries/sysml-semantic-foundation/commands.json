@@ -201,6 +201,62 @@
         "CARGO_PROFILE_TEST_DEBUG": "0",
         "CARGO_INCREMENTAL": "0"
       }
+    },
+    {
+      "name": "sysml-composed-fact-evidence",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "composed_fact_observation_retains_failed_and_absent_read_evidence"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e8e19169c3086f0f1728eeb2c6ba94661b044f5e",
+      "working_changes_sha256": "6022de419656c259aca5a4dc8239fdbf4314ba998c39f3c2e7e1c11e82c3a799",
+      "output_sha256": "9ac5163d361f8a0619a4d2f62f924f0d89e565a655d512d3ce7e7816b17a6605",
+      "duration_seconds": 5.7,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-composed-fact-evidence.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "sysml-composed-evidence-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "--tests",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e8e19169c3086f0f1728eeb2c6ba94661b044f5e",
+      "working_changes_sha256": "6022de419656c259aca5a4dc8239fdbf4314ba998c39f3c2e7e1c11e82c3a799",
+      "output_sha256": "be5cab4249bdf3e0bd8a2b0c1d538fd6daf61fbf8c4f360608b211c21c2bf99a",
+      "duration_seconds": 3.61,
+      "output": "verification/generated/sysml-semantic-foundation/sysml-composed-evidence-clippy.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
     }
   ]
 }

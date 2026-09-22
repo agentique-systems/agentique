@@ -65,6 +65,83 @@ impl<'m> KerMlQueries<'m> {
     pub fn model(&self) -> &'m ModelView {
         self.context.model
     }
+    /// Observe canonical facts for a composed language query, retaining the same
+    /// provenance expansion and negative-read contracts as KerML queries. This
+    /// does not derive a value: uncomputed derived properties and failed inputs
+    /// remain incomplete/invalid. Optional absent stored facts are observations
+    /// of absence, with search dependencies. Property aliases use their effective
+    /// canonical storage and association projections.
+    pub fn canonical_fact_evidence(&self, fact: FactKey) -> QueryResult<()> {
+        use agq_kernel::derived::{PropertyState, StructuralSearch};
+        let mut out = self.result(());
+        out.search_dependencies
+            .insert(SearchDependency::Kernel(StructuralSearch::DescriptorGraph));
+        match fact {
+            FactKey::Element(element) => {
+                out.search_dependencies
+                    .insert(SearchDependency::Element(element));
+                self.fact(&mut out, fact);
+            }
+            FactKey::Property { element, property } => {
+                if self
+                    .checked::<views::Element, _>(&mut out, element)
+                    .is_none()
+                {
+                    return out;
+                }
+                let record = self.model().element(element).expect("checked element");
+                let resolved = self.accept(
+                    &mut out,
+                    element,
+                    self.model()
+                        .registry()
+                        .resolve_property(record.metaclass(), property)
+                        .map_err(ViewError::Registry),
+                );
+                let Some(descriptor) = resolved.flatten() else {
+                    if out.completeness == Completeness::Complete {
+                        out.problem(
+                            Completeness::Invalid,
+                            "KQ_CANONICAL_FACT",
+                            element,
+                            format!("Property {property} is not applicable to this element"),
+                        );
+                    }
+                    return out;
+                };
+                let property = descriptor.id;
+                self.query_projection_failure(&mut out, element, property);
+                if matches!(
+                    self.model().property_state(element, property),
+                    Ok(PropertyState::NotComputed)
+                ) {
+                    self.accept::<_, ()>(
+                        &mut out,
+                        element,
+                        Err(ViewError::NotComputed { element, property }),
+                    );
+                }
+            }
+            FactKey::AssociationOccurrence(id) => {
+                if let Some(link) = self.model().association_occurrence(id) {
+                    for &element in link.ends().values() {
+                        out.search_dependencies.insert(SearchDependency::Kernel(
+                            StructuralSearch::Association {
+                                element,
+                                association: link.association(),
+                            },
+                        ));
+                    }
+                } else {
+                    // The kernel has no narrower negative occurrence-identity key.
+                    out.search_dependencies
+                        .insert(SearchDependency::Kernel(StructuralSearch::Model));
+                }
+                self.fact(&mut out, fact);
+            }
+        }
+        out
+    }
     pub(crate) fn result<T>(&self, value: T) -> QueryResult<T> {
         let mut result = QueryResult::new(self.context(), value);
         result.producer_evidence = self.producer_evidence;
