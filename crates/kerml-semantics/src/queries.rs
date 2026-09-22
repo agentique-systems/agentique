@@ -290,7 +290,21 @@ impl<'m> KerMlQueries<'m> {
             .ok()
             .flatten()
         {
-            let search = SearchDependency::Incoming { target: element };
+            // Ownership inverses observe whether this existing identity has an
+            // owner. New unrelated children do not change that answer.
+            let search = match storage {
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT => SearchDependency::SourceRelationships {
+                    source: element,
+                    class: c::RELATIONSHIP,
+                    property: storage,
+                },
+                p::ELEMENT_OWNED_RELATIONSHIP => SearchDependency::SourceRelationships {
+                    source: element,
+                    class: c::ELEMENT,
+                    property: storage,
+                },
+                _ => SearchDependency::Incoming { target: element },
+            };
             out.search_dependencies.insert(search.clone());
             evidence.push(Evidence::Search(search));
             for incoming in self
@@ -516,6 +530,67 @@ impl<'m> KerMlQueries<'m> {
         }
         out
     }
+    /// Class-filtered ownership population. An unrelated owned membership does
+    /// not change an outgoing specialization or feature-chain population.
+    /// Missing source endpoints remain visible because ownership, not the
+    /// availability of a computed source slot, selects these candidates.
+    pub(crate) fn owned_relationships_of_type(
+        &self,
+        element: ElementId,
+        class: MetaclassId,
+    ) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        let Some(view) = self.checked::<views::Element, _>(&mut out, element) else {
+            return out;
+        };
+        let search = SearchDependency::OwnedRelationships {
+            owner: element,
+            class,
+        };
+        out.search_dependencies.insert(search.clone());
+        let mut evidence = vec![Evidence::Search(search)];
+        if let Some(values) = self.accept(&mut out, element, view.owned_relationship()) {
+            let values: Vec<_> = values
+                .into_iter()
+                .flat_map(|v| v.iter())
+                .filter(|&target| self.is(target, class))
+                .collect();
+            if !values.is_empty() {
+                let property = self
+                    .model()
+                    .registry()
+                    .resolve_property(
+                        self.model()
+                            .element(element)
+                            .expect("checked element")
+                            .metaclass(),
+                        p::ELEMENT_OWNED_RELATIONSHIP,
+                    )
+                    .ok()
+                    .flatten()
+                    .map_or(p::ELEMENT_OWNED_RELATIONSHIP, |descriptor| descriptor.id);
+                let fact = FactKey::Property { element, property };
+                self.fact(&mut out, fact);
+                evidence.push(Evidence::Fact(fact));
+            }
+            for target in values {
+                self.fact(&mut out, FactKey::Element(target));
+                out.value.push(target);
+                out.prove(
+                    QueryKind::OwnedRelationships,
+                    element,
+                    target,
+                    Rule::StoredRelationship,
+                    evidence.clone(),
+                );
+            }
+        } else {
+            // Failure evidence is retained in full; filtering cannot discharge
+            // an incomplete/invalid underlying ownership projection.
+            self.property(&mut out, element, p::ELEMENT_OWNED_RELATIONSHIP);
+        }
+        out
+    }
     pub fn owning_relationship(&self, element: ElementId) -> QueryResult<Option<ElementId>> {
         let mut out = self.result(None);
         let Some(view) = self.checked::<views::Element, _>(&mut out, element) else {
@@ -637,7 +712,7 @@ impl<'m> KerMlQueries<'m> {
         }
         out.search_dependencies
             .insert(SearchDependency::NamespaceMembers { namespace });
-        let owned = self.owned_relationships(namespace);
+        let owned = self.owned_relationships_of_type(namespace, c::MEMBERSHIP);
         for &id in &owned.value {
             if self.is(id, c::MEMBERSHIP) {
                 out.value.push(id);
@@ -849,7 +924,7 @@ impl<'m> KerMlQueries<'m> {
         {
             self.accept(&mut out, ty, view.is_conjugated());
         }
-        let owned = self.owned_relationships(ty);
+        let owned = self.owned_relationships_of_type(ty, c::CONJUGATION);
         let conjugations: Vec<_> = owned
             .value
             .iter()
@@ -1026,12 +1101,12 @@ impl<'m> KerMlQueries<'m> {
         }
         let mut candidates =
             self.incoming_source_relationships(&mut out, source, class, source_property);
-        let owned = self.owned_relationships(source);
+        let owned = self.owned_relationships_of_type(source, class);
         // Owned relationships remain relevant even when their source endpoint
         // has not been computed yet. Ref/CrossSubsetting additionally derive
         // that endpoint from ownership below. Unknown *incoming general* sources
         // are not evidence about this Type's outgoing specialization population.
-        candidates.extend(owned.value.iter().copied().filter(|id| self.is(*id, class)));
+        candidates.extend(owned.value.iter().copied());
         out.merge(owned);
         for id in candidates {
             let Some(view) = self.checked::<views::Specialization, _>(&mut out, id) else {

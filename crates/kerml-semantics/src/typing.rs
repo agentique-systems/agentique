@@ -27,7 +27,7 @@ impl KerMlQueries<'_> {
                 "Pending specializations may contribute typing Features",
             );
         }
-        let owned = self.owned_relationships(feature);
+        let owned = self.owned_relationships_of_type(feature, c::CONJUGATION);
         let conjugators: Vec<_> = owned
             .value
             .iter()
@@ -58,7 +58,7 @@ impl KerMlQueries<'_> {
             c::SUBSETTING,
             p::SUBSETTING_SUBSETTING_FEATURE,
         );
-        let owned = self.owned_relationships(feature);
+        let owned = self.owned_relationships_of_type(feature, c::SUBSETTING);
         relationships.extend(owned.value.iter().copied());
         out.merge(owned);
         for relationship in relationships {

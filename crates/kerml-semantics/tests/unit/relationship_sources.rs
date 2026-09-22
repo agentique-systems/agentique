@@ -96,3 +96,75 @@ fn source_roles_include_registered_redefinitions_and_cache_only_descriptors() {
     assert_eq!(q.source_role_cache.lock().unwrap().len(), 2);
     assert!(q.fork().source_role_cache.lock().unwrap().is_empty());
 }
+
+#[test]
+fn owned_population_keeps_missing_source_endpoints_and_precise_class_reads() {
+    for source_present in [false, true] {
+        let mut f = Fixture::new();
+        f.create(1, c::FEATURE);
+        f.create(2, c::CLASSIFIER);
+        f.create(3, c::FEATURE_TYPING);
+        f.own(1, 3);
+        f.value(3, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+        if source_present {
+            f.value(3, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(1)));
+        }
+        f.create(4, c::FEATURE);
+        member(&mut f, 1, 4, 5, c::FEATURE_MEMBERSHIP);
+        let construction = f.construction();
+        let q = KerMlQueries::new(
+            SemanticContext::for_construction(
+                &construction,
+                SemanticOptions {
+                    exclude_implied: true,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .unwrap(),
+        );
+        let selected = q.owned_relationships_of_type(id(1), c::FEATURE_TYPING);
+        assert_eq!(
+            selected.value,
+            [id(3)],
+            "uncomputed source does not hide an owned candidate"
+        );
+        assert!(
+            selected
+                .search_dependencies
+                .contains(&SearchDependency::OwnedRelationships {
+                    owner: id(1),
+                    class: c::FEATURE_TYPING,
+                })
+        );
+        assert!(
+            !selected
+                .search_dependencies
+                .contains(&SearchDependency::PropertySet {
+                    element: id(1),
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                })
+        );
+        assert!(
+            selected.positive_dependencies.contains(&FactKey::Property {
+                element: id(1),
+                property: p::ELEMENT_OWNED_RELATIONSHIP,
+            }),
+            "canonical ownership support remains available for explanation"
+        );
+        let typed = q.direct_feature_types(id(1));
+        assert_eq!(
+            typed.completeness,
+            if source_present {
+                Completeness::Complete
+            } else {
+                Completeness::Incomplete
+            },
+            "{typed:?}"
+        );
+        assert_eq!(
+            typed.value,
+            if source_present { vec![id(2)] } else { vec![] }
+        );
+    }
+}

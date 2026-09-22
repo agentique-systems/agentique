@@ -129,7 +129,7 @@ impl KerMlQueries<'_> {
     /// The canonical FeatureChaining order, never a sort of endpoint identities.
     pub fn chaining_features(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
-        let owned = self.owned_relationships(feature);
+        let owned = self.owned_relationships_of_type(feature, c::FEATURE_CHAINING);
         for &relationship in &owned.value {
             if self.is(relationship, c::FEATURE_CHAINING) {
                 if let Some(target) = self.read_reference(
@@ -216,7 +216,7 @@ impl KerMlQueries<'_> {
                 && self.is(current, c::MULTIPLICITY)
             {
                 let mut explicit_domains = vec![];
-                let owned = self.owned_relationships(current);
+                let owned = self.owned_relationships_of_type(current, c::TYPE_FEATURING);
                 for &relationship in &owned.value {
                     if self.is(relationship, c::TYPE_FEATURING) {
                         if let Some(domain) = self.read_reference(
@@ -251,7 +251,7 @@ impl KerMlQueries<'_> {
                 out.merge(context);
                 continue;
             }
-            let owned = self.owned_relationships(current);
+            let owned = self.owned_relationships_of_type(current, c::TYPE_FEATURING);
             let mut explicit = false;
             let mut expression_domains = vec![];
             for &r in &owned.value {
@@ -574,7 +574,7 @@ impl KerMlQueries<'_> {
         let mut out = self.result(vec![]);
         let ends = self.structural_end_features(connector);
         for &end in &ends.value {
-            let owned = self.owned_relationships(end);
+            let owned = self.owned_relationships_of_type(end, c::REFERENCE_SUBSETTING);
             let refs: Vec<_> = owned
                 .value
                 .iter()
