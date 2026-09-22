@@ -1,6 +1,12 @@
 //! Independent real-corpus preflights. Scoped closure never seals a publication.
+use agq_kerml::properties as p;
 use agq_kerml_semantics::*;
-use agq_kernel::{provenance::Origin, value::Value};
+use agq_kerml_text::library::LibraryDraft;
+use agq_kernel::{
+    ElementId, ModelView,
+    provenance::{FactKey, Origin},
+    value::Value,
+};
 use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::json;
 use std::{collections::BTreeSet, io::Write, path::Path, time::Instant};
@@ -229,7 +235,15 @@ fn run_slice(
             *counts.entry(family).or_default() += count;
         }
         for (family, diagnostics) in audit.failures {
-            failures.extend(diagnostics.into_iter().map(|d| json!({"family":format!("{family:?}"), "subject":d.subject.to_string(), "code":d.code, "message":d.message})));
+            for diagnostic in diagnostics {
+                let finding = json!({"family":format!("{family:?}"), "subject":diagnostic.subject.to_string(),
+                    "code":diagnostic.code, "message":diagnostic.message,
+                    "subject_detail":subject_detail(model, &input.draft, sources, diagnostic.subject)});
+                if failures.len() < 10 {
+                    println!("slice {slice} capability finding: {finding}");
+                }
+                failures.push(finding);
+            }
         }
         let done = ((index + 1) * 32).min(audit_subjects.len());
         if done % 512 == 0 || done == audit_subjects.len() {
@@ -281,9 +295,21 @@ fn run_slice(
                     })
             });
             if answer.completeness != Completeness::Complete || answer.value.len() != 1 || !valid {
-                reference_failures.push(json!({"relationship":reference.relationship.to_string(), "completeness":format!("{:?}",answer.completeness), "candidates":answer.value.len(), "stored_endpoint_valid":valid}));
+                let finding = json!({"relationship":reference.relationship.to_string(), "name":reference.name.segments,
+                    "completeness":format!("{:?}",answer.completeness), "candidates":answer.value.len(), "stored_endpoint_valid":valid,
+                    "subject_detail":subject_detail(model, &input.draft, sources, reference.relationship)});
+                if reference_failures.len() < 10 {
+                    println!("slice {slice} reference finding: {finding}");
+                }
+                reference_failures.push(finding);
             }
         }
+    }
+    for subject in scope_boundary.missing_subjects.iter().take(10) {
+        println!(
+            "slice {slice} scope boundary: {}",
+            subject_detail(model, &input.draft, sources, *subject)
+        );
     }
     let mut bounds = multiplicity_inventory::collect(
         model,
@@ -314,6 +340,7 @@ fn run_slice(
             "scope_boundary":{"complete":scope_boundary.is_complete(),
                 "missing_subject_count":scope_boundary.missing_subjects.len(),
                 "missing_subjects":scope_boundary.missing_subjects.iter().take(32).map(ToString::to_string).collect::<Vec<_>>(),
+                "missing_subject_details":scope_boundary.missing_subjects.iter().take(32).map(|&subject|subject_detail(model,&input.draft,sources,subject)).collect::<Vec<_>>(),
                 "unbounded_reads":scope_boundary.unbounded_reads},
             "documents":document_counts, "subjects":subjects.len(), "audited_subjects":audit_subjects.len(),
             "source_content_set":sources.content_set_id(), "converged":closure.converged,
@@ -335,4 +362,34 @@ fn run_slice(
         return Err(format!("slice {slice} has incomplete publication obligations").into());
     }
     Ok(())
+}
+
+/// Bounded source/provenance details for workflow diagnosis; never a semantic decision.
+fn subject_detail(
+    model: &ModelView,
+    draft: &LibraryDraft,
+    sources: &VerifiedLibrarySet,
+    subject: ElementId,
+) -> serde_json::Value {
+    let Some(record) = model.element(subject) else {
+        return json!({"subject":subject.to_string(),"missing_element":true});
+    };
+    let name = model
+        .navigation_slot(subject, p::ELEMENT_DECLARED_NAME)
+        .and_then(|slot| {
+            slot.value().values().find_map(|value| match value {
+                Value::String(name) => Some(name.as_str()),
+                _ => None,
+            })
+        });
+    let source = draft.source_map().get(&FactKey::Element(subject)).map(|origin| {
+        let document = sources.documents().find(|document|document.document()==origin.document);
+        json!({"document":document.as_ref().map(|document|document.path()),
+            "range":[origin.range.start(),origin.range.end()],
+            "excerpt":document.map(|document|document.source()[origin.range.start() as usize..origin.range.end() as usize].chars().take(240).collect::<String>())})
+    });
+    json!({"subject":subject.to_string(),"metaclass":model.registry().class(record.metaclass()).ok().map(|class|class.name.as_str()),
+    "declared_name":name,"source":source,"derived_rule":match record.origin() {
+        Origin::Derived(origin) => Some(origin.rule.to_string()), _ => None,
+    }})
 }
