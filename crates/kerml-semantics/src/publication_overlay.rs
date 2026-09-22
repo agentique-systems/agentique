@@ -230,12 +230,35 @@ impl CompletePublicationOverlay {
 
 /// A failed publication gate never returns a complete overlay. Validator-only
 /// findings are collected separately by `KerMlConformanceReport`.
+/// Exact rejected output and its declared producer contract. Constructed only
+/// on an audit failure; successful publication does not expand this detail.
+#[derive(Debug)]
+pub struct ProducerEffectAuditFailure {
+    pub operation: &'static str,
+    pub fact: FactKey,
+    pub origin_rule: agq_kernel::RuleId,
+    pub producer_subject: Option<ElementId>,
+    pub semantic_target: ElementId,
+    pub detail: String,
+}
+
 #[derive(Debug)]
 pub enum PublicationOverlayError {
     UnsupportedProfile(BaselineProfile),
     Context(ContextError),
     Bindings(BindingError),
     Derivation(DerivationError),
+    ProducerEffectViolation(Box<ProducerEffectAuditFailure>),
+    ProducerEvaluationMismatch {
+        subject: ElementId,
+        family: ProducerFamilyId,
+        reason: &'static str,
+        state: Option<ProducerEvaluationState>,
+        descriptor: Option<Box<ProducerDescriptor>>,
+    },
+    SchedulerContextMismatch {
+        changed_fields: Vec<&'static str>,
+    },
     ForeignDeclaredFact(FactKey),
     IncompleteProducers(Vec<PublicationStage>),
     IncompleteCapabilities(BTreeMap<PublicationFamily, BTreeSet<Diagnostic>>),
