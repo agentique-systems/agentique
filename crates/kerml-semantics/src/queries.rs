@@ -924,20 +924,12 @@ impl<'m> KerMlQueries<'m> {
         {
             self.accept(&mut out, ty, view.is_conjugated());
         }
-        let owned = self.owned_relationships_of_type(ty, c::CONJUGATION);
-        let conjugations: Vec<_> = owned
-            .value
-            .iter()
-            .copied()
-            .filter(|r| self.is(*r, c::CONJUGATION))
-            .collect();
-        let chains: Vec<_> = owned
-            .value
-            .iter()
-            .copied()
-            .filter(|r| self.is(*r, c::FEATURE_CHAINING))
-            .collect();
-        out.merge(owned);
+        let owned_conjugations = self.owned_relationships_of_type(ty, c::CONJUGATION);
+        let owned_chains = self.owned_relationships_of_type(ty, c::FEATURE_CHAINING);
+        let conjugations = owned_conjugations.value.clone();
+        let chains = owned_chains.value.clone();
+        out.merge(owned_conjugations);
+        out.merge(owned_chains);
         if conjugations.len() > 1 {
             out.problem(
                 Completeness::Invalid,
