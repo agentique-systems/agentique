@@ -67,6 +67,12 @@ pub struct SystemsConstructionProduction {
     pub retained_closure_evaluations: usize,
     /// Previous evaluations reopened because their semantic inputs changed.
     pub reopened_closure_evaluations: usize,
+    /// Checked graph rebindings across all construction and predicate passes.
+    pub closure_rebindings: usize,
+    /// Evaluations retained across those rebindings, including earlier passes.
+    pub total_retained_closure_evaluations: usize,
+    /// Evaluations reopened across those rebindings, including earlier passes.
+    pub total_reopened_closure_evaluations: usize,
 }
 impl SystemsConstructionProduction {
     /// Known pinned authority conflicts on the final frontier. Transient
@@ -363,6 +369,9 @@ fn prepare_systems_library_scope(
         &mut progress,
     )?;
     let mut production = None;
+    let mut closure_rebindings = 0;
+    let mut total_retained_closure_evaluations = 0;
+    let mut total_reopened_closure_evaluations = 0;
     if all_supported
         && matches!(
             profile,
@@ -453,6 +462,9 @@ fn prepare_systems_library_scope(
                                 )?;
                                 retained_closure_evaluations = rebound.retained_evaluations;
                                 reopened_closure_evaluations = rebound.reopened_evaluations;
+                                closure_rebindings += 1;
+                                total_retained_closure_evaluations += rebound.retained_evaluations;
+                                total_reopened_closure_evaluations += rebound.reopened_evaluations;
                                 context
                                     .with_producer_closure(rebound.certificate)
                                     .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
@@ -488,6 +500,9 @@ fn prepare_systems_library_scope(
                         counters: closure.counters,
                         retained_closure_evaluations,
                         reopened_closure_evaluations,
+                        closure_rebindings,
+                        total_retained_closure_evaluations,
+                        total_reopened_closure_evaluations,
                     });
                     current.set_semantic_candidate(closure.overlay);
                     current.set_producer_closure(closure.certificate);

@@ -343,6 +343,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "closure_transport":candidate.production().map(|production|json!({
             "retained_evaluations":production.retained_closure_evaluations,
             "reopened_evaluations":production.reopened_closure_evaluations,
+            "rebindings":production.closure_rebindings,
+            "total_retained_evaluations":production.total_retained_closure_evaluations,
+            "total_reopened_evaluations":production.total_reopened_closure_evaluations,
         })),
         "closure_explanations":closure_explanations,
         "local_elements":model.elements().filter(|r|accepted.overlay().model().element(r.id()).is_none()).count(),

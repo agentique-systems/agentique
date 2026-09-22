@@ -385,6 +385,32 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "accumulated-transport-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b62621aef70514d1c4e7cd88173c944aeef80d24",
+      "working_changes_sha256": "101ef9a47931d5ac5b28840fe3dfdf8f817936549bd1530b8a66d0368154cad6",
+      "output_sha256": "5aca59602e7604846b450ee6de3f40f8729048aeb8c9f35f5de989ad64e6e22e",
+      "duration_seconds": 4.72,
+      "output": "verification/generated/language-stability-bridge/accumulated-transport-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }

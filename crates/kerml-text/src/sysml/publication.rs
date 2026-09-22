@@ -1300,6 +1300,9 @@ mod tests {
             counters: Default::default(),
             retained_closure_evaluations: 0,
             reopened_closure_evaluations: 0,
+            closure_rebindings: 0,
+            total_retained_closure_evaluations: 0,
+            total_reopened_closure_evaluations: 0,
             stages: vec![PublicationStage {
                 stratum: agq_kerml_semantics::ResultStructureStratum::Structural,
                 counters: Default::default(),
