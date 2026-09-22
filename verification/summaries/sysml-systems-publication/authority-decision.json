@@ -1,7 +1,7 @@
 {
   "format": "agentique-sysml-systems-authority-review/1",
-  "review_status": "exact-authority-conflicts-confirmed-canonical-graph-witnesses-pending",
-  "source_commit": "ca4b59f726b7cdfa1505e921058b7b64357377dc",
+  "review_status": "exact-authority-conflicts-and-declared-canonical-witnesses-confirmed-full-closure-pending",
+  "source_commit": "4f20914898151ae2dcded058529304623bbc1c5d",
   "baseline": "Pinned final SysML 2.0; no preliminary SysML 2.1 or KerML 1.1 rule adopted.",
   "profiles": {
     "published": "omg-sysml-2.0-published/1",
@@ -280,14 +280,50 @@
       "correction_authorized": false,
       "publication_impact": "The rule chooses a canonical specialization endpoint and is therefore a graph-producing obligation, not only an unrelated conformance validator.",
       "canonical_graph_evidence": {
-        "status": "pending-lead-candidate-query",
-        "subject_element_id": null,
-        "formal_target_lookup": null,
-        "other_target_lookup": null,
-        "antecedent_query": null,
+        "status": "declared-owned-path-confirmed-full-closure-pending",
+        "fixture": "All 21 exact documents together, Operational syntax v1, empty canonical graph with full combined registry; unpublished ConstructionView, unresolved reference obligations retained.",
+        "accepted_kerml_dependency": false,
+        "subject_element_id": "8c8a3d17-aa0d-50dc-bb3b-b5b41b330b5d",
+        "subject_metaclass": "ViewpointDefinition",
+        "formal_target_lookup": {
+          "contract": "Exact declared owned path using Complete owned_relationships and member queries, followed by declared-name comparison. No import/inheritance lookup.",
+          "path": "Views::Viewpoint",
+          "status": "CompleteAbsent",
+          "results": []
+        },
+        "other_target_lookup": {
+          "path": "Views::ViewpointCheck",
+          "status": "Complete",
+          "results": [
+            "8c8a3d17-aa0d-50dc-bb3b-b5b41b330b5d"
+          ],
+          "membership_id": "13b84e3c-3cdb-54a5-9bf7-05e461a2693e",
+          "unique": true,
+          "visibility": "public"
+        },
+        "source_provenance": {
+          "origin": "Declared::StandardLibrary",
+          "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+          "document_id": "78215481-452f-5123-9500-4ec748094e73",
+          "revision_id": "d4d50c13-f40e-58c0-b5ae-414e479ffbd2",
+          "syntax_node_id": "002d0b29-faf2-5d35-8534-e0571d03a097",
+          "byte_range": [
+            1092,
+            1437
+          ],
+          "element_membership_name_and_visibility_origins_checked": true
+        },
+        "antecedent_query": {
+          "metaclass": "ViewpointDefinition",
+          "exact_declared_metaclass": true,
+          "additional_condition": null
+        },
+        "global_namespace_query_status": "not asserted by this fixture",
+        "combined_producer_closure": "not run",
+        "mandatory_reference_closure": "not asserted",
         "publication_blocker_confirmed": false
       },
-      "disposition": "Preserve the formal target and report any incomplete lookup; do not invent an alias, silently substitute the other target, or waive the producer. Attach actual candidate query evidence before declaring a demonstrated publication blocker."
+      "disposition": "Declared canonical source/target mismatch and applicable declared antecedent are witnessed. Preserve formal target; no fallback, alias, or producer waiver authorized. Full accepted-dependency candidate closure and publication impact remain separate pending lead evidence."
     },
     {
       "id": "SYSML20-PUB-002",
@@ -373,14 +409,50 @@
       "correction_authorized": false,
       "publication_impact": "The rule chooses a canonical specialization endpoint and is therefore a graph-producing obligation, not only an unrelated conformance validator.",
       "canonical_graph_evidence": {
-        "status": "pending-lead-candidate-query",
-        "subject_element_id": null,
-        "formal_target_lookup": null,
-        "other_target_lookup": null,
-        "antecedent_query": null,
+        "status": "declared-owned-path-confirmed-full-closure-pending",
+        "fixture": "All 21 exact documents together, Operational syntax v1, empty canonical graph with full combined registry; unpublished ConstructionView, unresolved reference obligations retained.",
+        "accepted_kerml_dependency": false,
+        "subject_element_id": "29b6d0ae-8a25-55d0-ac30-9d153e62ddba",
+        "subject_metaclass": "ViewpointUsage",
+        "formal_target_lookup": {
+          "contract": "Exact declared owned path using Complete owned_relationships and member queries, followed by declared-name comparison. No import/inheritance lookup.",
+          "path": "Views::viewpoints",
+          "status": "CompleteAbsent",
+          "results": []
+        },
+        "other_target_lookup": {
+          "path": "Views::viewpointChecks",
+          "status": "Complete",
+          "results": [
+            "29b6d0ae-8a25-55d0-ac30-9d153e62ddba"
+          ],
+          "membership_id": "a645ff8c-ce2d-573c-a38a-14aae1703ff1",
+          "unique": true,
+          "visibility": "public"
+        },
+        "source_provenance": {
+          "origin": "Declared::StandardLibrary",
+          "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+          "document_id": "78215481-452f-5123-9500-4ec748094e73",
+          "revision_id": "d4d50c13-f40e-58c0-b5ae-414e479ffbd2",
+          "syntax_node_id": "a9f583a4-2cc3-5638-8927-45f43c7e298d",
+          "byte_range": [
+            2319,
+            2494
+          ],
+          "element_membership_name_and_visibility_origins_checked": true
+        },
+        "antecedent_query": {
+          "metaclass": "ViewpointUsage",
+          "exact_declared_metaclass": true,
+          "additional_condition": null
+        },
+        "global_namespace_query_status": "not asserted by this fixture",
+        "combined_producer_closure": "not run",
+        "mandatory_reference_closure": "not asserted",
         "publication_blocker_confirmed": false
       },
-      "disposition": "Preserve the formal target and report any incomplete lookup; do not invent an alias, silently substitute the other target, or waive the producer. Attach actual candidate query evidence before declaring a demonstrated publication blocker."
+      "disposition": "Declared canonical source/target mismatch and applicable declared antecedent are witnessed. Preserve formal target; no fallback, alias, or producer waiver authorized. Full accepted-dependency candidate closure and publication impact remain separate pending lead evidence."
     },
     {
       "id": "SYSML20-PUB-003",
@@ -498,14 +570,76 @@
       "correction_authorized": false,
       "publication_impact": "The rule chooses a canonical specialization endpoint and is therefore a graph-producing obligation, not only an unrelated conformance validator.",
       "canonical_graph_evidence": {
-        "status": "pending-lead-candidate-query",
-        "subject_element_id": null,
-        "formal_target_lookup": null,
-        "other_target_lookup": null,
-        "antecedent_query": null,
+        "status": "declared-owned-path-confirmed-full-closure-pending",
+        "fixture": "All 21 exact documents together, Operational syntax v1, empty canonical graph with full combined registry; unpublished ConstructionView, unresolved reference obligations retained.",
+        "accepted_kerml_dependency": false,
+        "subject_element_id": "6f256a75-d031-5390-90d0-24ba7666497b",
+        "subject_metaclass": "ConnectionDefinition",
+        "formal_target_lookup": {
+          "contract": "Exact declared owned path using Complete owned_relationships and member queries, followed by declared-name comparison. No import/inheritance lookup.",
+          "path": "Connections::BinaryConnections",
+          "status": "CompleteAbsent",
+          "results": []
+        },
+        "other_target_lookup": {
+          "path": "Connections::BinaryConnection",
+          "status": "Complete",
+          "results": [
+            "6f256a75-d031-5390-90d0-24ba7666497b"
+          ],
+          "membership_id": "f9438919-61cc-54ab-b419-a76a781eebb6",
+          "unique": true,
+          "visibility": "public"
+        },
+        "source_provenance": {
+          "origin": "Declared::StandardLibrary",
+          "library_id": "6c418b74-7704-5af0-bce2-28b92196cb15",
+          "document_id": "54160c33-fbae-52a0-8a59-e32ee8a8752f",
+          "revision_id": "74287a42-126f-55bb-a6ae-9250a42030ed",
+          "syntax_node_id": "2ada6282-a704-5c17-acca-7b87acd7c44a",
+          "byte_range": [
+            1225,
+            1696
+          ],
+          "element_membership_name_and_visibility_origins_checked": true
+        },
+        "antecedent_query": {
+          "exact_declared_metaclass": "ConnectionDefinition",
+          "condition": "ownedEndFeature->size() = 2",
+          "declared_owned_end_count": 2,
+          "complete": true,
+          "method": "Complete owned_relationships/member; restrict FeatureMembership; require Computed declared Feature::isEnd=true. No inherited/effective end count.",
+          "ends": [
+            {
+              "path": "Connections::BinaryConnection::source",
+              "element_id": "6c7986f9-6e5b-59f0-83e6-51e1fb686d81",
+              "metaclass": "ReferenceUsage",
+              "membership_id": "ed4aaea6-6a95-5b66-870d-6b411be160fd",
+              "byte_range": [
+                1581,
+                1631
+              ],
+              "is_end": true
+            },
+            {
+              "path": "Connections::BinaryConnection::target",
+              "element_id": "66864d33-a47d-5da9-9da6-41b7aa317ee1",
+              "metaclass": "ReferenceUsage",
+              "membership_id": "c8f74be9-8d8d-51e3-8860-86ba14e7e9ad",
+              "byte_range": [
+                1640,
+                1690
+              ],
+              "is_end": true
+            }
+          ]
+        },
+        "global_namespace_query_status": "not asserted by this fixture",
+        "combined_producer_closure": "not run",
+        "mandatory_reference_closure": "not asserted",
         "publication_blocker_confirmed": false
       },
-      "disposition": "Preserve the formal target and report any incomplete lookup; do not invent an alias, silently substitute the other target, or waive the producer. Attach actual candidate query evidence before declaring a demonstrated publication blocker."
+      "disposition": "Declared canonical source/target mismatch and applicable declared antecedent are witnessed. Preserve formal target; no fallback, alias, or producer waiver authorized. Full accepted-dependency candidate closure and publication impact remain separate pending lead evidence."
     }
   ],
   "source_name_observations": {
@@ -514,7 +648,7 @@
     "BinaryConnections": "No whole-word occurrence.",
     "viewpoints": "Only one occurrence: prose comment in Views.sysml line 4; no declaration or alias by that name."
   },
-  "acceptance_boundary": "These three findings have exact corpus source antecedents and change required graph endpoints. Final publication-blocker classification awaits candidate identities, complete/incomplete lookup outcomes, canonical antecedents and evidence dependencies from the lead. They do not authorize a correction.",
+  "acceptance_boundary": "Exact corpus antecedents, complete owned declaration absence/presence, expected metaclasses and provenance are now witnessed on an unpublished canonical ConstructionView. This fixture intentionally omits the accepted KerML graph and producer/refinement closure. It neither asserts a global imported/inherited namespace answer nor establishes full candidate publication failure or success. No correction is authorized.",
   "verification": {
     "command": "python - < authority-review.md Python reproduction block",
     "exit_code": 0,
@@ -522,5 +656,53 @@
     "source_mutations": false,
     "output_summary": "Verified 3 authority hashes, 5 formal PDF/XMI rules, 12 source witnesses, and the 21-document name observations; canonical graph evidence remains separate.",
     "previous_probe": "An initial PDF prose-token boundary check failed because pypdf joins BinaryConnection with the following word from; the final check uses the unambiguous exact Table 31 token on PDF 428. No authority input changed."
+  },
+  "additional_declared_usage_witness": {
+    "path": "Views::View::viewpointSatisfactions",
+    "element_id": "92713464-c2df-5d85-9a2c-8d9641ef3714",
+    "metaclass": "ViewpointUsage",
+    "membership_id": "668be599-5e1b-5510-a530-f80d11775836",
+    "owned_path_status": "Complete",
+    "visibility": "public",
+    "origin": "Declared::StandardLibrary",
+    "document_id": "78215481-452f-5123-9500-4ec748094e73",
+    "revision_id": "d4d50c13-f40e-58c0-b5ae-414e479ffbd2",
+    "syntax_node_id": "61a7f8e4-eed2-5229-b67d-77464ae31049",
+    "byte_range": [
+      654,
+      840
+    ]
+  },
+  "declared_graph_verification": {
+    "source_commit": "4f20914898151ae2dcded058529304623bbc1c5d",
+    "test_file": "crates/kerml-text/src/sysml_authority_tests.rs",
+    "environment": {
+      "CARGO_TARGET_DIR": "target-parser",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0"
+    },
+    "commands": [
+      {
+        "command": "cargo test --locked --offline -p agq-kerml-text --lib exact_systems_authority_targets_have_complete_declared_owned_path_witnesses -- --nocapture",
+        "exit_code": 0,
+        "output_summary": "1 passed; 20 filtered out; 5.01 seconds. AUTHORITY_DECLARED_WITNESS reports all21 documents, three CompleteAbsent owned targets, three unique real targets, exact metaclasses, public visibility, canonical provenance and BinaryConnection two declared ends."
+      },
+      {
+        "command": "cargo fmt -p agq-kerml-text -- --check",
+        "exit_code": 0,
+        "output_summary": "Formatting current."
+      },
+      {
+        "command": "cargo clippy --locked --offline -p agq-kerml-text --lib --tests -- -D warnings",
+        "exit_code": 0,
+        "output_summary": "Finished dev profile in 11.13 seconds; no warnings."
+      }
+    ],
+    "initial_compile_attempt": {
+      "exit_code": 1,
+      "result": "Test did not run: imported PropertyState from the kernel root instead of agq_kernel::derived. Import corrected before the successful run."
+    },
+    "no_accepted_publication_claim": true
   }
 }

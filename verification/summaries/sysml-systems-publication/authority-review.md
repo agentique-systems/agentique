@@ -32,11 +32,52 @@ of the unresolved formal target.
 A whole-word scan of all 21 exact source texts finds no `Viewpoint` or
 `BinaryConnections` occurrence. The only `viewpoints` occurrence is descriptive
 comment text at `Views.sysml:4`. There is no source alias under any missing name.
-This source observation is separate from a canonical namespace lookup. The lead
-must attach candidate subject IDs, metaclasses, exact antecedent query outcomes,
-formal-target lookup results and alternative-target identities before marking a
-demonstrated publication blocker. The manifest leaves that evidence explicitly
-pending; it makes no accepted-publication claim.
+This source observation is separate from a canonical namespace lookup. The
+focused declared-graph test described below now supplies exact owned-path
+witnesses; full accepted-dependency candidate closure remains pending. Neither
+the source scan nor this test makes an accepted-publication claim.
+
+## Declared canonical witnesses
+
+The focused test constructs all 21 exact documents together in an unpublished
+ConstructionView on an empty canonical graph with the full combined registry.
+Its unresolved reference obligations remain visible. It deliberately uses no
+accepted KerML dependency, reference refinement or producer closure.
+
+Every step of the owned path requires `owned_relationships` and `member` to be
+Complete, including their canonical ownership-property dependencies. It reads
+declared names and restricts traversal to OwningMemberships, following the exact
+declaration contract used by StandardSysmlBindings. It also checks uniqueness,
+public visibility, exact metaclasses, StandardLibrary origin, and the pinned
+DocumentId, SourceRevisionId, SyntaxNodeId and ByteRange for each subject and
+membership. Imports, inherited membership and global namespace completeness do
+not participate in this test.
+
+| Formal target absent on the complete declared owned path | Actual canonical declaration | ElementId |
+| --- | --- | --- |
+| `Views::Viewpoint` | `Views::ViewpointCheck` — ViewpointDefinition | `8c8a3d17-aa0d-50dc-bb3b-b5b41b330b5d` |
+| `Views::viewpoints` | `Views::viewpointChecks` — ViewpointUsage | `29b6d0ae-8a25-55d0-ac30-9d153e62ddba` |
+| `Connections::BinaryConnections` | `Connections::BinaryConnection` — ConnectionDefinition | `6f256a75-d031-5390-90d0-24ba7666497b` |
+
+BinaryConnection directly owns exactly two FeatureMembership members with a
+computed declared `Feature::isEnd = true`: `source`
+(`6c7986f9-6e5b-59f0-83e6-51e1fb686d81`) and `target`
+(`66864d33-a47d-5da9-9da6-41b7aa317ee1`), both ReferenceUsages. This witnesses the
+rule's declared owned-end antecedent without substituting an inherited or
+effective end count. The additional actual ViewpointUsage
+`Views::View::viewpointSatisfactions` has canonical identity
+`92713464-c2df-5d85-9a2c-8d9641ef3714`.
+
+The test passed in 5.01 seconds; package formatting and Clippy with warnings
+denied also passed. Reproduce it with:
+
+```text
+cargo test --locked --offline -p agq-kerml-text --lib exact_systems_authority_targets_have_complete_declared_owned_path_witnesses -- --nocapture
+```
+
+The output's `AUTHORITY_DECLARED_WITNESS` record contains the observed IDs,
+provenance and path outcomes. These are declared canonical witnesses, not a
+claim that all mandatory references or the combined semantic worklist close.
 
 Some neighboring examples have additional spelling inconsistencies: the
 ViewpointDefinition example on PDF 490 spells its package `Viewpoints`, and the
