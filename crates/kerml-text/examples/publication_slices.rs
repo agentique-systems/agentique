@@ -12,7 +12,9 @@ use serde_json::json;
 use std::{collections::BTreeSet, io::Write, path::Path, time::Instant};
 #[path = "support/publication_input.rs"]
 mod publication_input;
-use publication_input::{PublicationInput, PublicationScopeBoundary};
+use publication_input::{
+    PublicationInput, PublicationScopeBoundary, SLICES, slice_documents, validate_all_documents,
+};
 #[path = "support/multiplicity_inventory.rs"]
 mod multiplicity_inventory;
 #[path = "support/publication_metrics.rs"]
@@ -24,19 +26,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .find_map(|a| a.strip_prefix("--slice=").map(str::to_owned))
         .ok_or("--slice=A|B|C|D|E|all (or a comma-separated selection) is required")?;
     let slices: Vec<_> = if slice == "all" {
-        vec!["A", "B", "C", "D", "E"]
+        SLICES.to_vec()
     } else {
         slice.split(',').collect()
     };
-    if slices
-        .iter()
-        .any(|s| !["A", "B", "C", "D", "E"].contains(s))
+    if slices.iter().any(|s| !SLICES.contains(s))
         || slices.iter().copied().collect::<BTreeSet<_>>().len() != slices.len()
     {
         return Err("Select distinct slice labels A through E".into());
     }
     let preparation_start = Instant::now();
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
+    validate_all_documents(&sources)?;
     let input = PublicationInput::load(&sources)?;
     let preparation_seconds = preparation_start.elapsed().as_secs_f64();
     println!("Shared publication preparation: {preparation_seconds:.3}s");
@@ -57,24 +58,7 @@ fn run_slice(
     preparation_seconds: f64,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let slice_start = Instant::now();
-    let documents: &[&str] = match slice {
-        "A" => &["Base.kerml", "Objects.kerml", "Links.kerml"],
-        "B" => &["Occurrences.kerml", "Transfers.kerml"],
-        "C" => &[
-            "Performances.kerml",
-            "BaseFunctions.kerml",
-            "DataFunctions.kerml",
-            "ControlFunctions.kerml",
-        ],
-        "D" => &["Observation.kerml", "FeatureReferencingPerformances.kerml"],
-        "E" => &[
-            "Triggers.kerml",
-            "StatePerformances.kerml",
-            "ControlPerformances.kerml",
-            "TransitionPerformances.kerml",
-        ],
-        _ => return Err("unknown slice".into()),
-    };
+    let documents = slice_documents(slice).ok_or("unknown slice")?;
     let mut subjects = input.subjects(sources, documents)?;
     if slice == "C" {
         let array = input.fixture_subject(sources, &["CollectionFunctions", "array#"])?;

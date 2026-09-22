@@ -1,9 +1,12 @@
 //! Shared preparation for bounded, explicitly scoped publication preflights.
 use agq_kerml_semantics::*;
 use agq_kerml_text::library::LibraryDraft;
-use agq_kernel::{DocumentId, ElementId, Snapshot, derived::DerivedOverlay, provenance::FactKey};
+use agq_kernel::{ElementId, Snapshot, derived::DerivedOverlay, provenance::FactKey};
 use agq_standard_libraries::VerifiedLibrarySet;
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "publication_documents.rs"]
+mod publication_documents;
+pub use publication_documents::{SLICES, slice_documents, validate_all_documents};
 #[path = "publication_dependencies.rs"]
 mod publication_dependencies;
 pub use publication_dependencies::Boundary as PublicationScopeBoundary;
@@ -107,23 +110,7 @@ impl PublicationInput {
         sources: &VerifiedLibrarySet,
         documents: &[&str],
     ) -> Result<BTreeSet<ElementId>, Box<dyn std::error::Error>> {
-        for name in documents {
-            if sources
-                .documents()
-                .filter(|d| d.path().ends_with(name))
-                .count()
-                != 1
-            {
-                return Err(
-                    format!("Slice document must identify one pinned source: {name}").into(),
-                );
-            }
-        }
-        let documents: BTreeSet<DocumentId> = sources
-            .documents()
-            .filter(|d| documents.iter().any(|name| d.path().ends_with(name)))
-            .map(|d| d.document())
-            .collect();
+        let documents = publication_documents::select(sources, documents)?;
         let selected: BTreeSet<_> = self
             .draft
             .source_map()

@@ -468,6 +468,176 @@
         "min_free_disk_bytes": 0
       },
       "output_sha256": "dfa948e0a203c9eb5a5f81be5e45c05fef230c4b566c0ee6c858b0b02ef9cf0a"
+    },
+    {
+      "name": "v9-slice-document-selection-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "publication_slice_documents"
+      ],
+      "source_commit": "48c84658de3319071f3ff06f72ab2cf9d8f28a0d",
+      "working_changes_sha256": "c7e953384ac009764a3a8984dae5f705cf658ed769192121760f0eb6ce48679f",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-slice-document-selection-tests",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 16920,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 1.031,
+      "peak_rss_bytes": 1568768,
+      "peak_private_bytes": 271728640,
+      "samples": 2,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "b0a6b97c5449e00ee72c2d34249a15b8e74fd8d3b423849fc4f96c49cbc3c2ef"
+    },
+    {
+      "name": "v9-slice-document-selection-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "48c84658de3319071f3ff06f72ab2cf9d8f28a0d",
+      "working_changes_sha256": "c7e953384ac009764a3a8984dae5f705cf658ed769192121760f0eb6ce48679f",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-slice-document-selection-clippy",
+      "exit_code": 101,
+      "command_exit_code": 101,
+      "command_pid": 15292,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 3.032,
+      "peak_rss_bytes": 282685440,
+      "peak_private_bytes": 430772224,
+      "samples": 4,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "b1f4b485f0ea9e74d727e64d987f329bf13aa1f5d9f0a0e6991aa655af63d188"
+    },
+    {
+      "name": "v9-slice-document-selection-clippy-fixed",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "source_commit": "48c84658de3319071f3ff06f72ab2cf9d8f28a0d",
+      "working_changes_sha256": "efe3a0972560ad274df3dec100717ecaf57d4b0b331bb25df67e595a94a37ca0",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-slice-document-selection-clippy-fixed",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 23824,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 1.031,
+      "peak_rss_bytes": 1576960,
+      "peak_private_bytes": 359079936,
+      "samples": 2,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "6d12af3b75b62c843915343c06176e894f050cb7f279cd62dc9f96d0b02a0fce"
+    },
+    {
+      "name": "v9-slice-document-selection-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "source_commit": "48c84658de3319071f3ff06f72ab2cf9d8f28a0d",
+      "working_changes_sha256": "efe3a0972560ad274df3dec100717ecaf57d4b0b331bb25df67e595a94a37ca0",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/v9-slice-document-selection-fmt",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 8432,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 2.031,
+      "peak_rss_bytes": 73216000,
+      "peak_private_bytes": 191352832,
+      "samples": 3,
+      "limits": {
+        "wall_seconds": 120.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   ]
 }

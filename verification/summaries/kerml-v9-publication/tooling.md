@@ -112,3 +112,18 @@ an initial report-write failure still proceeds to the durable cache attempt.
 Semantic acceptance remains independent of telemetry status. Four focused example
 tests passed, including collision isolation, empty-reservation cleanup and durable
 staged replacement. Focused Clippy and workspace formatting checks passed.
+
+Slice document selection now compares exact basenames, or exact full archive paths
+when a path is supplied. `Performances.kerml` therefore excludes
+`ControlPerformances.kerml`, `StatePerformances.kerml` and
+`TransitionPerformances.kerml`. All A–E seed lists and the targeted C document are
+validated against the pinned library set before declaration preparation, including
+when resuming only C–E. The actual pinned `Semantic-Library.kpar` confirms the D/E
+document names under `Kernel Semantic Library/`.
+
+Two focused source-selection tests passed, covering all five unique selections,
+suffix collisions, missing documents and full-path disambiguation. All-target
+`agq-kerml-text` Clippy and workspace formatting passed. The first Clippy invocation
+caught a now-unused import, which was removed before the successful rerun. These
+tooling changes preserve slice scope and acceptance criteria and ran no corpus
+closure.
