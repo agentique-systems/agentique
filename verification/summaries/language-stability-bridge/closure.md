@@ -187,3 +187,13 @@ An initial inverse fixture used abstract Relationship and failed kernel construc
 the fixture now uses a concrete FeatureTyping carrier. Broader package checks follow
 integration; these focused outcomes authorize another bounded Actions check, not
 publication acceptance.
+
+The broader package run passed all 147 KerML unit tests before an existing
+cross-feature regression caught repeated selected-edge evidence allocating a new
+declared-origin Arc. The helper now reuses the existing declared-origin cache.
+This changes allocation sharing only: the existing regression asserts identical
+query values, completeness and proof contents across repeated and independent
+query evaluators, then checks shared Arc identity. Its focused rerun passed:
+`cargo test --locked --offline -p agq-kerml-semantics --test cross_features_v10
+produced_value_infrastructure_does_not_become_an_owned_cross_feature -- --nocapture`
+(exit 0, one test, 0.34 seconds). Package verification continues below.

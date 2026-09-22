@@ -569,9 +569,10 @@ impl<'m> KerMlQueries<'m> {
                 out.declared_fact_origins
                     .entry(fact)
                     .or_insert_with(|| Arc::new(origin.clone()));
-                out.fact_origins
-                    .entry(fact)
-                    .or_insert_with(|| Arc::new(Origin::Declared(origin.clone())));
+                out.fact_origins.entry(fact).or_insert_with(|| {
+                    self.declared_fact_origin(fact)
+                        .expect("selected original stored fact has declared provenance")
+                });
             }
         } else {
             self.fact(out, fact);
