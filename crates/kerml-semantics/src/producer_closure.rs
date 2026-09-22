@@ -459,6 +459,9 @@ impl SemanticClosureRequirement {
                     | E::Subsetting
                     | E::Redefinition
                     | E::ResultStructure
+                    // Visibility and other primitive selection properties can
+                    // change effective membership without creating a carrier.
+                    | E::Scalar(_)
             ),
             Self::EffectiveNaming => matches!(
                 effect,
@@ -468,6 +471,8 @@ impl SemanticClosureRequirement {
                     | E::Conjugation
                     | E::Subsetting
                     | E::Redefinition
+                    // Declared names and aliases are primitive scalar inputs.
+                    | E::Scalar(_)
             ),
             Self::ValueContext => {
                 Self::EffectiveFeaturing.requires(effect)

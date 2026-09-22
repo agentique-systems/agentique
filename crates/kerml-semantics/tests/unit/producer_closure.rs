@@ -464,6 +464,71 @@ fn requirements_name_exact_typing_effect_dependencies() {
 }
 
 #[test]
+fn primitive_scalar_writers_keep_naming_and_membership_requirements_open() {
+    use crate::producer_closure::ProducerEvaluationTable;
+    let mut f = Fixture::new();
+    f.create(1, c::FEATURE);
+    f.create(2, c::CLASSIFIER);
+    member(&mut f, 2, 1, 3, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    for (property, class, subject, requirement) in [
+        (
+            p::ELEMENT_DECLARED_NAME,
+            c::FEATURE,
+            id(1),
+            SemanticClosureRequirement::EffectiveNaming,
+        ),
+        (
+            p::MEMBERSHIP_VISIBILITY,
+            c::MEMBERSHIP,
+            id(3),
+            SemanticClosureRequirement::EffectiveMembership,
+        ),
+    ] {
+        let registry = ProducerRegistry::new([ProducerDescriptor::new(
+            ACTIVATE,
+            [ProducerEffect::Scalar(property)],
+            ProducerApplicability::Subtypes(vec![class]),
+        )])
+        .unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        for completeness in [
+            None,
+            Some(Completeness::Incomplete),
+            Some(Completeness::Complete),
+        ] {
+            let mut table = ProducerEvaluationTable::default();
+            for record in snapshot.model().elements() {
+                table.pending(record.id(), snapshot.model(), &registry);
+            }
+            if let Some(completeness) = completeness {
+                table
+                    .record(&[(subject, ACTIVATE, completeness)], &registry)
+                    .unwrap();
+                table.record_reads(&[(subject, ACTIVATE, Vec::new().into())], &registry);
+            }
+            let certificate = ProducerClosureCertificate::issue(
+                snapshot.model(),
+                context.id(),
+                &registry,
+                &table,
+                |_| false,
+            );
+            assert_eq!(
+                certificate.is_closed(id(2), requirement),
+                completeness == Some(Completeness::Complete),
+                "{requirement:?} may depend on primitive property {property}"
+            );
+            assert!(certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
+            assert!(certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveOwnership));
+        }
+    }
+}
+
+#[test]
 fn fresh_relationship_does_not_exempt_an_existing_semantic_source() {
     let snapshot = fixture();
     let q = KerMlQueries::new(
