@@ -2,12 +2,19 @@
 use agq_kerml_semantics::{Completeness, QualifiedName};
 use agq_kerml_syntax::production::SysmlSyntaxProfile;
 use agq_kerml_text::{
-    library::CanonicalKermlStandardLibraries, sysml::prepare_systems_library_with_semantic_progress,
+    library::CanonicalKermlStandardLibraries,
+    sysml::prepare_systems_library_slice_with_semantic_progress,
 };
 use agq_kernel::value::Value;
 use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::json;
-use std::{collections::BTreeMap, io::Write, path::PathBuf, sync::Arc, time::Instant};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    io::Write,
+    path::PathBuf,
+    sync::Arc,
+    time::Instant,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -19,6 +26,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output = argument("--output=").ok_or("--output=<report path> is required")?;
     let started = Instant::now();
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
+    let selected =
+        std::env::args().find_map(|arg| arg.strip_prefix("--documents=").map(str::to_owned));
+    let audit_only = std::env::args().any(|arg| arg == "--audit-only");
+    let paths: BTreeSet<String> = if let Some(selected) = &selected {
+        if !audit_only {
+            return Err(
+                "--documents requires --audit-only; a slice cannot accept a publication".into(),
+            );
+        }
+        selected
+            .split(',')
+            .map(|name| {
+                sources
+                    .documents()
+                    .find(|source| {
+                        source.language() == agq_standard_libraries::LibraryLanguage::SysMl
+                            && std::path::Path::new(source.path())
+                                .file_stem()
+                                .and_then(|s| s.to_str())
+                                == Some(name)
+                    })
+                    .map(|source| source.path().to_owned())
+                    .ok_or_else(|| format!("unknown Systems document: {name}"))
+            })
+            .collect::<Result<_, _>>()?
+    } else {
+        sources
+            .documents()
+            .filter(|source| source.language() == agq_standard_libraries::LibraryLanguage::SysMl)
+            .map(|source| source.path().to_owned())
+            .collect()
+    };
     println!("Systems: restoring sealed KerML dependency");
     let accepted = Arc::new(CanonicalKermlStandardLibraries::restore_cache(
         std::fs::File::open(cache)?,
@@ -30,10 +69,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     let mut last_reference_round = None;
     let mut last_producer_stage = None;
-    let preparation = prepare_systems_library_with_semantic_progress(
+    let preparation = prepare_systems_library_slice_with_semantic_progress(
         &sources,
         accepted.clone(),
-        SysmlSyntaxProfile::OperationalV1,
+        SysmlSyntaxProfile::OperationalV2,
+        &paths,
         |round| {
             last_reference_round = Some(json!({
                 "round":round.round,"selected":round.selected_endpoints,
@@ -87,7 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &output,
                 &json!({
                     "format":"agq-sysml-systems-publication-audit/1",
-                    "sysml_profile":SysmlSyntaxProfile::OperationalV1.id(),
+                    "sysml_profile":SysmlSyntaxProfile::OperationalV2.id(),
                     "accepted_kerml_digest":accepted.semantic_digest(),
                     "publication_accepted":false,"preparation_error":error.to_string(),
                     "last_reference_round":last_reference_round,"last_producer_stage":last_producer_stage,
@@ -195,6 +235,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let obligations = draft.candidate().obligations().len();
     let mut report = json!({
         "format":"agq-sysml-systems-publication-audit/1",
+        "scope":paths,
         "sysml_profile":candidate.syntax_profile().id(),
         "accepted_kerml_digest":accepted.semantic_digest(),
         "accepted_kerml_profile":accepted.profile().id(),
@@ -212,6 +253,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "elapsed_seconds":started.elapsed().as_secs_f64(),
     });
     drop(queries);
+    if audit_only {
+        let passed = candidate.construction_complete()
+            && candidate.production().is_some_and(|production| {
+                production.final_predicates
+                    && production.converged
+                    && production.completeness == Completeness::Complete
+            })
+            && failures.is_empty();
+        report["scoped_preflight_passed"] = json!(passed);
+        report["publication_attempted"] = json!(false);
+        write_report(&output, &report)?;
+        if !passed {
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
     println!("Systems: evaluating immutable publication acceptance");
     match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::publish(
         candidate,

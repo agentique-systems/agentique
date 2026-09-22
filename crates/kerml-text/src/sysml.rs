@@ -161,6 +161,60 @@ pub fn prepare_systems_library_with_semantic_progress(
     sources: &VerifiedLibrarySet,
     publication: Arc<CanonicalKermlStandardLibraries>,
     profile: production::SysmlSyntaxProfile,
+    progress: impl FnMut(&library::ReferenceRefinementRound),
+    batch_progress: impl FnMut(usize, usize, usize, usize),
+    producer_progress: impl FnMut(&agq_kerml_semantics::PublicationStage),
+) -> Result<SystemsLibraryCandidate, LibraryLoadError> {
+    prepare_systems_library_scope(
+        sources,
+        publication,
+        profile,
+        None,
+        progress,
+        batch_progress,
+        producer_progress,
+    )
+}
+
+/// Construct a bounded set of exact Systems source paths for producer and
+/// reference preflights. Callers must include the slice's Systems dependencies.
+/// A slice cannot pass the canonical publication's exact 21-document gate.
+pub fn prepare_systems_library_slice_with_semantic_progress(
+    sources: &VerifiedLibrarySet,
+    publication: Arc<CanonicalKermlStandardLibraries>,
+    profile: production::SysmlSyntaxProfile,
+    paths: &BTreeSet<String>,
+    progress: impl FnMut(&library::ReferenceRefinementRound),
+    batch_progress: impl FnMut(usize, usize, usize, usize),
+    producer_progress: impl FnMut(&agq_kerml_semantics::PublicationStage),
+) -> Result<SystemsLibraryCandidate, LibraryLoadError> {
+    if paths.is_empty()
+        || paths.iter().any(|path| {
+            !sources
+                .documents()
+                .any(|source| source.language() == LibraryLanguage::SysMl && source.path() == path)
+        })
+    {
+        return Err(LibraryLoadError::Interpretation(
+            "Systems slice requires a nonempty set of exact pinned SysML document paths".into(),
+        ));
+    }
+    prepare_systems_library_scope(
+        sources,
+        publication,
+        profile,
+        Some(paths),
+        progress,
+        batch_progress,
+        producer_progress,
+    )
+}
+
+fn prepare_systems_library_scope(
+    sources: &VerifiedLibrarySet,
+    publication: Arc<CanonicalKermlStandardLibraries>,
+    profile: production::SysmlSyntaxProfile,
+    paths: Option<&BTreeSet<String>>,
     mut progress: impl FnMut(&library::ReferenceRefinementRound),
     mut batch_progress: impl FnMut(usize, usize, usize, usize),
     mut producer_progress: impl FnMut(&agq_kerml_semantics::PublicationStage),
@@ -210,6 +264,7 @@ pub fn prepare_systems_library_with_semantic_progress(
     for source in sources
         .documents()
         .filter(|source| source.language() == LibraryLanguage::SysMl)
+        .filter(|source| paths.is_none_or(|paths| paths.contains(source.path())))
     {
         let syntax = production::parse_sysml_with_profile(
             profile,
