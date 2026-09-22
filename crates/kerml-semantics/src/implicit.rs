@@ -290,7 +290,7 @@ impl KerMlQueries<'_> {
         owner: ElementId,
         position: Position,
     ) -> Vec<ElementId> {
-        let members = self.memberships(owner);
+        let members = self.memberships_of_type(owner, c::FEATURE_MEMBERSHIP);
         let mut features = vec![];
         for &membership in &members.value {
             if !self.is(membership, c::FEATURE_MEMBERSHIP) {
@@ -457,7 +457,8 @@ impl KerMlQueries<'_> {
             }
             let ends = self.positioned_features(&mut out, current, position);
             owned.insert(current, ends);
-            let relationships = self.owned_relationships(current);
+            let conjugations = self.owned_relationships_of_type(current, c::CONJUGATION);
+            let chainings = self.owned_relationships_of_type(current, c::FEATURE_CHAINING);
             let targets = self.owned_specialization_targets(current);
             let mut generals: Vec<_> = targets
                 .value
@@ -468,18 +469,16 @@ impl KerMlQueries<'_> {
             out.merge(targets);
             let mut conjugated = None;
             let mut chained = None;
-            for &relationship in &relationships.value {
-                if self.is(relationship, c::CONJUGATION) {
-                    conjugated =
-                        self.read_reference(&mut out, relationship, p::CONJUGATION_ORIGINAL_TYPE);
-                }
-                if self.is(relationship, c::FEATURE_CHAINING) {
-                    chained = self.read_reference(
-                        &mut out,
-                        relationship,
-                        p::FEATURE_CHAINING_CHAINING_FEATURE,
-                    );
-                }
+            for &relationship in &conjugations.value {
+                conjugated =
+                    self.read_reference(&mut out, relationship, p::CONJUGATION_ORIGINAL_TYPE);
+            }
+            for &relationship in &chainings.value {
+                chained = self.read_reference(
+                    &mut out,
+                    relationship,
+                    p::FEATURE_CHAINING_CHAINING_FEATURE,
+                );
             }
             if let Some(original) = conjugated {
                 generals = vec![original];
@@ -489,7 +488,8 @@ impl KerMlQueries<'_> {
             {
                 generals.push(target);
             }
-            out.merge(relationships);
+            out.merge(conjugations);
+            out.merge(chainings);
             queue.extend(generals.iter().copied());
             graph.insert(current, generals);
         }

@@ -703,6 +703,13 @@ impl<'m> KerMlQueries<'m> {
 
     /// Direct owned memberships only; this is not Namespace::membership (imports/inheritance).
     pub fn memberships(&self, namespace: ElementId) -> QueryResult<Vec<ElementId>> {
+        self.memberships_of_type(namespace, c::MEMBERSHIP)
+    }
+    pub(crate) fn memberships_of_type(
+        &self,
+        namespace: ElementId,
+        class: MetaclassId,
+    ) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
         if self
             .checked::<views::Namespace, _>(&mut out, namespace)
@@ -710,9 +717,11 @@ impl<'m> KerMlQueries<'m> {
         {
             return out;
         }
-        out.search_dependencies
-            .insert(SearchDependency::NamespaceMembers { namespace });
-        let owned = self.owned_relationships_of_type(namespace, c::MEMBERSHIP);
+        if class == c::MEMBERSHIP {
+            out.search_dependencies
+                .insert(SearchDependency::NamespaceMembers { namespace });
+        }
+        let owned = self.owned_relationships_of_type(namespace, class);
         for &id in &owned.value {
             if self.is(id, c::MEMBERSHIP) {
                 out.value.push(id);

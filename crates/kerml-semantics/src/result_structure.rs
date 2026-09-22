@@ -106,6 +106,37 @@ mod navigation_evidence_regression {
     use super::{DerivationError, Graph, ResultStructurePlan};
 
     #[test]
+    fn absent_feature_values_only_read_the_relevant_relationship_population() {
+        let mut f = Fixture::new();
+        f.create(1, c::FEATURE);
+        let snapshot = f.finish();
+        let q = KerMlQueries::new(
+            SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+        );
+        let plan = q.plan_result_structure([id(1)]);
+        let (_, _, reads) = plan
+            .producer_reads
+            .iter()
+            .find(|(subject, family, _)| {
+                *subject == id(1) && *family == crate::ProducerFamily::FeatureValue.id()
+            })
+            .unwrap();
+        assert!(
+            reads.contains(&crate::producer_closure::ProducerRead::Owned(
+                id(1),
+                c::FEATURE_VALUE
+            ))
+        );
+        assert!(!reads.iter().any(|read| matches!(
+            read,
+            crate::producer_closure::ProducerRead::Structural(_)
+                | crate::producer_closure::ProducerRead::Property(_, p::FEATURE_DIRECTION)
+                | crate::producer_closure::ProducerRead::Owned(_, c::SPECIALIZATION)
+        )));
+        assert_eq!(plan.production.completeness, Completeness::Complete);
+    }
+
+    #[test]
     fn extension_property_changes_invalidate_reference_targets_and_require_complete_evidence() {
         let mut f = Fixture::new();
         f.create(1, c::FEATURE);
@@ -2698,24 +2729,28 @@ impl<'m> KerMlQueries<'m> {
             if self.is(subject, c::FEATURE) {
                 producer_families_attempted += 1;
                 let mut proof = self.result(());
-                let owned = self.owned_relationships(subject);
-                let undirected = self
-                    .read_value(&mut proof, subject, p::FEATURE_DIRECTION)
-                    .is_none();
-                let all_implied = owned
-                    .value
-                    .iter()
-                    .filter(|r| self.is(**r, c::SPECIALIZATION))
-                    .all(|r| {
+                let owned = self.owned_relationships_of_type(subject, c::FEATURE_VALUE);
+                // Direction and specialization constrain an actual valuation.
+                // An empty value population does not read those independent
+                // semantic results, which may still be produced later.
+                let (undirected, all_implied) = if owned.value.is_empty() {
+                    (false, false)
+                } else {
+                    let undirected = self
+                        .read_value(&mut proof, subject, p::FEATURE_DIRECTION)
+                        .is_none();
+                    let specializations =
+                        self.owned_relationships_of_type(subject, c::SPECIALIZATION);
+                    let all_implied = specializations.value.iter().all(|r| {
                         matches!(
                             self.read_value(&mut proof, *r, p::RELATIONSHIP_IS_IMPLIED),
                             Some(Value::Boolean(true))
                         )
                     });
+                    proof.merge(specializations);
+                    (undirected, all_implied)
+                };
                 for &value in &owned.value {
-                    if !self.is(value, c::FEATURE_VALUE) {
-                        continue;
-                    }
                     let nondefault = matches!(
                         self.read_value(&mut proof, value, p::FEATURE_VALUE_IS_DEFAULT),
                         Some(Value::Boolean(false))
