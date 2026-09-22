@@ -42,6 +42,12 @@ dependency and produces Incomplete. Explain output exposes the proof boundary;
 no synthetic FactKey represents it. A positive type or specialization witness can
 establish a positive antecedent without proving that additional types are absent.
 
+Canonical proof transport retains only the subject and versioned closure
+requirement as a kernel structural search. This is a dependency to reopen, not a
+witness. Query evaluation obtains the exact certificate from its current context.
+Historical certificate identities stay outside canonical records and their graph
+digest, so equivalent semantic graphs do not acquire worklist-history identities.
+
 Certificate attachment checks the exact graph, registry and context contract.
 Forks share valid evidence; changing interpretation inputs or the graph discards
 it. New frontiers issue new evidence after dependency invalidation. Certificates

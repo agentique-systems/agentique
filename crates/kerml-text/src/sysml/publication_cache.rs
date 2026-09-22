@@ -20,6 +20,19 @@ pub enum SystemsPublicationCacheError {
 }
 
 impl CanonicalSysmlSystemsLibrary {
+    /// Reject stale anchors or interpretation identities against this exact
+    /// accepted publication and the independently verified original sources.
+    pub fn check_binding_manifest(
+        &self,
+        sources: &VerifiedLibrarySet,
+        manifest: &Value,
+    ) -> Result<(), SystemsPublicationCacheError> {
+        if *manifest != self.binding_manifest(sources)? {
+            return Err(SystemsPublicationCacheError::Mismatch("binding manifest"));
+        }
+        Ok(())
+    }
+
     /// Accepted algorithmic anchors, including source and publication identities.
     /// This cannot be generated from an unpublished candidate.
     pub fn binding_manifest(

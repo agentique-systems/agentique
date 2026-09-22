@@ -267,7 +267,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "mandatory_references":{"total":draft.references().len(),"counts":counts,"failures":failures},
         "authority_targets":authority,
         "documents":candidate.documents().iter().map(|d|json!({"path":d.path,"document":d.document,"sha256":d.source_sha256,"profile":d.profile.id(),"parsed":d.parsed,"byte_exact":d.byte_exact,"recovery_count":d.recovery_count,"production_count":d.production_count,"construction_gap":d.construction_gap})).collect::<Vec<_>>(),
-        "construction_producers":candidate.production().map(|production|json!({"final_predicates":production.final_predicates,"completeness":format!("{:?}",production.completeness),"converged":production.converged,"rounds":production.counters.fixed_point_rounds,"subjects_evaluated":production.counters.subjects_evaluated,"derived_elements":production.counters.new_elements_proposed,"diagnostics":production.stages.last().map(|stage|stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>())})), "publication_accepted":false,
+        "construction_producers":candidate.production().map(|production|json!({"final_predicates":production.final_predicates,"completeness":format!("{:?}",production.completeness),"converged":production.converged,"rounds":production.counters.fixed_point_rounds,"subjects_evaluated":production.counters.subjects_evaluated,"derived_elements":production.counters.new_elements_proposed,"closure_counters":closure_counters(&production.counters),"diagnostics":production.stages.last().map(|stage|stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>())})), "publication_accepted":false,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
     });
     drop(queries);
@@ -312,6 +312,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             report["semantic_digest"] = json!(publication.semantic_digest());
             report["accepted_bindings"] = json!(publication.bindings().targets().len());
             report["publication_gate"] = audit_report(publication.audit());
+            report["publication_closure_counters"] = closure_counters(publication.counters());
             // Preserve the already accepted graph before this process exits.
             // Receipt files are outputs here, not trusted restoration inputs.
             let directory = output.parent().ok_or("output parent")?;
@@ -325,6 +326,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &directory.join("standard-bindings.json"),
                 &publication.binding_manifest(&sources)?,
             )?;
+            let persisted_bindings = serde_json::from_reader(std::fs::File::open(
+                directory.join("standard-bindings.json"),
+            )?)?;
+            publication.check_binding_manifest(&sources, &persisted_bindings)?;
+            report["bindings_stale_check"] = json!(true);
             report["exported_cache"] = json!(cache_path);
         }
         Err(agq_kerml_text::sysml::SystemsPublicationError::Rejected(audit)) => {
@@ -364,5 +370,18 @@ fn audit_report(audit: &agq_kerml_text::sysml::SystemsPublicationAudit) -> serde
         "mandatory_references":audit.mandatory_references,
         "complete_references":audit.complete_references,
         "findings":audit.findings.iter().map(|finding|format!("{finding:?}")).collect::<Vec<_>>()
+    })
+}
+
+fn closure_counters(counters: &agq_kerml_semantics::PublicationCounters) -> serde_json::Value {
+    json!({
+        "families_registered":counters.families_registered,
+        "applicable_subject_family_pairs":counters.applicable_subject_family_pairs,
+        "closed_pairs":counters.closed_producer_pairs,
+        "closed_requirements":counters.closed_producer_effects,
+        "incomplete_pairs":counters.incomplete_producer_pairs,
+        "certificate_bytes":counters.certificate_bytes,
+        "certificate_build_micros":counters.certificate_build_micros,
+        "negative_queries_certified":counters.negative_queries_certified,
     })
 }
