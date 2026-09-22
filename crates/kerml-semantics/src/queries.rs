@@ -534,7 +534,7 @@ impl<'m> KerMlQueries<'m> {
     /// not change an outgoing specialization or feature-chain population.
     /// Missing source endpoints remain visible because ownership, not the
     /// availability of a computed source slot, selects these candidates.
-    pub(crate) fn owned_relationships_of_type(
+    pub fn owned_relationships_of_type(
         &self,
         element: ElementId,
         class: MetaclassId,

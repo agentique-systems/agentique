@@ -200,13 +200,7 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
                     ProducerEffect::Scalar(kp::FEATURE_IS_VARIABLE),
                     ProducerEffect::Scalar(sp::USAGE_MAY_TIME_VARY),
                 ],
-                "checkTransitionUsagePayloadSpecialization" => vec![
-                    ProducerEffect::Membership,
-                    ProducerEffect::Specialization,
-                    ProducerEffect::Subsetting,
-                    ProducerEffect::FeatureChain,
-                    ProducerEffect::ResultStructure,
-                ],
+                "checkTransitionUsagePayloadSpecialization" => vec![ProducerEffect::Subsetting],
                 // A Usage contributes Subsetting; a Definition contributes
                 // Subclassification. Both are Specialization relationships.
                 _ => vec![ProducerEffect::Specialization, ProducerEffect::Subsetting],
@@ -216,7 +210,18 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
                 effects,
                 ProducerApplicability::Subtypes(classes),
             );
-            if rule != "checkTransitionUsagePayloadSpecialization" {
+            if rule == "checkTransitionUsagePayloadSpecialization" {
+                // Only the second input parameter receives a new Subsetting.
+                // FeatureChaining belongs to the newly created payload chain,
+                // and cannot change the transition's own effective typing.
+                descriptor.scope = agq_kerml_semantics::ProducerEffectScope::OwnedDescendants;
+                descriptor.fresh_effects = BTreeSet::from([
+                    ProducerEffect::FeatureChain,
+                    ProducerEffect::ResultStructure,
+                ]);
+                descriptor.relationship_classes =
+                    Some(BTreeSet::from([kc::SUBSETTING, kc::FEATURE_CHAINING]));
+            } else {
                 descriptor.scope = agq_kerml_semantics::ProducerEffectScope::Subject;
             }
             if rule == "deriveUsageMayTimeVary" {

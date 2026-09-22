@@ -209,11 +209,26 @@ fn producer_descriptors_cover_exactly_implemented_rules_with_declared_effects() 
             descriptor.id == ProducerFamilyId::new("checkTransitionUsagePayloadSpecialization")
         })
         .unwrap();
-    for effect in [
-        ProducerEffect::Subsetting,
-        ProducerEffect::FeatureChain,
-        ProducerEffect::ResultStructure,
-    ] {
-        assert!(payload.effects.contains(&effect));
-    }
+    assert_eq!(
+        payload.effects,
+        std::collections::BTreeSet::from([ProducerEffect::Subsetting])
+    );
+    assert_eq!(
+        payload.scope,
+        agq_kerml_semantics::ProducerEffectScope::OwnedDescendants
+    );
+    assert_eq!(
+        payload.fresh_effects,
+        std::collections::BTreeSet::from([
+            ProducerEffect::FeatureChain,
+            ProducerEffect::ResultStructure
+        ])
+    );
+    assert_eq!(
+        payload.relationship_classes,
+        Some(std::collections::BTreeSet::from([
+            kc::SUBSETTING,
+            kc::FEATURE_CHAINING
+        ]))
+    );
 }

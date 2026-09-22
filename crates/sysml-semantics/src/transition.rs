@@ -80,7 +80,7 @@ fn trigger_payload(
     q: &KerMlQueries<'_>,
     transition: ElementId,
 ) -> QueryResult<Option<(ElementId, ElementId)>> {
-    let owned = q.owned_relationships(transition);
+    let owned = q.owned_relationships_of_type(transition, sc::TRANSITION_FEATURE_MEMBERSHIP);
     let relationships = owned.value.clone();
     let mut out = owned.map(|_| None);
     for membership in relationships {
@@ -141,7 +141,7 @@ fn reference_subsetting(
     q: &KerMlQueries<'_>,
     subject: ElementId,
 ) -> QueryResult<Option<Option<ElementId>>> {
-    let owned = q.owned_relationships(subject);
+    let owned = q.owned_relationships_of_type(subject, kc::REFERENCE_SUBSETTING);
     let relationships = owned.value.clone();
     let mut out = owned.map(|_| None);
     for relationship in relationships {
