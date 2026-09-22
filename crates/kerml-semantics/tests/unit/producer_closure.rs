@@ -657,6 +657,18 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
 fn generic_effects_cover_subtype_populations_but_membership_does_not_reown() {
     use crate::producer_closure::{ProducerRead, effect_changes_read};
     let snapshot = fixture();
+    for effect in [
+        ProducerEffect::Featuring,
+        ProducerEffect::Membership,
+        ProducerEffect::ResultStructure,
+    ] {
+        for class in [c::SPECIALIZATION, c::FEATURE_TYPING] {
+            assert!(
+                !effect_changes_read(effect, &ProducerRead::Owned(id(1), class), snapshot.model()),
+                "{effect:?} changes {class:?}"
+            );
+        }
+    }
     assert!(effect_changes_read(
         ProducerEffect::Membership,
         &ProducerRead::Owned(id(1), c::FEATURE_VALUE),

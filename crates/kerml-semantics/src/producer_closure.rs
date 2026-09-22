@@ -617,6 +617,14 @@ impl ProducerEvaluationTable {
                             .iter()
                             .any(|&effect| effect_changes_read(effect, read, model))
                         {
+                            if trace && !blocked.contains(reader) {
+                                eprintln!(
+                                    "closure future cause {subject:?}/{} -> {:?}/{} read={read:?}",
+                                    descriptor.id.name(),
+                                    subjects[*reader / families],
+                                    registry.descriptors[*reader % families].id.name()
+                                );
+                            }
                             affected.push(*reader);
                         }
                     }
@@ -637,6 +645,14 @@ impl ProducerEvaluationTable {
                         .iter()
                         .any(|&effect| effect_changes_read(effect, read, model))
                     {
+                        if trace && !blocked.contains(reader) {
+                            eprintln!(
+                                "closure direct cause {subject:?}/{} -> {:?}/{} read={read:?}",
+                                descriptor.id.name(),
+                                subjects[*reader / families],
+                                registry.descriptors[*reader % families].id.name()
+                            );
+                        }
                         affected.push(*reader);
                     }
                 }
