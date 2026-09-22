@@ -883,6 +883,119 @@ fn additive_scalar_facts_are_fixed_while_absence_and_collection_reads_remain_ope
 }
 
 #[test]
+fn declared_relationship_classes_bound_current_and_future_population_writes() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut previous_registry = None;
+    for owner in [id(1), id(3)] {
+        for (bound, class, expected) in [
+            (false, c::FEATURE_VALUE, ProducerEvaluationState::Pending),
+            (
+                true,
+                c::FEATURE_VALUE,
+                ProducerEvaluationState::EvaluatedComplete,
+            ),
+            (true, c::MEMBERSHIP, ProducerEvaluationState::Pending),
+        ] {
+            let mut writer = ProducerDescriptor::new(
+                ACTIVATE,
+                [ProducerEffect::Membership],
+                ProducerApplicability::Subtypes(vec![c::FEATURE]),
+            );
+            writer.scope = ProducerEffectScope::SubjectAndOwners;
+            if bound {
+                writer.relationship_classes = Some(BTreeSet::from([c::FEATURE_MEMBERSHIP]));
+            }
+            let registry = ProducerRegistry::new([
+                writer,
+                ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any),
+            ])
+            .unwrap();
+            if !bound {
+                previous_registry = Some(registry.digest());
+            } else {
+                assert_ne!(previous_registry, Some(registry.digest()));
+            }
+            let context =
+                SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+                    .unwrap()
+                    .with_producer_registry_digest(registry.digest())
+                    .unwrap();
+            let mut table = ProducerEvaluationTable::default();
+            for record in snapshot.model().elements() {
+                table.pending(record.id(), snapshot.model(), &registry);
+                table
+                    .record(&[(record.id(), TYPE, Completeness::Complete)], &registry)
+                    .unwrap();
+                table.record_reads(
+                    &[(
+                        record.id(),
+                        TYPE,
+                        if record.id() == id(2) {
+                            vec![ProducerRead::Owned(owner, class)].into()
+                        } else {
+                            Vec::new().into()
+                        },
+                    )],
+                    &registry,
+                );
+            }
+            table
+                .record(&[(id(1), ACTIVATE, Completeness::Incomplete)], &registry)
+                .unwrap();
+            let certificate = ProducerClosureCertificate::issue(
+                snapshot.model(),
+                context.id(),
+                &registry,
+                &table,
+                |_| false,
+            );
+            assert_eq!(
+                certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
+                Some(expected),
+                "owner={owner:?}, class={class:?}, bounded={bound}"
+            );
+        }
+    }
+}
+
+#[test]
+fn relationship_class_bound_rejects_undeclared_subtype_output() {
+    let snapshot = fixture();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let mut plan = q.plan_result_structure([]);
+    plan.add_derived_element(
+        DerivationKey {
+            subject: id(1),
+            rule: RuleId::from_u128(99700),
+            output: OutputKey::from_u128(1),
+        },
+        c::FEATURE_VALUE,
+        BTreeMap::new(),
+        Some(id(1)),
+        &q.canonical_fact_evidence(FactKey::Element(id(1))),
+    )
+    .unwrap();
+    let mut descriptor = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Membership],
+        ProducerApplicability::Any,
+    );
+    plan.validate_declared_effects(
+        &[id(1)],
+        &ProducerRegistry::new([descriptor.clone()]).unwrap(),
+    )
+    .unwrap();
+    descriptor.relationship_classes = Some(BTreeSet::from([c::FEATURE_MEMBERSHIP]));
+    assert!(
+        plan.validate_declared_effects(&[id(1)], &ProducerRegistry::new([descriptor]).unwrap())
+            .is_err()
+    );
+}
+
+#[test]
 fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
     let descriptor =
         ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);

@@ -1781,15 +1781,19 @@ impl ResultStructurePlan<'_> {
             };
             let fresh = model.element(source).is_none();
             let permitted = descriptors.iter().any(|&(subject, descriptor)| {
-                (fresh && descriptor.fresh_effects.contains(&effect))
-                    || (descriptor.effects.contains(&effect)
-                        && (fresh
-                            || descriptor.scope == ProducerEffectScope::Model
-                            || subject == source
-                            || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
-                                && owned_below(model, source, subject))
-                            || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
-                                && owned_below(model, subject, source))))
+                descriptor
+                    .relationship_classes
+                    .as_ref()
+                    .is_none_or(|classes| classes.contains(&record.class))
+                    && ((fresh && descriptor.fresh_effects.contains(&effect))
+                        || (descriptor.effects.contains(&effect)
+                            && (fresh
+                                || descriptor.scope == ProducerEffectScope::Model
+                                || subject == source
+                                || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
+                                    && owned_below(model, source, subject))
+                                || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
+                                    && owned_below(model, subject, source)))))
             });
             if !permitted {
                 return Err(DerivationError::InputContextMismatch);

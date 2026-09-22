@@ -248,6 +248,10 @@ pub struct ProducerDescriptor {
     /// records. A fresh FeatureTyping targeting an existing Feature belongs in
     /// `effects`, even though its relationship identity is new.
     pub fresh_effects: BTreeSet<ProducerEffect>,
+    /// Optional exact metaclasses of relationship records this family may
+    /// create. This bounds potential output, not the records observed so far.
+    /// `None` permits every relationship class covered by its effects.
+    pub relationship_classes: Option<BTreeSet<MetaclassId>>,
     pub applicability: ProducerApplicability,
     pub scope: ProducerEffectScope,
     pub minimum_stratum: ResultStructureStratum,
@@ -262,6 +266,7 @@ impl ProducerDescriptor {
             id,
             effects: effects.into_iter().collect(),
             fresh_effects: BTreeSet::new(),
+            relationship_classes: None,
             applicability,
             scope: ProducerEffectScope::SubjectAndOwned,
             minimum_stratum: ResultStructureStratum::Structural,
@@ -279,18 +284,20 @@ impl ProducerDescriptor {
 /// A pending creator can activate families with no subjects in the current
 /// frontier. Their cross-subject effects cannot be omitted from the witness.
 fn future_cross_subject_effects(registry: &ProducerRegistry) -> BTreeSet<ProducerEffect> {
-    registry
-        .descriptors
-        .iter()
-        .filter(|descriptor| {
-            descriptor.applicability != ProducerApplicability::Never
-                && matches!(
-                    descriptor.scope,
-                    ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
-                )
-        })
+    future_cross_subject_families(registry)
         .flat_map(|descriptor| descriptor.effects.iter().copied())
         .collect()
+}
+fn future_cross_subject_families(
+    registry: &ProducerRegistry,
+) -> impl Iterator<Item = &ProducerDescriptor> {
+    registry.descriptors.iter().filter(|descriptor| {
+        descriptor.applicability != ProducerApplicability::Never
+            && matches!(
+                descriptor.scope,
+                ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
+            )
+    })
 }
 
 /// Explicit effect requirements of exhaustive queries. Positive witnesses do
@@ -474,6 +481,7 @@ impl ProducerEvaluationTable {
     ) -> BTreeSet<usize> {
         let families = registry.descriptors.len();
         let future_effects = future_cross_subject_effects(registry);
+        let future_families: Vec<_> = future_cross_subject_families(registry).collect();
         let mut blocked = BTreeSet::new();
         let mut pending = VecDeque::new();
         for (i, &subject) in subjects.iter().enumerate() {
@@ -613,10 +621,12 @@ impl ProducerEvaluationTable {
                 future_effects_applied = true;
                 for reads in readers.values() {
                     for (read, reader) in reads {
-                        if future_effects
-                            .iter()
-                            .any(|&effect| effect_changes_read(effect, read, model))
-                        {
+                        if future_families.iter().any(|future| {
+                            future
+                                .effects
+                                .iter()
+                                .any(|&effect| descriptor_changes_read(future, effect, read, model))
+                        }) {
                             if trace && !blocked.contains(reader) {
                                 eprintln!(
                                     "closure future cause {subject:?}/{} -> {:?}/{} read={read:?}",
@@ -643,7 +653,7 @@ impl ProducerEvaluationTable {
                     if descriptor
                         .effects
                         .iter()
-                        .any(|&effect| effect_changes_read(effect, read, model))
+                        .any(|&effect| descriptor_changes_read(descriptor, effect, read, model))
                     {
                         if trace && !blocked.contains(reader) {
                             eprintln!(
@@ -1221,6 +1231,33 @@ fn propagate(masks: &mut [u8], dependents: &[Vec<usize>]) {
             }
         }
     }
+}
+
+pub(crate) fn descriptor_changes_read(
+    descriptor: &ProducerDescriptor,
+    effect: ProducerEffect,
+    read: &ProducerRead,
+    model: &ModelView,
+) -> bool {
+    if !effect_changes_read(effect, read, model) {
+        return false;
+    }
+    if !matches!(
+        effect,
+        ProducerEffect::Scalar(_) | ProducerEffect::Ownership
+    ) && let Some(classes) = &descriptor.relationship_classes
+        && let ProducerRead::Source(_, class, _) | ProducerRead::Owned(_, class) = read
+    {
+        return classes.iter().any(|&output| {
+            model.registry().is_subtype(output, *class).unwrap_or(false)
+                && effect_changes_read(
+                    effect,
+                    &ProducerRead::Owned(ElementId::from_u128(0), output),
+                    model,
+                )
+        });
+    }
+    true
 }
 
 pub(crate) fn effect_changes_read(

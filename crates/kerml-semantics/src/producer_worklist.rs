@@ -220,6 +220,13 @@ impl ProducerFamily {
         }
         .into_iter()
         .collect();
+        if self == Self::VariableFeaturing {
+            descriptor.relationship_classes = Some(
+                [c::TYPE_FEATURING, c::FEATURE_MEMBERSHIP, c::REDEFINITION]
+                    .into_iter()
+                    .collect(),
+            );
+        }
         if self == Self::FeatureChainExpression {
             descriptor.effects.insert(E::Subsetting);
         }
