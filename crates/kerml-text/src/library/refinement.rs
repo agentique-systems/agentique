@@ -4,7 +4,10 @@ use agq_kerml::properties as p;
 use agq_kerml_semantics::{
     KerMlStatusQueries, QueryInvalidationSet, QueryReadSet, SemanticContextId,
 };
-use agq_kernel::{ConstructionView, ElementId, ElementRecord, ModelView, PropertyId, value::Value};
+use agq_kernel::{
+    ConstructionObligation, ConstructionView, ElementId, ElementRecord, ModelView, PropertyId,
+    value::Value,
+};
 use std::{
     collections::{BTreeMap, BTreeSet},
     time::{Duration, Instant},
@@ -66,10 +69,25 @@ fn record_participants(record: &ElementRecord, affected: &mut BTreeSet<ElementId
 
 /// A merge walk compares canonical before/after records, including slot origins.
 /// A retarget or removal invalidates both its old and new navigation participants.
+#[cfg(test)]
 fn changed_population(before: &ConstructionView, after: &ConstructionView) -> BTreeSet<ElementId> {
+    changed_models(
+        before.model(),
+        before.obligations(),
+        after.model(),
+        after.obligations(),
+    )
+}
+
+fn changed_models(
+    before: &ModelView,
+    before_obligations: &[ConstructionObligation],
+    after: &ModelView,
+    after_obligations: &[ConstructionObligation],
+) -> BTreeSet<ElementId> {
     let mut affected = BTreeSet::new();
-    let mut old = before.model().elements().peekable();
-    let mut new = after.model().elements().peekable();
+    let mut old = before.elements().peekable();
+    let mut new = after.elements().peekable();
     while let (Some(a), Some(b)) = (old.peek(), new.peek()) {
         match a.id().cmp(&b.id()) {
             std::cmp::Ordering::Less => record_participants(old.next().unwrap(), &mut affected),
@@ -87,8 +105,8 @@ fn changed_population(before: &ConstructionView, after: &ConstructionView) -> BT
     for record in old.chain(new) {
         record_participants(record, &mut affected);
     }
-    let mut old = before.model().association_occurrences().peekable();
-    let mut new = after.model().association_occurrences().peekable();
+    let mut old = before.association_occurrences().peekable();
+    let mut new = after.association_occurrences().peekable();
     while let (Some(a), Some(b)) = (old.peek(), new.peek()) {
         match a.id().cmp(&b.id()) {
             std::cmp::Ordering::Less => {
@@ -110,16 +128,15 @@ fn changed_population(before: &ConstructionView, after: &ConstructionView) -> BT
     for occurrence in old.chain(new) {
         affected.extend(occurrence.ends().values().copied());
     }
-    let obligations = |candidate: &ConstructionView| {
+    let obligations = |candidate: &[ConstructionObligation]| {
         candidate
-            .obligations()
             .iter()
             .map(|o| (o.element, o.property, o.actual))
             .collect::<BTreeSet<_>>()
     };
     affected.extend(
-        obligations(before)
-            .symmetric_difference(&obligations(after))
+        obligations(before_obligations)
+            .symmetric_difference(&obligations(after_obligations))
             .map(|(id, _, _)| *id),
     );
     // Direct containment owners are negative population search keys even when
@@ -128,7 +145,7 @@ fn changed_population(before: &ConstructionView, after: &ConstructionView) -> BT
     // Do not propagate arbitrary descendants to every ancestor root: reads of
     // transitive scope already carry their individual bounded search keys.
     let participants: Vec<_> = affected.iter().copied().collect();
-    for model in [before.model(), after.model()] {
+    for model in [before, after] {
         for &id in &participants {
             for owner in ownership_sources(model, id) {
                 affected.insert(owner);
@@ -178,14 +195,29 @@ fn context_changes(
 }
 
 pub(crate) fn refine(
+    construct: impl FnMut(&Endpoints) -> Result<LibraryDraft, LibraryLoadError>,
+    query: impl for<'m> FnMut(&'m LibraryDraft) -> Result<KerMlStatusQueries<'m>, LibraryLoadError>,
+    strategy: ReferenceRefinementStrategy,
+    progress: impl FnMut(&ReferenceRefinementRound),
+) -> Result<LibraryDraft, LibraryLoadError> {
+    refine_from(Endpoints::new(), construct, query, strategy, progress)
+}
+
+/// Continue from provisional endpoints after ordinary declared refinement has
+/// stabilized. The next factory may add evidenced construction producer facts;
+/// every retained endpoint is still queried and audited normally.
+pub(crate) fn refine_from(
+    mut resolved: Endpoints,
     mut construct: impl FnMut(&Endpoints) -> Result<LibraryDraft, LibraryLoadError>,
     mut query: impl for<'m> FnMut(&'m LibraryDraft) -> Result<KerMlStatusQueries<'m>, LibraryLoadError>,
     strategy: ReferenceRefinementStrategy,
     mut progress: impl FnMut(&ReferenceRefinementRound),
 ) -> Result<LibraryDraft, LibraryLoadError> {
-    let mut resolved = Endpoints::new();
     let mut previous_resolutions = BTreeSet::new();
-    let mut previous_candidate: Option<ConstructionView> = None;
+    let mut previous_candidate: Option<(
+        std::sync::Arc<ConstructionView>,
+        Option<agq_kernel::derived::ConstructionOverlay>,
+    )> = None;
     let mut previous_context: Option<SemanticContextId> = None;
     let mut cache = BTreeMap::<ReferenceKey, CachedReference>::new();
     for round in 0.. {
@@ -198,12 +230,23 @@ pub(crate) fn refine(
         let draft = construct(&resolved)?;
         let construction_elapsed = start.elapsed();
         let start = Instant::now();
-        let mut affected = previous_candidate
-            .take()
-            .as_ref()
-            .map_or_else(BTreeSet::new, |old| {
-                changed_population(old, &draft.candidate)
-            });
+        let mut affected =
+            previous_candidate
+                .take()
+                .as_ref()
+                .map_or_else(BTreeSet::new, |(old, semantic)| {
+                    changed_models(
+                        semantic.as_ref().map_or_else(|| old.model(), |s| s.model()),
+                        semantic
+                            .as_ref()
+                            .map_or_else(|| old.obligations(), |s| s.obligations()),
+                        draft.reference_model(),
+                        draft
+                            .semantic_candidate
+                            .as_ref()
+                            .map_or_else(|| draft.candidate.obligations(), |s| s.obligations()),
+                    )
+                });
         // Release the old graph before retaining any new query caches.
         let change_detection_elapsed = start.elapsed();
         let start = Instant::now();
@@ -267,13 +310,11 @@ pub(crate) fn refine(
                         member.element
                     };
                     let record = draft
-                        .candidate
-                        .model()
+                        .reference_model()
                         .element(target)
                         .expect("query endpoint");
                     draft
-                        .candidate
-                        .model()
+                        .reference_model()
                         .registry()
                         .is_subtype(record.metaclass(), reference.expected)
                         .map_err(agq_kernel::ModelError::from)?
@@ -302,7 +343,7 @@ pub(crate) fn refine(
         if next == resolved {
             return Ok(draft);
         }
-        previous_candidate = Some(draft.candidate);
+        previous_candidate = Some((draft.candidate, draft.semantic_candidate));
         previous_context = Some(context);
         cache = next_cache;
         resolved = next;

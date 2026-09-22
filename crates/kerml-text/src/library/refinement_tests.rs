@@ -164,7 +164,8 @@ impl Fixture {
             );
         }
         LibraryDraft {
-            candidate: self.base.preview(&self.changes).unwrap(),
+            candidate: Arc::new(self.base.preview(&self.changes).unwrap()),
+            semantic_candidate: None,
             base: self.base,
             profile: BaselineProfile::OPERATIONAL_V8,
             source_map: BTreeMap::new(),

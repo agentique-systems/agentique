@@ -472,6 +472,323 @@ fn resource_limit_does_not_claim_closure() {
     assert_eq!(result.completeness, Completeness::Incomplete);
 }
 
+struct AdditionalSpecialization {
+    general: ElementId,
+}
+impl PublicationProducerExtension for AdditionalSpecialization {
+    fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
+        model.registry().is_subtype(class, c::CLASS).unwrap()
+    }
+    fn contribute<'m>(
+        &self,
+        q: &KerMlQueries<'m>,
+        subject: ElementId,
+        _: ResultStructureStratum,
+        plan: &mut ResultStructurePlan<'m>,
+    ) -> Result<(), agq_kernel::derived::DerivationError> {
+        if subject != id(1) {
+            return Ok(());
+        }
+        let supers = q.supertypes(subject);
+        let satisfied = supers.value.contains(&self.general);
+        let mut evidence = supers.map(|_| ());
+        evidence
+            .merge_evidence(q.canonical_fact_evidence(FactKey::Element(self.general)))
+            .unwrap();
+        if satisfied {
+            return plan.observe_evidence(evidence);
+        }
+        plan.add_derived_element(
+            DerivationKey {
+                rule: RuleId::from_u128(9901),
+                subject,
+                output: OutputKey::from_u128(9902),
+            },
+            c::SUBCLASSIFICATION,
+            BTreeMap::from([
+                (
+                    p::SUBCLASSIFICATION_SUBCLASSIFIER,
+                    SlotValue::Scalar(Value::Reference(subject)),
+                ),
+                (
+                    p::SUBCLASSIFICATION_SUPERCLASSIFIER,
+                    SlotValue::Scalar(Value::Reference(self.general)),
+                ),
+            ]),
+            Some(subject),
+            &evidence,
+        )?;
+        Ok(())
+    }
+}
+
+#[test]
+fn extension_specialization_dirties_kerml_variable_producers_in_every_order() {
+    let (original, bindings) = variable_fixture();
+    let mut changes = original.change_set();
+    changes.remove(id(502));
+    changes.set(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![Value::Reference(id(110)), Value::Reference(id(111))]),
+        origin(),
+    );
+    let snapshot = original.apply(&changes).unwrap();
+    let extension = AdditionalSpecialization {
+        general: bindings.get(StandardRole::Occurrence),
+    };
+    let run = |options| {
+        close_result_structure_with_extension(
+            &snapshot,
+            options,
+            |overlay| {
+                let mut context = SemanticContext::for_overlay(
+                    overlay,
+                    SemanticOptions {
+                        baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V8,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .map_err(PublicationOverlayError::Context)?;
+                context.id.standard_bindings = Some(bindings.clone());
+                Ok(context)
+            },
+            &extension,
+            |_, _, _, _| {},
+            |_| {},
+        )
+        .unwrap()
+    };
+    let expected = run(PublicationClosureOptions {
+        strategy: PublicationClosureStrategy::ReferenceFullScan,
+        ..Default::default()
+    });
+    assert!(expected.converged);
+    assert_eq!(
+        expected.completeness,
+        Completeness::Complete,
+        "{:?}",
+        expected.stages.last()
+    );
+    assert!(
+        expected
+            .overlay
+            .model()
+            .instances(c::TYPE_FEATURING, true)
+            .unwrap()
+            .count()
+            >= 2
+    );
+    for order in [
+        PublicationWorklistOrder::Fifo,
+        PublicationWorklistOrder::Lifo,
+        PublicationWorklistOrder::ReversedInitial,
+        PublicationWorklistOrder::Partitioned,
+    ] {
+        for batch_size in [1, 7] {
+            let actual = run(PublicationClosureOptions {
+                order,
+                batch_size,
+                ..Default::default()
+            });
+            compare(&expected, &actual, Some(&bindings));
+            assert!(actual.counters.dirty_reevaluations > 0);
+        }
+    }
+}
+
+#[test]
+fn immutable_dependency_is_never_a_producer_subject_even_if_requested() {
+    struct Observe(std::cell::RefCell<BTreeSet<ElementId>>);
+    impl PublicationProducerExtension for Observe {
+        fn applies(&self, _: &ModelView, _: MetaclassId) -> bool {
+            true
+        }
+        fn contribute<'m>(
+            &self,
+            _: &KerMlQueries<'m>,
+            subject: ElementId,
+            _: ResultStructureStratum,
+            _: &mut ResultStructurePlan<'m>,
+        ) -> Result<(), agq_kernel::derived::DerivationError> {
+            self.0.borrow_mut().insert(subject);
+            Ok(())
+        }
+    }
+    let mut f = Fixture::new();
+    f.create(1, c::CLASS);
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(f.finish())
+            .build()
+            .unwrap(),
+    );
+    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(2, c::CLASS);
+    let snapshot = f.finish();
+    let extension = Observe(Default::default());
+    let result = close_result_structure_with_extension(
+        &snapshot,
+        PublicationClosureOptions {
+            initial_subjects: Some(BTreeSet::from([id(1), id(2)])),
+            ..Default::default()
+        },
+        |overlay| {
+            SemanticContext::for_overlay(overlay, Default::default(), BTreeSet::new())
+                .map_err(PublicationOverlayError::Context)
+        },
+        &extension,
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(result.converged);
+    assert_eq!(*extension.0.borrow(), BTreeSet::from([id(2)]));
+    assert_eq!(result.counters.declared_subjects, 1);
+    assert!(Arc::ptr_eq(
+        result.overlay.declared().immutable_dependency().unwrap(),
+        &dependency
+    ));
+    assert_eq!(
+        dependency.model().element(id(1)),
+        result.overlay.model().element(id(1))
+    );
+}
+
+#[test]
+fn stable_usage_property_activates_kerml_after_structural_closure() {
+    use agq_sysml::{classes as sc, properties as sp};
+    struct UsageProperties;
+    impl PublicationProducerExtension for UsageProperties {
+        fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
+            model.registry().is_subtype(class, sc::USAGE).unwrap()
+        }
+        fn has_stable_properties(&self) -> bool {
+            true
+        }
+        fn contribute<'m>(
+            &self,
+            q: &KerMlQueries<'m>,
+            subject: ElementId,
+            stratum: ResultStructureStratum,
+            plan: &mut ResultStructurePlan<'m>,
+        ) -> Result<(), agq_kernel::derived::DerivationError> {
+            if stratum != ResultStructureStratum::Structural {
+                plan.add_derived_property(
+                    subject,
+                    sp::USAGE_MAY_TIME_VARY,
+                    SlotValue::Scalar(Value::Boolean(true)),
+                    RuleId::from_u128(9903),
+                    &q.canonical_fact_evidence(FactKey::Element(subject)),
+                )?;
+            }
+            Ok(())
+        }
+    }
+    let (original, bindings) = variable_fixture();
+    let base = Snapshot::new(Arc::new(
+        agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8).unwrap(),
+    ));
+    let mut changes = base.change_set();
+    for record in original.model().elements() {
+        let usage = [id(10), id(11)].contains(&record.id());
+        changes.create(
+            record.id(),
+            if usage {
+                sc::REFERENCE_USAGE
+            } else {
+                record.metaclass()
+            },
+            origin(),
+        );
+        for (property, slot) in record.slots() {
+            if usage && property == p::FEATURE_IS_VARIABLE {
+                continue;
+            }
+            changes.set(record.id(), property, slot.value().clone(), origin());
+        }
+        if usage {
+            changes.set(
+                record.id(),
+                sp::USAGE_IS_VARIATION,
+                SlotValue::Scalar(Value::Boolean(false)),
+                origin(),
+            );
+        }
+    }
+    for link in original.model().association_occurrences() {
+        changes.link(
+            link.id(),
+            link.association(),
+            link.ends().clone(),
+            link.positions().clone(),
+            origin(),
+        );
+    }
+    let snapshot = base.apply(&changes).unwrap();
+    assert!(
+        snapshot
+            .model()
+            .navigation_slot(id(10), p::FEATURE_IS_VARIABLE)
+            .is_none()
+    );
+    let run = |strategy| {
+        close_result_structure_with_extension(
+            &snapshot,
+            PublicationClosureOptions {
+                strategy,
+                ..Default::default()
+            },
+            |overlay| {
+                let mut context = SemanticContext::for_overlay(
+                    overlay,
+                    SemanticOptions {
+                        baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V8,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .map_err(PublicationOverlayError::Context)?;
+                context.id.standard_bindings = Some(bindings.clone());
+                Ok(context)
+            },
+            &UsageProperties,
+            |_, _, _, _| {},
+            |_| {},
+        )
+        .unwrap()
+    };
+    let worklist = run(PublicationClosureStrategy::Worklist);
+    let reference = run(PublicationClosureStrategy::ReferenceFullScan);
+    assert_eq!(
+        worklist.completeness,
+        Completeness::Complete,
+        "{:?}",
+        worklist.stages.last()
+    );
+    assert!(
+        worklist
+            .stages
+            .iter()
+            .any(|stage| stage.stratum == ResultStructureStratum::StableProperties)
+    );
+    assert!(
+        worklist
+            .overlay
+            .model()
+            .instances(c::TYPE_FEATURING, true)
+            .unwrap()
+            .count()
+            >= 2
+    );
+    compare(&reference, &worklist, Some(&bindings));
+}
+
 /// Explicit workflow scale gate; release runs are invoked under the watchdog.
 #[test]
 #[ignore = "synthetic publication scale gate; run explicitly in release mode"]

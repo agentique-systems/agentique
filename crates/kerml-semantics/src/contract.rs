@@ -229,6 +229,19 @@ pub struct QueryResult<T> {
 }
 
 impl<T> QueryResult<T> {
+    /// Combine evidence from queries over the exact same immutable context.
+    /// This retains compact producer search sets as well as public proof data.
+    /// A mismatched context is rejected without modifying either result.
+    pub fn merge_evidence<U>(
+        &mut self,
+        other: QueryResult<U>,
+    ) -> Result<(), QueryEvidenceContextMismatch> {
+        if self.context != other.context {
+            return Err(QueryEvidenceContextMismatch);
+        }
+        self.merge(other);
+        Ok(())
+    }
     /// Project a value without discarding context, completeness or any evidence.
     /// A projection that performs additional semantic reads must account for
     /// those reads separately; this operation only transforms the existing value.
@@ -366,6 +379,16 @@ impl<T> QueryResult<T> {
             .insert(Explanation { rule, premises });
     }
 }
+
+/// Evidence from distinct graph/profile contexts cannot justify one conclusion.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct QueryEvidenceContextMismatch;
+impl std::fmt::Display for QueryEvidenceContextMismatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("query evidence contexts differ")
+    }
+}
+impl std::error::Error for QueryEvidenceContextMismatch {}
 
 impl<T: PartialEq> PartialEq for QueryResult<T> {
     fn eq(&self, other: &Self) -> bool {

@@ -6,11 +6,46 @@
 use crate::read_dependencies::{InvalidationKey, query_read_keys};
 use crate::*;
 use agq_kerml::{BaselineProfile, classes as c};
-use agq_kernel::{
-    ElementId, MetaclassId, ModelView, Snapshot,
-    derived::{DerivationBuilder, DerivedOverlay},
-};
+use agq_kernel::{ElementId, MetaclassId, ModelView, Snapshot, derived::DerivedOverlay};
 use std::collections::{BTreeMap, BTreeSet};
+
+mod frontier;
+use frontier::ProducerFrontier;
+
+/// Additional language producers participating in the same immutable frontiers
+/// and positive/negative read index as KerML. Contributions must carry their
+/// actual query evidence and stable rule/output identities.
+pub trait PublicationProducerExtension {
+    fn applies(&self, model: &ModelView, class: MetaclassId) -> bool;
+    /// Whether to establish structurally dependent scalar predicates before
+    /// context-sensitive bindings. Later dirty reads still reevaluate them;
+    /// contradictory additive values fail instead of selecting a winner.
+    fn has_stable_properties(&self) -> bool {
+        false
+    }
+    fn contribute<'m>(
+        &self,
+        queries: &KerMlQueries<'m>,
+        subject: ElementId,
+        stratum: ResultStructureStratum,
+        plan: &mut ResultStructurePlan<'m>,
+    ) -> Result<(), agq_kernel::derived::DerivationError>;
+}
+
+impl PublicationProducerExtension for () {
+    fn applies(&self, _: &ModelView, _: MetaclassId) -> bool {
+        false
+    }
+    fn contribute<'m>(
+        &self,
+        _: &KerMlQueries<'m>,
+        _: ElementId,
+        _: ResultStructureStratum,
+        _: &mut ResultStructurePlan<'m>,
+    ) -> Result<(), agq_kernel::derived::DerivationError> {
+        Ok(())
+    }
+}
 
 /// Independent metaclass-gated structural producer families.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -147,8 +182,8 @@ pub struct PublicationCounters {
 }
 /// A scoped closure is useful for authored projects and real-corpus slices, but
 /// cannot assert whole-library capabilities or become a complete publication.
-pub struct PublicationClosure {
-    pub overlay: DerivedOverlay,
+pub struct PublicationClosure<Overlay = DerivedOverlay> {
+    pub overlay: Overlay,
     pub stages: Vec<PublicationStage>,
     pub counters: PublicationCounters,
     pub completeness: Completeness,
@@ -235,15 +270,75 @@ impl DependencyIndex {
 pub fn close_result_structure(
     snapshot: &Snapshot,
     options: PublicationClosureOptions,
-    mut context: impl for<'m> FnMut(
+    context: impl for<'m> FnMut(
         &'m DerivedOverlay,
     ) -> Result<SemanticContext<'m>, PublicationOverlayError>,
+    batch_progress: impl FnMut(usize, usize, usize, usize),
+    progress: impl FnMut(&PublicationStage),
+) -> Result<PublicationClosure, PublicationOverlayError> {
+    close_result_structure_with_extension(snapshot, options, context, &(), batch_progress, progress)
+}
+
+/// Close KerML and extension producers together. Accepted immutable dependency
+/// elements are never scheduled, including when explicitly listed by a caller.
+pub fn close_result_structure_with_extension(
+    snapshot: &Snapshot,
+    options: PublicationClosureOptions,
+    context: impl for<'m> FnMut(
+        &'m DerivedOverlay,
+    ) -> Result<SemanticContext<'m>, PublicationOverlayError>,
+    extension: &impl PublicationProducerExtension,
+    batch_progress: impl FnMut(usize, usize, usize, usize),
+    progress: impl FnMut(&PublicationStage),
+) -> Result<PublicationClosure, PublicationOverlayError> {
+    close_frontiers::<DerivedOverlay>(
+        snapshot,
+        options,
+        context,
+        extension,
+        batch_progress,
+        progress,
+    )
+}
+
+/// Run the identical scheduler over unpublished construction frontiers. Missing
+/// required values remain query obligations; this result can never certify a
+/// strict publication. Accepted dependency subjects remain excluded.
+pub fn close_construction_structure_with_extension(
+    candidate: &std::sync::Arc<agq_kernel::ConstructionView>,
+    options: PublicationClosureOptions,
+    context: impl for<'m> FnMut(
+        &'m agq_kernel::derived::ConstructionOverlay,
+    ) -> Result<SemanticContext<'m>, PublicationOverlayError>,
+    extension: &impl PublicationProducerExtension,
+    batch_progress: impl FnMut(usize, usize, usize, usize),
+    progress: impl FnMut(&PublicationStage),
+) -> Result<PublicationClosure<agq_kernel::derived::ConstructionOverlay>, PublicationOverlayError> {
+    close_frontiers::<agq_kernel::derived::ConstructionOverlay>(
+        candidate,
+        options,
+        context,
+        extension,
+        batch_progress,
+        progress,
+    )
+}
+
+fn close_frontiers<Overlay: ProducerFrontier>(
+    input: &Overlay::Input,
+    options: PublicationClosureOptions,
+    mut context: impl for<'m> FnMut(&'m Overlay) -> Result<SemanticContext<'m>, PublicationOverlayError>,
+    extension: &impl PublicationProducerExtension,
     mut batch_progress: impl FnMut(usize, usize, usize, usize),
     mut progress: impl FnMut(&PublicationStage),
-) -> Result<PublicationClosure, PublicationOverlayError> {
-    let mut overlay = DerivationBuilder::new(snapshot.clone()).build()?;
+) -> Result<PublicationClosure<Overlay>, PublicationOverlayError> {
+    let mut overlay = Overlay::empty(input)?;
+    let declared_model = Overlay::input_model(input);
     let mut counters = PublicationCounters {
-        declared_subjects: snapshot.model().len(),
+        declared_subjects: declared_model
+            .elements()
+            .filter(|r| !Overlay::is_dependency_element(input, r.id()))
+            .count(),
         overlay_materializations: 1, // The empty derived input is a materialization too.
         logical_search_sets: overlay.build_metrics().logical_search_sets,
         logical_search_entries: overlay.build_metrics().logical_search_entries,
@@ -259,7 +354,8 @@ pub fn close_result_structure(
     let mut population: BTreeSet<_> = options
         .initial_subjects
         .clone()
-        .unwrap_or_else(|| snapshot.model().elements().map(|r| r.id()).collect());
+        .unwrap_or_else(|| declared_model.elements().map(|r| r.id()).collect());
+    population.retain(|id| !Overlay::is_dependency_element(input, *id));
     let mut worklist = population.clone();
     let mut seen = BTreeSet::new();
     let mut applicability = BTreeMap::<MetaclassId, Vec<ProducerFamily>>::new();
@@ -276,6 +372,10 @@ pub fn close_result_structure(
             current.model_digest = previous.model_digest;
             current.derivation_phase = previous.derivation_phase;
             current.library_graph_digest = previous.library_graph_digest;
+            // Missing lower bounds are mutable construction frontier state,
+            // not a change of semantic authority. Their participants join the
+            // dirty population after each materialization below.
+            current.construction_obligations = previous.construction_obligations.clone();
             if let (Some(current_targets), Some(previous_targets)) = (
                 &current.formal_constraint_targets,
                 &previous.formal_constraint_targets,
@@ -322,7 +422,10 @@ pub fn close_result_structure(
                     .filter(|f| f.applies(overlay.model(), record.metaclass(), profile))
                     .collect()
             });
-            if families.is_empty() && options.strategy == PublicationClosureStrategy::Worklist {
+            if families.is_empty()
+                && !extension.applies(overlay.model(), record.metaclass())
+                && options.strategy == PublicationClosureStrategy::Worklist
+            {
                 counters.subjects_skipped_by_applicability += 1;
             } else {
                 subjects.push(subject);
@@ -336,8 +439,13 @@ pub fn close_result_structure(
             }
             _ => {}
         }
+        let kerml_stratum = if stratum == ResultStructureStratum::StableProperties {
+            ResultStructureStratum::Structural
+        } else {
+            stratum
+        };
         let mut plan =
-            KerMlQueries::new(context.fork()).plan_result_structure_in_stratum([], stratum);
+            KerMlQueries::new(context.fork()).plan_result_structure_in_stratum([], kerml_stratum);
         for (batch_index, batch) in subjects.chunks(options.batch_size.max(1)).enumerate() {
             let q = match options.strategy {
                 PublicationClosureStrategy::Worklist => {
@@ -346,7 +454,20 @@ pub fn close_result_structure(
                 PublicationClosureStrategy::ReferenceFullScan => KerMlQueries::new(context.fork()),
             };
             if options.strategy == PublicationClosureStrategy::ReferenceFullScan {
-                let mut part = q.plan_result_structure_reference(batch.iter().copied(), stratum);
+                let mut part =
+                    q.plan_result_structure_reference(batch.iter().copied(), kerml_stratum);
+                for &subject in batch {
+                    if extension.applies(
+                        overlay.model(),
+                        overlay
+                            .model()
+                            .element(subject)
+                            .expect("scheduled subject")
+                            .metaclass(),
+                    ) {
+                        extension.contribute(&q, subject, stratum, &mut part)?;
+                    }
+                }
                 counters.subjects_evaluated += batch.len();
                 counters.producer_families_attempted += part.producer_families_attempted;
                 for &subject in batch {
@@ -368,7 +489,17 @@ pub fn close_result_structure(
                 for &subject in batch {
                     counters.subjects_evaluated += 1;
                     counters.dirty_reevaluations += usize::from(!seen.insert(subject));
-                    let mut part = q.plan_result_structure_in_stratum([subject], stratum);
+                    let mut part = q.plan_result_structure_in_stratum([subject], kerml_stratum);
+                    if extension.applies(
+                        overlay.model(),
+                        overlay
+                            .model()
+                            .element(subject)
+                            .expect("scheduled subject")
+                            .metaclass(),
+                    ) {
+                        extension.contribute(&q, subject, stratum, &mut part)?;
+                    }
                     counters.producer_families_attempted += part.producer_families_attempted;
                     index.replace(subject, &part.production, overlay.model(), &mut counters);
                     status.insert(
@@ -390,7 +521,8 @@ pub fn close_result_structure(
             );
         }
         deferred_bindings.extend(plan.deferred_bindings.iter().copied());
-        let changed = plan.changed_population();
+        let mut changed = plan.changed_population();
+        let prior_obligations = overlay.obligation_keys();
         let new_subjects: BTreeSet<_> = changed
             .iter()
             .copied()
@@ -412,21 +544,26 @@ pub fn close_result_structure(
         // deliberately does not trust the optimized additive change boundary.
         let reference_input = (options.strategy == PublicationClosureStrategy::ReferenceFullScan)
             .then(|| overlay.clone());
-        let prepared = plan.prepare_on_overlay(&overlay)?;
+        let prepared = Overlay::prepare(plan, &overlay)?;
         drop(context);
         // Preparation validates every reused record and proposed slot even when
         // no writes remain. Only then may an empty optimized frontier reuse its
         // input. The reference still builds and compares an independent graph.
         let materialized = prepared.has_changes() || reference_input.is_some();
         let next = if materialized {
-            prepared.build_on_overlay(overlay)?
+            Overlay::build(prepared, overlay)?
         } else {
             overlay
         };
+        changed.extend(
+            prior_obligations
+                .symmetric_difference(&next.obligation_keys())
+                .map(|(subject, _, _)| *subject),
+        );
         let stable = reference_input.as_ref().map_or_else(
             || changed.is_empty(),
             |before| {
-                before.facts().eq(next.facts())
+                before.facts_equal(&next)
                     && before.model().elements().eq(next.model().elements())
                     && before
                         .model()
@@ -473,7 +610,14 @@ pub fn close_result_structure(
         progress(&record);
         stages.push(record);
         if stable {
-            if stratum == ResultStructureStratum::Structural
+            if stratum == ResultStructureStratum::Structural && extension.has_stable_properties() {
+                stratum = ResultStructureStratum::StableProperties;
+                worklist = population.clone();
+                counters.dirty_subjects_enqueued += worklist.len();
+                overlay = next;
+                continue;
+            }
+            if stratum != ResultStructureStratum::ContextualBindings
                 && (!deferred_bindings.is_empty()
                     || options.strategy == PublicationClosureStrategy::ReferenceFullScan)
             {
@@ -508,7 +652,7 @@ pub fn close_result_structure(
                     next.model()
                         .elements()
                         .map(|r| r.id())
-                        .filter(|id| snapshot.model().element(*id).is_none()),
+                        .filter(|id| declared_model.element(*id).is_none()),
                 );
                 population.clone()
             }

@@ -916,7 +916,8 @@ impl Builder {
         Ok(LibraryDraft {
             base: self.base,
             profile: self.profile,
-            candidate,
+            candidate: std::sync::Arc::new(candidate),
+            semantic_candidate: None,
             source_map,
             roots: self.roots,
             references: self.references,

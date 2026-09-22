@@ -39,7 +39,8 @@ pub type LibrarySourceMap = BTreeMap<FactKey, SourceOrigin>;
 #[derive(Debug)]
 pub struct LibraryDraft {
     base: Snapshot,
-    candidate: agq_kernel::ConstructionView,
+    candidate: std::sync::Arc<agq_kernel::ConstructionView>,
+    semantic_candidate: Option<agq_kernel::derived::ConstructionOverlay>,
     profile: agq_kerml::BaselineProfile,
     source_map: LibrarySourceMap,
     roots: Vec<ElementId>,
@@ -177,6 +178,29 @@ impl LibraryDraft {
     }
     pub fn candidate(&self) -> &agq_kernel::ConstructionView {
         &self.candidate
+    }
+    pub(crate) fn candidate_shared(&self) -> &std::sync::Arc<agq_kernel::ConstructionView> {
+        &self.candidate
+    }
+    pub(crate) fn set_semantic_candidate(
+        &mut self,
+        overlay: agq_kernel::derived::ConstructionOverlay,
+    ) {
+        assert!(std::sync::Arc::ptr_eq(
+            overlay.declared_shared(),
+            &self.candidate
+        ));
+        self.semantic_candidate = Some(overlay);
+    }
+    /// Unpublished producer facts, when reference refinement required semantic
+    /// inheritance. This overlay is not used by strict declared construction.
+    pub fn semantic_candidate(&self) -> Option<&agq_kernel::derived::ConstructionOverlay> {
+        self.semantic_candidate.as_ref()
+    }
+    pub(crate) fn reference_model(&self) -> &agq_kernel::ModelView {
+        self.semantic_candidate
+            .as_ref()
+            .map_or_else(|| self.candidate.model(), |overlay| overlay.model())
     }
     pub fn source_map(&self) -> &LibrarySourceMap {
         &self.source_map

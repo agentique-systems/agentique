@@ -30,8 +30,11 @@ pub struct SystemsDocumentStatus {
     pub path: String,
     pub document: agq_kernel::DocumentId,
     pub source_sha256: String,
+    pub profile: production::SysmlSyntaxProfile,
     pub parsed: bool,
     pub byte_exact: bool,
+    pub recovery_count: usize,
+    pub production_count: usize,
     pub construction_gap: Option<String>,
 }
 
@@ -43,6 +46,17 @@ pub struct SystemsLibraryCandidate {
     documents: Vec<SystemsDocumentStatus>,
     publication: Arc<CanonicalKermlStandardLibraries>,
     source_content_set: String,
+    syntax_profile: production::SysmlSyntaxProfile,
+    production: Option<SystemsConstructionProduction>,
+}
+
+/// Unpublished combined worklist result, separate from canonical acceptance.
+#[derive(Debug)]
+pub struct SystemsConstructionProduction {
+    pub completeness: Completeness,
+    pub converged: bool,
+    pub stages: Vec<agq_kerml_semantics::PublicationStage>,
+    pub counters: agq_kerml_semantics::PublicationCounters,
 }
 impl SystemsLibraryCandidate {
     pub fn draft(&self) -> &LibraryDraft {
@@ -54,6 +68,15 @@ impl SystemsLibraryCandidate {
     pub fn source_content_set(&self) -> &str {
         &self.source_content_set
     }
+    pub fn syntax_profile(&self) -> production::SysmlSyntaxProfile {
+        self.syntax_profile
+    }
+    pub fn accepted_kerml(&self) -> &Arc<CanonicalKermlStandardLibraries> {
+        &self.publication
+    }
+    pub fn production(&self) -> Option<&SystemsConstructionProduction> {
+        self.production.as_ref()
+    }
     /// Source/graph construction completeness only; SysML producers are separate.
     pub fn construction_complete(&self) -> bool {
         self.documents.iter().all(|document| {
@@ -61,22 +84,18 @@ impl SystemsLibraryCandidate {
         }) && self.draft.candidate().obligations().is_empty()
     }
     pub fn queries(&self) -> Result<KerMlQueries<'_>, LibraryLoadError> {
-        let pending = if self.construction_complete() {
+        // Exact missing reference fields already participate as construction
+        // obligations. Only missing source populations make every root pending.
+        let pending = if self
+            .documents
+            .iter()
+            .all(|document| document.parsed && document.construction_gap.is_none())
+        {
             BTreeSet::new()
         } else {
             self.draft.roots().iter().copied().collect()
         };
-        Ok(KerMlQueries::new(
-            self.publication
-                .complete_overlay()
-                .project_construction_context(
-                    self.draft.candidate(),
-                    self.draft.roots(),
-                    BTreeSet::new(),
-                    pending,
-                )
-                .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?,
-        ))
+        systems_candidate_queries(&self.draft, &self.publication, pending)
     }
 }
 
@@ -86,6 +105,52 @@ pub fn prepare_systems_library(
     sources: &VerifiedLibrarySet,
     publication: Arc<CanonicalKermlStandardLibraries>,
 ) -> Result<SystemsLibraryCandidate, LibraryLoadError> {
+    prepare_systems_library_with_profile(
+        sources,
+        publication,
+        production::SysmlSyntaxProfile::Published,
+    )
+}
+
+/// Interpret the exact pinned corpus under explicit textual authority. This
+/// closes declared references against the sealed KerML dependency; it does not
+/// assert completion of semantic producers or accept a Systems publication.
+pub fn prepare_systems_library_with_profile(
+    sources: &VerifiedLibrarySet,
+    publication: Arc<CanonicalKermlStandardLibraries>,
+    profile: production::SysmlSyntaxProfile,
+) -> Result<SystemsLibraryCandidate, LibraryLoadError> {
+    prepare_systems_library_with_progress(sources, publication, profile, |_| {})
+}
+
+/// As `prepare_systems_library_with_profile`, with refinement observations for
+/// external resource watchdogs. Observations cannot affect canonical selection.
+pub fn prepare_systems_library_with_progress(
+    sources: &VerifiedLibrarySet,
+    publication: Arc<CanonicalKermlStandardLibraries>,
+    profile: production::SysmlSyntaxProfile,
+    progress: impl FnMut(&library::ReferenceRefinementRound),
+) -> Result<SystemsLibraryCandidate, LibraryLoadError> {
+    prepare_systems_library_with_semantic_progress(
+        sources,
+        publication,
+        profile,
+        progress,
+        |_, _, _, _| {},
+        |_| {},
+    )
+}
+
+/// Observe both reference refinement and combined producer frontiers. The
+/// accepted KerML dependency is never part of the scheduled population.
+pub fn prepare_systems_library_with_semantic_progress(
+    sources: &VerifiedLibrarySet,
+    publication: Arc<CanonicalKermlStandardLibraries>,
+    profile: production::SysmlSyntaxProfile,
+    mut progress: impl FnMut(&library::ReferenceRefinementRound),
+    mut batch_progress: impl FnMut(usize, usize, usize, usize),
+    mut producer_progress: impl FnMut(&agq_kerml_semantics::PublicationStage),
+) -> Result<SystemsLibraryCandidate, LibraryLoadError> {
     if sources.content_set_id() != publication.source_content_set() {
         return Err(LibraryLoadError::Interpretation(
             "Systems sources and accepted KerML source set differ".into(),
@@ -94,11 +159,16 @@ pub fn prepare_systems_library(
     let mut parsed = Vec::new();
     let mut documents = Vec::new();
     let base = base(&publication)?;
+    // Syntax support is independent of reference endpoints. Probe each document
+    // against the same small descriptor registry, without retaining 21 copies
+    // of accepted dependency navigation indexes.
+    let probe = Snapshot::new(Arc::new(base.model().registry().clone()));
     for source in sources
         .documents()
         .filter(|source| source.language() == LibraryLanguage::SysMl)
     {
-        let syntax = production::parse_sysml(
+        let syntax = production::parse_sysml_with_profile(
+            profile,
             source.document(),
             source.revision(),
             source.source(),
@@ -124,7 +194,7 @@ pub fn prepare_systems_library(
                         }],
                         &Default::default(),
                         publication.profile(),
-                        base.clone(),
+                        probe.clone(),
                         None,
                     )
                     .map(|_| ())
@@ -133,7 +203,7 @@ pub fn prepare_systems_library(
                 .map(|error| error.to_string())
         } else {
             Some(format!(
-                "Strict final SysML grammar requires recovery at {:?}",
+                "Selected SysML grammar requires recovery at {:?}",
                 syntax.recovery()
             ))
         };
@@ -142,8 +212,11 @@ pub fn prepare_systems_library(
             path: source.path().into(),
             document: source.document(),
             source_sha256: source.sha256().into(),
+            profile,
             parsed: syntax.is_complete(),
             byte_exact,
+            recovery_count: syntax.recovery().len(),
+            production_count: syntax.nodes().count(),
             construction_gap,
         });
         if supported {
@@ -158,19 +231,156 @@ pub fn prepare_systems_library(
             sysml: true,
         })
         .collect();
-    let draft = construction::construct_on(
-        &inputs,
-        &Default::default(),
-        publication.profile(),
-        base,
-        None,
+    let all_supported = documents
+        .iter()
+        .all(|document| document.construction_gap.is_none());
+    let mut draft = library::refinement::refine(
+        |resolved| {
+            construction::construct_on(&inputs, resolved, publication.profile(), base.clone(), None)
+        },
+        |draft| {
+            let pending = if all_supported {
+                BTreeSet::new()
+            } else {
+                draft.roots().iter().copied().collect()
+            };
+            Ok(KerMlQueries::new(
+                publication
+                    .complete_overlay()
+                    .project_construction_context(
+                        draft.candidate(),
+                        draft.roots(),
+                        BTreeSet::new(),
+                        pending,
+                    )
+                    .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?,
+            )
+            .status_queries())
+        },
+        ReferenceRefinementStrategy::DependencyDriven,
+        &mut progress,
     )?;
+    let mut production = None;
+    if all_supported && profile == production::SysmlSyntaxProfile::OperationalV1 {
+        let endpoints = draft
+            .references()
+            .iter()
+            .filter_map(|reference| {
+                draft
+                    .candidate()
+                    .model()
+                    .navigation_slot(reference.relationship, reference.property)
+                    .and_then(|slot| {
+                        slot.value().values().find_map(|value| {
+                            if let Value::Reference(id) = value {
+                                Some(((reference.relationship, reference.property), *id))
+                            } else {
+                                None
+                            }
+                        })
+                    })
+            })
+            .collect();
+        // Reconstruct only declared records. Derived endpoints and ownership
+        // remain in a distinct unpublished overlay and are never copied back.
+        drop(draft);
+        draft = library::refinement::refine_from(
+            endpoints,
+            |resolved| {
+                let mut current = construction::construct_on(
+                    &inputs,
+                    resolved,
+                    publication.profile(),
+                    base.clone(),
+                    None,
+                )?;
+                let roots: Vec<_> = current
+                    .roots()
+                    .iter()
+                    .chain(publication.roots())
+                    .copied()
+                    .collect();
+                let bindings = agq_sysml_semantics::StandardSysmlBindings::unbound(
+                    agq_sysml_semantics::SystemsLibraryIdentity::pinned(
+                        agq_sysml_semantics::SystemsLibraryIdentity::SOURCE_CONTENT_SET,
+                    ),
+                );
+                let extension = agq_sysml_semantics::SysmlProducerExtension::new(
+                    agq_sysml_semantics::SysmlBaselineProfile::OperationalV1,
+                    bindings,
+                    roots,
+                );
+                let closure = agq_kerml_semantics::close_construction_structure_with_extension(
+                    current.candidate_shared(),
+                    Default::default(),
+                    |overlay| {
+                        publication
+                            .complete_overlay()
+                            .project_construction_overlay_context(
+                                overlay,
+                                current.roots(),
+                                BTreeSet::new(),
+                                BTreeSet::new(),
+                            )
+                            .map_err(agq_kerml_semantics::PublicationOverlayError::Context)
+                    },
+                    &extension,
+                    &mut batch_progress,
+                    &mut producer_progress,
+                )
+                .map_err(|error| {
+                    LibraryLoadError::Interpretation(format!(
+                        "Combined Systems construction producers: {error}"
+                    ))
+                })?;
+                production = Some(SystemsConstructionProduction {
+                    completeness: closure.completeness,
+                    converged: closure.converged,
+                    stages: closure.stages,
+                    counters: closure.counters,
+                });
+                current.set_semantic_candidate(closure.overlay);
+                Ok(current)
+            },
+            |current| {
+                Ok(
+                    systems_candidate_queries(current, &publication, BTreeSet::new())?
+                        .status_queries(),
+                )
+            },
+            ReferenceRefinementStrategy::DependencyDriven,
+            progress,
+        )?;
+    }
     Ok(SystemsLibraryCandidate {
         draft,
         documents,
         publication,
         source_content_set: sources.content_set_id().into(),
+        syntax_profile: profile,
+        production,
     })
+}
+
+fn systems_candidate_queries<'m>(
+    draft: &'m LibraryDraft,
+    publication: &CanonicalKermlStandardLibraries,
+    pending: BTreeSet<ElementId>,
+) -> Result<KerMlQueries<'m>, LibraryLoadError> {
+    let context = if let Some(overlay) = draft.semantic_candidate() {
+        publication
+            .complete_overlay()
+            .project_construction_overlay_context(overlay, draft.roots(), BTreeSet::new(), pending)
+    } else {
+        publication.complete_overlay().project_construction_context(
+            draft.candidate(),
+            draft.roots(),
+            BTreeSet::new(),
+            pending,
+        )
+    }
+    .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
+    Ok(KerMlQueries::new(context))
 }
 
 #[derive(Debug)]

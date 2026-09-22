@@ -13,12 +13,17 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+mod contributions;
+
 /// Publication closes positive structural implications before choosing nearest
 /// featuring contexts. The second stratum still runs all ordinary producers on
 /// newly generated subjects and rejects any conflicting context reassignment.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResultStructureStratum {
     Structural,
+    /// Extension predicates whose negative antecedents require structural
+    /// closure. KerML contextual bindings remain deferred in this stratum.
+    StableProperties,
     ContextualBindings,
 }
 
@@ -99,6 +104,44 @@ mod navigation_evidence_regression {
     use crate as agq_kerml_semantics;
     include!("../tests/common/result_fixture.rs");
     use super::{DerivationError, Graph, ResultStructurePlan};
+
+    #[test]
+    fn extension_property_changes_invalidate_reference_targets_and_require_complete_evidence() {
+        let mut f = Fixture::new();
+        f.create(1, c::FEATURE);
+        f.create(2, c::CLASSIFIER);
+        let snapshot = f.finish();
+        let q = KerMlQueries::new(
+            SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+        );
+        let mut evidence = q.all_supertypes(id(2)).map(|_| ());
+        assert_eq!(evidence.completeness, Completeness::Complete);
+        let mut plan = q.plan_result_structure([]);
+        let value = SlotValue::Set(BTreeSet::from([Value::Reference(id(2))]));
+        plan.add_derived_property(
+            id(1),
+            p::FEATURE_TYPE,
+            value.clone(),
+            RuleId::from_u128(5),
+            &evidence,
+        )
+        .unwrap();
+        assert_eq!(plan.changed_population(), BTreeSet::from([id(1), id(2)]));
+
+        evidence.completeness = Completeness::Incomplete;
+        let mut pending = q.plan_result_structure([]);
+        pending
+            .add_derived_property(
+                id(1),
+                p::FEATURE_TYPE,
+                value,
+                RuleId::from_u128(5),
+                &evidence,
+            )
+            .unwrap();
+        assert!(pending.changed_population().is_empty());
+        assert_eq!(pending.production.completeness, Completeness::Incomplete);
+    }
 
     #[test]
     fn planned_outputs_share_proofs_across_batches_and_reuse_existing_evidence() {
@@ -270,6 +313,7 @@ mod navigation_evidence_regression {
             search_pool: agq_kernel::derived::StructuralSearchPool::default(),
             direct_searches: BTreeSet::new(),
             touched_records: BTreeSet::new(),
+            contributed_properties: BTreeMap::new(),
         };
         let mut proof = q.result(());
         q.fact(&mut proof, projected);
@@ -388,6 +432,7 @@ struct Graph<'a> {
     search_pool: StructuralSearchPool,
     direct_searches: BTreeSet<SearchDependency>,
     touched_records: BTreeSet<ElementId>,
+    contributed_properties: BTreeMap<(ElementId, PropertyId), contributions::PropertyContribution>,
 }
 impl<'a> Graph<'a> {
     fn finish_subject(
@@ -1025,8 +1070,9 @@ impl<'a> Graph<'a> {
             p::FEATURE_IS_VARIABLE,
         ] {
             if registry
-                .is_legal(class, property)
+                .resolve_property(class, property)
                 .expect("KerML descriptor")
+                .is_some_and(|property| !property.derived)
             {
                 slots.insert(
                     property,
@@ -1360,10 +1406,11 @@ impl<'a> Graph<'a> {
         self.enqueue(&mut builder)?;
         builder.build()
     }
-    fn enqueue(self, builder: &mut DerivationBuilder) -> Result<(), DerivationError> {
+    fn enqueue<Input>(self, builder: &mut DerivationBuilder<Input>) -> Result<(), DerivationError> {
         if let Some(fact) = self.conflict {
             return Err(DerivationError::DuplicateFact(fact));
         }
+        contributions::enqueue_properties(self.model, self.contributed_properties, builder)?;
         let mut owner_orders: BTreeMap<_, Vec<_>> = self
             .records
             .iter()
@@ -1581,6 +1628,14 @@ pub struct ResultStructure {
     pub contextual_results: Vec<ContextualResult>,
 }
 
+/// Unpublished derivation retaining every missing construction obligation.
+/// It cannot be used as a strict overlay or a publication certificate.
+pub struct ConstructionResultStructure {
+    pub overlay: agq_kernel::derived::ConstructionOverlay,
+    pub production: QueryResult<Vec<ElementId>>,
+    pub contextual_results: Vec<ContextualResult>,
+}
+
 /// A bounded producer plan over one immutable semantic context. This is a
 /// proposed derivation, not canonical storage or an accepted publication.
 /// Construction inputs can be audited without inventing a valid Snapshot.
@@ -1616,6 +1671,24 @@ impl ResultStructurePlan<'_> {
     /// References include both participant and occurrence navigation endpoints.
     pub(crate) fn changed_population(&self) -> BTreeSet<ElementId> {
         let mut result: BTreeSet<_> = self.graph.attachments.keys().copied().collect();
+        for (&(element, property), contribution) in &self.graph.contributed_properties {
+            if self
+                .graph
+                .model
+                .navigation_slot(element, property)
+                .is_some()
+            {
+                continue;
+            }
+            result.insert(element);
+            result.extend(contribution.value.values().filter_map(|value| {
+                if let Value::Reference(target) = value {
+                    Some(*target)
+                } else {
+                    None
+                }
+            }));
+        }
         for (&id, record) in &self.graph.records {
             if self.graph.model.element(id).is_some() {
                 continue;
@@ -1663,6 +1736,41 @@ impl ResultStructurePlan<'_> {
         self.graph.enqueue(&mut builder)?;
         Ok(builder)
     }
+    pub(crate) fn prepare_on_construction_overlay(
+        self,
+        input: &agq_kernel::derived::ConstructionOverlay,
+    ) -> Result<agq_kernel::derived::ConstructionDerivationBuilder, DerivationError> {
+        if input.base_revision() != self.context.revision
+            || !std::ptr::eq(input.model(), self.graph.model)
+        {
+            return Err(DerivationError::InputContextMismatch);
+        }
+        let mut builder = agq_kernel::derived::ConstructionDerivationBuilder::for_construction(
+            input.declared_shared().clone(),
+        );
+        self.graph.enqueue(&mut builder)?;
+        Ok(builder)
+    }
+    /// Materialize only an unpublished construction overlay. Required endpoint
+    /// deficits remain explicit and all other kernel invariants still apply.
+    pub fn materialize_construction(
+        self,
+        candidate: Arc<agq_kernel::ConstructionView>,
+    ) -> Result<ConstructionResultStructure, DerivationError> {
+        if candidate.revision() != self.context.revision
+            || !std::ptr::eq(candidate.model(), self.graph.model)
+        {
+            return Err(DerivationError::InputContextMismatch);
+        }
+        let mut builder =
+            agq_kernel::derived::ConstructionDerivationBuilder::for_construction(candidate);
+        self.graph.enqueue(&mut builder)?;
+        Ok(ConstructionResultStructure {
+            overlay: builder.build()?,
+            production: self.production,
+            contextual_results: self.contextual_results,
+        })
+    }
     /// Merge disjoint subject batches from the identical context. Duplicate
     /// facts must agree exactly, including provenance. Contributions to existing
     /// ownership collections merge by stable identity, preserving declared
@@ -1673,6 +1781,13 @@ impl ResultStructurePlan<'_> {
         }
         if let Some(fact) = self.graph.conflict.or(other.graph.conflict) {
             return Err(DerivationError::DuplicateFact(fact));
+        }
+        for (key, contribution) in other.graph.contributed_properties {
+            contributions::merge_property(
+                &mut self.graph.contributed_properties,
+                key,
+                contribution,
+            )?;
         }
         for (&id, record) in &other.graph.records {
             if self
@@ -1860,6 +1975,7 @@ impl<'m> KerMlQueries<'m> {
             search_pool: StructuralSearchPool::default(),
             direct_searches: BTreeSet::new(),
             touched_records: BTreeSet::new(),
+            contributed_properties: BTreeMap::new(),
         };
         let mut aggregate = self.result(vec![]);
         let mut contextual_results = vec![];
