@@ -227,6 +227,8 @@ impl ProducerApplicability {
 pub enum ProducerEffectScope {
     Subject,
     SubjectAndOwned,
+    /// Transitive owned records, excluding the producer subject itself.
+    OwnedDescendants,
     /// Subject and current transitive canonical owners. If the registry can
     /// change an existing subject's ownership, this expands to `Model`.
     SubjectAndOwners,
@@ -680,11 +682,17 @@ impl ProducerEvaluationTable {
                     if !seen.insert(source) {
                         continue;
                     }
-                    if let Some(reads) = readers.get(&source) {
+                    if (descriptor.scope != ProducerEffectScope::OwnedDescendants
+                        || source != subject)
+                        && let Some(reads) = readers.get(&source)
+                    {
                         consume(reads);
                     }
-                    if descriptor.scope == ProducerEffectScope::SubjectAndOwned
-                        && let Some(children) = owned.get(&source)
+                    if matches!(
+                        descriptor.scope,
+                        ProducerEffectScope::SubjectAndOwned
+                            | ProducerEffectScope::OwnedDescendants
+                    ) && let Some(children) = owned.get(&source)
                     {
                         scope.extend(children);
                     }
@@ -980,6 +988,7 @@ impl ProducerClosureCertificate {
         let mut states = vec![0; (subjects.len() * families).div_ceil(4)];
         let mut blocked = vec![0_u8; subjects.len()];
         let mut inherited_blocks = vec![0_u8; subjects.len()];
+        let mut descendant_blocks = vec![0_u8; subjects.len()];
         let mut owner_blocks = vec![0_u8; subjects.len()];
         let ownership_mutable = registry
             .descriptors
@@ -1046,6 +1055,7 @@ impl ProducerClosureCertificate {
                     match descriptor.scope {
                         ProducerEffectScope::Model => global_block |= mask,
                         ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
+                        ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
                         ProducerEffectScope::SubjectAndOwners if ownership_mutable => {
                             global_block |= mask
                         }
@@ -1096,6 +1106,11 @@ impl ProducerClosureCertificate {
                         owners_of[j].push(i);
                     }
                 }
+            }
+        }
+        for (i, mask) in descendant_blocks.into_iter().enumerate() {
+            for &child in &owned_by[i] {
+                inherited_blocks[child] |= mask;
             }
         }
         propagate(&mut inherited_blocks, &owned_by);

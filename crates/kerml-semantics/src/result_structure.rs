@@ -1728,8 +1728,12 @@ impl ResultStructurePlan<'_> {
                     let permitted = descriptors.iter().any(|&(subject, descriptor)| {
                         descriptor.effects.contains(&ProducerEffect::Ownership)
                             && (descriptor.scope == ProducerEffectScope::Model
-                                || subject == child
+                                || (descriptor.scope != ProducerEffectScope::OwnedDescendants
+                                    && subject == child)
                                 || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
+                                    && owned_below(model, child, subject))
+                                || (descriptor.scope == ProducerEffectScope::OwnedDescendants
+                                    && child != subject
                                     && owned_below(model, child, subject))
                                 || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
                                     && owned_below(model, subject, child)))
@@ -1820,8 +1824,12 @@ impl ResultStructurePlan<'_> {
                         || (descriptor.effects.contains(&effect)
                             && (fresh
                                 || descriptor.scope == ProducerEffectScope::Model
-                                || subject == source
+                                || (descriptor.scope != ProducerEffectScope::OwnedDescendants
+                                    && subject == source)
                                 || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
+                                    && owned_below(model, source, subject))
+                                || (descriptor.scope == ProducerEffectScope::OwnedDescendants
+                                    && source != subject
                                     && owned_below(model, source, subject))
                                 || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
                                     && owned_below(model, subject, source)))))

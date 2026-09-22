@@ -996,6 +996,116 @@ fn relationship_class_bound_rejects_undeclared_subtype_output() {
 }
 
 #[test]
+fn owned_descendant_effects_do_not_retype_or_invalidate_the_producer_subject() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let mut f = Fixture::new();
+    for subject in [1, 2, 3] {
+        f.create(subject, c::FEATURE);
+    }
+    member(&mut f, 1, 2, 4, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    let mut writer = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Subsetting],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::OwnedDescendants;
+    let registry = ProducerRegistry::new([
+        writer.clone(),
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any),
+    ])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        table.pending(record.id(), snapshot.model(), &registry);
+        table
+            .record(&[(record.id(), TYPE, Completeness::Complete)], &registry)
+            .unwrap();
+        table.record_reads(
+            &[(
+                record.id(),
+                TYPE,
+                vec![ProducerRead::Owned(record.id(), c::SUBSETTING)].into(),
+            )],
+            &registry,
+        );
+        if record.metaclass() == c::FEATURE {
+            table
+                .record(
+                    &[(
+                        record.id(),
+                        ACTIVATE,
+                        if record.id() == id(1) {
+                            Completeness::Incomplete
+                        } else {
+                            Completeness::Complete
+                        },
+                    )],
+                    &registry,
+                )
+                .unwrap();
+            table.record_reads(&[(record.id(), ACTIVATE, Vec::new().into())], &registry);
+        }
+    }
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| false,
+    );
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    assert!(!certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
+    assert!(certificate.is_closed(id(3), SemanticClosureRequirement::EffectiveTyping));
+    assert_eq!(
+        certificate.evaluation(id(1), registry.index(TYPE).unwrap()),
+        Some(ProducerEvaluationState::EvaluatedComplete)
+    );
+    assert_eq!(
+        certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
+        Some(ProducerEvaluationState::Pending)
+    );
+
+    let q = KerMlQueries::new(context);
+    for source in [id(1), id(2)] {
+        let mut plan = q.plan_result_structure([]);
+        plan.add_derived_element(
+            DerivationKey {
+                subject: id(1),
+                rule: RuleId::from_u128(99800),
+                output: OutputKey::from_u128(1),
+            },
+            c::SUBSETTING,
+            BTreeMap::from([
+                (
+                    p::SUBSETTING_SUBSETTING_FEATURE,
+                    SlotValue::Scalar(Value::Reference(source)),
+                ),
+                (
+                    p::SUBSETTING_SUBSETTED_FEATURE,
+                    SlotValue::Scalar(Value::Reference(id(3))),
+                ),
+            ]),
+            Some(source),
+            &q.canonical_fact_evidence(FactKey::Element(source)),
+        )
+        .unwrap();
+        assert_eq!(
+            plan.validate_declared_effects(
+                &[id(1)],
+                &ProducerRegistry::new([writer.clone()]).unwrap()
+            )
+            .is_ok(),
+            source == id(2)
+        );
+    }
+}
+
+#[test]
 fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
     let descriptor =
         ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);
