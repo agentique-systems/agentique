@@ -449,6 +449,7 @@ fn requirements_name_exact_typing_effect_dependencies() {
         E::Subsetting,
         E::Redefinition,
         E::Specialization,
+        E::Conjugation,
         E::FeatureChain,
     ] {
         assert!(requirement.requires(effect));
@@ -606,7 +607,11 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
     writer.scope = ProducerEffectScope::SubjectAndOwners;
     let registry = ProducerRegistry::new([
         writer,
-        ProducerDescriptor::new(TYPE, [ProducerEffect::Scalar(p::TYPE_IS_SUFFICIENT)], ProducerApplicability::Any),
+        ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::Scalar(p::TYPE_IS_SUFFICIENT)],
+            ProducerApplicability::Any,
+        ),
     ])
     .unwrap();
     let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
@@ -638,8 +643,14 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
         &table,
         |_| false,
     );
-    assert_eq!(certificate.evaluation(id(1), registry.index(TYPE).unwrap()), Some(ProducerEvaluationState::Pending));
-    assert_eq!(certificate.evaluation(id(3), registry.index(TYPE).unwrap()), Some(ProducerEvaluationState::EvaluatedComplete));
+    assert_eq!(
+        certificate.evaluation(id(1), registry.index(TYPE).unwrap()),
+        Some(ProducerEvaluationState::Pending)
+    );
+    assert_eq!(
+        certificate.evaluation(id(3), registry.index(TYPE).unwrap()),
+        Some(ProducerEvaluationState::EvaluatedComplete)
+    );
 }
 
 #[test]

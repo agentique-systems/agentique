@@ -1725,6 +1725,8 @@ impl ResultStructurePlan<'_> {
                 Some((ProducerEffect::Subsetting, p::SUBSETTING_SUBSETTING_FEATURE))
             } else if is(c::SPECIALIZATION) {
                 Some((ProducerEffect::Specialization, p::SPECIALIZATION_SPECIFIC))
+            } else if is(c::CONJUGATION) {
+                Some((ProducerEffect::Conjugation, p::CONJUGATION_CONJUGATED_TYPE))
             } else if is(c::TYPE_FEATURING) {
                 Some((ProducerEffect::Featuring, p::TYPE_FEATURING_FEATURE_OF_TYPE))
             } else if is(c::FEATURE_CHAINING) {

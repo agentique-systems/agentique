@@ -188,6 +188,7 @@ pub enum ProducerEffect {
     /// Changing the owner of a semantic subject already present in the graph.
     Ownership,
     Specialization,
+    Conjugation,
     Subsetting,
     Redefinition,
     Typing,
@@ -333,13 +334,19 @@ impl SemanticClosureRequirement {
             Self::EffectiveOwnership => matches!(effect, E::Ownership),
             Self::EffectiveTyping => matches!(
                 effect,
-                E::Typing | E::Subsetting | E::Redefinition | E::Specialization | E::FeatureChain
+                E::Typing
+                    | E::Subsetting
+                    | E::Redefinition
+                    | E::Specialization
+                    | E::Conjugation
+                    | E::FeatureChain
             ),
             Self::EffectiveFeaturing => matches!(
                 effect,
                 E::Featuring
                     | E::Membership
                     | E::Specialization
+                    | E::Conjugation
                     | E::Subsetting
                     | E::Redefinition
                     | E::FeatureChain
@@ -349,13 +356,19 @@ impl SemanticClosureRequirement {
                 effect,
                 E::Membership
                     | E::Specialization
+                    | E::Conjugation
                     | E::Subsetting
                     | E::Redefinition
                     | E::ResultStructure
             ),
             Self::EffectiveNaming => matches!(
                 effect,
-                E::Naming | E::Membership | E::Specialization | E::Subsetting | E::Redefinition
+                E::Naming
+                    | E::Membership
+                    | E::Specialization
+                    | E::Conjugation
+                    | E::Subsetting
+                    | E::Redefinition
             ),
             Self::ValueContext => {
                 Self::EffectiveFeaturing.requires(effect)
@@ -551,14 +564,19 @@ impl ProducerEvaluationTable {
             }
         }
         let trace = std::env::var_os("AGQ_PRODUCER_CAUSAL_TRACE").is_some();
+        let mut future_effects_applied = false;
         while let Some(pair) = pending.pop_front() {
             let subject = subjects[pair / families];
             let descriptor = &registry.descriptors[pair % families];
             if descriptor.effects.is_empty() && descriptor.fresh_effects.is_empty() {
                 continue;
             }
-            let mut affected = global.clone();
-            if descriptor.can_create_subjects() && !future_effects.is_empty() {
+            let mut affected = std::mem::take(&mut global);
+            if descriptor.can_create_subjects()
+                && !future_effects_applied
+                && !future_effects.is_empty()
+            {
+                future_effects_applied = true;
                 for reads in readers.values() {
                     for (read, reader) in reads {
                         if future_effects
@@ -576,7 +594,7 @@ impl ProducerEvaluationTable {
                 .chain(&descriptor.fresh_effects)
                 .any(|effect| !matches!(effect, ProducerEffect::Scalar(_)))
             {
-                affected.extend(&inverse);
+                affected.append(&mut inverse);
             }
             let mut consume = |reads: &[(ProducerRead, usize)]| {
                 for (read, reader) in reads {
@@ -1185,6 +1203,7 @@ pub(crate) fn effect_changes_read(
                 }
                 ProducerEffect::Redefinition => &[c::REDEFINITION],
                 ProducerEffect::Specialization => &[c::SPECIALIZATION, c::SUBCLASSIFICATION],
+                ProducerEffect::Conjugation => &[c::CONJUGATION],
                 ProducerEffect::FeatureChain => &[c::FEATURE_CHAINING],
                 ProducerEffect::Featuring => &[c::TYPE_FEATURING],
                 ProducerEffect::Membership => &[c::MEMBERSHIP, c::FEATURE_MEMBERSHIP],
