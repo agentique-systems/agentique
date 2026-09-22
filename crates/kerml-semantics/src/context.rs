@@ -70,6 +70,10 @@ pub struct SemanticContextId {
     /// Accepted immutable dependency, including all publication derivations.
     /// Authored revisions retain this identity without claiming their own closure.
     pub publication_dependency_digest: Option<[u8; 32]>,
+    /// Frozen interpretation contracts of composed language producers. An empty
+    /// map is the historical KerML-only context. Values are content identities,
+    /// not additional model records or publication certificates.
+    pub semantic_extensions: BTreeMap<&'static str, [u8; 32]>,
     /// Phase is part of query identity; a partial overlay cannot claim closure.
     pub derivation_phase: crate::DerivationPhase,
 }
@@ -87,6 +91,8 @@ pub enum ContextError {
     /// A reviewed library fact belongs to a different explicit authority profile.
     CorrectionProfileMismatch(agq_kernel::provenance::FactKey),
     PublicationDependencyMismatch,
+    /// An attached interpretation contract cannot be replaced within a context.
+    SemanticExtensionIdentityMismatch(&'static str),
 }
 
 impl<'m> SemanticContext<'m> {
@@ -97,6 +103,23 @@ impl<'m> SemanticContext<'m> {
             model: self.model,
             id: self.id.clone(),
         }
+    }
+    /// Bind a frozen language interpretation to every query and producer answer.
+    /// Reattaching the same identity is idempotent; replacing it is rejected.
+    /// The language facade remains responsible for authenticating the contract.
+    pub fn with_semantic_extension_identity(
+        mut self,
+        domain: &'static str,
+        digest: [u8; 32],
+    ) -> Result<Self, ContextError> {
+        if let Some(existing) = self.id.semantic_extensions.get(domain) {
+            if existing != &digest {
+                return Err(ContextError::SemanticExtensionIdentityMismatch(domain));
+            }
+        } else {
+            self.id.semantic_extensions.insert(domain, digest);
+        }
+        Ok(self)
     }
     /// Attach bindings only after validating them against this exact canonical view.
     pub fn with_standard_bindings(
@@ -419,6 +442,7 @@ impl<'m> SemanticContext<'m> {
                 library_graph_digest: None,
                 derivation_phase: crate::DerivationPhase::Declared,
                 publication_dependency_digest: None,
+                semantic_extensions: BTreeMap::new(),
             },
         })
     }
@@ -426,3 +450,7 @@ impl<'m> SemanticContext<'m> {
         &self.id
     }
 }
+
+#[cfg(test)]
+#[path = "context_extension_tests.rs"]
+mod extension_tests;

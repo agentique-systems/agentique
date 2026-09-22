@@ -263,6 +263,25 @@ fn decode(graph: &[u8]) -> DerivedOverlay {
 #[test]
 fn accepted_graph_roundtrip_retains_context_and_protected_dependency() {
     let (complete, roots, libraries) = fixture();
+    let historical = context_identity(complete.context());
+    assert!(historical.get("semantic_extensions").is_none());
+    let mut composed = complete.context().clone();
+    composed
+        .semantic_extensions
+        .insert("fixture-language/1", [7; 32]);
+    let mut encoded = context_identity(&composed);
+    assert_eq!(
+        encoded["semantic_extensions"]["fixture-language/1"],
+        json!(vec![7_u8; 32])
+    );
+    encoded
+        .as_object_mut()
+        .unwrap()
+        .remove("semantic_extensions");
+    assert_eq!(
+        encoded, historical,
+        "empty extension preserves historical receipt encoding"
+    );
     let (graph, receipt) = trusted_fixture(&complete);
     let restored =
         CompletePublicationOverlay::restore_accepted(decode(&graph), &roots, &libraries, &receipt)

@@ -246,7 +246,7 @@ fn context_identity(context: &SemanticContextId) -> Value {
         .as_ref()
         .expect("complete publication bindings");
     let libraries = bindings.library_set();
-    json!({
+    let mut identity = json!({
         "operational_profile":context.baseline_profile_id,
         "rule_set":context.rule_set_version,
         "binding_contract":context.binding_version,
@@ -272,7 +272,13 @@ fn context_identity(context: &SemanticContextId) -> Value {
             "multiplicity_context":context.multiplicity_context_manifest_digest,
             "cross_multiplicity_context":context.cross_multiplicity_context_manifest_digest,
         },
-    })
+    });
+    // Preserve the exact historical receipt encoding for KerML-only inputs.
+    // A composed producer contract must never disappear from a new receipt.
+    if !context.semantic_extensions.is_empty() {
+        identity["semantic_extensions"] = json!(context.semantic_extensions);
+    }
+    identity
 }
 
 fn json_digest(value: &Value) -> Result<[u8; 32], serde_json::Error> {

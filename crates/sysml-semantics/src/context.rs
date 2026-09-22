@@ -255,6 +255,10 @@ impl<'m> SysmlSemanticContext<'m> {
                 "standard SysML bindings graph",
             ));
         }
+        let kerml = kerml.with_semantic_extension_identity(
+            crate::SYSML_SEMANTIC_CONTEXT_DOMAIN,
+            trusted.context_identity_digest(),
+        )?;
         let id = SysmlSemanticContextId {
             kerml: kerml.id().clone(),
             dependencies: trusted,
@@ -398,6 +402,12 @@ pub(crate) fn fixture_context<'m>(
         BTreeSet::new(),
     )
     .unwrap();
+    let kerml = kerml
+        .with_semantic_extension_identity(
+            crate::SYSML_SEMANTIC_CONTEXT_DOMAIN,
+            contract.context_identity_digest(),
+        )
+        .unwrap();
     let id = SysmlSemanticContextId {
         kerml: kerml.id().clone(),
         dependencies: contract,
