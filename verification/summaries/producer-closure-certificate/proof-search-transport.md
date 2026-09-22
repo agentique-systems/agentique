@@ -1,12 +1,14 @@
 # Producer proof search transport
 
-Canonical kernel searches preserve three previously conflated dependencies:
+Canonical kernel searches preserve previously conflated dependencies:
 
 - `SourceRelationships { source, class, property }` retains the exact
   descriptor-resolved source role, including subtype/property redefinitions.
   An unrelated relationship general endpoint is not part of that population.
 - `ElementIdentity` reads only existence/metaclass; `Element` continues to cover
   arbitrary stored properties and populations. Missing identities stay open.
+- `OwnedRelationships { owner, class }` retains a class-selected direct owned
+  population, including relevant relationships whose source endpoint is pending.
 - `ProducerClosure { subject, requirement }` is a reopenable semantic dependency.
   The requirement is a versioned opaque language contract, not a model Element.
 
@@ -26,7 +28,7 @@ query evidence remains distinct. Ordinary revision invalidation remains global
 for a closure boundary and bounded by the source for source-role searches.
 
 Existing canonical digest tags and archive encodings are unchanged. New search
-variants append tags 6/7/8; accepted KerML Operational v9 restoration stays pinned.
+variants append tags 6/7/8/9; accepted KerML Operational v9 restoration stays pinned.
 Archive roundtrip retains typed searches, proof sharing and deterministic bytes.
 
 Verification uses the isolated `target/foundation-evidence` directory with
@@ -41,6 +43,12 @@ incremental/debug artifacts disabled and two build jobs. Completed commands:
   `cargo test --locked --offline -p agq-kerml-semantics --lib transported_closure_requirements`
   and `cargo test --locked --offline -p agq-kerml-semantics --lib closure_witness_is_invalidated`:
   exit 0, one focused test each; kernel archive suite rerun, exit 0, five tests.
+- `cargo clippy --locked --offline -p agq-kernel -p agq-kerml-semantics --all-targets -- -D warnings`:
+  exit 0 after certificate-sidecar separation.
+- After adding the owned relationship class search, focused
+  `--lib owned_relationship_class_search` and
+  `--lib derived_proofs_searches_navigation` tests both exit 0; kernel archive
+  suite rerun, exit 0, five tests.
 
 Development fixture correction: adding a global certificate dependency to an
 existing explicitly bounded-read fixture correctly failed its non-global
