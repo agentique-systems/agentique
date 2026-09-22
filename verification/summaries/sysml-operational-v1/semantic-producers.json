@@ -193,5 +193,38 @@
       "No new publication receipt or accepted facade was created by focused tests",
       "Authored Systems context attachment and effective closure certificate remain separate integration work"
     ]
+  },
+  "stable_scalar_ownership_regression": {
+    "scope": "Cross-language scalar proof reads prior derived ownership; VariableFeaturing later extends that same aggregate",
+    "support": "Lead result_structure::Graph::producer_dependencies extraction and scalar normalization; support source edits excluded from regression commit",
+    "verified": [
+      "Unfixed implementation reproduces kernel DependencyCycle on a bounded fixture",
+      "Fixed scalar proof retains original derived Subsetting contributor and omits mutable ownedRelationship aggregate",
+      "Scalar activates KerML TypeFeaturing on same Usage owner",
+      "FIFO/LIFO/reversed/partitioned schedules with varied batches equal fullscan canonical records, proofs and semantic context digest"
+    ],
+    "commands": [
+      {
+        "command": "cargo test -p agq-kerml-semantics --lib stable_usage_property_retains_contributors",
+        "exit": 1,
+        "output": "Expected regression failure: DependencyCycle;0.59s test execution before lead fix"
+      },
+      {
+        "command": "cargo test -p agq-kerml-semantics --lib stable_usage_property",
+        "exit": 0,
+        "output": "2 passed;0 failed;4.76s test execution with lead fix"
+      },
+      {
+        "command": "cargo clippy -p agq-kerml-semantics --lib --tests -- -D warnings",
+        "exit": 0,
+        "output": "Finished dev profile12.55s"
+      },
+      {
+        "command": "cargo fmt -p agq-kerml-semantics -- --check",
+        "exit": 0,
+        "output": "No formatting differences"
+      }
+    ],
+    "full_corpus_run": false
   }
 }

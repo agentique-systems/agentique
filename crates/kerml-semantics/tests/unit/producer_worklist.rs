@@ -660,36 +660,8 @@ fn immutable_dependency_is_never_a_producer_subject_even_if_requested() {
     );
 }
 
-#[test]
-fn stable_usage_property_activates_kerml_after_structural_closure() {
+fn usage_variable_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
     use agq_sysml::{classes as sc, properties as sp};
-    struct UsageProperties;
-    impl PublicationProducerExtension for UsageProperties {
-        fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
-            model.registry().is_subtype(class, sc::USAGE).unwrap()
-        }
-        fn has_stable_properties(&self) -> bool {
-            true
-        }
-        fn contribute<'m>(
-            &self,
-            q: &KerMlQueries<'m>,
-            subject: ElementId,
-            stratum: ResultStructureStratum,
-            plan: &mut ResultStructurePlan<'m>,
-        ) -> Result<(), agq_kernel::derived::DerivationError> {
-            if stratum != ResultStructureStratum::Structural {
-                plan.add_derived_property(
-                    subject,
-                    sp::USAGE_MAY_TIME_VARY,
-                    SlotValue::Scalar(Value::Boolean(true)),
-                    RuleId::from_u128(9903),
-                    &q.canonical_fact_evidence(FactKey::Element(subject)),
-                )?;
-            }
-            Ok(())
-        }
-    }
     let (original, bindings) = variable_fixture();
     let base = Snapshot::new(Arc::new(
         agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8).unwrap(),
@@ -731,6 +703,40 @@ fn stable_usage_property_activates_kerml_after_structural_closure() {
         );
     }
     let snapshot = base.apply(&changes).unwrap();
+    (snapshot, bindings)
+}
+
+#[test]
+fn stable_usage_property_activates_kerml_after_structural_closure() {
+    use agq_sysml::{classes as sc, properties as sp};
+    struct UsageProperties;
+    impl PublicationProducerExtension for UsageProperties {
+        fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
+            model.registry().is_subtype(class, sc::USAGE).unwrap()
+        }
+        fn has_stable_properties(&self) -> bool {
+            true
+        }
+        fn contribute<'m>(
+            &self,
+            q: &KerMlQueries<'m>,
+            subject: ElementId,
+            stratum: ResultStructureStratum,
+            plan: &mut ResultStructurePlan<'m>,
+        ) -> Result<(), agq_kernel::derived::DerivationError> {
+            if stratum != ResultStructureStratum::Structural {
+                plan.add_derived_property(
+                    subject,
+                    sp::USAGE_MAY_TIME_VARY,
+                    SlotValue::Scalar(Value::Boolean(true)),
+                    RuleId::from_u128(9903),
+                    &q.canonical_fact_evidence(FactKey::Element(subject)),
+                )?;
+            }
+            Ok(())
+        }
+    }
+    let (snapshot, bindings) = usage_variable_fixture();
     assert!(
         snapshot
             .model()
@@ -787,6 +793,178 @@ fn stable_usage_property_activates_kerml_after_structural_closure() {
             >= 2
     );
     compare(&reference, &worklist, Some(&bindings));
+}
+
+#[test]
+fn stable_usage_property_retains_contributors_when_variable_featuring_extends_derived_ownership() {
+    use agq_sysml::{classes as sc, properties as sp};
+    fn specialization_key(subject: ElementId) -> DerivationKey {
+        DerivationKey {
+            rule: RuleId::from_u128(9904),
+            subject,
+            output: OutputKey::from_u128(1),
+        }
+    }
+    struct SpecializedUsageProperties {
+        general: ElementId,
+        ownership_reads: std::cell::Cell<usize>,
+    }
+    impl PublicationProducerExtension for SpecializedUsageProperties {
+        fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
+            model.registry().is_subtype(class, sc::USAGE).unwrap()
+        }
+        fn has_stable_properties(&self) -> bool {
+            true
+        }
+        fn contribute<'m>(
+            &self,
+            q: &KerMlQueries<'m>,
+            subject: ElementId,
+            stratum: ResultStructureStratum,
+            plan: &mut ResultStructurePlan<'m>,
+        ) -> Result<(), agq_kernel::derived::DerivationError> {
+            let mut base = q.canonical_fact_evidence(FactKey::Element(subject));
+            base.merge_evidence(q.canonical_fact_evidence(FactKey::Element(self.general)))
+                .unwrap();
+            plan.add_derived_element(
+                specialization_key(subject),
+                c::SUBSETTING,
+                BTreeMap::from([
+                    (
+                        p::SUBSETTING_SUBSETTING_FEATURE,
+                        SlotValue::Scalar(Value::Reference(subject)),
+                    ),
+                    (
+                        p::SUBSETTING_SUBSETTED_FEATURE,
+                        SlotValue::Scalar(Value::Reference(self.general)),
+                    ),
+                ]),
+                Some(subject),
+                &base,
+            )?;
+            if stratum != ResultStructureStratum::Structural {
+                let owned = q.owned_relationships(subject);
+                assert!(
+                    owned
+                        .value
+                        .contains(&specialization_key(subject).element_id())
+                );
+                assert!(
+                    owned.canonical_dependencies.contains(&Dependency::Derived(
+                        FactKey::Property {
+                            element: subject,
+                            property: p::ELEMENT_OWNED_RELATIONSHIP
+                        }
+                    )),
+                    "scalar premise must read the already-derived ownership aggregate"
+                );
+                self.ownership_reads.set(self.ownership_reads.get() + 1);
+                plan.add_derived_property(
+                    subject,
+                    sp::USAGE_MAY_TIME_VARY,
+                    SlotValue::Scalar(Value::Boolean(true)),
+                    RuleId::from_u128(9905),
+                    &owned.map(|_| ()),
+                )?;
+            }
+            Ok(())
+        }
+    }
+    let (snapshot, bindings) = usage_variable_fixture();
+    let run = |strategy, order, batch_size| {
+        let extension = SpecializedUsageProperties {
+            general: bindings.targets[&StandardRole::DataValues].element,
+            ownership_reads: std::cell::Cell::new(0),
+        };
+        let result = close_result_structure_with_extension(
+            &snapshot,
+            PublicationClosureOptions {
+                strategy,
+                order,
+                batch_size,
+                ..Default::default()
+            },
+            |overlay| {
+                let mut context = SemanticContext::for_overlay(
+                    overlay,
+                    SemanticOptions {
+                        baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V8,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .map_err(PublicationOverlayError::Context)?;
+                context.id.standard_bindings = Some(bindings.clone());
+                Ok(context)
+            },
+            &extension,
+            |_, _, _, _| {},
+            |_| {},
+        )
+        .unwrap();
+        assert!(extension.ownership_reads.get() >= 2);
+        assert!(result.converged, "{:?}", result.stages);
+        assert_eq!(
+            result.completeness,
+            Completeness::Complete,
+            "{:?}",
+            result.stages.last()
+        );
+        for subject in [id(10), id(11)] {
+            let fact = FactKey::Property {
+                element: subject,
+                property: sp::USAGE_MAY_TIME_VARY,
+            };
+            let proof = result.overlay.explain(fact).expect("derived stable scalar");
+            assert!(
+                !proof
+                    .dependencies
+                    .contains(&Dependency::Derived(FactKey::Property {
+                        element: subject,
+                        property: p::ELEMENT_OWNED_RELATIONSHIP,
+                    })),
+                "proof must not refer back to an aggregate later extended by VariableFeaturing"
+            );
+            assert!(
+                proof
+                    .dependencies
+                    .contains(&Dependency::Derived(FactKey::Element(
+                        specialization_key(subject).element_id()
+                    ))),
+                "normalization must preserve the original specialization contributor"
+            );
+            assert!(
+                result
+                    .overlay
+                    .model()
+                    .navigation_slot(subject, p::ELEMENT_OWNED_RELATIONSHIP)
+                    .unwrap()
+                    .value()
+                    .values()
+                    .filter_map(|value| match value {
+                        Value::Reference(id) => result.overlay.model().element(*id),
+                        _ => None,
+                    })
+                    .any(|record| record.metaclass() == c::TYPE_FEATURING),
+                "the stable scalar must activate a later KerML producer on the same owner"
+            );
+        }
+        result
+    };
+    let expected = run(
+        PublicationClosureStrategy::ReferenceFullScan,
+        PublicationWorklistOrder::Fifo,
+        32,
+    );
+    for (order, batch_size) in [
+        (PublicationWorklistOrder::Fifo, 1),
+        (PublicationWorklistOrder::Lifo, 7),
+        (PublicationWorklistOrder::ReversedInitial, 16),
+        (PublicationWorklistOrder::Partitioned, 32),
+    ] {
+        let actual = run(PublicationClosureStrategy::Worklist, order, batch_size);
+        compare(&expected, &actual, Some(&bindings));
+    }
 }
 
 /// Explicit workflow scale gate; release runs are invoked under the watchdog.
