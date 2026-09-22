@@ -808,6 +808,116 @@ fn immutable_record_reads_are_fixed_but_external_source_relationships_stay_open(
 }
 
 #[test]
+fn immutable_noncomposite_inverse_remains_open_to_local_carriers() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let mut f = Fixture::new();
+    f.create(1, c::FEATURE);
+    f.create(2, c::FEATURE_TYPING);
+    f.create(3, c::CLASSIFIER);
+    f.value(2, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(1)));
+    f.value(2, p::FEATURE_TYPING_TYPE, Value::Reference(id(3)));
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(f.finish())
+            .build()
+            .unwrap(),
+    );
+    let base = Snapshot::with_immutable_dependency(dependency);
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::CLASSIFIER);
+    f.create(5, c::CLASSIFIER);
+    let snapshot = f.finish();
+    // This noncomposite canonical carrier may be added locally. The immutable
+    // record stays untouched, but its inverse navigation changes.
+    let mut edit = snapshot.change_set();
+    edit.set(
+        id(4),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![Value::Reference(id(2))]),
+        origin(),
+    );
+    let changed = snapshot.apply(&edit).unwrap();
+    assert!(
+        snapshot
+            .model()
+            .navigation_slot(id(2), p::RELATIONSHIP_OWNING_RELATED_ELEMENT)
+            .is_none()
+    );
+    assert_eq!(
+        changed
+            .model()
+            .navigation_slot(id(2), p::RELATIONSHIP_OWNING_RELATED_ELEMENT)
+            .unwrap()
+            .value(),
+        &SlotValue::Scalar(Value::Reference(id(4)))
+    );
+
+    let mut writer = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Ownership],
+        ProducerApplicability::Any,
+    );
+    writer.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([
+        writer,
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any),
+    ])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    for read in [
+        ProducerRead::Source(id(2), c::ELEMENT, p::ELEMENT_OWNED_RELATIONSHIP),
+        ProducerRead::Property(id(2), p::RELATIONSHIP_OWNING_RELATED_ELEMENT),
+    ] {
+        let mut table = ProducerEvaluationTable::default();
+        for record in snapshot.model().elements() {
+            table.pending(record.id(), snapshot.model(), &registry);
+            table
+                .record(
+                    &[
+                        (record.id(), TYPE, Completeness::Complete),
+                        (
+                            record.id(),
+                            ACTIVATE,
+                            if record.id() == id(4) {
+                                Completeness::Incomplete
+                            } else {
+                                Completeness::Complete
+                            },
+                        ),
+                    ],
+                    &registry,
+                )
+                .unwrap();
+            table.record_reads(
+                &[
+                    (record.id(), TYPE, Vec::new().into()),
+                    (record.id(), ACTIVATE, Vec::new().into()),
+                ],
+                &registry,
+            );
+        }
+        table.record_reads(&[(id(5), TYPE, vec![read].into())], &registry);
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &table,
+            |id| snapshot.is_dependency_element(id),
+        );
+        assert_eq!(
+            certificate.evaluation(id(5), registry.index(TYPE).unwrap()),
+            Some(ProducerEvaluationState::Pending)
+        );
+    }
+}
+
+#[test]
 fn additive_scalar_facts_are_fixed_while_absence_and_collection_reads_remain_open() {
     use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
     let mut f = Fixture::new();
