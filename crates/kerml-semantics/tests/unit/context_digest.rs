@@ -384,6 +384,40 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
 }
 
 #[test]
+fn owned_relationship_exclusions_bind_owner_class_and_sorted_excluded_population() {
+    let base = snapshot(3, authored());
+    let digest = |owner, class, excluded| {
+        let mut builder = DerivationBuilder::new(base.clone());
+        builder.element(key(1), NODE, [], BTreeSet::new());
+        builder.searches(
+            FactKey::Element(key(1).element_id()),
+            BTreeSet::from([StructuralSearch::OwnedRelationshipsExcluding {
+                owner,
+                class,
+                excluded,
+            }]),
+        );
+        model_digest(builder.build().unwrap().model())
+    };
+    let excluded = MetaclassId::from_u128(99);
+    let other = MetaclassId::from_u128(100);
+    let cases = BTreeSet::from([
+        digest(id(1), NODE, BTreeSet::new()),
+        digest(id(1), NODE, BTreeSet::from([excluded])),
+        digest(id(2), NODE, BTreeSet::from([excluded])),
+        digest(id(1), other, BTreeSet::from([excluded])),
+        digest(id(1), NODE, BTreeSet::from([other])),
+        digest(id(1), NODE, BTreeSet::from([excluded, other])),
+    ]);
+    assert_eq!(cases.len(), 6);
+    assert_eq!(
+        digest(id(1), NODE, BTreeSet::from([excluded, other])),
+        digest(id(1), NODE, BTreeSet::from([other, excluded])),
+        "set insertion order cannot affect canonical proof identity"
+    );
+}
+
+#[test]
 fn transported_closure_requirements_do_not_canonicalize_certificate_history() {
     use crate::{QueryResult, SearchDependency, SemanticClosureRequirement, SemanticContext};
     let normative = Snapshot::new(Arc::new(agq_kerml::registry().unwrap()));

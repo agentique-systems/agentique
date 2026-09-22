@@ -1,6 +1,61 @@
 use super::*;
 
 #[test]
+fn owned_relationship_exclusions_survive_transport_and_owner_invalidation() {
+    let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
+    let queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default()).unwrap(),
+    );
+    let owner = ElementId::from_u128(1);
+    let class = agq_kerml::classes::MEMBERSHIP;
+    for excluded in [
+        BTreeSet::new(),
+        BTreeSet::from([agq_kerml::classes::FEATURE_MEMBERSHIP]),
+        BTreeSet::from([
+            agq_kerml::classes::FEATURE_MEMBERSHIP,
+            agq_kernel::MetaclassId::from_u128(999),
+        ]),
+    ] {
+        let mut answer = queries.result(());
+        answer
+            .search_dependencies
+            .insert(SearchDependency::OwnedRelationshipsExcluding {
+                owner,
+                class,
+                excluded: excluded.clone(),
+            });
+        let searches = structural_searches(&answer);
+        assert_eq!(
+            searches,
+            BTreeSet::from([StructuralSearch::OwnedRelationshipsExcluding {
+                owner,
+                class,
+                excluded,
+            }])
+        );
+        assert!(answer.canonical_dependencies.is_empty());
+        let mut persisted = queries.result(());
+        persisted
+            .search_dependencies
+            .extend(searches.into_iter().map(SearchDependency::Kernel));
+        for result in [&answer, &persisted] {
+            let expected = BTreeSet::from([InvalidationKey::Element(owner)]);
+            assert_eq!(query_read_keys(result, snapshot.model()), expected);
+            assert_eq!(
+                query_publication_provider_keys(result, snapshot.model()),
+                expected
+            );
+            let compact = QueryInvalidationSet::from_keys(expected);
+            assert!(compact.affected_by(&BTreeSet::from([owner]), false));
+            assert!(!compact.affected_by(&BTreeSet::from([ElementId::from_u128(99)]), false));
+            // Descriptor identity is a separate immutable context contract;
+            // unresolved exclusion descriptors never suppress its invalidation.
+            assert!(compact.affected_by(&BTreeSet::new(), true));
+        }
+    }
+}
+
+#[test]
 fn structural_feature_population_survives_transport_and_owner_invalidation() {
     let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
     let queries = KerMlQueries::new(

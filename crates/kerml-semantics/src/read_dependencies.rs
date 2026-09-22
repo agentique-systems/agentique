@@ -46,9 +46,7 @@ fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKe
         S::SourceRelationships { source, .. } => [Some(K::Incoming(*source)), None],
         S::OwnedRelationships { owner, .. }
         | S::OwnedRelationshipsExcluding { owner, .. }
-        | S::StructuralFeaturePopulation { owner, .. } => {
-            [Some(K::Element(*owner)), None]
-        }
+        | S::StructuralFeaturePopulation { owner, .. } => [Some(K::Element(*owner)), None],
         S::NamespaceMembers { namespace } | S::ImportSet { namespace } => {
             [Some(K::Element(*namespace)), None]
         }
