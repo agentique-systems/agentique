@@ -28,11 +28,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Systems: dependency restored in {:.3}s",
         started.elapsed().as_secs_f64()
     );
-    let candidate = prepare_systems_library_with_semantic_progress(
+    let mut last_reference_round = None;
+    let mut last_producer_stage = None;
+    let preparation = prepare_systems_library_with_semantic_progress(
         &sources,
         accepted.clone(),
         SysmlSyntaxProfile::OperationalV1,
         |round| {
+            last_reference_round = Some(json!({
+                "round":round.round,"selected":round.selected_endpoints,
+                "kernel_obligations":round.structural_obligations,
+                "evaluated":round.references_evaluated,"reused":round.references_reused
+            }));
             println!(
                 "Systems: references round={} selected={} obligations={} evaluated={} reused={}",
                 round.round,
@@ -58,6 +65,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         },
         |stage| {
+            last_producer_stage = Some(json!({
+                "stage":stage.stage,"stratum":format!("{:?}",stage.stratum),
+                "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
+                "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>()
+            }));
             println!(
                 "Systems: producer frontier={} stratum={:?} added={} completeness={:?} diagnostics={}",
                 stage.stage,
@@ -67,7 +79,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 stage.diagnostics.len()
             )
         },
-    )?;
+    );
+    let candidate = match preparation {
+        Ok(candidate) => candidate,
+        Err(error) => {
+            write_report(
+                &output,
+                &json!({
+                    "format":"agq-sysml-systems-publication-audit/1",
+                    "sysml_profile":SysmlSyntaxProfile::OperationalV1.id(),
+                    "accepted_kerml_digest":accepted.semantic_digest(),
+                    "publication_accepted":false,"preparation_error":error.to_string(),
+                    "last_reference_round":last_reference_round,"last_producer_stage":last_producer_stage,
+                    "elapsed_seconds":started.elapsed().as_secs_f64()
+                }),
+            )?;
+            return Err(error.into());
+        }
+    };
     let draft = candidate.draft();
     let queries = candidate.queries()?;
     let model = queries.model();
@@ -217,10 +246,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     report["elapsed_seconds"] = json!(started.elapsed().as_secs_f64());
-    std::fs::create_dir_all(output.parent().ok_or("output parent")?)?;
-    let mut file = std::fs::File::create(&output)?;
-    file.write_all(&serde_json::to_vec_pretty(&report)?)?;
-    file.sync_all()?;
+    write_report(&output, &report)?;
     println!(
         "Systems: {parsed}/21 parsed; {constructed}/21 constructed; {} kernel obligations; {:.3}s",
         obligations,
@@ -229,6 +255,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if report["publication_accepted"] != true {
         std::process::exit(1);
     }
+    Ok(())
+}
+
+fn write_report(
+    output: &std::path::Path,
+    report: &serde_json::Value,
+) -> Result<(), Box<dyn std::error::Error>> {
+    std::fs::create_dir_all(output.parent().ok_or("output parent")?)?;
+    let mut file = std::fs::File::create(output)?;
+    file.write_all(&serde_json::to_vec_pretty(report)?)?;
+    file.sync_all()?;
     Ok(())
 }
 

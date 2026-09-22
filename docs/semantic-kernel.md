@@ -80,6 +80,12 @@ contract; overlay attachment also requires the exact protected dependency.
 Context forks borrow the same graph with independent query caches. Historical
 KerML-only contexts and publication receipt encoding remain unchanged.
 
+SysML naming operations participate in shared namespace lookup through an
+explicit language naming hook. Its presence has a separate context identity;
+forks retain its implementation and failed applicability searches retain their
+dependencies. Transition payloads use canonical Subsetting and ordered
+FeatureChaining records. Neither mechanism inserts aliases or copied names.
+
 The shared producer worklist operates on new Systems records and derived facts.
 Construction overlays retain missing endpoint obligations while structural
 bootstrap and reference refinement establish declared links; strict publication

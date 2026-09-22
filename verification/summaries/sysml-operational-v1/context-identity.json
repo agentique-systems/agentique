@@ -75,5 +75,11 @@
       "exit_code": 1,
       "output_summary": "Two attempts encountered the producer branch's missing merge_evidence prerequisite. The second had a stale copied source timestamp. Copied the exact root support API and refreshed its timestamp; focused rerun passed."
     }
-  ]
+  ],
+  "naming_follow_up": {
+    "source_commit": "8cd2046",
+    "rule_set": "agq-sysml-query/3",
+    "integration": "Current Systems and SysmlSemanticContext factories use with_naming_extension with the same authenticated contract; agq-semantic-naming/1 separately identifies callback presence.",
+    "verification": "Shared naming regressions cover override, explicit fallback reads, null source, cycle incompleteness, forks and identity mismatch. Transition regressions cover canonical ordered payload chains and exact corpus-required naming dispatch. Actual root commands are retained in ../sysml-systems-publication/summary.json."
+  }
 }
