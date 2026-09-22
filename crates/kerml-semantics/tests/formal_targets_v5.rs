@@ -373,7 +373,16 @@ fn incomplete_owner_typing_cannot_make_an_antecedent_vacuously_complete() {
     let inapplicable =
         q.formal_constraint_applies(FormalConstraintId::FeatureSubobjectSpecialization, id(3));
     assert!(!inapplicable.value);
-    assert_eq!(inapplicable.completeness, Completeness::Complete);
+    assert_eq!(inapplicable.completeness, Completeness::Incomplete);
+    assert!(
+        inapplicable
+            .search_dependencies
+            .contains(&SearchDependency::ProducerClosure {
+                subject: id(3),
+                requirement: SemanticClosureRequirement::EffectiveTyping,
+                certificate_digest: None,
+            })
+    );
     let changes = untyped.change_set();
     let mut f = Fixture {
         base: untyped,

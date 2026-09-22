@@ -413,8 +413,8 @@ impl KerMlQueries<'_> {
         } else {
             c::CLASS
         };
-        // A complete negative owned-typing prerequisite is conclusive before
-        // the owning Feature's potentially incomplete effective type closure.
+        // A matching owned type is a positive witness. Absence of one requires
+        // producer closure: later producers may add an owned FeatureTyping.
         if !step_rule {
             let owned = self.owned_relationships(feature);
             let mut typed = false;
@@ -428,6 +428,9 @@ impl KerMlQueries<'_> {
             }
             out.merge(owned);
             if !typed {
+                let closed =
+                    self.producer_closure(feature, SemanticClosureRequirement::EffectiveTyping);
+                out.merge(closed);
                 return out;
             }
         }
