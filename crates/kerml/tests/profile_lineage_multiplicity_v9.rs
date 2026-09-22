@@ -45,5 +45,4 @@ fn multiplicity_context_authority_is_added_only_in_v9() {
     assert_eq!(old.classes, new.classes);
     assert_eq!(old.properties, new.properties);
     assert_eq!(old.associations, new.associations);
-    assert_eq!(P::OPERATIONAL, P::OPERATIONAL_V2);
 }

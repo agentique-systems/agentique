@@ -61,10 +61,34 @@ fn v7_authored_metadata_retains_exact_correction_identity_across_edits() {
     );
     assert_ne!(next.queries().context().revision, context.revision);
     assert_eq!(first.queries().context(), &context);
+}
+
+#[test]
+fn authored_default_v9_keeps_explicit_historical_profile_selection() {
+    use agq_kerml::BaselineProfile as P;
     assert_eq!(
-        agq_kerml::BaselineProfile::OPERATIONAL,
-        agq_kerml::BaselineProfile::OPERATIONAL_V2
+        SourceProject::new().unwrap().baseline_profile(),
+        P::OPERATIONAL_V9
     );
+    for profile in [
+        P::PublishedKerMl10,
+        P::OPERATIONAL_V1,
+        P::OPERATIONAL_V2,
+        P::OPERATIONAL_V3,
+        P::OPERATIONAL_V4,
+        P::OPERATIONAL_V5,
+        P::OPERATIONAL_V6,
+        P::OPERATIONAL_V7,
+        P::OPERATIONAL_V8,
+        P::OPERATIONAL_V9,
+    ] {
+        assert_eq!(
+            SourceProject::with_profile(profile)
+                .unwrap()
+                .baseline_profile(),
+            profile
+        );
+    }
 }
 
 #[test]

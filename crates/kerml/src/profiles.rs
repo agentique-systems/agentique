@@ -163,7 +163,10 @@ impl BaselineProfile {
     }
 
     /// Default authority for usable generation-2 KerML model construction.
-    pub const OPERATIONAL: Self = Self::OPERATIONAL_V2;
+    /// The alias was intentionally frozen at v2 while later profiles remained
+    /// publication candidates. It advances only after canonical library
+    /// publication acceptance; explicit Published/v1-v9 selectors stay fixed.
+    pub const OPERATIONAL: Self = Self::OPERATIONAL_V9;
 
     /// Explicit v7 selector; availability does not establish library acceptance.
     pub const OPERATIONAL_V7: Self = Self::OperationalKerMl10 {

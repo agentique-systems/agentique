@@ -1,0 +1,40 @@
+{
+  "format": "agentique-concise-verification/1",
+  "timestamp_utc": "2026-09-22T06:37:31.784978+00:00",
+  "base_commit": "ad038cabc69756250c01dc64292cc6f3bf17e8ec",
+  "activation_status_at_preparation": "Prepared only in isolated worktree; must not be integrated until canonical KerML publication is accepted. No main activation or publication acceptance is claimed by this evidence.",
+  "source_sha256": {
+    "crates/kerml/src/profiles.rs": "6bf6ef003796d0f91cf9b73653e92269cf25e104bfe1a59dd38de296104625bf",
+    "crates/kerml/tests/operational_default.rs": "0c0d402178185f62425dd25105fcd96c4015401f28919046a71cd5b365dbbca1",
+    "crates/kerml/tests/profile_lineage_v9.rs": "fb642abb06fdce239b5ed242e46726df6a9edf567a4c896f2b9eb1d5d0a87bf5",
+    "crates/kerml/tests/profile_lineage_v10.rs": "5efcc6599107c573999620c2412fddffbb905ad7531f524b214b2fa3d271af2b",
+    "crates/kerml/tests/profile_lineage_publication_v8.rs": "2bfd2cbbb9d94ecc06d01203ae6cef45edeb45f84caf345a406f0854703b78ad",
+    "crates/kerml/tests/profile_lineage_multiplicity_v9.rs": "e5e8611c9f9214bdc6ee6f7cbcefb52c72a8d2403d4d160c0bc9c9b44b70feec",
+    "crates/kerml-semantics/tests/redefinition_v2.rs": "a5b1163510569c9f1b255b0bc0c8fbb3e8aa488d1126f5211c8e4fadf4dfa1fc",
+    "crates/kerml-text/tests/project.rs": "dab134e276f7fb0aaf057bcfe4760e95582c77b135205d5c0c16a3dc9237b93d"
+  },
+  "source_set_sha256": "4a1608086294ab79f6892d4d6e35be1cfb3e740746e15413c66812e5a68d77b8",
+  "environment": {
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "commands": [
+    {
+      "command": "cargo test --locked --offline -j 2 -p agq-kerml --test operational_default --test profile_lineage_v9 --test profile_lineage_v10 --test profile_lineage_publication_v8 --test profile_lineage_multiplicity_v9 -p agq-kerml-semantics --test redefinition_v2 -p agq-kerml-text --test project",
+      "exit_code": 0,
+      "output": "operational_default2 + four lineage fixtures1each + redefinition_v2 10 + project13 =29passed;0failed"
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "cargo clippy --locked --offline -j 2 -p agq-kerml --test operational_default -p agq-kerml-text --test project -p agq-kerml-semantics --test redefinition_v2 -- -D warnings",
+      "exit_code": 0,
+      "output": "Finished dev profile [unoptimized] target(s) in 7.42s"
+    }
+  ]
+}

@@ -47,5 +47,4 @@ fn publication_interpretations_first_apply_in_v8_with_independent_manifest_ident
     assert_eq!(v7.classes, v8.classes);
     assert_eq!(v7.properties, v8.properties);
     assert_eq!(v7.associations, v8.associations);
-    assert_eq!(P::OPERATIONAL, P::OPERATIONAL_V2);
 }

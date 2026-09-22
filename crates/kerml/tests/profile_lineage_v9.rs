@@ -44,5 +44,4 @@ fn seven_immutable_profiles_keep_their_earliest_correction_boundaries() {
         P::OPERATIONAL_V6.result_domain_manifest_sha256(),
         P::OPERATIONAL_V6.reference_binding_manifest_sha256()
     );
-    assert_eq!(P::OPERATIONAL, P::OPERATIONAL_V2);
 }

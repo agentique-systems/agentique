@@ -83,7 +83,7 @@ fn adversarial_redefinition_matrix() {
     ];
     for case in cases {
         for reverse in [false, true] {
-            let profile = agq_kerml::BaselineProfile::OPERATIONAL;
+            let profile = agq_kerml::BaselineProfile::OPERATIONAL_V2;
             let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
             let changes = base.change_set();
             let mut f = Fixture {
