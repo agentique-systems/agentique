@@ -20,6 +20,7 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
     use InvalidationKey as K;
     match search {
         StructuralSearch::Element(id)
+        | StructuralSearch::ElementIdentity(id)
         | StructuralSearch::Property { element: id, .. }
         | StructuralSearch::Association { element: id, .. } => Some(K::Element(*id)),
         StructuralSearch::Incoming(id)
@@ -100,6 +101,9 @@ fn publication_search_keys(
         // the context contract; ordinary revision reads remain conservative.
         SearchDependency::ProducerClosure { .. } => true,
         SearchDependency::Element(element) => declared_identity(model, *element),
+        SearchDependency::Kernel(StructuralSearch::ElementIdentity(element)) => {
+            model.element(*element).is_some()
+        }
         SearchDependency::PropertySet { element, property }
         | SearchDependency::Kernel(StructuralSearch::Property { element, property }) => {
             fixed_declared_name(model, *element, *property)
@@ -193,6 +197,8 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
     for search in &answer.search_dependencies {
         if let SearchDependency::Kernel(search) = search {
             result.insert(search.clone());
+        } else if let SearchDependency::Element(element) = search {
+            result.insert(StructuralSearch::ElementIdentity(*element));
         } else if let SearchDependency::PropertySet { element, property } = search {
             result.insert(StructuralSearch::Property {
                 element: *element,

@@ -139,6 +139,10 @@ impl Encoder {
                     self.id(class.as_u128());
                     self.id(property.as_u128());
                 }
+                StructuralSearch::ElementIdentity(element) => {
+                    self.tag(7);
+                    self.id(element.as_u128());
+                }
             }
         }
     }

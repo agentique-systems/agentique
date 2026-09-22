@@ -34,6 +34,7 @@ pub enum SearchDependency {
     },
     /// Generic overlay computation searches, including empty descriptor/navigation searches.
     Kernel(agq_kernel::derived::StructuralSearch),
+    /// Existence and metaclass identity, excluding stored property populations.
     Element(ElementId),
     PropertySet {
         element: ElementId,

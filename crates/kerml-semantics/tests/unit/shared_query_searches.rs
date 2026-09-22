@@ -225,6 +225,7 @@ fn status_read_sets_expand_every_search_and_remain_isolated_between_contexts() {
         .collect();
     let searches = BTreeSet::from([
         StructuralSearch::Element(id(991)),
+        StructuralSearch::ElementIdentity(id(993)),
         StructuralSearch::Incoming(id(992)),
         StructuralSearch::SourceRelationships {
             source: id(3),

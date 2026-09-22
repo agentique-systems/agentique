@@ -267,6 +267,7 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
     );
     let search = build(None, Some(StructuralSearch::Incoming(id(2))), false);
     let navigation = build(None, None, true);
+    let identity_search = build(None, Some(StructuralSearch::ElementIdentity(id(2))), false);
     let source_search = build(
         None,
         Some(StructuralSearch::SourceRelationships {
@@ -290,13 +291,14 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
         &extra,
         &search,
         &navigation,
+        &identity_search,
         &source_search,
         &other_source_search,
     ]
     .into_iter()
     .map(|overlay| model_digest(overlay.model()))
     .collect();
-    assert_eq!(digests.len(), 6);
+    assert_eq!(digests.len(), 7);
     let failures = [
         ComputationFailure::Incomplete {
             reason: IncompleteReason::MissingInput,

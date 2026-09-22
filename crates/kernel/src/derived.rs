@@ -874,6 +874,10 @@ pub enum StructuralSearch {
         class: MetaclassId,
         property: PropertyId,
     },
+    /// Existence and metaclass identity only. Stored properties and association
+    /// populations are outside this lookup, unlike the broader `Element` read.
+    /// An absent identity remains a negative dependency.
+    ElementIdentity(ElementId),
 }
 /// Explicit unsuccessful computation; never an empty value.
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -1,6 +1,40 @@
 use super::*;
 
 #[test]
+fn native_identity_reads_remain_distinct_from_kernel_population_reads() {
+    let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
+    let queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default()).unwrap(),
+    );
+    let absent = ElementId::from_u128(1);
+    let mut answer = queries.result(());
+    answer.search_dependencies.extend([
+        SearchDependency::Element(absent),
+        SearchDependency::Kernel(StructuralSearch::Element(absent)),
+    ]);
+    let searches = structural_searches(&answer);
+    assert_eq!(
+        searches,
+        BTreeSet::from([
+            StructuralSearch::ElementIdentity(absent),
+            StructuralSearch::Element(absent),
+        ])
+    );
+    let mut reread = queries.result(());
+    reread
+        .search_dependencies
+        .extend(searches.into_iter().map(SearchDependency::Kernel));
+    let ordinary = query_read_keys(&reread, snapshot.model());
+    assert_eq!(ordinary, BTreeSet::from([InvalidationKey::Element(absent)]));
+    // Missing existence can still be supplied by a producer. Persisting the
+    // precision marker must not turn a negative read into a fixed fact.
+    assert_eq!(
+        query_publication_provider_keys(&reread, snapshot.model()),
+        ordinary
+    );
+}
+
+#[test]
 fn source_role_precision_survives_persistent_search_transport_and_invalidation() {
     let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
     let queries = KerMlQueries::new(
