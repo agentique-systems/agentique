@@ -1,0 +1,68 @@
+{
+  "schema": "agq-focused-verification/1",
+  "scope": "Parser-free SysML semantic context and current-graph Definition/Usage foundation",
+  "base": "9b80b68",
+  "required_support_commits": ["8d3f922", "fa0143e"],
+  "environment": {
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "commands": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "cargo test --locked --offline -j 2 -p agq-sysml-semantics --lib",
+      "exit_code": 0,
+      "output": "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.44s"
+    },
+    {
+      "command": "cargo clippy --locked --offline -j 2 -p agq-sysml-semantics --all-targets -- -D warnings",
+      "exit_code": 0,
+      "output": "Finished `dev` profile [unoptimized] target(s) in 8.12s"
+    },
+    {
+      "command": "cargo doc --locked --offline -j 2 -p agq-sysml-semantics --no-deps",
+      "environment": { "RUSTDOCFLAGS": "-D warnings" },
+      "exit_code": 0,
+      "output": "Finished `dev` profile [unoptimized] target(s) in 10.27s; Generated target/doc/agq_sysml_semantics/index.html"
+    }
+  ],
+  "initial_fixture_failure": {
+    "command": "cargo test --offline -j 2 -p agq-sysml-semantics --lib",
+    "exit_code": 1,
+    "result": "7 passed, 5 failed: synthetic Subclassification fixture supplied the generic association end instead of Subclassification::subclassifier",
+    "fix": "Use the exact effective source property in the test change set; no production semantic change"
+  },
+  "coverage": [
+    "Independent checked-in acceptance authority; expected digest/profile/rules/library/source/descriptor/Systems/binding identity matrix",
+    "Original-ID Engine/Vehicle/engine/SportsCar typing and inheritance; no copied inherited record",
+    "Valid KerML DataType/Structure targets retained; invalid typed endpoints diagnosed and retained as rejected evidence",
+    "Pending specialization completeness survives SysML usage filtering",
+    "Owned redefinition suppresses inherited usage while retaining canonical identities",
+    "Missing base edge visible; explicit matching base edge discharges only its specific obligation",
+    "Derived mayTimeVary remains NotComputed/Incomplete; unapproved singular/plural Item subsetting gap retained",
+    "Variant membership naming remains pending",
+    "Scoped bindings validate exact path, public visibility, uniqueness, metaclass, library provenance and query/model identity"
+  ],
+  "limitations": [
+    "These are explicitly synthetic unit fixtures; actual accepted-cache textual/programmatic integration is a separate gate",
+    "Current-graph queries do not certify SysML producer closure or Systems Library publication",
+    "Port typing and ConnectorAsUsage related features are structural projections; broader Port/Connection implications remain pending"
+  ],
+  "inputs_sha256": {
+    "Cargo.lock": "44aae3e7f94412b2f538839d80f027f3d4bfa0572273280f5fc206d911686f10",
+    "Cargo.toml": "063098738a98f0beacb5a2ae7ef132ffd7e0ef19943ccdd5fc5d6a1f4401964b",
+    "crates/sysml-semantics/Cargo.toml": "1d5d5a3d689299bc3b4fd8c8b63ca637cdd42e171d7b50158d1efc89e6a1ffef",
+    "crates/sysml-semantics/README.md": "d574544604818408f9395c673c95c951dfb2f03c26e81ea966081e68bfba81f1",
+    "crates/sysml-semantics/src/bindings.rs": "c76b46c9e6e54dc7c9080043c0d9a02df49807ea1147d205402057702c1d2228",
+    "crates/sysml-semantics/src/context.rs": "9c1aef9ce46c94142e0fe9b3d177c6539d1f8538797ca77c58a5ee3cc24e5e9b",
+    "crates/sysml-semantics/src/lib.rs": "3238b1e33225ed7400146c95e0266c35b3d73d43ca297b15f6f30ba196b44dc2",
+    "crates/sysml-semantics/src/queries.rs": "92c345ab6e54634614327ee6c77e98eeb56fe82a521d5c8b392925b93f0daeb8",
+    "crates/sysml-semantics/src/tests.rs": "1b423009f76623858fb232b05ff38a589fba84ea16b3d8da73d0b798186901f1"
+  }
+}

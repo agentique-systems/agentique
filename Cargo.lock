@@ -224,6 +224,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-sysml-semantics"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml",
+ "agq-kerml-semantics",
+ "agq-kernel",
+ "agq-sysml",
+ "serde_json",
+]
+
+[[package]]
 name = "agq-workspace"
 version = "0.1.0"
 dependencies = [
