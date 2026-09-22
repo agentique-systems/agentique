@@ -3986,3 +3986,146 @@ fn declared_source_population_does_not_close_pending_namespace_or_member() {
     result.merge(member);
     assert_eq!(result.completeness, Completeness::Incomplete);
 }
+
+#[test]
+fn declared_population_reconstruction_reopens_equal_aggregate_frontier() {
+    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    use agq_kernel::derived::DerivationBuilder;
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    for member in [3, 4, 5] {
+        f.create(member, c::MEMBERSHIP);
+        f.value(
+            member,
+            p::MEMBERSHIP_MEMBER_ELEMENT,
+            Value::Reference(id(2)),
+        );
+    }
+    f.own(1, 3);
+    let before = f.finish();
+    let mut changes = before.change_set();
+    changes.set(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![Value::Reference(id(3)), Value::Reference(id(4))]),
+        origin(),
+    );
+    let after = before.apply(&changes).unwrap();
+    let overlay = |snapshot: Snapshot, additions: Vec<ElementId>| {
+        let mut builder = DerivationBuilder::new(snapshot);
+        builder.extend_ordered_references(
+            id(1),
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            additions,
+            agq_kernel::provenance::Explanation {
+                rule: RuleId::from_u128(8829),
+                dependencies: BTreeSet::from([
+                    Dependency::Declared(FactKey::Element(id(4))),
+                    Dependency::Declared(FactKey::Element(id(5))),
+                ]),
+            },
+        );
+        builder.build().unwrap()
+    };
+    let before = overlay(before, vec![id(4), id(5)]);
+    let after = overlay(after, vec![id(5)]);
+    assert_eq!(before.model().element(id(1)), after.model().element(id(1)));
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    )])
+    .unwrap();
+    let before_context = SemanticContext::for_overlay(&before, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let after_context = SemanticContext::for_overlay(&after, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let before_query = KerMlQueries::new(before_context.fork()).declared_owned_relationships(id(1));
+    let after_query = KerMlQueries::new(after_context.fork()).declared_owned_relationships(id(1));
+    assert_eq!(before_query.value, vec![id(3)]);
+    assert_eq!(after_query.value, vec![id(3), id(4)]);
+    let mut table = ProducerEvaluationTable::default();
+    for record in before.model().elements() {
+        table.pending(record.id(), before.model(), &registry);
+    }
+    table
+        .record(&[(id(2), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(2), TYPE, producer_reads(&before_query, before.model()))],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        before.model(),
+        before_context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    let direct_attachment_rejected = after_context
+        .fork()
+        .with_producer_closure(Arc::new(certificate.clone()))
+        .is_err();
+    let rebound = certificate
+        .checkpoint(&before_context)
+        .unwrap()
+        .rebind(&after_context, &registry)
+        .unwrap();
+    assert_eq!(
+        (
+            direct_attachment_rejected,
+            rebound
+                .certificate
+                .evaluation(id(2), registry.index(TYPE).unwrap())
+        ),
+        (true, Some(ProducerEvaluationState::Pending)),
+        "original declaration population changed beneath an identical aggregate; digest_equal={}, affected={:?}, retained={}",
+        before_context.id().model_digest == after_context.id().model_digest,
+        rebound.affected_subjects,
+        rebound.retained_evaluations
+    );
+}
+
+#[test]
+fn mixed_declared_and_current_fact_reads_remain_current_before_first_append() {
+    use crate::producer_closure::{ProducerRead, producer_reads};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let source = q.declared_owned_relationships(id(1));
+    let mut current = q.result(());
+    q.fact(
+        &mut current,
+        FactKey::Property {
+            element: id(1),
+            property: p::ELEMENT_OWNED_RELATIONSHIP,
+        },
+    );
+    for source_first in [false, true] {
+        let mut combined = q.result(());
+        if source_first {
+            combined.merge(source.clone());
+        }
+        combined.merge(current.clone());
+        if !source_first {
+            combined.merge(source.clone());
+        }
+        assert!(
+            producer_reads(&combined, snapshot.model()).contains(&ProducerRead::Property(
+                id(1),
+                p::ELEMENT_OWNED_RELATIONSHIP
+            )),
+            "a broad current fact read must still reopen on the first derived append; source_first={source_first}"
+        );
+    }
+}

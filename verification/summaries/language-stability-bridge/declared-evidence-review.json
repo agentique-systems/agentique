@@ -1,0 +1,92 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "declared-aggregate-reconstruction-review",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "declared_population_reconstruction_reopens_equal_aggregate_frontier",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3942e68614862a65300c8e15f8b2626176ddbf0a",
+      "working_changes_sha256": "7d210843aab9984897dab780b40db7a33b8165e96b75df94485c8e2f500bc780",
+      "output_sha256": "7a2fcac998c0b7563fe79a67309e6179b751ec80389222730466d1253f815cc1",
+      "duration_seconds": 14.39,
+      "output": "verification/generated/language-stability-bridge/declared-aggregate-reconstruction-review.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "declared-aggregate-reconstruction-review-2",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "declared_population_reconstruction_reopens_equal_aggregate_frontier",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3942e68614862a65300c8e15f8b2626176ddbf0a",
+      "working_changes_sha256": "90127d87b08de0433b19f277030a76da6c89d78939e863cdb0567160f7282616",
+      "output_sha256": "c941198981d2a13c266125bf6aa0823d0f0e7bc869d52d91f00f97d04656ae09",
+      "duration_seconds": 15.83,
+      "output": "verification/generated/language-stability-bridge/declared-aggregate-reconstruction-review-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "declared-current-mixed-review",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "mixed_declared_and_current_fact_reads_remain_current_before_first_append",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3942e68614862a65300c8e15f8b2626176ddbf0a",
+      "working_changes_sha256": "6419af0aa9babc16982fc9519afb7ed74f05233681c2f5dcf8893d69e847a824",
+      "output_sha256": "a540287b7f0abc9996fcfce9b30ccc292f41732ceeb70fb110bec23a8d5bc5b1",
+      "duration_seconds": 17.48,
+      "output": "verification/generated/language-stability-bridge/declared-current-mixed-review.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    }
+  ]
+}
