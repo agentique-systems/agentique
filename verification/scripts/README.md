@@ -58,8 +58,8 @@ Crossing it terminates the command tree with a recorded `disk_space` stop; the
 wrapper never removes files to recover space.
 
 Only after all publication preflights pass, the lead may run the release binary
-with `--wall-seconds 5400 --private-mib 6144`. At most two full-corpus attempts are
-allowed in this milestone; a stop requires implementation work before another.
+under the milestone's limits above. This Systems milestone permits one full
+attempt and one retry only after fixing a concrete defect found in that attempt.
 `--progress-pattern` optionally captures named regex groups from a bounded stdout
 tail into resource observations. Create the run directory's `stop` file to request
 a recorded process-tree termination. Raw logs and samples remain available there.
