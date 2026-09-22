@@ -953,20 +953,45 @@ fn transition_acceptance_and_source_specialization_use_structural_memberships() 
 
 #[test]
 fn actions_micro_closes_generic_owner_negation_and_preserves_payload_identities() {
-    actions_micro(false, false);
+    actions_micro(ActionsMicro::Basic);
 }
 
 #[test]
 fn certified_usage_scalar_activates_shared_snapshot_and_value_context_producers() {
-    actions_micro(true, false);
+    actions_micro(ActionsMicro::VariableValue);
 }
 
 #[test]
 fn root_usage_absent_owner_closes_with_combined_producers() {
-    actions_micro(false, true);
+    actions_micro(ActionsMicro::RootUsage);
 }
 
-fn actions_micro(with_variable_value: bool, with_root_usage: bool) {
+#[test]
+fn actions_nested_state_transition_closes_owner_typing_and_payload_structure() {
+    actions_micro(ActionsMicro::NestedState);
+}
+
+#[test]
+fn directed_usage_value_closes_without_adopting_an_existing_contextual_feature() {
+    actions_micro(ActionsMicro::DirectedValue);
+}
+
+#[derive(Clone, Copy)]
+enum ActionsMicro {
+    Basic,
+    VariableValue,
+    RootUsage,
+    NestedState,
+    DirectedValue,
+}
+
+fn actions_micro(variant: ActionsMicro) {
+    let with_variable_value = matches!(
+        variant,
+        ActionsMicro::VariableValue | ActionsMicro::NestedState | ActionsMicro::DirectedValue
+    );
+    let with_root_usage = matches!(variant, ActionsMicro::RootUsage);
+    let nested_state = matches!(variant, ActionsMicro::NestedState);
     use agq_kerml_semantics::{
         FormalConstraintId, MemberAccess, PublicationOverlayError, SemanticClosureRequirement,
         close_result_structure_with_extension,
@@ -1060,6 +1085,31 @@ fn actions_micro(with_variable_value: bool, with_root_usage: bool) {
         origin: origin(),
     };
     f.create(50_000, sc::TRANSITION_USAGE, "transition");
+    if nested_state {
+        // Actions::AcceptAction owns aState, whose transition owns an accepter.
+        // All three local levels must close; none is an immutable anchor.
+        f.create(50_010, sc::ACTION_DEFINITION, "AcceptActionDefinition");
+        f.create(50_011, sc::STATE_USAGE, "aState");
+        f.value(50_011, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+        f.member(50_010, 50_011, 150_011, kc::FEATURE_MEMBERSHIP);
+        f.value(50_000, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+        f.member(50_011, 50_000, 150_010, kc::FEATURE_MEMBERSHIP);
+        for (feature, membership, name) in [(50_012, 150_012, "start"), (50_013, 150_013, "done")] {
+            f.create(feature, sc::STATE_USAGE, name);
+            f.value(feature, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+            f.member(50_011, feature, membership, kc::FEATURE_MEMBERSHIP);
+        }
+        f.create(150_014, kc::MEMBERSHIP, "source");
+        f.owned
+            .entry(id(50_000))
+            .or_default()
+            .push(Value::Reference(id(150_014)));
+        f.value(
+            150_014,
+            kp::MEMBERSHIP_MEMBER_ELEMENT,
+            Value::Reference(id(50_012)),
+        );
+    }
     for parameter in [50_001, 50_002] {
         f.create(parameter, sc::REFERENCE_USAGE, "");
         f.changes.clear(id(parameter), kp::ELEMENT_DECLARED_NAME);
@@ -1092,6 +1142,9 @@ fn actions_micro(with_variable_value: bool, with_root_usage: bool) {
     }
     if with_variable_value {
         f.create(50_005, sc::REFERENCE_USAGE, "variableValue");
+        if matches!(variant, ActionsMicro::DirectedValue) {
+            set_enum(&mut f, 50_005, kp::FEATURE_DIRECTION, "in");
+        }
         f.member(50_000, 50_005, 150_005, kc::FEATURE_MEMBERSHIP);
         f.changes.clear(id(150_005), kp::ELEMENT_DECLARED_NAME);
         f.create(50_006, kc::EXPRESSION, "valueExpression");
@@ -1176,6 +1229,33 @@ fn actions_micro(with_variable_value: bool, with_root_usage: bool) {
         .with_producer_closure(certificate.clone())
         .unwrap();
     let queries = KerMlQueries::new(context);
+    if nested_state {
+        for subject in [50_000, 50_003, 50_010, 50_011, 50_012, 50_013] {
+            assert!(
+                certificate.is_closed(id(subject), SemanticClosureRequirement::EffectiveTyping)
+            );
+        }
+        assert_eq!(queries.owning_type(id(50_000)).value, Some(id(50_011)));
+        assert_eq!(queries.owning_type(id(50_011)).value, Some(id(50_010)));
+        let owner = queries.lookup_path(
+            id(50_010),
+            &agq_kerml_semantics::QualifiedName {
+                absolute: false,
+                segments: ["aState", "transition", "accepter", "acceptedMessage"]
+                    .map(str::to_owned)
+                    .to_vec(),
+            },
+        );
+        assert_eq!(owner.completeness, Completeness::Complete, "{owner:?}");
+        assert_eq!(
+            owner
+                .value
+                .iter()
+                .map(|member| member.element)
+                .collect::<Vec<_>>(),
+            [id(45_001)]
+        );
+    }
     if with_root_usage {
         let owner = queries.owning_type(id(50_008));
         assert_eq!(owner.completeness, Completeness::Complete, "{owner:?}");
