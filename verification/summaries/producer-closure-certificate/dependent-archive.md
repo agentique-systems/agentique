@@ -21,5 +21,6 @@ Target: `target/foundation-actions` in the root integration checkout.
 | `cargo test -p agq-kernel` | All package tests and 3 doctests passed | 0 |
 | `cargo clippy -p agq-kernel --all-targets -- -D warnings` | No warnings | 0 |
 | `cargo fmt --all -- --check` | No diff | 0 |
+| `RUSTDOCFLAGS="-D warnings" cargo doc -p agq-kernel --no-deps` | Generated kernel API docs without warnings | 0 |
 
 No trusted Systems receipt, accepted binding manifest, or publication status was minted.
