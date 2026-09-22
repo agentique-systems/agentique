@@ -22,9 +22,13 @@ passes, and generic scheduling tests preserve the final one-shot graph/provenanc
 A nested State/Transition reproduction also exposed an overbroad source-feature
 search. The pinned query excludes FeatureMembership subtypes; the generic search
 contract and closure matcher now represent this excluded population explicitly.
-The remaining fixture failure traces native namespace/import structure searches
-being widened to arbitrary element reads during canonical proof persistence.
-That transport repair and its combined regression gate the next bounded run.
+Native namespace/import structure searches now retain their precise scope during
+canonical proof persistence. Filtered ownership queries also retain original
+declared support when every selected reference belongs to the declared prefix,
+avoiding unrelated appended-member provenance. Broad and mixed derived reads
+retain their full proof, including when they follow a declared-only observation.
+The nested State/Transition regression and all 53 SysML tests now pass. The
+generic matrix passes 41 tests; release compilation precedes the next bounded run.
 
 The integrated KerML semantics package passed 280 tests (two existing scale
 probes ignored) at `18d5147`, after updating the context-rejection assertion to

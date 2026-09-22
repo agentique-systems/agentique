@@ -38,6 +38,14 @@ the exact relationship or member population they observe, while keeping the
 canonical carrier facts in their proof. This precision removes false dependency
 cycles without declaring an open population closed.
 
+Filtered ownership observations can use the original declared collection as
+positive support when every selected member belongs to its preserved prefix.
+They retain the precise current-population search and selected-member evidence.
+Later or mixed selections retain the full derived aggregate proof. Aggregate
+provenance remains intact on the canonical property; it is not automatically a
+premise of every filtered observation. Separate proof-expansion bookkeeping
+ensures a subsequent broad read still observes that full aggregate evidence.
+
 `ProducerClosureCertificate` is an immutable sidecar with a private issuing
 boundary. It binds model, registry and context-contract digests and stores compact
 subject/family states and closed requirement masks. It is not a canonical model
