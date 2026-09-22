@@ -280,6 +280,22 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
     };
     let closure = closure_search(id(2));
     let other_closure = closure_search(id(3));
+    let owned_search = build(
+        None,
+        Some(StructuralSearch::OwnedRelationships {
+            owner: id(2),
+            class: NODE,
+        }),
+        false,
+    );
+    let other_owned_search = build(
+        None,
+        Some(StructuralSearch::OwnedRelationships {
+            owner: id(3),
+            class: NODE,
+        }),
+        false,
+    );
     let source_search = build(
         None,
         Some(StructuralSearch::SourceRelationships {
@@ -306,13 +322,15 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
         &identity_search,
         &closure,
         &other_closure,
+        &owned_search,
+        &other_owned_search,
         &source_search,
         &other_source_search,
     ]
     .into_iter()
     .map(|overlay| model_digest(overlay.model()))
     .collect();
-    assert_eq!(digests.len(), 9);
+    assert_eq!(digests.len(), 11);
     let failures = [
         ComputationFailure::Incomplete {
             reason: IncompleteReason::MissingInput,

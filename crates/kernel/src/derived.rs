@@ -886,6 +886,13 @@ pub enum StructuralSearch {
         subject: ElementId,
         requirement: String,
     },
+    /// Direct owned relationships selected by metaclass (including subtypes).
+    /// An owned relationship with a missing source endpoint still belongs to
+    /// this population; unrelated relationship classes do not.
+    OwnedRelationships {
+        owner: ElementId,
+        class: MetaclassId,
+    },
 }
 /// Explicit unsuccessful computation; never an empty value.
 #[derive(Clone, Debug, PartialEq, Eq)]

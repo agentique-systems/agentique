@@ -51,6 +51,12 @@ pub enum SearchDependency {
         class: MetaclassId,
         property: PropertyId,
     },
+    /// Direct owned relationship population restricted by registered metaclass,
+    /// including subtypes and relationships with unresolved source endpoints.
+    OwnedRelationships {
+        owner: ElementId,
+        class: MetaclassId,
+    },
     /// Owned membership population, including endpoint, visibility and name changes.
     NamespaceMembers {
         namespace: ElementId,

@@ -151,6 +151,11 @@ impl Encoder {
                     self.id(subject.as_u128());
                     self.text(requirement);
                 }
+                StructuralSearch::OwnedRelationships { owner, class } => {
+                    self.tag(9);
+                    self.id(owner.as_u128());
+                    self.id(class.as_u128());
+                }
             }
         }
     }

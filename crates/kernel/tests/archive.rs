@@ -63,6 +63,10 @@ fn overlay() -> DerivedOverlay {
             class: SPECIALIZATION,
             property: SPECIFIC,
         },
+        StructuralSearch::OwnedRelationships {
+            owner: VEHICLE,
+            class: SPECIALIZATION,
+        },
     ]));
     for output in 1..=40 {
         build.element_with_explanation(

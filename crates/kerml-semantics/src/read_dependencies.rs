@@ -21,6 +21,7 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
     match search {
         StructuralSearch::Element(id)
         | StructuralSearch::ElementIdentity(id)
+        | StructuralSearch::OwnedRelationships { owner: id, .. }
         | StructuralSearch::Property { element: id, .. }
         | StructuralSearch::Association { element: id, .. } => Some(K::Element(*id)),
         StructuralSearch::Incoming(id)
@@ -37,6 +38,7 @@ fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKe
         S::PropertySet { element, .. } => [Some(K::Element(*element)), None],
         S::Incoming { target } => [Some(K::Incoming(*target)), None],
         S::SourceRelationships { source, .. } => [Some(K::Incoming(*source)), None],
+        S::OwnedRelationships { owner, .. } => [Some(K::Element(*owner)), None],
         S::NamespaceMembers { namespace } | S::ImportSet { namespace } => {
             [Some(K::Element(*namespace)), None]
         }
@@ -225,6 +227,11 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
                 source: *source,
                 class: *class,
                 property: *property,
+            });
+        } else if let SearchDependency::OwnedRelationships { owner, class } = search {
+            result.insert(StructuralSearch::OwnedRelationships {
+                owner: *owner,
+                class: *class,
             });
         } else {
             result.extend(search_keys(search).map(|key| match key {

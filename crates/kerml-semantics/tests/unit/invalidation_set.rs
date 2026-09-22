@@ -1,6 +1,41 @@
 use super::*;
 
 #[test]
+fn owned_relationship_class_search_survives_transport_and_owner_invalidation() {
+    let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
+    let queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default()).unwrap(),
+    );
+    let owner = ElementId::from_u128(1);
+    let class = agq_kerml::classes::FEATURE_TYPING;
+    let mut answer = queries.result(());
+    answer
+        .search_dependencies
+        .insert(SearchDependency::OwnedRelationships { owner, class });
+    let searches = structural_searches(&answer);
+    assert_eq!(
+        searches,
+        BTreeSet::from([StructuralSearch::OwnedRelationships { owner, class }])
+    );
+    let keys = query_read_keys(&answer, snapshot.model());
+    assert_eq!(keys, BTreeSet::from([InvalidationKey::Element(owner)]));
+    assert_eq!(
+        searches
+            .iter()
+            .filter_map(structural_search_key)
+            .collect::<BTreeSet<_>>(),
+        keys
+    );
+    assert_eq!(
+        query_publication_provider_keys(&answer, snapshot.model()),
+        keys
+    );
+    let compact = QueryInvalidationSet::from_keys(keys);
+    assert!(compact.affected_by(&BTreeSet::from([owner]), false));
+    assert!(!compact.affected_by(&BTreeSet::from([ElementId::from_u128(99)]), false));
+}
+
+#[test]
 fn native_identity_reads_remain_distinct_from_kernel_population_reads() {
     let snapshot = agq_kernel::Snapshot::new(std::sync::Arc::new(agq_kerml::registry().unwrap()));
     let queries = KerMlQueries::new(
