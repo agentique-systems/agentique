@@ -2879,8 +2879,16 @@ fn filtered_declared_ownership_keeps_original_proof_after_unrelated_append() {
     f.create(1, c::CLASSIFIER);
     f.create(2, c::CLASSIFIER);
     f.create(3, c::SUBCLASSIFICATION);
-    f.value(3, p::SUBCLASSIFICATION_SUBCLASSIFIER, Value::Reference(id(1)));
-    f.value(3, p::SUBCLASSIFICATION_SUPERCLASSIFIER, Value::Reference(id(2)));
+    f.value(
+        3,
+        p::SUBCLASSIFICATION_SUBCLASSIFIER,
+        Value::Reference(id(1)),
+    );
+    f.value(
+        3,
+        p::SUBCLASSIFICATION_SUPERCLASSIFIER,
+        Value::Reference(id(2)),
+    );
     f.own(1, 3);
     f.create(5, c::FEATURE);
     member(&mut f, 1, 5, 4, c::FEATURE_MEMBERSHIP);
@@ -2955,5 +2963,87 @@ fn filtered_declared_ownership_keeps_original_proof_after_unrelated_append() {
                     .contains(&ProducerRead::Requirement(id(2), requirement))
             );
         }
+        for broad_first in [false, true] {
+            let mut combined = q.result(());
+            if broad_first {
+                q.property(&mut combined, id(1), p::ELEMENT_OWNED_RELATIONSHIP);
+            }
+            q.selected_reference_fact(
+                &mut combined,
+                id(1),
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                &[id(3)],
+            );
+            if !broad_first {
+                q.property(&mut combined, id(1), p::ELEMENT_OWNED_RELATIONSHIP);
+            }
+            assert!(
+                combined
+                    .canonical_dependencies
+                    .contains(&Dependency::Declared(fact))
+            );
+            assert!(
+                combined
+                    .canonical_dependencies
+                    .contains(&Dependency::Derived(fact))
+            );
+            assert!(
+                producer_reads(&combined, overlay.model())
+                    .contains(&ProducerRead::Requirement(id(2), requirement))
+            );
+            if !production {
+                assert!(matches!(
+                    combined.fact_origins[&fact].as_ref(),
+                    Origin::Derived(_)
+                ));
+            }
+        }
+        for empty in [
+            q.owned_relationships_of_type(id(1), c::FEATURE_TYPING),
+            q.owned_relationships_of_type(id(2), c::FEATURE_TYPING),
+        ] {
+            assert!(empty.value.is_empty());
+            assert!(!empty.positive_dependencies.contains(&fact));
+            assert!(!empty.positive_dependencies.contains(&FactKey::Property {
+                element: id(2),
+                property: p::ELEMENT_OWNED_RELATIONSHIP
+            }));
+        }
+        let output = DerivationKey {
+            rule: RuleId::from_u128(99722),
+            subject: id(1),
+            output: OutputKey::from_u128(1),
+        };
+        let mut materialize = DerivationBuilder::from_overlay(overlay.clone());
+        materialize.element(
+            output,
+            c::SUBCLASSIFICATION,
+            overlay
+                .model()
+                .element(id(3))
+                .unwrap()
+                .slots()
+                .map(|(property, slot)| (property, slot.value().clone())),
+            selected.canonical_dependencies.clone(),
+        );
+        materialize.searches(
+            FactKey::Element(output.element_id()),
+            crate::read_dependencies::structural_searches(&selected),
+        );
+        let materialized = materialize.build().unwrap();
+        let context =
+            SemanticContext::for_overlay(&materialized, Default::default(), BTreeSet::new())
+                .unwrap();
+        let reread = if production {
+            KerMlQueries::for_production(context)
+        } else {
+            KerMlQueries::new(context)
+        };
+        let output_evidence = reread.canonical_fact_evidence(FactKey::Element(output.element_id()));
+        assert!(
+            !producer_reads(&output_evidence, materialized.model())
+                .contains(&ProducerRead::Requirement(id(2), requirement)),
+            "a stored Declared dependency must not expand the current aggregate proof on reread"
+        );
     }
 }

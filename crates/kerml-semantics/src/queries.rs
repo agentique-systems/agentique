@@ -417,13 +417,17 @@ impl<'m> KerMlQueries<'m> {
             // an ownership extension or association navigation projection.
             let mut queue = vec![key];
             while let Some(fact) = queue.pop() {
-                if !out.positive_dependencies.insert(fact) {
+                out.positive_dependencies.insert(fact);
+                let origin = self.fact_origin(fact);
+                if matches!(origin.as_deref(), None | Some(Origin::Declared(_)))
+                    || !out.producer_expanded_facts.insert(fact)
+                {
                     continue;
                 }
                 if let Some(searches) = self.model().computation_searches_shared(fact) {
                     out.shared_search_dependencies.insert(searches);
                 }
-                match self.fact_origin(fact).as_deref() {
+                match origin.as_deref() {
                     Some(Origin::Derived(proof)) => {
                         queue.extend(proof.dependencies.iter().filter_map(|d| {
                             if let Dependency::Derived(fact) = d {

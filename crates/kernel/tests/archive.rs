@@ -134,6 +134,25 @@ fn roundtrip_preserves_declared_overlay_values_provenance_searches_and_sharing()
             .eq(original.declared().model().elements())
     );
     assert!(restored.model().elements().eq(original.model().elements()));
+    assert_eq!(
+        restored.model().declared_slot(OWNS, SOURCES),
+        original
+            .declared()
+            .model()
+            .element(OWNS)
+            .unwrap()
+            .slot(SOURCES)
+    );
+    assert_ne!(
+        restored.model().declared_slot(OWNS, SOURCES),
+        restored.model().navigation_slot(OWNS, SOURCES)
+    );
+    assert!(
+        restored
+            .model()
+            .declared_slot(key(1).element_id(), NAME)
+            .is_none()
+    );
     assert!(restored.facts().eq(original.facts()));
     assert!(
         restored

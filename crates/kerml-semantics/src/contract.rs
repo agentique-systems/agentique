@@ -277,6 +277,10 @@ pub struct QueryResult<T> {
     // Internal producer evaluation retains canonical dependencies and bounded
     // searches; public query evaluators always retain the full explanation view.
     pub(crate) producer_evidence: bool,
+    // A positive fact may cite only its original declared contribution. Keep
+    // current derived-origin expansion separate so a later broad read is never
+    // suppressed by that narrower proof. This is a private traversal cache.
+    pub(crate) producer_expanded_facts: BTreeSet<FactKey>,
     // Only private producer/status evaluators defer kernel search expansion.
     // Public evidence fields are populated eagerly by ordinary query evaluators.
     pub(crate) shared_search_dependencies: SharedSearchDependencies,
@@ -321,6 +325,7 @@ impl<T> QueryResult<T> {
         QueryResult {
             value: transform(self.value),
             producer_evidence: self.producer_evidence,
+            producer_expanded_facts: self.producer_expanded_facts,
             shared_search_dependencies: self.shared_search_dependencies,
             context: self.context,
             completeness: self.completeness,
@@ -336,6 +341,7 @@ impl<T> QueryResult<T> {
     pub(crate) fn new(context: &SemanticContextId, value: T) -> Self {
         Self {
             producer_evidence: false,
+            producer_expanded_facts: BTreeSet::new(),
             shared_search_dependencies: SharedSearchDependencies::default(),
             context: context.clone(),
             value,
@@ -357,6 +363,8 @@ impl<T> QueryResult<T> {
             .extend(other.positive_dependencies);
         self.search_dependencies.extend(other.search_dependencies);
         if self.producer_evidence {
+            self.producer_expanded_facts
+                .extend(other.producer_expanded_facts);
             self.shared_search_dependencies
                 .merge(other.shared_search_dependencies);
         } else {
@@ -398,6 +406,7 @@ impl<T> QueryResult<T> {
     pub(crate) fn clear_search_dependencies(&mut self) {
         self.search_dependencies.clear();
         self.shared_search_dependencies.clear();
+        self.producer_expanded_facts.clear();
     }
     pub(crate) fn problem(
         &mut self,
