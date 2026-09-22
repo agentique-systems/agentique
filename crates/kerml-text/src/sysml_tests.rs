@@ -8,6 +8,9 @@ use agq_kernel::{
 };
 use agq_sysml::{classes as s, properties as sp};
 
+#[path = "sysml_authority_tests.rs"]
+mod authority;
+
 fn parse(source: &str) -> production::Document {
     let parsed = production::parse_sysml(
         DocumentId::new(),
