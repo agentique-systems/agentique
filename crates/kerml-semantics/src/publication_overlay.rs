@@ -459,11 +459,16 @@ impl KerMlQueries<'_> {
         subjects: impl IntoIterator<Item = ElementId>,
         extension_rules: impl IntoIterator<Item = agq_kernel::RuleId>,
     ) -> PublicationCapabilityReport {
-        let q = KerMlQueries::for_production(self.context.fork());
+        let mut q = KerMlQueries::for_production(self.context.fork());
         let mut checks = PublicationChecks::new(self.model(), true);
         checks.extension_rules.extend(extension_rules);
         checks.standard_bindings(&q);
-        for subject in subjects {
+        for (index, subject) in subjects.into_iter().enumerate() {
+            if index > 0 && index.is_multiple_of(32) {
+                // Keep the aggregate audit/proof deduplication, while bounding
+                // per-query memo retention over a combined language corpus.
+                q = KerMlQueries::for_production(self.context.fork());
+            }
             checks.subject(&q, subject);
         }
         PublicationCapabilityReport {
