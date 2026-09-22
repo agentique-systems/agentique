@@ -26,6 +26,7 @@ pub(crate) struct State {
     access: MemberAccess,
     recursive: bool,
     excluded: Option<ElementId>,
+    excluded_owning_only: bool,
     inherited_projection: bool,
     imported_projection: bool,
     excluded_import_scopes: Vec<ElementId>,
@@ -235,7 +236,18 @@ impl KerMlQueries<'_> {
         access: MemberAccess,
         excluded: Option<ElementId>,
     ) -> QueryResult<Vec<MemberMatch>> {
-        self.membership_population(namespace, access, excluded, false, false)
+        self.membership_population(namespace, access, excluded, false, false, false)
+    }
+
+    /// Exclude an endpoint-dependent derived name, while preserving explicit
+    /// alias Membership names that happen to denote the same Feature.
+    pub(crate) fn namespace_members_excluding_own_name(
+        &self,
+        namespace: ElementId,
+        access: MemberAccess,
+        feature: ElementId,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        self.membership_population(namespace, access, Some(feature), true, false, false)
     }
 
     /// Type::inheritedMemberships retains Membership identity during suppression.
@@ -243,7 +255,14 @@ impl KerMlQueries<'_> {
         &self,
         namespace: ElementId,
     ) -> QueryResult<Vec<MemberMatch>> {
-        self.membership_population(namespace, MemberAccess::NonPrivate, None, true, false)
+        self.membership_population(
+            namespace,
+            MemberAccess::NonPrivate,
+            None,
+            false,
+            true,
+            false,
+        )
     }
 
     /// Imported Membership identities, before combination with owned/inherited members.
@@ -253,7 +272,7 @@ impl KerMlQueries<'_> {
         namespace: ElementId,
         access: MemberAccess,
     ) -> QueryResult<Vec<MemberMatch>> {
-        self.membership_population(namespace, access, None, false, true)
+        self.membership_population(namespace, access, None, false, false, true)
     }
 
     /// Membership::isDistinguishableFrom, shared by imports and validation.
@@ -304,6 +323,7 @@ impl KerMlQueries<'_> {
         namespace: ElementId,
         access: MemberAccess,
         excluded: Option<ElementId>,
+        excluded_owning_only: bool,
         inherited_projection: bool,
         imported_projection: bool,
     ) -> QueryResult<Vec<MemberMatch>> {
@@ -323,6 +343,7 @@ impl KerMlQueries<'_> {
             access,
             recursive: false,
             excluded,
+            excluded_owning_only,
             inherited_projection,
             imported_projection,
             excluded_import_scopes: vec![],
@@ -387,7 +408,10 @@ impl KerMlQueries<'_> {
             let memberships = self.memberships(namespace);
             for &membership in &memberships.value {
                 let member = self.member(membership);
-                if excluded.is_some() && member.value == excluded {
+                if excluded.is_some()
+                    && member.value == excluded
+                    && (!excluded_owning_only || self.is(membership, c::OWNING_MEMBERSHIP))
+                {
                     out.merge(member);
                     continue;
                 }
@@ -451,6 +475,7 @@ impl KerMlQueries<'_> {
                         },
                         recursive: state.recursive,
                         excluded,
+                        excluded_owning_only,
                         inherited_projection: false,
                         imported_projection: false,
                         excluded_import_scopes: state.excluded_import_scopes.clone(),
@@ -481,7 +506,11 @@ impl KerMlQueries<'_> {
                         p::MEMBERSHIP_IMPORT_IMPORTED_MEMBERSHIP,
                     ) {
                         let member = self.member(membership);
-                        if let Some(element) = member.value.filter(|e| Some(*e) != excluded) {
+                        if let Some(element) = member.value.filter(|e| {
+                            Some(*e) != excluded
+                                || excluded_owning_only
+                                    && !self.is(membership, c::OWNING_MEMBERSHIP)
+                        }) {
                             names.insert(
                                 membership,
                                 self.names(&mut out, membership, Some(element)),
@@ -532,6 +561,7 @@ impl KerMlQueries<'_> {
                         access,
                         recursive,
                         excluded,
+                        excluded_owning_only,
                         inherited_projection: false,
                         imported_projection: false,
                         excluded_import_scopes,

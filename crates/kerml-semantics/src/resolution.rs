@@ -8,6 +8,10 @@ use std::collections::BTreeSet;
 #[path = "../tests/unit/resolution.rs"]
 mod tests;
 
+#[cfg(test)]
+#[path = "../tests/unit/reference_naming_resolution.rs"]
+mod reference_naming_tests;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QualifiedName {
     pub absolute: bool,
@@ -55,6 +59,8 @@ impl KerMlQueries<'_> {
                 return out;
             };
             out.merge(owner);
+            let naming_exclusion =
+                self.reference_naming_exclusion(context, property, scope, &mut out);
             let owned_specific = if self.is(context, c::REFERENCE_SUBSETTING) {
                 true
             } else if self.is(context, c::SPECIALIZATION) {
@@ -175,11 +181,83 @@ impl KerMlQueries<'_> {
                     scope = next;
                 }
             }
-            let lookup = self.lookup_path(scope, name);
+            let lookup = if let Some(feature) = naming_exclusion {
+                self.lookup_path_with_exclusion(scope, name, Some(feature), None)
+            } else {
+                self.lookup_path(scope, name)
+            };
             out.value = lookup.value.clone();
             out.merge(lookup);
             return out;
         }
+    }
+    /// A provisional endpoint must not supply the name used to resolve itself.
+    /// KerML 8.2.3.5.1 requires incremental resolution to avoid names already
+    /// pending resolution. Composed naming operations can read precisely that
+    /// endpoint; ordinary KerML naming and explicitly declared names are intact.
+    fn reference_naming_exclusion<T>(
+        &self,
+        relationship: ElementId,
+        property: agq_kernel::PropertyId,
+        feature: ElementId,
+        out: &mut QueryResult<T>,
+    ) -> Option<ElementId> {
+        let (_, extension) = self.context.naming_extension.as_ref()?;
+        if property != p::REFERENCE_SUBSETTING_REFERENCED_FEATURE
+            || !self.is(relationship, c::REFERENCE_SUBSETTING)
+            || !self.is(feature, c::FEATURE)
+        {
+            return None;
+        }
+        let declared_name = self.read_value(out, feature, p::ELEMENT_DECLARED_NAME);
+        let declared_short_name = self.read_value(out, feature, p::ELEMENT_DECLARED_SHORT_NAME);
+        if matches!(declared_name, Some(agq_kernel::value::Value::String(_)))
+            || matches!(
+                declared_short_name,
+                Some(agq_kernel::value::Value::String(_))
+            )
+        {
+            return None;
+        }
+        let mut naming = extension.naming_source(self, feature);
+        if naming.value.is_none() {
+            out.merge(naming);
+            return None;
+        }
+        let mut endpoint =
+            self.canonical_fact_evidence(agq_kernel::provenance::FactKey::Property {
+                element: relationship,
+                property,
+            });
+        // Compare actual storage/occurrence dependencies, not spelling or an
+        // abstract property alias. Merely inspecting the relationship's class
+        // is not an endpoint read, so Element facts do not justify exclusion.
+        naming.expand_search_dependencies();
+        endpoint.expand_search_dependencies();
+        let reads_value = endpoint.canonical_dependencies.iter().any(|dependency| {
+            use agq_kernel::provenance::{Dependency, FactKey};
+            !matches!(
+                dependency,
+                Dependency::Declared(FactKey::Element(_))
+                    | Dependency::Derived(FactKey::Element(_))
+            ) && naming.canonical_dependencies.contains(dependency)
+        });
+        // An unresolved endpoint has no positive fact yet. The canonical query
+        // still records the normalized property search, including property aliases.
+        let reads_absence = endpoint.search_dependencies.iter().any(|search| {
+            matches!(search, SearchDependency::PropertySet { element, .. } if *element == relationship)
+                && naming.search_dependencies.contains(search)
+        });
+        let dependent = naming.value.is_some() && (reads_value || reads_absence);
+        out.merge(endpoint);
+        out.merge(naming);
+        if dependent {
+            out.search_dependencies
+                .insert(SearchDependency::ValidationRule(
+                    "agq-composed-reference-naming/1",
+                ));
+        }
+        dependent.then_some(feature)
     }
     fn published_redefinition_target(
         &self,
@@ -251,6 +329,21 @@ impl KerMlQueries<'_> {
         name: &QualifiedName,
         excluded: Option<(ElementId, ElementId, RedefinitionRulePath)>,
     ) -> QueryResult<Vec<MemberMatch>> {
+        self.lookup_path_with_exclusion(
+            scope,
+            name,
+            excluded.map(|(feature, _, _)| feature),
+            excluded.map(|(_, relationship, path)| (relationship, path)),
+        )
+    }
+
+    fn lookup_path_with_exclusion(
+        &self,
+        scope: ElementId,
+        name: &QualifiedName,
+        excluded: Option<ElementId>,
+        redefinition: Option<(ElementId, RedefinitionRulePath)>,
+    ) -> QueryResult<Vec<MemberMatch>> {
         let mut out = self.result(vec![]);
         if name.segments.is_empty() || name.segments.iter().any(String::is_empty) {
             out.problem(
@@ -279,7 +372,7 @@ impl KerMlQueries<'_> {
             scopes.push(root);
         }
         for namespace in scopes {
-            if let Some((_, relationship, path)) = excluded {
+            if let Some((relationship, path)) = redefinition {
                 out.search_dependencies
                     .insert(SearchDependency::RedefinitionScope {
                         relationship,
@@ -298,7 +391,7 @@ impl KerMlQueries<'_> {
                     .unwrap_or_else(|| BTreeSet::from([root]));
                 let mut candidates = BTreeSet::new();
                 for available in roots {
-                    let lookup = self.lookup_member_excluding(
+                    let lookup = self.lookup_member_with_exclusion(
                         available,
                         &name.segments[0],
                         if available == root {
@@ -306,18 +399,20 @@ impl KerMlQueries<'_> {
                         } else {
                             MemberAccess::Public
                         },
-                        excluded.map(|(feature, _, _)| feature),
+                        excluded,
+                        redefinition.is_none(),
                     );
                     candidates.extend(lookup.value.iter().copied());
                     out.merge(lookup);
                 }
                 candidates.into_iter().collect()
             } else {
-                let lookup = self.lookup_member_excluding(
+                let lookup = self.lookup_member_with_exclusion(
                     namespace,
                     &name.segments[0],
                     MemberAccess::All,
-                    excluded.map(|(feature, _, _)| feature),
+                    excluded,
+                    redefinition.is_none(),
                 );
                 let candidates = lookup.value.clone();
                 out.merge(lookup);
@@ -337,16 +432,33 @@ impl KerMlQueries<'_> {
                 out.value.clear();
                 break;
             }
-            let lookup = self.lookup_member_excluding(
+            let lookup = self.lookup_member_with_exclusion(
                 namespace,
                 segment,
                 MemberAccess::Public,
-                excluded.map(|(feature, _, _)| feature),
+                excluded,
+                redefinition.is_none(),
             );
             out.value = lookup.value.clone();
             out.merge(lookup);
         }
         out
+    }
+
+    fn lookup_member_with_exclusion(
+        &self,
+        namespace: ElementId,
+        name: &str,
+        access: MemberAccess,
+        excluded: Option<ElementId>,
+        owning_only: bool,
+    ) -> QueryResult<Vec<MemberMatch>> {
+        if owning_only && let Some(feature) = excluded {
+            let population = self.namespace_members_excluding_own_name(namespace, access, feature);
+            self.named_population(population, name)
+        } else {
+            self.lookup_member_excluding(namespace, name, access, excluded)
+        }
     }
 
     fn lookup_member_excluding(
