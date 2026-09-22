@@ -1,6 +1,6 @@
 {
   "format": "agentique-concise-verification/1",
-  "timestamp_utc": "2026-09-22T06:04:30.424072+00:00",
+  "timestamp_utc": "2026-09-22T06:11:38.351875+00:00",
   "base_commit": "150d97879b84ea3ebc9978256a5c93e391602244",
   "source_sha256": {
     "crates/kerml-semantics/src/context.rs": "5f4edd75b0a978afd5c352a054b161a12e5ff112a107df528cbc0dda5fadc7f9",
@@ -9,15 +9,15 @@
     "crates/kerml-semantics/src/producer_worklist.rs": "164653f96507d26358969573ad84bee7c5922b76f8c24fcd3d97da543ee46fa8",
     "crates/kerml-semantics/src/publication_overlay.rs": "cbe8f6073bc97ca79aabb77a67c8519be99ce8375dfe1cee0c9b979b0e896c67",
     "crates/kerml-semantics/src/result_structure.rs": "4957ccf45a8a816e41139747c65d4fdb79c7921ed7adf4861cff1420c741ee11",
-    "crates/kerml-semantics/src/structural.rs": "01c913617996f855c89424ca8283b945e619249a6edf831b440ed4f22d4e4e41",
-    "crates/kerml-semantics/tests/multiplicity_context_v9.rs": "de8ba0a4db4751db90ce12d538b9a97fa433610f99ffe15fc12c0898566c62d4",
+    "crates/kerml-semantics/src/structural.rs": "d35ab0131908457a5a63a9d1b47198ff74e5fbb9278d25428c1589c3105e61b2",
+    "crates/kerml-semantics/tests/multiplicity_context_v9.rs": "f9e433b079306d44eb0a13a30a321da500141dbad775b828998a68775970a8f4",
     "crates/kerml/src/profiles.rs": "67d9ca27ef493fa41c026ec5183cefe1dbff08c7e36c9f2a6548e73a970dcfe2",
     "crates/kerml/tests/profile_lineage_multiplicity_v9.rs": "3afd55fb4db837e40a0de0f7710808ca8b42aa2c9789382541c01b7ccbd21e1b",
     "standards/kerml-1.0-operational-cross-multiplicity-context-errata-v9.json": "108852d0d9b0b94ed2260725a001e5727161f897c017d715b5c1d0ee137735fe",
     "standards/kerml-1.0-operational-multiplicity-context-errata-v9.json": "34cbf9e08edd7e588c4bccaa7d7ee179a313bd0ea858ca44dd1614998cc91a3e",
     "standards/kerml-1.0-operational-profile-v9.json": "1b79d4c3474e2bd2e1cf7f5c57b954b7de34bfbc0c302a993a78afc061c7b847"
   },
-  "source_set_sha256": "d70cafd491c26de66488405c840d36b5947f0bfdc0ded984e2989545c0e18f59",
+  "source_set_sha256": "94ab023ae0d0e1df78a8b27e369f9598fb67e3385d61b0588f7d7e0f00bb3dcf",
   "environment": {
     "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
     "CARGO_PROFILE_DEV_DEBUG": "0",
@@ -49,8 +49,33 @@
       "command": "git diff --check",
       "exit_code": 0,
       "output": ""
+    },
+    {
+      "command": "cargo test --locked --offline -j 2 -p agq-kerml-semantics --test multiplicity_context_v9 --test publication_v8_bounds",
+      "exit_code": 1,
+      "output": "Follow-up fixture compile failed on ambiguous Explanation glob imports; fixed by qualifying agq_kernel::provenance::Explanation."
+    },
+    {
+      "command": "cargo test --locked --offline -j 2 -p agq-kerml-semantics --test multiplicity_context_v9 --test publication_v8_bounds",
+      "exit_code": 0,
+      "output": "multiplicity_context_v9: 9 passed; publication_v8_bounds: 2 passed; 0 failed."
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "cargo clippy --locked --offline -j 2 -p agq-kerml-semantics --lib --test multiplicity_context_v9 -- -D warnings",
+      "exit_code": 0,
+      "output": "Finished dev profile [unoptimized] target(s) in 8.03s"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "output": ""
     }
   ],
-  "scope": "K1-K5 structural implementation and focused historical matrix; complete corpus and canonical acceptance are separate gates",
+  "scope": "K1-K5 structural implementation and focused historical matrix; complete corpus and canonical acceptance are separate gates; explicit Incomplete/Invalid owningNamespace and owning Membership namespace failures retain their exact failure/search evidence.",
   "raw_logs": "Tool command output only; no raw log files persisted"
 }

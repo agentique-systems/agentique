@@ -1,7 +1,7 @@
 //! Small derived operations with their own completeness and evidence boundaries.
 use crate::*;
-use agq_kerml::{classes as c, views};
-use agq_kernel::ElementId;
+use agq_kerml::{classes as c, properties as p, views};
+use agq_kernel::{ElementId, PropertyId};
 
 /// Structural expressions, with no claim to have evaluated their values.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,20 +53,21 @@ impl KerMlQueries<'_> {
             .insert(SearchDependency::ValidationRule(
                 "agentique-kerml10-multiplicity-context/1",
             ));
-        let relationship = self.owning_relationship(multiplicity);
-        let has_namespace = relationship
-            .value
-            .is_some_and(|r| self.is(r, c::OWNING_MEMBERSHIP));
-        out.merge(relationship);
-        if !has_namespace {
-            return out;
-        }
-        let namespace = self.owner(multiplicity);
+        let namespace = self.multiplicity_owning_namespace(multiplicity);
         let owner = namespace.value.filter(|owner| self.is(*owner, c::FEATURE));
         out.merge(namespace);
         let Some(owner) = owner else {
             return out;
         };
+        // Selection of an owned cross Feature also depends on its owning
+        // namespace. An explicit unsuccessful projection cannot become a
+        // definitive ordinary-Feature case merely because raw links exist.
+        let containing_namespace = self.multiplicity_owning_namespace(owner);
+        let end = containing_namespace.value;
+        out.merge(containing_namespace);
+        if out.completeness != Completeness::Complete {
+            return out;
+        }
         let cross = self.is_owned_cross_feature(owner);
         if cross.completeness == Completeness::Complete {
             if cross.value {
@@ -74,10 +75,9 @@ impl KerMlQueries<'_> {
                     .insert(SearchDependency::ValidationRule(
                         "agentique-kerml10-cross-multiplicity-context/1",
                     ));
-                let end = self.owner(owner);
-                if let Some(end) = end.value.filter(|end| self.is(*end, c::FEATURE)) {
+                if let Some(end) = end.filter(|end| self.is(*end, c::FEATURE)) {
                     out.value = Some(end);
-                } else if end.completeness == Completeness::Complete {
+                } else {
                     out.problem(
                         Completeness::Invalid,
                         "KQ_MULTIPLICITY_CROSS_OWNER",
@@ -85,13 +85,68 @@ impl KerMlQueries<'_> {
                         "An owned cross Feature must have an owning end Feature",
                     );
                 }
-                out.merge(end);
             } else {
                 out.value = Some(owner);
             }
         }
         out.merge(cross);
         out
+    }
+
+    // Derived owningNamespace may be computed structurally from its canonical
+    // membership, but an explicit failed computation remains authoritative input.
+    fn multiplicity_owning_namespace(&self, element: ElementId) -> QueryResult<Option<ElementId>> {
+        let mut out = self.result(None);
+        if self.namespace_projection_failure(&mut out, element, p::ELEMENT_OWNING_NAMESPACE) {
+            return out;
+        }
+        let relationship = self.owning_relationship(element);
+        let membership = relationship
+            .value
+            .filter(|r| self.is(*r, c::OWNING_MEMBERSHIP));
+        out.merge(relationship);
+        let Some(membership) = membership else {
+            return out;
+        };
+        if self.namespace_projection_failure(
+            &mut out,
+            membership,
+            p::MEMBERSHIP_MEMBERSHIP_OWNING_NAMESPACE,
+        ) {
+            return out;
+        }
+        let owner = self.owner(element);
+        if owner.completeness == Completeness::Complete {
+            out.value = owner.value;
+        }
+        out.merge(owner);
+        out
+    }
+
+    fn namespace_projection_failure<T>(
+        &self,
+        out: &mut QueryResult<T>,
+        element: ElementId,
+        property: PropertyId,
+    ) -> bool {
+        use agq_kernel::derived::PropertyState;
+        self.property(out, element, property);
+        if let Ok(PropertyState::Incomplete(failure) | PropertyState::Invalid(failure)) =
+            self.model().property_state(element, property)
+        {
+            self.accept::<_, ()>(
+                out,
+                element,
+                Err(agq_kerml::ViewError::ComputationFailure {
+                    element,
+                    property,
+                    failure: Box::new(failure.clone()),
+                }),
+            );
+            true
+        } else {
+            false
+        }
     }
 
     /// KerML deriveMultiplicityRangeLowerBound/UpperBound/Bound in owned-member order.

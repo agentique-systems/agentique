@@ -232,6 +232,85 @@ fn incomplete_owner_evidence_propagates_into_multiplicity_and_bound() {
 }
 
 #[test]
+fn explicitly_unresolved_owning_namespace_retains_failure_and_search_evidence() {
+    use agq_kernel::derived::{
+        ComputationFailure, DerivationBuilder, IncompleteReason, StructuralSearch,
+    };
+    for (subject, property) in [
+        (20, p::ELEMENT_OWNING_NAMESPACE),
+        (120, p::MEMBERSHIP_MEMBERSHIP_OWNING_NAMESPACE),
+    ] {
+        let mut f = fixture(P::OPERATIONAL_V9);
+        if subject == 120 {
+            // A known owning Membership whose namespace is still unresolved.
+            f.create(120, c::OWNING_MEMBERSHIP);
+            f.changes.set(
+                id(120),
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                SlotValue::Ordered(vec![Value::Reference(id(20))]),
+                origin(),
+            );
+        }
+        let snapshot = f.finish();
+        for invalid in [false, true] {
+            let explanation = agq_kernel::provenance::Explanation {
+                rule: RuleId::from_u128(900),
+                dependencies: BTreeSet::new(),
+            };
+            let searches = BTreeSet::from([StructuralSearch::Incoming(id(901))]);
+            let failure = if invalid {
+                ComputationFailure::Invalid {
+                    diagnostic: "invalid owning namespace".into(),
+                    explanation,
+                    searches,
+                }
+            } else {
+                ComputationFailure::Incomplete {
+                    reason: IncompleteReason::MissingInput,
+                    explanation,
+                    searches,
+                }
+            };
+            let mut builder = DerivationBuilder::new(snapshot.clone());
+            builder.failure(id(subject), property, failure).unwrap();
+            let overlay = builder.build().unwrap();
+            let q = KerMlQueries::new(
+                SemanticContext::for_overlay(
+                    &overlay,
+                    SemanticOptions {
+                        baseline_profile: P::OPERATIONAL_V9,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .unwrap(),
+            );
+            for result in [
+                q.multiplicity_featuring_context(id(20)),
+                q.featuring_types(id(2)),
+            ] {
+                assert_eq!(
+                    result.completeness,
+                    if invalid {
+                        Completeness::Invalid
+                    } else {
+                        Completeness::Incomplete
+                    }
+                );
+                assert!(result.value.is_empty());
+                assert!(
+                    result
+                        .search_dependencies
+                        .contains(&SearchDependency::Kernel(StructuralSearch::Incoming(id(
+                            901
+                        ))))
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn incomparable_domains_do_not_select_a_context_by_element_id() {
     let mut f = fixture(P::OPERATIONAL_V9);
     member(&mut f, 10, 20, 120, c::OWNING_MEMBERSHIP);
