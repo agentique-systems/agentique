@@ -20,6 +20,13 @@ pub struct ConnectorFeaturing {
     pub valid: bool,
 }
 
+struct RequiredFeaturingContext {
+    subject: ElementId,
+    source: Option<ElementId>,
+    explicit_domains: Vec<ElementId>,
+    is_bound: bool,
+}
+
 impl KerMlQueries<'_> {
     /// KerML 1.0 Feature::isFeaturingType. Variable Features require the
     /// canonical snapshots role, or a redefinition featured by their owner.
@@ -147,10 +154,52 @@ impl KerMlQueries<'_> {
 
     /// Direct featuring domains, including required membership and first-chain consequences.
     pub fn featuring_types(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut requirements = vec![];
+        let mut out = self.featuring_types_walk(feature, Some(&mut requirements));
+        if out.completeness == Completeness::Complete {
+            for requirement in requirements {
+                // Reconcile against this subject's required context, not the
+                // aggregate domains of an outer expression or feature chain.
+                // The walk never performs reconciliation itself: ownership/
+                // chaining cycles remain bounded by its visited set, and the
+                // zero-explicit path does no additional traversal or reads.
+                let required = requirement.source.map_or_else(
+                    || self.result(vec![]),
+                    |source| self.featuring_types_walk(source, None),
+                );
+                if required.completeness == Completeness::Complete
+                    && requirement
+                        .explicit_domains
+                        .iter()
+                        .any(|domain| !required.value.contains(domain))
+                {
+                    let (code, message) = if requirement.is_bound {
+                        (
+                            "KQ_MULTIPLICITY_BOUND_FEATURING_CONFLICT",
+                            "Explicit TypeFeaturing conflicts with the required bound-expression context",
+                        )
+                    } else {
+                        (
+                            "KQ_MULTIPLICITY_FEATURING_CONFLICT",
+                            "Explicit TypeFeaturing conflicts with the required multiplicity context",
+                        )
+                    };
+                    out.problem(Completeness::Invalid, code, requirement.subject, message);
+                }
+                out.merge(required);
+            }
+        }
+        out
+    }
+
+    fn featuring_types_walk(
+        &self,
+        feature: ElementId,
+        mut requirements: Option<&mut Vec<RequiredFeaturingContext>>,
+    ) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
         let mut pending = vec![feature];
         let mut visited = BTreeSet::new();
-        let mut explicit_multiplicity_domains = vec![];
         while let Some(current) = pending.pop() {
             if !visited.insert(current) {
                 continue;
@@ -166,6 +215,7 @@ impl KerMlQueries<'_> {
                 .corrects_multiplicity_context()
                 && self.is(current, c::MULTIPLICITY)
             {
+                let mut explicit_domains = vec![];
                 let owned = self.owned_relationships(current);
                 for &relationship in &owned.value {
                     if self.is(relationship, c::TYPE_FEATURING) {
@@ -174,7 +224,7 @@ impl KerMlQueries<'_> {
                             relationship,
                             p::TYPE_FEATURING_FEATURING_TYPE,
                         ) {
-                            explicit_multiplicity_domains.push((current, domain));
+                            explicit_domains.push(domain);
                         } else {
                             out.problem(
                                 Completeness::Incomplete,
@@ -187,12 +237,23 @@ impl KerMlQueries<'_> {
                 }
                 out.merge(owned);
                 let context = self.multiplicity_context_feature(current);
+                if !explicit_domains.is_empty()
+                    && let Some(requirements) = requirements.as_mut()
+                {
+                    requirements.push(RequiredFeaturingContext {
+                        subject: current,
+                        source: context.value,
+                        explicit_domains,
+                        is_bound: false,
+                    });
+                }
                 pending.extend(context.value);
                 out.merge(context);
                 continue;
             }
             let owned = self.owned_relationships(current);
             let mut explicit = false;
+            let mut expression_domains = vec![];
             for &r in &owned.value {
                 if self.is(r, c::TYPE_FEATURING) {
                     if let Some(ty) =
@@ -200,6 +261,16 @@ impl KerMlQueries<'_> {
                     {
                         out.value.push(ty);
                         explicit = true;
+                        if requirements.is_some()
+                            && self
+                                .context()
+                                .options
+                                .baseline_profile
+                                .corrects_multiplicity_context()
+                            && self.is(current, c::EXPRESSION)
+                        {
+                            expression_domains.push(ty);
+                        }
                     } else {
                         out.problem(
                             Completeness::Incomplete,
@@ -304,6 +375,16 @@ impl KerMlQueries<'_> {
                         let bounds = self.multiplicity_bounds(range);
                         if bounds.value.bound.contains(&current) {
                             pending.push(range);
+                            if !expression_domains.is_empty()
+                                && let Some(requirements) = requirements.as_mut()
+                            {
+                                requirements.push(RequiredFeaturingContext {
+                                    subject: current,
+                                    source: Some(range),
+                                    explicit_domains: expression_domains,
+                                    is_bound: true,
+                                });
+                            }
                         }
                         out.merge(bounds);
                         out.search_dependencies
@@ -318,18 +399,6 @@ impl KerMlQueries<'_> {
         }
         out.value.sort();
         out.value.dedup();
-        if out.completeness == Completeness::Complete {
-            for (multiplicity, domain) in explicit_multiplicity_domains {
-                if !out.value.contains(&domain) {
-                    out.problem(
-                        Completeness::Invalid,
-                        "KQ_MULTIPLICITY_FEATURING_CONFLICT",
-                        multiplicity,
-                        "Explicit TypeFeaturing conflicts with the required multiplicity context",
-                    );
-                }
-            }
-        }
         out
     }
 
@@ -782,5 +851,63 @@ impl KerMlQueries<'_> {
         out.value = nearest.value;
         out.merge(nearest);
         out
+    }
+}
+
+#[cfg(test)]
+mod multiplicity_reconciliation_tests {
+    use crate as agq_kerml_semantics;
+    include!("../tests/common/result_fixture.rs");
+
+    #[test]
+    fn no_explicit_context_reconciliation_preserves_values_evidence_and_reads() {
+        let profile = agq_kerml::BaselineProfile::OPERATIONAL_V9;
+        for cross in [false, true] {
+            let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+            let mut f = Fixture {
+                changes: base.change_set(),
+                base,
+                owned: BTreeMap::new(),
+            };
+            for (element, class) in [
+                (1, c::ASSOCIATION),
+                (10, c::FEATURE),
+                (20, c::MULTIPLICITY_RANGE),
+                (2, c::FEATURE_REFERENCE_EXPRESSION),
+            ] {
+                f.create(element, class);
+            }
+            member(&mut f, 1, 10, 110, c::END_FEATURE_MEMBERSHIP);
+            let owner = if cross {
+                f.value(10, p::FEATURE_IS_END, Value::Boolean(true));
+                f.create(11, c::FEATURE);
+                member(&mut f, 10, 11, 111, c::OWNING_MEMBERSHIP);
+                11
+            } else {
+                10
+            };
+            member(&mut f, owner, 20, 120, c::OWNING_MEMBERSHIP);
+            member(&mut f, 20, 2, 122, c::OWNING_MEMBERSHIP);
+            let snapshot = f.finish();
+            let q = KerMlQueries::new(
+                SemanticContext::for_snapshot(
+                    &snapshot,
+                    SemanticOptions {
+                        baseline_profile: profile,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .unwrap(),
+            );
+            for subject in [id(20), id(2)] {
+                let before_reconciliation = q.featuring_types_walk(subject, None);
+                assert_eq!(before_reconciliation.completeness, Completeness::Complete);
+                assert_eq!(before_reconciliation.value, vec![id(1)]);
+                // QueryResult equality includes proofs, positive dependencies,
+                // canonical evidence and every search/read dependency.
+                assert_eq!(q.featuring_types(subject), before_reconciliation);
+            }
+        }
     }
 }

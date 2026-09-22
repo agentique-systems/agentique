@@ -1,0 +1,218 @@
+{
+  "format": "agq-kerml-bound-context-checks/1",
+  "base_revision": "d322c1df0c5cbbe09d4ae889a78251399523b59c",
+  "rule_set": "agq-kerml-query/26",
+  "rule_version_changed": false,
+  "source_sha256": {
+    "crates/kerml-semantics/src/featuring.rs": "47cc8521b2f450eeefc42f85792edd08d59e5a2a5b30f1b3d9eac516ea9231be",
+    "crates/kerml-semantics/tests/multiplicity_context_v9.rs": "f80fc4edd8f051884e8a094dbd3b9c6026206983c4b7a00f7ea17bc00d5be3b8",
+    "crates/kerml-semantics/src/result_structure.rs": "4957ccf45a8a816e41139747c65d4fdb79c7921ed7adf4861cff1420c741ee11",
+    "crates/kerml-semantics/src/cross_features.rs": "6c69fffd3dfab7757edb9f480949432b8d303c70a3d8c08936f7778a02635c0c",
+    "crates/kerml-text/src/library/construction.rs": "e64447b5d9b6bdba6230f410dda7d489a1d7878d8f1265b16fcc3a86320c110a"
+  },
+  "environment": {
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "before_fix": {
+    "command": "cargo test --locked --offline -j 2 -p agq-kerml-semantics --test multiplicity_context_v9 bound_expression_ -- --nocapture",
+    "exit_code": 1,
+    "failed": 2,
+    "observation": "Both explicit-bound disagreement and masked invalid Multiplicity produced Complete [ElementId(1), ElementId(90)] instead of Invalid."
+  },
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "no_explicit_context_reconciliation",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.641,
+      "log_sha256": "148ef97494093be8824f23f64de99d644c82a23749d554412cca5a723af6b810",
+      "output_tail": [
+        "     Running unittests src\\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target\\debug\\deps\\agq_kerml_semantics-545605f4b8d80094.exe)",
+        "",
+        "running 1 test",
+        "test featuring::multiplicity_reconciliation_tests::no_explicit_context_reconciliation_preserves_values_evidence_and_reads ... ok",
+        "",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 45 filtered out; finished in 0.18s",
+        ""
+      ],
+      "test_results": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 45 filtered out; finished in 0.18s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "multiplicity_context_v9",
+        "--test",
+        "publication_v8_bounds",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.687,
+      "log_sha256": "440cf3a3cf69689e9973696637cf580786fe535763f9684074e7c8ac1d400679",
+      "output_tail": [
+        "",
+        "running 2 tests",
+        "test structural_bounds_use_owned_expression_order_without_evaluation ... ok",
+        "test bound_reference_to_outer_feature_retains_the_unresolved_context_obligation ... ok",
+        "",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s",
+        ""
+      ],
+      "test_results": [
+        "test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.75s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.609,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_tail": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "--tests",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.5,
+      "log_sha256": "61548dcfe98c369573aebe86214dbc66354129be373521852c49c0d76044d4cc",
+      "output_tail": [
+        "    Checking agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kerml-semantics)",
+        "    Finished `dev` profile [unoptimized] target(s) in 3.33s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-semantics",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 8.032,
+      "log_sha256": "c99d6cb27c506c9cb32ceabb50f672f649655913db8b66910a0f388fca093200",
+      "output_tail": [
+        "    Checking agq-kernel v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kernel)",
+        "    Checking agq-kerml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kerml)",
+        " Documenting agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-v9-multiplicity\\crates\\kerml-semantics)",
+        "    Finished `dev` profile [unoptimized] target(s) in 7.95s",
+        "   Generated C:/Users/phili/github/agentique-systems/agentique/target\\doc\\agq_kerml_semantics\\index.html"
+      ],
+      "RUSTDOCFLAGS": "-D warnings"
+    }
+  ],
+  "corpus_applicability": {
+    "declared_elements": 29140,
+    "declared_type_featuring_total": 0,
+    "direct_bounds": 2097,
+    "explicit_multiplicity_or_bound_type_featuring": [],
+    "format": "agq-kerml-v9-bound-context-applicability/1",
+    "multiplicities": 1499,
+    "multiplicity_ranges": 1499,
+    "non_source_mapped_ranges": [
+      {
+        "bounds": [
+          "441d6b17-d2d3-57ca-8d96-4a3a9ce0f254"
+        ],
+        "element": "ccfdd669-3166-568b-a55e-6d4f926d0d4b",
+        "origin": "Declared(ReviewedCorrection { profile: \"agentique-kerml-1.0-operational/3\", entry: \"AGQ-KERML10-LIB-002\", authority: {\"https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/commit/240fba1faea614d6aa7f905cc697b95b8bf68d04\", \"https://issues.omg.org/issues/KERML11-76\"}, library: LibraryId(311171416397086604043708172772662354806), source_key: \"Kernel Semantic Library/FeatureReferencingPerformances.kerml#sha256:7531748535998a0bdd8fe8cca37d4a5ac677e1d5cc062131c0e919b3a502a07e\", output_key: \"BooleanEvaluationMonitor/result/multiplicity\" })"
+      }
+    ],
+    "other_type_featuring_producers": "crossing_product creates fresh Feature; binding_featuring creates fresh BindingConnector; neither can target a declared Multiplicity or bound Expression",
+    "owned_cross_featuring_producer_applicable_subjects": [],
+    "producer_closure_executed": false,
+    "profile": "agentique-kerml-1.0-operational/9",
+    "source_content_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+    "source_mapped_bounds": 2096,
+    "source_mapped_ranges": 1498,
+    "variable_featuring_producer_applicable_subjects": []
+  },
+  "probe": {
+    "command": "cargo run --locked --offline -j 2 -p agq-kerml-text --example _v9_bound_context_applicability",
+    "exit_code": 0,
+    "source_retained_ignored": "verification/generated/kerml-v9-publication/bound-context-applicability.rs",
+    "source_sha256": "8aa83868b0aaccd768bd01c60039ce67252b41a36b3b6e7c6902f803b74a0bb9",
+    "scope": "One canonical declaration lowering with reviewed profile corrections; no endpoint-refinement or producer closure was executed."
+  },
+  "type_featuring_producer_sites": [
+    {
+      "file": "crates/kerml-semantics/src/result_structure.rs",
+      "line": 649,
+      "operation": "crossing_product",
+      "exclusion": "Fresh exact Feature outputs, never Multiplicity or Expression; no declared target mutation."
+    },
+    {
+      "file": "crates/kerml-semantics/src/result_structure.rs",
+      "line": 750,
+      "operation": "cross_featuring",
+      "exclusion": "Owned cross candidates or fresh Cartesian product Features. Probe established zero M/bound owned-cross candidates; Multiplicity is excluded by selector, bound owner is its non-end Multiplicity. Declared flags/ownership are immutable."
+    },
+    {
+      "file": "crates/kerml-semantics/src/result_structure.rs",
+      "line": 801,
+      "operation": "variable_featuring",
+      "exclusion": "Requires isVariable=true; zero M/bound candidate inputs in exact declared graph. Declared boolean slots are immutable."
+    },
+    {
+      "file": "crates/kerml-semantics/src/result_structure.rs",
+      "line": 1339,
+      "operation": "binding-featuring",
+      "exclusion": "Fresh exact BindingConnector outputs, never Multiplicity or bound Expression."
+    }
+  ],
+  "population_difference": "1498 source-mapped ranges/2096 bounds match retained inventory. The broader 1499/2097 canonical graph includes v3 reviewed correction AGQ-KERML10-LIB-002, BooleanEvaluationMonitor/result/multiplicity; its exact IDs and origin are retained above.",
+  "preflight_disposition": "The additional reconciliation branch cannot execute on pinned corpus M/bounds. Zero-explicit regression compares the whole QueryResult, preserving values/proofs/positive/canonical/search/read evidence. Existing A-E reports remain applicable to this narrow unreleased integration fix.",
+  "historical_profiles": "Published through explicit v8 preserve earlier behavior; default OPERATIONAL alias unchanged.",
+  "status": "pass",
+  "source_content_digest": "e973a7edbcf4c16b6cbc5fbe0d7cb97dc6964e652a67be71880f7797a6299ee4",
+  "audit_disposition": "One concrete K3 conflict-completeness defect was reproduced and fixed. No other concrete K2-K6 implementation gap found by this focused audit; canonical publication remains a separate gate."
+}

@@ -412,6 +412,162 @@ fn conflicting_explicit_multiplicity_domain_is_invalid() {
 }
 
 #[test]
+fn bound_expression_explicit_context_must_equal_its_range() {
+    for profile in [
+        P::PublishedKerMl10,
+        P::OPERATIONAL_V1,
+        P::OPERATIONAL_V2,
+        P::OPERATIONAL_V3,
+        P::OPERATIONAL_V4,
+        P::OPERATIONAL_V5,
+        P::OPERATIONAL_V6,
+        P::OPERATIONAL_V7,
+        P::OPERATIONAL_V8,
+        P::OPERATIONAL_V9,
+    ] {
+        for matching in [false, true] {
+            let mut f = fixture(profile);
+            member(&mut f, 10, 20, 120, c::OWNING_MEMBERSHIP);
+            f.create(90, c::CLASSIFIER);
+            type_featuring(&mut f, 2, if matching { 1 } else { 90 }, 190);
+            let snapshot = f.finish();
+            let q = queries(&snapshot, profile);
+            let range = q.multiplicity_featuring_context(id(20));
+            assert_eq!(range.completeness, Completeness::Complete);
+            assert_eq!(
+                range.value,
+                if profile == P::OPERATIONAL_V9 {
+                    vec![id(1)]
+                } else {
+                    vec![]
+                }
+            );
+            let bound = q.featuring_types(id(2));
+            assert_eq!(
+                bound.completeness,
+                if profile == P::OPERATIONAL_V9 && !matching {
+                    Completeness::Invalid
+                } else {
+                    Completeness::Complete
+                },
+                "{profile:?}: {matching}"
+            );
+            if profile == P::OPERATIONAL_V9 && !matching {
+                assert!(
+                    bound
+                        .diagnostics
+                        .iter()
+                        .any(|d| d.code == "KQ_MULTIPLICITY_BOUND_FEATURING_CONFLICT")
+                );
+                // Retain the actual explicit assertion as evidence, while
+                // preventing contradictory domains from claiming completeness.
+                assert!(bound.value.contains(&id(90)));
+            }
+        }
+    }
+}
+
+#[test]
+fn bound_expression_cannot_mask_invalid_multiplicity_context() {
+    let mut f = fixture(P::OPERATIONAL_V9);
+    member(&mut f, 10, 20, 120, c::OWNING_MEMBERSHIP);
+    f.create(90, c::CLASSIFIER);
+    type_featuring(&mut f, 20, 90, 190);
+    type_featuring(&mut f, 2, 90, 191);
+    let snapshot = f.finish();
+    let q = queries(&snapshot, P::OPERATIONAL_V9);
+    assert_eq!(
+        q.multiplicity_featuring_context(id(20)).completeness,
+        Completeness::Invalid
+    );
+    let bound = q.featuring_types(id(2));
+    assert_eq!(bound.completeness, Completeness::Invalid);
+    for code in [
+        "KQ_MULTIPLICITY_FEATURING_CONFLICT",
+        "KQ_MULTIPLICITY_BOUND_FEATURING_CONFLICT",
+    ] {
+        assert!(bound.diagnostics.iter().any(|d| d.code == code));
+    }
+}
+
+#[test]
+fn cross_bound_explicit_context_is_reconciled_against_the_owning_end() {
+    for domain in [1, 40] {
+        let mut f = fixture(P::OPERATIONAL_V9);
+        f.value(10, p::FEATURE_IS_END, Value::Boolean(true));
+        f.create(11, c::FEATURE);
+        f.create(30, c::FEATURE);
+        f.create(40, c::CLASSIFIER);
+        f.value(30, p::FEATURE_IS_END, Value::Boolean(true));
+        member(&mut f, 1, 30, 130, c::END_FEATURE_MEMBERSHIP);
+        relation(
+            &mut f,
+            30,
+            40,
+            140,
+            c::FEATURE_TYPING,
+            p::FEATURE_TYPING_TYPE,
+        );
+        f.value(
+            140,
+            p::FEATURE_TYPING_TYPED_FEATURE,
+            Value::Reference(id(30)),
+        );
+        member(&mut f, 10, 11, 111, c::OWNING_MEMBERSHIP);
+        member(&mut f, 11, 20, 120, c::OWNING_MEMBERSHIP);
+        type_featuring(&mut f, 2, domain, 190);
+        let snapshot = f.finish();
+        let q = queries(&snapshot, P::OPERATIONAL_V9);
+        assert_eq!(q.featuring_types(id(11)).value, vec![id(40)]);
+        let bound = q.featuring_types(id(2));
+        assert_eq!(
+            bound.completeness,
+            if domain == 1 {
+                Completeness::Complete
+            } else {
+                Completeness::Invalid
+            }
+        );
+        if domain == 40 {
+            assert!(
+                bound
+                    .diagnostics
+                    .iter()
+                    .any(|d| d.code == "KQ_MULTIPLICITY_BOUND_FEATURING_CONFLICT")
+            );
+        }
+    }
+}
+
+#[test]
+fn explicit_context_reconciliation_remains_bounded_when_owner_chain_returns_to_bound() {
+    let mut f = fixture(P::OPERATIONAL_V9);
+    member(&mut f, 10, 20, 120, c::OWNING_MEMBERSHIP);
+    type_featuring(&mut f, 20, 1, 190);
+    type_featuring(&mut f, 2, 1, 191);
+    relation(
+        &mut f,
+        10,
+        2,
+        192,
+        c::FEATURE_CHAINING,
+        p::FEATURE_CHAINING_CHAINING_FEATURE,
+    );
+    let snapshot = f.finish();
+    let q = queries(&snapshot, P::OPERATIONAL_V9);
+    for subject in [id(20), id(2)] {
+        let result = q.featuring_types(subject);
+        assert_eq!(
+            result.completeness,
+            Completeness::Complete,
+            "{:?}",
+            result.diagnostics
+        );
+        assert_eq!(result.value, vec![id(1)]);
+    }
+}
+
+#[test]
 fn v9_symbolic_bound_closure_agrees_between_worklist_and_independent_full_scan() {
     let profile = P::OPERATIONAL_V9;
     let mut f = fixture(profile);
