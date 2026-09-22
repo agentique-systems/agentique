@@ -1730,6 +1730,39 @@ impl ResultStructurePlan<'_> {
                 })
             })
             .collect();
+        for &(target, property) in self.graph.contributed_properties.keys() {
+            let Some(record) = model.element(target) else {
+                continue;
+            };
+            let permitted = descriptors.iter().any(|&(subject, descriptor)| {
+                descriptor.affects_subject(model, target)
+                    && descriptor.effects.iter().any(|effect| match effect {
+                        ProducerEffect::Scalar(written) => {
+                            *written == property
+                                || model
+                                    .registry()
+                                    .resolve_property(record.metaclass(), *written)
+                                    .ok()
+                                    .flatten()
+                                    .is_some_and(|resolved| resolved.id == property)
+                        }
+                        _ => false,
+                    })
+                    && (descriptor.scope == ProducerEffectScope::Model
+                        || (descriptor.scope != ProducerEffectScope::OwnedDescendants
+                            && subject == target)
+                        || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
+                            && owned_below(model, target, subject))
+                        || (descriptor.scope == ProducerEffectScope::OwnedDescendants
+                            && target != subject
+                            && owned_below(model, target, subject))
+                        || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
+                            && owned_below(model, subject, target)))
+            });
+            if !permitted {
+                return Err(DerivationError::InputContextMismatch);
+            }
+        }
         for (&relationship, record) in &self.graph.records {
             if model.element(relationship).is_some() {
                 continue;
