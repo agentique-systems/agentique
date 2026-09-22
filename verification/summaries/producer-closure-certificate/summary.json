@@ -771,6 +771,58 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "family-provenance-compile",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2e444f4972243004e36c20adc4bb82179a1390f5",
+      "working_changes_sha256": "a53a42216555da93757a082754d54e80b637dc3c89fa78c52401ccc87a2aa7cf",
+      "output_sha256": "70aa9e5ad12969539b05d168dee4c10d97475c9680f73b698349718e5dbcdfbf",
+      "duration_seconds": 1.89,
+      "output": "verification/generated/producer-closure-certificate/family-provenance-compile.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "family-provenance-regression",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "positional_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2e444f4972243004e36c20adc4bb82179a1390f5",
+      "working_changes_sha256": "a06b6754cf35249a9ea4bd3fc91bab683dc5ebec3541ef916deaedbd5b540b4b",
+      "output_sha256": "606c20b2e790ad03c057feba3fda93544a659238bd29b10a285d2e7f0e0da70b",
+      "duration_seconds": 5.83,
+      "output": "verification/generated/producer-closure-certificate/family-provenance-regression.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }

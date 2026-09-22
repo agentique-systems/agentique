@@ -1,6 +1,91 @@
 include!("common/result_fixture.rs");
 
 #[test]
+fn positional_output_does_not_inherit_an_unrelated_incomplete_family_read() {
+    use agq_kernel::derived::StructuralSearch;
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    for (owner, feature, membership) in [(1, 11, 21), (2, 12, 22)] {
+        f.create(owner, c::BEHAVIOR);
+        f.create(feature, c::FEATURE);
+        f.enumeration(feature, p::FEATURE_DIRECTION, "in");
+        member(&mut f, owner, feature, membership, c::PARAMETER_MEMBERSHIP);
+    }
+    relation(
+        &mut f,
+        2,
+        1,
+        31,
+        c::SPECIALIZATION,
+        p::SPECIALIZATION_GENERAL,
+    );
+    f.value(31, p::SPECIALIZATION_SPECIFIC, Value::Reference(id(2)));
+    // Variable featuring cannot finish without the standard snapshot anchors.
+    // Its sibling positional producer already has a complete positive proof.
+    f.value(12, p::FEATURE_IS_VARIABLE, Value::Boolean(true));
+    let snapshot = f.finish();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(
+            &snapshot,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap(),
+    );
+    let produced = q
+        .plan_result_structure([id(12)])
+        .materialize(&snapshot)
+        .unwrap();
+    assert_eq!(produced.production.completeness, Completeness::Incomplete);
+    let redefinition = produced
+        .overlay
+        .model()
+        .instances(c::REDEFINITION, false)
+        .unwrap()
+        .next()
+        .expect("positive positional output")
+        .id();
+    let searches: BTreeSet<_> = produced
+        .overlay
+        .model()
+        .computation_searches_for(FactKey::Element(redefinition))
+        .cloned()
+        .collect();
+    assert!(
+        searches.contains(&StructuralSearch::OwnedRelationships {
+            owner: id(12),
+            class: c::REDEFINITION,
+        }),
+        "authored relationship reuse remains a real dependency"
+    );
+    assert!(
+        !searches.contains(&StructuralSearch::Property {
+            element: id(12),
+            property: p::FEATURE_IS_VARIABLE,
+        }),
+        "the unrelated incomplete family must not contaminate this output's proof"
+    );
+    assert!(
+        produced
+            .production
+            .search_dependencies
+            .contains(&SearchDependency::PropertySet {
+                element: id(12),
+                property: p::FEATURE_IS_VARIABLE,
+            }),
+        "the subject report must still retain the incomplete family's read"
+    );
+}
+
+#[test]
 fn materialized_ordered_redefinitions_close_names_with_derived_provenance() {
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
     let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
