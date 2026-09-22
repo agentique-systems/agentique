@@ -107,3 +107,18 @@ binding-population reads because it lacks the real accepted KerML dependency
 boundary. This experiment was removed; it does not justify changing the accepted
 KerML contract. The focused declared-source regression independently verifies the
 SysML correction. No corpus publication ran in this worktree.
+
+The synthetic fixtures now reproduce the genuine dependency topology: KerML
+anchors close under the full combined registry, SysML anchors close over that
+authenticated immutable layer, and authored Actions fixtures consume both layers.
+All portion-classification overrides were removed; ordinary false defaults now
+exercise the negative predicates. A dedicated test verifies every requirement on
+every subject in the untyped SysML anchor population and exact dependency sharing.
+These remain synthetic closed dependencies, not accepted standards receipts.
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib actions_micro_closes -- --nocapture` | 1 passed, 18.89 seconds | 0 |
+| `cargo test --locked --offline -p agq-sysml-semantics` | Initial layering adaptation lost the fixture ownership append map: 59 passed/3 failed. Restored original ownership before adding fixture relationships; final 62 passed/0 failed, 45.05 seconds; doc tests passed | 101, then 0 |
+| `cargo clippy --locked --offline -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings | 0 |
+| `cargo fmt --all -- --check` | No output | 0 |

@@ -1017,40 +1017,38 @@ fn actions_micro(variant: ActionsMicro) {
     };
     // Synthetic anchors isolate the scheduler/query contract from the corpus.
     // They are immutable dependencies in this fixture, never a production receipt.
-    let (mut anchors, roles) = corpus_anchor_fixture_complete(true);
-    let (kernel, libraries, mut roots) = may_time_fixture(false, false, false, None);
-    let kernel_queries = KerMlQueries::new(
-        SemanticContext::for_snapshot(
-            &kernel,
-            SemanticOptions {
-                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
-                exclude_implied: true,
-            },
-            BTreeSet::new(),
-        )
+    let (kernel_dependency, libraries, mut roots) =
+        closed_kernel_anchor_fixture(with_variable_value);
+    let occurrence = kernel_dependency
+        .context()
+        .standard_bindings
+        .as_ref()
         .unwrap()
-        .with_standard_bindings(&roots, &libraries)
-        .unwrap(),
-    );
-    let occurrence = kernel_queries
-        .standard_role(StandardRole::Occurrence)
-        .value
-        .unwrap();
-    let snapshots = kernel_queries
-        .standard_role(StandardRole::OccurrenceSnapshots)
-        .value
-        .unwrap();
-    roots.retain(|root| *root != id(30_000));
-    roots.push(id(1));
-    for record in kernel.model().elements().filter(|record| {
-        matches!(record.origin(), agq_kernel::provenance::Origin::Declared(DeclaredOrigin::StandardLibrary { library }) if libraries.artifacts.values().any(|candidate| candidate == library))
-    }) {
-        let agq_kernel::provenance::Origin::Declared(origin) = record.origin() else { unreachable!() };
-        anchors.changes.create(record.id(), record.metaclass(), origin.clone());
+        .get(StandardRole::Occurrence);
+    let (source, roles) = corpus_anchor_fixture_complete(true);
+    let owned = source.owned.clone();
+    let source = source.finish();
+    let base = kernel_dependency.project_snapshot();
+    let mut anchors = Fixture {
+        changes: base.change_set(),
+        base,
+        owned,
+        origin: origin(),
+    };
+    for record in source.model().elements() {
+        let agq_kernel::provenance::Origin::Declared(origin) = record.origin() else {
+            unreachable!()
+        };
+        anchors
+            .changes
+            .create(record.id(), record.metaclass(), origin.clone());
         for (property, slot) in record.slots() {
-            anchors.changes.set(record.id(), property, slot.value().clone(), origin.clone());
+            anchors
+                .changes
+                .set(record.id(), property, slot.value().clone(), origin.clone());
         }
     }
+    roots.push(id(1));
     anchors.origin = DeclaredOrigin::StandardLibrary {
         library: SystemsLibraryIdentity::LIBRARY,
     };
@@ -1078,31 +1076,14 @@ fn actions_micro(variant: ActionsMicro) {
             kc::SUBCLASSIFICATION,
             kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
         );
-        anchors.relation(
-            snapshots.as_u128(),
-            occurrence.as_u128(),
-            245_004,
-            kc::FEATURE_TYPING,
-            kp::FEATURE_TYPING_TYPE,
-        );
     }
     let anchors = anchors.finish();
     let mut names = anchors.change_set();
     for membership in anchors.model().instances(kc::MEMBERSHIP, true).unwrap() {
-        names.clear(membership.id(), kp::ELEMENT_DECLARED_NAME);
-    }
-    // The skeletal combined fake library has no independently accepted KerML
-    // boundary. Classify its Usage anchors explicitly before genuine closure.
-    for usage in anchors.model().instances(sc::USAGE, true).unwrap() {
-        let agq_kernel::provenance::Origin::Declared(origin) = usage.origin() else {
-            unreachable!()
-        };
-        names.set(
-            usage.id(),
-            kp::FEATURE_IS_PORTION,
-            SlotValue::Scalar(Value::Boolean(true)),
-            origin.clone(),
-        );
+        if matches!(membership.origin(), agq_kernel::provenance::Origin::Declared(DeclaredOrigin::StandardLibrary { library }) if *library == SystemsLibraryIdentity::LIBRARY)
+        {
+            names.clear(membership.id(), kp::ELEMENT_DECLARED_NAME);
+        }
     }
     let anchor_snapshot = anchors.apply(&names).unwrap();
     let anchor_options = SemanticOptions {
@@ -1117,7 +1098,15 @@ fn actions_micro(variant: ActionsMicro) {
     let anchor_closure = close_result_structure_with_extension(
         &anchor_snapshot,
         Default::default(),
-        |overlay| make_context(overlay, &anchor_options, &roots, &libraries, None),
+        |overlay| {
+            make_context(
+                overlay,
+                &anchor_options,
+                &roots,
+                &libraries,
+                Some(&kernel_dependency),
+            )
+        },
         &anchor_extension,
         |_, _, _, _| {},
         |_| {},
@@ -1138,12 +1127,18 @@ fn actions_micro(variant: ActionsMicro) {
     .unwrap();
     let anchor_certificate = anchor_closure.certificate.unwrap();
     let anchor_overlay = Arc::new(anchor_closure.overlay);
-    let anchor_context = make_context(&anchor_overlay, &anchor_options, &roots, &libraries, None)
-        .unwrap()
-        .with_producer_registry_digest(registry.digest())
-        .unwrap()
-        .with_producer_closure(anchor_certificate)
-        .unwrap();
+    let anchor_context = make_context(
+        &anchor_overlay,
+        &anchor_options,
+        &roots,
+        &libraries,
+        Some(&kernel_dependency),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap()
+    .with_producer_closure(anchor_certificate)
+    .unwrap();
     let dependency = agq_kerml_semantics::ProducerClosedDependency::new(
         anchor_overlay.clone(),
         &anchor_context,
@@ -1724,4 +1719,213 @@ fn standard_anchor_path_requires_original_declared_ownership() {
             .iter()
             .any(|diagnostic| diagnostic.code == "SQ_TARGET_AMBIGUOUS")
     );
+}
+
+fn closed_kernel_anchor_fixture(
+    with_snapshot_typing: bool,
+) -> (
+    Arc<agq_kerml_semantics::ProducerClosedDependency>,
+    LibrarySetIdentity,
+    Vec<ElementId>,
+) {
+    use agq_kerml_semantics::{
+        ProducerClosedDependency, ProducerFamily, ProducerRegistry, PublicationOverlayError,
+        close_result_structure_with_extension,
+    };
+    fn kernel_context<'m>(
+        overlay: &'m agq_kernel::derived::DerivedOverlay,
+        roots: &[ElementId],
+        libraries: &LibrarySetIdentity,
+    ) -> Result<SemanticContext<'m>, PublicationOverlayError> {
+        let context = SemanticContext::for_overlay(
+            overlay,
+            SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap()
+        .with_standard_bindings(roots, libraries)
+        .unwrap()
+        .with_formal_constraint_targets(
+            roots,
+            libraries.artifacts[&StandardLibraryArtifact::Semantic],
+        );
+        Ok(crate::context::fixture_overlay_context(
+            overlay,
+            context,
+            SysmlBaselineProfile::OPERATIONAL_V2,
+        )
+        .unwrap()
+        .kerml)
+    }
+    let registry = ProducerRegistry::new(
+        ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V9))
+            .chain(sysml_producer_descriptors()),
+    )
+    .unwrap();
+    let (all_kernel, libraries, mut kernel_roots) = may_time_fixture(false, false, false, None);
+    kernel_roots.retain(|root| *root != id(30_000));
+    let mut kernel = Fixture::new();
+    for record in all_kernel.model().elements().filter(|record| {
+        matches!(record.origin(),
+        agq_kernel::provenance::Origin::Declared(DeclaredOrigin::StandardLibrary { library })
+        if libraries.artifacts.values().any(|candidate| candidate == library))
+    }) {
+        let agq_kernel::provenance::Origin::Declared(origin) = record.origin() else {
+            unreachable!()
+        };
+        kernel
+            .changes
+            .create(record.id(), record.metaclass(), origin.clone());
+        for (property, slot) in record.slots() {
+            kernel
+                .changes
+                .set(record.id(), property, slot.value().clone(), origin.clone());
+            if property == kp::ELEMENT_OWNED_RELATIONSHIP {
+                let SlotValue::Ordered(relationships) = slot.value() else {
+                    unreachable!()
+                };
+                kernel.owned.insert(record.id(), relationships.clone());
+            }
+        }
+        if all_kernel
+            .model()
+            .registry()
+            .is_subtype(record.metaclass(), kc::MEMBERSHIP)
+            .unwrap()
+        {
+            kernel.changes.clear(record.id(), kp::ELEMENT_DECLARED_NAME);
+        }
+    }
+    if with_snapshot_typing {
+        let context = SemanticContext::for_snapshot(
+            &all_kernel,
+            SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                exclude_implied: true,
+            },
+            BTreeSet::new(),
+        )
+        .unwrap()
+        .with_standard_bindings(&kernel_roots, &libraries)
+        .unwrap();
+        let bindings = context.id().standard_bindings.as_ref().unwrap();
+        kernel.relation(
+            bindings.get(StandardRole::OccurrenceSnapshots).as_u128(),
+            bindings.get(StandardRole::Occurrence).as_u128(),
+            245_004,
+            kc::FEATURE_TYPING,
+            kp::FEATURE_TYPING_TYPE,
+        );
+    }
+    let kernel = kernel.finish();
+    let extension = SysmlProducerExtension::new(
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+        kernel_roots.clone(),
+    );
+    let closed = close_result_structure_with_extension(
+        &kernel,
+        Default::default(),
+        |overlay| kernel_context(overlay, &kernel_roots, &libraries),
+        &extension,
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert_eq!(
+        closed.completeness,
+        Completeness::Complete,
+        "kernel {:?}",
+        closed.stages.last()
+    );
+    let certificate = closed.certificate.unwrap();
+    let overlay = Arc::new(closed.overlay);
+    let context = kernel_context(&overlay, &kernel_roots, &libraries)
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap()
+        .with_producer_closure(certificate)
+        .unwrap();
+    let dependency = ProducerClosedDependency::new(overlay.clone(), &context, &registry).unwrap();
+    drop(context);
+    (dependency, libraries, kernel_roots)
+}
+
+#[test]
+fn untyped_sysml_anchor_population_closes_over_a_genuinely_closed_kernel_layer() {
+    use agq_kerml_semantics::{PublicationOverlayError, close_result_structure_with_extension};
+    let (dependency, _, kernel_roots) = closed_kernel_anchor_fixture(false);
+    let source = corpus_anchor_fixture_complete(true).0.finish();
+    let base = dependency.project_snapshot();
+    let mut changes = base.change_set();
+    for record in source.model().elements() {
+        let agq_kernel::provenance::Origin::Declared(origin) = record.origin() else {
+            unreachable!()
+        };
+        changes.create(record.id(), record.metaclass(), origin.clone());
+        for (property, slot) in record.slots() {
+            changes.set(record.id(), property, slot.value().clone(), origin.clone());
+        }
+        if source
+            .model()
+            .registry()
+            .is_subtype(record.metaclass(), kc::MEMBERSHIP)
+            .unwrap()
+        {
+            changes.clear(record.id(), kp::ELEMENT_DECLARED_NAME);
+        }
+    }
+    let snapshot = base.apply(&changes).unwrap();
+    let mut roots = kernel_roots.clone();
+    roots.push(id(1));
+    let extension = SysmlProducerExtension::new(
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+        roots.clone(),
+    );
+    let closed = close_result_structure_with_extension(
+        &snapshot,
+        Default::default(),
+        |overlay| {
+            let context = dependency
+                .project_overlay_context(overlay, &[id(1)])
+                .map_err(PublicationOverlayError::Context)?;
+            Ok(crate::context::fixture_overlay_context(
+                overlay,
+                context,
+                SysmlBaselineProfile::OPERATIONAL_V2,
+            )
+            .unwrap()
+            .kerml)
+        },
+        &extension,
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert_eq!(
+        closed.completeness,
+        Completeness::Complete,
+        "systems {:?}",
+        closed.stages.last()
+    );
+    assert!(Arc::ptr_eq(
+        closed.overlay.declared().immutable_dependency().unwrap(),
+        dependency.overlay()
+    ));
+    let certificate = closed.certificate.unwrap();
+    for record in closed.overlay.model().elements() {
+        for requirement in agq_kerml_semantics::SemanticClosureRequirement::ALL {
+            assert!(
+                certificate.is_closed(record.id(), requirement),
+                "{:?} {requirement:?}",
+                record.id()
+            );
+        }
+    }
 }
