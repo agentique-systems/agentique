@@ -7,7 +7,7 @@ use agq_kerml_semantics::{
     LibrarySetIdentity, SemanticContext, SemanticContextId, SemanticOptions,
     StandardLibraryArtifact,
 };
-use agq_kernel::{ElementId, ModelView, Snapshot};
+use agq_kernel::{ElementId, ModelView, Snapshot, derived::DerivedOverlay};
 use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -192,6 +192,16 @@ pub struct SysmlSemanticContext<'m> {
 }
 
 impl<'m> SysmlSemanticContext<'m> {
+    /// Start an independent query cache over the same borrowed model and frozen
+    /// dependency identity, without repeating graph fingerprinting.
+    pub fn fork(&self) -> Self {
+        Self {
+            model: self.model,
+            kerml: self.kerml.fork(),
+            id: self.id.clone(),
+            bindings: self.bindings.clone(),
+        }
+    }
     /// Attach a project to its exact accepted immutable KerML dependency.
     /// The checked-in receipt is authoritative, independently of caller input.
     pub fn for_project(
@@ -238,6 +248,24 @@ impl<'m> SysmlSemanticContext<'m> {
             pending_namespaces,
         )?;
         Self::attach(candidate.model(), kerml, trusted, bindings)
+    }
+    /// Bind current-graph SysML queries to a derived overlay that retains the
+    /// exact accepted KerML dependency. Bindings must describe this overlay's
+    /// canonical model. The overlay remains partial: this does not certify
+    /// producer closure or promote effective-query completeness.
+    pub fn for_overlay(
+        overlay: &'m DerivedOverlay,
+        accepted: &CompletePublicationOverlay,
+        local_roots: &[ElementId],
+        expected: &SysmlDependencyContract,
+        bindings: StandardSysmlBindings,
+    ) -> Result<Self, SysmlContextError> {
+        let trusted =
+            SysmlDependencyContract::checked_in_for_profile(&bindings, expected.sysml_profile)?;
+        validate_contract(expected, &trusted)?;
+        validate_accepted(accepted.context(), &trusted)?;
+        let kerml = accepted.project_overlay_context(overlay, local_roots)?;
+        Self::attach(overlay.model(), kerml, trusted, bindings)
     }
     fn attach(
         model: &'m ModelView,
@@ -454,3 +482,7 @@ mod contract_tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "context_overlay_tests.rs"]
+mod overlay_tests;
