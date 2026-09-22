@@ -918,6 +918,13 @@ pub enum StructuralSearch {
     RelationshipStructure {
         element: ElementId,
     },
+    /// Original submitted stored slot before additive derived contributions,
+    /// including its absence. Source reconstruction may change this population;
+    /// a producer append or derived adoption cannot change the original slot.
+    DeclaredProperty {
+        element: ElementId,
+        property: PropertyId,
+    },
 }
 /// Explicit unsuccessful computation; never an empty value.
 #[derive(Clone, Debug, PartialEq, Eq)]

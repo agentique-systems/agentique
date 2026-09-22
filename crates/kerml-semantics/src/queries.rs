@@ -587,6 +587,73 @@ impl<'m> KerMlQueries<'m> {
         }
         out
     }
+    /// Original submitted ownership entries, excluding every additive derived
+    /// append or adoption. This is a source declaration projection, not effective
+    /// ownership. Empty populations retain a source reconstruction dependency;
+    /// pending source namespace populations cannot establish a closed absence.
+    pub fn declared_owned_relationships(&self, element: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        if self
+            .checked::<views::Element, _>(&mut out, element)
+            .is_none()
+        {
+            return out;
+        }
+        let property = self
+            .model()
+            .element(element)
+            .and_then(|record| {
+                self.model()
+                    .registry()
+                    .resolve_property(record.metaclass(), p::ELEMENT_OWNED_RELATIONSHIP)
+                    .ok()
+                    .flatten()
+            })
+            .map_or(p::ELEMENT_OWNED_RELATIONSHIP, |descriptor| descriptor.id);
+        let search =
+            SearchDependency::Kernel(agq_kernel::derived::StructuralSearch::DeclaredProperty {
+                element,
+                property,
+            });
+        out.search_dependencies.insert(search.clone());
+        if self.context().pending_namespace_scopes.contains(&element) {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_DECLARED_NAMESPACE_PENDING",
+                element,
+                "The original source namespace population is pending construction",
+            );
+        }
+        let selected: Vec<_> = self
+            .model()
+            .declared_slot(element, property)
+            .into_iter()
+            .flat_map(|slot| slot.value().values())
+            .filter_map(|value| {
+                if let Value::Reference(id) = value {
+                    Some(*id)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let mut evidence = vec![Evidence::Search(search)];
+        if let Some(fact) = self.selected_reference_fact(&mut out, element, property, &selected) {
+            evidence.push(Evidence::Fact(fact));
+        }
+        for target in selected {
+            self.fact(&mut out, FactKey::Element(target));
+            out.value.push(target);
+            out.prove(
+                QueryKind::OwnedRelationships,
+                element,
+                target,
+                Rule::StoredRelationship,
+                evidence.clone(),
+            );
+        }
+        out
+    }
     /// Class-filtered ownership population. An unrelated owned membership does
     /// not change an outgoing specialization or feature-chain population.
     /// Missing source endpoints remain visible because ownership, not the

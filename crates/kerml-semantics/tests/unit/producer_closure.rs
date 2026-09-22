@@ -3745,3 +3745,244 @@ fn initial_pending_namespace_keeps_unattached_owning_membership_open() {
         "pending namespace 2 can attach existing membership 3 and give Step 1 an owning Type: {absent:?}"
     );
 }
+
+#[test]
+fn declared_source_population_ignores_derived_adoptions_and_preserves_transport() {
+    use crate::producer_closure::{ProducerRead, producer_reads};
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    f.create(4, c::MEMBERSHIP);
+    f.value(4, p::MEMBERSHIP_MEMBER_ELEMENT, Value::Reference(id(2)));
+    let snapshot = f.finish();
+    let fresh_slots: Vec<_> = snapshot
+        .model()
+        .element(id(4))
+        .unwrap()
+        .slots()
+        .map(|(property, slot)| (property, slot.value().clone()))
+        .collect();
+    let mut builder = DerivationBuilder::new(snapshot);
+    let fresh = DerivationKey {
+        subject: id(1),
+        rule: RuleId::from_u128(99881),
+        output: OutputKey::from_u128(1),
+    };
+    builder.element(fresh, c::MEMBERSHIP, fresh_slots, BTreeSet::new());
+    builder.extend_ordered_references(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        vec![id(4), fresh.element_id()],
+        agq_kernel::provenance::Explanation {
+            rule: fresh.rule,
+            dependencies: BTreeSet::new(),
+        },
+    );
+    let overlay = builder.build().unwrap();
+    let q = KerMlQueries::new(
+        SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let selected = q.declared_owned_relationships(id(1));
+    assert_eq!(selected.value, vec![id(3)]);
+    assert_eq!(selected.completeness, Completeness::Complete);
+    assert_eq!(
+        q.owned_relationships(id(1)).value,
+        vec![id(3), id(4), fresh.element_id()]
+    );
+    let original = ProducerRead::DeclaredProperty(id(1), p::ELEMENT_OWNED_RELATIONSHIP);
+    let reads = producer_reads(&selected, overlay.model());
+    assert!(reads.contains(&original));
+    assert!(!reads.contains(&ProducerRead::Property(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP
+    )));
+    for effect in [
+        ProducerEffect::Membership,
+        ProducerEffect::Ownership,
+        ProducerEffect::Naming,
+        ProducerEffect::Scalar(p::ELEMENT_OWNED_RELATIONSHIP),
+    ] {
+        assert!(!crate::producer_closure::effect_changes_read(
+            effect,
+            &original,
+            overlay.model()
+        ));
+    }
+    let persisted = crate::read_dependencies::structural_searches(&selected);
+    assert!(persisted.contains(&StructuralSearch::DeclaredProperty {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP
+    }));
+    let roundtrip: BTreeSet<StructuralSearch> =
+        serde_json::from_str(&serde_json::to_string(&persisted).unwrap()).unwrap();
+    let mut reread = q.result(());
+    reread
+        .search_dependencies
+        .extend(roundtrip.into_iter().map(SearchDependency::Kernel));
+    assert!(producer_reads(&reread, overlay.model()).contains(&original));
+    // Broad observation remains broad in either evaluation order, even a
+    // persisted canonical fact without an explicit current Property search.
+    let fact = FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    };
+    let mut current_fact = q.result(());
+    q.fact(&mut current_fact, fact);
+    for broad_first in [false, true] {
+        let mut combined = q.result(());
+        if broad_first {
+            combined.merge(q.owned_relationships(id(1)));
+        }
+        combined.merge(selected.clone());
+        if !broad_first {
+            combined.merge(q.owned_relationships(id(1)));
+        }
+        assert!(
+            producer_reads(&combined, overlay.model()).contains(&ProducerRead::Property(
+                id(1),
+                p::ELEMENT_OWNED_RELATIONSHIP
+            ))
+        );
+        for broad in [q.canonical_fact_evidence(fact), current_fact.clone()] {
+            let mut combined = q.result(());
+            if broad_first {
+                combined.merge(broad.clone());
+            }
+            combined.merge(selected.clone());
+            if !broad_first {
+                combined.merge(broad);
+            }
+            assert!(
+                producer_reads(&combined, overlay.model()).contains(&ProducerRead::Property(
+                    id(1),
+                    p::ELEMENT_OWNED_RELATIONSHIP
+                ))
+            );
+        }
+    }
+}
+
+#[test]
+fn declared_source_population_closes_against_producers_but_reopens_on_source_edit() {
+    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    f.create(3, c::MEMBERSHIP);
+    f.value(3, p::MEMBERSHIP_MEMBER_ELEMENT, Value::Reference(id(2)));
+    let snapshot = f.finish();
+    let mut creator = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Membership],
+        ProducerApplicability::Any,
+    );
+    creator.scope = ProducerEffectScope::Model;
+    let mut typing = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    typing.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([creator, typing]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let q = KerMlQueries::new(context.fork());
+    let empty = q.declared_owned_relationships(id(1));
+    assert!(empty.value.is_empty());
+    assert!(!empty.search_dependencies.is_empty());
+    let mut table = ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        table.pending(record.id(), snapshot.model(), &registry);
+        table
+            .record(
+                &[(
+                    record.id(),
+                    ACTIVATE,
+                    if record.id() == id(1) {
+                        Completeness::Incomplete
+                    } else {
+                        Completeness::Complete
+                    },
+                )],
+                &registry,
+            )
+            .unwrap();
+        table.record_reads(&[(record.id(), ACTIVATE, Vec::new().into())], &registry);
+    }
+    table
+        .record(&[(id(2), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(2), TYPE, producer_reads(&empty, snapshot.model()))],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    assert_eq!(
+        certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
+        Some(ProducerEvaluationState::EvaluatedComplete)
+    );
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    let mut changes = snapshot.change_set();
+    changes.set(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![Value::Reference(id(3))]),
+        origin(),
+    );
+    let changed = snapshot.apply(&changes).unwrap();
+    let next = SemanticContext::for_snapshot(&changed, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&next, &registry).unwrap();
+    assert!(rebound.reopened_evaluations > 0);
+    assert_eq!(
+        rebound
+            .certificate
+            .evaluation(id(2), registry.index(TYPE).unwrap()),
+        Some(ProducerEvaluationState::Pending)
+    );
+    assert_eq!(
+        KerMlQueries::new(next)
+            .declared_owned_relationships(id(1))
+            .value,
+        vec![id(3)]
+    );
+}
+
+#[test]
+fn declared_source_population_does_not_close_pending_namespace_or_member() {
+    let mut f = Fixture::new();
+    f.create(1, c::NAMESPACE);
+    f.create(2, c::FEATURE);
+    f.create(3, c::MEMBERSHIP);
+    f.own(1, 3);
+    let candidate = f.construction();
+    assert!(!candidate.obligations().is_empty());
+    let context = SemanticContext::for_project_construction(
+        &candidate,
+        Default::default(),
+        BTreeSet::new(),
+        BTreeSet::new(),
+        BTreeSet::from([id(1)]),
+    )
+    .unwrap();
+    let q = KerMlQueries::new(context);
+    let mut result = q.declared_owned_relationships(id(1));
+    assert_eq!(result.value, vec![id(3)]);
+    assert_eq!(result.completeness, Completeness::Incomplete);
+    let member = q.member(id(3));
+    assert_eq!(member.completeness, Completeness::Incomplete);
+    result.merge(member);
+    assert_eq!(result.completeness, Completeness::Incomplete);
+}

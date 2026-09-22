@@ -99,6 +99,7 @@ pub(super) fn read_changed(read: &ProducerRead, affected: &BTreeSet<ElementId>) 
     match read {
         ProducerRead::Global | ProducerRead::Inverse => !affected.is_empty(),
         ProducerRead::Property(id, _)
+        | ProducerRead::DeclaredProperty(id, _)
         | ProducerRead::Structural(id)
         | ProducerRead::Source(id, _, _)
         | ProducerRead::Owned(id, _)

@@ -1416,9 +1416,6 @@ impl Evaluator<'_, '_> {
         for (index, segment) in path.iter().enumerate() {
             let mut candidates = BTreeSet::new();
             for &scope in &scopes {
-                answer
-                    .search_dependencies
-                    .insert(SearchDependency::NamespaceMembers { namespace: scope });
                 if q.context().pending_namespace_scopes.contains(&scope) {
                     problem(
                         &mut answer,
@@ -1428,7 +1425,7 @@ impl Evaluator<'_, '_> {
                         "Canonical target namespace population is pending",
                     );
                 }
-                let owned = q.owned_relationships(scope);
+                let owned = q.declared_owned_relationships(scope);
                 for &membership in &owned.value {
                     answer
                         .merge_evidence(q.canonical_fact_evidence(FactKey::Element(membership)))

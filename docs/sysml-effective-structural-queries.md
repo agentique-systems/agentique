@@ -1,6 +1,6 @@
 # Effective SysML structural queries
 
-`agq-sysml-semantics` query contract `agq-sysml-query/4` composes KerML queries
+`agq-sysml-semantics` query contract `agq-sysml-query/5` composes KerML queries
 over the same canonical graph. Every result carries its context, completeness,
 canonical fact observations and supporting query evidence. Returned `ElementId`s
 are the original declarations or derived elements; inheritance never copies them.

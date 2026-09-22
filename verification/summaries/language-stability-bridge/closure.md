@@ -79,3 +79,31 @@ Final query contexts include the same authenticated dependency contract.
 | `cargo test --locked --offline -p agq-sysml-semantics` | 60 passed, 0 failed, 33.15 seconds; doc tests passed | 0 |
 | `cargo fmt --all -- --check` | No output | 0 |
 | `cargo clippy --locked --offline -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings after witness fixture correction | 0 |
+
+Declared-source target lookup follow-up (2026-09-23): a pending membership writer
+was reopening a completed producer that read only original source ownership.
+`StructuralSearch::DeclaredProperty` now distinguishes the original submitted slot
+(including absence) from the current derived aggregate. It survives proof transport,
+ignores additive derived ownership/adoption, and remains a source-reconstruction
+read. SysML anchor lookup requires these original ownership edges and retains
+endpoint, origin, visibility and name evidence. Pending source scopes/endpoints
+remain incomplete. Mixed current/declared reads remain broad, in either order,
+including persisted current facts without an explicit current-property search.
+The SysML query contract is version 5; accepted KerML rule-set version 26 is unchanged.
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib declared_source_population -- --nocapture` | 3 passed; initial test setup omitted required membership visibility, corrected; mixed-read/reconstruction/provider tests pass | 101, then 0 |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib standard_anchor_path -- --nocapture` | 1 passed; derived adoption excluded, original source edit exposes ambiguity | 0 |
+| `cargo test --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-sysml-semantics` | Kernel and KerML suites passed; SysML60 passed/1 failed because old test expected broad NamespaceMembers instead of precise declared-source evidence | 101 |
+| `cargo test --locked --offline -p agq-sysml-semantics` | After updating that evidence assertion, 61 passed/0 failed, 33.16 seconds; doc tests passed | 0 |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib context_identity -- --nocapture` | Version5 context: 3 passed | 0 |
+| `cargo clippy --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-sysml-semantics --all-targets -- -D warnings` | Finished, no warnings | 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-sysml-semantics --no-deps` | Three crates documented without warnings | 0 |
+| `cargo fmt --all -- --check` | No output | 0 |
+
+The diagnostic-only untyped combined synthetic library still exposes broad KerML
+binding-population reads because it lacks the real accepted KerML dependency
+boundary. This experiment was removed; it does not justify changing the accepted
+KerML contract. The focused declared-source regression independently verifies the
+SysML correction. No corpus publication ran in this worktree.

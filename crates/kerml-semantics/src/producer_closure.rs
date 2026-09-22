@@ -16,6 +16,7 @@ pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum ProducerRead {
     Property(ElementId, PropertyId),
+    DeclaredProperty(ElementId, PropertyId),
     Structural(ElementId),
     Source(ElementId, MetaclassId, PropertyId),
     Owned(ElementId, MetaclassId),
@@ -35,6 +36,9 @@ pub(crate) fn producer_reads<T>(
     use agq_kernel::{derived::StructuralSearch as K, provenance::FactKey};
     let mut result = BTreeSet::new();
     let mut kernel = |search: &K| match search {
+        K::DeclaredProperty { element, property } => {
+            result.insert(ProducerRead::DeclaredProperty(*element, *property));
+        }
         K::Property { element, property } => {
             result.insert(ProducerRead::Property(*element, *property));
         }
@@ -185,6 +189,15 @@ pub(crate) fn producer_reads<T>(
         .collect();
     for fact in &answer.positive_dependencies {
         if let FactKey::Property { element, property } = fact {
+            if result.contains(&ProducerRead::DeclaredProperty(*element, *property))
+                && !result.contains(&ProducerRead::Property(*element, *property))
+                && !answer
+                    .canonical_dependencies
+                    .contains(&agq_kernel::provenance::Dependency::Derived(*fact))
+                && !answer.producer_expanded_facts.contains(fact)
+            {
+                continue;
+            }
             if *property == agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT
                 && !result.contains(&ProducerRead::Property(*element, *property))
                 && model.element(*element).is_some_and(|record| {
@@ -733,6 +746,7 @@ impl ProducerEvaluationTable {
                         // relationship searches remain open: local carriers
                         // may refer to a dependency without writing its record.
                         let fixed = match read {
+                            ProducerRead::DeclaredProperty(_, _) => true,
                             ProducerRead::Any(id)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Owned(id, _)
@@ -784,6 +798,7 @@ impl ProducerEvaluationTable {
                             ProducerRead::Global => global.push(pair),
                             ProducerRead::Inverse => inverse.push(pair),
                             ProducerRead::Property(id, _)
+                            | ProducerRead::DeclaredProperty(id, _)
                             | ProducerRead::Source(id, _, _)
                             | ProducerRead::Owned(id, _)
                             | ProducerRead::OwnedExcluding(id, _, _)
@@ -1601,6 +1616,7 @@ pub(crate) fn descriptor_changes_read(
 ) -> bool {
     let target = match read {
         ProducerRead::Property(subject, _)
+        | ProducerRead::DeclaredProperty(subject, _)
         | ProducerRead::Structural(subject)
         | ProducerRead::Source(subject, _, _)
         | ProducerRead::Owned(subject, _)
@@ -1699,6 +1715,7 @@ pub(crate) fn effect_changes_read(
     model: &ModelView,
 ) -> bool {
     match read {
+        ProducerRead::DeclaredProperty(_, _) => false,
         ProducerRead::Global | ProducerRead::Any(_) => true,
         ProducerRead::Requirement(_, requirement) => requirement.requires_in_model(effect, model),
         ProducerRead::FeaturePopulation(_, kind) => {
@@ -2074,6 +2091,7 @@ fn provider_changes_read(
     use agq_kerml::{classes as c, properties as p};
     let mask = |id| positions.get(&id).map_or(0, |&index| masks[index]);
     match read {
+        ProducerRead::DeclaredProperty(id, _) => mask(*id) != 0,
         ProducerRead::Global | ProducerRead::Inverse => masks.iter().any(|mask| *mask != 0),
         ProducerRead::Requirement(id, requirement) => mask(*id) & requirement.bit() != 0,
         ProducerRead::Property(id, property) => {

@@ -244,7 +244,12 @@ fn missing_target_retains_pending_reads_without_suppressing_proven_positive_base
     assert!(
         item.evidence
             .search_dependencies
-            .contains(&SearchDependency::NamespaceMembers { namespace: id(3) })
+            .contains(&SearchDependency::Kernel(
+                agq_kernel::derived::StructuralSearch::DeclaredProperty {
+                    element: id(3),
+                    property: kp::ELEMENT_OWNED_RELATIONSHIP,
+                }
+            ))
     );
     assert!(item.relationships.is_empty());
     assert_eq!(item.evidence.completeness, Completeness::Incomplete);
@@ -1086,9 +1091,8 @@ fn actions_micro(variant: ActionsMicro) {
     for membership in anchors.model().instances(kc::MEMBERSHIP, true).unwrap() {
         names.clear(membership.id(), kp::ELEMENT_DECLARED_NAME);
     }
-    // Skeletal synthetic anchors have no authored owner/type facts. Give their
-    // portion classification explicitly, then actually close them before use;
-    // immutable storage alone is not semantic closure authority.
+    // The skeletal combined fake library has no independently accepted KerML
+    // boundary. Classify its Usage anchors explicitly before genuine closure.
     for usage in anchors.model().instances(sc::USAGE, true).unwrap() {
         let agq_kernel::provenance::Origin::Declared(origin) = usage.origin() else {
             unreachable!()
@@ -1610,5 +1614,114 @@ fn interface_and_flow_end_rules_use_only_owned_end_features() {
         result(&message, "checkFlowUsageFlowSpecialization")
             .relationships
             .is_empty()
+    );
+}
+
+#[test]
+fn standard_anchor_path_requires_original_declared_ownership() {
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    use agq_kernel::provenance::FactKey;
+    let mut f = item_fixture(false, false);
+    f.origin = DeclaredOrigin::StandardLibrary {
+        library: SystemsLibraryIdentity::LIBRARY,
+    };
+    f.create(19, sc::PART_DEFINITION, "Part");
+    f.member(7, 19, 119, kc::OWNING_MEMBERSHIP);
+    f.owned
+        .get_mut(&id(7))
+        .unwrap()
+        .retain(|value| *value != Value::Reference(id(119)));
+    let snapshot = f.finish();
+    let mut builder = DerivationBuilder::new(snapshot);
+    builder.extend_ordered_references(
+        id(7),
+        kp::ELEMENT_OWNED_RELATIONSHIP,
+        vec![id(119)],
+        agq_kernel::provenance::Explanation {
+            rule: RuleId::from_u128(98211),
+            dependencies: BTreeSet::new(),
+        },
+    );
+    let overlay = builder.build().unwrap();
+    let context = crate::context::fixture_overlay_context(
+        &overlay,
+        SemanticContext::for_overlay(
+            &overlay,
+            agq_kerml_semantics::SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                exclude_implied: true,
+            },
+            BTreeSet::new(),
+        )
+        .unwrap(),
+        SysmlBaselineProfile::OPERATIONAL_V2,
+    )
+    .unwrap();
+    let queries = KerMlQueries::new(context.kerml);
+    let plan = plan_sysml_producers(
+        &queries,
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        &context.bindings,
+        &[id(1)],
+        id(13),
+    );
+    let part = result(&plan, "checkPartDefinitionSpecialization");
+    assert_eq!(part.evidence.completeness, Completeness::Complete);
+    assert_eq!(part.relationships[0].general, id(8));
+    assert!(
+        part.evidence
+            .search_dependencies
+            .contains(&SearchDependency::Kernel(
+                StructuralSearch::DeclaredProperty {
+                    element: id(7),
+                    property: kp::ELEMENT_OWNED_RELATIONSHIP,
+                }
+            ))
+    );
+    assert!(
+        !part
+            .evidence
+            .search_dependencies
+            .contains(&SearchDependency::NamespaceMembers { namespace: id(7) })
+    );
+    for element in [id(8), id(108)] {
+        assert!(
+            part.evidence
+                .positive_dependencies
+                .contains(&FactKey::Element(element))
+        );
+    }
+    // The same carrier becomes an original declaration in a new source graph.
+    // It must now participate and expose the duplicate anchor, not be ignored.
+    let mut changes = overlay.declared().change_set();
+    changes.set(
+        id(7),
+        kp::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![
+            Value::Reference(id(108)),
+            Value::Reference(id(109)),
+            Value::Reference(id(119)),
+        ]),
+        DeclaredOrigin::StandardLibrary {
+            library: SystemsLibraryIdentity::LIBRARY,
+        },
+    );
+    let edited = overlay.declared().apply(&changes).unwrap();
+    let context = crate::context::fixture_context(&edited, BTreeSet::new());
+    let queries = KerMlQueries::new(context.kerml);
+    let plan = plan_sysml_producers(
+        &queries,
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        &context.bindings,
+        &[id(1)],
+        id(13),
+    );
+    let part = result(&plan, "checkPartDefinitionSpecialization");
+    assert_eq!(part.evidence.completeness, Completeness::Invalid);
+    assert!(
+        part.evidence
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SQ_TARGET_AMBIGUOUS")
     );
 }

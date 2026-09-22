@@ -15,7 +15,7 @@ use std::{
 };
 
 /// Identity of the implemented SysML query contract, independently of KerML rules.
-pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/4";
+pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/5";
 /// Final SysML 2.0 formal descriptor authority, not a preliminary revision.
 pub const SYSML_METAMODEL_VERSION: &str =
     "SysML/2.0;XMI:caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f";

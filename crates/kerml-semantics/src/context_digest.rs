@@ -178,6 +178,11 @@ impl Encoder {
                     self.tag(12);
                     self.id(element.as_u128());
                 }
+                StructuralSearch::DeclaredProperty { element, property } => {
+                    self.tag(13);
+                    self.id(element.as_u128());
+                    self.id(property.as_u128());
+                }
             }
         }
     }

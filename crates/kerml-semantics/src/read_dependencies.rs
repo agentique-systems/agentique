@@ -25,6 +25,7 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
         | StructuralSearch::OwnedRelationships { owner: id, .. }
         | StructuralSearch::OwnedRelationshipsExcluding { owner: id, .. }
         | StructuralSearch::Property { element: id, .. }
+        | StructuralSearch::DeclaredProperty { element: id, .. }
         | StructuralSearch::Association { element: id, .. } => Some(K::Element(*id)),
         StructuralSearch::Incoming(id)
         | StructuralSearch::SourceRelationships { source: id, .. } => Some(K::Incoming(*id)),
@@ -111,7 +112,8 @@ fn publication_search_keys(
         // every graph producer. Exact witness identity is invalidated through
         // the context contract; ordinary revision reads remain conservative.
         SearchDependency::ProducerClosure { .. }
-        | SearchDependency::Kernel(StructuralSearch::ProducerClosure { .. }) => true,
+        | SearchDependency::Kernel(StructuralSearch::ProducerClosure { .. })
+        | SearchDependency::Kernel(StructuralSearch::DeclaredProperty { .. }) => true,
         SearchDependency::Element(element) => declared_identity(model, *element),
         SearchDependency::Kernel(StructuralSearch::ElementIdentity(element)) => {
             model.element(*element).is_some()
