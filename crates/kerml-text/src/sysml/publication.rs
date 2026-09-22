@@ -348,24 +348,11 @@ impl CanonicalSysmlSystemsLibrary {
                     }
                 }));
         }
-        for diagnostic in closure
-            .stages
-            .iter()
-            .flat_map(|stage| &stage.diagnostics)
-            .collect::<std::collections::BTreeSet<_>>()
-        {
-            for rule in [
-                "checkViewpointDefinitionSpecialization",
-                "checkViewpointUsageSpecialization",
-                "checkConnectionDefinitionBinarySpecialization",
-            ] {
-                if let Some(conflict) = authority_conflict(rule, diagnostic.subject, diagnostic) {
-                    audit
-                        .findings
-                        .push(SystemsPublicationFinding::Authority(conflict));
-                }
-            }
-        }
+        audit.findings.extend(
+            final_authority_conflicts(&closure.stages)
+                .into_iter()
+                .map(SystemsPublicationFinding::Authority),
+        );
         audit_references(&q, &inputs.references, &mut audit);
         let bindings = StandardSysmlBindings::validate(
             q.model(),
@@ -516,6 +503,7 @@ fn audit_inputs(
     contract: &SysmlDependencyContract,
     audit: &mut SystemsPublicationAudit,
 ) {
+    audit_reference_population(candidate.draft().references(), audit);
     let accepted = candidate.accepted_kerml();
     for (valid, field) in [
         (
@@ -606,6 +594,48 @@ fn audit_inputs(
                 }),
             });
         }
+    }
+}
+
+/// Corpus acceptance baseline for the exact pinned 21-document source set.
+/// This is not a limit on authored SysML projects or a language conformance rule.
+const SYSTEMS_MANDATORY_REFERENCE_ASSERTIONS: usize = 1_327;
+
+fn audit_reference_population(
+    references: &[PendingLibraryReference],
+    audit: &mut SystemsPublicationAudit,
+) {
+    if references.len() != SYSTEMS_MANDATORY_REFERENCE_ASSERTIONS {
+        audit.findings.push(SystemsPublicationFinding::Identity(
+            "exact 1,327 Systems mandatory reference assertions",
+        ));
+    }
+    // One relationship/property pair can carry distinct source assertions.
+    // Preserve that distinction; only a duplicate complete request, including
+    // exact source identity/range, could falsely pad the audited population.
+    let distinct: std::collections::BTreeSet<_> = references
+        .iter()
+        .map(|reference| {
+            (
+                reference.relationship,
+                reference.property,
+                reference.expected,
+                reference.name.absolute,
+                &reference.name.segments,
+                reference.membership_target,
+                reference.executable_expression,
+                reference.origin.document,
+                reference.origin.revision,
+                reference.origin.range.start(),
+                reference.origin.range.end(),
+                reference.origin.syntax_node,
+            )
+        })
+        .collect();
+    if distinct.len() != references.len() {
+        audit.findings.push(SystemsPublicationFinding::Identity(
+            "distinct Systems mandatory source assertions",
+        ));
     }
 }
 
@@ -978,17 +1008,11 @@ fn authority_conflict(
     })
 }
 
-fn audit_prior_authority(
-    production: Option<&super::SystemsConstructionProduction>,
-    audit: &mut SystemsPublicationAudit,
-) {
-    let Some(production) = production else { return };
-    let Some(last) = production.stages.last() else {
-        return;
-    };
-    let conflicts: Vec<_> = last
-        .diagnostics
-        .iter()
+fn final_authority_conflicts(stages: &[PublicationStage]) -> Vec<SystemsAuthorityConflict> {
+    stages
+        .last()
+        .into_iter()
+        .flat_map(|last| &last.diagnostics)
         .flat_map(|diagnostic| {
             [
                 "checkViewpointDefinitionSpecialization",
@@ -998,7 +1022,18 @@ fn audit_prior_authority(
             .into_iter()
             .filter_map(|rule| authority_conflict(rule, diagnostic.subject, diagnostic))
         })
-        .collect();
+        .collect()
+}
+
+fn audit_prior_authority(
+    production: Option<&super::SystemsConstructionProduction>,
+    audit: &mut SystemsPublicationAudit,
+) {
+    let Some(production) = production else { return };
+    let Some(last) = production.stages.last() else {
+        return;
+    };
+    let conflicts = final_authority_conflicts(&production.stages);
     if conflicts.is_empty() {
         return;
     }
@@ -1170,6 +1205,54 @@ fn publication_identity(
 mod tests {
     use super::*;
     #[test]
+    fn pinned_reference_population_rejects_omissions_and_duplicate_padding() {
+        let references: Vec<_> = (0..SYSTEMS_MANDATORY_REFERENCE_ASSERTIONS)
+            .map(|index| PendingLibraryReference {
+                relationship: ElementId::from_u128(index as u128 + 1),
+                property: agq_kerml::properties::SPECIALIZATION_GENERAL,
+                expected: agq_kerml::classes::TYPE,
+                name: agq_kerml_semantics::QualifiedName {
+                    absolute: false,
+                    segments: vec!["Target".into()],
+                },
+                membership_target: false,
+                executable_expression: false,
+                origin: SourceOrigin {
+                    document: DocumentId::from_u128(1),
+                    revision: SourceRevisionId::from_u128(2),
+                    range: ByteRange::new(index as u64, index as u64 + 1).unwrap(),
+                    syntax_node: Some(SyntaxNodeId::from_u128(index as u128 + 1)),
+                },
+            })
+            .collect();
+        let audit = |population: &[PendingLibraryReference]| {
+            let mut audit = SystemsPublicationAudit::default();
+            audit_reference_population(population, &mut audit);
+            audit.findings
+        };
+        assert!(audit(&references).is_empty());
+        assert!(matches!(
+            audit(&references[..references.len() - 1]).as_slice(),
+            [SystemsPublicationFinding::Identity(
+                "exact 1,327 Systems mandatory reference assertions"
+            )]
+        ));
+        let mut duplicated = references.clone();
+        duplicated[1] = duplicated[0].clone();
+        assert!(matches!(
+            audit(&duplicated).as_slice(),
+            [SystemsPublicationFinding::Identity(
+                "distinct Systems mandatory source assertions"
+            )]
+        ));
+        let mut distinct_source = references.clone();
+        distinct_source[1].relationship = distinct_source[0].relationship;
+        assert!(
+            audit(&distinct_source).is_empty(),
+            "different source assertions on one property remain distinct"
+        );
+    }
+    #[test]
     fn authority_preflight_retains_ordinary_failures_and_ignores_superseded_frontiers() {
         let missing = Diagnostic {
             code: "SQ_TARGET_MISSING",
@@ -1199,6 +1282,7 @@ mod tests {
         };
         let mut audit = SystemsPublicationAudit::default();
         audit_prior_authority(Some(&production), &mut audit);
+        assert_eq!(final_authority_conflicts(&production.stages).len(), 1);
         assert_eq!(
             audit
                 .findings
@@ -1214,6 +1298,11 @@ mod tests {
         last.stage = 1;
         last.diagnostics = [ordinary].into_iter().collect();
         production.stages.push(last);
+        assert!(
+            final_authority_conflicts(&production.stages).is_empty(),
+            "strict final acceptance must ignore a superseded authority diagnostic"
+        );
+        assert!(final_authority_conflicts(&[]).is_empty());
         let mut audit = SystemsPublicationAudit::default();
         audit_prior_authority(Some(&production), &mut audit);
         assert!(
@@ -1303,12 +1392,13 @@ mod tests {
             library: SystemsLibraryIdentity::LIBRARY,
         });
         let mut audit = SystemsPublicationAudit::default();
+        let mut references = Vec::new();
         for source in sources
             .documents()
             .filter(|d| d.language() == LibraryLanguage::SysMl)
         {
             let syntax = production::parse_sysml_with_profile(
-                SysmlSyntaxProfile::OperationalV1,
+                SysmlSyntaxProfile::OperationalV2,
                 source.document(),
                 source.revision(),
                 source.source(),
@@ -1335,6 +1425,7 @@ mod tests {
                 None,
             )
             .unwrap();
+            references.extend(draft.references().iter().cloned());
             for record in draft.candidate().model().elements() {
                 audit_source_fact(
                     FactKey::Element(record.id()),
@@ -1369,6 +1460,7 @@ mod tests {
                 );
             }
         }
+        audit_reference_population(&references, &mut audit);
         assert!(audit.findings.is_empty(), "{:?}", audit.findings);
         assert!(audit.checked[&SystemsPublicationFamily::IdentityProvenance] > 7591);
     }
