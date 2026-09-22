@@ -2206,3 +2206,104 @@ fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
     assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
     assert!(certificate.is_closed(id(60_000), SemanticClosureRequirement::EffectiveTyping));
 }
+
+#[test]
+fn directed_feature_value_closes_without_reowning_an_earlier_context_feature() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V9;
+    let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    f.enumeration(2, p::FEATURE_DIRECTION, "in");
+    f.create(4, c::EXPRESSION);
+    f.create(5, c::FEATURE);
+    f.enumeration(5, p::FEATURE_DIRECTION, "out");
+    member(&mut f, 4, 5, 6, c::RETURN_PARAMETER_MEMBERSHIP);
+    member(&mut f, 2, 4, 7, c::FEATURE_VALUE);
+    f.value(7, p::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(false));
+    f.value(7, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
+    let snapshot = f.finish();
+    let closed = close_result_structure(
+        &snapshot,
+        PublicationClosureOptions::default(),
+        |overlay| {
+            SemanticContext::for_overlay(
+                overlay,
+                SemanticOptions {
+                    baseline_profile: profile,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .map_err(PublicationOverlayError::Context)
+        },
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(closed.converged);
+    assert_eq!(
+        closed.completeness,
+        Completeness::Complete,
+        "{:?}",
+        closed.stages.last()
+    );
+    let queries = KerMlQueries::new(
+        SemanticContext::for_overlay(
+            &closed.overlay,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap(),
+    );
+    let bindings: Vec<_> = closed
+        .overlay
+        .model()
+        .elements()
+        .filter(|record| {
+            record.metaclass() == c::BINDING_CONNECTOR
+                && queries.implied_binding_role(record.id())
+                    == Some(ImpliedBindingRole::FeatureValue)
+        })
+        .map(|record| record.id())
+        .collect();
+    assert_eq!(bindings.len(), 1);
+    assert!(
+        queries
+            .validate_connector_featuring(bindings[0])
+            .value
+            .valid
+    );
+    let current = KerMlQueries::new(
+        SemanticContext::for_snapshot(
+            &snapshot,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap(),
+    );
+    let direct = current
+        .plan_result_structure(snapshot.model().elements().map(|record| record.id()))
+        .materialize(&snapshot)
+        .unwrap();
+    assert_eq!(direct.production.completeness, Completeness::Complete);
+    assert!(
+        closed
+            .overlay
+            .model()
+            .elements()
+            .eq(direct.overlay.model().elements()),
+        "staging retains the direct contextual plan's identities, records and provenance"
+    );
+}

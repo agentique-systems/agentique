@@ -2980,7 +2980,7 @@ impl<'m> KerMlQueries<'m> {
                             ResultDomainRule::FeatureValueBinding
                         };
                         let contextual =
-                            if nondefault || (valuation && profile.corrects_result_domains()) {
+                            if valuation && (nondefault || profile.corrects_result_domains()) {
                                 let contextual = graph.contextual(
                                     subject,
                                     expression,
@@ -3008,6 +3008,27 @@ impl<'m> KerMlQueries<'m> {
                                 &proof.canonical_dependencies,
                             );
                         }
+                        // A non-valuation chain has no structural consumer.
+                        // Create it atomically with its binding once the context
+                        // is complete, so a later frontier never has to attach
+                        // ownership to an already published orphan feature.
+                        let mut bind_value =
+                            |graph: &mut Graph<'_>, domain, deps: &BTreeSet<Dependency>| {
+                                let target = contextual.unwrap_or_else(|| {
+                                    let result =
+                                        graph.contextual(subject, expression, raw, rule, deps);
+                                    let feature = result.feature;
+                                    contextual_results.push(result);
+                                    feature
+                                });
+                                graph.binding(
+                                    subject,
+                                    [subject, target],
+                                    domain,
+                                    ImpliedBindingRole::FeatureValue,
+                                    deps,
+                                )
+                            };
                         if nondefault {
                             if stratum == ResultStructureStratum::Structural {
                                 // The contextual chain and valuation Subsetting
@@ -3024,11 +3045,9 @@ impl<'m> KerMlQueries<'m> {
                                     proof.merge(start);
                                     if let (Some(that), Some(start)) = anchors {
                                         let context = graph.initial_value_context(that, start);
-                                        production.value.push(graph.binding(
-                                            subject,
-                                            [subject, contextual.expect("value chain")],
+                                        production.value.push(bind_value(
+                                            &mut graph,
                                             Some(context),
-                                            ImpliedBindingRole::FeatureValue,
                                             &proof.canonical_dependencies,
                                         ));
                                     }
@@ -3058,11 +3077,9 @@ impl<'m> KerMlQueries<'m> {
                                         if proof.completeness == Completeness::Complete {
                                             let context =
                                                 graph.initial_value_context(*that, *start);
-                                            production.value.push(graph.binding(
-                                                subject,
-                                                [subject, contextual.expect("value chain")],
+                                            production.value.push(bind_value(
+                                                &mut graph,
                                                 Some(context),
-                                                ImpliedBindingRole::FeatureValue,
                                                 &proof.canonical_dependencies,
                                             ));
                                         }
@@ -3079,11 +3096,9 @@ impl<'m> KerMlQueries<'m> {
                                 } else if domains.value.len() <= 1
                                     && domains.completeness == Completeness::Complete
                                 {
-                                    production.value.push(graph.binding(
-                                        subject,
-                                        [subject, contextual.expect("value chain")],
+                                    production.value.push(bind_value(
+                                        &mut graph,
                                         domains.value.first().copied(),
-                                        ImpliedBindingRole::FeatureValue,
                                         &proof.canonical_dependencies,
                                     ));
                                 } else {

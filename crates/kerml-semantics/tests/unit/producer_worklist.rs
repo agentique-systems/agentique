@@ -1265,42 +1265,47 @@ fn status_queries_preserve_reference_values_completeness_and_diagnostics() {
 
 #[test]
 fn worklist_matches_fullscan_for_reference_expression_and_feature_values() {
-    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
-    let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
-    let mut f = Fixture {
-        changes: base.change_set(),
-        base,
-        owned: BTreeMap::new(),
-    };
-    f.create(1, c::FUNCTION);
-    f.create(2, c::FEATURE_REFERENCE_EXPRESSION);
-    for n in [3, 4, 5, 6] {
-        f.create(n, c::FEATURE);
+    for directed in [false, true] {
+        let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+        let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+        let mut f = Fixture {
+            changes: base.change_set(),
+            base,
+            owned: BTreeMap::new(),
+        };
+        f.create(1, c::FUNCTION);
+        f.create(2, c::FEATURE_REFERENCE_EXPRESSION);
+        for n in [3, 4, 5, 6] {
+            f.create(n, c::FEATURE);
+        }
+        member(&mut f, 1, 2, 101, c::RESULT_EXPRESSION_MEMBERSHIP);
+        member(&mut f, 2, 3, 102, c::RETURN_PARAMETER_MEMBERSHIP);
+        member(&mut f, 1, 4, 103, c::FEATURE_MEMBERSHIP);
+        member(&mut f, 1, 5, 104, c::RETURN_PARAMETER_MEMBERSHIP);
+        member(&mut f, 1, 6, 105, c::FEATURE_MEMBERSHIP);
+        if directed {
+            f.enumeration(6, p::FEATURE_DIRECTION, "in");
+        }
+        f.enumeration(3, p::FEATURE_DIRECTION, "out");
+        f.enumeration(5, p::FEATURE_DIRECTION, "out");
+        relation(
+            &mut f,
+            2,
+            4,
+            106,
+            c::MEMBERSHIP,
+            p::MEMBERSHIP_MEMBER_ELEMENT,
+        );
+        type_featuring(&mut f, 2, 1, 107);
+        f.create(7, c::EXPRESSION);
+        f.create(8, c::FEATURE);
+        f.enumeration(8, p::FEATURE_DIRECTION, "out");
+        member(&mut f, 7, 8, 108, c::RETURN_PARAMETER_MEMBERSHIP);
+        member(&mut f, 6, 7, 109, c::FEATURE_VALUE);
+        f.value(109, p::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(false));
+        f.value(109, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
+        permutations(&f.finish(), None, None);
     }
-    member(&mut f, 1, 2, 101, c::RESULT_EXPRESSION_MEMBERSHIP);
-    member(&mut f, 2, 3, 102, c::RETURN_PARAMETER_MEMBERSHIP);
-    member(&mut f, 1, 4, 103, c::FEATURE_MEMBERSHIP);
-    member(&mut f, 1, 5, 104, c::RETURN_PARAMETER_MEMBERSHIP);
-    member(&mut f, 1, 6, 105, c::FEATURE_MEMBERSHIP);
-    f.enumeration(3, p::FEATURE_DIRECTION, "out");
-    f.enumeration(5, p::FEATURE_DIRECTION, "out");
-    relation(
-        &mut f,
-        2,
-        4,
-        106,
-        c::MEMBERSHIP,
-        p::MEMBERSHIP_MEMBER_ELEMENT,
-    );
-    type_featuring(&mut f, 2, 1, 107);
-    f.create(7, c::EXPRESSION);
-    f.create(8, c::FEATURE);
-    f.enumeration(8, p::FEATURE_DIRECTION, "out");
-    member(&mut f, 7, 8, 108, c::RETURN_PARAMETER_MEMBERSHIP);
-    member(&mut f, 6, 7, 109, c::FEATURE_VALUE);
-    f.value(109, p::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(false));
-    f.value(109, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
-    permutations(&f.finish(), None, None);
 }
 
 #[test]
