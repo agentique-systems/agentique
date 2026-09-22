@@ -448,11 +448,7 @@ fn prepare_systems_library_scope(
                         &mut batch_progress,
                         &mut producer_progress,
                     )
-                    .map_err(|error| {
-                        LibraryLoadError::Interpretation(format!(
-                            "Combined Systems construction producers: {error}"
-                        ))
-                    })?;
+                    .map_err(LibraryLoadError::ProducerClosure)?;
                     production = Some(SystemsConstructionProduction {
                         final_predicates,
                         completeness: closure.completeness,

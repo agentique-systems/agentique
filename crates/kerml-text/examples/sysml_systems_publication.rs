@@ -135,8 +135,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &json!({
                     "format":"agq-sysml-systems-publication-audit/1",
                     "sysml_profile":SysmlSyntaxProfile::OperationalV2.id(),
+                    "scope":paths,
                     "accepted_kerml_digest":accepted.semantic_digest(),
-                    "publication_accepted":false,"preparation_error":error.to_string(),
+                    "publication_attempted":false,"publication_accepted":false,
+                    "preparation_error":error.to_string(),
                     "last_reference_round":last_reference_round,"last_producer_stage":last_producer_stage,
                     "elapsed_seconds":started.elapsed().as_secs_f64()
                 }),

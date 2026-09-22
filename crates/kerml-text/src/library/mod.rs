@@ -251,6 +251,8 @@ pub enum LibraryLoadError {
     Syntax(String),
     #[error("unsupported canonical grammar interpretation: {0}")]
     Interpretation(String),
+    #[error("semantic producer closure failed: {0}")]
+    ProducerClosure(#[from] agq_kerml_semantics::PublicationOverlayError),
 }
 
 struct Input {
