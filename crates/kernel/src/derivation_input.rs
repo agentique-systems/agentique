@@ -1,6 +1,38 @@
 //! Shared validation input; construction views are never promoted to snapshots.
 use super::*;
 
+impl ConstructionView {
+    /// Same identity history, canonical declarations and immutable
+    /// dependency. This authorizes strict revalidation, never direct promotion.
+    pub(crate) fn matches_strict_snapshot(&self, strict: &Snapshot) -> bool {
+        let dependency_matches = match (&self.dependency, &strict.inner.dependency) {
+            (None, None) => true,
+            (Some(candidate), Some(accepted)) => Arc::ptr_eq(candidate, accepted),
+            _ => false,
+        };
+        let candidate = self.model();
+        let accepted = strict.model();
+        let registry_matches = Arc::ptr_eq(&candidate.registry, &accepted.registry)
+            || (candidate
+                .registry
+                .require_extension_of(&accepted.registry)
+                .is_ok()
+                && accepted
+                    .registry
+                    .require_extension_of(&candidate.registry)
+                    .is_ok());
+        self.used_ids == strict.inner.used_ids
+            && self.used_links == strict.inner.used_links
+            && dependency_matches
+            && registry_matches
+            && candidate.records == accepted.records
+            && candidate.links == accepted.links
+            && candidate.derived_navigation == accepted.derived_navigation
+            && candidate.statuses == accepted.statuses
+            && candidate.searches == accepted.searches
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) enum DerivationInput {
     Strict(Snapshot),

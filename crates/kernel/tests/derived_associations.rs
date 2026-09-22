@@ -70,6 +70,54 @@ fn ends(a: ElementId, b: ElementId) -> BTreeMap<PropertyId, ElementId> {
 }
 
 #[test]
+fn strict_construction_revalidation_preserves_derived_occurrences_and_rejects_changed_declarations()
+{
+    let base = snapshot(false, false, None);
+    let declared_link = AssociationOccurrenceId::from_u128(19);
+    let mut changes = base.change_set();
+    changes.link(
+        declared_link,
+        A,
+        ends(ENGINE, VEHICLE),
+        BTreeMap::new(),
+        authored(),
+    );
+    let declared = base.apply(&changes).unwrap();
+    let candidate = Arc::new(base.preview(&changes).unwrap());
+    let mut builder = ConstructionDerivationBuilder::for_construction(candidate);
+    let participants = ends(ENGINE, ENGINE_USE);
+    let generated_link = key(42).association_occurrence_id(A, &participants);
+    builder.association_occurrence(key(42), A, participants, BTreeMap::new(), BTreeSet::new());
+    let overlay = builder.build().unwrap();
+    let mut removal = declared.change_set();
+    removal.unlink(declared_link);
+    let changed = declared.apply(&removal).unwrap();
+    assert!(matches!(
+        overlay.clone().revalidate(changed),
+        Err(DerivationError::InputContextMismatch)
+    ));
+    let strict = overlay.clone().revalidate(declared).unwrap();
+    assert_eq!(
+        strict.model().association_occurrences().collect::<Vec<_>>(),
+        overlay
+            .model()
+            .association_occurrences()
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        strict.explain(FactKey::AssociationOccurrence(generated_link)),
+        overlay.explain(FactKey::AssociationOccurrence(generated_link))
+    );
+    assert!(
+        strict
+            .declared()
+            .model()
+            .association_occurrence(generated_link)
+            .is_none()
+    );
+}
+
+#[test]
 fn identity_uses_rule_subject_role_association_and_oriented_endpoints() {
     let participants = ends(ENGINE, VEHICLE);
     let id = key(1).association_occurrence_id(A, &participants);

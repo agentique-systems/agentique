@@ -4,7 +4,7 @@ use crate::{ConstructionObligation, ConstructionView};
 
 /// Immutable derivation over an unpublished declared input. Missing lower bounds
 /// remain obligations, even when other semantic facts are available. There is no
-/// conversion to a `Snapshot` or a strict `DerivedOverlay`.
+/// unchecked conversion to a `Snapshot` or a strict `DerivedOverlay`.
 ///
 /// ```compile_fail
 /// use agq_kernel::derived::{ConstructionOverlay, DerivedOverlay};
@@ -49,6 +49,70 @@ impl ConstructionOverlay {
     /// Diagnostic work counters, never a publication or completeness certificate.
     pub fn build_metrics(&self) -> &DerivationBuildMetrics {
         &self.inner.build_metrics
+    }
+    /// Revalidate the complete graph against an independently committed strict
+    /// snapshot of the exact original declarations and reserved identity history.
+    /// A fresh revision label is permitted only after that equivalence check.
+    ///
+    /// Every structural bound and protected ownership constraint is checked
+    /// again, as are every proof dependency, computation search and proof cycle.
+    /// Derived facts keep their provenance and never enter the declared snapshot.
+    /// The dependency Arc, canonical records and immutable evidence remain shared;
+    /// consuming the last overlay handle also transfers its owned index maps.
+    ///
+    /// This performs no language-rule evaluation and confers no semantic
+    /// completeness or publication acceptance. Outstanding structural obligations
+    /// are rejected by strict validation. Different declarations, registry,
+    /// reserved identities or dependency identity cannot be substituted.
+    pub fn revalidate(self, declared: Snapshot) -> Result<DerivedOverlay, DerivationError> {
+        if !self.declared().matches_strict_snapshot(&declared) {
+            return Err(DerivationError::InputContextMismatch);
+        }
+        // The exact-input comparison is the sole bridge between construction
+        // and strict builder inputs. The ordinary builder then rechecks the full
+        // model using strict multiplicities, never the construction deficit mode.
+        let mut builder = DerivationBuilder::new(declared);
+        builder.previous = Some(self.inner);
+        let mut strict = builder.build()?;
+        let inner = Arc::get_mut(&mut strict.inner).expect("new unshared strict overlay");
+        let mut checked_proofs = HashSet::new();
+        for (&fact, explanation) in &inner.explanations {
+            let unsuccessful = matches!(fact, FactKey::Property { element, property }
+                if inner.model.statuses.contains_key(&(element, property)));
+            if !checked_proofs.insert((Arc::as_ptr(explanation) as usize, unsuccessful)) {
+                continue;
+            }
+            for &dependency in &explanation.dependencies {
+                inner.build_metrics.dependency_edges_considered += 1;
+                let exists = match dependency {
+                    Dependency::Declared(key) => inner.declared.has_declared_fact(key),
+                    Dependency::Derived(key) => {
+                        if !unsuccessful
+                            && matches!(key, FactKey::Property { element, property }
+                                if inner.model.statuses.contains_key(&(element, property)))
+                        {
+                            return Err(DerivationError::IncompleteDependency(key));
+                        }
+                        inner.explanations.contains_key(&key)
+                    }
+                };
+                if !exists {
+                    return Err(DerivationError::MissingDependency { fact, dependency });
+                }
+            }
+        }
+        for fact in inner.model.searches.keys() {
+            if !inner.explanations.contains_key(fact) {
+                return Err(DerivationError::MissingSearchSubject(*fact));
+            }
+        }
+        let all_facts = inner.explanations.keys().copied().collect();
+        let cycle =
+            cyclic_explanations(&inner.explanations, &inner.evidence_pool, &all_facts, true);
+        if !cycle.is_empty() {
+            return Err(DerivationError::DependencyCycle(cycle));
+        }
+        Ok(strict)
     }
 }
 

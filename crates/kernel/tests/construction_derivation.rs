@@ -283,3 +283,242 @@ fn construction_derivation_cannot_mutate_dependency_slots_or_ownership() {
         ));
     }
 }
+
+#[test]
+fn strict_revalidation_preserves_graph_evidence_searches_and_declared_boundary() {
+    let base = vertical();
+    let changes = base.change_set();
+    let candidate = Arc::new(base.preview(&changes).unwrap());
+    let declared = base.apply(&changes).unwrap();
+    let mut builder = ConstructionDerivationBuilder::for_construction(candidate);
+    let output = key(ENGINE, 41);
+    builder.element(output, FEATURE, [(NAME, text("inferred"))], BTreeSet::new());
+    builder.property(
+        VEHICLE,
+        EFFECTIVE,
+        set_refs(&[output.element_id()]),
+        proof([]),
+    );
+    builder.searches(
+        FactKey::Element(output.element_id()),
+        BTreeSet::from([
+            StructuralSearch::Incoming(ENGINE),
+            StructuralSearch::Element(ElementId::from_u128(999)),
+        ]),
+    );
+    builder
+        .failure(
+            ENGINE,
+            COUNT,
+            ComputationFailure::Incomplete {
+                reason: IncompleteReason::MissingInput,
+                explanation: proof([]),
+                searches: BTreeSet::from([StructuralSearch::Incoming(ENGINE)]),
+            },
+        )
+        .unwrap();
+    let candidate = builder.build().unwrap();
+    let facts: Vec<_> = candidate
+        .facts()
+        .map(|(fact, proof)| (fact, proof.clone()))
+        .collect();
+    let strict = candidate.clone().revalidate(declared.clone()).unwrap();
+    assert_eq!(
+        strict
+            .facts()
+            .map(|(fact, proof)| (fact, proof.clone()))
+            .collect::<Vec<_>>(),
+        facts
+    );
+    for record in candidate.model().elements() {
+        assert!(std::ptr::eq(
+            record,
+            strict.model().element(record.id()).unwrap()
+        ));
+    }
+    assert_eq!(
+        strict.model().association_occurrences().collect::<Vec<_>>(),
+        candidate
+            .model()
+            .association_occurrences()
+            .collect::<Vec<_>>()
+    );
+    for (fact, _) in candidate.model().computation_searches() {
+        assert!(Arc::ptr_eq(
+            candidate
+                .model()
+                .computation_searches_shared(*fact)
+                .unwrap(),
+            strict.model().computation_searches_shared(*fact).unwrap()
+        ));
+    }
+    assert!(
+        strict
+            .declared()
+            .model()
+            .element(output.element_id())
+            .is_none()
+    );
+    assert!(matches!(
+        strict
+            .model()
+            .element(output.element_id())
+            .unwrap()
+            .origin(),
+        Origin::Derived(_)
+    ));
+    assert_eq!(
+        strict.model().property_state(ENGINE, COUNT).unwrap(),
+        candidate.model().property_state(ENGINE, COUNT).unwrap()
+    );
+    assert_eq!(strict.build_metrics().full_model_validations, 1);
+    assert_eq!(strict.build_metrics().new_elements, 0);
+    assert!(strict.build_metrics().dependency_edges_considered > 0);
+    // Equivalent reconstructed declarations may have a different revision label.
+    let reconstructed = declared.apply(&declared.change_set()).unwrap();
+    assert_ne!(declared.revision(), reconstructed.revision());
+    let transferred = candidate.revalidate(reconstructed).unwrap();
+    assert!(transferred.build_metrics().reused_owned_storage);
+}
+
+#[test]
+fn strict_revalidation_rejects_remaining_derived_lower_bounds() {
+    let base = vertical();
+    let changes = base.change_set();
+    let candidate = Arc::new(base.preview(&changes).unwrap());
+    let declared = base.apply(&changes).unwrap();
+    let mut builder = ConstructionDerivationBuilder::for_construction(candidate);
+    builder.element(
+        key(ENGINE, 42),
+        SPECIALIZATION,
+        [(SPECIFIC, scalar_ref(ENGINE))],
+        BTreeSet::new(),
+    );
+    let overlay = builder.build().unwrap();
+    assert_eq!(overlay.obligations().len(), 1);
+    assert!(matches!(
+        overlay.revalidate(declared),
+        Err(DerivationError::Model(ModelError::Multiplicity {
+            property: GENERAL,
+            actual: 0,
+            ..
+        }))
+    ));
+}
+
+#[test]
+fn strict_revalidation_rejects_changed_declarations_provenance_and_reserved_identities() {
+    let base = vertical();
+    let changes = base.change_set();
+    let candidate = Arc::new(base.preview(&changes).unwrap());
+    let overlay = ConstructionDerivationBuilder::for_construction(candidate)
+        .build()
+        .unwrap();
+    let declared = base.apply(&changes).unwrap();
+    let mut changed_name = declared.change_set();
+    changed_name.set(ENGINE, NAME, text("different"), authored());
+    let changed_name = declared.apply(&changed_name).unwrap();
+    assert!(matches!(
+        overlay.clone().revalidate(changed_name),
+        Err(DerivationError::InputContextMismatch)
+    ));
+    let mut changed_origin = declared.change_set();
+    changed_origin.set(
+        ENGINE,
+        NAME,
+        text("Engine"),
+        DeclaredOrigin::StandardLibrary {
+            library: LibraryId::from_u128(99),
+        },
+    );
+    let changed_origin = declared.apply(&changed_origin).unwrap();
+    assert!(matches!(
+        overlay.clone().revalidate(changed_origin),
+        Err(DerivationError::InputContextMismatch)
+    ));
+    let mut retired = declared.change_set();
+    retired
+        .create(ElementId::from_u128(999), TYPE, authored())
+        .remove(ElementId::from_u128(999));
+    let retired = declared.apply(&retired).unwrap();
+    assert_eq!(
+        retired.model().elements().collect::<Vec<_>>(),
+        declared.model().elements().collect::<Vec<_>>()
+    );
+    assert!(matches!(
+        overlay.revalidate(retired),
+        Err(DerivationError::InputContextMismatch)
+    ));
+}
+
+#[test]
+fn strict_revalidation_retains_the_exact_protected_dependency_arc() {
+    let dependency = Arc::new(DerivationBuilder::new(vertical()).build().unwrap());
+    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let changes = base.change_set();
+    let candidate = Arc::new(base.preview(&changes).unwrap());
+    let declared = base.apply(&changes).unwrap();
+    let overlay = ConstructionDerivationBuilder::for_construction(candidate)
+        .build()
+        .unwrap();
+    let wrong_dependency = Arc::new((*dependency).clone());
+    let wrong = Snapshot::with_immutable_dependency(wrong_dependency);
+    assert!(matches!(
+        overlay.clone().revalidate(wrong),
+        Err(DerivationError::InputContextMismatch)
+    ));
+    let strict = overlay.revalidate(declared).unwrap();
+    assert!(Arc::ptr_eq(
+        strict.declared().immutable_dependency().unwrap(),
+        &dependency
+    ));
+    for record in dependency.model().elements() {
+        assert!(std::ptr::eq(
+            record,
+            strict.model().element(record.id()).unwrap()
+        ));
+    }
+}
+
+#[test]
+fn strict_revalidation_rejects_registry_changes_even_with_equal_declared_records() {
+    let base = vertical();
+    let changes = base.change_set();
+    let candidate = Arc::new(base.preview(&changes).unwrap());
+    let overlay = ConstructionDerivationBuilder::for_construction(candidate)
+        .build()
+        .unwrap();
+    let (mut classes, properties) = descriptors();
+    classes
+        .iter_mut()
+        .find(|class| class.id == TYPE)
+        .unwrap()
+        .name = "ChangedTypeContract".into();
+    let registry = Arc::new(
+        agq_kernel::metamodel::MetamodelRegistry::new([model_descriptor()], classes, properties)
+            .unwrap(),
+    );
+    let other = Snapshot::new(registry);
+    let mut changes = other.change_set();
+    for record in base.model().elements() {
+        let Origin::Declared(origin) = record.origin() else {
+            unreachable!()
+        };
+        changes.create(record.id(), record.metaclass(), origin.clone());
+        for (property, slot) in record.slots() {
+            let Origin::Declared(origin) = slot.origin() else {
+                unreachable!()
+            };
+            changes.set(record.id(), property, slot.value().clone(), origin.clone());
+        }
+    }
+    let other = other.apply(&changes).unwrap();
+    assert_eq!(
+        base.model().elements().collect::<Vec<_>>(),
+        other.model().elements().collect::<Vec<_>>()
+    );
+    assert!(matches!(
+        overlay.revalidate(other),
+        Err(DerivationError::InputContextMismatch)
+    ));
+}
