@@ -1,0 +1,63 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "selected-ownership-closure-review",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_closure_tests",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f6eaac7a515685f1d6457f585be57fd59a569ec4",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "6d96f6bfcb7389610064442474bddbe67e1b8a30cb26bef8818aecd1ea08a907",
+      "duration_seconds": 39.27,
+      "output": "verification/generated/language-stability-bridge/selected-ownership-closure-review.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "selected-ownership-unnamed-usage-review",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "unnamed_constraint_and_connection_usages_close_under_occurrence_owner",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f6eaac7a515685f1d6457f585be57fd59a569ec4",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "06c344d64ee7acd9cd8cb8b21fb380c019eb0132089e2d49542e82d9290a1530",
+      "duration_seconds": 38.83,
+      "output": "verification/generated/language-stability-bridge/selected-ownership-unnamed-usage-review.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    }
+  ]
+}
