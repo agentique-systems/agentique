@@ -81,14 +81,18 @@ fn composed_cycle_with_fully_owned_positions_keeps_exact_order_and_evidence() {
                 }));
             }
             for namespace in [1, 2, 3] {
-                assert!(
-                    answer
-                        .search_dependencies
-                        .contains(&SearchDependency::PropertySet {
-                            element: id(namespace),
-                            property: p::ELEMENT_OWNED_RELATIONSHIP,
-                        })
-                );
+                assert!(answer.search_dependencies.contains(
+                    &SearchDependency::OwnedRelationships {
+                        owner: id(namespace),
+                        class: c::SPECIALIZATION,
+                    }
+                ));
+                assert!(answer.search_dependencies.contains(
+                    &SearchDependency::StructuralFeaturePopulation {
+                        owner: id(namespace),
+                        kind: FeaturePopulationKind::End,
+                    }
+                ));
             }
         }
         // Cyclic specializations imply reciprocal positional redefinitions;
