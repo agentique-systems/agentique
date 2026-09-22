@@ -11,6 +11,10 @@ Canonical kernel searches preserve previously conflated dependencies:
   population, including relevant relationships whose source endpoint is pending.
 - `ProducerClosure { subject, requirement }` is a reopenable semantic dependency.
   The requirement is a versioned opaque language contract, not a model Element.
+- `OwnedMemberProjection { owner, contract }` retains a versioned opaque direct
+  member projection. The language recognizes Parameter/End/Result population
+  contracts; the kernel contains no language enum. Canonical carrier facts remain
+  separate proof support. Unknown contract versions stay conservative/global.
 
 The kernel closure search deliberately contains no certificate digest. Exact
 current certificates remain shared query-context sidecars. Language
@@ -28,7 +32,7 @@ query evidence remains distinct. Ordinary revision invalidation remains global
 for a closure boundary and bounded by the source for source-role searches.
 
 Existing canonical digest tags and archive encodings are unchanged. New search
-variants append tags 6/7/8/9; accepted KerML Operational v9 restoration stays pinned.
+variants append tags 6/7/8/9/10; accepted KerML Operational v9 restoration stays pinned.
 Archive roundtrip retains typed searches, proof sharing and deterministic bytes.
 
 Verification uses the isolated `target/foundation-evidence` directory with
@@ -54,3 +58,32 @@ Development fixture correction: adding a global certificate dependency to an
 existing explicitly bounded-read fixture correctly failed its non-global
 assertion. Certificate transport now has a separate global-invalidation test;
 the bounded fixture continues to test only bounded reads.
+
+The member projection transport (`26545ec`, `36f5d80`) was integrated locally
+with the causal matcher (`5efd1f7`) and positional query patch (`e194d97`). Ordinary
+read invalidation remains owner-bounded for known projections; shared persisted
+reads preserve that boundary. Distinct owner/contract combinations change the
+semantic digest, and unknown projections survive neutral archive roundtrip.
+
+Additional integrated verification, all exit 0:
+
+- `cargo test --locked --offline -p agq-kerml-semantics --lib`:
+  103 passed; two existing explicit scale probes ignored. The automatic compact
+  certificate fixture for 60,000 subjects passed.
+- `cargo test --locked --offline -p agq-kerml-semantics --test foundation`:
+  29 passed, including proof consistency and malformed-membership behavior.
+- `cargo test --locked --offline -p agq-sysml-semantics --lib transition_tests`:
+  six passed, including owned versus inherited inputs and pending ancestor reads.
+- `cargo test --locked --offline -p agq-kernel --test archive`: six passed on
+  the transport patch, including opaque projection storage and shared dependency
+  preservation.
+- `cargo clippy --locked --offline -p agq-kernel -p agq-kerml-semantics -p agq-sysml-semantics -p agq-kerml-text --all-targets -- -D warnings`:
+  no warnings.
+- `cargo doc --locked --offline --no-deps -p agq-kernel -p agq-kerml-semantics -p agq-sysml-semantics -p agq-kerml-text`, with `RUSTDOCFLAGS=-D warnings`:
+  all four public crates documented successfully.
+
+Independent query review confirmed retained canonical order, endpoint checks,
+and carrier facts. It identified that Result/Parameter membership-class filtering
+should precede irrelevant endpoint validation; the query owner handles that
+follow-up separately. These results do not claim Actions slice closure or Systems
+publication acceptance.
