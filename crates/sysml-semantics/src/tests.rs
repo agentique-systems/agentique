@@ -73,6 +73,16 @@ impl Fixture {
                         .literals
                         .iter()
                         .find(|(_, name)| name.as_str() == "public")
+                        .or_else(|| {
+                            self.base
+                                .model()
+                                .registry()
+                                .enumeration(domain)
+                                .unwrap()
+                                .literals
+                                .iter()
+                                .next()
+                        })
                         .unwrap()
                         .0,
                 ),

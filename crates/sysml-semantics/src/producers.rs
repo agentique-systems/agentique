@@ -90,6 +90,7 @@ enum Target {
     Sysml(R),
     KerMl(StandardRole),
     Suboccurrences,
+    TimeEnclosedOccurrences,
     PublishedSubitem,
     MissingViewpoint,
     MissingViewpoints,
@@ -190,60 +191,146 @@ pub fn plan_sysml_producers(
         plan.results.push(result);
     }
     if evaluator.is(subject, sc::ACTION_USAGE) {
-        let mut result = evaluator.result(subject, "checkActionUsageSubactionSpecialization");
-        if evaluator.boolean(&mut result.evidence, subject, kp::FEATURE_IS_COMPOSITE) == Some(true)
-        {
-            let owner = queries.owning_type(subject);
-            let owner_id = owner.value;
+        let predicate = evaluator.subaction(subject);
+        for &(class, rule, target) in SUBACTION_RULES {
+            if !evaluator.is(subject, class) {
+                continue;
+            }
+            let mut result = evaluator.result(subject, rule);
             result
                 .evidence
-                .merge_evidence(owner)
+                .merge_evidence(predicate.clone())
                 .expect("same producer context");
-            if let Some(owner) = owner_id {
+            if predicate.value {
+                result = evaluator.specialize(result, subject, target);
+            }
+            plan.results.push(result);
+        }
+    }
+    if evaluator.is(subject, sc::ACCEPT_ACTION_USAGE) {
+        let trigger = evaluator.trigger_action(subject);
+        let mut result = evaluator.result(
+            subject,
+            if trigger.value {
+                "checkAcceptActionUsageTriggerActionSpecialization"
+            } else {
+                "checkAcceptActionUsageSpecialization"
+            },
+        );
+        result
+            .evidence
+            .merge_evidence(trigger.clone())
+            .expect("same producer context");
+        result = evaluator.specialize(
+            result,
+            subject,
+            Target::Sysml(if trigger.value {
+                R::TransitionAccepter
+            } else {
+                R::AcceptActions
+            }),
+        );
+        plan.results.push(result);
+        let mut subaction =
+            evaluator.result(subject, "checkAcceptActionUsageSubactionSpecialization");
+        subaction
+            .evidence
+            .merge_evidence(trigger.clone())
+            .expect("same producer context");
+        if !trigger.value {
+            let predicate = evaluator.subaction(subject);
+            let applicable = predicate.value;
+            subaction
+                .evidence
+                .merge_evidence(predicate)
+                .expect("same producer context");
+            if applicable {
+                subaction =
+                    evaluator.specialize(subaction, subject, Target::Sysml(R::AcceptSubactions));
+            }
+        }
+        plan.results.push(subaction);
+    }
+    if evaluator.is(subject, sc::STATE_USAGE) {
+        for (parallel, rule, target) in [
+            (true, "checkStateUsageSubstateSpecialization", R::Substates),
+            (
+                false,
+                "checkStateUsageExclusiveStateSpecialization",
+                R::ExclusiveStates,
+            ),
+        ] {
+            let mut result = evaluator.result(subject, rule);
+            let predicate = evaluator.substate(subject, parallel);
+            let applicable = predicate.value;
+            result
+                .evidence
+                .merge_evidence(predicate)
+                .expect("same producer context");
+            if applicable {
+                result = evaluator.specialize(result, subject, Target::Sysml(target));
+            }
+            plan.results.push(result);
+        }
+    }
+    if evaluator.is(subject, sc::TRANSITION_USAGE) {
+        let mut source = None;
+        let mut premise = evaluator
+            .result(subject, "transitionSpecializationAntecedent")
+            .evidence;
+        if evaluator.boolean(&mut premise, subject, kp::FEATURE_IS_COMPOSITE) == Some(true) {
+            let source_query = evaluator.transition_source(subject);
+            source = source_query.value;
+            premise
+                .merge_evidence(source_query)
+                .expect("same producer context");
+        }
+        for (state, classes, rule, target) in [
+            (
+                true,
+                [sc::STATE_DEFINITION, sc::STATE_USAGE],
+                "checkTransitionUsageStateSpecialization",
+                R::StateTransitions,
+            ),
+            (
+                false,
+                [sc::ACTION_DEFINITION, sc::ACTION_USAGE],
+                "checkTransitionUsageActionSpecialization",
+                R::DecisionTransitions,
+            ),
+        ] {
+            let mut result = evaluator.result(subject, rule);
+            result
+                .evidence
+                .merge_evidence(premise.clone())
+                .expect("same producer context");
+            if let Some(source) = source {
                 result
                     .evidence
-                    .merge_evidence(queries.canonical_fact_evidence(FactKey::Element(owner)))
+                    .merge_evidence(queries.canonical_fact_evidence(FactKey::Element(source)))
                     .expect("same producer context");
-                if evaluator.is(owner, sc::ACTION_DEFINITION)
-                    || evaluator.is(owner, sc::ACTION_USAGE)
-                {
-                    let membership = queries.owning_relationship(subject);
-                    let membership_id = membership.value;
+                if evaluator.is(source, sc::STATE_USAGE) == state {
+                    let owner = queries.owning_type(subject);
+                    let owner_id = owner.value;
                     result
                         .evidence
-                        .merge_evidence(membership)
+                        .merge_evidence(owner)
                         .expect("same producer context");
-                    let mut applicable = true;
-                    if let Some(membership) = membership_id {
+                    if let Some(owner) = owner_id {
                         result
                             .evidence
                             .merge_evidence(
-                                queries.canonical_fact_evidence(FactKey::Element(membership)),
+                                queries.canonical_fact_evidence(FactKey::Element(owner)),
                             )
                             .expect("same producer context");
-                        if evaluator.is(membership, sc::STATE_SUBACTION_MEMBERSHIP) {
-                            let property = sp::STATE_SUBACTION_MEMBERSHIP_KIND;
-                            result
-                                .evidence
-                                .merge_evidence(queries.canonical_fact_evidence(
-                                    FactKey::Property {
-                                        element: membership,
-                                        property,
-                                    },
-                                ))
-                                .expect("same producer context");
-                            applicable =
-                                enumeration_is(queries.model(), membership, property, "do");
+                        if classes.iter().any(|class| evaluator.is(owner, *class)) {
+                            result = evaluator.specialize(result, subject, Target::Sysml(target));
                         }
-                    }
-                    if applicable {
-                        result =
-                            evaluator.specialize(result, subject, Target::Sysml(R::Subactions));
                     }
                 }
             }
+            plan.results.push(result);
         }
-        plan.results.push(result);
     }
     if evaluator.is(subject, sc::OCCURRENCE_USAGE) {
         let mut result =
@@ -284,16 +371,43 @@ pub fn plan_sysml_producers(
         }
         plan.results.push(result);
     }
-    if evaluator.is(subject, sc::CONNECTION_DEFINITION)
-        || evaluator.is(subject, sc::CONNECTION_USAGE)
-    {
-        let definition = evaluator.is(subject, sc::CONNECTION_DEFINITION);
-        let rule = if definition {
-            "checkConnectionDefinitionBinarySpecialization"
-        } else {
-            "checkConnectionUsageBinarySpecialization"
-        };
-        let mut result = evaluator.result(subject, rule);
+    for (
+        definition_class,
+        usage_class,
+        definition_rule,
+        usage_rule,
+        definition_target,
+        usage_target,
+    ) in [
+        (
+            sc::CONNECTION_DEFINITION,
+            sc::CONNECTION_USAGE,
+            "checkConnectionDefinitionBinarySpecialization",
+            "checkConnectionUsageBinarySpecialization",
+            Target::MissingBinaryConnections,
+            Target::Sysml(R::BinaryConnections),
+        ),
+        (
+            sc::INTERFACE_DEFINITION,
+            sc::INTERFACE_USAGE,
+            "checkInterfaceDefinitionBinarySpecialization",
+            "checkInterfaceUsageBinarySpecialization",
+            Target::Sysml(R::BinaryInterface),
+            Target::Sysml(R::BinaryInterfaces),
+        ),
+    ] {
+        if !evaluator.is(subject, definition_class) && !evaluator.is(subject, usage_class) {
+            continue;
+        }
+        let definition = evaluator.is(subject, definition_class);
+        let mut result = evaluator.result(
+            subject,
+            if definition {
+                definition_rule
+            } else {
+                usage_rule
+            },
+        );
         let features = queries.direct_features(subject);
         let mut ends = 0;
         for &feature in &features.value {
@@ -310,9 +424,9 @@ pub fn plan_sysml_producers(
                 result,
                 subject,
                 if definition {
-                    Target::MissingBinaryConnections
+                    definition_target
                 } else {
-                    Target::Sysml(R::BinaryConnections)
+                    usage_target
                 },
             );
         }
@@ -378,6 +492,21 @@ pub fn plan_sysml_producers(
 }
 
 const BASE_RULES: &[(MetaclassId, &str, Target)] = &[
+    (
+        sc::ASSIGNMENT_ACTION_USAGE,
+        "checkAssignmentActionUsageSpecialization",
+        Target::Sysml(R::AssignmentActions),
+    ),
+    (
+        sc::WHILE_LOOP_ACTION_USAGE,
+        "checkWhileLoopActionUsageSpecialization",
+        Target::Sysml(R::WhileLoopActions),
+    ),
+    (
+        sc::TRANSITION_USAGE,
+        "checkTransitionUsageSpecialization",
+        Target::Sysml(R::TransitionActions),
+    ),
     (
         sc::ATTRIBUTE_USAGE,
         "checkAttributeUsageSpecialization",
@@ -606,6 +735,12 @@ const BASE_RULES: &[(MetaclassId, &str, Target)] = &[
 ];
 const COMPOSITE_RULES: &[(MetaclassId, &[MetaclassId], &str, Target)] = &[
     (
+        sc::STATE_USAGE,
+        &[sc::PART_DEFINITION, sc::PART_USAGE],
+        "checkStateUsageOwnedStateSpecialization",
+        Target::Sysml(R::OwnedStates),
+    ),
+    (
         sc::ITEM_USAGE,
         &[sc::ITEM_DEFINITION, sc::ITEM_USAGE],
         "checkItemUsageSubitemSpecialization",
@@ -632,6 +767,18 @@ const COMPOSITE_RULES: &[(MetaclassId, &[MetaclassId], &str, Target)] = &[
 ];
 const OWNED_RULES: &[(MetaclassId, &[MetaclassId], &str, Target)] = &[
     (
+        sc::PERFORM_ACTION_USAGE,
+        &[sc::PART_DEFINITION, sc::PART_USAGE],
+        "checkPerformActionUsageSpecialization",
+        Target::Sysml(R::PerformedActions),
+    ),
+    (
+        sc::EVENT_OCCURRENCE_USAGE,
+        &[sc::OCCURRENCE_DEFINITION, sc::OCCURRENCE_USAGE],
+        "checkEventOccurrenceUsageSpecialization",
+        Target::TimeEnclosedOccurrences,
+    ),
+    (
         sc::PORT_USAGE,
         &[sc::PART_DEFINITION, sc::PART_USAGE],
         "checkPortUsageOwnedPortSpecialization",
@@ -644,6 +791,23 @@ const OWNED_RULES: &[(MetaclassId, &[MetaclassId], &str, Target)] = &[
         Target::Sysml(R::CheckedConstraints),
     ),
 ];
+const SUBACTION_RULES: &[(MetaclassId, &str, Target)] = &[
+    (
+        sc::ACTION_USAGE,
+        "checkActionUsageSubactionSpecialization",
+        Target::Sysml(R::Subactions),
+    ),
+    (
+        sc::ASSIGNMENT_ACTION_USAGE,
+        "checkAssignmentActionUsageSubactionSpecialization",
+        Target::Sysml(R::Assignments),
+    ),
+    (
+        sc::WHILE_LOOP_ACTION_USAGE,
+        "checkWhileLoopActionUsageSubactionSpecialization",
+        Target::Sysml(R::WhileLoops),
+    ),
+];
 
 struct Evaluator<'q, 'm> {
     queries: &'q KerMlQueries<'m>,
@@ -652,6 +816,193 @@ struct Evaluator<'q, 'm> {
     roots: &'q [ElementId],
 }
 impl Evaluator<'_, '_> {
+    fn subaction(&self, subject: ElementId) -> QueryResult<bool> {
+        let mut result = self.result(subject, "isSubactionUsage").evidence;
+        let mut applicable = false;
+        if self.boolean(&mut result, subject, kp::FEATURE_IS_COMPOSITE) == Some(true) {
+            let owner = self.queries.owning_type(subject);
+            let owner_id = owner.value;
+            result.merge_evidence(owner).expect("same producer context");
+            if let Some(owner) = owner_id {
+                result
+                    .merge_evidence(
+                        self.queries
+                            .canonical_fact_evidence(FactKey::Element(owner)),
+                    )
+                    .expect("same producer context");
+                if self.is(owner, sc::ACTION_DEFINITION) || self.is(owner, sc::ACTION_USAGE) {
+                    let membership = self.queries.owning_relationship(subject);
+                    let membership_id = membership.value;
+                    result
+                        .merge_evidence(membership)
+                        .expect("same producer context");
+                    applicable = true;
+                    if let Some(membership) = membership_id {
+                        result
+                            .merge_evidence(
+                                self.queries
+                                    .canonical_fact_evidence(FactKey::Element(membership)),
+                            )
+                            .expect("same producer context");
+                        if self.is(membership, sc::STATE_SUBACTION_MEMBERSHIP) {
+                            let property = sp::STATE_SUBACTION_MEMBERSHIP_KIND;
+                            result
+                                .merge_evidence(self.queries.canonical_fact_evidence(
+                                    FactKey::Property {
+                                        element: membership,
+                                        property,
+                                    },
+                                ))
+                                .expect("same producer context");
+                            applicable =
+                                enumeration_is(self.queries.model(), membership, property, "do");
+                        }
+                    }
+                }
+            }
+        }
+        result.map(|()| applicable)
+    }
+    fn trigger_action(&self, subject: ElementId) -> QueryResult<bool> {
+        let mut result = self.result(subject, "isTriggerAction").evidence;
+        let owner = self.queries.owning_type(subject);
+        let owner_id = owner.value;
+        result.merge_evidence(owner).expect("same producer context");
+        let mut applicable = false;
+        if let Some(owner) = owner_id {
+            result
+                .merge_evidence(
+                    self.queries
+                        .canonical_fact_evidence(FactKey::Element(owner)),
+                )
+                .expect("same producer context");
+            if self.is(owner, sc::TRANSITION_USAGE) {
+                // deriveTransitionUsageTriggerAction selects exactly owned
+                // TransitionFeatureMemberships of kind trigger whose member is
+                // an AcceptActionUsage. owning_type already proves membership.
+                let membership = self.queries.owning_relationship(subject);
+                let membership_id = membership.value;
+                result
+                    .merge_evidence(membership)
+                    .expect("same producer context");
+                if let Some(membership) = membership_id {
+                    result
+                        .merge_evidence(
+                            self.queries
+                                .canonical_fact_evidence(FactKey::Element(membership)),
+                        )
+                        .expect("same producer context");
+                    if self.is(membership, sc::TRANSITION_FEATURE_MEMBERSHIP) {
+                        let property = sp::TRANSITION_FEATURE_MEMBERSHIP_KIND;
+                        result
+                            .merge_evidence(self.queries.canonical_fact_evidence(
+                                FactKey::Property {
+                                    element: membership,
+                                    property,
+                                },
+                            ))
+                            .expect("same producer context");
+                        applicable =
+                            enumeration_is(self.queries.model(), membership, property, "trigger");
+                    }
+                }
+            }
+        }
+        result.map(|()| applicable)
+    }
+    fn substate(&self, subject: ElementId, parallel: bool) -> QueryResult<bool> {
+        let mut result = self.result(subject, "isSubstateUsage").evidence;
+        let mut applicable = false;
+        if self.boolean(&mut result, subject, kp::FEATURE_IS_COMPOSITE) == Some(true) {
+            let owner = self.queries.owning_type(subject);
+            let owner_id = owner.value;
+            result.merge_evidence(owner).expect("same producer context");
+            if let Some(owner) = owner_id {
+                result
+                    .merge_evidence(
+                        self.queries
+                            .canonical_fact_evidence(FactKey::Element(owner)),
+                    )
+                    .expect("same producer context");
+                let property = if self.is(owner, sc::STATE_DEFINITION) {
+                    Some(sp::STATE_DEFINITION_IS_PARALLEL)
+                } else if self.is(owner, sc::STATE_USAGE) {
+                    Some(sp::STATE_USAGE_IS_PARALLEL)
+                } else {
+                    None
+                };
+                if let Some(property) = property {
+                    applicable = self.boolean(&mut result, owner, property) == Some(parallel);
+                    let membership = self.queries.owning_relationship(subject);
+                    if let Some(membership) = membership.value {
+                        result
+                            .merge_evidence(
+                                self.queries
+                                    .canonical_fact_evidence(FactKey::Element(membership)),
+                            )
+                            .expect("same producer context");
+                        applicable &= !self.is(membership, sc::STATE_SUBACTION_MEMBERSHIP);
+                    }
+                    result
+                        .merge_evidence(membership)
+                        .expect("same producer context");
+                }
+            }
+        }
+        result.map(|()| applicable)
+    }
+    fn transition_source(&self, subject: ElementId) -> QueryResult<Option<ElementId>> {
+        let mut result = self
+            .result(subject, "sourceFeature")
+            .evidence
+            .map(|()| None);
+        let owned = self.queries.owned_relationships(subject);
+        for &membership in &owned.value {
+            result
+                .merge_evidence(
+                    self.queries
+                        .canonical_fact_evidence(FactKey::Element(membership)),
+                )
+                .expect("same producer context");
+            if !self.is(membership, kc::MEMBERSHIP) || self.is(membership, kc::FEATURE_MEMBERSHIP) {
+                continue;
+            }
+            let member = self.queries.member(membership);
+            let member_id = member.value;
+            result
+                .merge_evidence(member)
+                .expect("same producer context");
+            if let Some(member) = member_id {
+                result
+                    .merge_evidence(
+                        self.queries
+                            .canonical_fact_evidence(FactKey::Element(member)),
+                    )
+                    .expect("same producer context");
+                if self.is(member, kc::FEATURE) {
+                    let target = self.queries.feature_target(member);
+                    let target_id = target.value;
+                    result
+                        .merge_evidence(target)
+                        .expect("same producer context");
+                    if let Some(target) = target_id {
+                        result
+                            .merge_evidence(
+                                self.queries
+                                    .canonical_fact_evidence(FactKey::Element(target)),
+                            )
+                            .expect("same producer context");
+                        if self.is(target, sc::ACTION_USAGE) {
+                            result.value = Some(target);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        result.merge_evidence(owned).expect("same producer context");
+        result
+    }
     fn is(&self, subject: ElementId, class: MetaclassId) -> bool {
         self.queries.model().element(subject).is_some_and(|record| {
             self.queries
@@ -772,6 +1123,27 @@ impl Evaluator<'_, '_> {
             Target::Suboccurrences => self
                 .queries
                 .formal_constraint_target(FormalConstraintId::FeatureSuboccurrenceSpecialization),
+            Target::TimeEnclosedOccurrences => {
+                let library = self
+                    .queries
+                    .context()
+                    .standard_bindings
+                    .as_ref()
+                    .map(|bindings| bindings.library());
+                if let Some(library) = library {
+                    self.path(
+                        subject,
+                        &["Occurrences", "Occurrence", "timeEnclosedOccurrences"],
+                        kc::FEATURE,
+                        Some(kc::CLASS),
+                        library,
+                    )
+                } else {
+                    let mut result = self.queries.standard_role(StandardRole::Occurrence);
+                    result.value = None;
+                    result
+                }
+            }
             Target::Sysml(role) => {
                 let (path, class) = role.specification();
                 // Candidate paths are resolved with current negative-read evidence.

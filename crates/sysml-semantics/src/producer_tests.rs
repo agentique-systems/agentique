@@ -508,3 +508,322 @@ fn may_time_vary_exact_antecedents_and_exclusions_use_canonical_identities() {
         );
     }
 }
+
+fn corpus_anchor_fixture() -> (Fixture, BTreeMap<StandardSysmlRole, u128>) {
+    let mut f = Fixture::new();
+    f.origin = DeclaredOrigin::StandardLibrary {
+        library: SystemsLibraryIdentity::LIBRARY,
+    };
+    f.create(1, kc::NAMESPACE, "root");
+    let mut paths: BTreeMap<Vec<String>, u128> = BTreeMap::new();
+    let mut roles = BTreeMap::new();
+    let mut next = 10u128;
+    for role in [
+        StandardSysmlRole::Action,
+        StandardSysmlRole::Actions,
+        StandardSysmlRole::Subactions,
+        StandardSysmlRole::AssignmentActions,
+        StandardSysmlRole::Assignments,
+        StandardSysmlRole::WhileLoopActions,
+        StandardSysmlRole::WhileLoops,
+        StandardSysmlRole::TransitionActions,
+        StandardSysmlRole::TransitionAccepter,
+        StandardSysmlRole::AcceptActions,
+        StandardSysmlRole::AcceptSubactions,
+        StandardSysmlRole::PerformedActions,
+        StandardSysmlRole::StateTransitions,
+        StandardSysmlRole::DecisionTransitions,
+        StandardSysmlRole::StateAction,
+        StandardSysmlRole::StateActions,
+        StandardSysmlRole::Substates,
+        StandardSysmlRole::ExclusiveStates,
+        StandardSysmlRole::OwnedStates,
+        StandardSysmlRole::BinaryInterface,
+        StandardSysmlRole::BinaryInterfaces,
+        StandardSysmlRole::Interfaces,
+        StandardSysmlRole::Interface,
+        StandardSysmlRole::Messages,
+        StandardSysmlRole::Flows,
+    ] {
+        let (segments, expected) = role.specification();
+        let mut owner = 1;
+        for index in 0..segments.len() {
+            let key: Vec<_> = segments[..=index].iter().map(|s| (*s).to_owned()).collect();
+            if let Some(&id) = paths.get(&key) {
+                owner = id;
+                continue;
+            }
+            let class = if index + 1 == segments.len() {
+                expected
+            } else {
+                role.prefix_class(index)
+            };
+            f.create(next, class, segments[index]);
+            f.member(
+                owner,
+                next,
+                next + 10_000,
+                if index > 1 {
+                    kc::FEATURE_MEMBERSHIP
+                } else {
+                    kc::OWNING_MEMBERSHIP
+                },
+            );
+            paths.insert(key, next);
+            owner = next;
+            next += 1;
+        }
+        roles.insert(role, owner);
+    }
+    f.origin = origin();
+    (f, roles)
+}
+
+fn set_enum(f: &mut Fixture, subject: u128, property: PropertyId, name: &str) {
+    let ValueKind::Enumeration(domain) = f
+        .base
+        .model()
+        .registry()
+        .property(property)
+        .unwrap()
+        .value_kind
+    else {
+        panic!("enum property");
+    };
+    let literal = *f
+        .base
+        .model()
+        .registry()
+        .enumeration(domain)
+        .unwrap()
+        .literals
+        .iter()
+        .find(|(_, candidate)| candidate.as_str() == name)
+        .unwrap()
+        .0;
+    f.value(subject, property, Value::Enumeration(literal));
+}
+
+#[test]
+fn corpus_action_bases_and_subactions_follow_metaclasses_and_state_membership_kind() {
+    let (mut f, roles) = corpus_anchor_fixture();
+    f.create(3000, sc::ACTION_DEFINITION, "Owner");
+    for (subject, class) in [
+        (3001, sc::ASSIGNMENT_ACTION_USAGE),
+        (3002, sc::WHILE_LOOP_ACTION_USAGE),
+    ] {
+        f.create(subject, class, "nested");
+        f.value(subject, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+        f.member(3000, subject, subject + 10_000, kc::FEATURE_MEMBERSHIP);
+    }
+    f.create(3003, sc::STATE_DEFINITION, "State");
+    for (subject, kind) in [(3004, "entry"), (3005, "do"), (3006, "exit")] {
+        f.create(subject, sc::PERFORM_ACTION_USAGE, kind);
+        f.value(subject, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+        f.member(
+            3003,
+            subject,
+            subject + 10_000,
+            sc::STATE_SUBACTION_MEMBERSHIP,
+        );
+        set_enum(
+            &mut f,
+            subject + 10_000,
+            agq_sysml::properties::STATE_SUBACTION_MEMBERSHIP_KIND,
+            kind,
+        );
+    }
+    let snapshot = f.finish();
+    let queries = SysmlQueries::new(crate::context::fixture_context(&snapshot, BTreeSet::new()));
+    for (subject, base, base_rule, subset, subset_rule) in [
+        (
+            3001,
+            StandardSysmlRole::AssignmentActions,
+            "checkAssignmentActionUsageSpecialization",
+            StandardSysmlRole::Assignments,
+            "checkAssignmentActionUsageSubactionSpecialization",
+        ),
+        (
+            3002,
+            StandardSysmlRole::WhileLoopActions,
+            "checkWhileLoopActionUsageSpecialization",
+            StandardSysmlRole::WhileLoops,
+            "checkWhileLoopActionUsageSubactionSpecialization",
+        ),
+    ] {
+        let plan = queries.producer_plan(&[id(1)], id(subject));
+        assert_eq!(
+            result(&plan, base_rule).relationships[0].general,
+            id(roles[&base])
+        );
+        assert_eq!(
+            result(&plan, subset_rule).relationships[0].general,
+            id(roles[&subset])
+        );
+    }
+    for subject in 3004..=3006 {
+        let plan = queries.producer_plan(&[id(1)], id(subject));
+        let action = result(&plan, "checkActionUsageSubactionSpecialization");
+        assert_eq!(action.evidence.completeness, Completeness::Complete);
+        assert_eq!(
+            !action.relationships.is_empty(),
+            subject == 3005,
+            "only do is a subaction"
+        );
+    }
+}
+
+#[test]
+fn transition_acceptance_and_source_specialization_use_structural_memberships() {
+    for trigger in [false, true] {
+        let (mut f, roles) = corpus_anchor_fixture();
+        f.create(3000, sc::STATE_DEFINITION, "Owner");
+        f.create(3001, sc::TRANSITION_USAGE, "transition");
+        f.value(3001, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+        f.member(3000, 3001, 13_001, kc::FEATURE_MEMBERSHIP);
+        f.create(3002, sc::STATE_USAGE, "start");
+        f.member(3000, 3002, 13_002, kc::FEATURE_MEMBERSHIP);
+        f.create(14_001, kc::MEMBERSHIP, "source");
+        f.owned
+            .entry(id(3001))
+            .or_default()
+            .push(Value::Reference(id(14_001)));
+        f.value(
+            14_001,
+            kp::MEMBERSHIP_MEMBER_ELEMENT,
+            Value::Reference(id(3002)),
+        );
+        f.create(3003, sc::ACCEPT_ACTION_USAGE, "accept");
+        f.member(3001, 3003, 13_003, sc::TRANSITION_FEATURE_MEMBERSHIP);
+        set_enum(
+            &mut f,
+            13_003,
+            agq_sysml::properties::TRANSITION_FEATURE_MEMBERSHIP_KIND,
+            if trigger { "trigger" } else { "effect" },
+        );
+        let snapshot = f.finish();
+        let queries =
+            SysmlQueries::new(crate::context::fixture_context(&snapshot, BTreeSet::new()));
+        let accept = queries.producer_plan(&[id(1)], id(3003));
+        let (rule, target) = if trigger {
+            (
+                "checkAcceptActionUsageTriggerActionSpecialization",
+                StandardSysmlRole::TransitionAccepter,
+            )
+        } else {
+            (
+                "checkAcceptActionUsageSpecialization",
+                StandardSysmlRole::AcceptActions,
+            )
+        };
+        assert_eq!(
+            result(&accept, rule).relationships[0].general,
+            id(roles[&target])
+        );
+        let transition = queries.producer_plan(&[id(1)], id(3001));
+        assert_eq!(
+            result(&transition, "checkTransitionUsageSpecialization").relationships[0].general,
+            id(roles[&StandardSysmlRole::TransitionActions])
+        );
+        assert_eq!(
+            result(&transition, "checkTransitionUsageStateSpecialization").relationships[0].general,
+            id(roles[&StandardSysmlRole::StateTransitions])
+        );
+        assert!(
+            result(&transition, "checkTransitionUsageActionSpecialization")
+                .relationships
+                .is_empty()
+        );
+    }
+}
+
+#[test]
+fn parallel_and_exclusive_state_antecedents_choose_distinct_canonical_anchors() {
+    for parallel in [false, true] {
+        let (mut f, roles) = corpus_anchor_fixture();
+        f.create(3000, sc::STATE_DEFINITION, "Owner");
+        f.value(
+            3000,
+            agq_sysml::properties::STATE_DEFINITION_IS_PARALLEL,
+            Value::Boolean(parallel),
+        );
+        f.create(3001, sc::STATE_USAGE, "nested");
+        f.value(3001, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+        f.member(3000, 3001, 13_001, kc::FEATURE_MEMBERSHIP);
+        let snapshot = f.finish();
+        let queries =
+            SysmlQueries::new(crate::context::fixture_context(&snapshot, BTreeSet::new()));
+        let plan = queries.producer_plan(&[id(1)], id(3001));
+        let (rule, target, other) = if parallel {
+            (
+                "checkStateUsageSubstateSpecialization",
+                StandardSysmlRole::Substates,
+                "checkStateUsageExclusiveStateSpecialization",
+            )
+        } else {
+            (
+                "checkStateUsageExclusiveStateSpecialization",
+                StandardSysmlRole::ExclusiveStates,
+                "checkStateUsageSubstateSpecialization",
+            )
+        };
+        assert_eq!(
+            result(&plan, rule).relationships[0].general,
+            id(roles[&target])
+        );
+        assert!(result(&plan, other).relationships.is_empty());
+    }
+}
+
+#[test]
+fn interface_and_flow_end_rules_use_only_owned_end_features() {
+    let (mut f, roles) = corpus_anchor_fixture();
+    for (subject, class) in [
+        (3000, sc::INTERFACE_DEFINITION),
+        (3001, sc::INTERFACE_USAGE),
+        (3002, sc::FLOW_USAGE),
+        (3003, sc::FLOW_USAGE),
+    ] {
+        f.create(subject, class, "connector");
+        if subject == 3003 {
+            continue;
+        }
+        for offset in [100, 200] {
+            let end = subject + offset;
+            f.create(end, sc::REFERENCE_USAGE, "end");
+            f.value(end, kp::FEATURE_IS_END, Value::Boolean(true));
+            f.member(subject, end, end + 10_000, kc::END_FEATURE_MEMBERSHIP);
+        }
+    }
+    let snapshot = f.finish();
+    let queries = SysmlQueries::new(crate::context::fixture_context(&snapshot, BTreeSet::new()));
+    for (subject, rule, role) in [
+        (
+            3000,
+            "checkInterfaceDefinitionBinarySpecialization",
+            StandardSysmlRole::BinaryInterface,
+        ),
+        (
+            3001,
+            "checkInterfaceUsageBinarySpecialization",
+            StandardSysmlRole::BinaryInterfaces,
+        ),
+        (
+            3002,
+            "checkFlowUsageFlowSpecialization",
+            StandardSysmlRole::Flows,
+        ),
+    ] {
+        let plan = queries.producer_plan(&[id(1)], id(subject));
+        assert_eq!(
+            result(&plan, rule).relationships[0].general,
+            id(roles[&role])
+        );
+    }
+    let message = queries.producer_plan(&[id(1)], id(3003));
+    assert!(
+        result(&message, "checkFlowUsageFlowSpecialization")
+            .relationships
+            .is_empty()
+    );
+}

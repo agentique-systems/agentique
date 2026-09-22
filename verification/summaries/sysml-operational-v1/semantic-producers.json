@@ -64,5 +64,72 @@
     "Viewpoint/Viewpoints/BinaryConnections formal target discrepancies remain explicit; no unauthorized aliases or corrections"
   ],
   "systems_publication": "not-certified-by-this-summary",
-  "sysml_conformance": "incomplete"
+  "sysml_conformance": "incomplete",
+  "corpus_followup": {
+    "implementation_inputs_sha256": "ae34ce5897564917749324a2bb645cd1b5468278ca1fec606c5a44028b5a89f6",
+    "input_hash_scope": "Sorted crates/sysml-semantics/src/*.rs paths and LF-normalized bytes, NUL-separated",
+    "local_integration_dependencies": [
+      "parser e769525",
+      "lowering c3a59c6",
+      "Lead QueryResult::merge_evidence"
+    ],
+    "corpus_scope": {
+      "documents_constructed": 21,
+      "non_reference_construction_obligations": 0,
+      "relevant_declared_metaclasses": {
+        "AcceptActionUsage": 1,
+        "ActionDefinition": 19,
+        "ActionUsage": 49,
+        "AssignmentActionUsage": 3,
+        "WhileLoopActionUsage": 1,
+        "PerformActionUsage": 4,
+        "TransitionUsage": 1,
+        "StateSubactionMembership": 3,
+        "StateUsage": 8,
+        "StateDefinition": 1,
+        "InterfaceDefinition": 2,
+        "InterfaceUsage": 2,
+        "FlowDefinition": 4,
+        "FlowUsage": 3,
+        "EventOccurrenceUsage": 2
+      }
+    },
+    "verified": [
+      "Specialized assignment and while action base/subaction targets",
+      "Accept transition trigger selects TransitionAction::accepter rather than ordinary accept action bases",
+      "Entry/do/exit membership antecedents: only do receives generic subaction specialization",
+      "Perform action ownership and parallel/exclusive state specialization",
+      "Transition sourceFeature membership traversal and state/decision transition target selection",
+      "Binary interface and flow specialization uses exact owned end cardinality",
+      "Event occurrence time enclosure reuses accepted KerML canonical anchor",
+      "Original Systems sources constructed in an empty-registry fixture; no accepted dependency cache or publication replay"
+    ],
+    "commands": [
+      {
+        "command": "cargo test -p agq-kerml-text all_pinned_systems_documents_construct_with_source_provenance -- --nocapture",
+        "exit": 0,
+        "output": "1 passed; 21 documents constructed; 0 non-reference structural obligations; 4.78s; temporary ignored instrumentation removed"
+      },
+      {
+        "command": "cargo test -p agq-sysml-semantics",
+        "exit": 0,
+        "output": "32 passed; 0 failed; doc-tests 0; test execution 2.62s"
+      },
+      {
+        "command": "cargo clippy -p agq-sysml-semantics --all-targets -- -D warnings",
+        "exit": 0,
+        "output": "Finished dev profile in 0.66s"
+      },
+      {
+        "command": "cargo fmt -p agq-sysml-semantics -- --check",
+        "exit": 0,
+        "output": "No formatting differences"
+      },
+      {
+        "command": "RUSTDOCFLAGS=-D warnings cargo doc -p agq-sysml-semantics --no-deps",
+        "exit": 0,
+        "output": "Generated documentation; finished in 1.60s"
+      }
+    ]
+  }
 }

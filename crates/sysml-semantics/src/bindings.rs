@@ -97,9 +97,25 @@ pub enum StandardSysmlRole {
     ViewpointChecks,
     Rendering,
     Renderings,
+    BinaryInterface,
+    BinaryInterfaces,
+    AssignmentActions,
+    Assignments,
+    WhileLoopActions,
+    WhileLoops,
+    TransitionActions,
+    TransitionAccepter,
+    DecisionTransitions,
+    AcceptActions,
+    AcceptSubactions,
+    PerformedActions,
+    Substates,
+    ExclusiveStates,
+    OwnedStates,
+    StateTransitions,
 }
 impl StandardSysmlRole {
-    pub const ALL: [Self; 53] = [
+    pub const ALL: [Self; 69] = [
         Self::Item,
         Self::Items,
         Self::Subitems,
@@ -153,6 +169,22 @@ impl StandardSysmlRole {
         Self::ViewpointChecks,
         Self::Rendering,
         Self::Renderings,
+        Self::BinaryInterface,
+        Self::BinaryInterfaces,
+        Self::AssignmentActions,
+        Self::Assignments,
+        Self::WhileLoopActions,
+        Self::WhileLoops,
+        Self::TransitionActions,
+        Self::TransitionAccepter,
+        Self::DecisionTransitions,
+        Self::AcceptActions,
+        Self::AcceptSubactions,
+        Self::PerformedActions,
+        Self::Substates,
+        Self::ExclusiveStates,
+        Self::OwnedStates,
+        Self::StateTransitions,
     ];
     pub fn specification(self) -> (&'static [&'static str], MetaclassId) {
         match self {
@@ -235,15 +267,56 @@ impl StandardSysmlRole {
             Self::ViewpointChecks => (&["Views", "viewpointChecks"], sc::VIEWPOINT_USAGE),
             Self::Rendering => (&["Views", "Rendering"], sc::RENDERING_DEFINITION),
             Self::Renderings => (&["Views", "renderings"], sc::RENDERING_USAGE),
+            Self::BinaryInterface => (&["Interfaces", "BinaryInterface"], sc::INTERFACE_DEFINITION),
+            Self::BinaryInterfaces => (&["Interfaces", "binaryInterfaces"], sc::INTERFACE_USAGE),
+            Self::AssignmentActions => (&["Actions", "assignmentActions"], sc::ACTION_USAGE),
+            Self::Assignments => (&["Actions", "Action", "assignments"], sc::ACTION_USAGE),
+            Self::WhileLoopActions => (&["Actions", "whileLoopActions"], sc::ACTION_USAGE),
+            Self::WhileLoops => (&["Actions", "Action", "whileLoops"], sc::ACTION_USAGE),
+            Self::TransitionActions => (&["Actions", "transitionActions"], sc::ACTION_USAGE),
+            Self::TransitionAccepter => (
+                &["Actions", "TransitionAction", "accepter"],
+                sc::ACTION_USAGE,
+            ),
+            Self::DecisionTransitions => (
+                &["Actions", "Action", "decisionTransitions"],
+                sc::ACTION_USAGE,
+            ),
+            Self::AcceptActions => (&["Actions", "acceptActions"], sc::ACTION_USAGE),
+            Self::AcceptSubactions => {
+                (&["Actions", "Action", "acceptSubactions"], sc::ACTION_USAGE)
+            }
+            Self::PerformedActions => (&["Parts", "Part", "performedActions"], sc::ACTION_USAGE),
+            Self::Substates => (&["States", "StateAction", "substates"], sc::ACTION_USAGE),
+            Self::ExclusiveStates => (
+                &["States", "StateAction", "exclusiveStates"],
+                sc::STATE_USAGE,
+            ),
+            Self::OwnedStates => (&["Parts", "Part", "ownedStates"], sc::STATE_USAGE),
+            Self::StateTransitions => (
+                &["States", "StateAction", "stateTransitions"],
+                sc::ACTION_USAGE,
+            ),
         }
     }
     pub(crate) fn prefix_class(self, index: usize) -> MetaclassId {
         if index == 1 {
             match self {
                 Self::Subitems | Self::Subparts | Self::CheckedConstraints => sc::ITEM_DEFINITION,
-                Self::Subactions => sc::ACTION_DEFINITION,
+                Self::Subactions
+                | Self::Assignments
+                | Self::WhileLoops
+                | Self::TransitionAccepter
+                | Self::DecisionTransitions
+                | Self::AcceptSubactions => sc::ACTION_DEFINITION,
                 Self::Subports => sc::PORT_DEFINITION,
-                Self::OwnedActions | Self::OwnedPorts => sc::PART_DEFINITION,
+                Self::OwnedActions
+                | Self::OwnedPorts
+                | Self::PerformedActions
+                | Self::OwnedStates => sc::PART_DEFINITION,
+                Self::Substates | Self::ExclusiveStates | Self::StateTransitions => {
+                    sc::STATE_DEFINITION
+                }
                 _ => kc::LIBRARY_PACKAGE,
             }
         } else {
