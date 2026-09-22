@@ -25,6 +25,13 @@ Completed checks:
 | `cargo clippy -p agq-kerml-semantics --all-targets -- -D warnings` | Exit 0 before the final feature projection change |
 | `cargo test -p agq-kerml-semantics --test ordered_results` | Exit 0; 7 passed, including conditional inherited-result suppression reads |
 | `cargo test -p agq-sysml-semantics` | Exit 0; 51 passed and doc tests passed after expression membership precision |
+| `cargo test -p agq-kerml-semantics --lib variable` | Exit 0; 4 passed after scalar-write target audit |
+| `cargo test -p agq-kerml-semantics --lib feature_values` | Exit 0; 2 passed after scalar-write target audit |
+| `cargo test -p agq-kerml-semantics --test initial_values_v10 --test ordered_results --test positional_publication` | Exit 0; 1 + 7 + 3 passed after scalar-write target audit |
+| `cargo test -p agq-sysml-semantics` | Exit 0; 51 passed again after scalar-write target audit |
+| `cargo fmt --all -- --check` | Exit 0 |
+| `cargo clippy -p agq-kerml-semantics -p agq-sysml-semantics --all-targets -- -D warnings` | Exit 0 |
+| `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps -p agq-kerml-semantics -p agq-sysml-semantics` | Exit 0 |
 
 The failed feature-chain test exposed a real implementation defect in the earlier
 class-filtered lookup. It was fixed in `e0a5f7d`; the assertion was retained.
