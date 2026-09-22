@@ -1,9 +1,9 @@
 //! Streaming, versioned kernel graph archives. Loading proves structural integrity,
 //! never language publication, rule truth, or authority acceptance.
 //!
-//! Archives contain one root declared snapshot and optionally its derived overlay.
-//! Protected dependency histories are intentionally rejected: flattening one would
-//! erase its immutable boundary. Compression and trusted content pins belong to the
+//! Root archives contain one declared snapshot and optionally its derived overlay.
+//! Dependent archives contain only a local delta and pin the separately supplied
+//! immutable dependency. Compression and trusted content pins belong to the
 //! caller. A caller can wrap any `Read`/`Write` in its own compression stream.
 use super::*;
 use crate::derived::{ComputationFailure, DerivedOverlay, IncompleteReason, StructuralSearch};
@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::io::{BufRead, Write};
 
 const FORMAT: &str = "agq-kernel-graph-archive/1";
+const DEPENDENT_FORMAT: &str = "agq-kernel-dependent-graph-archive/1";
 const MAX_LINE_BYTES: u64 = 64 * 1024 * 1024;
 
 /// Serialization, registry identity, or structural reconstruction failed.
@@ -37,6 +38,11 @@ enum Entry {
         format: String,
         registry: [u8; 32],
         overlay: bool,
+    },
+    DependentHeader {
+        format: String,
+        registry: [u8; 32],
+        dependency: [u8; 32],
     },
     Proof(Explanation),
     Search(BTreeSet<StructuralSearch>),
@@ -317,30 +323,67 @@ fn registry_digest(registry: &MetamodelRegistry) -> [u8; 32] {
 
 /// Stream one declared root snapshot. This does not certify language conformance.
 pub fn write_snapshot(snapshot: &Snapshot, writer: impl Write) -> Result<(), ArchiveError> {
-    write(snapshot, None, writer)
+    write(snapshot, None, false, writer)
 }
 /// Stream a declared root snapshot and all derived state, with shared evidence tables.
 pub fn write_overlay(overlay: &DerivedOverlay, writer: impl Write) -> Result<(), ArchiveError> {
-    write(overlay.declared(), Some(overlay), writer)
+    write(overlay.declared(), Some(overlay), false, writer)
+}
+/// Stream only the local graph delta over one exact immutable dependency.
+/// The dependency must have its own root archive; this confers no language seal.
+pub fn write_dependent_overlay(
+    overlay: &DerivedOverlay,
+    writer: impl Write,
+) -> Result<(), ArchiveError> {
+    write(overlay.declared(), Some(overlay), true, writer)
+}
+
+struct ArchiveDigest(Sha256);
+impl Write for ArchiveDigest {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        self.0.update(bytes);
+        Ok(bytes.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+fn dependency_digest(dependency: &DerivedOverlay) -> Result<[u8; 32], ArchiveError> {
+    let mut writer = ArchiveDigest(Sha256::new());
+    write_overlay(dependency, &mut writer)?;
+    Ok(writer.0.finalize().into())
 }
 fn write(
     snapshot: &Snapshot,
     overlay: Option<&DerivedOverlay>,
+    dependent: bool,
     mut writer: impl Write,
 ) -> Result<(), ArchiveError> {
-    if snapshot.immutable_dependency().is_some() || snapshot.model().declared_source.is_some() {
+    let dependency = snapshot.immutable_dependency();
+    if dependent {
+        let dependency = dependency.ok_or(ArchiveError::Invalid("missing immutable dependency"))?;
+        emit(
+            &mut writer,
+            &Entry::DependentHeader {
+                format: DEPENDENT_FORMAT.into(),
+                registry: registry_digest(snapshot.model().registry()),
+                dependency: dependency_digest(dependency)?,
+            },
+        )?;
+    } else if dependency.is_some() || snapshot.model().declared_source.is_some() {
         return Err(ArchiveError::Invalid(
             "protected dependency snapshots require their own archive boundary",
         ));
+    } else {
+        emit(
+            &mut writer,
+            &Entry::Header {
+                format: FORMAT.into(),
+                registry: registry_digest(snapshot.model().registry()),
+                overlay: overlay.is_some(),
+            },
+        )?;
     }
-    emit(
-        &mut writer,
-        &Entry::Header {
-            format: FORMAT.into(),
-            registry: registry_digest(snapshot.model().registry()),
-            overlay: overlay.is_some(),
-        },
-    )?;
     emit(
         &mut writer,
         &Entry::Snapshot {
@@ -351,10 +394,14 @@ fn write(
     )?;
     let mut tables = Tables::new();
     for record in snapshot.model().elements() {
-        tables.record(record, &mut writer)?;
+        if dependency.is_none_or(|d| d.model().element(record.id()).is_none()) {
+            tables.record(record, &mut writer)?;
+        }
     }
     for occurrence in snapshot.model().association_occurrences() {
-        tables.occurrence(occurrence, &mut writer)?;
+        if dependency.is_none_or(|d| d.model().association_occurrence(occurrence.id()).is_none()) {
+            tables.occurrence(occurrence, &mut writer)?;
+        }
     }
     if let Some(overlay) = overlay {
         emit(&mut writer, &Entry::Overlay)?;
@@ -369,6 +416,11 @@ fn write(
             }
         }
         for ((element, property), slot) in overlay.model().derived_navigation_results() {
+            if dependency
+                .is_some_and(|d| d.model().navigation_slot(*element, *property) == Some(slot))
+            {
+                continue;
+            }
             let slot = tables.slot(slot, &mut writer)?;
             emit(
                 &mut writer,
@@ -380,6 +432,11 @@ fn write(
             )?;
         }
         for (&(element, property), failure) in &overlay.model().statuses {
+            if dependency
+                .is_some_and(|d| d.model().statuses.get(&(element, property)) == Some(failure))
+            {
+                continue;
+            }
             let failure = match failure {
                 ComputationFailure::Incomplete {
                     reason,
@@ -410,6 +467,13 @@ fn write(
             )?;
         }
         for (fact, searches) in overlay.model().computation_searches() {
+            if dependency.is_some_and(|d| {
+                d.model()
+                    .computation_searches_shared(*fact)
+                    .is_some_and(|before| before.as_ref() == searches)
+            }) {
+                continue;
+            }
             let table = tables.search(searches, &mut writer)?;
             emit(&mut writer, &Entry::Searches { fact: *fact, table })?;
         }
@@ -516,7 +580,7 @@ pub fn read_snapshot(
     mut reader: impl BufRead,
     registry: Arc<MetamodelRegistry>,
 ) -> Result<Snapshot, ArchiveError> {
-    let (snapshot, overlay) = read(&mut reader, registry)?;
+    let (snapshot, overlay) = read(&mut reader, registry, None)?;
     if overlay.is_some() {
         return Err(ArchiveError::Invalid("expected declared snapshot archive"));
     }
@@ -528,16 +592,27 @@ pub fn read_overlay(
     mut reader: impl BufRead,
     registry: Arc<MetamodelRegistry>,
 ) -> Result<DerivedOverlay, ArchiveError> {
-    let (_, overlay) = read(&mut reader, registry)?;
+    let (_, overlay) = read(&mut reader, registry, None)?;
     overlay.ok_or(ArchiveError::Invalid("expected overlay archive"))
+}
+/// Restore a dependent graph delta while retaining the exact supplied dependency
+/// allocation. The archive pins its bytes and cannot replace protected facts.
+pub fn read_dependent_overlay(
+    mut reader: impl BufRead,
+    registry: Arc<MetamodelRegistry>,
+    dependency: Arc<DerivedOverlay>,
+) -> Result<DerivedOverlay, ArchiveError> {
+    let (_, overlay) = read(&mut reader, registry, Some(dependency))?;
+    overlay.ok_or(ArchiveError::Invalid("expected dependent overlay archive"))
 }
 fn declared_snapshot(
     registry: Arc<MetamodelRegistry>,
     revision: RevisionId,
-    records: BTreeMap<ElementId, Arc<ElementRecord>>,
-    links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    mut records: BTreeMap<ElementId, Arc<ElementRecord>>,
+    mut links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
     used_ids: BTreeSet<ElementId>,
     used_links: BTreeSet<AssociationOccurrenceId>,
+    dependency: Option<Arc<DerivedOverlay>>,
 ) -> Result<Snapshot, ArchiveError> {
     if records.values().any(|r| {
         !matches!(r.origin, Origin::Declared(_))
@@ -570,33 +645,93 @@ fn declared_snapshot(
             }
         }
     }
-    let model = ModelView::build(registry, records, links, BTreeMap::new())?;
-    Ok(Snapshot {
+    let navigation = if let Some(dependency) = &dependency {
+        registry
+            .require_extension_of(dependency.model().registry())
+            .map_err(ModelError::from)?;
+        let base = Snapshot::with_immutable_dependency(dependency.clone());
+        if !base.inner.used_ids.is_subset(&used_ids)
+            || !base.inner.used_links.is_subset(&used_links)
+        {
+            return Err(ArchiveError::Invalid(
+                "missing dependency identity reservation",
+            ));
+        }
+        if records.keys().any(|id| base.has_used(*id))
+            || links.keys().any(|id| base.has_used_occurrence(*id))
+        {
+            return Err(ArchiveError::Invalid("protected dependency identity"));
+        }
+        records.extend(
+            dependency
+                .model()
+                .records
+                .iter()
+                .map(|(&id, record)| (id, record.clone())),
+        );
+        links.extend(
+            dependency
+                .model()
+                .links
+                .iter()
+                .map(|(&id, link)| (id, link.clone())),
+        );
+        dependency.model().derived_navigation.clone()
+    } else {
+        BTreeMap::new()
+    };
+    let mut model = ModelView::build(registry, records, links, navigation)?;
+    if let Some(dependency) = &dependency {
+        model.declared_source = dependency.model().declared_source.clone();
+        model.statuses = dependency.model().statuses.clone();
+        model.searches = dependency.model().searches.clone();
+    }
+    let snapshot = Snapshot {
         inner: Arc::new(SnapshotData {
             revision,
             model,
             used_ids,
             used_links,
-            dependency: None,
+            dependency,
         }),
-    })
+    };
+    snapshot.check_dependency_ownership(snapshot.model())?;
+    Ok(snapshot)
 }
 fn read(
     reader: &mut impl BufRead,
     registry: Arc<MetamodelRegistry>,
+    dependency: Option<Arc<DerivedOverlay>>,
 ) -> Result<(Snapshot, Option<DerivedOverlay>), ArchiveError> {
     let mut line = Vec::new();
-    let Entry::Header {
-        format,
-        registry: expected,
-        overlay: has_overlay,
-    } = next(reader, &mut line)?
-    else {
-        return Err(ArchiveError::Invalid("header"));
+    let has_overlay = match (next(reader, &mut line)?, &dependency) {
+        (
+            Entry::Header {
+                format,
+                registry: expected,
+                overlay,
+            },
+            None,
+        ) if format == FORMAT && expected == registry_digest(&registry) => overlay,
+        (
+            Entry::DependentHeader {
+                format,
+                registry: expected,
+                dependency: digest,
+            },
+            Some(dependency),
+        ) if format == DEPENDENT_FORMAT
+            && expected == registry_digest(&registry)
+            && digest == dependency_digest(dependency)? =>
+        {
+            true
+        }
+        _ => {
+            return Err(ArchiveError::Invalid(
+                "format, registry or dependency mismatch",
+            ));
+        }
     };
-    if format != FORMAT || expected != registry_digest(&registry) {
-        return Err(ArchiveError::Invalid("format or exact registry mismatch"));
-    }
     let Entry::Snapshot {
         revision,
         used_ids,
@@ -626,6 +761,11 @@ fn read(
                 .searches
                 .push(restorer.search_pool.intern_shared(Arc::new(search))),
             Entry::Record(record) => {
+                if dependency.as_ref().is_some_and(|d| {
+                    d.model().element(record.id).is_some() || d.declared().has_used(record.id)
+                }) {
+                    return Err(ArchiveError::Invalid("protected dependency record"));
+                }
                 if !changed_records.insert(record.id) {
                     return Err(ArchiveError::Invalid("duplicate record"));
                 }
@@ -633,6 +773,12 @@ fn read(
                 records.insert(record.id, Arc::new(record));
             }
             Entry::Occurrence(occurrence) => {
+                if dependency.as_ref().is_some_and(|d| {
+                    d.model().association_occurrence(occurrence.id).is_some()
+                        || d.declared().has_used_occurrence(occurrence.id)
+                }) {
+                    return Err(ArchiveError::Invalid("protected dependency occurrence"));
+                }
                 if !changed_links.insert(occurrence.id) {
                     return Err(ArchiveError::Invalid("duplicate occurrence"));
                 }
@@ -647,6 +793,7 @@ fn read(
                     std::mem::take(&mut links),
                     used_ids.clone(),
                     used_links.clone(),
+                    dependency.clone(),
                 )?;
                 records = declared.model().records.clone();
                 links = declared.model().links.clone();
@@ -659,6 +806,12 @@ fn read(
                 property,
                 slot,
             } if snapshot.is_some() => {
+                if dependency
+                    .as_ref()
+                    .is_some_and(|d| d.model().element(element).is_some())
+                {
+                    return Err(ArchiveError::Invalid("protected dependency navigation"));
+                }
                 if navigation
                     .insert((element, property), restorer.slot(slot)?)
                     .is_some()
@@ -671,6 +824,12 @@ fn read(
                 property,
                 failure,
             } if snapshot.is_some() => {
+                if dependency
+                    .as_ref()
+                    .is_some_and(|d| d.model().element(element).is_some())
+                {
+                    return Err(ArchiveError::Invalid("protected dependency status"));
+                }
                 if failures
                     .insert((element, property), restorer.failure(failure)?)
                     .is_some()
@@ -679,6 +838,16 @@ fn read(
                 }
             }
             Entry::Searches { fact, table } if snapshot.is_some() => {
+                if dependency.as_ref().is_some_and(|d| match fact {
+                    FactKey::Element(id) | FactKey::Property { element: id, .. } => {
+                        d.model().element(id).is_some()
+                    }
+                    FactKey::AssociationOccurrence(id) => {
+                        d.model().association_occurrence(id).is_some()
+                    }
+                }) {
+                    return Err(ArchiveError::Invalid("protected dependency search"));
+                }
                 if searches.insert(fact, restorer.search(table)?).is_some() {
                     return Err(ArchiveError::Invalid("duplicate computation search"));
                 }
@@ -696,6 +865,11 @@ fn read(
     drop(restorer);
     drop(line);
     if let Some(snapshot) = snapshot {
+        if let Some(dependency) = &dependency {
+            navigation.extend(dependency.model().derived_navigation.clone());
+            failures.extend(dependency.model().statuses.clone());
+            searches.extend(dependency.model().searches.clone());
+        }
         let mut model = ModelView::build(registry, records, links, navigation)?;
         model.statuses = failures;
         model.searches = searches;
@@ -705,7 +879,9 @@ fn read(
         Err(ArchiveError::Invalid("missing overlay"))
     } else {
         Ok((
-            declared_snapshot(registry, revision, records, links, used_ids, used_links)?,
+            declared_snapshot(
+                registry, revision, records, links, used_ids, used_links, dependency,
+            )?,
             None,
         ))
     }

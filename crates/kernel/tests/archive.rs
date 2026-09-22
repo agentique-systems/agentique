@@ -191,6 +191,147 @@ fn retired_element_and_occurrence_ids_remain_reserved_and_registry_is_exact() {
 }
 
 #[test]
+fn dependent_delta_retains_exact_shared_graph_and_protected_history() {
+    let dependency = Arc::new(overlay());
+    let (mut classes, properties) = descriptors();
+    let extension = MetaclassId::from_u128(900);
+    classes.push(class(extension, "LanguageExtension", &[PART_DEF]));
+    let combined =
+        Arc::new(MetamodelRegistry::new([model_descriptor()], classes, properties).unwrap());
+    let empty =
+        Snapshot::with_immutable_dependency_in_registry(dependency.clone(), combined.clone())
+            .unwrap();
+    let local = ElementId::from_u128(500);
+    let retired = ElementId::from_u128(501);
+    let mut add = empty.change_set();
+    add.create(local, extension, authored());
+    add.set(local, NAME, text("local definition"), authored());
+    add.create(retired, PART_DEF, authored());
+    let active = empty.apply(&add).unwrap();
+    let mut remove = active.change_set();
+    remove.remove(retired);
+    let declared = active.apply(&remove).unwrap();
+    let mut builder = DerivationBuilder::new(declared);
+    let local_key = DerivationKey {
+        rule: key(0).rule,
+        subject: local,
+        output: OutputKey::from_u128(901),
+    };
+    let local_proof = Explanation {
+        rule: local_key.rule,
+        dependencies: BTreeSet::from([
+            Dependency::Declared(FactKey::Element(local)),
+            Dependency::Derived(FactKey::Element(key(1).element_id())),
+        ]),
+    };
+    builder.element(
+        local_key,
+        PART_DEF,
+        [(NAME, text("local result"))],
+        local_proof.dependencies.clone(),
+    );
+    builder.property(
+        local,
+        COUNT,
+        SlotValue::Scalar(Value::Integer(1.into())),
+        local_proof,
+    );
+    let original = builder.build().unwrap();
+    let mut bytes = vec![];
+    write_dependent_overlay(&original, &mut bytes).unwrap();
+    assert!(write_overlay(&original, vec![]).is_err());
+    assert!(read_overlay(Cursor::new(&bytes), registry()).is_err());
+    let entries: Vec<serde_json::Value> = String::from_utf8(bytes.clone())
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(
+        entries
+            .iter()
+            .filter(|entry| entry.get("Record").is_some())
+            .count(),
+        3,
+        "only the local declaration, its overlay update and the new inferred record are serialized"
+    );
+    let restored =
+        read_dependent_overlay(Cursor::new(&bytes), combined.clone(), dependency.clone()).unwrap();
+    assert!(
+        read_dependent_overlay(Cursor::new(&bytes), registry(), dependency.clone()).is_err(),
+        "combined descriptor registry is exact"
+    );
+    assert!(Arc::ptr_eq(
+        restored.declared().immutable_dependency().unwrap(),
+        &dependency
+    ));
+    for record in dependency.model().elements() {
+        assert!(std::ptr::eq(
+            record,
+            restored.model().element(record.id()).unwrap()
+        ));
+    }
+    assert!(restored.model().elements().eq(original.model().elements()));
+    assert!(
+        restored
+            .model()
+            .computation_failures()
+            .eq(original.model().computation_failures())
+    );
+    assert!(
+        restored
+            .model()
+            .computation_searches()
+            .eq(original.model().computation_searches())
+    );
+    assert_eq!(restored.base_revision(), original.base_revision());
+    let mut rewrite = vec![];
+    write_dependent_overlay(&restored, &mut rewrite).unwrap();
+    assert_eq!(bytes, rewrite);
+    let mut reuse = restored.declared().change_set();
+    reuse.create(retired, PART_DEF, authored());
+    assert!(restored.declared().apply(&reuse).is_err());
+    let mut mutation = restored.declared().change_set();
+    mutation.set(ENGINE, NAME, text("forbidden"), authored());
+    assert!(matches!(
+        restored.declared().apply(&mutation),
+        Err(ModelError::ImmutableDependency(_))
+    ));
+    let unrelated = Arc::new(DerivationBuilder::new(vertical()).build().unwrap());
+    assert!(read_dependent_overlay(Cursor::new(&bytes), combined.clone(), unrelated).is_err());
+    let mut corrupt = entries.clone();
+    let record = corrupt
+        .iter_mut()
+        .find_map(|entry| entry.get_mut("Record"))
+        .unwrap();
+    record["id"] = serde_json::to_value(VEHICLE).unwrap();
+    let corrupt: String = corrupt.iter().map(|entry| format!("{entry}\n")).collect();
+    assert!(
+        read_dependent_overlay(Cursor::new(corrupt), combined.clone(), dependency.clone()).is_err()
+    );
+    let mut ownership = entries;
+    let record = ownership
+        .iter_mut()
+        .filter_map(|entry| entry.get_mut("Record"))
+        .find(|record| record["id"] == serde_json::to_value(local_key.element_id()).unwrap())
+        .unwrap();
+    let proof = record["origin"].clone();
+    record["slots"]
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!([
+            CONTAINS, { "value": {"Set": [{"Reference": ENGINE}]}, "origin": proof }
+        ]));
+    let ownership: String = ownership.iter().map(|entry| format!("{entry}\n")).collect();
+    assert!(
+        matches!(
+            read_dependent_overlay(Cursor::new(ownership), combined, dependency),
+            Err(ArchiveError::Model(ModelError::ImmutableDependency(_)))
+        ),
+        "new local carriers cannot acquire ownership of protected records"
+    );
+}
+
+#[test]
 fn corruption_rejects_missing_proofs_missing_dependencies_cycles_and_declared_replacement() {
     let original = overlay();
     let mut bytes = vec![];

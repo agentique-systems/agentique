@@ -11,6 +11,9 @@ impl DerivedOverlay {
     ) -> Result<Self, ArchiveError> {
         let invalid =
             || ArchiveError::Invalid("overlay does not monotonically extend its declared snapshot");
+        // New local relationship carriers must not take ownership of a protected
+        // dependency record, even when the archive never rewrites that record.
+        declared.check_dependency_ownership(&model)?;
         // An archive cannot relabel, remove, or replace declared assertions. The
         // only stored-slot replacement admitted by DerivationBuilder is appending
         // references to an ordered collection, retaining its declared prefix.
