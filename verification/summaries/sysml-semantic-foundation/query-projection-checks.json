@@ -1,0 +1,52 @@
+{
+  "schema": "agq-focused-verification/1",
+  "scope": "Root-relative qualified names and proof-preserving current SysML type projections",
+  "environment": {
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "commands": [
+    {
+      "command": "cargo test --locked --offline -j 2 -p agq-sysml-semantics --lib",
+      "exit_code": 0,
+      "output": "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.47s"
+    },
+    {
+      "command": "cargo clippy --locked --offline -j 2 -p agq-sysml-semantics --all-targets -- -D warnings",
+      "exit_code": 0,
+      "output": "Finished `dev` profile [unoptimized] target(s) in 0.45s"
+    },
+    { "command": "cargo fmt --all -- --check", "exit_code": 0, "output": "" },
+    { "command": "git diff --check", "exit_code": 0, "output": "" }
+  ],
+  "authority": [
+    "KerML 1.0 Root-Elements-Element-deriveElementQualifiedName excludes the root namespace; root itself has no qualified name",
+    "KerML 1.0 Core-Features-Feature-deriveFeatureType excludes a type proven more general than another current type",
+    "SysML 2.0 ItemUsage::itemDefinition selects Structure from the inherited Class domain",
+    "SysML 2.0 PartUsage::partDefinition selects PartDefinition from itemDefinition; final nonempty validation is distinct from incomplete current base typing",
+    "SysML 2.0 AttributeUsage::attributeDefinition and PortUsage::portDefinition redefine narrower domains rather than selecting subsets"
+  ],
+  "coverage": [
+    "Named and unnamed root exclusion; root qualified name absent; full declared name selected without substituting short name",
+    "Duplicate direct owned names and pending namespace populations remain Incomplete; imports and inherited memberships do not enter the sibling population",
+    "Mixed explicit PartDefinition/ItemDefinition and Structure/Class subsets remain Complete with filtered-target evidence",
+    "Existing KerML all_supertypes queries prove general-ancestor suppression; all supporting completeness, facts and searches remain retained",
+    "An incomplete hierarchy proof remains Incomplete after a positively proven ancestor is removed",
+    "Incompatible nonancestor DataType, Structure and Class endpoints retain Invalid domain diagnostics",
+    "Untyped Part remains Incomplete pending its required base typing rather than prematurely applying final cardinality validation"
+  ],
+  "limitations": [
+    "Synthetic fixtures only; the accepted-cache textual/programmatic vertical is a separate integration gate",
+    "The ancestor adapter fixture supplies the raw multi-type population directly because canonical explicit ancestry is already pruned by KerML feature_types",
+    "Ambiguous full-name selection remains explicitly Incomplete; this does not implement additional naming or validation breadth",
+    "Current-graph projections do not certify SysML producer closure; no accepted KerML query, rule identity or authority profile changed"
+  ],
+  "inputs_sha256": {
+    "crates/sysml-semantics/src/queries.rs": "57c73cfa9c95fc6fd24159e8f14f99e3efeb67edb544b70712b78a28f7eee92d",
+    "crates/sysml-semantics/src/projection_tests.rs": "11341620cb74de95b8a066d44b72f4f7d593b39fcca5891a4e0fb13dda7cac46",
+    "crates/sysml-semantics/src/qualified_names_tests.rs": "af9ee44b4ac8ba39d7328df0041a21e54104784583bae753b082d36f21e314e6",
+    "crates/sysml-semantics/README.md": "2e9ec1a557bc752b282891dffa13830484d802f649a0fb02f4a1837c00e86c04"
+  }
+}

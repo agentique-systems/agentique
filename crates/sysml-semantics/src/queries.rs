@@ -12,6 +12,14 @@ use agq_kernel::{
 use agq_sysml::{classes as sc, properties as sp};
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(test)]
+#[path = "qualified_names_tests.rs"]
+mod qualified_names_tests;
+
+#[cfg(test)]
+#[path = "projection_tests.rs"]
+mod projection_tests;
+
 /// Unfinished SysML implications are separate from determinate current-graph
 /// answers. No entry authorizes a new standards correction.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -39,8 +47,12 @@ pub struct SysmlQueryResult<T> {
     pub kerml: QueryResult<T>,
     pub pending: BTreeSet<(ElementId, PendingSysmlRule)>,
     pub diagnostics: BTreeSet<Diagnostic>,
-    /// Invalid endpoint kinds are retained here when a typed projection rejects them.
+    /// Out-of-domain endpoints remain visible, with Invalid or pending-domain
+    /// diagnostics distinguishing incorrect assertions from unfinished typing.
     pub rejected_targets: BTreeSet<ElementId>,
+    /// Proven general ancestors and valid members outside a selectByKind subset.
+    /// Their original evidence remains in the composed/supporting query answers.
+    pub filtered_targets: BTreeSet<ElementId>,
     /// Additional current-graph queries used to inspect producer prerequisites.
     pub supporting_queries: Vec<QueryResult<Vec<ElementId>>>,
     pub supporting_names: Vec<QueryResult<EffectiveNames>>,
@@ -49,8 +61,8 @@ pub struct SysmlQueryResult<T> {
     additional_completeness: Completeness,
 }
 
-/// Qualified naming alternatives without allocating their Cartesian product.
-/// Every segment retains its determinate long/short names in owner order.
+/// Raw qualified-name components in namespace order, excluding the root namespace.
+/// Supported segments have one established full name; no short name is substituted.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QualifiedNamePath {
     pub segments: Vec<BTreeSet<String>>,
@@ -126,6 +138,7 @@ impl<'m> SysmlQueries<'m> {
             pending: BTreeSet::new(),
             diagnostics: BTreeSet::new(),
             rejected_targets: BTreeSet::new(),
+            filtered_targets: BTreeSet::new(),
             supporting_queries: vec![],
             supporting_names: vec![],
             observations: BTreeMap::new(),
@@ -227,7 +240,7 @@ impl<'m> SysmlQueries<'m> {
     }
     /// Derived Usage::definition over the current graph; no producer-closure claim.
     pub fn current_usage_types(&self, usage: ElementId) -> SysmlQueryResult<Vec<ElementId>> {
-        let out = self.wrap(self.kerml.feature_types(usage));
+        let out = self.prune_general_types(self.wrap(self.kerml.feature_types(usage)));
         self.type_projection(out, usage, sc::USAGE, kc::CLASSIFIER)
     }
     /// Effective Usage::definition, with unfinished SysML implications visible.
@@ -258,37 +271,111 @@ impl<'m> SysmlQueries<'m> {
         &self,
         usage: ElementId,
     ) -> SysmlQueryResult<Vec<ElementId>> {
-        self.type_projection(
-            self.wrap(self.kerml.feature_types(usage)),
-            usage,
-            sc::ATTRIBUTE_USAGE,
-            kc::DATA_TYPE,
-        )
+        self.current_typed_domain(usage, sc::ATTRIBUTE_USAGE, kc::DATA_TYPE)
     }
     /// ItemUsage::itemDefinition selects Structure, including ordinary KerML Structure.
     pub fn current_item_definitions(&self, usage: ElementId) -> SysmlQueryResult<Vec<ElementId>> {
-        self.type_projection(
-            self.wrap(self.kerml.feature_types(usage)),
-            usage,
-            sc::ITEM_USAGE,
-            kc::STRUCTURE,
-        )
+        let mut out = self.current_typed_domain(usage, sc::ITEM_USAGE, kc::CLASS);
+        self.select_type_subset(&mut out, kc::STRUCTURE);
+        out
     }
     pub fn current_part_definitions(&self, usage: ElementId) -> SysmlQueryResult<Vec<ElementId>> {
-        self.type_projection(
-            self.wrap(self.kerml.feature_types(usage)),
-            usage,
-            sc::PART_USAGE,
-            sc::PART_DEFINITION,
-        )
+        let mut out = self.current_item_definitions(usage);
+        self.check(&mut out, usage, &[sc::PART_USAGE]);
+        self.select_type_subset(&mut out, sc::PART_DEFINITION);
+        if out.value().is_empty() && out.completeness() != Completeness::Invalid {
+            out.problem(
+                Completeness::Incomplete,
+                "SQ_PART_DEFINITION_PENDING",
+                usage,
+                "Required PartDefinition typing is not established before SysML producer closure",
+            );
+            out.pending.insert((
+                usage,
+                PendingSysmlRule::StandardGeneralization(StandardSysmlRole::Parts),
+            ));
+        }
+        out
     }
     pub fn current_port_definitions(&self, usage: ElementId) -> SysmlQueryResult<Vec<ElementId>> {
-        self.type_projection(
-            self.wrap(self.kerml.feature_types(usage)),
-            usage,
-            sc::PORT_USAGE,
-            sc::PORT_DEFINITION,
-        )
+        self.current_typed_domain(usage, sc::PORT_USAGE, sc::PORT_DEFINITION)
+    }
+
+    /// KerML's producer-safe feature_types deliberately prunes canonical edges.
+    /// A partial SysML graph can still expose a general type supplied by virtual
+    /// KerML library ancestry. Reuse all_supertypes (and all its evidence) to
+    /// establish that redundancy before applying the narrowed SysML domain.
+    /// This adapter neither creates relationships nor certifies producer closure.
+    fn prune_general_types(
+        &self,
+        mut out: SysmlQueryResult<Vec<ElementId>>,
+    ) -> SysmlQueryResult<Vec<ElementId>> {
+        let types: BTreeSet<_> = out.value().iter().copied().collect();
+        let mut general = BTreeSet::new();
+        if types.len() > 1 {
+            for &specific in &types {
+                let ancestors = self.kerml.all_supertypes(specific);
+                general.extend(
+                    ancestors
+                        .value
+                        .iter()
+                        .copied()
+                        .filter(|id| *id != specific && types.contains(id)),
+                );
+                out.supporting_queries.push(ancestors);
+            }
+        }
+        out.kerml.value.retain(|id| !general.contains(id));
+        out.filtered_targets.extend(general);
+        out
+    }
+
+    fn current_typed_domain(
+        &self,
+        usage: ElementId,
+        subject_kind: MetaclassId,
+        domain: MetaclassId,
+    ) -> SysmlQueryResult<Vec<ElementId>> {
+        let mut out = self.current_usage_types(usage);
+        let direct = self.kerml.direct_feature_types(usage);
+        let untyped = direct.value.is_empty();
+        out.supporting_queries.push(direct);
+        self.check(&mut out, usage, &[subject_kind]);
+        let targets = std::mem::take(&mut out.kerml.value);
+        for target in targets {
+            self.observe(&mut out, FactKey::Element(target));
+            if self.is(target, domain) {
+                out.kerml.value.push(target);
+            } else if untyped && self.is(target, kc::CLASSIFIER) {
+                // The required SysML library base can supply a more specific type
+                // to an untyped usage. Retain the nonconforming candidate as
+                // rejected evidence and report the outstanding domain honestly.
+                out.rejected_targets.insert(target);
+                out.problem(Completeness::Incomplete, "SQ_TYPE_DOMAIN_PENDING", usage,
+                    "Current inherited types do not establish the narrowed domain before SysML base typing");
+                out.pending
+                    .insert((usage, PendingSysmlRule::ProducerClosure));
+            } else {
+                self.check(&mut out, target, &[domain]);
+                out.rejected_targets.insert(target);
+            }
+        }
+        out
+    }
+
+    fn select_type_subset(
+        &self,
+        out: &mut SysmlQueryResult<Vec<ElementId>>,
+        selected: MetaclassId,
+    ) {
+        let values = std::mem::take(&mut out.kerml.value);
+        for target in values {
+            if self.is(target, selected) {
+                out.kerml.value.push(target);
+            } else {
+                out.filtered_targets.insert(target);
+            }
+        }
     }
     /// General KerML specialization endpoints are retained, not filtered to SysML Definition.
     pub fn direct_specializations(
@@ -406,14 +493,15 @@ impl<'m> SysmlQueries<'m> {
             .push(relationship.map(|id| id.into_iter().collect()));
     }
 
-    /// Determinate long/short-name choices through canonical owners. Segment
-    /// alternatives remain factored, so deep naming chains cannot expand exponentially.
+    /// Pinned deriveElementQualifiedName root boundary and owned-name population.
+    /// Explicit full names are supported. Inherited-only name selection and
+    /// duplicate sibling names remain Incomplete instead of choosing an endpoint.
     pub fn effective_qualified_name(
         &self,
         element: ElementId,
     ) -> SysmlQueryResult<Option<QualifiedNamePath>> {
         let mut out = self.wrap(self.kerml.owner(element).map(|_| None));
-        self.check(&mut out, element, &[sc::DEFINITION, sc::USAGE]);
+        self.check(&mut out, element, &[kc::ELEMENT]);
         let mut current = Some(element);
         let mut visited = BTreeSet::new();
         let mut segments = Vec::new();
@@ -430,38 +518,127 @@ impl<'m> SysmlQueries<'m> {
             if self.is(id, sc::USAGE) {
                 self.variant_membership(&mut out, id);
             }
-            let names = self.kerml.effective_names(id);
-            match &names.value {
-                EffectiveNames::Determinate(names) if !names.is_empty() => {
-                    segments.push(names.clone())
-                }
-                EffectiveNames::Determinate(_) => {
-                    out.supporting_names.push(names);
-                    return out;
-                }
-                EffectiveNames::Ambiguous { .. } => {
-                    out.problem(
-                        Completeness::Incomplete,
-                        "SQ_AMBIGUOUS_NAME",
-                        id,
-                        "Ambiguous effective names cannot establish one set of qualified paths",
-                    );
-                    out.supporting_names.push(names);
-                    return out;
-                }
+            let membership = self.kerml.owning_relationship(id);
+            let owned_member = membership
+                .value
+                .is_some_and(|m| self.is(m, kc::OWNING_MEMBERSHIP));
+            out.supporting_queries
+                .push(membership.map(|id| id.into_iter().collect()));
+            if !owned_member {
+                return out;
             }
-            out.supporting_names.push(names);
             let owner = self.kerml.owner(id);
-            current = owner.value;
+            let namespace = owner.value;
             out.supporting_queries
                 .push(owner.map(|id| id.into_iter().collect()));
+            let Some(namespace) = namespace else {
+                return out;
+            };
+            let Some(name) = self.qualified_segment(&mut out, id) else {
+                return out;
+            };
+            if !self.unique_qualified_segment(&mut out, namespace, id, &name) {
+                return out;
+            }
+            segments.push(BTreeSet::from([name]));
+            // KerML 1.0 deriveElementQualifiedName: a root Namespace has no
+            // qualifiedName; its own name (if any) is excluded from its members'.
+            let namespace_owner = self.kerml.owner(namespace);
+            let is_root = namespace_owner.value.is_none();
+            out.supporting_queries
+                .push(namespace_owner.map(|id| id.into_iter().collect()));
+            if is_root {
+                break;
+            }
+            current = Some(namespace);
         }
-        if out.completeness() == Completeness::Invalid {
+        if out.completeness() != Completeness::Complete {
             return out;
         }
         segments.reverse();
         out.kerml.value = Some(QualifiedNamePath { segments });
         out
+    }
+
+    fn qualified_segment<T>(
+        &self,
+        out: &mut SysmlQueryResult<T>,
+        element: ElementId,
+    ) -> Option<String> {
+        self.observe(
+            out,
+            FactKey::Property {
+                element,
+                property: kp::ELEMENT_DECLARED_NAME,
+            },
+        );
+        if let Ok(PropertyState::Computed(slot)) = self
+            .model
+            .property_state(element, kp::ELEMENT_DECLARED_NAME)
+            && let SlotValue::Scalar(Value::String(name)) = slot.value()
+        {
+            return Some(name.clone());
+        }
+        // KerML's current naming answer combines effective long and short names.
+        // It cannot prove which nonempty inherited/short-name choice is name.
+        let names = self.kerml.effective_names(element);
+        if !matches!(&names.value, EffectiveNames::Determinate(names) if names.is_empty()) {
+            out.problem(Completeness::Incomplete, "SQ_QUALIFIED_NAME_SELECTION", element,
+                "The effective full name is not established independently of short-name alternatives");
+        }
+        out.supporting_names.push(names);
+        None
+    }
+
+    fn unique_qualified_segment<T>(
+        &self,
+        out: &mut SysmlQueryResult<T>,
+        namespace: ElementId,
+        element: ElementId,
+        name: &str,
+    ) -> bool {
+        if self
+            .kerml
+            .context()
+            .pending_namespace_scopes
+            .contains(&namespace)
+            || self
+                .kerml
+                .context()
+                .pending_specialization_scopes
+                .contains(&namespace)
+        {
+            out.problem(
+                Completeness::Incomplete,
+                "SQ_PENDING_QUALIFIED_NAME_POPULATION",
+                namespace,
+                "The owned-name population may still change",
+            );
+            return false;
+        }
+        let memberships = self.kerml.memberships(namespace);
+        let mut matches = BTreeSet::new();
+        for &membership in &memberships.value {
+            if !self.is(membership, kc::OWNING_MEMBERSHIP) {
+                continue;
+            }
+            let member = self.kerml.member(membership);
+            if let Some(target) = member.value {
+                let other_name = self.qualified_segment(out, target);
+                if other_name.as_deref() == Some(name) {
+                    matches.insert(target);
+                }
+            }
+            out.supporting_queries
+                .push(member.map(|id| id.into_iter().collect()));
+        }
+        out.supporting_queries.push(memberships);
+        if matches != BTreeSet::from([element]) {
+            out.problem(Completeness::Incomplete, "SQ_QUALIFIED_NAME_COLLISION", element,
+                "Duplicate or unavailable owned names require first-member qualified-name selection");
+            return false;
+        }
+        out.completeness() == Completeness::Complete
     }
 
     fn pending_implications<T>(&self, out: &mut SysmlQueryResult<T>, subject: ElementId) {

@@ -16,16 +16,21 @@ API.
 `SysmlQueries` supplies direct typing, current derived typing, specialization,
 reflexive supertypes, owned and inherited usage sets, subsetting, redefinition and
 ordinary naming. Attribute/Item/Part projections reuse KerML's algorithms. Usage
-typing retains valid KerML Classifiers; Attribute typing accepts DataType and Item
-typing accepts Structure. Invalid typed projection endpoints remain in
-`rejected_targets` with diagnostics. Port typing and ConnectorAsUsage related
+typing retains valid KerML Classifiers. A partial-project adapter removes only
+proven general ancestors using KerML `all_supertypes` and its full evidence before
+checking narrowed domains. Attribute typing requires DataType and Port typing
+requires PortDefinition. Item selects Structure from Class typing; Part selects
+PartDefinition from the Item subset. Valid excluded types remain in
+`filtered_targets`, and out-of-domain candidates remain in `rejected_targets`
+with Invalid or pending-typing diagnostics. Port typing and ConnectorAsUsage related
 features are structural projections only.
 
 Query results retain the composed KerML evidence. Additional observations retain
 canonical origins and proof/search dependencies. The effective usage collection
-is an identity set, not normative feature order. Qualified names retain ordered
-segments with factored long/short-name choices; they do not expand an exponential
-number of paths.
+is an identity set, not normative feature order. Qualified names exclude the root
+namespace and retain raw full-name components in namespace order. Duplicate
+siblings, pending name populations, and inherited-only/short-name selection stay
+explicitly incomplete; the query does not choose by element identity.
 
 Current-graph queries can be complete without claiming SysML producer closure.
 Effective queries expose missing Item/Part base relationships, uncomputed derived
