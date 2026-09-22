@@ -988,6 +988,88 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "actions-corpus-fixes-kerml-suite",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "532dfa730926a48be7c82d20479e05ef196d3eb0",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "63d48d11b0e9927410e3ff77751ef965e40acc8b028c0d32aed425f1bf76def3",
+      "duration_seconds": 71.41,
+      "output": "verification/generated/producer-closure-certificate/actions-corpus-fixes-kerml-suite.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "formal-binding-context-diagnostic",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "changing_formal_binding_contract_is_rejected_between_frontiers",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "532dfa730926a48be7c82d20479e05ef196d3eb0",
+      "working_changes_sha256": "8e676c01c05dcceecd44529d069679889d1f89b63009126970a956e4093ef06b",
+      "output_sha256": "7e798a513c307dc66c23e1a54fb04aa1f87da2b9aac39ffa99a9c68d95cc254b",
+      "duration_seconds": 18.31,
+      "output": "verification/generated/producer-closure-certificate/formal-binding-context-diagnostic.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "formal-binding-context-diagnostic-executed",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "producer_worklist_tests::changing_formal_binding_contract_is_rejected_between_frontiers",
+        "--lib",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "532dfa730926a48be7c82d20479e05ef196d3eb0",
+      "working_changes_sha256": "8e676c01c05dcceecd44529d069679889d1f89b63009126970a956e4093ef06b",
+      "output_sha256": "84b5cc16c483ba0d8779457ee650d30d7e84a6355284b5879c0c6fe7739e7426",
+      "duration_seconds": 0.45,
+      "output": "verification/generated/producer-closure-certificate/formal-binding-context-diagnostic-executed.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }

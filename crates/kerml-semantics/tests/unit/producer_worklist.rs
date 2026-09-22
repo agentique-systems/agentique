@@ -1418,9 +1418,8 @@ fn changing_formal_binding_contract_is_rejected_between_frontiers() {
     );
     assert!(matches!(
         result,
-        Err(PublicationOverlayError::Derivation(
-            agq_kernel::derived::DerivationError::InputContextMismatch
-        ))
+        Err(PublicationOverlayError::SchedulerContextMismatch { changed_fields })
+            if changed_fields == ["formal_constraint_targets"]
     ));
 }
 
