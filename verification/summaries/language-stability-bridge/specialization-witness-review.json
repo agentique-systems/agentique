@@ -1,0 +1,63 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "positive-specialization-witness-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "specialization_witness",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c4baa8d5293abe39748d7a4b4cc7938f37657337",
+      "working_changes_sha256": "eaeb654b0e6fc00b318edb34f2e23a913a0a5ca43fbc4e8c9c447ac0affe5669",
+      "output_sha256": "6f0abd0c126c2e0807831b6387ad273e84dc4f6d879da2b53a4e7f8ee9ae351d",
+      "duration_seconds": 2.52,
+      "output": "verification/generated/language-stability-bridge/positive-specialization-witness-regressions.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "positive-specialization-witness-regressions-2",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "specialization_witness",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c4baa8d5293abe39748d7a4b4cc7938f37657337",
+      "working_changes_sha256": "cfa0c5a571af0f6e9aa77a930cdd0892ba12dec73d3e0d39e9ee924400967349",
+      "output_sha256": "f43ac817fdaf8c5961abb633c18f4d4c69e71637510b5446b17ea3ed37946908",
+      "duration_seconds": 18.47,
+      "output": "verification/generated/language-stability-bridge/positive-specialization-witness-regressions-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    }
+  ]
+}
