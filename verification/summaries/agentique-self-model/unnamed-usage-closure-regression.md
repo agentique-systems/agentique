@@ -20,10 +20,16 @@ The causal trace contains this chain:
 3. The transition typing population remains open, preserving negative-query
    diagnostics rather than inventing a closure proof.
 
-This is a bounded reproduction, not a completed fix or an accepted-library gate.
-The closure owner is investigating generic read/effect precision.
+The correction is integrated as `f6eaac7`: selected inverse ownership uses the
+original edge's support while retaining its current population search, and
+binary-connection predicates use the direct end population. The whole fixture
+now reaches Complete. Independent review reproduced that result in 20.51 seconds
+and passed 61 closure regressions, including real end writers, mixed broad reads,
+derived ownership edges and pending providers. See the
+[review and command evidence](../language-stability-bridge/selected-ownership-review.md).
+This synthetic result does not establish accepted-library publication.
 
-Verification (low-disk debug/test profile, two build jobs):
+Original reproduction (low-disk debug/test profile, two build jobs):
 
 - `cargo test --locked --offline -p agq-sysml-semantics unnamed_constraint_and_connection_usages_close_under_occurrence_owner -- --nocapture`:
   exit 101; one failing regression, 18.66 seconds.

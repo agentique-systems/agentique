@@ -456,6 +456,36 @@
       "duration_seconds": 9.74,
       "output": "verification/generated/language-stability-bridge/actions-declared-source-locators.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "actions-selected-populations-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f6eaac7a515685f1d6457f585be57fd59a569ec4",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "148ff0a37f4aa3702756c8ab95ee278916c98c84fd0fd2ed98b6d4a0a37b81d6",
+      "duration_seconds": 121.5,
+      "output": "verification/generated/language-stability-bridge/actions-selected-populations-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
     }
   ]
 }
