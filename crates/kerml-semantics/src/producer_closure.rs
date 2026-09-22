@@ -15,6 +15,7 @@ pub(crate) enum ProducerRead {
     Structural(ElementId),
     Source(ElementId, MetaclassId, PropertyId),
     Owned(ElementId, MetaclassId),
+    OwnedExcluding(ElementId, MetaclassId, Vec<MetaclassId>),
     FeaturePopulation(ElementId, crate::FeaturePopulationKind),
     Inverse,
     Any(ElementId),
@@ -54,8 +55,16 @@ pub(crate) fn producer_reads<T>(
         K::OwnedRelationships { owner, class } => {
             result.insert(ProducerRead::Owned(*owner, *class));
         }
-        K::OwnedRelationshipsExcluding { .. } => {
-            result.insert(ProducerRead::Global);
+        K::OwnedRelationshipsExcluding {
+            owner,
+            class,
+            excluded,
+        } => {
+            result.insert(ProducerRead::OwnedExcluding(
+                *owner,
+                *class,
+                excluded.iter().copied().collect(),
+            ));
         }
         K::OwnedMemberProjection { owner, contract } => {
             result.insert(
@@ -106,8 +115,16 @@ pub(crate) fn producer_reads<T>(
             S::OwnedRelationships { owner, class } => {
                 result.insert(ProducerRead::Owned(*owner, *class));
             }
-            S::OwnedRelationshipsExcluding { .. } => {
-                result.insert(ProducerRead::Global);
+            S::OwnedRelationshipsExcluding {
+                owner,
+                class,
+                excluded,
+            } => {
+                result.insert(ProducerRead::OwnedExcluding(
+                    *owner,
+                    *class,
+                    excluded.iter().copied().collect(),
+                ));
             }
             S::StructuralFeaturePopulation { owner, kind } => {
                 result.insert(ProducerRead::FeaturePopulation(*owner, *kind));
@@ -153,9 +170,9 @@ pub(crate) fn producer_reads<T>(
     let filtered_owners: BTreeSet<_> = result
         .iter()
         .filter_map(|read| match read {
-            ProducerRead::FeaturePopulation(owner, _) | ProducerRead::Owned(owner, _) => {
-                Some(*owner)
-            }
+            ProducerRead::FeaturePopulation(owner, _)
+            | ProducerRead::Owned(owner, _)
+            | ProducerRead::OwnedExcluding(owner, _, _) => Some(*owner),
             _ => None,
         })
         .collect();
@@ -658,6 +675,7 @@ impl ProducerEvaluationTable {
                             ProducerRead::Any(id)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Owned(id, _)
+                            | ProducerRead::OwnedExcluding(id, _, _)
                             | ProducerRead::FeaturePopulation(id, _) => immutable(*id),
                             ProducerRead::Property(id, property) => {
                                 let registry = model.registry();
@@ -707,6 +725,7 @@ impl ProducerEvaluationTable {
                             ProducerRead::Property(id, _)
                             | ProducerRead::Source(id, _, _)
                             | ProducerRead::Owned(id, _)
+                            | ProducerRead::OwnedExcluding(id, _, _)
                             | ProducerRead::FeaturePopulation(id, _)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Any(id)
@@ -1431,6 +1450,7 @@ pub(crate) fn descriptor_changes_read(
         | ProducerRead::Structural(subject)
         | ProducerRead::Source(subject, _, _)
         | ProducerRead::Owned(subject, _)
+        | ProducerRead::OwnedExcluding(subject, _, _)
         | ProducerRead::FeaturePopulation(subject, _)
         | ProducerRead::Any(subject)
         | ProducerRead::Requirement(subject, _) => Some(*subject),
@@ -1443,6 +1463,32 @@ pub(crate) fn descriptor_changes_read(
     }
     if !effect_changes_read(effect, read, model) {
         return false;
+    }
+    if let ProducerRead::OwnedExcluding(owner, class, excluded) = read
+        && !matches!(
+            effect,
+            ProducerEffect::Ownership | ProducerEffect::Scalar(_)
+        )
+        && let Some(outputs) = &descriptor.relationship_classes
+    {
+        if model.registry().class(*class).is_err()
+            || excluded
+                .iter()
+                .any(|class| model.registry().class(*class).is_err())
+        {
+            return true;
+        }
+        return outputs.iter().any(|&output| {
+            model.registry().class(output).is_err()
+                || model.registry().is_subtype(output, *class).unwrap_or(true)
+                    && !excluded.iter().any(|&excluded| {
+                        model
+                            .registry()
+                            .is_subtype(output, excluded)
+                            .unwrap_or(false)
+                    })
+                    && effect_changes_read(effect, &ProducerRead::Owned(*owner, output), model)
+        });
     }
     if let ProducerRead::FeaturePopulation(_, kind) = read
         && effect == ProducerEffect::Membership
@@ -1522,8 +1568,12 @@ pub(crate) fn effect_changes_read(
                 || reference_scalar(effect, model)
                 || matches!(effect, ProducerEffect::Scalar(written) if written == *property)
         }
+        ProducerRead::OwnedExcluding(owner, class, _) => {
+            model.registry().class(*class).is_err()
+                || effect_changes_read(effect, &ProducerRead::Owned(*owner, *class), model)
+        }
         ProducerRead::Source(_, class, _) | ProducerRead::Owned(_, class) => {
-            if reference_scalar(effect, model) {
+            if effect == ProducerEffect::Ownership || reference_scalar(effect, model) {
                 return true;
             }
             use agq_kerml::classes as c;

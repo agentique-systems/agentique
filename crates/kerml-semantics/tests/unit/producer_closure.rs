@@ -2372,3 +2372,130 @@ fn directed_feature_value_closes_without_reowning_an_earlier_context_feature() {
         "staging retains the direct contextual plan's identities, records and provenance"
     );
 }
+
+#[test]
+fn excluded_relationship_populations_keep_unknown_writers_and_broad_reads_open() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead, producer_reads};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    for (effect, output, can_change) in [
+        (ProducerEffect::Membership, None, true),
+        (
+            ProducerEffect::Membership,
+            Some(c::FEATURE_MEMBERSHIP),
+            false,
+        ),
+        (
+            ProducerEffect::Membership,
+            Some(c::RETURN_PARAMETER_MEMBERSHIP),
+            false,
+        ),
+        (ProducerEffect::Membership, Some(c::OWNING_MEMBERSHIP), true),
+        (
+            ProducerEffect::Membership,
+            Some(MetaclassId::from_u128(99890)),
+            true,
+        ),
+        (ProducerEffect::Ownership, Some(c::FEATURE_MEMBERSHIP), true),
+    ] {
+        let mut writer = ProducerDescriptor::new(
+            ACTIVATE,
+            [effect],
+            ProducerApplicability::Subtypes(vec![c::FEATURE]),
+        );
+        writer.scope = ProducerEffectScope::SubjectAndOwners;
+        writer.relationship_classes = output.map(|class| BTreeSet::from([class]));
+        let registry = ProducerRegistry::new([
+            writer,
+            ProducerDescriptor::new(
+                TYPE,
+                [ProducerEffect::Typing],
+                ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+            ),
+        ])
+        .unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let q = KerMlQueries::new(context);
+        for persisted in [false, true] {
+            for broad in [false, true] {
+                let mut evidence = q.canonical_fact_evidence(FactKey::Property {
+                    element: id(1),
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                });
+                evidence.clear_search_dependencies();
+                let excluded = BTreeSet::from([c::FEATURE_MEMBERSHIP]);
+                evidence.search_dependencies.insert(if persisted {
+                    SearchDependency::Kernel(
+                        agq_kernel::derived::StructuralSearch::OwnedRelationshipsExcluding {
+                            owner: id(1),
+                            class: c::MEMBERSHIP,
+                            excluded,
+                        },
+                    )
+                } else {
+                    SearchDependency::OwnedRelationshipsExcluding {
+                        owner: id(1),
+                        class: c::MEMBERSHIP,
+                        excluded,
+                    }
+                });
+                if broad {
+                    evidence
+                        .search_dependencies
+                        .insert(SearchDependency::PropertySet {
+                            element: id(1),
+                            property: p::ELEMENT_OWNED_RELATIONSHIP,
+                        });
+                }
+                let reads = producer_reads(&evidence, snapshot.model());
+                assert!(evidence.positive_dependencies.contains(&FactKey::Property {
+                    element: id(1),
+                    property: p::ELEMENT_OWNED_RELATIONSHIP
+                }));
+                assert_eq!(
+                    reads.contains(&ProducerRead::Property(
+                        id(1),
+                        p::ELEMENT_OWNED_RELATIONSHIP
+                    )),
+                    broad
+                );
+                let mut table = ProducerEvaluationTable::default();
+                for record in snapshot.model().elements() {
+                    table.pending(record.id(), snapshot.model(), &registry);
+                }
+                table
+                    .record(
+                        &[
+                            (id(2), ACTIVATE, Completeness::Incomplete),
+                            (id(1), TYPE, Completeness::Complete),
+                        ],
+                        &registry,
+                    )
+                    .unwrap();
+                table.record_reads(&[(id(1), TYPE, reads)], &registry);
+                let certificate = ProducerClosureCertificate::issue(
+                    snapshot.model(),
+                    q.context(),
+                    &registry,
+                    &table,
+                    |_| false,
+                );
+                assert_eq!(
+                    certificate.evaluation(id(1), registry.index(TYPE).unwrap()),
+                    Some(if broad || can_change {
+                        ProducerEvaluationState::Pending
+                    } else {
+                        ProducerEvaluationState::EvaluatedComplete
+                    }),
+                    "output={output:?}, persisted={persisted}, broad={broad}"
+                );
+            }
+        }
+    }
+}
