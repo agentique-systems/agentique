@@ -1,6 +1,6 @@
 # Scheduler-issued producer closure
 
-Implementation source: `47977a5` on the isolated
+Implementation source: `0eec834` on the isolated
 `foundation/producer-closure` branch. This summary records generic closure work;
 it does not establish Systems Library acceptance.
 
@@ -15,6 +15,12 @@ typed reads; absent bounds remain conservative. Future scalar producers reopen
 parameter/end exclusions even before an applicable subject exists. Property
 redefinitions are resolved through the registry; unknown scalar properties remain
 conservative. Pending ownership changes expand ownership-dependent write scopes.
+Existing semantic target metaclass bounds distinguish a Type from its membership
+carriers; fresh semantic subjects retain their separate effect contract. Primitive
+scalar reads remain precise, while reference-valued or unclassified scalar effects
+conservatively reopen cross-subject requirements and inverse searches. Registry
+schema 3 versions this interpretation. Existing scalar contributions are checked
+against declared property, target class and write scope.
 
 The scheduler retains per-family evaluation status and precise query reads.
 Incomplete or dirty families prevent closure of dependent complete evaluations,
@@ -44,13 +50,13 @@ Verification used Windows, Rust/Cargo 1.92.0, isolated `target/foundation-closur
 
 | Actual command | Result |
 | --- | --- |
-| `cargo test -p agq-kerml-semantics --lib producer_closure_tests -- --nocapture` at `47977a5` | Exit 0; 28 passed |
+| `cargo test -p agq-kerml-semantics --lib producer_closure_tests -- --nocapture` at `0eec834` | Exit 0; 33 passed |
 | `cargo test -p agq-kerml-semantics --lib -- --nocapture` at `e039114` | Exit 0; 93 passed, 2 existing scale probes ignored |
-| `cargo fmt --all -- --check` at `28e6b5d` | Exit 0 |
-| `cargo clippy -p agq-kerml-semantics -p agq-sysml-semantics --all-targets --locked --offline -- -D warnings` at `9125c91` | Exit 0 |
-| `RUSTDOCFLAGS=-D warnings cargo doc -p agq-kerml-semantics -p agq-sysml-semantics --no-deps --locked --offline` at `28e6b5d` | Exit 0 |
+| `cargo fmt --all -- --check` at `0eec834` | Exit 0 |
+| `cargo clippy -p agq-kerml-semantics --all-targets --locked --offline -- -D warnings` at `0eec834` | Exit 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc -p agq-kerml-semantics --no-deps --locked --offline` at `0eec834` | Exit 0 |
 
-The 28-test matrix covers delayed producer activation; incomplete/inapplicable
+The 33-test matrix covers delayed producer activation; incomplete/inapplicable
 families; registry and graph mismatch; malformed registration; FIFO, LIFO,
 reversed, partitioned and reference-scan scheduling; varied batches; actual
 negative-proof-consuming output determinism; existing-overlay revalidation;
@@ -59,14 +65,17 @@ arbitrary inverse reads; fresh-source/reownership misuse; subtype populations;
 future cross-subject producers; protected stored reads versus external semantic
 searches; existing scalar versus absent/collection reads; current/future bounded
 relationship classes; strict descendant scopes; pending ownership attachment;
-future scalar projection activation including property aliases; and malformed or
-qualifying membership outputs that violate an empty positional bound.
+future scalar projection activation including property aliases; malformed or
+qualifying membership outputs that violate an empty positional bound; immutable
+records with mutable noncomposite inverse navigation; reference scalar writes;
+current/future target-class bounds; and existing scalar output target audits.
 
 The synthetic scale fixture has 60,000 subjects and 80 registered families, with
 300,000 applicable evaluations carrying nonempty reads. One incomplete writer
 blocks four otherwise complete readers: 299,995 closed pairs remain. Certificate
 storage is **2,220,208 bytes**; the final focused debug run constructed it in
-**6,108 ms** during concurrent worktree activity. This measures the certificate,
+**8,133 ms** during concurrent worktree activity (the previous 32-test run measured
+6,186 ms). This measures the certificate,
 not whole-publication runtime or peak scheduler memory.
 
 Development failures exposed conservative read conflation and obsolete fixture
