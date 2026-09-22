@@ -3047,3 +3047,96 @@ fn filtered_declared_ownership_keeps_original_proof_after_unrelated_append() {
         );
     }
 }
+
+#[test]
+fn initial_pending_table_can_certify_only_producer_independent_requirements() {
+    use crate::producer_closure::ProducerEvaluationTable;
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.value(1, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    let snapshot = f.finish();
+    let base =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
+    let registry = ProducerRegistry::new(
+        ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(base.id().options.baseline_profile)),
+    )
+    .unwrap();
+    let context = base
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let empty = ProducerEvaluationTable::default();
+    let mut pending = ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        pending.pending(record.id(), snapshot.model(), &registry);
+    }
+    let issue = |table: &ProducerEvaluationTable| {
+        ProducerClosureCertificate::issue(snapshot.model(), context.id(), &registry, table, |_| {
+            false
+        })
+    };
+    let certificate = issue(&empty);
+    assert_eq!(certificate.digest(), issue(&pending).digest());
+    assert_eq!(certificate.closed_pairs(), 0);
+    assert!(certificate.applicable_pairs() > 0);
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveOwnership));
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    let q = KerMlQueries::new(
+        context
+            .with_producer_closure(Arc::new(certificate))
+            .unwrap(),
+    );
+    let answer =
+        q.formal_constraint_applies(FormalConstraintId::StepSubperformanceSpecialization, id(1));
+    assert!(!answer.value);
+    assert_eq!(answer.completeness, Completeness::Complete);
+
+    for future in [false, true] {
+        let mut writer = ProducerDescriptor::new(
+            ACTIVATE,
+            [ProducerEffect::Ownership],
+            if future {
+                ProducerApplicability::Subtypes(vec![c::FUNCTION])
+            } else {
+                ProducerApplicability::Any
+            },
+        );
+        writer.scope = ProducerEffectScope::Model;
+        let mut creator = ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::ResultStructure],
+            ProducerApplicability::Any,
+        );
+        creator.fresh_effects.insert(ProducerEffect::Membership);
+        let registry = ProducerRegistry::new([writer, creator]).unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &empty,
+            |_| false,
+        );
+        assert!(
+            !certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveOwnership),
+            "future={future}"
+        );
+        let q = KerMlQueries::new(
+            context
+                .with_producer_closure(Arc::new(certificate))
+                .unwrap(),
+        );
+        assert_eq!(
+            q.formal_constraint_applies(
+                FormalConstraintId::StepSubperformanceSpecialization,
+                id(1)
+            )
+            .completeness,
+            Completeness::Incomplete
+        );
+    }
+}
