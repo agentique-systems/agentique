@@ -168,3 +168,54 @@ fn owned_population_keeps_missing_source_endpoints_and_precise_class_reads() {
         );
     }
 }
+
+#[test]
+fn excluded_owned_population_preserves_order_and_relevant_pending_endpoints() {
+    let mut f = Fixture::new();
+    f.create(1, c::TYPE);
+    for feature in [11, 12, 13] {
+        f.create(feature, c::FEATURE);
+    }
+    member(&mut f, 1, 11, 20, c::OWNING_MEMBERSHIP);
+    member(&mut f, 1, 12, 21, c::FEATURE_MEMBERSHIP);
+    member(&mut f, 1, 13, 22, c::PARAMETER_MEMBERSHIP);
+    f.create(19, c::MEMBERSHIP);
+    f.value(19, p::MEMBERSHIP_MEMBER_ELEMENT, Value::Reference(id(11)));
+    f.own(1, 19);
+    f.create(23, c::MEMBERSHIP);
+    f.own(1, 23);
+    let construction = f.construction();
+    let q = KerMlQueries::new(
+        SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+            .unwrap(),
+    );
+    let selected = q.owned_relationships_excluding(id(1), c::MEMBERSHIP, [c::FEATURE_MEMBERSHIP]);
+    assert_eq!(
+        selected.completeness,
+        Completeness::Complete,
+        "{selected:?}"
+    );
+    assert_eq!(selected.value, [id(20), id(19), id(23)]);
+    assert!(selected.search_dependencies.contains(
+        &SearchDependency::OwnedRelationshipsExcluding {
+            owner: id(1),
+            class: c::MEMBERSHIP,
+            excluded: BTreeSet::from([c::FEATURE_MEMBERSHIP]),
+        }
+    ));
+    assert!(selected.positive_dependencies.contains(&FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    }));
+    assert!(
+        !selected
+            .positive_dependencies
+            .contains(&FactKey::Element(id(21)))
+    );
+    assert!(
+        !selected
+            .positive_dependencies
+            .contains(&FactKey::Element(id(22)))
+    );
+    assert_eq!(q.member(id(23)).completeness, Completeness::Incomplete);
+}

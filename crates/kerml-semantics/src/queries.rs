@@ -539,13 +539,34 @@ impl<'m> KerMlQueries<'m> {
         element: ElementId,
         class: MetaclassId,
     ) -> QueryResult<Vec<ElementId>> {
+        self.owned_relationships_excluding(element, class, [])
+    }
+
+    /// Owned relationships conforming to `class`, excluding every subtype of
+    /// each supplied class. Canonical order, backing facts and incomplete
+    /// ownership evidence are retained for this exact population.
+    pub fn owned_relationships_excluding(
+        &self,
+        element: ElementId,
+        class: MetaclassId,
+        excluded: impl IntoIterator<Item = MetaclassId>,
+    ) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
         let Some(view) = self.checked::<views::Element, _>(&mut out, element) else {
             return out;
         };
-        let search = SearchDependency::OwnedRelationships {
-            owner: element,
-            class,
+        let excluded: BTreeSet<_> = excluded.into_iter().collect();
+        let search = if excluded.is_empty() {
+            SearchDependency::OwnedRelationships {
+                owner: element,
+                class,
+            }
+        } else {
+            SearchDependency::OwnedRelationshipsExcluding {
+                owner: element,
+                class,
+                excluded: excluded.clone(),
+            }
         };
         out.search_dependencies.insert(search.clone());
         let mut evidence = vec![Evidence::Search(search)];
@@ -554,6 +575,7 @@ impl<'m> KerMlQueries<'m> {
                 .into_iter()
                 .flat_map(|v| v.iter())
                 .filter(|&target| self.is(target, class))
+                .filter(|&target| !excluded.iter().any(|&class| self.is(target, class)))
                 .collect();
             if !values.is_empty() {
                 let property = self

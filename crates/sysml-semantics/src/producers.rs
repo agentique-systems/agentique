@@ -1128,7 +1128,11 @@ impl Evaluator<'_, '_> {
             .result(subject, "sourceFeature")
             .evidence
             .map(|()| None);
-        let owned = self.queries.owned_relationships(subject);
+        let owned = self.queries.owned_relationships_excluding(
+            subject,
+            kc::MEMBERSHIP,
+            [kc::FEATURE_MEMBERSHIP],
+        );
         for &membership in &owned.value {
             result
                 .merge_evidence(
