@@ -49,6 +49,17 @@ pub(crate) fn producer_reads<T>(
         } => {
             result.insert(ProducerRead::Source(*source, *class, *property));
         }
+        K::ProducerClosure {
+            subject,
+            requirement,
+            ..
+        } => {
+            result.insert(
+                SemanticClosureRequirement::from_contract_id(requirement)
+                    .map(|requirement| ProducerRead::Requirement(*subject, requirement))
+                    .unwrap_or(ProducerRead::Global),
+            );
+        }
         K::Model => {
             result.insert(ProducerRead::Global);
         }
