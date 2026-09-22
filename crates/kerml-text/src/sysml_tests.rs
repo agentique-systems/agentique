@@ -242,6 +242,140 @@ fn reference_metadata_preserves_private_aliases_and_imports_and_rejects_unknown_
 }
 
 #[test]
+fn mixed_production_namespaces_compose_imports_visibility_shadowing_and_cycles() {
+    let sysml = parse(
+        r#"
+        package BaseDefinitions {
+            part def Visible;
+            private part def Hidden;
+        }
+        package User {
+            private import BaseDefinitions::*;
+            public alias Model for Visible;
+            part def Mixed :> Legacy::Old;
+            package Inner {
+                part def Visible;
+                part selected : Visible;
+            }
+        }
+        package CycleA { private import CycleB::*; part def AType; }
+        package CycleB { private import CycleA::*; part def BType; }
+    "#,
+    );
+    let kerml = production::parse(
+        DocumentId::new(),
+        SourceRevisionId::new(),
+        "package Legacy { class Old; }",
+        Default::default(),
+    )
+    .unwrap();
+    assert!(kerml.is_complete());
+    let inputs = [
+        SourceInput {
+            syntax: &sysml,
+            library: None,
+            sysml: true,
+        },
+        SourceInput {
+            syntax: &kerml,
+            library: None,
+            sysml: false,
+        },
+    ];
+    let root = ElementId::new();
+    let base = Snapshot::new(Arc::new(
+        agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
+    ));
+    let draft = library::refinement::refine(
+        |resolved| {
+            construction::construct_on(
+                &inputs,
+                resolved,
+                BaselineProfile::OPERATIONAL_V9,
+                base.clone(),
+                Some((root, DeclaredOrigin::Authored { source: None })),
+            )
+        },
+        |draft| {
+            Ok(KerMlQueries::new(
+                SemanticContext::for_construction(draft.candidate(), options(), BTreeSet::new())
+                    .unwrap(),
+            )
+            .status_queries())
+        },
+        ReferenceRefinementStrategy::DependencyDriven,
+        |_| {},
+    )
+    .unwrap();
+    let snapshot = draft.strict_snapshot().unwrap();
+    let query = q(&snapshot);
+    let lookup = |scope, path: &[&str]| {
+        let answer = query.lookup_path(
+            scope,
+            &agq_kerml_semantics::QualifiedName {
+                absolute: false,
+                segments: path.iter().map(|s| (*s).to_owned()).collect(),
+            },
+        );
+        assert_eq!(
+            answer.completeness,
+            Completeness::Complete,
+            "{path:?}: {answer:?}"
+        );
+        answer
+            .value
+            .into_iter()
+            .map(|member| member.element)
+            .collect::<Vec<_>>()
+    };
+    let visible = lookup(root, &["BaseDefinitions", "Visible"])[0];
+    assert_eq!(lookup(root, &["User", "Model"]), vec![visible]);
+    assert!(lookup(root, &["BaseDefinitions", "Hidden"]).is_empty());
+    assert!(
+        lookup(root, &["User", "Visible"]).is_empty(),
+        "private import is not re-exported"
+    );
+    let user = lookup(root, &["User"])[0];
+    assert_eq!(lookup(user, &["Visible"]), vec![visible]);
+    assert!(lookup(user, &["Hidden"]).is_empty());
+    let inner_visible = lookup(root, &["User", "Inner", "Visible"])[0];
+    let selected = lookup(root, &["User", "Inner", "selected"])[0];
+    assert_ne!(inner_visible, visible);
+    let typing = query.direct_feature_types(selected);
+    assert_eq!(typing.completeness, Completeness::Complete);
+    assert_eq!(
+        typing.value,
+        vec![inner_visible],
+        "nearer declaration shadows outer import"
+    );
+    let mixed = lookup(root, &["User", "Mixed"])[0];
+    let old = lookup(root, &["Legacy", "Old"])[0];
+    let bases = query.direct_specializations(mixed);
+    assert_eq!(bases.completeness, Completeness::Complete);
+    assert_eq!(bases.value, vec![old]);
+    assert_eq!(snapshot.model().element(old).unwrap().metaclass(), c::CLASS);
+    let cycle_a = lookup(root, &["CycleA"])[0];
+    let cycle_b = lookup(root, &["CycleB"])[0];
+    assert_eq!(
+        lookup(cycle_a, &["BType"]),
+        lookup(root, &["CycleB", "BType"])
+    );
+    assert_eq!(
+        lookup(cycle_b, &["AType"]),
+        lookup(root, &["CycleA", "AType"])
+    );
+    for reference in draft.references() {
+        let answer = query.lookup_relationship_target(
+            reference.relationship,
+            reference.property,
+            &reference.name,
+        );
+        assert_eq!(answer.completeness, Completeness::Complete, "{reference:?}");
+        assert_eq!(answer.value.len(), 1, "{reference:?}");
+    }
+}
+
+#[test]
 fn authored_edit_reuses_unaffected_semantic_and_relationship_identities() {
     let first = parse("part def Engine; part def Vehicle { part engine : Engine; }");
     let before = lower(&first);

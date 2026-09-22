@@ -461,6 +461,52 @@
         "min_free_disk_bytes": 0
       },
       "output_sha256": "6aad2d86721b6f4feb3a4b108801a05391f0b450aebda542c73c11ff6b07e3c4"
+    },
+    {
+      "name": "sysml-mixed-namespaces",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "2",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "mixed_production_namespaces",
+        "--",
+        "--nocapture"
+      ],
+      "source_commit": "0264e5f6c772a344c5d51288567ab0fb6e8df497",
+      "working_changes_sha256": "6f51709b296a766511c96975ab1f1b3ed14f5c74be08f7928bf68e7f6326c5de",
+      "environment_overrides": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/sysml-mixed-namespaces",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 9496,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 5.032,
+      "peak_rss_bytes": 352681984,
+      "peak_private_bytes": 469856256,
+      "samples": 6,
+      "limits": {
+        "wall_seconds": 180.0,
+        "private_bytes": 1610612736,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 0
+      },
+      "output_sha256": "c28421d02593bf30a478bfe571593802340968cf84c78a5da7ddec5b2b1173fe"
     }
   ]
 }
