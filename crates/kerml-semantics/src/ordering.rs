@@ -74,30 +74,22 @@ impl KerMlQueries<'_> {
         let mut out = self.result(vec![]);
         let mut graph = BTreeMap::<ElementId, Vec<ElementId>>::new();
         let mut own = BTreeMap::<ElementId, Vec<(ElementId, ElementId)>>::new();
-        let mut all_owned = BTreeMap::new();
         let mut queue = VecDeque::from([ty]);
         while let Some(current) = queue.pop_front() {
             if graph.contains_key(&current) {
                 continue;
             }
-            let members = self.memberships(current);
+            let members = self.memberships_of_type(current, c::RETURN_PARAMETER_MEMBERSHIP);
             let mut results = vec![];
-            let mut features = vec![];
             for &membership in &members.value {
-                if self.is(membership, c::FEATURE_MEMBERSHIP) {
-                    let member = self.member(membership);
-                    if let Some(feature) = member.value {
-                        features.push(feature);
-                        if self.is(membership, c::RETURN_PARAMETER_MEMBERSHIP) {
-                            results.push((membership, feature));
-                        }
-                    }
-                    out.merge(member);
+                let member = self.member(membership);
+                if let Some(feature) = member.value {
+                    results.push((membership, feature));
                 }
+                out.merge(member);
             }
             out.merge(members);
             own.insert(current, results);
-            all_owned.insert(current, features);
             let mut parents = self.owned_specialization_targets(current);
             if !self.context().options.exclude_implied {
                 let library = self.library_specializations(current);
@@ -106,29 +98,29 @@ impl KerMlQueries<'_> {
             }
             // Conjugation replaces ordinary supertypes; a feature target supplies
             // its inherited memberships as prescribed by Feature::supertypes.
-            let owned = self.owned_relationships(current);
+            let conjugations = self.owned_relationships_of_type(current, c::CONJUGATION);
             let mut chain = vec![];
-            for &r in &owned.value {
-                if self.is(r, c::CONJUGATION) {
-                    parents.value.clear();
-                    parents.value.extend(self.read_reference(
-                        &mut out,
-                        r,
-                        p::CONJUGATION_ORIGINAL_TYPE,
-                    ));
-                }
-                if self.is(r, c::FEATURE_CHAINING) {
-                    chain.extend(self.read_reference(
-                        &mut out,
-                        r,
-                        p::FEATURE_CHAINING_CHAINING_FEATURE,
-                    ));
-                }
+            for &r in &conjugations.value {
+                parents.value.clear();
+                parents.value.extend(self.read_reference(
+                    &mut out,
+                    r,
+                    p::CONJUGATION_ORIGINAL_TYPE,
+                ));
+            }
+            out.merge(conjugations);
+            let chains = self.owned_relationships_of_type(current, c::FEATURE_CHAINING);
+            for &r in &chains.value {
+                chain.extend(self.read_reference(
+                    &mut out,
+                    r,
+                    p::FEATURE_CHAINING_CHAINING_FEATURE,
+                ));
             }
             if let Some(target) = chain.last().filter(|&&target| target != current) {
                 parents.value.push(*target);
             }
-            out.merge(owned);
+            out.merge(chains);
             parents.value.retain(|&p| p != current);
             queue.extend(parents.value.iter().copied());
             graph.insert(current, parents.value.clone());
@@ -184,8 +176,29 @@ impl KerMlQueries<'_> {
                         }
                     }
                 }
+                // Other owned features matter only when they may suppress an
+                // inherited result. Their population cannot affect a type that
+                // has no inherited result identities to remove.
+                let mut owned_features: Vec<_> = own[&current].iter().map(|(_, f)| *f).collect();
+                let owned_results_suppress_inherited = inherited.iter().all(|(_, inherited)| {
+                    owned_features.iter().any(|owned| {
+                        implied
+                            .get(owned)
+                            .is_some_and(|targets| targets.contains(inherited))
+                    })
+                });
+                if !inherited.is_empty() && !owned_results_suppress_inherited {
+                    owned_features.clear();
+                    let members = self.memberships_of_type(current, c::FEATURE_MEMBERSHIP);
+                    for &membership in &members.value {
+                        let member = self.member(membership);
+                        owned_features.extend(member.value);
+                        out.merge(member);
+                    }
+                    out.merge(members);
+                }
                 let mut closures = BTreeMap::new();
-                for feature in all_owned[&current]
+                for feature in owned_features
                     .iter()
                     .copied()
                     .chain(inherited.iter().map(|(_, f)| *f))
@@ -210,7 +223,7 @@ impl KerMlQueries<'_> {
                     let suppressed = inherited
                         .iter()
                         .any(|(_, other)| *other != feature && closures[other].contains(&feature))
-                        || all_owned[&current].iter().any(|f| {
+                        || owned_features.iter().any(|f| {
                             let explicit = self.targets(*f, QueryKind::RedefinedFeatures);
                             let mut direct: BTreeSet<_> = explicit.value.iter().copied().collect();
                             out.merge(explicit);

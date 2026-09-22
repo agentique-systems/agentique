@@ -23,8 +23,16 @@ Completed checks:
 | `cargo test -p agq-kerml-semantics --test positional_publication --test redefinition_v2 --test redefinition_end_v4 --test ordered_results -- --nocapture` | Exit 101; ordered 6, positional 2, end 2 passed; redefinition 9 passed and one feature-chain regression failed |
 | `cargo test -p agq-kerml-semantics --test redefinition_v2 conjugation_and_feature_chain_supply_original_member_identities` | Exit 0 after fixing the missing separate FeatureChaining population; 1 passed |
 | `cargo clippy -p agq-kerml-semantics --all-targets -- -D warnings` | Exit 0 before the final feature projection change |
+| `cargo test -p agq-kerml-semantics --test ordered_results` | Exit 0; 7 passed, including conditional inherited-result suppression reads |
+| `cargo test -p agq-sysml-semantics` | Exit 0; 51 passed and doc tests passed after expression membership precision |
 
 The failed feature-chain test exposed a real implementation defect in the earlier
 class-filtered lookup. It was fixed in `e0a5f7d`; the assertion was retained.
-The combined Actions micro fixture remains the gate for the final projection
-contract. No whole Systems Library candidate was run from this workstream.
+The combined Actions micro, root Usage without an owner, and shared variable
+snapshot/value-context fixtures all pass. Result producers select their exact
+membership classes. Result queries retain broad owned-feature suppression evidence
+when inherited results can survive, and avoid those unrelated reads when known
+positional redefinitions already suppress every inherited result.
+
+No whole Systems Library candidate was run from this workstream. These fixture
+results do not establish Systems publication acceptance.

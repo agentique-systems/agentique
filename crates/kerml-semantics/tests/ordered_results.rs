@@ -90,6 +90,53 @@ fn local_result_redefines_canonical_inherited_result_without_copying() {
 }
 
 #[test]
+fn other_owned_features_are_read_only_when_they_can_suppress_an_inherited_result() {
+    for local_result in [false, true] {
+        let mut f = Fixture::new();
+        f.create(1, c::FUNCTION);
+        result(&mut f, 1, 101, 11, "inherited");
+        f.create(2, c::EXPRESSION);
+        general(&mut f, 2, 201, 1);
+        if local_result {
+            result(&mut f, 2, 102, 12, "replacement");
+        }
+        f.member(2, 103, 13, c::FEATURE, "other");
+        f.create(203, c::REDEFINITION);
+        f.value(
+            203,
+            p::REDEFINITION_REDEFINING_FEATURE,
+            Value::Reference(id(13)),
+        );
+        f.value(
+            203,
+            p::REDEFINITION_REDEFINED_FEATURE,
+            Value::Reference(id(11)),
+        );
+        f.own(13, 203);
+        let snapshot = f.finish();
+        let q = KerMlQueries::new(
+            SemanticContext::for_snapshot(&snapshot, Default::default(), Default::default())
+                .unwrap(),
+        );
+        let answer = q.result_parameters(id(2));
+        assert_eq!(answer.completeness, Completeness::Complete, "{answer:?}");
+        assert_eq!(
+            answer.value,
+            if local_result { vec![id(12)] } else { vec![] }
+        );
+        assert_eq!(
+            answer
+                .search_dependencies
+                .contains(&SearchDependency::OwnedRelationships {
+                    owner: id(2),
+                    class: c::FEATURE_MEMBERSHIP,
+                }),
+            !local_result,
+        );
+    }
+}
+
+#[test]
 fn multiple_inheritance_preserves_distinct_results_until_local_redefinition() {
     for reverse in [false, true] {
         for local in [false, true] {

@@ -2370,7 +2370,7 @@ impl<'m> KerMlQueries<'m> {
             {
                 producer_families_attempted += 1;
                 let mut proof = self.result(());
-                let members = self.memberships(subject);
+                let members = self.memberships_of_type(subject, c::RETURN_PARAMETER_MEMBERSHIP);
                 let has_owned_result = members
                     .value
                     .iter()
@@ -2798,7 +2798,7 @@ impl<'m> KerMlQueries<'m> {
             if self.is(subject, c::EXPRESSION) || self.is(subject, c::FUNCTION) {
                 producer_families_attempted += 1;
                 let mut proof = self.result(());
-                let members = self.memberships(subject);
+                let members = self.memberships_of_type(subject, c::RESULT_EXPRESSION_MEMBERSHIP);
                 for &membership in &members.value {
                     if !self.is(membership, c::RESULT_EXPRESSION_MEMBERSHIP) {
                         continue;
