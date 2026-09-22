@@ -1534,8 +1534,19 @@ pub(crate) fn effect_changes_read(
                 })
                 .map_or(*property, |descriptor| descriptor.id);
             if let ProducerEffect::Scalar(written) = effect {
+                let written_resolved = model
+                    .element(*element)
+                    .and_then(|record| {
+                        model
+                            .registry()
+                            .resolve_property(record.metaclass(), written)
+                            .ok()
+                            .flatten()
+                    })
+                    .map_or(written, |descriptor| descriptor.id);
                 return written == *property
                     || written == resolved
+                    || written_resolved == resolved
                     || reference_scalar(effect, model);
             }
             if [

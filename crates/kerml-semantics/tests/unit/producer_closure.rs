@@ -1972,7 +1972,9 @@ fn semantic_target_bound_audits_existing_scalar_contribution() {
 
 #[test]
 fn scalar_producer_base_property_matches_effective_read_alias() {
-    use crate::producer_closure::{ProducerRead, effect_changes_read};
+    use crate::producer_closure::{
+        ProducerEvaluationTable, ProducerRead, effect_changes_read, producer_reads,
+    };
     use agq_kernel::metamodel::{MetamodelRegistry, PropertyOwner};
     let custom_class = MetaclassId::from_u128(0xfee104);
     let alias = PropertyId::from_u128(0xfee105);
@@ -2019,6 +2021,68 @@ fn scalar_producer_base_property_matches_effective_read_alias() {
                 snapshot.model(),
             ),
             "base and effective property identity describe the same pending primitive scalar write"
+        );
+        let mut writer = ProducerDescriptor::new(
+            ACTIVATE,
+            [ProducerEffect::Scalar(written)],
+            ProducerApplicability::Any,
+        );
+        writer.effect_targets = Some(BTreeSet::from([c::TYPE]));
+        let registry = ProducerRegistry::new([
+            writer,
+            ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any),
+        ])
+        .unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let q = KerMlQueries::new(context);
+        let mut evidence = q.canonical_fact_evidence(FactKey::Element(id(1)));
+        assert!(q.read_value(&mut evidence, id(1), read).is_none());
+        let mut table = ProducerEvaluationTable::default();
+        table.pending(id(1), snapshot.model(), &registry);
+        table
+            .record(
+                &[
+                    (id(1), ACTIVATE, Completeness::Incomplete),
+                    (id(1), TYPE, Completeness::Complete),
+                ],
+                &registry,
+            )
+            .unwrap();
+        table.record_reads(
+            &[(id(1), TYPE, producer_reads(&evidence, snapshot.model()))],
+            &registry,
+        );
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            q.context(),
+            &registry,
+            &table,
+            |_| false,
+        );
+        assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+
+        let mut plan = q.plan_result_structure([]);
+        plan.add_derived_property(
+            id(1),
+            alias,
+            SlotValue::Scalar(Value::String("fixture".into())),
+            RuleId::from_u128(99872),
+            &evidence,
+        )
+        .unwrap();
+        plan.validate_declared_effects(&[id(1)], &registry).unwrap();
+        let applied = plan.materialize(&snapshot).unwrap();
+        assert_eq!(
+            applied
+                .overlay
+                .model()
+                .navigation_slot(id(1), alias)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::String("fixture".into()))
         );
     }
 }
