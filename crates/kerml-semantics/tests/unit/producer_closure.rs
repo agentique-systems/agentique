@@ -1971,6 +1971,59 @@ fn semantic_target_bound_audits_existing_scalar_contribution() {
 }
 
 #[test]
+fn scalar_producer_base_property_matches_effective_read_alias() {
+    use crate::producer_closure::{ProducerRead, effect_changes_read};
+    use agq_kernel::metamodel::{MetamodelRegistry, PropertyOwner};
+    let custom_class = MetaclassId::from_u128(0xfee104);
+    let alias = PropertyId::from_u128(0xfee105);
+    let mut descriptors = agq_kerml::descriptors();
+    let mut class = descriptors
+        .classes
+        .iter()
+        .find(|class| class.id == c::FEATURE)
+        .unwrap()
+        .clone();
+    class.id = custom_class;
+    class.name = "FixtureNamedFeature".into();
+    class.direct_supertypes = BTreeSet::from([c::FEATURE]);
+    descriptors.classes.push(class);
+    let mut property = descriptors
+        .properties
+        .iter()
+        .find(|property| property.id == p::ELEMENT_QUALIFIED_NAME)
+        .unwrap()
+        .clone();
+    property.id = alias;
+    property.name = "fixtureQualifiedName".into();
+    property.owner = PropertyOwner::Class(custom_class);
+    property.redefines = BTreeSet::from([p::ELEMENT_QUALIFIED_NAME]);
+    descriptors.properties.push(property);
+    let base = Snapshot::new(Arc::new(
+        MetamodelRegistry::from_descriptors(descriptors).unwrap(),
+    ));
+    let mut fixture = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    fixture.create(1, custom_class);
+    let snapshot = fixture.finish();
+    for (written, read) in [
+        (p::ELEMENT_QUALIFIED_NAME, alias),
+        (alias, p::ELEMENT_QUALIFIED_NAME),
+    ] {
+        assert!(
+            effect_changes_read(
+                ProducerEffect::Scalar(written),
+                &ProducerRead::Property(id(1), read),
+                snapshot.model(),
+            ),
+            "base and effective property identity describe the same pending primitive scalar write"
+        );
+    }
+}
+
+#[test]
 fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
     use crate::producer_closure::ProducerEvaluationTable;
     let mut f = Fixture::new();
