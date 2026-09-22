@@ -1715,7 +1715,7 @@ impl ResultStructurePlan<'_> {
         &self,
         subjects: &[ElementId],
         registry: &ProducerRegistry,
-    ) -> Result<(), DerivationError> {
+    ) -> Result<(), PublicationOverlayError> {
         let model = self.graph.model;
         let descriptors: Vec<_> = subjects
             .iter()
@@ -1730,7 +1730,43 @@ impl ResultStructurePlan<'_> {
                 })
             })
             .collect();
-        for &(target, property) in self.graph.contributed_properties.keys() {
+        let audit_failure = |operation,
+                             fact,
+                             origin_rule,
+                             producer_subject: Option<ElementId>,
+                             semantic_target,
+                             detail: String| {
+            let mut details = format!(
+                "{detail}; target_class={:?}",
+                model
+                    .element(semantic_target)
+                    .map(|record| record.metaclass())
+            );
+            let evaluated: Vec<_> = self
+                .producer_evaluations
+                .iter()
+                .filter(|(subject, _, _)| {
+                    producer_subject.is_none_or(|producer| *subject == producer)
+                })
+                .collect();
+            details.push_str(&format!(
+                "; evaluations={evaluated:?}; applicable_contracts="
+            ));
+            for (subject, descriptor) in &descriptors {
+                if producer_subject.is_none_or(|producer| *subject == producer) {
+                    details.push_str(&format!(" [{subject:?}: {descriptor:?}]"));
+                }
+            }
+            PublicationOverlayError::ProducerEffectViolation(Box::new(ProducerEffectAuditFailure {
+                operation,
+                fact,
+                origin_rule,
+                producer_subject,
+                semantic_target,
+                detail: details,
+            }))
+        };
+        for (&(target, property), contribution) in &self.graph.contributed_properties {
             let Some(record) = model.element(target) else {
                 continue;
             };
@@ -1760,7 +1796,24 @@ impl ResultStructurePlan<'_> {
                             && owned_below(model, subject, target)))
             });
             if !permitted {
-                return Err(DerivationError::InputContextMismatch);
+                return Err(audit_failure(
+                    "existing property contribution",
+                    FactKey::Property {
+                        element: target,
+                        property,
+                    },
+                    contribution.explanation.rule,
+                    Some(target),
+                    target,
+                    format!(
+                        "property={:?}; proposed_value={:?}; no applicable contract permits property/target/scope",
+                        model
+                            .registry()
+                            .property(property)
+                            .map(|descriptor| descriptor.name.as_str()),
+                        contribution.value
+                    ),
+                ));
             }
         }
         for (&relationship, record) in &self.graph.records {
@@ -1787,7 +1840,17 @@ impl ResultStructurePlan<'_> {
                                     && owned_below(model, subject, child)))
                     });
                     if !permitted {
-                        return Err(DerivationError::InputContextMismatch);
+                        return Err(audit_failure(
+                            "ownership of existing subject",
+                            FactKey::Element(relationship),
+                            record.key.rule,
+                            Some(record.key.subject),
+                            child,
+                            format!(
+                                "new_relationship_class={:?}; ownership effect/target/scope undeclared",
+                                record.class
+                            ),
+                        ));
                     }
                 }
             }
@@ -1961,7 +2024,17 @@ impl ResultStructurePlan<'_> {
                                     && owned_below(model, subject, source)))))
             });
             if !permitted {
-                return Err(DerivationError::InputContextMismatch);
+                return Err(audit_failure(
+                    "relationship semantic effect",
+                    FactKey::Element(relationship),
+                    record.key.rule,
+                    Some(record.key.subject),
+                    source,
+                    format!(
+                        "effect={effect:?}; relationship_class={:?}; source_role={property:?}; fresh_source={fresh}; feature_populations={feature_populations:?}; slots={:?}; no applicable contract permits effect/class/population/target/scope",
+                        record.class, record.slots
+                    ),
+                ));
             }
         }
         Ok(())

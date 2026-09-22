@@ -908,17 +908,35 @@ impl ProducerEvaluationTable {
         &mut self,
         evaluations: &[(ElementId, ProducerFamilyId, Completeness)],
         registry: &ProducerRegistry,
-    ) -> Result<(), agq_kernel::derived::DerivationError> {
+    ) -> Result<(), crate::PublicationOverlayError> {
         for &(subject, family, completeness) in evaluations {
             let Some(index) = registry.index(family) else {
-                return Err(agq_kernel::derived::DerivationError::InputContextMismatch);
+                return Err(crate::PublicationOverlayError::ProducerEvaluationMismatch {
+                    subject,
+                    family,
+                    reason: "unregistered producer family",
+                    state: None,
+                    descriptor: None,
+                });
             };
             let Some(row) = self.rows.get_mut(&subject) else {
-                return Err(agq_kernel::derived::DerivationError::InputContextMismatch);
+                return Err(crate::PublicationOverlayError::ProducerEvaluationMismatch {
+                    subject,
+                    family,
+                    reason: "subject has no scheduled evaluation row",
+                    state: None,
+                    descriptor: Some(Box::new(registry.descriptors[index].clone())),
+                });
             };
             {
                 if row[index] == ProducerEvaluationState::Inapplicable {
-                    return Err(agq_kernel::derived::DerivationError::InputContextMismatch);
+                    return Err(crate::PublicationOverlayError::ProducerEvaluationMismatch {
+                        subject,
+                        family,
+                        reason: "family evaluated on an inapplicable subject",
+                        state: Some(row[index]),
+                        descriptor: Some(Box::new(registry.descriptors[index].clone())),
+                    });
                 }
                 row[index] = if completeness == Completeness::Complete
                     && row[index] != ProducerEvaluationState::EvaluatedIncomplete

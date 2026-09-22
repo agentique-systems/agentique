@@ -1498,11 +1498,25 @@ fn unknown_family_evaluation_and_duplicate_registry_identity_are_rejected() {
     let snapshot = fixture();
     let mut table = crate::producer_closure::ProducerEvaluationTable::default();
     table.pending(id(1), snapshot.model(), &registry);
-    assert!(
-        table
-            .record(&[(id(1), ACTIVATE, Completeness::Complete)], &registry)
-            .is_err()
-    );
+    assert!(matches!(
+        table.record(&[(id(1), ACTIVATE, Completeness::Complete)], &registry),
+        Err(PublicationOverlayError::ProducerEvaluationMismatch { subject, family: ACTIVATE, reason: "unregistered producer family", state: None, .. }) if subject == id(1)
+    ));
+    assert!(matches!(
+        table.record(&[(id(99), TYPE, Completeness::Complete)], &registry),
+        Err(PublicationOverlayError::ProducerEvaluationMismatch { subject, family: TYPE, reason: "subject has no scheduled evaluation row", state: None, .. }) if subject == id(99)
+    ));
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Never,
+    )])
+    .unwrap();
+    table.pending(id(1), snapshot.model(), &registry);
+    assert!(matches!(
+        table.record(&[(id(1), TYPE, Completeness::Complete)], &registry),
+        Err(PublicationOverlayError::ProducerEvaluationMismatch { subject, family: TYPE, state: Some(ProducerEvaluationState::Inapplicable), .. }) if subject == id(1)
+    ));
 }
 
 #[test]
@@ -1962,11 +1976,25 @@ fn semantic_target_bound_audits_existing_scalar_contribution() {
             &evidence,
         )
         .unwrap();
-        assert_eq!(
-            plan.validate_declared_effects(&[id(1)], &registry).is_ok(),
-            class == c::CLASSIFIER,
-            "the existing scalar subject must satisfy the declared target bound"
-        );
+        let audited = plan.validate_declared_effects(&[id(1)], &registry);
+        if class == c::CLASSIFIER {
+            audited.unwrap();
+        } else {
+            let Err(PublicationOverlayError::ProducerEffectViolation(failure)) = audited else {
+                panic!("the existing scalar subject must satisfy the declared target bound");
+            };
+            assert_eq!(failure.operation, "existing property contribution");
+            assert_eq!(
+                failure.fact,
+                FactKey::Property {
+                    element: id(1),
+                    property
+                }
+            );
+            assert_eq!(failure.semantic_target, id(1));
+            assert_eq!(failure.origin_rule, RuleId::from_u128(99871));
+            assert!(failure.detail.contains(TYPE.name()));
+        }
     }
 }
 

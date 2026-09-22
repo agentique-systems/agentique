@@ -4,7 +4,7 @@ use super::*;
 #[derive(PartialEq, Eq)]
 pub(super) struct PropertyContribution {
     pub(super) value: SlotValue,
-    explanation: KernelExplanation,
+    pub(super) explanation: KernelExplanation,
     searches: BTreeSet<StructuralSearch>,
 }
 
