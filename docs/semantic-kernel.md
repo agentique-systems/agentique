@@ -179,6 +179,16 @@ query contract and complete reporting of changed records, pending inputs and bot
 old and new navigation endpoints. Full explanations remain available through
 `KerMlQueries` against the same canonical graph.
 
+Negative effective conclusions additionally require a scheduler-issued
+`ProducerClosureCertificate` ([ADR 0025](adr/0025-producer-closure-evidence.md)).
+The certificate binds the exact graph, producer registry and semantic context;
+it remains immutable evidence beside the graph. Stable family descriptors declare
+applicability and potential effects, including future cross-subject writes.
+Quiescence follows actual family dependencies, rather than graph convergence
+alone. Typed closure search evidence explains which subject and requirement the
+certificate covers. Without that evidence, a negative formal antecedent remains
+Incomplete; a proved positive antecedent need not await unrelated producers.
+
 Scoped publication also carries `PublicationProviderReads`. It distinguishes
 observations of fixed declared identities and names from reads that can require
 additional additive producers. General revision invalidation retains all reads.

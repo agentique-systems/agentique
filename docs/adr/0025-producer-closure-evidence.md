@@ -23,6 +23,21 @@ typing result remains open until that upstream writer closes. The certificate
 uses per-family semantic reads and potential effects to retain this obligation;
 checking only the typing producer's latest return status is insufficient.
 
+Potential writes include future subjects: an unfinished creator can activate a
+family that has no applicable subject yet. The registry declares cross-subject
+scope and optional relationship-class, positional-population and semantic-target
+metaclass bounds. These bounds are promises about every execution, audited against
+emitted effects; they are never inferred from an empty result. Reference-valued
+scalar effects can change navigation at other subjects and remain conservative.
+Ownership-sensitive scopes expand when another family can alter ownership.
+
+Each family retains its own canonical query searches on its outputs. A complete
+positional redefinition must not acquire an unrelated incomplete featuring
+family's reads merely because both ran on one subject. Ordered projections name
+the exact relationship or member population they observe, while keeping the
+canonical carrier facts in their proof. This precision removes false dependency
+cycles without declaring an open population closed.
+
 `ProducerClosureCertificate` is an immutable sidecar with a private issuing
 boundary. It binds model, registry and context-contract digests and stores compact
 subject/family states and closed requirement masks. It is not a canonical model
