@@ -229,7 +229,7 @@ fn composite_item_correction_uses_actual_plural_identity_only_when_applicable() 
 }
 
 #[test]
-fn missing_target_retains_empty_namespace_reads_and_pending_inputs_create_no_fact() {
+fn missing_target_retains_pending_reads_without_suppressing_proven_positive_bases() {
     let snapshot = item_fixture(true, false).finish();
     let context = crate::context::fixture_context(&snapshot, BTreeSet::from([id(12)]));
     let queries = KerMlQueries::new(context.kerml);
@@ -246,7 +246,18 @@ fn missing_target_retains_empty_namespace_reads_and_pending_inputs_create_no_fac
             .search_dependencies
             .contains(&SearchDependency::NamespaceMembers { namespace: id(3) })
     );
-    assert!(plan.results.iter().all(|r| r.relationships.is_empty()));
+    assert!(item.relationships.is_empty());
+    assert_eq!(item.evidence.completeness, Completeness::Incomplete);
+    // The pending authored specialization can change ancestry exhaustiveness,
+    // but cannot change the existing PartUsage metaclass or its standard base.
+    let positive = result(&plan, "checkPartUsageSpecialization");
+    assert_eq!(positive.evidence.completeness, Completeness::Complete);
+    assert_eq!(positive.relationships.len(), 1);
+    assert_eq!(positive.relationships[0].general, id(9));
+    assert_eq!(
+        queries.all_supertypes(id(12)).completeness,
+        Completeness::Incomplete
+    );
     assert_eq!(plan.completeness(), Completeness::Incomplete);
 }
 
