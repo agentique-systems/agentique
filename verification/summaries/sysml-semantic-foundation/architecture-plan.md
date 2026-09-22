@@ -11,21 +11,94 @@ K10–K13 accept the real KerML corpus and authored integration.
 `agq-sysml-semantics` depending on kernel, KerML descriptors/semantics and SysML
 descriptors. Neither parsing nor transport belongs in that crate.
 
-Two concrete integration seams need attention:
+### Implemented acceptance and cache boundary
 
-1. `agq_sysml::descriptors()` currently starts with the published
-   `agq_kerml::descriptors()`. Operational SysML construction must combine
-   `agq_kerml::descriptors_for_profile(v9)` with
-   `agq_sysml::own_descriptors()`, preserving shared descriptor identities and
-   validating the exact combined graph. Do not silently use published KerML
-   metadata for a dependency accepted under v9.
-2. `CanonicalKermlStandardLibraries` lives in `agq-kerml-text`. A SysML semantic
-   crate must not depend on that frontend just to consume its acceptance identity.
-   Expose a parser-independent, immutable accepted dependency contract from
-   `agq-kerml-semantics`; the source facade can issue it only after its existing
-   producer/capability/source/mandatory-reference checks. A raw
-   `CompletePublicationOverlay` alone does not certify those source/reference
-   checks. Preserve the facade's unforgeable acceptance boundary.
+Reviewed against `d322c1d` and its accepted-cache implementation. The checked-in
+receipt still says `unaccepted`; these APIs do not establish corpus acceptance.
+
+`agq-kerml-semantics` now owns the parser-independent
+`AcceptedPublicationReceipt::checked_in()` and
+`CompletePublicationOverlay::restore_accepted(overlay, roots, libraries, receipt)`.
+The receipt is compiled from the separately checked-in acceptance and binding
+manifests; arbitrary cache JSON cannot construct it. Restoration re-encodes the
+actual graph and checks its archive hash, complete semantic identity, capability
+families and standard-role population. A restored object records
+`restored_from_receipt() == true`; an ordinary producer-closed overlay does not.
+This existing boundary replaces the earlier plan to invent a receipt mechanism.
+
+The source-facing `CanonicalKermlStandardLibraries::restore_cache` additionally
+checks bounded ZIP entries, verified source content, roots/source-map metadata
+and the accepted binding manifest. Keep that I/O/provenance facade in
+`agq-kerml-text`; the future semantic crate can consume the restored complete
+overlay, its existing context/bindings and the trusted receipt without depending
+on the parser. Its constructor must require this accepted route, not any object
+of type `CompletePublicationOverlay`: the public canonical builder seals closure
+without independently establishing source/mandatory-reference acceptance.
+
+Restore under the receipt's original KerML v9 registry first. The kernel archive
+pins the exact registry and semantic restoration pins the exact descriptor digest.
+Loading the archive under a combined SysML registry, or changing its recorded
+digest to make that load pass, would destroy the accepted dependency contract.
+
+### Remaining kernel registry-extension seam
+
+`Snapshot::with_immutable_dependency(Arc<DerivedOverlay>)` already starts an
+independent authored history, shares canonical records and protects dependency
+facts. It currently clones the dependency's `ModelView`, including its KerML-only
+registry. It cannot yet create a SysML record in that history.
+
+Add a fallible, language-neutral counterpart accepting a validated extension
+registry; the following is a proposed API, not existing code:
+
+```rust
+Snapshot::with_immutable_dependency_in_registry(dependency, registry)
+    -> Result<Snapshot, /* typed registry/dependency error */>
+```
+
+Implement compatibility inside `agq-kernel`'s registry/model boundary, where all
+descriptor maps and navigation state are available. Require:
+
+1. Every base metamodel, class, property, association, enumeration, primitive
+   and source entry remains present and identical. Preserve existing review
+   evidence. New descriptor identities may extend the graph; duplicate IDs or
+   replacement of base metadata must fail atomically.
+2. Every old class retains its effective properties and resolution of old property
+   IDs. Preserve old association effective ends, storage policy and primitive
+   storage domains. Merely retaining raw descriptors is insufficient: adding a
+   property owned by an old class could change its effective contract.
+3. Revalidate/rebuild the project `ModelView` using existing strict structural
+   validation and association/index construction. Retain the same record Arcs,
+   occurrence identities, declared source, proofs, computation failures and
+   search dependencies; carry all reserved/retired IDs into the new history.
+   Do not make another canonical copy of the library or recompute its producers.
+4. Store the original dependency Arc unchanged. The accepted overlay and its
+   registry, archive identity and digest remain unchanged; only the authored
+   view uses the larger registry. Existing edit, derivation and ownership guards
+   must remain active on both `apply` and `preview`.
+
+At the language boundary, assemble
+`agq_kerml::descriptors_for_profile(OPERATIONAL_V9)` plus
+`agq_sysml::own_descriptors()` across every `DescriptorSet` field, then call
+`MetamodelRegistry::from_descriptors`. The current `agq_sysml::descriptors()`
+starts from published KerML and must not silently supply this v9 dependency.
+Reuse `SemanticContext::bind` through its public constructors: it already admits
+independent classes/subclasses while checking exact KerML descriptors, base-class
+effective properties and source identities, and rejects profile-excluded raw
+descriptors smuggled back as extensions. Generic kernel compatibility and this
+language/profile check are complementary.
+
+`CompletePublicationOverlay::project_context` already checks that the snapshot
+retains this exact dependency model, installs asymmetric root availability and
+preserves standard bindings, formal targets and `publication_dependency_digest`.
+Keeping the original Arc makes that check reusable with the extended project
+view. The composed context must keep two distinct descriptor identities: the
+accepted KerML descriptor digest and the complete current SysML registry digest.
+Descriptor-search caches must rebind to the new context; shared immutable proof
+storage is not permission to reuse query outcomes across different registries.
+
+The current kernel archive intentionally rejects protected dependency snapshots.
+Do not flatten a SysML project or Systems candidate to bypass that boundary;
+project/dependency persistence is a separate future archive contract.
 
 A composed SysML context holds the existing KerML context/query evaluator plus
 the SysML rule-set identity, combined descriptor digest, exact Systems candidate
@@ -46,6 +119,32 @@ Reuse `QueryResult`, completeness, evidence, positive reads and search dependenc
 Filtering a KerML result by SysML metaclass must preserve its incompleteness and
 account for descriptor reads. An incomplete base query must never become Complete
 just because the filter returned no elements.
+
+### Focused extension and context tests after acceptance
+
+Extend the existing suites below; their current tests establish reusable behavior,
+not acceptance of the proposed registry-extension API.
+
+| Existing suite | Required added coverage |
+| --- | --- |
+| `crates/kernel/tests/immutable_dependencies.rs` | Two independent projects share the original dependency Arc and record addresses under a larger registry; new subtype records are legal; derived/declared provenance, searches, failures and retired IDs survive; authored and derived writes, inverse ownership edits and root capture remain rejected. A rejected registry extension leaves both readers unchanged. |
+| `crates/kernel/tests/metamodel.rs` | Reject missing/replaced base descriptors, source changes, changed base-class effective properties, changed old association ends/storage and primitive/enum domains. Accept descriptors owned by new classes, including redefinition of inherited properties in those new class contexts. |
+| `crates/kerml-semantics/tests/foundation.rs` and `profiles.rs` | Extend `full_sysml_and_unrelated_extensions_preserve_kerml_answers_and_change_context_identity` to the v9 registry plus the real protected dependency; retain `operational_context_cannot_smuggle_deleted_descriptors_back_as_an_extension`. Base query values/completeness/evidence remain valid while the composed descriptor identity changes. |
+| `crates/kerml-semantics/src/publication_restore_tests.rs` and `crates/kernel/tests/archive.rs` | Preserve exact-registry archive validation, receipt/graph/profile/rule/library/source tamper rejection, capability-family checks and zero replayed producer stages. The restored dependency still passes `project_context` after creating an extended-registry project; an independently reconstructed overlay with a matching digest still fails its exact dependency check. |
+
+The future SysML context tests additionally reject a wrong accepted publication
+digest, v8 or published profile, KerML library set, or pinned combined descriptor
+graph. An unrelated registry extension may be valid for general KerML queries
+yet still violate a SysML project's exact descriptor pin. Test that distinction.
+Keep the dependency digest and standard IDs stable across a local edit while the
+authored revision/model digest changes; verify parallel immutable readers and
+library-root isolation with the real accepted cache. These are focused tests for
+the new seam, not another full KerML producer or corpus acceptance run.
+
+The relevant implementation points are `kernel/src/{metamodel,model,archive}.rs`,
+`kerml-semantics/src/{context,publication_overlay,publication_restore}.rs`,
+`kerml-text/src/library/publication_cache.rs` and `sysml/src/lib.rs`, all under
+`crates/`. This plan changes none of those modules.
 
 ## S4–S7: shared source and textual architecture
 
