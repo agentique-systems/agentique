@@ -25,7 +25,7 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
         | StructuralSearch::Association { element: id, .. } => Some(K::Element(*id)),
         StructuralSearch::Incoming(id)
         | StructuralSearch::SourceRelationships { source: id, .. } => Some(K::Incoming(*id)),
-        StructuralSearch::Model => Some(K::Global),
+        StructuralSearch::Model | StructuralSearch::ProducerClosure { .. } => Some(K::Global),
         StructuralSearch::DescriptorGraph => None,
     }
 }
@@ -99,7 +99,8 @@ fn publication_search_keys(
         // Certificate production is a scheduler stratum, not a request to run
         // every graph producer. Exact witness identity is invalidated through
         // the context contract; ordinary revision reads remain conservative.
-        SearchDependency::ProducerClosure { .. } => true,
+        SearchDependency::ProducerClosure { .. }
+        | SearchDependency::Kernel(StructuralSearch::ProducerClosure { .. }) => true,
         SearchDependency::Element(element) => declared_identity(model, *element),
         SearchDependency::Kernel(StructuralSearch::ElementIdentity(element)) => {
             model.element(*element).is_some()
@@ -197,6 +198,17 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
     for search in &answer.search_dependencies {
         if let SearchDependency::Kernel(search) = search {
             result.insert(search.clone());
+        } else if let SearchDependency::ProducerClosure {
+            subject,
+            requirement,
+            certificate_digest,
+        } = search
+        {
+            result.insert(StructuralSearch::ProducerClosure {
+                subject: *subject,
+                requirement: format!("agq-semantic-closure/{requirement:?}/1"),
+                certificate_digest: *certificate_digest,
+            });
         } else if let SearchDependency::Element(element) = search {
             result.insert(StructuralSearch::ElementIdentity(*element));
         } else if let SearchDependency::PropertySet { element, property } = search {

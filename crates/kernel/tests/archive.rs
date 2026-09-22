@@ -54,6 +54,11 @@ fn overlay() -> DerivedOverlay {
         StructuralSearch::Incoming(ENGINE),
         StructuralSearch::Element(ElementId::from_u128(999)),
         StructuralSearch::ElementIdentity(VEHICLE),
+        StructuralSearch::ProducerClosure {
+            subject: VEHICLE,
+            requirement: "fixture-effective-type/1".into(),
+            certificate_digest: Some([42; 32]),
+        },
         StructuralSearch::SourceRelationships {
             source: VEHICLE,
             class: SPECIALIZATION,

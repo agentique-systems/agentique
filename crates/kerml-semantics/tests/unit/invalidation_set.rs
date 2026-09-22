@@ -87,8 +87,23 @@ fn closure_witness_is_invalidated_by_any_graph_delta_but_is_not_a_graph_provider
     assert!(query_publication_provider_keys(&answer, snapshot.model()).is_empty());
     assert_eq!(
         structural_searches(&answer),
-        BTreeSet::from([StructuralSearch::Model])
+        BTreeSet::from([StructuralSearch::ProducerClosure {
+            subject: ElementId::from_u128(1),
+            requirement: "agq-semantic-closure/EffectiveTyping/1".into(),
+            certificate_digest: None,
+        }])
     );
+    let mut reread = queries.result(());
+    reread.search_dependencies.extend(
+        structural_searches(&answer)
+            .into_iter()
+            .map(SearchDependency::Kernel),
+    );
+    assert_eq!(
+        query_read_keys(&reread, snapshot.model()),
+        BTreeSet::from([InvalidationKey::Global])
+    );
+    assert!(query_publication_provider_keys(&reread, snapshot.model()).is_empty());
     assert!(answer.canonical_dependencies.is_empty());
 }
 

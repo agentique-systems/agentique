@@ -268,6 +268,20 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
     let search = build(None, Some(StructuralSearch::Incoming(id(2))), false);
     let navigation = build(None, None, true);
     let identity_search = build(None, Some(StructuralSearch::ElementIdentity(id(2))), false);
+    let closure_search = |digest| {
+        build(
+            None,
+            Some(StructuralSearch::ProducerClosure {
+                subject: id(2),
+                requirement: "agq-semantic-closure/EffectiveTyping/1".into(),
+                certificate_digest: digest,
+            }),
+            false,
+        )
+    };
+    let missing_closure = closure_search(None);
+    let certified_closure = closure_search(Some([42; 32]));
+    let other_closure = closure_search(Some([43; 32]));
     let source_search = build(
         None,
         Some(StructuralSearch::SourceRelationships {
@@ -292,13 +306,16 @@ fn derived_proofs_searches_navigation_and_failure_details_are_included() {
         &search,
         &navigation,
         &identity_search,
+        &missing_closure,
+        &certified_closure,
+        &other_closure,
         &source_search,
         &other_source_search,
     ]
     .into_iter()
     .map(|overlay| model_digest(overlay.model()))
     .collect();
-    assert_eq!(digests.len(), 7);
+    assert_eq!(digests.len(), 10);
     let failures = [
         ComputationFailure::Incomplete {
             reason: IncompleteReason::MissingInput,

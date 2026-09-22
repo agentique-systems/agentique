@@ -143,6 +143,21 @@ impl Encoder {
                     self.tag(7);
                     self.id(element.as_u128());
                 }
+                StructuralSearch::ProducerClosure {
+                    subject,
+                    requirement,
+                    certificate_digest,
+                } => {
+                    self.tag(8);
+                    self.id(subject.as_u128());
+                    self.text(requirement);
+                    if let Some(digest) = certificate_digest {
+                        self.tag(1);
+                        self.0.update(digest);
+                    } else {
+                        self.tag(0);
+                    }
+                }
             }
         }
     }
