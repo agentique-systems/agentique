@@ -64,6 +64,9 @@ pub struct StandardSysmlBindings {
     targets: BTreeMap<StandardSysmlRole, ElementId>,
     model_digest: Option<[u8; 32]>,
     descriptor_digest: Option<[u8; 32]>,
+    // Every searched population can affect path uniqueness, including roots
+    // that currently contribute no matching declaration.
+    path_scopes: BTreeSet<ElementId>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SysmlBindingError {
@@ -91,6 +94,7 @@ impl StandardSysmlBindings {
             targets: BTreeMap::new(),
             model_digest: None,
             descriptor_digest: None,
+            path_scopes: BTreeSet::new(),
         }
     }
     /// Validate only requested anchors: exact owned path, public visibility,
@@ -115,6 +119,10 @@ impl StandardSysmlBindings {
             for (index, segment) in path.iter().enumerate() {
                 let mut matches = BTreeSet::new();
                 for scope in scopes {
+                    out.path_scopes.insert(scope);
+                    if queries.context().pending_namespace_scopes.contains(&scope) {
+                        return Err(SysmlBindingError::Incomplete(role));
+                    }
                     let owned = queries.owned_relationships(scope);
                     if owned.completeness != Completeness::Complete {
                         return Err(SysmlBindingError::Incomplete(role));
@@ -226,5 +234,8 @@ impl StandardSysmlBindings {
         self.targets.is_empty()
             || self.model_digest == Some(context.model_digest)
                 && self.descriptor_digest == Some(context.descriptor_digest)
+                && self
+                    .path_scopes
+                    .is_disjoint(&context.pending_namespace_scopes)
     }
 }

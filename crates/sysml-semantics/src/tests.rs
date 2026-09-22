@@ -552,3 +552,67 @@ fn distinct_query_model_is_rejected_before_binding() {
     .unwrap_err();
     assert_eq!(error, SysmlBindingError::QueryModelMismatch);
 }
+
+#[test]
+fn binding_uniqueness_requires_closed_path_populations_on_validation_and_attachment() {
+    let mut f = Fixture::new();
+    f.origin = DeclaredOrigin::StandardLibrary {
+        library: SystemsLibraryIdentity::LIBRARY,
+    };
+    f.create(1, kc::PACKAGE, "root");
+    f.create(2, kc::LIBRARY_PACKAGE, "Parts");
+    f.create(3, sc::PART_DEFINITION, "Part");
+    f.create(4, kc::PACKAGE, "currentlyEmptyRoot");
+    f.create(5, kc::PACKAGE, "unsearchedRoot");
+    f.member(1, 2, 102, kc::OWNING_MEMBERSHIP);
+    f.member(2, 3, 103, kc::OWNING_MEMBERSHIP);
+    let snapshot = f.finish();
+    let queries = |pending| {
+        KerMlQueries::new(
+            SemanticContext::for_project_snapshot(
+                &snapshot,
+                SemanticOptions {
+                    baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                    exclude_implied: true,
+                },
+                BTreeSet::new(),
+                BTreeSet::new(),
+                pending,
+            )
+            .unwrap(),
+        )
+    };
+    let validate = |queries: &KerMlQueries<'_>| {
+        StandardSysmlBindings::validate(
+            snapshot.model(),
+            queries,
+            SystemsLibraryIdentity::pinned([7; 32]),
+            &[id(1), id(4)],
+            [StandardSysmlRole::Part],
+        )
+    };
+    let closed = queries(BTreeSet::new());
+    let bindings = validate(&closed).unwrap();
+    assert_eq!(bindings.get(StandardSysmlRole::Part), Some(id(3)));
+    assert!(bindings.valid_for(closed.context()));
+    for scope in [id(1), id(2), id(4)] {
+        let pending = queries(BTreeSet::from([scope]));
+        // The underlying graph is identical, but the declaration-population
+        // contract no longer establishes a unique owned qualified path.
+        assert_eq!(
+            pending.context().model_digest,
+            closed.context().model_digest
+        );
+        assert_eq!(
+            validate(&pending),
+            Err(SysmlBindingError::Incomplete(StandardSysmlRole::Part)),
+            "pending path scope {scope}"
+        );
+        assert!(!bindings.valid_for(pending.context()));
+    }
+    // Pending members of the terminal Part definition and an unsearched root
+    // cannot add another declaration along the already complete Parts::Part path.
+    let unrelated = queries(BTreeSet::from([id(3), id(5)]));
+    assert!(validate(&unrelated).is_ok());
+    assert!(bindings.valid_for(unrelated.context()));
+}
