@@ -87,6 +87,35 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
       }
+    },
+    {
+      "name": "declared-population-archive-review",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "dependent_archive_preserves_original_population_and_producer_identity",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "485208047cca0c004fa9c8f84174354fa44a5ad7",
+      "working_changes_sha256": "7c00d688540912c2c592bb52600a3799c859e7d2bdcd6757993982a0cd3f11b5",
+      "output_sha256": "003ef3b41f4a2785058f13acd7f9a90880ea92f947f1ec5d9a8ba39c41198a5a",
+      "duration_seconds": 15.62,
+      "output": "verification/generated/language-stability-bridge/declared-population-archive-review.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
     }
   ]
 }

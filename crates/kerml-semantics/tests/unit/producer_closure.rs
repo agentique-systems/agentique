@@ -3987,11 +3987,13 @@ fn declared_source_population_does_not_close_pending_namespace_or_member() {
     assert_eq!(result.completeness, Completeness::Incomplete);
 }
 
-#[test]
-fn declared_population_reconstruction_reopens_equal_aggregate_frontier() {
-    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+fn declared_population_alias_pair(
+    mut f: Fixture,
+) -> (
+    agq_kernel::derived::DerivedOverlay,
+    agq_kernel::derived::DerivedOverlay,
+) {
     use agq_kernel::derived::DerivationBuilder;
-    let mut f = Fixture::new();
     f.create(1, c::CLASSIFIER);
     f.create(2, c::FEATURE);
     for member in [3, 4, 5] {
@@ -4031,6 +4033,13 @@ fn declared_population_reconstruction_reopens_equal_aggregate_frontier() {
     let before = overlay(before, vec![id(4), id(5)]);
     let after = overlay(after, vec![id(5)]);
     assert_eq!(before.model().element(id(1)), after.model().element(id(1)));
+    (before, after)
+}
+
+#[test]
+fn declared_population_reconstruction_reopens_equal_aggregate_frontier() {
+    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    let (before, after) = declared_population_alias_pair(Fixture::new());
     let registry = ProducerRegistry::new([ProducerDescriptor::new(
         TYPE,
         [ProducerEffect::Typing],
@@ -4128,4 +4137,78 @@ fn mixed_declared_and_current_fact_reads_remain_current_before_first_append() {
             "a broad current fact read must still reopen on the first derived append; source_first={source_first}"
         );
     }
+}
+
+#[test]
+fn dependent_archive_preserves_original_population_and_producer_identity() {
+    use agq_kernel::{
+        archive::{read_dependent_overlay, write_dependent_overlay},
+        derived::DerivationBuilder,
+    };
+    use std::io::Cursor;
+
+    let mut dependency = Fixture::new();
+    dependency.create(99, c::PACKAGE);
+    let dependency = Arc::new(DerivationBuilder::new(dependency.finish()).build().unwrap());
+    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let changes = base.change_set();
+    let (before, after) = declared_population_alias_pair(Fixture {
+        base,
+        changes,
+        owned: BTreeMap::new(),
+    });
+    let producer_registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    )])
+    .unwrap();
+    let mut restored_identities = vec![];
+    for (original, expected) in [(&before, vec![id(3)]), (&after, vec![id(3), id(4)])] {
+        let mut bytes = vec![];
+        write_dependent_overlay(original, &mut bytes).unwrap();
+        let restored = read_dependent_overlay(
+            Cursor::new(&bytes),
+            Arc::new(agq_kerml::registry().unwrap()),
+            dependency.clone(),
+        )
+        .unwrap();
+        assert!(Arc::ptr_eq(
+            restored.declared().immutable_dependency().unwrap(),
+            &dependency
+        ));
+        assert!(restored.model().elements().eq(original.model().elements()));
+        assert_eq!(
+            restored
+                .model()
+                .declared_slot(id(1), p::ELEMENT_OWNED_RELATIONSHIP),
+            original
+                .model()
+                .declared_slot(id(1), p::ELEMENT_OWNED_RELATIONSHIP)
+        );
+        let original_context =
+            SemanticContext::for_overlay(original, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(producer_registry.digest())
+                .unwrap();
+        let restored_context =
+            SemanticContext::for_overlay(&restored, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(producer_registry.digest())
+                .unwrap();
+        assert_eq!(original_context.id(), restored_context.id());
+        let restored_query = KerMlQueries::new(restored_context.fork());
+        assert_eq!(
+            restored_query.declared_owned_relationships(id(1)).value,
+            expected
+        );
+        restored_identities.push(restored_context.id().clone());
+        let mut rewrite = vec![];
+        write_dependent_overlay(&restored, &mut rewrite).unwrap();
+        assert_eq!(bytes, rewrite);
+    }
+    assert_ne!(
+        restored_identities[0].model_digest, restored_identities[1].model_digest,
+        "producer graph identity must authenticate distinct original populations after restoration"
+    );
 }
