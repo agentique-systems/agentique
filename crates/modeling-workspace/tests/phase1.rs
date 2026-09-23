@@ -2,6 +2,7 @@
 //! Working frontend carrier exist. See README for exact compile blockers.
 mod support;
 use agq_kerml_semantics::{Completeness, QualifiedName};
+use agq_kerml_syntax::production::Production;
 use agq_kerml_text::{DocumentStatus, ProjectChange, SourceLanguage};
 use agq_kernel::DocumentId;
 use std::{collections::BTreeSet, sync::Arc, time::Instant};
@@ -12,6 +13,7 @@ use support::*;
 fn mixed_documents_and_edits_retain_old_revisions_and_inherited_ids() {
     let mut workspace = open();
     let r0 = workspace.head().clone();
+    assert_shared(&r0);
     let contracts = workspace
         .add_kerml(r0.revision(), "Contracts.kerml", inputs::CONTRACTS)
         .unwrap();
@@ -34,6 +36,13 @@ fn mixed_documents_and_edits_retain_old_revisions_and_inherited_ids() {
         4
     );
     let r1_signature = immutable_signature(&r1);
+    let original_repository = element(&r1, &["Modeling", "Workspace", "repository"]);
+    let repository_syntax = syntax_id(
+        &r1,
+        "Workspace.sysml",
+        Production::PartUsage,
+        "part repository : Storage::Repository;",
+    );
     let insertion = inputs::WORKSPACE.find("    }\n").unwrap();
     let r2 = workspace
         .apply(
@@ -50,7 +59,6 @@ fn mixed_documents_and_edits_retain_old_revisions_and_inherited_ids() {
     assert_valid(&r2);
     let r2_signature = immutable_signature(&r2);
     let bus = element(&r2, &["Modeling", "Workspace", "bus"]);
-    let original_repository = element(&r2, &["Modeling", "Workspace", "repository"]);
     let insertion = r2
         .document_at("Workspace.sysml")
         .unwrap()
@@ -70,6 +78,35 @@ fn mixed_documents_and_edits_retain_old_revisions_and_inherited_ids() {
         )
         .unwrap();
     assert_valid(&r3);
+    for revision in [&r2, &r3] {
+        assert_eq!(
+            element(revision, &["Modeling", "Workspace", "repository"]),
+            original_repository
+        );
+        assert_eq!(
+            syntax_id(
+                revision,
+                "Workspace.sysml",
+                Production::PartUsage,
+                "part repository : Storage::Repository;",
+            ),
+            repository_syntax,
+            "an unaffected declaration in an edited document retains syntax identity"
+        );
+        let document = revision.document_at("Workspace.sysml").unwrap();
+        assert_eq!(
+            document.id(),
+            r1.document_at("Workspace.sysml").unwrap().id()
+        );
+        assert_ne!(
+            document.revision(),
+            r1.document_at("Workspace.sysml").unwrap().revision()
+        );
+    }
+    assert_ne!(
+        r2.document_at("Workspace.sysml").unwrap().revision(),
+        r3.document_at("Workspace.sysml").unwrap().revision()
+    );
     assert_eq!(immutable_signature(&r1), r1_signature);
     assert_eq!(immutable_signature(&r2), r2_signature);
     assert!(Arc::ptr_eq(workspace.revision(r1.revision()).unwrap(), &r1));
@@ -248,7 +285,9 @@ fn removal_and_readding_a_path_does_not_resurrect_retired_identity() {
 fn operational_failures_publish_nothing_and_independent_projects_share_only_standards() {
     let mut workspace = open();
     let before = workspace.head().clone();
+    assert_shared(&before);
     let r1 = seed(&mut workspace);
+    assert_valid(&r1);
     let signature = immutable_signature(&r1);
     assert!(
         workspace
@@ -303,6 +342,7 @@ fn operational_failures_publish_nothing_and_independent_projects_share_only_stan
     );
     assert!(Arc::ptr_eq(workspace.head(), &r2));
     let mut other = open();
+    assert_shared(other.head());
     let independent = seed(&mut other);
     assert_valid(&independent);
     assert_ne!(
@@ -317,6 +357,8 @@ fn operational_failures_publish_nothing_and_independent_projects_share_only_stan
         independent.accepted_kerml(),
         r1.accepted_kerml()
     ));
+    assert_shared(&r1);
+    assert_eq!(immutable_signature(&r1), signature);
 }
 
 #[test]
@@ -324,6 +366,7 @@ fn operational_failures_publish_nothing_and_independent_projects_share_only_stan
 fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
     let started = Instant::now();
     let mut workspace = open();
+    assert_shared(workspace.head());
     let mut changes = Vec::with_capacity(100);
     for index in 0..50 {
         changes.push(add(
@@ -342,6 +385,16 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
         .unwrap();
     assert_valid(&s1);
     assert_eq!(s1.documents().count(), 100);
+    // Capture before the next mutation, not after all revisions exist.
+    let mut baseline = vec![immutable_signature(&s1)];
+    let mut projections = vec![[0, 25, 49].map(|group| group_projection(&s1, group))];
+    let original_engine = element(&s1, &["Workbench025", "Worker", "engine"]);
+    let original_engine_syntax = syntax_id(
+        &s1,
+        "Worker025.sysml",
+        Production::PartUsage,
+        "part engine;",
+    );
     let original = inputs::worker(25);
     let insertion = original.find("part engine;").unwrap() + "part engine;".len();
     let s2 = workspace
@@ -356,6 +409,9 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
             )],
         )
         .unwrap();
+    assert_valid(&s2);
+    baseline.push(immutable_signature(&s2));
+    projections.push([0, 25, 49].map(|group| group_projection(&s2, group)));
     let source = s2.document_at("Worker025.sysml").unwrap().source();
     let insertion = source.rfind('}').unwrap();
     let s3 = workspace
@@ -370,8 +426,24 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
             )],
         )
         .unwrap();
-    assert_valid(&s2);
     assert_valid(&s3);
+    baseline.push(immutable_signature(&s3));
+    projections.push([0, 25, 49].map(|group| group_projection(&s3, group)));
+    for revision in [&s2, &s3] {
+        assert_eq!(
+            element(revision, &["Workbench025", "Worker", "engine"]),
+            original_engine
+        );
+        assert_eq!(
+            syntax_id(
+                revision,
+                "Worker025.sysml",
+                Production::PartUsage,
+                "part engine;"
+            ),
+            original_engine_syntax
+        );
+    }
     let bus = element(&s2, &["Workbench025", "Worker", "bus"]);
     let inherited = s3
         .sysml_queries()
@@ -390,10 +462,16 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
         )
         .unwrap();
     assert_unresolved(&s4, Some(provider));
+    assert_eq!(s4.documents().count(), 99);
+    baseline.push(immutable_signature(&s4));
+    projections.push([0, 25, 49].map(|group| group_projection(&s4, group)));
     let s5 = workspace
         .add_kerml(s4.revision(), "Contracts025.kerml", &inputs::contracts(25))
         .unwrap();
     assert_valid(&s5);
+    assert_eq!(s5.documents().count(), 100);
+    baseline.push(immutable_signature(&s5));
+    projections.push([0, 25, 49].map(|group| group_projection(&s5, group)));
     assert_ne!(
         s5.document_at("Contracts025.kerml").unwrap().id(),
         old_document
@@ -406,14 +484,9 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
                 == agq_kerml_semantics::Resolution::Resolved(repaired_provider)
     }));
     let revisions = [s1, s2, s3, s4, s5];
-    let baseline: Vec<_> = revisions
-        .iter()
-        .map(|revision| immutable_signature(revision))
-        .collect();
-    let projections: Vec<_> = revisions
-        .iter()
-        .map(|revision| [0, 25, 49].map(|group| group_projection(revision, group)))
-        .collect();
+    for consecutive in revisions.windows(2) {
+        assert_eq!(consecutive[1].parent(), Some(consecutive[0].revision()));
+    }
     let stable = element(&revisions[0], &["Workbench000", "Worker", "engine"]);
     for revision in &revisions {
         assert_shared(revision);

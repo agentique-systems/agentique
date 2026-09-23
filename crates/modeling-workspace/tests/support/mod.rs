@@ -1,12 +1,15 @@
 //! Held test support: every semantic test restores exact accepted publications.
 //! No fallback constructs standards or substitutes the strict SourceProject API.
-use agq_kerml_semantics::{Completeness, KerMlQueries, QualifiedName, Resolution};
-use agq_kerml_syntax::TextEdit;
+use agq_kerml_semantics::{
+    Completeness, KerMlQueries, QualifiedName, Resolution, SemanticContextId,
+    TrustedPublicationReceipt,
+};
+use agq_kerml_syntax::{TextEdit, production::Production};
 use agq_kerml_text::{
     ProjectChange, SourceLanguage, library::CanonicalKermlStandardLibraries,
     sysml::CanonicalSysmlSystemsLibrary,
 };
-use agq_kernel::{ElementId, provenance::ByteRange};
+use agq_kernel::{DocumentId, ElementId, SourceRevisionId, SyntaxNodeId, provenance::ByteRange};
 use agq_modeling_workspace::{ProjectWorkspace, WorkingProjectRevision};
 use agq_standard_libraries::VerifiedLibrarySet;
 use std::{
@@ -23,26 +26,23 @@ pub fn accepted() -> Arc<CanonicalSysmlSystemsLibrary> {
     static ACCEPTED: OnceLock<Arc<CanonicalSysmlSystemsLibrary>> = OnceLock::new();
     ACCEPTED
         .get_or_init(|| {
-            let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-            let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
             let kerml_path = std::env::var_os("AGENTIQUE_KERML_CACHE")
                 .expect("requested workspace acceptance requires AGENTIQUE_KERML_CACHE");
             let systems_path = std::env::var_os("AGENTIQUE_SYSTEMS_CACHE")
                 .expect("requested workspace acceptance requires AGENTIQUE_SYSTEMS_CACHE");
+            // Both inputs and compiled authority must exist before the large
+            // KerML restore. A requested but unavailable gate fails immediately.
+            let kerml_file = File::open(kerml_path).unwrap();
+            let systems_file = File::open(systems_path).unwrap();
+            TrustedPublicationReceipt::checked_in("sysml-systems-operational-v2")
+                .expect("requested workspace acceptance requires an accepted Systems receipt");
+            let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+            let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
             let kerml = Arc::new(
-                CanonicalKermlStandardLibraries::restore_cache(
-                    File::open(kerml_path).unwrap(),
-                    &sources,
-                )
-                .unwrap(),
+                CanonicalKermlStandardLibraries::restore_cache(kerml_file, &sources).unwrap(),
             );
             Arc::new(
-                CanonicalSysmlSystemsLibrary::restore_cache(
-                    File::open(systems_path).unwrap(),
-                    &sources,
-                    kerml,
-                )
-                .unwrap(),
+                CanonicalSysmlSystemsLibrary::restore_cache(systems_file, &sources, kerml).unwrap(),
             )
         })
         .clone()
@@ -140,7 +140,13 @@ pub fn assert_valid(revision: &Arc<WorkingProjectRevision>) {
     let status = revision.producer_status().expect("local producer status");
     assert!(status.converged, "{status:?}");
     assert_eq!(status.completeness, Completeness::Complete, "{status:?}");
-    assert!(revision.producer_closure().is_some());
+    assert!(
+        revision
+            .producer_closure()
+            .expect("validated revision needs a closure certificate")
+            .is_fully_closed(revision.semantic_model().unwrap()),
+        "convergence or a partial certificate alone cannot validate a revision"
+    );
     for reference in revision.references() {
         assert_eq!(
             reference.resolution.completeness,
@@ -169,6 +175,14 @@ pub fn assert_shared(revision: &WorkingProjectRevision) {
         revision.accepted_kerml(),
         accepted.accepted_kerml()
     ));
+    // Test-only storage observations must come from actual retained tables,
+    // including Working/empty mounts. Facade/record Arc identity cannot detect
+    // cloning an accepted graph's maps, indexes or proof/search tables.
+    let expected_tables = agq_modeling_workspace::testing::publication_storage(&accepted);
+    let storage = agq_modeling_workspace::testing::dependency_storage(revision);
+    assert!(!expected_tables.is_empty());
+    assert_eq!(storage.base_tables, expected_tables);
+    assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
     if let Some(model) = revision.semantic_model() {
         for (standard, standard_model) in [
             (accepted.roots()[0], accepted.overlay().model()),
@@ -216,21 +230,72 @@ pub fn assert_unresolved(revision: &Arc<WorkingProjectRevision>, removed: Option
     assert_shared(revision);
 }
 
-pub fn immutable_signature(
-    revision: &WorkingProjectRevision,
-) -> (
-    Vec<(String, String, agq_kernel::SourceRevisionId)>,
-    String,
-    Option<agq_kerml_semantics::SemanticContextId>,
-) {
-    (
-        revision
+#[derive(Debug, PartialEq, Eq)]
+pub struct DocumentSignature {
+    path: String,
+    id: DocumentId,
+    revision: SourceRevisionId,
+    language: SourceLanguage,
+    source: String,
+    syntax_nodes: Vec<(SyntaxNodeId, ByteRange)>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ImmutableSignature {
+    documents: Vec<DocumentSignature>,
+    diagnostics: String,
+    references: String,
+    semantic_context: Option<SemanticContextId>,
+    closure_digest: Option<[u8; 32]>,
+}
+
+pub fn immutable_signature(revision: &WorkingProjectRevision) -> ImmutableSignature {
+    ImmutableSignature {
+        documents: revision
             .documents()
-            .map(|(path, doc)| (path.to_owned(), doc.source().to_owned(), doc.revision()))
+            .map(|(path, doc)| DocumentSignature {
+                path: path.to_owned(),
+                id: doc.id(),
+                revision: doc.revision(),
+                language: doc.language(),
+                source: doc.source().to_owned(),
+                syntax_nodes: doc
+                    .production_syntax()
+                    .into_iter()
+                    .flat_map(|syntax| syntax.nodes().map(|node| (node.id(), node.range())))
+                    .collect(),
+            })
             .collect(),
-        format!("{:?}", revision.diagnostics()),
-        revision.kerml_queries().ok().map(|q| q.context().clone()),
-    )
+        diagnostics: format!("{:?}", revision.diagnostics()),
+        references: format!("{:?}", revision.references()),
+        semantic_context: revision.kerml_queries().ok().map(|q| q.context().clone()),
+        closure_digest: revision
+            .producer_closure()
+            .map(|certificate| certificate.digest()),
+    }
+}
+
+pub fn syntax_id(
+    revision: &WorkingProjectRevision,
+    path: &str,
+    kind: Production,
+    text: &str,
+) -> SyntaxNodeId {
+    let matches: Vec<_> = revision
+        .document_at(path)
+        .unwrap()
+        .production_syntax()
+        .unwrap()
+        .nodes()
+        .filter(|node| node.kind() == kind && node.text() == text)
+        .map(|node| node.id())
+        .collect();
+    assert_eq!(
+        matches.len(),
+        1,
+        "fixture needs one syntax node for {text:?}"
+    );
+    matches[0]
 }
 
 pub fn group_projection(revision: &WorkingProjectRevision, group: usize) -> String {
