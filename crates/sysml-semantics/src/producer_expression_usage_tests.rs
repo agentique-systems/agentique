@@ -348,8 +348,7 @@ fn invocation_value_with_frontend_reference_usage_results_closes() {
     invocation_value(sc::REFERENCE_USAGE);
 }
 
-#[test]
-fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
+fn invocation_chain_value(nested: bool) {
     // Items::Item::boundingShapes::faces has contains(inter.intersectionsOf, ...).
     // Preserve the nested expression/argument/result ownership shape, using a
     // direct second argument rather than adding the unrelated union invocation.
@@ -384,14 +383,41 @@ fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
         f.create(feature, class, name);
         f.member(owner, feature, feature + 100_000, kc::FEATURE_MEMBERSHIP);
     }
+    if nested {
+        f.create(73_019, sc::ITEM_USAGE, "otherFeature");
+        f.member(73_002, 73_019, 173_019, kc::FEATURE_MEMBERSHIP);
+    }
     for (owner, expression, class) in [
         (73_004, 73_005, kc::INVOCATION_EXPRESSION),
         (73_006, 73_007, kc::FEATURE_CHAIN_EXPRESSION),
-        (73_008, 73_009, kc::FEATURE_REFERENCE_EXPRESSION),
+        (
+            if nested { 73_017 } else { 73_008 },
+            73_009,
+            kc::FEATURE_REFERENCE_EXPRESSION,
+        ),
         (73_012, 73_013, kc::FEATURE_REFERENCE_EXPRESSION),
     ] {
         f.create(expression, class, "");
         f.member(owner, expression, expression + 100_000, kc::FEATURE_VALUE);
+    }
+    if nested {
+        // contains(inter.intersectionsOf.otherFeature, face): the outer chain's
+        // first input is valued by a second chain, which has its own input,
+        // direct referent membership and frontend ReferenceUsage result.
+        f.create(73_016, kc::FEATURE_CHAIN_EXPRESSION, "");
+        f.value(
+            73_016,
+            kp::FEATURE_CHAIN_EXPRESSION_OPERATOR,
+            Value::String(".".into()),
+        );
+        f.member(73_008, 73_016, 173_016, kc::FEATURE_VALUE);
+        f.create(73_017, kc::FEATURE, "");
+        set_enum(&mut f, 73_017, kp::FEATURE_DIRECTION, "in");
+        f.member(73_016, 73_017, 173_017, kc::PARAMETER_MEMBERSHIP);
+        f.create(73_018, sc::REFERENCE_USAGE, "");
+        set_enum(&mut f, 73_018, kp::FEATURE_DIRECTION, "out");
+        f.member(73_016, 73_018, 173_018, kc::RETURN_PARAMETER_MEMBERSHIP);
+        reference(&mut f, 73_016, 73_002, 173_024);
     }
     f.value(
         73_007,
@@ -418,13 +444,13 @@ fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
     }
     for (expression, target, membership) in [
         (73_005, 71_000, 173_020),
-        (73_007, 73_002, 173_021),
+        (73_007, if nested { 73_019 } else { 73_002 }, 173_021),
         (73_009, 73_001, 173_022),
         (73_013, 73_003, 173_023),
     ] {
         reference(&mut f, expression, target, membership);
     }
-    for subject in 73_005..=73_015 {
+    for subject in 73_005..=if nested { 73_018 } else { 73_015 } {
         f.changes.clear(id(subject), kp::ELEMENT_DECLARED_NAME);
     }
     let snapshot = without_membership_names(f.finish());
@@ -466,12 +492,12 @@ fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
     assert_eq!(
         closed.completeness,
         Completeness::Complete,
-        "nested feature-chain expression: {:?}",
+        "feature-chain expression (nested={nested}): {:?}",
         closed.stages.last()
     );
     let certificate = closed.certificate.unwrap();
     assert!(certificate.is_fully_closed(closed.overlay.model()));
-    for subject in 73_001..=73_015 {
+    for subject in 73_001..=if nested { 73_019 } else { 73_015 } {
         for requirement in SemanticClosureRequirement::ALL {
             assert!(
                 certificate.is_closed(id(subject), requirement),
@@ -479,4 +505,14 @@ fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
             );
         }
     }
+}
+
+#[test]
+fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
+    invocation_chain_value(false);
+}
+
+#[test]
+fn invocation_nested_chain_with_frontend_reference_usage_results_closes() {
+    invocation_chain_value(true);
 }
