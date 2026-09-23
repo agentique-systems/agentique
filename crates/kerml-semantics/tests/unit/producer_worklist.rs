@@ -617,6 +617,110 @@ fn first_input_population_does_not_wait_for_result_snapshot_membership() {
 }
 
 #[test]
+fn first_input_preserves_direction_order_and_incomplete_candidate_meaning() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V9;
+    for case in [
+        "return_in",
+        "return_out",
+        "return_inout",
+        "no_in",
+        "undirected_return",
+        "invalid_return_endpoint",
+        "pending_provider",
+    ] {
+        let (base, _) = expression_nested_result_fixture(true);
+        let mut f = Fixture {
+            changes: base.change_set(),
+            base,
+            owned: BTreeMap::new(),
+        };
+        // A structurally admitted in-directed return still participates in
+        // ownedFeatures->select(direction='in'); semantic validation is separate.
+        f.changes.set(
+            id(1),
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            SlotValue::Ordered([5001, 3, 4].map(|n| Value::Reference(id(n))).to_vec()),
+            origin(),
+        );
+        f.enumeration(
+            5000,
+            p::FEATURE_DIRECTION,
+            match case {
+                "return_in" => "in",
+                "return_inout" => "inout",
+                _ => "out",
+            },
+        );
+        if case == "no_in" {
+            f.enumeration(2, p::FEATURE_DIRECTION, "inout");
+        }
+        if case == "undirected_return" {
+            f.changes.clear(id(5000), p::FEATURE_DIRECTION);
+        }
+        if case == "invalid_return_endpoint" {
+            f.changes
+                .clear(id(5001), p::RELATIONSHIP_OWNED_RELATED_ELEMENT);
+        }
+        let snapshot = f.finish();
+        let context = SemanticContext::for_project_snapshot(
+            &snapshot,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+            BTreeSet::new(),
+            if case == "pending_provider" {
+                BTreeSet::from([id(1)])
+            } else {
+                BTreeSet::new()
+            },
+        )
+        .unwrap();
+        let q = KerMlQueries::for_production(context);
+        let result = q.first_input(id(1));
+        assert_eq!(
+            result.completeness,
+            match case {
+                "invalid_return_endpoint" => Completeness::Invalid,
+                "pending_provider" => Completeness::Incomplete,
+                _ => Completeness::Complete,
+            },
+            "{case}"
+        );
+        assert_eq!(
+            result.value,
+            match case {
+                "return_in" => Some(id(5000)),
+                "no_in" => None,
+                _ => Some(id(2)),
+            },
+            "{case}"
+        );
+        for kind in [
+            FeaturePopulationKind::Parameter,
+            FeaturePopulationKind::Result,
+        ] {
+            assert!(
+                result.search_dependencies.contains(
+                    &SearchDependency::StructuralFeaturePopulation { owner: id(1), kind }
+                )
+            );
+        }
+        if case == "undirected_return" {
+            assert!(
+                result
+                    .search_dependencies
+                    .contains(&SearchDependency::PropertySet {
+                        element: id(5000),
+                        property: p::FEATURE_DIRECTION,
+                    })
+            );
+        }
+    }
+}
+
+#[test]
 fn feature_chain_source_target_declares_membership_on_its_existing_input() {
     let (snapshot, bindings) = expression_fixture();
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
