@@ -1,0 +1,43 @@
+{
+  "format": "agentique-watchdog-summary/1",
+  "commands": [
+    {
+      "name": "systems-finalizer-1",
+      "command": [
+        "verification/generated/systems-finalization/finalizer.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--finalize-converged=verification/generated/final-language-acceptance/full-frontiers/journal-735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5.json",
+        "--resume-sha256=735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5",
+        "--output=verification/generated/systems-finalization/accepted/report.json"
+      ],
+      "source_commit": "047807af93d3594503a637680b1d4aeda84e2c55",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "Systems finalization (?P<event>begin|end): (?P<audit>\\w+)",
+      "output": "verification/generated/overnight-convergence/systems-finalizer-1",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 756,
+      "monitor_error": null,
+      "last_progress": {
+        "event": "end",
+        "audit": "effective_sysml_population_audit"
+      },
+      "minimum_free_disk_bytes": 7304880128,
+      "safety_stop": null,
+      "duration_seconds": 1632.078,
+      "peak_rss_bytes": 5837385728,
+      "peak_private_bytes": 6040027136,
+      "samples": 1631,
+      "limits": {
+        "wall_seconds": 1800.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824,
+        "stall_seconds": 0
+      },
+      "output_sha256": "e71930dd740cfd588fb78a4a4f32831eaf7d29917f6ab2e0be19f0e32e9f5072"
+    }
+  ]
+}
