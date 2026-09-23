@@ -9,16 +9,14 @@ is unchanged. Generation-1 release evidence remains independent.
 ## Current gate status
 
 **Systems publication and foundation readiness remain unaccepted.** The latest
-13-document medium audit has **695/695 mandatory references Complete**, zero
+13-document medium audit passes: **695/695 mandatory references Complete**, zero
 reference failures, kernel obligations or authority conflicts. All 13 documents
-parse and construct byte-exactly. Producer closure is Incomplete and not converged
-at its 32-round resource limit, with 14 incomplete evaluations and 11 diagnostics.
-The corpus result alone did not establish a persistent cycle. A subsequent faithful
-Interfaces fixture reproduces and fixes an inherited-result closure cycle; the
-medium retry remains unrun.
-The preceding eight-document Actions gate passed with 534/534 Complete references
-and fully closed producer evidence. Full publication has not run; its attempt
-budget is unused.
+parse and construct byte-exactly. Producer closure converges Complete in 33 rounds
+with a fully closed certificate, zero incomplete evaluations and no diagnostics.
+The faithful inherited-result correction and sufficient Systems-only budget close
+the previously diagnosed boundary. The earlier eight-document Actions gate also
+passed with 534/534 Complete references and fully closed evidence. Full publication
+has not run; its attempt budget is unused.
 
 All six genuine layered expression fixtures and the connection-end fixture pass
 with fully closed certificates. The indexed assignment now matches the real
@@ -45,6 +43,21 @@ restoration remain gated. [restore.md](restore.md) records C1/C2 preparation and
 the executable actual-cache gate.
 
 ## Publication observations
+
+The passed `systems-medium-result-populations` audit uses clean source `9152fb9`
+and release build `b018b18`. It exits 0 in **1,726.844 seconds**, peak **6,435.4 MiB
+private memory**, without a watchdog stop. All **14,791/14,791 applicable pairs**
+and **417,786/417,786 required closures** are closed. The 695 selected endpoints
+all pass the final mandatory audit; kernel obligations, authority conflicts and
+producer diagnostics are zero. Accepted KerML producers are not replayed.
+
+It evaluates 27,429 subjects, derives 4,252 elements and retains 7,913 local
+elements. The compact certificate is 2,698,418 bytes; logical transport read
+storage is 874,567,848 bytes. Two rebindings retain 1,679 and reopen 15,570
+producer evaluations in aggregate. This is a passed medium gate, not full
+publication acceptance. Exact report/stage hashes and final counters are retained
+in the publication ledger. The earlier failed medium observation below remains
+historical.
 
 The passed `actions-owned-cross-subsetting` audit uses clean source `c7d65cf` and
 the successful release build from `7782e3c`. It exits 0 in **1,491.656 seconds**,
