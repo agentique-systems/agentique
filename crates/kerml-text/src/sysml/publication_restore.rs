@@ -90,17 +90,18 @@ impl CanonicalSysmlSystemsLibrary {
         let library = sources.libraries().get(&identity.library).ok_or(
             SystemsPublicationCacheError::Mismatch("Systems source library"),
         )?;
-        let current = accepted_kerml
-            .complete_overlay()
-            .project_overlay_context(&overlay, &metadata.roots)
-            .map_err(SysmlContextError::from)?
-            .with_naming_extension(
-                SYSML_SEMANTIC_CONTEXT_DOMAIN,
-                initial_contract.context_identity_digest(),
-                Arc::new(agq_sysml_semantics::SysmlNamingExtension),
-            )
-            .map_err(SysmlContextError::from)?;
-        let queries = KerMlQueries::new(current);
+        // Bind role validation to the same producer-aware model identity used
+        // by the restored certificate and subsequent mounted dependency. The
+        // explicit constructor derives the full registry independently; an
+        // aggregate current-graph digest is not interchangeable with this one.
+        let current = SysmlSemanticContext::for_producer_overlay(
+            &overlay,
+            accepted_kerml.complete_overlay(),
+            &metadata.roots,
+            &initial_contract,
+            empty_bindings,
+        )?;
+        let queries = KerMlQueries::new(current.kerml_context().fork());
         let bindings = StandardSysmlBindings::validate(
             overlay.model(),
             &queries,
@@ -110,6 +111,7 @@ impl CanonicalSysmlSystemsLibrary {
         )?
         .with_verified_sources(library, &source_map)?;
         drop(queries);
+        drop(current);
         let contract = SysmlDependencyContract::checked_in_for_profile(
             &bindings,
             SysmlBaselineProfile::OPERATIONAL_V2,
@@ -122,7 +124,7 @@ impl CanonicalSysmlSystemsLibrary {
             ));
         }
         let closure_bytes = authenticated_bytes(&mut archive, &receipt, "closure.json")?;
-        let context = SysmlSemanticContext::for_overlay(
+        let context = SysmlSemanticContext::for_producer_overlay(
             &overlay,
             accepted_kerml.complete_overlay(),
             &metadata.roots,
