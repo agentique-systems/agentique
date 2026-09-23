@@ -149,7 +149,8 @@ not claim measured savings or authorize production workspace integration early.
 
 ### Minimum shared-storage implementation
 
-Read-only design review at `e75d15e`; no storage implementation or benchmark is
+Read-only design review updated against `695e67e`, including selected contribution
+and sealed dependency proof support; no storage implementation or benchmark is
 claimed. Keep the current public `ModelView`, Snapshot, construction and overlay
 contracts. Use the existing immutable dependency handle as the shared base and
 ordinary local `BTreeMap` storage; no new collection dependency is needed.
@@ -167,8 +168,10 @@ struct ModelView {
 ```
 
 `LocalModelTables` contains only this project's current records, occurrences,
-derived navigation, computation failures, searches and optional ordered-reference
-contributions. A standalone publication uses the same representation without a
+explicit derived navigation, computation failures, searches and optional
+ordered-reference contributions. Reconstructed inverse/association projection
+slots belong to `LocalIndexes`, not to the explicit derived-navigation table.
+A standalone publication uses the same representation without a
 base; a dependent publication can itself retain its existing dependency chain.
 Record IDs and occurrence IDs must be disjoint from the entire base, not resolved
 by a local-wins overwrite rule. Local records may reference protected IDs.
@@ -201,6 +204,32 @@ the combined registry; do not assume that all required association navigation
 is covered by the old class property set. Such validation can borrow the base
 without rebuilding its tables. The ordinary accepted Systems project mount uses
 the already combined registry.
+
+#### First implementation slices after readiness
+
+Keep these as sequential, reviewable kernel changes before integrating the
+workspace. Intermediate commits do not establish I8 until all four slices pass.
+
+| Slice | Concrete first changes | Boundary required before proceeding |
+| --- | --- | --- |
+| 1. Borrowed storage access | Add private `LocalModelTables` and `LocalIndexes`; move the current fields into them without changing public results. Introduce read helpers for records, occurrences, statuses, searches and explanation lookup. Replace validators' concrete `&BTreeMap` inputs with one private borrowed candidate view supporting lookup and sorted iteration. Keep mutations explicitly local. | The existing flat build still passes with identical canonical bytes. A test-only flat oracle remains independent of the new layered merge. No blanket local-wins record lookup is introduced. |
+| 2. Dependency-backed snapshots | Add the dependency handle to the read view; make `with_immutable_dependency` start with empty local tables/indexes and local identity reservations. Thread this through `stage`, `apply`, `preview` and `DerivationInput::build_model`. Construct only local class/reference buckets plus touched projection groups; validate endpoints and ownership against the borrowed combined view. | Empty mounts contain zero dependency-sized local tables. Retained old snapshots and construction views preserve answers. Local references to dependency IDs are visible without allowing writes or ownership transfers into the dependency. The compatible-registry path gets the same checks, not a full-map fallback. |
+| 3. Local derivation storage | Change first `DerivationBuilder::build_inner` to start empty local explanation/search pools instead of cloning `dependency.inner` pools. `DerivationModelParts` transfers local tables plus the shared dependency handle. Additive `Arc::try_unwrap` moves only local frontier storage; shared frontiers clone only those local maps. Route `DerivedOverlay::explain`/`facts` and proof-existence checks through local/dependency lookup. | Creation/append contributions, strict/construction promotion, local cycle detection, historical dependency proofs and failed computations retain their current meanings. Instrument both first and later materializations: no base interner, proof adjacency or index copy is hidden there. |
+| 4. Archive and workspace integration | Remove dependency `records.extend`, `links.extend`, navigation/status/search copying and contribution-map cloning from dependent restoration. Retain the supplied dependency object, validate decoded local data against it, then connect the frontend compilation owner and revision handles. | Root and dependent archive compatibility, exact restoration, language proof-boundary controls and the 100-document/five-revision sharing fixture pass. Only then report I8 complete. |
+
+Merged iterators need a concrete private cursor implementation. Recursively
+calling a dependency's opaque `impl Iterator` cannot define a finite return type;
+use ordered per-layer cursors with storage proportional to dependency depth,
+without collecting all base keys. Resolve matching record/occurrence IDs as a
+validation error. Projection groups are the explicit exception: their combined
+replacement shadows the base group, never its canonical record.
+
+Keep separate internal counters for local records, occurrences, reservations,
+class/reference index entries, touched projection entries, explanation lookup
+entries, proof adjacency and contribution entries. A local incoming edge may
+legitimately create a bucket keyed by a dependency ID, so checking that every
+index key is authored would be wrong. Check retained entries and their carriers,
+plus unchanged dependency allocations, rather than keys or record pointers alone.
 
 #### Index and navigation rules
 
@@ -241,10 +270,54 @@ into new graph/index tables as a hidden builder step.
 
 Original declared-slot lookup must route standard subjects to the dependency's
 declared projection and local subjects to this revision's declared input. Derived
-status, proof and contribution-cache lookup follows the same partition. Preserve
-the existing archive omission/fallback of local contribution metadata, checked
-checkpoint invalidation, canonical context digest and all Complete/Incomplete
-meanings. Shared storage does not itself justify preserving a closure witness.
+stored facts, failures and contribution-cache lookup follow their owning layer.
+Current inverse/association navigation must first consult the sparse combined
+projection: subject membership alone does not make that value a dependency fact.
+
+#### Proof and restoration boundaries
+
+`SemanticContext::sealed_dependency_fact` authenticates an actual record, slot
+or occurrence against the accepted/producer-closed dependency. Preserve its
+exact value-and-origin check and shared-pointer fast path. Storage sharing alone
+confers no language seal. A local inverse carrier can change a standard subject's
+navigation slot while its record remains identical. Queries must then retain
+the current population evidence. Historical searches of an exact sealed fact
+stay in the dependency proof context; independently requested current searches
+remain live, including when their values equal a historical search. Preserve
+ordinary and producer query modes and both merge orders.
+
+Keep dependency explanation/search pools owned by their publication. Local
+proof-existence checks may borrow dependency facts, and `explain`/`facts` must
+still expose the same logical assertions in deterministic order. Do not insert
+every dependency proof into a local pool to make
+`ExplanationPool::derived_dependencies` work: that copies the cached adjacency
+the sharing change is meant to avoid. Local cycle checking may treat a validated
+immutable dependency as a terminal boundary because it cannot point into the
+new local layer; it must still traverse previous **local** explanations when an
+additive batch changes an existing local proof. Missing and unsuccessful base
+premises retain their existing rejection rules.
+
+The ordered-reference cache now covers both fresh ordered-slot creation and
+later append events. Preserve selected position, exact explanation and searches;
+whole-slot search submissions still discard earlier precision when they cannot
+be attributed. Dependent archive restoration retains the supplied dependency's
+cache by lookup, while restored local contributions remain absent and queries
+fall back to aggregate evidence. Checkpoint rebinding must observe lost or
+changed contribution metadata. The optional cache is not added to canonical
+archive bytes or semantic model identity merely to enable sharing.
+
+Archive wire output retains its current logical ordering, proof/search table
+assignment and complete identity reservations. Stream merged reservation sets
+through a borrowed serializer rather than rebuilding a retained base-sized set;
+decoded reservations may be validated and reduced to local history. Preserve
+the declared/derived overlay boundary and original slots used by producer model
+digests. Do not serialize transient producer-emitter attribution, bounded future
+scope state or evaluator caches as canonical graph data. Existing dependent
+archive protection and accepted receipt validation remain authoritative.
+
+Shared storage does not itself justify preserving a closure witness. Context
+digests, original declared slots, provider/search guards and Complete/Incomplete
+meanings remain unchanged.
 
 #### Storage-specific acceptance matrix
 
@@ -256,6 +329,7 @@ Extend the existing kernel tests before using the representation in the workspac
 | `association_slots`, `derived_associations` | Local noncomposite carriers into a base subject appear in combined incoming, property-filtered incoming, incidence and navigation; the base facade stays unchanged. Check scalar inverse conflict, duplicate targets with distinct occurrences, ordered positions and a smaller local occurrence ID shifting unordered positions. Removing the local link restores the exact base projection. |
 | `registry_extensions` | Existing classes reuse base index populations under a compatible extension; new local subclasses are found correctly. Incompatible descriptors and newly unsatisfied navigation bounds still reject. |
 | `derivations`, `reference_contributions`, `structural_search_sharing` | Local proofs resolve base premises without copied base pools. Strict/construction/additive paths preserve declared versus derived facts, exact contribution support and fallback; changing a local carrier still reopens relevant negative/provider closure. |
+| KerML sealed dependency / selected contribution controls | A sealed historical Incoming search does not become a current producer read; an identical explicit current search survives either merge order. A changed inverse projection on a protected subject remains live. Fresh-slot and append support keep precise guards; loss of local metadata on restore reopens transport conservatively. |
 | `archive`, accepted publication restoration | Dependent roundtrip retains the supplied base allocation and canonical bytes/digests. Protected archive writes/reservations reject, local contribution metadata remains optional, and historical accepted receipt checks still pass. |
 | Workspace 100-document/five-revision fixture | Observe local/base table entries, index entries, proof-pool entries and touched projection sizes, plus unique retained storage and peak temporary memory. Empty mounts allocate no standard-sized maps; tiny edits rebuild only authored/touched index populations. Parallel readers see revision-specific results and no standard producer replay. |
 
