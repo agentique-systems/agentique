@@ -73,3 +73,28 @@ audit because of its measured host-memory pressure; the earlier scaffold checks
 above do not verify this later delta. No cache was loaded and no acceptance was
 activated. The eventual C2 integration must compile and run the exact cache and
 authored-consumer checks after the actual Systems publication gate succeeds.
+
+## Combined preparation verification
+
+After the bounded Actions process exited, the held chain `c28fd16` → `2a070b4`
+→ `b8fbd44` was combined with constructor correction `a82a03e` on root `5e57467`
+(review-worktree commit `3f2728d`). No further production correction was needed.
+The following checks supersede the compilation deferral above; exact command,
+output hash and exit records are in `held-restore-integration.json`.
+
+| Command | Actual result | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib trusted_publication -- --nocapture` | 4 passed; exact authority, unavailable catalogue, altered bytes/context/bounds, weaker registry and recomputed certificate rejection | 0 |
+| `cargo test --locked --offline -p agq-kerml-text --lib restoration -- --nocapture` | 4 passed; receipt schema, archive bounds/population, stale sources and incomplete facade populations | 0 |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib overlay_tests -- --nocapture` | 5 passed; exact producer-bound roles, wrong graph, weaker registry, forged dependency and ordinary current-graph distinction | 0 |
+| `cargo clippy --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics -p agq-kerml-text --all-targets -- -D warnings` | Finished with no warnings | 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics -p agq-kerml-text --no-deps` | Three public APIs documented without warnings | 0 |
+| `cargo fmt --all -- --check` | No output | 0 |
+
+The initial context filter `context_overlay` selected zero tests; it was corrected
+to the actual `overlay_tests` module before reporting the five passing checks.
+Builds used the low-artifact runner with two jobs and disabled debug/incremental
+artifacts. The catalogue remains empty, and actual Systems cache restoration,
+accepted bindings, publication acceptance and authored accepted-cache integration
+remain unverified until the publication gate supplies the real accepted artifact.
+The preparation code is ready to integrate without enabling that authority.
