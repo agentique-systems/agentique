@@ -249,3 +249,17 @@ Five independent positive-path regressions are included. The wider unit run also
 caught native/persistent identity-read parity and an overbroad excluded-carrier
 endpoint guard; both production issues were corrected before the 155-pass run.
 Package/clippy/rustdoc validation follows in a separate concise result below.
+
+Final positive-witness package verification (`e3e92e0`, test-only lint fix `6a31278`):
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --no-fail-fast` | KerML 156 unit tests plus all integration suites passed, 2 scale probes ignored; SysML 66 passed; both doc-test suites passed | 0 |
+| `cargo clippy --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --all-targets -- -D warnings` | Passed after removing two redundant conversions in the new helper tests | 0 |
+| `RUSTDOCFLAGS=-D warnings cargo doc --locked --offline -p agq-kerml-semantics -p agq-sysml-semantics --no-deps` | Both public semantic APIs documented without warnings | 0 |
+| `cargo fmt --all -- --check` | No output | 0 |
+
+Raw package output is ignored at
+`verification/generated/language-stability-bridge/positive-witness-package-tests.log`.
+These results establish the bounded semantic fix and regressions, not Systems
+publication acceptance; the lead owns the next measured Actions candidate.
