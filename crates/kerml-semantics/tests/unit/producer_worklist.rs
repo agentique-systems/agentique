@@ -74,7 +74,12 @@ fn variable_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
     (snapshot, bindings)
 }
 fn expression_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
-    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    expression_fixture_with_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8)
+}
+
+fn expression_fixture_with_profile(
+    profile: agq_kerml::BaselineProfile,
+) -> (Snapshot, Arc<StandardKermlBindings>) {
     let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
     let mut f = Fixture {
         changes: base.change_set(),
@@ -147,6 +152,163 @@ fn expression_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
         },
     });
     (snapshot, bindings)
+}
+
+fn expression_nested_result_fixture(
+    existing_source_target: bool,
+) -> (Snapshot, Arc<StandardKermlBindings>) {
+    let (base, bindings) =
+        expression_fixture_with_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9);
+    let mut f = Fixture {
+        changes: base.change_set(),
+        owned: BTreeMap::from([(
+            id(1),
+            base.model()
+                .navigation_slot(id(1), p::ELEMENT_OWNED_RELATIONSHIP)
+                .unwrap()
+                .value()
+                .values()
+                .cloned()
+                .collect(),
+        )]),
+        base,
+    };
+    f.create(5000, c::FEATURE);
+    f.enumeration(5000, p::FEATURE_DIRECTION, "out");
+    member(&mut f, 1, 5000, 5001, c::RETURN_PARAMETER_MEMBERSHIP);
+    // The input's value is a nested reference expression with its own result;
+    // that result is not the chain expression's direct structural result.
+    f.create(5002, c::FEATURE_REFERENCE_EXPRESSION);
+    member(&mut f, 2, 5002, 5003, c::FEATURE_VALUE);
+    f.create(5004, c::FEATURE);
+    f.enumeration(5004, p::FEATURE_DIRECTION, "out");
+    member(&mut f, 5002, 5004, 5005, c::RETURN_PARAMETER_MEMBERSHIP);
+    if existing_source_target {
+        f.create(5006, c::FEATURE);
+        member(&mut f, 2, 5006, 5007, c::FEATURE_MEMBERSHIP);
+    }
+    (f.finish(), bindings)
+}
+
+#[test]
+fn pending_feature_chain_cannot_change_nested_input_expression_result_typing() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V9;
+    for existing_source_target in [false, true] {
+        let (snapshot, _) = expression_nested_result_fixture(existing_source_target);
+        let registry =
+            ProducerRegistry::new([ProducerFamily::FeatureChainExpression.descriptor(profile)])
+                .unwrap();
+        let context = SemanticContext::for_snapshot(
+            &snapshot,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+        let q = KerMlQueries::new(context.fork());
+        assert_eq!(q.structural_result(id(1)).value, Some(id(5000)));
+        assert_eq!(q.structural_result(id(5002)).value, Some(id(5004)));
+        assert_eq!(
+            q.source_target_feature(id(1)).value,
+            existing_source_target.then_some(id(5006))
+        );
+        let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+        assert!(!certificate.is_closed(id(5000), SemanticClosureRequirement::EffectiveTyping));
+        if existing_source_target {
+            assert!(!certificate.is_closed(id(5006), SemanticClosureRequirement::EffectiveTyping));
+        }
+        assert!(
+            certificate.is_closed(id(5004), SemanticClosureRequirement::EffectiveTyping),
+            "the pending chain cannot specialize a nested input expression's result"
+        );
+    }
+}
+
+#[test]
+fn feature_chain_planner_specializes_only_direct_result_and_source_target() {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V9;
+    for existing_source_target in [false, true] {
+        let (snapshot, bindings) = expression_nested_result_fixture(existing_source_target);
+        let mut context = SemanticContext::for_snapshot(
+            &snapshot,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap();
+        context.id.standard_bindings = Some(bindings);
+        let q = KerMlQueries::new(context);
+        let plan = q.plan_result_structure([id(1)]);
+        assert!(plan.producer_evaluations.contains(&(
+            id(1),
+            ProducerFamily::FeatureChainExpression.id(),
+            Completeness::Complete
+        )));
+        let registry = ProducerRegistry::new(
+            ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(profile)),
+        )
+        .unwrap();
+        plan.validate_declared_effects(&[id(1)], &registry).unwrap();
+        let output = plan.materialize(&snapshot).unwrap();
+        let rules: BTreeSet<_> = [
+            "checkFeatureChainExpressionResultSpecialization",
+            "checkFeatureChainExpressionTargetRedefinition",
+            "checkFeatureChainExpressionSourceTargetRedefinition",
+        ]
+        .into_iter()
+        .map(|rule| crate::result_structure::rule_id(profile, rule))
+        .collect();
+        let model = output.overlay.model();
+        let specialized: BTreeSet<_> = model
+            .elements()
+            .filter(|record| {
+                matches!(record.origin(), Origin::Derived(proof) if rules.contains(&proof.rule))
+                    && model
+                        .registry()
+                        .is_subtype(record.metaclass(), c::SPECIALIZATION)
+                        .unwrap()
+            })
+            .map(|record| {
+                let specific = model
+                    .registry()
+                    .resolve_property(record.metaclass(), p::SPECIALIZATION_SPECIFIC)
+                    .unwrap()
+                    .unwrap()
+                    .id;
+                match model
+                    .navigation_slot(record.id(), specific)
+                    .unwrap()
+                    .value()
+                {
+                    SlotValue::Scalar(Value::Reference(target)) => *target,
+                    value => panic!("unexpected specialization endpoint {value:?}"),
+                }
+            })
+            .collect();
+        assert_eq!(specialized.len(), 2);
+        assert!(specialized.contains(&id(5000)));
+        assert!(!specialized.contains(&id(5004)));
+        if existing_source_target {
+            assert_eq!(specialized, BTreeSet::from([id(5000), id(5006)]));
+        } else {
+            assert_eq!(
+                specialized
+                    .iter()
+                    .filter(|&&target| snapshot.model().element(target).is_some())
+                    .copied()
+                    .collect::<BTreeSet<_>>(),
+                BTreeSet::from([id(5000)])
+            );
+        }
+    }
 }
 
 #[test]
