@@ -476,3 +476,18 @@ the corrected input used UTF-8 without BOM. An initial unqualified `--exact` tes
 filter selected zero tests and establishes no result. The qualified rerun above
 is the recorded regression. No graph cache, producer corpus, or publication run
 was used for source mapping.
+
+Combined source `2e1e346` includes the direct invocation-result scope and audited
+future-owner bound. The same paired command above still exits 101: 2 failed in
+17.93 s. Plain Feature results retain three incomplete pairs; ReferenceUsage
+results improve from five to four. Nested feature-reference typing and its result
+snapshot diagnostics disappear; AttributeUsage typing, direct invocation-result
+typing and the outer FeatureValue featuring boundary remain incomplete. The
+qualified frontend command above with `AGQ_PRODUCER_CAUSAL_TRACE=1` also exits 101:
+1 failed in 16.38 s. Its trace retains a future edge from the nested
+FeatureReferenceExpression producer to Invocation through the invocation's broad
+Membership population, then direct Invocation edges to its result's value
+producers. Function-target result-write precision and target-membership read
+precision remain diagnostic hypotheses, not verified fixes. Output SHA-256:
+paired run `2fabde69ab5378d9a42622e6b572866dbc72943c06a1b417c5118ad87bbf9ca5`;
+trace `ac1aaaf984b23246c3488d674a7ac5e8117467a8acf027bb58caf45e6d897f7b`.
