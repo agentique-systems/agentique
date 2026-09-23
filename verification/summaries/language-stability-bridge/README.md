@@ -15,8 +15,8 @@ parse and construct byte-exactly. Producer closure converges Complete in 33 roun
 with a fully closed certificate, zero incomplete evaluations and no diagnostics.
 The faithful inherited-result correction and sufficient Systems-only budget close
 the previously diagnosed boundary. The earlier eight-document Actions gate also
-passed with 534/534 Complete references and fully closed evidence. Full publication
-has not run; its attempt budget is unused.
+passed with 534/534 Complete references and fully closed evidence. The first full publication attempt is now running; no full acceptance result
+has been recorded.
 
 All six genuine layered expression fixtures and the connection-end fixture pass
 with fully closed certificates. The indexed assignment now matches the real
@@ -43,6 +43,14 @@ restoration remain gated. [restore.md](restore.md) records C1/C2 preparation and
 the executable actual-cache gate.
 
 ## Publication observations
+
+The first normal full attempt, `systems-full-language-bridge`, started on
+2026-09-23 at clean `530b430`, using the successful release build from `692ed8e`
+(binary SHA-256 in `commands.json`). It selects all 21 documents without
+`--audit-only`. The watchdog retains 2,100 seconds, 6,656 MiB private memory and
+1 GiB free disk. This attempt is **in progress**, not accepted; its completed
+result belongs in `publication-commands.json`. The normal full attempt is now
+used; the only permitted retry requires a concrete defect fix.
 
 The passed `systems-medium-result-populations` audit uses clean source `9152fb9`
 and release build `b018b18`. It exits 0 in **1,726.844 seconds**, peak **6,435.4 MiB
@@ -78,7 +86,7 @@ remain historical, including their verified original source spans. Exact command
 exit, resource observations, final
 counts and report hashes are in [publication-commands.json](publication-commands.json).
 Earlier failed audits remain historical in that ledger and [closure.md](closure.md).
-Full publication has not run; the full-attempt budget is unused.
+The full attempt status is recorded at the start of this section.
 
 The `systems-medium-thirteen` audit uses clean source `262fd5c` and release
 build `4fdaf2b`. It exits 1 in **1,749.844 seconds**, peak **6,351.0 MiB private**,
