@@ -35,6 +35,28 @@ EnumerationDefinition. `checkAttributeUsageSpecialization` produces this general
 base edge; it does not supply the missing enumeration typing. The literal's
 declared name is present and its own `Usage::isVariation` is false.
 
+The subsequent full search did not limit candidates to owned relationships.
+Across all 15,420 serialized Record rows (13,624 final local records), there are
+exactly 46 canonical slot references to the 21 literals: 21 VariantMembership
+owned-member endpoints, 21 Subsetting source endpoints, two Membership aliases
+and two ReferenceSubsetting **target** endpoints. There is no additional
+FeatureTyping, Specialization or redefined source-role endpoint on any literal.
+The two ReferenceSubsettings point from other expression features to `pass` and
+`fail`; their direction does not add typing to either literal.
+
+All 22 canonical association occurrences were inspected; none has a literal or
+DataValues endpoint. DataValues has only one local membership alias and 57 local
+Subsetting **general** endpoints, with no local source-side relationship. Thus
+no nonowned local relation supplies an indirect route from DataValues to an
+enumeration owner. The full local population also contains zero source-side
+specialization/typing/subsetting/redefinition references to any accepted dependency
+subject, and every local association occurrence endpoint is local. Thus no outer
+relationship extends an intermediate accepted ancestor either. The sealed KerML
+dependency cannot itself refer to these new local EnumerationDefinitions.
+This covers the incoming source-role search used
+by `incoming_source_relationships`/`targets`, in addition to the owned
+conjugation, chaining and reference-subsetting paths.
+
 All seven EnumerationDefinition records store false for the **resolved override**
 `EnumerationDefinition::isVariation`, property
 `5172cf68-e527-5aa1-9e82-725821e72197`. This is not confusion with a superseded
@@ -87,3 +109,23 @@ this checkpoint and is not authorized by a query-only acceptance fix.
 
 The checkpoint remains unchanged and unaccepted. No producer replay is authorized
 or performed, and no broad Variation exception or validator expansion is adopted.
+
+## Reproducible absence check
+
+`verification/scripts/diagnose_systems_enumeration_frontier.py` authenticates both
+the archive and decoded graph hashes, reconstructs the final local record map,
+checks every canonical reference regardless of ownership, checks all association
+occurrences and rejects any additional unclassified literal/DataValues reference.
+Its exit zero establishes this diagnosed absence, not acceptance authority.
+
+Actual command, from the isolated `agentique-platform-finalization` worktree:
+
+```powershell
+python verification/scripts/diagnose_systems_enumeration_frontier.py --repository C:/Users/phili/github/agentique-systems/agentique --archive C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/full-frontiers/c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d.zip --archive-sha256 c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d --graph-sha256 c056ecf5ea4b168235677763d3b2dd64ebefb15fbc71ca43bcee090865b1608a --output C:/Users/phili/github/agentique-systems/agentique/verification/generated/systems-finalization/enumeration-diagnosis.json
+```
+
+Python 3.12.10; exit: **0**. Report: 13,624 local records, 22 association occurrences, 21 literals
+missing enumeration-owner typing. Output JSON SHA-256:
+`0416b56b12d9fe248bcfc998cc263e1ab10f5d0b9bb3fe494a37f0f01118a1da`.
+The output also pins the inspected generated descriptor-name tables and retains
+the complete 46-reference inventory and per-literal representative identities.
