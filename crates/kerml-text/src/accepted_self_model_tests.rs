@@ -698,23 +698,29 @@ fn insert(
 #[test]
 #[ignore = "requires exact accepted KerML and Systems caches; never rebuilds standards"]
 fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_semantics() {
+    // Check both original inputs and compiled authority before the large KerML
+    // restoration. Retain the opened handles so the checked inputs are consumed.
+    let open_cache = |name| {
+        let path = std::env::var_os(name)
+            .unwrap_or_else(|| panic!("{name} is required for this requested acceptance gate"));
+        let file = File::open(path)
+            .unwrap_or_else(|error| panic!("{name} must name a readable original cache: {error}"));
+        assert!(
+            file.metadata().unwrap().is_file(),
+            "{name} must name a regular cache file"
+        );
+        file
+    };
+    let kerml_cache = open_cache("AGENTIQUE_KERML_CACHE");
+    let systems_cache = open_cache("AGENTIQUE_SYSTEMS_CACHE");
+    agq_kerml_semantics::TrustedPublicationReceipt::checked_in("sysml-systems-operational-v2")
+        .expect("the requested gate requires the independently accepted compiled Systems receipt");
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
-    let kerml_path = std::env::var_os("AGENTIQUE_KERML_CACHE")
-        .expect("AGENTIQUE_KERML_CACHE is required for this requested acceptance gate");
-    let systems_path = std::env::var_os("AGENTIQUE_SYSTEMS_CACHE")
-        .expect("AGENTIQUE_SYSTEMS_CACHE is required for this requested acceptance gate");
-    let kerml = Arc::new(
-        CanonicalKermlStandardLibraries::restore_cache(File::open(kerml_path).unwrap(), &sources)
-            .unwrap(),
-    );
+    let kerml =
+        Arc::new(CanonicalKermlStandardLibraries::restore_cache(kerml_cache, &sources).unwrap());
     let accepted = Arc::new(
-        CanonicalSysmlSystemsLibrary::restore_cache(
-            File::open(systems_path).unwrap(),
-            &sources,
-            kerml,
-        )
-        .unwrap(),
+        CanonicalSysmlSystemsLibrary::restore_cache(systems_cache, &sources, kerml).unwrap(),
     );
     let mut project =
         SourceProject::with_accepted_sysml_standard_libraries(accepted.clone()).unwrap();

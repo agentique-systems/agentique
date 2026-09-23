@@ -448,13 +448,6 @@ fn programmatic_platform_with_builder(mut builder: VehicleBuilder) -> Snapshot {
         let id = builder.create(class, Some(name));
         builder.member(builder.names[package], id, c::OWNING_MEMBERSHIP);
     }
-    builder.relationship(
-        c::SUBCLASSIFICATION,
-        builder.names["ValidatedSemanticState"],
-        builder.names["SemanticState"],
-        Some(p::SUBCLASSIFICATION_SUBCLASSIFIER),
-        p::SUBCLASSIFICATION_SUPERCLASSIFIER,
-    );
     for (owner, name, definition) in [
         ("SemanticQuery", "semanticAnswer", "SemanticState"),
         ("ModelRevision", "revisionState", "SemanticState"),

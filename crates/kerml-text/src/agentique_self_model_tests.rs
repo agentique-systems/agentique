@@ -351,6 +351,27 @@ fn agentique_rich_platform_matches_independent_programmatic_semantics() {
         let query = q(snapshot);
         let model = snapshot.model();
         let mut summary = BTreeMap::new();
+        for (specific, general) in [
+            ("ValidatedSemanticState", "SemanticState"),
+            ("IncrementalWorkspace", "ProjectWorkspace"),
+        ] {
+            let relationships =
+                query.owned_relationships_of_type(named(model, specific), c::SUBCLASSIFICATION);
+            assert_eq!(relationships.completeness, Completeness::Complete);
+            assert_eq!(
+                relationships.value.len(),
+                1,
+                "{specific} has exactly one canonical specialization relationship"
+            );
+            assert_eq!(
+                model.element(relationships.value[0]).unwrap().metaclass(),
+                c::SUBCLASSIFICATION
+            );
+            let parents = query.supertypes(named(model, specific));
+            assert_eq!(parents.completeness, Completeness::Complete);
+            assert_eq!(parents.value, [named(model, general)]);
+            summary.insert(format!("parents/{specific}"), names(model, parents.value));
+        }
         for owner in [
             "ProjectWorkspace",
             "IncrementalWorkspace",
