@@ -44,12 +44,36 @@ ranges; the retained observation table covers older Markdown-only results.
 | Transition payload suppression imported an unrelated derived ancestor | Exhaustive ancestry only discovers candidates; suppression requires one Complete canonical specialization witness plus the exact ordered trigger/payload chain and original trigger/input antecedents | `4425065` (review `8af0d6f`); six transition tests pass, deterministic IDs and trigger-before-payload order preserved |
 | A selected appended relationship fell back to the complete owner-slot proof, importing unrelated snapshot contributions | Kernel per-reference support retains explicit append/adoption proof, only owner/selected-target automatic dependencies, position and batch searches. Broad current reads still merge in either order; search-only updates evict unattributable precision | Kernel `b6bcfaa`; five final independent semantic regressions pass; production `fa3bbdd`, tests `dc888fd` / `7adca6b` (root `4f18a0d`); earlier failed guard/proof assertions are retained in the ledger |
 | A newly created helper's initial two-FeatureChaining slot had no per-reference support, leaving seven receiver producer pairs open | Initial ordered derived slots retain selected target and validated owner creation evidence, including record/slot negative searches. Repeated targets fall back to aggregate evidence. Copy-on-write, construction and dependency paths preserve the optional cache | `4fa87cd` / root `55b5af8`; seven kernel regressions and 119 package tests plus three doc tests pass; receiver test now Complete in 33.80 s |
+| Positive SelfLink/HappensLink/composite Action exclusion imported an unrelated ancestor's mayTimeVary proof | Select a canonical positive specialization witness while retaining owner, scalar and role antecedents. No witness preserves the exhaustive ancestry and negative closure requirements | Reproduction `afb092a` failed for Action and SelfLink; correction `039a035` / root `f15cfca` passes five focused tests, receiver Complete in 27.18 s, all-target SysML Clippy and formatting. Actual corrected corpus audit remains pending |
 
 The contribution cache is optional, read-only kernel evidence. Local archives omit
 it without changing canonical bytes; a missing entry requires aggregate query
 fallback and reopens transported selected-support reads. Exact supplied immutable
 dependency entries remain available. Population searches and recursively retained
 positive/negative premises are still required; the cache is not closure authority.
+
+The bounded residual review of the 532/534 audit (`fc04dfa`) found 105 incomplete
+mayTimeVary, 11 value-binding and two positional evaluations among diagnostic
+subjects. Both positional subjects are TriggerAction's payload
+`70506936-f8f9-5057-9e36-37230a4e02df` and receiver
+`a1ff5677-154c-54fa-b0b4-78c9a54a3c73`. Value-context findings span Actions,
+Flows, Items and Parts. The final filtered direct causal edge is TriggerAction's
+mayTimeVary to its VariableFeaturing. The future-writer trace's
+`042923d6-97a3-5b93-9d20-b4c1217ad9d9` is Items' `edge` expression at bytes
+2767..2771; it labels the first queued creator, not a uniquely established cause.
+The report exposed only 118 of 164 incomplete evaluations, so it cannot establish
+that every residual finding shares that root. No separate defect was reproduced.
+The next report includes every incomplete evaluation's subject and source locator.
+
+Independent review retained the composite Action guard, complete antecedents,
+selected proof and negative fallback. In the isolated closure checkout,
+`cargo test -p agq-sysml-semantics may_time_vary -- --nocapture` exited 0 with
+five tests, using disabled incremental/debug output and one build job. The existing
+`sysml_diagnostic_sources.exe` locator with generated diagnostic input also exited
+0 without cache restoration or producer replay. Its precise generated argument
+and output hashes were not recorded; raw inputs/output remain under ignored
+`verification/generated/residual-population/`. These observations do not accept
+the corpus or substitute for the exact focused-run records in `commands.json`.
 
 ## Distinct failures retained for reproduction
 

@@ -280,7 +280,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .production()
         .map(|production| production.authority_conflicts())
         .unwrap_or_default();
-    // Bounded explanation for actual final diagnostic subjects. This keeps
+    // Bounded explanation for final diagnostics and incomplete evaluations. This keeps
     // pending writers distinct from completed evaluations whose upstream
     // requirements remain open, without serializing the full certificate.
     let registry = agq_kerml_semantics::ProducerRegistry::new(
@@ -290,7 +290,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .chain(agq_sysml_semantics::sysml_producer_descriptors()),
     )
     .map_err(|family| format!("duplicate producer family: {}", family.name()))?;
-    let diagnostic_subjects: BTreeSet<_> = candidate
+    let mut diagnostic_subjects: BTreeSet<_> = candidate
         .production()
         .and_then(|production| production.stages.last())
         .into_iter()
@@ -301,6 +301,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|diagnostic| diagnostic.subject)
         })
         .collect();
+    if let Some(certificate) = draft.producer_closure() {
+        diagnostic_subjects.extend(model.elements().filter_map(|record| {
+            registry
+                .descriptors()
+                .iter()
+                .enumerate()
+                .any(|(index, _)| {
+                    certificate.evaluation(record.id(), index)
+                        == Some(agq_kerml_semantics::ProducerEvaluationState::EvaluatedIncomplete)
+                })
+                .then_some(record.id())
+        }));
+    }
     let closure_explanations: Vec<_> = draft.producer_closure().into_iter().flat_map(|certificate| {
         diagnostic_subjects.iter().map(|subject| json!({
             "subject":subject,
