@@ -2,6 +2,9 @@
 use crate::*;
 use agq_kerml::{classes as c, properties as p, views};
 use agq_kernel::{ElementId, provenance::FactKey};
+#[cfg(test)]
+#[path = "../tests/unit/cross_subsetting_population.rs"]
+mod cross_subsetting_population_tests;
 
 /// One association end contributes the intersection of its effective Types.
 #[derive(Clone, Debug, PartialEq, Eq)]
