@@ -56,12 +56,12 @@ impl KerMlQueries<'_> {
                 }
             }
         } else {
-            let memberships = self.memberships(expression);
-            if let Some(&membership) = memberships
-                .value
-                .iter()
-                .find(|&&m| !self.is(m, c::FEATURE_MEMBERSHIP))
-            {
+            let memberships = self.owned_relationships_excluding(
+                expression,
+                c::MEMBERSHIP,
+                [c::FEATURE_MEMBERSHIP],
+            );
+            if let Some(&membership) = memberships.value.first() {
                 let member = self.member(membership);
                 out.value = member.value.filter(|&e| self.is(e, c::TYPE));
                 out.merge(member);

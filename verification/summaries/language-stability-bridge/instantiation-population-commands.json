@@ -30,6 +30,36 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "instantiation-population-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "expression_structure::population_tests",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e0e68dc3977d901673e3a035fa8316f6fc6037c9",
+      "working_changes_sha256": "087e86835d60b79715aab5da98f76142ef104f33f647d788c546f238ea3ba846",
+      "output_sha256": "eb60d91aacb2d614989187a9f16c6fc6ae7d874337c37b3d08f9a1fe9f59b45c",
+      "duration_seconds": 35.58,
+      "output": "verification/generated/language-stability-bridge/instantiation-population-focused.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ]
 }
