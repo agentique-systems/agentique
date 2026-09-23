@@ -1,0 +1,92 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "positive-owner-may-time",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "may_time",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4eae19825d8abf12c2769ffd6f2f36cf6a87b235",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "622ae626e7f99f8ff7e4ad8e5685af900cb1074cd6f56537cbc9590713d43cd8",
+      "duration_seconds": 11.0,
+      "output": "verification/generated/language-stability-bridge/positive-owner-may-time.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "positive-owner-path",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "specialization_witness",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4eae19825d8abf12c2769ffd6f2f36cf6a87b235",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "817f2496e6e04c4211f2ca3f9f036253df5c943b8a61da99d97a9e55a210b6d9",
+      "duration_seconds": 16.31,
+      "output": "verification/generated/language-stability-bridge/positive-owner-path.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "positive-owner-loop",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "input_action_body_closes_under_while_loop_with_nested_actions",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4eae19825d8abf12c2769ffd6f2f36cf6a87b235",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "287c0710f92f3eb2b6f01bcd5748c964588c68fdf69be37092f31ab401c66308",
+      "duration_seconds": 34.53,
+      "output": "verification/generated/language-stability-bridge/positive-owner-loop.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    }
+  ]
+}

@@ -28,3 +28,22 @@ Low-disk environment, one build job; no corpus or accepted-cache load:
 | `cargo clippy -p agq-sysml-semantics --all-targets -- -D warnings` | exit 0 |
 | `cargo fmt --all -- --check` | exit 0 |
 | `git diff --check` | exit 0 |
+## Independent review
+
+**GO for this scoped correction.** Independent checks on `1fa256d` over root
+`31633ba` (review-worktree equivalent `4eae198`) found no remaining issue. The
+positive owner premise retains the canonical helper's selected endpoint and
+derivation evidence, including its provider/conjugation guards. No witness still
+uses ordinary semantic ancestry. Negative owner-type and usage exclusion-type
+closure requirements are unchanged.
+
+| Command | Actual result | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib may_time -- --nocapture` | 4 passed, 1.34 s | 0 |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib specialization_witness -- --nocapture` | 5 passed, 0.29 s; selected derived proof, changed/deleted edge reopening, implied filtering, conjugation/provider and chained-path cases | 0 |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib input_action_body_closes_under_while_loop_with_nested_actions -- --nocapture` | Complete, 1 passed, 34.28 s; two local parameters plus inherited third retain exact IDs, varying body and shared snapshot | 0 |
+| `git diff --check` | No output | 0 |
+
+`positive-owner-review.json` records actual commands, source/patch identity,
+outputs and exits under the low-artifact runner. No corpus publication was run
+by the reviewer; this result is not Systems publication or readiness acceptance.
