@@ -133,6 +133,48 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "final-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--",
+        "--test-threads=4"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "db3a18c15c6ce514ee006cf0bac6b884cdc235a8",
+      "working_changes_sha256": "7831471fd0ee0c443394b41ef8b92ad4bd3267f88f47eea9bb34b62bf3479134",
+      "output_sha256": "defcdafaba9417c622031613413345303e35dd0a74069345d93a468531d9a902",
+      "duration_seconds": 876.06,
+      "output": "verification/generated/final-language-acceptance/final-workspace-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "final-evidence-diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "8b9aabb43418b45e85066c5c67bf1c9f8bb977ce",
+      "working_changes_sha256": "ebf65cb88fe530f70becace2b9889ca17780df7df714107602b6107660d4dfed",
+      "output_sha256": "e1c219f515336cb1f6e75d6fc59f3aaa7df9fa7281bb6753443475aff69d3721",
+      "duration_seconds": 0.06,
+      "output": "verification/generated/final-language-acceptance/final-evidence-diff-check.log",
+      "environment_overrides": {}
     }
   ]
 }

@@ -60,11 +60,33 @@ clean worktree; its executable was the independently retained, medium-tested
 binary above. Subsequent root changes are documentation and verification tooling,
 not modifications to the running scheduler.
 
-Final repository checks are recorded separately in [final-verification.json](final-verification.json).
-Their status is finalized after the serialized checks complete. Earlier focused,
-frontend/browser, grammar, metamodel and runtime commands retain their actual
-outputs and exits in [commands.json](commands.json) and
-[frontend-commands.json](frontend-commands.json).
+## Repository verification
+
+Final commands, outputs, durations and exit codes are recorded in
+[final-verification.json](final-verification.json). All checks below exited 0:
+
+| Check | Actual result |
+| --- | --- |
+| `cargo fmt --all -- --check` | Passed. |
+| Workspace Clippy, all targets, `-D warnings` | Passed. |
+| Kernel / KerML semantics / SysML semantics / text frontend package tests | 784 passed, zero failed, five explicitly ignored. |
+| One low-artifact `cargo test --locked --offline --workspace -- --test-threads=4` | 918 passed, zero failed, five explicitly ignored; 876.06 seconds including compilation. One build job and the 4 GiB disk preflight were retained. |
+| Strict Rustdoc, seven Gen2 kernel/language crates, `RUSTDOCFLAGS=-D warnings` | Passed. |
+| Dependency boundary | Passed, including dev/build/optional/target-specific edges. |
+| Readiness, local links and Gen1 register preservation | Passed; [document check](document-checks.json). |
+
+The earlier successful `npm run check`, `npm run build`, `npm test`,
+`npm run standards:check`, both grammar stale gates, the offline metamodel stale
+gate, and KerML/SysML runtime gates retain actual outputs and exits in
+[commands.json](commands.json). The unchanged frontend's `npm run test:e2e`
+passed all four tests; see [frontend-commands.json](frontend-commands.json).
+No repeated browser run was needed. The integrated medium/frontier/final-artifact
+Python guards passed all 13 tests. Authenticated frontier analysis and full-run
+profiling retain their own pinned command evidence linked above.
+
+These are repository regressions, not H-K acceptance. The five ignored root
+tests and ten held workspace acceptance tests are not represented as passed.
+The full publication operation separately exited 124 as recorded above.
 
 **MODELING WORKSPACE PHASE 1 REMAINS GATED**
 
