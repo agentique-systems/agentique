@@ -25,6 +25,9 @@ pub use publication::*;
 mod source;
 pub(crate) use source::{AcceptedSourceDependency, lower_accepted_source};
 #[cfg(test)]
+#[path = "sysml_end_shape_tests.rs"]
+mod end_shape_tests;
+#[cfg(test)]
 #[path = "sysml_index_shape_tests.rs"]
 mod index_shape_tests;
 #[cfg(test)]
