@@ -1540,6 +1540,14 @@ impl ProducerClosureCertificate {
         }
         propagate(&mut inherited_blocks, &owned_by);
         propagate(&mut owner_blocks, &owners_of);
+        trace::scope_masks(
+            &subjects,
+            &blocked,
+            &inherited_blocks,
+            &owner_blocks,
+            global_block,
+            dependency_global_block,
+        );
         for (i, mask) in inherited_blocks.into_iter().enumerate() {
             blocked[i] |= mask
                 | owner_blocks[i]

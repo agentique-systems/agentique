@@ -3,6 +3,44 @@ use super::{ProducerRegistry, SemanticClosureRequirement};
 use agq_kernel::{ElementId, ModelView};
 use std::collections::{BTreeSet, VecDeque};
 
+fn requested_subjects() -> Option<BTreeSet<String>> {
+    std::env::var_os("AGQ_PRODUCER_CAUSAL_TRACE")?;
+    let filter = std::env::var("AGQ_PRODUCER_CAUSAL_SUBJECTS").ok()?;
+    let requested: BTreeSet<_> = filter
+        .split(',')
+        .map(|id| id.trim().to_ascii_lowercase())
+        .filter(|id| !id.is_empty())
+        .take(32)
+        .collect();
+    (!requested.is_empty()).then_some(requested)
+}
+
+pub(super) fn scope_masks(
+    subjects: &[ElementId],
+    direct: &[u8],
+    inherited: &[u8],
+    owners: &[u8],
+    global: u8,
+    dependency_global: u8,
+) {
+    let Some(requested) = requested_subjects() else {
+        return;
+    };
+    let typing = SemanticClosureRequirement::EffectiveTyping.bit();
+    for (index, subject) in subjects.iter().enumerate() {
+        if requested.contains(&subject.to_string()) {
+            eprintln!(
+                "closure typing scope subject={subject} direct_or_provider={} inherited={} owners={} global={} dependency_global={}",
+                direct[index] & typing != 0,
+                inherited[index] & typing != 0,
+                owners[index] & typing != 0,
+                global & typing != 0,
+                dependency_global & typing != 0,
+            );
+        }
+    }
+}
+
 pub(super) fn typing_blockers(
     model: &ModelView,
     subjects: &[ElementId],
@@ -11,21 +49,9 @@ pub(super) fn typing_blockers(
     registry: &ProducerRegistry,
     states: &[u8],
 ) {
-    if std::env::var_os("AGQ_PRODUCER_CAUSAL_TRACE").is_none() {
-        return;
-    }
-    let Ok(filter) = std::env::var("AGQ_PRODUCER_CAUSAL_SUBJECTS") else {
+    let Some(requested) = requested_subjects() else {
         return;
     };
-    let requested: BTreeSet<_> = filter
-        .split(',')
-        .map(|id| id.trim().to_ascii_lowercase())
-        .filter(|id| !id.is_empty())
-        .take(32)
-        .collect();
-    if requested.is_empty() {
-        return;
-    }
     let mut dependencies = vec![Vec::new(); subjects.len()];
     for (source, dependents) in typing_dependents.iter().enumerate() {
         for &dependent in dependents {
