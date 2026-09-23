@@ -1,19 +1,20 @@
 # Producer closure integration and regressions
 
 Current status: focused corrections are integrated; Systems publication and
-language readiness remain unaccepted. The latest completed corpus gate (`bca8702`)
-has **534/534 Actions references Complete**, zero kernel obligations and zero
+language readiness remain unaccepted. The latest completed corpus gate
+(`actions-bounded-writers`, source `695e67e`, release build `b56a1b5`) has
+**534/534 Actions references Complete**, zero kernel obligations and zero
 unresolved, incomplete, ambiguous, invalid or mismatched references. All eight
-documents parse and construct byte-exactly. Closure is converged but Incomplete:
-103 evaluations remain incomplete and 379,814/403,806 requirements are closed.
-The full-certificate guard correctly rejects the scoped gate. No medium or full
-publication has run.
+documents parse and construct byte-exactly. Closure converges but remains
+Incomplete: 64 evaluations and 380,711/405,270 closed requirements. The
+full-certificate guard correctly rejects this scoped gate. No medium/full
+publication has run. Exact command, source and resource observations are in
+`publication-commands.json`.
 
-The sealed-proof correction closes typing for the original trigger, payload,
-receiver, transition and state. Remaining incomplete evaluations are 68 Usage
-mayTimeVary predicates, 31 FeatureReferenceExpression producers and 4 FeatureValue
-producers. Their unresolved contextual featuring/membership evidence is the next
-bounded diagnosis; the accepted dependency proof defect is independently fixed.
+Remaining incomplete evaluations are 42 Usage mayTimeVary predicates,
+19 FeatureReferenceExpression producers and 3 FeatureValue producers. The
+nested feature-chain result has a small faithful red reproduction; its scope
+correction remains under focused review. No next corpus result is inferred.
 
 The reproduced defect was historical proof-search contamination across an
 authenticated dependency boundary. A closed dependency's derived parameter proof

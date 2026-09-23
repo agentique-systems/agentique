@@ -13,7 +13,7 @@ completed corpus result is the eight-document Actions/dependency scope:
 **534/534 mandatory references Complete**, zero unresolved, incomplete,
 ambiguous, invalid or mismatched references, and zero kernel obligations. All eight
 documents parse and construct byte-exactly. The scheduler converges but producer
-closure remains Incomplete: 103 evaluations remain incomplete and the certificate
+closure remains Incomplete: 64 evaluations remain incomplete and the certificate
 is not fully closed. The scoped acceptance guard correctly rejects this result.
 Medium/full publication has not run;
 the full-publication attempt budget is unused.
@@ -60,7 +60,7 @@ Exit 124 is a requested workflow stop, not a semantic result; peak private memor
 was 4,515.0 MiB. No final reference audit exists for that run. Provisional endpoint
 selections are never Complete-reference counts.
 
-Nine corrected scoped audits finished normally with exit 1 and no watchdog stop.
+Ten corrected scoped audits finished normally with exit 1 and no watchdog stop.
 Each parsed/constructed 8/8 documents, selected 534 endpoints and had zero kernel
 obligations. These remain failed scoped gates, not Systems acceptance:
 
@@ -74,7 +74,7 @@ obligations. These remain failed scoped gates, not Systems acceptance:
 | `actions-positive-exclusion` (`d594006`) | 875.047 | 5,209.6 | 106 producer-closure, 11 value-context, 45 variable-featuring |
 | `actions-chain-terminal` (`b4ce4e2`) | 871.047 | 5,209.3 | 106 producer-closure, 11 value-context, 45 variable-featuring |
 
-The latest `actions-sealed-proof` audit (`bca8702`) took 981.234 seconds,
+The preceding `actions-sealed-proof` audit (`bca8702`) took 981.234 seconds,
 peaked at 5,489.4 MiB private memory, and exited 1 without a watchdog stop. Its
 534/534 references remain Complete. It has 107 diagnostics (68 producer-closure,
 35 variable-featuring, 4 value-context), 26 rounds, 12,035 evaluated subjects and
@@ -87,6 +87,17 @@ featuring/membership closure remains open. The prior owned-parameter audit took
 842.016 seconds, peaked at 5,214.7 MiB, and had 158 incomplete evaluations.
 A final pass's individual counters do not replace aggregate reconstruction
 observations. Per-subject explanations remain diagnostic evidence, not acceptance.
+
+The latest `actions-bounded-writers` audit (source `695e67e`, release build
+`b56a1b5`) finishes normally with exit 1 in 1,180.313 seconds, peaking at
+5,821.1 MiB private memory. All 534 references remain Complete, with zero kernel
+obligations or authority conflicts. Producer closure converges in 26 rounds but
+remains Incomplete: 64 explicit incomplete pairs (42 Usage mayTimeVary,
+19 FeatureReferenceExpression, 3 FeatureValue), 67 diagnostics and
+380,711/405,270 closed requirements. It evaluates 12,011 subjects and derives
+3,048 elements. The 2,617,585-byte compact certificate retains optional
+590,341,256-byte revalidation data; reconstruction retains 1,225 evaluations and
+reopens 10,975 across two rebindings. No medium/full attempt is consumed.
 
 Full non-audit publication now uses normal preparation; scoped/audit-only paths
 retain the final construction predicate pass. Strict publication independently
