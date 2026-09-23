@@ -97,7 +97,7 @@ cannot preserve a conclusion. Explain distinguishes `AcceptedDependency` from
 source/inverse populations remain open to qualifying local writers. A definitely
 absent owner requires ownership closure; an existing owner's negative class test
 also requires effective typing closure. The optional context/certificate contract
-is `/2`, the producer registry is `/4`, SysML queries are `/5`, and historical
+is `/2`, the producer registry is `/5`, SysML queries are `/5`, and historical
 accepted KerML `/26` interpretation and receipt identities remain unchanged.
 
 Full-publication preflight found that scheduler `Complete` did not independently
