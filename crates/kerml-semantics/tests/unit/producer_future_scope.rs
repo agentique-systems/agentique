@@ -8,6 +8,7 @@ const READER: ProducerFamilyId = ProducerFamilyId::new("Fixture.UnrelatedPopulat
 fn binding_helpers_do_not_activate_future_owner_writers_at_unrelated_types() {
     for case in [
         "bounded",
+        "second_bounded_root",
         "unknown_creation",
         "unknown_transitive",
         "model_writer",
@@ -33,6 +34,10 @@ fn binding_helpers_do_not_activate_future_owner_writers_at_unrelated_types() {
             11,
             c::FEATURE_MEMBERSHIP,
         );
+        if case == "second_bounded_root" {
+            f.create(3, c::FEATURE_REFERENCE_EXPRESSION);
+            member(&mut f, 2, 3, 12, c::FEATURE_MEMBERSHIP);
+        }
         let snapshot = f.finish();
         let mut creator = ProducerFamily::FeatureReferenceExpression.descriptor(profile);
         let mut future = ProducerFamily::VariableFeaturing.descriptor(profile);
@@ -76,7 +81,7 @@ fn binding_helpers_do_not_activate_future_owner_writers_at_unrelated_types() {
         let q = KerMlQueries::for_production(context.fork());
         let answer = q.owned_relationships_of_type(id(2), c::FEATURE_MEMBERSHIP);
         assert_eq!(answer.completeness, Completeness::Complete);
-        if case != "reparented" {
+        if !matches!(case, "reparented" | "second_bounded_root") {
             assert!(answer.value.is_empty());
         }
         let owner_answer = q.owned_relationships_of_type(id(10), c::FEATURE_MEMBERSHIP);
@@ -93,7 +98,10 @@ fn binding_helpers_do_not_activate_future_owner_writers_at_unrelated_types() {
                             &[(
                                 record.id(),
                                 descriptor.id,
-                                if record.id() == id(1) && descriptor.id == creator.id {
+                                if (record.id() == id(1)
+                                    || case == "second_bounded_root" && record.id() == id(3))
+                                    && descriptor.id == creator.id
+                                {
                                     Completeness::Incomplete
                                 } else {
                                     Completeness::Complete

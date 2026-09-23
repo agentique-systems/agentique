@@ -1139,44 +1139,50 @@ impl ProducerEvaluationTable {
                 // A bounded creator affects only its own roots. Other pending
                 // creators still need their distinct attachment frontier.
                 future_effects_applied = future_targets.is_none();
-                for (read_subject, reads) in &readers {
-                    if future_targets
-                        .as_ref()
-                        .is_some_and(|targets| !targets.contains(read_subject))
-                    {
-                        continue;
-                    }
-                    for (read, reader) in reads {
-                        if future_families.iter().any(|future| {
-                            if immutable(*read_subject)
-                                && future.scope != ProducerEffectScope::Model
-                                && !has_reference_scalar(future, model)
-                                && !(ownership_mutable && future.scope.depends_on_ownership())
-                            {
-                                return false;
+                let mut consume_future =
+                    |read_subject: &ElementId, reads: &[(ProducerRead, usize)]| {
+                        for (read, reader) in reads {
+                            if future_families.iter().any(|future| {
+                                if immutable(*read_subject)
+                                    && future.scope != ProducerEffectScope::Model
+                                    && !has_reference_scalar(future, model)
+                                    && !(ownership_mutable && future.scope.depends_on_ownership())
+                                {
+                                    return false;
+                                }
+                                future.effects.iter().any(|&effect| {
+                                    descriptor_changes_read(
+                                        future,
+                                        effect,
+                                        read,
+                                        model,
+                                        &mutable_feature_populations,
+                                    )
+                                })
+                            }) {
+                                if !blocked.contains(reader)
+                                    && trace_pair(subject, subjects[*reader / families])
+                                {
+                                    eprintln!(
+                                        "closure future cause {subject}/{} -> {}/{} read={read:?}",
+                                        descriptor.id.name(),
+                                        subjects[*reader / families],
+                                        registry.descriptors[*reader % families].id.name()
+                                    );
+                                }
+                                affected.push(*reader);
                             }
-                            future.effects.iter().any(|&effect| {
-                                descriptor_changes_read(
-                                    future,
-                                    effect,
-                                    read,
-                                    model,
-                                    &mutable_feature_populations,
-                                )
-                            })
-                        }) {
-                            if !blocked.contains(reader)
-                                && trace_pair(subject, subjects[*reader / families])
-                            {
-                                eprintln!(
-                                    "closure future cause {subject}/{} -> {}/{} read={read:?}",
-                                    descriptor.id.name(),
-                                    subjects[*reader / families],
-                                    registry.descriptors[*reader % families].id.name()
-                                );
-                            }
-                            affected.push(*reader);
                         }
+                    };
+                if let Some(targets) = &future_targets {
+                    for target in targets {
+                        if let Some((read_subject, reads)) = readers.get_key_value(target) {
+                            consume_future(read_subject, reads);
+                        }
+                    }
+                } else {
+                    for (read_subject, reads) in &readers {
+                        consume_future(read_subject, reads);
                     }
                 }
             }
