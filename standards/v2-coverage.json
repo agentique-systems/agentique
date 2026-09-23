@@ -549,7 +549,7 @@
     "systems_publication": "not accepted"
   },
   "sysml_systems_library_publication": {
-    "status": "full-publication-final-retry-running",
+    "status": "full-publication-final-retry-watchdog-wall-time-stop",
     "profile": "agentique-sysml-2.0-operational/2",
     "evidence": "verification/summaries/language-stability-bridge/README.md",
     "kerML_dependency": "exact accepted immutable Operational v9 /26; no producer replay",
@@ -598,8 +598,8 @@
       "boundary": "Medium scoped acceptance passes with exact fully closed certificate; full 21-document publication remains a separate gate.",
       "producer_round_limit": 64
     },
-    "focused_corrections": "Actions 534/534 and medium 695/695 scoped gates pass with zero obligations, diagnostics or authority conflicts and fully closed certificates. The inherited-result ExpressionResult population correction and Systems-only 64-round budget are verified by focused guards and the medium corpus. After the first full attempt hit its private-memory limit, exact-content producer-read atom sharing fixes a measured duplication defect. Focused allocation/negative/provider/rehydration controls and 153 producer regressions pass; no semantic evidence is removed. The single remaining full retry is running.",
-    "full_publication_this_bridge": "First normal attempt systems-full-language-bridge stopped by private-memory watchdog after 1693.297 seconds, peak 6656.6 MiB against 6656 MiB. Construction audited 1327/1327 references without failure and had zero kernel obligations; strict acceptance did not finish. Final retry systems-full-interned-reads-retry is running at clean source 97a79a9 using release 0760054 after the measured allocation fix; unchanged 2100-second / 6656-MiB-private / 1024-MiB-reserve limits. No accepted receipt or final retry result exists yet; the full-attempt budget is used.",
+    "focused_corrections": "Actions 534/534 and medium 695/695 scoped gates pass with zero obligations, diagnostics or authority conflicts and fully closed certificates. The inherited-result ExpressionResult population correction and Systems-only 64-round budget are verified. Exact-content producer-read atom sharing fixes measured duplication; allocation/negative/provider/rehydration controls and 153 producer regressions pass without removing semantic evidence. The final full retry remained below its private-memory limit but did not finish within 35 minutes.",
+    "full_publication_this_bridge": "Both permitted attempts are used. First normal attempt systems-full-language-bridge stopped at the private-memory limit after 1693.297 seconds (6656.6 MiB peak). Final retry systems-full-interned-reads-retry stopped at the wall-time limit after 2100.546 seconds, peak 5508.0 MiB below 6656 MiB. Both construction audits covered 1327/1327 references without failure and zero kernel obligations. Final strict frontier 21 remained Incomplete; retry stopped in frontier 22 at 1280/2633 evaluations. No final report, accepted receipt, accepted bindings or cache. No further full attempt is authorized within this milestone.",
     "systems_publication": "not accepted",
     "accepted_bindings": false,
     "trusted_receipt_catalogue": "unavailable until actual full publication acceptance",
