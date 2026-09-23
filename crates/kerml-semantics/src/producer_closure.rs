@@ -1866,6 +1866,24 @@ impl ProducerClosureCertificate {
             descriptor.effects.contains(&ProducerEffect::Ownership)
                 || has_reference_scalar(descriptor, model)
         });
+        // Registry/model classification is constant across unfinished creators.
+        let future_transitive_requirements = SemanticClosureRequirement::ALL
+            .into_iter()
+            .filter(|requirement| {
+                future_cross_subject_families(registry, model).any(|family| {
+                    family.effects.iter().any(|&effect| {
+                        effect_reaches_future_existing_subjects(
+                            family,
+                            effect,
+                            ownership_mutable,
+                            model,
+                        ) && requirement.requires_in_model(effect, model)
+                            && family.effect_scope(effect)
+                                != ProducerEffectScope::SubjectAndOwningType
+                    })
+                })
+            })
+            .fold(0_u8, |mask, requirement| mask | requirement.bit());
         let direction_mutable = registry.descriptors.iter().any(|descriptor| {
             descriptor.applicability != ProducerApplicability::Never
                 && descriptor.effects.iter().any(|effect| {
@@ -1935,24 +1953,12 @@ impl ProducerClosureCertificate {
                                 .iter()
                                 .any(|&effect| requirement.requires_in_model(effect, model))
                             {
-                                let transitive = future_cross_subject_families(registry, model)
-                                    .any(|family| {
-                                        family.effects.iter().any(|&effect| {
-                                            effect_reaches_future_existing_subjects(
-                                                family,
-                                                effect,
-                                                ownership_mutable,
-                                                model,
-                                            ) && requirement.requires_in_model(effect, model)
-                                                && family.effect_scope(effect)
-                                                    != ProducerEffectScope::SubjectAndOwningType
-                                        })
-                                    });
-                                let targets = if transitive {
-                                    &future_targets
-                                } else {
-                                    &future_direct_targets
-                                };
+                                let targets =
+                                    if future_transitive_requirements & requirement.bit() != 0 {
+                                        &future_targets
+                                    } else {
+                                        &future_direct_targets
+                                    };
                                 if let Some(targets) = targets {
                                     for target in targets {
                                         if !immutable(*target)
