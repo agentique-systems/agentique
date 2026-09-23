@@ -135,6 +135,15 @@ and formatting pass. Setup/compile corrections remain in the consolidated
 `inline-function-commands.json` and `views-satisfaction.json` source-ledger ranges
 of `commands.json`; no cache or corpus was loaded by these fixtures.
 
+The exact Interfaces `otherParticipants` caller also has a whole-closure control
+(21.43 s) and an original-source frontend shape assertion (0.23 s). Its closed
+callee preserves input directions, multiplicities and subsetting but owns an
+explicit result, so it deliberately isolates the caller from inherited-result
+semantics. No caller defect was reproduced. An initial synthetic-ID collision,
+the corrected run, shape check, Clippy and formatting remain in the six-record
+`other-participants-caller.json` source-ledger range. Full callee diagnosis remains
+separate; this passing control does not discharge the medium gate.
+
 The full-only source preflight covers the remaining eight documents. Allocations,
 AnalysisCases and UseCases reuse the already exercised end/base/role paths.
 Metadata, SysML and StandardViewDefinitions add reflective declarations and

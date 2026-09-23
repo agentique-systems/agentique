@@ -1079,7 +1079,7 @@ report, stage stream and source-map hashes are retained with the command record.
 This remains scoped failure evidence. A matching explicit-multiplicity fixture
 must diagnose the remaining boundary before another corpus attempt.
 
-The subsequent medium13 report at source `7638346` exhausts the generic
+The subsequent medium13 report at clean source `262fd5c` exhausts the generic
 32-round limit: contextual stages 23–30 add 1,854, 338, 0, 9, 54, 10, 9 and 2
 elements; stage 31 adds none but issues a changed certificate, increasing
 closed pairs from the pre-issue observation 9,147 to 14,404. Incomplete subjects
