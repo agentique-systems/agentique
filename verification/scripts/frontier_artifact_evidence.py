@@ -149,6 +149,51 @@ class StateReader:
             require(delimiter == b",", "state object delimiter")
 
 
+
+def graph_evidence(source):
+    """Hash decoded graph bytes and selected support without retaining the graph."""
+    proofs, searches, previous = [], [], None
+    rows = hashlib.sha256(b"agq-selected-reference-evidence/1\0")
+    graph_hash, payload_hash, count, ended = hashlib.sha256(), hashlib.sha256(), 0, False
+    header = None
+    while line := source.readline(64 * 1024 * 1024 + 1):
+        require(len(line) <= 64 * 1024 * 1024, "graph row exceeds limit")
+        require(not ended, "graph data after End")
+        graph_hash.update(line)
+        value = json.loads(line)
+        if header is None:
+            header = value
+        else:
+            payload_hash.update(line)
+        if value == "End":
+            ended = True
+            continue
+        if value == "Overlay":
+            continue
+        require(isinstance(value, dict) and len(value) == 1, "invalid graph row")
+        if "Proof" in value:
+            proofs.append(content_hash(value["Proof"]))
+        elif "Search" in value:
+            searches.append(content_hash(value["Search"]))
+        elif "ReferenceContribution" in value:
+            row = value["ReferenceContribution"]
+            key = (row["element"], row["property"], row["target"])
+            require(previous is None or previous < key,
+                    "unordered/duplicate reference contribution")
+            previous = key
+            for field, table in (("proof", proofs), ("searches", searches)):
+                index = row[field]
+                require(type(index) is int and 0 <= index < len(table),
+                        "invalid selected evidence pool index")
+                row[field] = table[index]
+            require(type(row["position"]) is int and row["position"] >= 0,
+                    "invalid selected position")
+            rows.update(bytes.fromhex(content_hash(row)))
+            count += 1
+    require(ended, "missing graph End")
+    return {"graph_sha256": graph_hash.hexdigest(), "graph_payload_sha256": payload_hash.hexdigest(),
+            "header": header, "contributions": count, "selected_reference_digest": rows.hexdigest()}
+
 def checkpoint_evidence(report):
     latest = report["checkpoint_session"]["latest"]
     path = Path(latest["journal"])
@@ -190,43 +235,9 @@ def checkpoint_evidence(report):
                     ("context_contract_digest", "context_contract_digest"), ("digest", "digest")):
                 require(receipt[source_key] == certificate[report_key],
                         f"checkpoint receipt binding: {source_key}")
-            proofs, searches, previous = [], [], None
-            rows = hashlib.sha256(b"agq-selected-reference-evidence/1\0")
-            graph_hash, count, ended = hashlib.sha256(), 0, False
             with archive.open("graph.jsonl") as source:
-                while line := source.readline(64 * 1024 * 1024 + 1):
-                    require(len(line) <= 64 * 1024 * 1024, "graph row exceeds limit")
-                    require(not ended, "graph data after End")
-                    graph_hash.update(line)
-                    value = json.loads(line)
-                    if value == "End":
-                        ended = True
-                        continue
-                    if value == "Overlay":
-                        continue
-                    require(isinstance(value, dict) and len(value) == 1, "invalid graph row")
-                    if "Proof" in value:
-                        proofs.append(content_hash(value["Proof"]))
-                    elif "Search" in value:
-                        searches.append(content_hash(value["Search"]))
-                    elif "ReferenceContribution" in value:
-                        row = value["ReferenceContribution"]
-                        key = (row["element"], row["property"], row["target"])
-                        require(previous is None or previous < key,
-                                "unordered/duplicate reference contribution")
-                        previous = key
-                        for field, table in (("proof", proofs), ("searches", searches)):
-                            index = row[field]
-                            require(type(index) is int and 0 <= index < len(table),
-                                    "invalid selected evidence pool index")
-                            row[field] = table[index]
-                        require(type(row["position"]) is int and row["position"] >= 0,
-                                "invalid selected position")
-                        rows.update(bytes.fromhex(content_hash(row)))
-                        count += 1
-            require(ended, "missing graph End")
-            require(graph_hash.hexdigest() == pin(entry["graph_sha256"]),
+                graph = graph_evidence(source)
+            require(graph["graph_sha256"] == pin(entry["graph_sha256"]),
                     "decoded checkpoint graph hash")
     return {"journal_sha256": expected, "archive_sha256": archive_pin,
-            "source_identity": source_identity, "contributions": count,
-            "selected_reference_digest": rows.hexdigest()}
+            "source_identity": source_identity, "certificate_receipt_digest": content_hash(receipt), **graph}
