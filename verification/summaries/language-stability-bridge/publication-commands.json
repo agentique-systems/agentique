@@ -1594,6 +1594,236 @@
       },
       "last_progress_before_stop": "Systems publication: round=19 evaluated=2048/2636 planned=1547",
       "interpretation": "First normal full attempt stopped by the unchanged private-memory watchdog. Construction audited all1327 references without failure and had zero kernel obligations, but strict publication was unfinished. No final report, accepted facade receipt or bindings were produced. This is a resource stop, not a semantic rejection. One retry remains only after a concrete defect fix."
+    },
+    {
+      "name": "systems-full-interned-reads-retry",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/systems-full-interned-reads-retry/report.json"
+      ],
+      "source_commit": "97a79a9308e9fc3a7998c735591405b4443b7fc6",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/systems-full-interned-reads-retry",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 26356,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 22854852608,
+      "safety_stop": "wall_time",
+      "duration_seconds": 2100.546,
+      "peak_rss_bytes": 5689376768,
+      "peak_private_bytes": 5775601664,
+      "samples": 2099,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "469cf3c26b79f7b9ca33ee76aefa6fa41d3948e7a1cd8540900cd924e56d13ff",
+      "release_build_source": "076005455e169dfaf7f229edd3290c310290f5ba",
+      "release_binary_sha256": "fc0092259cee4533f7481803d5255539c5e1121185257b748e52e1021f059f4d",
+      "stages_path": "verification/generated/language-stability-bridge/systems-full-interned-reads-retry/report.stages.jsonl",
+      "stages_sha256": "083d195f593dce3e5ffbd065b21646b84c9c1e3efaf32b0f064ee8c47967af7e",
+      "final_report_created": false,
+      "construction_observation": {
+        "selected_endpoints": 1327,
+        "mandatory_references_audited": 1327,
+        "failures": 0,
+        "kernel_obligations": 0,
+        "scope": "construction; final strict mandatory audit unfinished"
+      },
+      "last_completed_stage": {
+        "added": 15,
+        "closure_counters": {
+          "applicable_subject_family_pairs": 24732,
+          "certificate_build_micros": 99865164,
+          "certificate_bytes": 2914410,
+          "closed_pairs": 22236,
+          "closed_requirements": 395011,
+          "families_registered": 87,
+          "incomplete_pairs": 6,
+          "negative_queries_certified": 138143
+        },
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "A scheduler-issued EffectiveTyping closure witness is required for this negative owner-type antecedent",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "006ebf10-0147-55f4-b469-6041876e9f8d"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "0dd52805-e478-5b83-b2f0-e955ab8000f8"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "0fbd3c4e-90ef-5cdd-b7c4-badbbd0c22eb"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "1a5e1ae2-e70e-54c0-8da9-2d749201721a"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "420b87f6-0adf-5721-87ac-d0a91c0ffbab"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "4f1c7548-fa6f-5ec4-b275-754941bd1cd6"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "5e122faf-8354-5596-9973-a2d47c69f98e"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "645e8bcf-5b2b-5b10-82ff-49d0c7e4f012"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "70506936-f8f9-5057-9e36-37230a4e02df"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "7b1b5cfd-929c-58a3-a4e9-b9ea7d31db3c"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "92d17f67-7cf8-5e29-bb3d-f38dcc3f65f4"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "98c30374-e65a-579b-be50-0d23d18160d8"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "a07be4da-cccf-55f2-86fa-953be67af485"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "a088065c-e638-56f4-aca0-eb31b392de20"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "a1ff5677-154c-54fa-b0b4-78c9a54a3c73"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "b35223f7-eeec-5fdb-83a2-169c44861aab"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "c5273603-3353-575e-99b6-242cf361b21e"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "d8a5aa08-c0e3-583a-8969-2e22683106a2"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "f23bff63-ed3c-5d65-9ca7-21455344397b"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "3af5418b-509c-5284-a0ee-019494766fa1"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "80ea68eb-545d-53d2-81a4-33a860f22b60"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "f1e9f776-13cf-5f0b-b9e1-f2a7204a4a8d"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "fe3ae656-267a-5c7c-86c7-71ad9c0ce13e"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "0fbd3c4e-90ef-5cdd-b7c4-badbbd0c22eb"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "645e8bcf-5b2b-5b10-82ff-49d0c7e4f012"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "7b1b5cfd-929c-58a3-a4e9-b9ea7d31db3c"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "a088065c-e638-56f4-aca0-eb31b392de20"
+          }
+        ],
+        "elapsed_seconds": 2017.0283253,
+        "phase": "publication",
+        "stage": 21,
+        "stratum": "ContextualBindings"
+      },
+      "last_progress_before_stop": "Systems publication: round=22 evaluated=1280/2633 planned=936 elapsed=2094.588s",
+      "prior_attempt_prefix_comparison": {
+        "compared_completed_frontiers": 56,
+        "excluded_observation_fields": [
+          "elapsed_seconds",
+          "closure_counters.certificate_build_micros"
+        ],
+        "differing_frontiers": [],
+        "scope": "Retained observations match; this does not establish full graph identity or acceptance."
+      },
+      "interpretation": "Final permitted retry stopped by the unchanged wall-time watchdog. Peak private memory remained below its limit. Construction audited all 1327 references without failures and had zero kernel obligations, but strict publication was unfinished. No final report, accepted receipt, accepted binding manifest or cache was produced. Both full attempts are used; no additional full run is authorized within this milestone."
     }
   ]
 }

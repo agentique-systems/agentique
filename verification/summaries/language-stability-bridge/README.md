@@ -15,9 +15,12 @@ parse and construct byte-exactly. Producer closure converges Complete in 33 roun
 with a fully closed certificate, zero incomplete evaluations and no diagnostics.
 The faithful inherited-result correction and sufficient Systems-only budget close
 the previously diagnosed boundary. The earlier eight-document Actions gate also
-passed with 534/534 Complete references and fully closed evidence. The first full publication attempt stopped at its private-memory limit. Its
-construction audit passed all 1,327 references with zero kernel obligations, but
-strict acceptance did not finish. No Systems receipt or accepted bindings exist.
+passed with 534/534 Complete references and fully closed evidence. The first full
+attempt stopped at its private-memory limit; the final retry stayed below that
+limit but stopped at 35 minutes. Both construction audits passed all 1,327
+references with zero kernel obligations. Strict acceptance did not finish.
+No Systems receipt or accepted bindings exist, and both permitted full attempts
+are used. Foundation readiness and production workspace integration remain gated.
 
 All six genuine layered expression fixtures and the connection-end fixture pass
 with fully closed certificates. The indexed assignment now matches the real
@@ -45,15 +48,30 @@ the executable actual-cache gate.
 
 ## Publication observations
 
-The single permitted full retry, `systems-full-interned-reads-retry`, is running
-from clean source `97a79a9` after the independently reviewed allocation correction
-and passing controls below. Release source is `0760054`; its binary SHA-256 is
+The final full retry, `systems-full-interned-reads-retry`, stops at the unchanged
+**35-minute wall limit**: exit **124**, **2,100.546 seconds**, peak private memory
+**5,508.0 MiB** against 6,656 MiB. It uses clean source `97a79a9` after the
+independently reviewed allocation correction and passing controls below.
+Release source is `0760054`; its binary SHA-256 is
 `fc0092259cee4533f7481803d5255539c5e1121185257b748e52e1021f059f4d`.
 The command uses all 21 documents without `--audit-only`, the original accepted
 KerML cache, and the unchanged 2,100-second / 6,656-MiB-private / 1,024-MiB-reserve
 watchdog. Generated output is under
 `verification/generated/language-stability-bridge/systems-full-interned-reads-retry/`.
-This is a running observation, not acceptance; the retry budget is now used.
+Construction selects and audits **1,327/1,327 references without failure** with
+zero kernel obligations. Strict frontier 21 remains Incomplete: 22,236/24,732
+closed applicable pairs, 395,011 closed requirements, six incomplete pairs and
+31 diagnostics. The stop occurs in frontier 22 at 1,280/2,633 subject evaluations.
+These are intermediate observations, not final acceptance counts. No final
+report, accepted receipt, accepted bindings or cache was created.
+
+All 56 completed frontiers shared with the first attempt have identical retained
+non-timing observations (excluding elapsed seconds and certificate-build timing).
+This comparison does not establish full graph identity or publication acceptance.
+Exact result, stage/output hashes and comparison scope are in the publication
+ledger. Memory remains below the fixed limit; strict completion within the time
+budget remains unestablished. No further full attempt is authorized in this
+milestone. Final repository checks are being completed with readiness gated.
 
 The first normal full attempt, `systems-full-language-bridge`, ran at clean
 `530b430` using release build `692ed8e` (binary hash in `commands.json`). It
@@ -70,7 +88,7 @@ The final retained frontier closes 22,236/24,732 applicable pairs and reports
 **intermediate strict observations**, not final acceptance counts. Exact command,
 output/stage hashes, memory/time measurements and the frontier are in the
 publication ledger. At that stop, one retry remained after a concrete allocation
-fix and its focused checks. That retry is now running as recorded above; limits
+fix and its focused checks. That retry has now stopped as recorded above; limits
 stay unchanged and no further full attempt remains in this milestone's budget.
 
 The publication example now records elapsed seconds for reference and producer
@@ -93,7 +111,7 @@ three new focused tests pass in 2.50 seconds. Accounted row/atom/Arc and pool
 reference payload falls from 4,358,144 unshared enum bytes to 575,840 bytes (86.8%
 lower). Tree-node and allocator overhead are excluded; this is not a corpus or
 private-memory measurement. A raw/shared certificate comparison retains identical
-receipt values and semantic closure digests. Full retry acceptance remains pending.
+receipt values and semantic closure digests. The full retry does not reach acceptance.
 
 The existing producer filter then passes 152 unit tests and one integration test
 (two preexisting scale probes ignored). Three-package all-target Clippy with
