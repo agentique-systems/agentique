@@ -1657,11 +1657,25 @@ fn usage_may_time_vary(
     evidence
         .merge_evidence(occurrence)
         .expect("same producer context");
-    let ancestors = queries.all_supertypes(owner);
-    let owner_is_occurrence = occurrence_id.is_some_and(|id| ancestors.value.contains(&id));
-    evidence
-        .merge_evidence(ancestors)
-        .expect("same producer context");
+    let owner_witness = occurrence_id
+        .and_then(|occurrence| queries.canonical_specialization_witness(owner, occurrence));
+    let owner_is_occurrence = if let Some(witness) = owner_witness {
+        // This is a positive existential premise. A selected canonical path
+        // proves it without importing unrelated owner ancestors' pending reads.
+        evidence
+            .merge_evidence(witness)
+            .expect("same producer context");
+        true
+    } else {
+        // No bounded witness is not absence: virtual/chained semantic paths and
+        // the negative case still use the ordinary complete ancestor query.
+        let ancestors = queries.all_supertypes(owner);
+        let matches = occurrence_id.is_some_and(|id| ancestors.value.contains(&id));
+        evidence
+            .merge_evidence(ancestors)
+            .expect("same producer context");
+        matches
+    };
     if evidence.completeness != Completeness::Complete {
         return evidence.map(|()| None);
     }

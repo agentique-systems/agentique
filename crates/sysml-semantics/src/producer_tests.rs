@@ -664,6 +664,125 @@ fn may_time_fixture(
 }
 
 #[test]
+fn may_time_vary_positive_owner_uses_only_selected_occurrence_path() {
+    use agq_kernel::{
+        derived::{DerivationBuilder, StructuralSearch},
+        provenance::{Dependency, FactKey},
+    };
+    let (snapshot, libraries, roots) = may_time_fixture(true, false, false, None);
+    let mut f = Fixture {
+        changes: snapshot.change_set(),
+        base: snapshot,
+        owned: BTreeMap::new(),
+        origin: origin(),
+    };
+    f.create(40_002, kc::CLASSIFIER, "UnrelatedAncestor");
+    let snapshot = f.finish();
+    let slots = snapshot
+        .model()
+        .element(id(240_000))
+        .unwrap()
+        .slots()
+        .map(|(property, slot)| {
+            (
+                property,
+                if property == kp::SUBCLASSIFICATION_SUPERCLASSIFIER {
+                    SlotValue::Scalar(Value::Reference(id(40_002)))
+                } else {
+                    slot.value().clone()
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+    let key = DerivationKey {
+        rule: RuleId::from_u128(98_223),
+        subject: id(40_000),
+        output: OutputKey::from_u128(1),
+    };
+    let mut builder = DerivationBuilder::new(snapshot);
+    builder.element(
+        key,
+        kc::SUBCLASSIFICATION,
+        slots,
+        BTreeSet::from([Dependency::Declared(FactKey::Element(id(40_001)))]),
+    );
+    builder.searches(
+        FactKey::Element(key.element_id()),
+        BTreeSet::from([StructuralSearch::ProducerClosure {
+            subject: id(40_001),
+            requirement: agq_kerml_semantics::SemanticClosureRequirement::EffectiveTyping
+                .contract_id()
+                .into(),
+        }]),
+    );
+    let overlay = builder.build().unwrap();
+    let context = SemanticContext::for_overlay(
+        &overlay,
+        SemanticOptions {
+            baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+            ..Default::default()
+        },
+        BTreeSet::new(),
+    )
+    .unwrap()
+    .with_standard_bindings(&roots, &libraries)
+    .unwrap();
+    {
+        let queries = KerMlQueries::new(context);
+        let all = queries.all_supertypes(id(40_000));
+        assert!(
+            all.canonical_dependencies
+                .contains(&Dependency::Derived(FactKey::Element(key.element_id())))
+        );
+        let answer = current_usage_may_time_vary(
+            &queries,
+            SysmlBaselineProfile::OPERATIONAL_V2,
+            &StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+            &roots,
+            id(40_001),
+        );
+        assert_eq!(answer.completeness, Completeness::Complete, "{answer:?}");
+        assert_eq!(answer.value, Some(true));
+        assert!(answer.positive_dependencies.contains(&FactKey::Property {
+            element: id(240_000),
+            property: kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
+        }));
+        assert!(
+            !answer
+                .canonical_dependencies
+                .contains(&Dependency::Derived(FactKey::Element(key.element_id()))),
+            "unrelated ancestor imported its child-typing requirement: {answer:?}"
+        );
+        assert!(
+            !answer
+                .search_dependencies
+                .contains(&SearchDependency::Kernel(
+                    StructuralSearch::ProducerClosure {
+                        subject: id(40_001),
+                        requirement:
+                            agq_kerml_semantics::SemanticClosureRequirement::EffectiveTyping
+                                .contract_id()
+                                .into(),
+                    }
+                ))
+        );
+        let final_plan = plan_sysml_may_time_vary(
+            &queries,
+            SysmlBaselineProfile::OPERATIONAL_V2,
+            &StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+            &roots,
+            id(40_001),
+        );
+        assert_eq!(final_plan.evidence.completeness, Completeness::Incomplete);
+        assert!(final_plan.properties.is_empty());
+        assert!(final_plan.evidence.search_dependencies.iter().any(|search| matches!(search,
+            SearchDependency::ProducerClosure { subject, requirement: agq_kerml_semantics::SemanticClosureRequirement::EffectiveTyping, .. }
+                if *subject == id(40_001)
+        )), "the child's negative excluded-type premise still requires closure");
+    }
+}
+
+#[test]
 fn may_time_vary_exact_antecedents_and_exclusions_use_canonical_identities() {
     for (occurrence, composite, portion, excluded, expected) in [
         (true, false, false, None, true),
@@ -1449,9 +1568,7 @@ fn actions_micro(variant: ActionsMicro) {
         f.changes.clear(id(50_032), kp::ELEMENT_DECLARED_NAME);
         set_enum(&mut f, 50_032, kp::FEATURE_DIRECTION, "in");
         f.member(50_031, 50_032, 150_032, kc::PARAMETER_MEMBERSHIP);
-        f.create(50_037, sc::REFERENCE_USAGE, "untilTest");
-        set_enum(&mut f, 50_037, kp::FEATURE_DIRECTION, "in");
-        f.member(50_031, 50_037, 150_037, kc::PARAMETER_MEMBERSHIP);
+        // A while-only node declares its test and body; untilTest is inherited.
         for (subject, class) in [
             (50_033, sc::ASSIGNMENT_ACTION_USAGE),
             (50_034, sc::PERFORM_ACTION_USAGE),
@@ -1462,9 +1579,7 @@ fn actions_micro(variant: ActionsMicro) {
             f.value(subject, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
             f.member(50_032, subject, subject + 100_000, kc::FEATURE_MEMBERSHIP);
         }
-        for membership in [
-            150_031, 150_032, 150_033, 150_034, 150_035, 150_036, 150_037,
-        ] {
+        for membership in [150_031, 150_032, 150_033, 150_034, 150_035, 150_036] {
             f.changes.clear(id(membership), kp::ELEMENT_DECLARED_NAME);
         }
     }
@@ -1795,6 +1910,10 @@ fn actions_micro(variant: ActionsMicro) {
         assert_eq!(binding_domains.value, domains.value);
     }
     if while_loop_body {
+        assert_eq!(
+            queries.structural_parameter_features(id(50_031)).value,
+            [id(50_036), id(50_032), id(45_013)],
+        );
         assert_eq!(
             queries
                 .model()
