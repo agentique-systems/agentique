@@ -63,7 +63,12 @@ fn sealed_dependency_proof_searches_do_not_become_project_producer_reads() {
         ),
     ])
     .unwrap();
-    for contribution_search in [false, true] {
+    for (contribution_search, historical_search, archive) in [
+        (false, StructuralSearch::Model, false),
+        (false, StructuralSearch::Incoming(id(1)), false),
+        (true, StructuralSearch::Incoming(id(1)), false),
+        (true, StructuralSearch::Incoming(id(1)), true),
+    ] {
         let mut f = Fixture::new();
         f.create(1, c::BEHAVIOR);
         f.create(3, c::FEATURE);
@@ -112,8 +117,28 @@ fn sealed_dependency_proof_searches_do_not_become_project_producer_reads() {
         } else {
             FactKey::Element(key.element_id())
         };
-        builder.searches(proof_fact, BTreeSet::from([StructuralSearch::Model]));
-        let overlay = Arc::new(builder.build().unwrap());
+        builder.searches(proof_fact, BTreeSet::from([historical_search.clone()]));
+        let mut overlay = builder.build().unwrap();
+        if archive {
+            let mut bytes = vec![];
+            agq_kernel::archive::write_overlay(&overlay, &mut bytes).unwrap();
+            overlay = agq_kernel::archive::read_overlay(
+                std::io::Cursor::new(bytes),
+                Arc::new(agq_kerml::registry().unwrap()),
+            )
+            .unwrap();
+            assert!(
+                overlay
+                    .model()
+                    .ordered_reference_contribution(
+                        id(1),
+                        p::ELEMENT_OWNED_RELATIONSHIP,
+                        key.element_id()
+                    )
+                    .is_none()
+            );
+        }
+        let overlay = Arc::new(overlay);
         let sealed_context =
             SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new())
                 .unwrap()
@@ -148,6 +173,19 @@ fn sealed_dependency_proof_searches_do_not_become_project_producer_reads() {
             .unwrap();
         let initial = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
         let context = context.with_producer_closure(initial).unwrap();
+        assert!(context.sealed_dependency_fact(proof_fact));
+        let unauthenticated =
+            SemanticContext::for_snapshot(&project, Default::default(), BTreeSet::new()).unwrap();
+        assert!(
+            !unauthenticated.sealed_dependency_fact(proof_fact),
+            "a plain immutable mount is not authority"
+        );
+        let untrusted = KerMlQueries::new(unauthenticated).canonical_fact_evidence(proof_fact);
+        assert!(
+            untrusted
+                .search_dependencies
+                .contains(&SearchDependency::Kernel(historical_search.clone()))
+        );
         for production in [false, true] {
             let q = if production {
                 KerMlQueries::for_production(context.fork())
@@ -162,6 +200,24 @@ fn sealed_dependency_proof_searches_do_not_become_project_producer_reads() {
                 answer.diagnostics
             );
             assert_eq!(answer.value, [id(3)]);
+            let sealed_proof = q.canonical_fact_evidence(proof_fact);
+            assert!(
+                sealed_proof
+                    .canonical_dependencies
+                    .contains(&Dependency::Derived(proof_fact))
+            );
+            if !production {
+                assert!(matches!(
+                    sealed_proof.fact_origins[&proof_fact].as_ref(),
+                    Origin::Derived(_)
+                ));
+                let declared = q.canonical_fact_evidence(FactKey::Element(id(1)));
+                assert!(
+                    declared
+                        .declared_fact_origins
+                        .contains_key(&FactKey::Element(id(1)))
+                );
+            }
             let mut table = ProducerEvaluationTable::default();
             for record in project.model().elements() {
                 table.pending(record.id(), project.model(), &registry);
@@ -185,6 +241,74 @@ fn sealed_dependency_proof_searches_do_not_become_project_producer_reads() {
                 Some(ProducerEvaluationState::EvaluatedComplete),
                 "sealed proof's search was reinterpreted against the project; production={production}, contribution={contribution_search}"
             );
+            for live_first in [false, true] {
+                let mut live = q.result(Vec::<ElementId>::new());
+                live.search_dependencies
+                    .insert(SearchDependency::Kernel(historical_search.clone()));
+                let mut mixed = if live_first {
+                    live.merge(answer.clone());
+                    live
+                } else {
+                    let mut mixed = answer.clone();
+                    mixed.merge(live);
+                    mixed
+                };
+                mixed.expand_search_dependencies();
+                assert!(
+                    mixed
+                        .search_dependencies
+                        .contains(&SearchDependency::Kernel(historical_search.clone()))
+                );
+                table.record_reads(
+                    &[(id(2), READER, producer_reads(&mixed, project.model()))],
+                    &registry,
+                );
+                let mixed_certificate = ProducerClosureCertificate::issue(
+                    project.model(),
+                    context.id(),
+                    &registry,
+                    &table,
+                    |subject| context.dependency_closure_source(subject),
+                );
+                assert_eq!(
+                    mixed_certificate.evaluation(id(2), registry.index(READER).unwrap()),
+                    Some(ProducerEvaluationState::Pending),
+                    "a live identical search must survive either merge order"
+                );
+            }
         }
+        // The accepted relationship's record remains identical while a new
+        // local noncomposite owner changes its current inverse navigation.
+        let inverse = FactKey::Property {
+            element: id(10),
+            property: p::RELATIONSHIP_OWNING_RELATED_ELEMENT,
+        };
+        assert!(
+            !context.sealed_dependency_fact(inverse),
+            "absent slots are not sealed facts"
+        );
+        let mut edit = project.change_set();
+        edit.set(
+            id(2),
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            SlotValue::Ordered(vec![Value::Reference(id(107)), Value::Reference(id(10))]),
+            origin(),
+        );
+        let changed = project.apply(&edit).unwrap();
+        let changed_context = dependency
+            .project_context(&changed, &[], BTreeSet::new(), BTreeSet::new())
+            .unwrap();
+        assert!(changed_context.sealed_dependency_fact(FactKey::Element(id(10))));
+        assert!(!changed_context.sealed_dependency_fact(inverse));
+        let current = KerMlQueries::new(changed_context).canonical_fact_evidence(inverse);
+        assert!(
+            current
+                .search_dependencies
+                .contains(&SearchDependency::SourceRelationships {
+                    source: id(10),
+                    class: c::ELEMENT,
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                })
+        );
     }
 }
