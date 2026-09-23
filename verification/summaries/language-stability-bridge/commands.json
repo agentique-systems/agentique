@@ -564,6 +564,70 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "actions-positive-witness-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b509a8122a8f258ea29395b03eed560c80e1dd03",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "9990eccef65a9688e446d37b16b0134880af4d37a9f204fa963e233d84949726",
+      "duration_seconds": 129.56,
+      "output": "verification/generated/language-stability-bridge/actions-positive-witness-release-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "foundation-integrated-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "991d3562fd5a586cbcdc6bd638b6fa357e7d9bf2",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 3.05,
+      "output": "verification/generated/language-stability-bridge/foundation-integrated-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "foundation-current-standards-check",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5e57467b7ef24f8560c36f0083760ab30e4ee4fa",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "6a2ae8d0645192dde56b2854ae12d14bf5d617e4edf28b1c826ce6ab60c6de77",
+      "duration_seconds": 0.91,
+      "output": "verification/generated/language-stability-bridge/foundation-current-standards-check.log",
+      "environment_overrides": {}
     }
   ]
 }

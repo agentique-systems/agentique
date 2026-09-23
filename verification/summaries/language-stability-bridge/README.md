@@ -30,10 +30,10 @@ Initial closure/rebinding tests and their precise boundary are recorded in
 [closure.md](closure.md). Independent review reproduced unresolved source-provider,
 causal-reader and delayed owning-carrier counterexamples. The corrected producer
 mask propagation passes 53 focused closure tests, including those regressions.
-Three corrected eight-document Actions audits finished normally, with exit 1 and
+Four corrected eight-document Actions audits finished normally, with exit 1 and
 no watchdog stop. Each parses/constructs 8/8 documents and selects all 534
-endpoints with zero kernel obligations. The latest reaches **493/534 mandatory
-references Complete**, with 41 Incomplete and every other failure category zero.
+endpoints with zero kernel obligations. The latest reaches **499/534 mandatory
+references Complete**, with 35 Incomplete and every other failure category zero.
 Producer scheduling converges but remains Incomplete. These are failed scoped
 gates, not Systems acceptance. Medium/full publication has not been attempted.
 
@@ -42,12 +42,13 @@ gates, not Systems acceptance. Medium/full publication has not been attempted.
 | `actions-provider-closure` | 795.172 | 4,984.4 | 3 owner-type closure, 217 producer closure, 13 value-context, 71 variable featuring |
 | `actions-declared-source` | 1,013.563 | 5,211.5 | 3 owner-type closure, 219 producer closure, 13 value-context, 66 variable featuring |
 | `actions-selected-populations` | 1,066.390 | 5,037.0 | 1 owner-type closure, 169 producer closure, 13 value-context, 62 variable featuring |
+| `actions-positive-witness` | 788.969 | 4,955.0 | 1 owner-type closure, 122 producer closure, 13 value-context, 62 variable featuring |
 
-The latest certificate has 8,254 applicable subject/family pairs, 4,878 closed and
-256 explicitly incomplete. Its compact proof is 2,568,282 bytes; optional in-memory
-revalidation reads are separately measured at 297,071,888 bytes. The latter remain
+The latest certificate has 8,259 applicable subject/family pairs, 5,107 closed and
+208 explicitly incomplete. Its compact proof is 2,567,512 bytes; optional in-memory
+revalidation reads are separately measured at 272,315,080 bytes. The latter remain
 an optimization target, not part of the compact receipt-size claim. Two checked
-rebindings retain 952 evaluations and reopen 8,889; the final predicate pass's
+rebindings retain 992 evaluations and reopen 8,912; the final predicate pass's
 individual zero counts do not summarize earlier reconstruction revalidation.
 The report includes per-subject closure explanations for diagnosis.
 
@@ -61,9 +62,12 @@ ownership witnesses and explicit owned-end populations then close the reproduced
 unnamed constraint/connection fixture and improve the scoped count by 24 references.
 The remaining formal-owner finding concerns the ForLoopAction while-loop body.
 Another corpus run waits for a concrete correction to the remaining causal closure
-failure. The release binary for the latest run includes the selected-population
-semantic correction; subsequent origin interning and exported metaclass changes
-do not alter its semantic results.
+failure. The latest release binary includes selected positive specialization
+witnesses and precise positional population evidence. The small loop regression
+closes, including a true mayTimeVary body and shared snapshot featuring; the
+remaining difference from the real library is still under diagnosis. The live
+publication binding context fix is separately covered by rejection and attachment
+tests and does not establish publication acceptance.
 
 A focused immutable-dependency review passes five tests. Accepted records are
 not producer subjects, but combined project searches over local noncomposite
