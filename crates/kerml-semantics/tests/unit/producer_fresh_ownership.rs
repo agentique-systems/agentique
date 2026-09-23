@@ -111,7 +111,7 @@ fn existing_detached_carrier_adoption_requires_ownership_capability() {
         let mut f = Fixture::new();
         f.create(1, c::FEATURE);
         f.create(2, c::CLASSIFIER);
-        f.create(3, c::RELATIONSHIP);
+        f.create(3, c::FEATURE_MEMBERSHIP);
         f.create(4, c::FEATURE);
         f.changes.set(
             id(3),
@@ -151,6 +151,49 @@ fn existing_detached_carrier_adoption_requires_ownership_capability() {
                 };
                 assert_eq!(failure.operation, "existing relationship adoption");
             }
+        }
+    }
+}
+
+#[test]
+fn fresh_owner_cannot_adopt_existing_detached_carrier_without_ownership() {
+    let mut f = Fixture::new();
+    f.create(1, c::FEATURE);
+    f.create(3, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    let q = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let family = ProducerFamilyId::new("Fixture.FreshOwner");
+    for ownership in [false, true] {
+        let mut descriptor = ProducerDescriptor::new(
+            family,
+            [ProducerEffect::ResultStructure],
+            ProducerApplicability::Any,
+        );
+        descriptor.scope = ProducerEffectScope::Model;
+        descriptor.scoped_fresh_ownership = true;
+        if ownership {
+            descriptor.effects.insert(ProducerEffect::Ownership);
+        }
+        let registry = ProducerRegistry::new([descriptor]).unwrap();
+        let mut plan = q.plan_result_structure([]);
+        let key = DerivationKey {
+            rule: RuleId::from_u128(99903),
+            subject: id(1),
+            output: OutputKey::from_u128(1),
+        };
+        let owner = plan.graph.create(key, c::FEATURE, &BTreeSet::new());
+        plan.graph.own(owner, id(3));
+        plan.attribute_producer_outputs(id(1), family, [owner]);
+        let result = plan.validate_declared_effects(&[id(1)], &registry);
+        if ownership {
+            assert!(result.is_ok(), "{result:?}");
+        } else {
+            let Err(PublicationOverlayError::ProducerEffectViolation(failure)) = result else {
+                panic!("fresh owner adopted existing carrier");
+            };
+            assert_eq!(failure.operation, "existing subject adoption");
         }
     }
 }

@@ -15,6 +15,9 @@ use std::sync::Arc;
 
 mod contributions;
 #[cfg(test)]
+#[path = "../tests/unit/producer_emitter_scope.rs"]
+mod emitter_scope_tests;
+#[cfg(test)]
 #[path = "../tests/unit/producer_fresh_ownership.rs"]
 mod fresh_ownership_tests;
 
@@ -1838,6 +1841,32 @@ impl ResultStructurePlan<'_> {
                 {
                     if let Value::Reference(child) = value {
                         proposed_owners.entry(*child).or_default().insert(owner);
+                        if model.element(*child).is_some()
+                            && !model.navigation_slot(owner, property).is_some_and(|slot| {
+                                slot.value()
+                                    .values()
+                                    .any(|value| *value == Value::Reference(*child))
+                            })
+                        {
+                            let permitted = every_emitter(owner, &|subject, descriptor| {
+                                owns_rule(descriptor, record.key.rule, record.key.subject)
+                                    && descriptor.effects.contains(&ProducerEffect::Ownership)
+                                    && descriptor.affects_subject(model, *child)
+                                    && fresh_attachment_root_in_scope(
+                                        model,
+                                        subject,
+                                        *child,
+                                        descriptor.scope,
+                                    )
+                            });
+                            if !permitted {
+                                return Err(audit_failure(
+                                    "existing subject adoption", FactKey::Property { element: owner, property },
+                                    record.key.rule, Some(record.key.subject), *child,
+                                    "a proposed ownership slot cannot adopt an existing subject without ownership capability".into(),
+                                ));
+                            }
+                        }
                     }
                 }
             }
