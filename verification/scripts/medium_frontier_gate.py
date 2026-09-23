@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from frontier_artifact_evidence import checkpoint_evidence
 
 
 def require(condition, message):
@@ -113,6 +114,14 @@ def main():
     require(hashlib.sha256(data[0]).hexdigest() == BASELINE_SHA256,
             "baseline differs from retained prior medium evidence")
     result = compare(*(json.loads(raw) for raw in data))
+    current = [checkpoint_evidence(json.loads(raw)) for raw in data[1:]]
+    for key in ("source_identity", "contributions", "selected_reference_digest"):
+        require(current[0][key] == current[1][key], f"changed checkpoint evidence: {key}")
+    result["checkpoint_artifact_evidence"] = current
+    result["historical_comparison_scope"] = (
+        "Pinned prior report graph/aggregate proof/search and certificate digests; "
+        "prior report has no selected-contribution archive. Authenticated selected "
+        "contribution proofs/searches additionally match uninterrupted and resumed runs.")
     result["evidence"] = [{"path": str(path), "sha256": hashlib.sha256(raw).hexdigest()}
                           for path, raw in zip(paths, data)]
     args.output.parent.mkdir(parents=True, exist_ok=True)
