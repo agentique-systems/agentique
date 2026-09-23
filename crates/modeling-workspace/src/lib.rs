@@ -10,7 +10,7 @@ pub use agq_kerml_text::QueryUnavailable;
 use agq_kerml_text::library::{CanonicalKermlStandardLibraries, LibraryLoadError};
 use agq_kerml_text::sysml::{AuthoredProducerStatus, CanonicalSysmlSystemsLibrary};
 use agq_kerml_text::{
-    ProjectChange, ProjectDocument, ProjectError, SourceCompilation, SourceDiagnostic,
+    ProjectChange, ProjectDocument, ProjectError, ProjectId, SourceCompilation, SourceDiagnostic,
     SourceInputs, SourceLanguage,
 };
 use agq_kernel::provenance::{FactKey, SourceOrigin};
@@ -32,6 +32,10 @@ pub struct ProjectRevision {
     compilation: SourceCompilation,
 }
 impl ProjectRevision {
+    /// Authored project identity shared by this history, independent of its path labels.
+    pub fn project(&self) -> ProjectId {
+        self.compilation.inputs().project()
+    }
     pub fn revision(&self) -> ProjectRevisionId {
         self.revision
     }
@@ -145,6 +149,9 @@ impl WorkingProjectRevision {
                     certificate.compatible_context(queries.context())
                 }) => {}
             _ => findings.push(ValidationFinding::Context),
+        }
+        if self.sysml_queries().is_err() && !findings.contains(&ValidationFinding::Context) {
+            findings.push(ValidationFinding::Context);
         }
         if findings.is_empty() {
             Ok(ValidatedProjectRevision {

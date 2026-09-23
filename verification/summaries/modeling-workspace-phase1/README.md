@@ -1,92 +1,54 @@
-# Modeling workspace phase 1 preparation
+# Gen2 modeling workspace Phase 1
 
-MODELING WORKSPACE PHASE 1 REMAINS GATED
+Status: reviewed implementation integrated after the measured
+[language readiness decision](../final-language-acceptance/semantic-closure-readiness.md).
+Workspace acceptance remains pending. The preparation outcomes below retain
+their original source commits and do not establish acceptance of this integration.
 
-The current [language readiness decision](../language-foundation-accepted/README.md)
-records the authenticated Systems finalizer's effective-audit rejection. The
-prepared production implementation was found locally at full commit
-`e5a65f8b3f6413b3d2094dc88c172cbba6435c3d`; recovery and review commits
+The earlier [language rejection](../language-foundation-accepted/README.md) is
+historical and remains preserved. The reviewed recovery commits are
 `427d29b2633d5ac1183e0338df96d4ef4300552e` and
-`1ee7be295f43266c7f480b78865f3fd60a0874e9` remain on isolated branch
-`platform/workspace-integration`. All ten acceptance tests compile there,
-and focused kernel/frontend and dependency checks pass. Accepted-dependency
-execution, dogfooding, the 100-document fixture and production integration remain
-unrun and unaccepted. The historical preparation below remains applicable.
+`1ee7be295f43266c7f480b78865f3fd60a0874e9`. They are source inputs for this
+integration, not independent acceptance authority.
 
-The [design and acceptance matrix](../../../docs/modeling-workspace-phase1-design.md)
-and [ADR 0024](../../../docs/adr/0024-gen2-modeling-workspace.md) select an additive
-`agq-modeling-workspace`. No production crate is added by this preparatory work.
-The [stability contract](../../../docs/adr/0026-language-foundation-stability-contract.md)
-remains proposed until the integration readiness record adopts it.
+The prepared implementation exists at actual commit
+`e5a65f8b3f6413b3d2094dc88c172cbba6435c3d`, retained by
+`foundation/workspace-authenticated-frontier-held` (HEAD `8e16e36`). It was applied
+cleanly to inspected main `0c4c0adae19125c5a72b3e3521c7df1c6c6d84f0` in branch
+`platform/workspace-integration` as `427d29b`.
 
-Prepared decisions cover immutable document/revision ownership, transitive
-accepted Systems/KerML sharing, construction-backed Working revisions, checked
-Validated handles, explicit query availability, atomic edit publication and
-revision-specific diagnostics. The matrix covers mixed documents, three retained
-edits, identity reconciliation, remove/repair, syntax recovery, stale/invalid
-edits, closure invalidation, shared standards, trusted dependency restoration,
-programmatic equivalence and 100-document parallel reads.
+The crate supplies ProjectWorkspace, distinct project revision IDs, immutable
+Working and checked Validated handles, mixed source edits, native borrowed query
+facades and source/element lookup. Additive frontend inputs preserve recovery and
+unresolved construction. Kernel history preserves retired identities; shared-base
+storage avoids standard table/proof copies. Gen1 remains separate.
 
-These are design/test obligations, not executed workspace acceptance tests.
-Existing frontend strict-snapshot requirements must be addressed explicitly after
-the gate. SourceProject currently rebuilds authored dependencies; no incremental
-workspace performance or accepted Systems integration is claimed here.
+The ten prepared accepted-cache tests include the five-document Agentique
+self-model edit, explicit effective ModelingPlatform membership changes,
+unchanged authored identities, invalid Working repair and the 100-document /
+five-revision / four-reader fixture. They inspect actual shared storage and
+producer evaluation subjects, not just publication Arc equality. Requested
+accepted-cache tests fail if either dependency cache or compiled authority is
+missing; they never publish standards or skip a requested gate.
 
-The subsequent [frontend boundary review](../../../docs/modeling-workspace-frontend-boundary.md)
-inspects the prepared accepted-publication SourceProject path. It specifies an
-additive immutable input/result carrier, obligation-backed query facade, recovery
-and removal handling, identity history and 100-document read/scaling assertions.
-Its concrete input fixture has real-frontend parser preflight tests; results are
-recorded in the `frontend-boundary.json` source-ledger range of [commands.json](commands.json). Those tests do not instantiate a workspace
-or establish semantic acceptance. No production workspace has been integrated.
+Actual command arguments, exit codes, source/patch identities and output digests
+are in [commands.json](commands.json). Raw logs remain ignored under
+`verification/generated/modeling-workspace-phase1/`. Initial non-compiling
+preflight passed formatting and the generation dependency audit (20 packages,
+zero violations; all normal/build/dev/optional/target dependency kinds), with eight
+boundary-check regressions. The feature-enabled kernel/frontend/workspace test
+compilation passed, including all ten workspace acceptance tests. The full kernel
+package passed 139 tests including doctests; the current-input frontend passed
+three focused tests. Strict Rustdoc and accepted-cache execution remain pending.
 
-## Working-state acceptance preparation
+Earlier parser preparation and neutral kernel-oracle outcomes remain in the same
+command ledger with their original source commits and failed held-crate command.
+Those historical missing-manifest failures do not describe the prepared crate.
+The original retained branch preserves its detailed preparation notes; they are
+not imported as a second command-log collection for this milestone.
 
-Reviewed the strict accepted frontend at `695e67e`. `SourceProject::apply` still
-rejects recovered production inputs, and `lower_accepted_source` still requires
-strict promotion and supplies empty pending-scope sets. The additive Working
-frontend and workspace remain necessary; neither is implemented by these tests.
-
-Three held tests in `crates/modeling-workspace/tests/working_states.rs` require:
-
-- targeted recovery/repair preserves a disjoint declaration's reconciled syntax
-  and authored identity, while later explicit deletion/re-addition retires it;
-- a failed mandatory reference retains its current document/source origin and
-  incomplete effective query evidence, with no stale old endpoint;
-- Parsed but unsupported variation remains Incomplete and cannot validate even
-  when the actual producer status and whole-graph certificate are Complete.
-
-The separate two-test `workspace_working_inputs` preflight passes against the
-real Operational v2 parser (0.05 seconds). It confirms complete and malformed
-source classifications, exact source roundtrip, disjoint syntax identity across
-recovery and repair, and fresh identity for a new document. It does not establish
-canonical lowering, workspace acceptance or publication success.
-
-Targeted parser Clippy and both workspace/held-file formatting pass. The requested
-held integration command exits 101 because its crate manifest does not exist;
-the three semantic tests remain uncompiled and unexecuted. No manifest, Cargo
-member, production code, accepted cache load or publication run was added.
-The `working-states-commands.json` source-ledger range of [commands.json](commands.json) records commands, exits, hashes and source identity.
-
-## Additional identity and shared-graph preparation
-
-The held unresolved-reference sequence now removes its provider while already
-Working, repairs the name while the provider remains absent, then re-adds the
-provider. It requires current reference provenance, no stale canonical or queried
-typing endpoint, a fresh provider identity and unchanged prior revisions. The
-real parser preflight now has three passing tests (0.08 s), including declaration
-deletion/reinsertion while recovery persists: identical restored bytes retain a
-new syntax identity through repair. Focused Clippy and formatting pass. The
-semantic workspace tests remain uncompiled because the manifest is absent;
-this expected failed invocation is retained without claiming acceptance.
-
-Two kernel tests compile and pass using current APIs (0.01 s). They compare a
-mounted dependency with an independently constructed flat oracle for local
-association additions, reference positions, duplicate carriers, inverse slots,
-provenance/proofs, removal, archive roundtrip and atomic scalar inverse rejection.
-These protect observable semantics for the future storage change. They do not
-prove physical map/index/proof-pool sharing: those assertions remain held until
-a real storage observer exists. Targeted Clippy and formatting pass. Both new
-source-ledger ranges and original raw hashes are retained in `commands.json`.
-No production workspace, shared-storage implementation or accepted cache run was
-introduced by this preparation.
+[ADR 0024](../../../docs/adr/0024-gen2-modeling-workspace.md) describes workspace
+ownership and validation. It remains proposed until acceptance. The
+[Phase 2 roadmap](../../../docs/modeling-platform-phase2-roadmap.md) defines
+repository, branch, application/query and Systems Modeling API boundaries only;
+none of those services is implemented here.

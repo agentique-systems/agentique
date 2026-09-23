@@ -33,6 +33,23 @@ fn self_model_revision_edit_preserves_architecture_and_old_queries() {
         .unwrap();
     assert_valid(&r1);
     let before = immutable_signature(&r1);
+    let unchanged = [
+        ["LanguageArchitecture", "SemanticKernel"],
+        ["LanguageArchitecture", "KerMLEngine"],
+        ["LanguageArchitecture", "SysMLEngine"],
+        ["ExecutionArchitecture", "ExecutionSubsystem"],
+    ]
+    .map(|path| (path, element(&r1, &path)));
+    let original_platform = element(&r1, &["PlatformArchitecture", "ModelingPlatform"]);
+    let original_members = {
+        let queries = r1.sysml_queries().unwrap();
+        let answer = queries.effective_usages(original_platform);
+        assert_eq!(
+            answer.completeness(),
+            agq_kerml_semantics::Completeness::Complete
+        );
+        answer.value().clone()
+    };
     let (path, document) = r1
         .documents()
         .find(|(_, document)| document.source().contains("part def ModelingPlatform"))
@@ -55,6 +72,11 @@ fn self_model_revision_edit_preserves_architecture_and_old_queries() {
     assert_valid(&r2);
     assert_eq!(immutable_signature(&r1), before);
     assert_ne!(r1.revision(), r2.revision());
+    assert_eq!(r2.parent(), Some(r1.revision()));
+    assert_eq!(r1.project(), r2.project());
+    for (path, identity) in unchanged {
+        assert_eq!(element(&r2, &path), identity, "unchanged authored {path:?}");
+    }
     for revision in [&r1, &r2] {
         assert_shared(revision);
         let queries = revision.kerml_queries().unwrap();
@@ -262,4 +284,20 @@ fn self_model_revision_edit_preserves_architecture_and_old_queries() {
         ],
     );
     assert!(r1.semantic_model().unwrap().element(added).is_none());
+    let old_queries = r1.sysml_queries().unwrap();
+    let old_members = old_queries.effective_usages(original_platform);
+    assert_eq!(
+        old_members.completeness(),
+        agq_kerml_semantics::Completeness::Complete
+    );
+    assert_eq!(old_members.value(), &original_members);
+    assert!(!old_members.value().contains(&added));
+    let new_queries = r2.sysml_queries().unwrap();
+    let new_platform = element(&r2, &["PlatformArchitecture", "ModelingPlatform"]);
+    let new_members = new_queries.effective_usages(new_platform);
+    assert_eq!(
+        new_members.completeness(),
+        agq_kerml_semantics::Completeness::Complete
+    );
+    assert!(new_members.value().contains(&added));
 }

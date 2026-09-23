@@ -476,6 +476,150 @@
       "duration_seconds": 2.72,
       "output": "verification/generated/modeling-workspace-phase1/frontend-build.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "workspace-focused-compile",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-modeling-workspace",
+        "--features",
+        "agq-modeling-workspace/verification",
+        "--no-run"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "427d29b2633d5ac1183e0338df96d4ef4300552e",
+      "working_changes_sha256": "b301ed34bcae9017b792e9c9a17ffc667ed340bec9269ad349afa303c44668c9",
+      "output_sha256": "d7f18c0d98f88bf277c07af8da80bfe8296a1cc1a30cd93462d322daccdf5818",
+      "duration_seconds": 71.92,
+      "output": "verification/generated/modeling-workspace-phase1/workspace-focused-compile.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "kernel-history-storage-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kernel",
+        "--features",
+        "verification"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "427d29b2633d5ac1183e0338df96d4ef4300552e",
+      "working_changes_sha256": "515b4afa7e85f1fba22d5b2d0a02a5b9ad9fe3220685b980d61f04c534c62923",
+      "output_sha256": "c8662bd52519c474ba45eb07b7f34c4892b20139d29b8c2b42e443f1a4615217",
+      "duration_seconds": 18.59,
+      "output": "verification/generated/modeling-workspace-phase1/kernel-history-storage-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "frontend-working-inputs-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--features",
+        "verification",
+        "--lib",
+        "source_inputs::tests",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "427d29b2633d5ac1183e0338df96d4ef4300552e",
+      "working_changes_sha256": "515b4afa7e85f1fba22d5b2d0a02a5b9ad9fe3220685b980d61f04c534c62923",
+      "output_sha256": "1077148da35e7b996d598976988537b0bb0e2d873d1083528a6db8f49f9f7c04",
+      "duration_seconds": 0.83,
+      "output": "verification/generated/modeling-workspace-phase1/frontend-working-inputs-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "prepared-workspace-boundary-regressions",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "427d29b2633d5ac1183e0338df96d4ef4300552e",
+      "working_changes_sha256": "515b4afa7e85f1fba22d5b2d0a02a5b9ad9fe3220685b980d61f04c534c62923",
+      "output_sha256": "9f19866c8af7bd0425354480972b9749c259e92bd47393c4d7e76dcf44f46db3",
+      "duration_seconds": 0.12,
+      "output": "verification/generated/modeling-workspace-phase1/prepared-workspace-boundary-regressions.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "prepared-workspace-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "427d29b2633d5ac1183e0338df96d4ef4300552e",
+      "working_changes_sha256": "515b4afa7e85f1fba22d5b2d0a02a5b9ad9fe3220685b980d61f04c534c62923",
+      "output_sha256": "ac7f89edc52250602dd16a8dbbd1f35f84b7f24f4a8f48bc436054bdf30bb52d",
+      "duration_seconds": 0.19,
+      "output": "verification/generated/modeling-workspace-phase1/prepared-workspace-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "prepared-workspace-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "427d29b2633d5ac1183e0338df96d4ef4300552e",
+      "working_changes_sha256": "515b4afa7e85f1fba22d5b2d0a02a5b9ad9fe3220685b980d61f04c534c62923",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.66,
+      "output": "verification/generated/modeling-workspace-phase1/prepared-workspace-format.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [

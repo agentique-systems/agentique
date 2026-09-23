@@ -1,11 +1,44 @@
 # In-memory modeling workspace phase 1
 
-Status: design prepared; production crate integration remains gated by
-[ADR 0026](adr/0026-language-foundation-stability-contract.md). The tests below
-are an implementation acceptance plan, not claims of runtime test success.
+Status: implementation prepared in isolation; production integration remains
+gated by [ADR 0026](adr/0026-language-foundation-stability-contract.md). Accepted
+Systems cache execution is a separate measured gate, not established by compiling
+the implementation. Current results belong in the
+[Phase 1 summary](../verification/summaries/modeling-workspace-phase1/README.md).
 [ADR 0024](adr/0024-gen2-modeling-workspace.md) selects the additive
 `agq-modeling-workspace` boundary; the
 [generation audit](gen1-gen2-architecture-audit.md) explains the reuse choices.
+
+## Prepared implementation
+
+The implementation was recovered from the actual retained branch
+`foundation/workspace-authenticated-frontier-held`, commit
+`e5a65f8b3f6413b3d2094dc88c172cbba6435c3d` (parent
+`7223938437dc8ab7c684961bfb76eaba6c6c92f0`). It does not depend on an unavailable
+short Git object. Its pieces are:
+
+| Boundary | Implemented carrier |
+| --- | --- |
+| Authored history/head | `agq-modeling-workspace::ProjectWorkspace`, with opaque `ProjectRevisionId`, retained parents and immutable revision handles. |
+| Exact source state | `agq-kerml-text::SourceInputs` shares unchanged `ProjectDocument`/syntax values; source edits produce fresh source revisions. |
+| Working semantics | `SourceCompilation` binds strict or construction-backed current graphs, references, diagnostics and closure evidence. Recovery is retained without using old graph answers. |
+| Checked validation | `WorkingProjectRevision::validate` issues only the private-construction `ValidatedProjectRevision` for the exact accepted handle under `Phase1V1`. |
+| Identity retirement | Kernel `DeclaredConstructionHistory` retains reservations through incomplete construction; explicit source deletion retires identities. |
+| Immutable dependencies | Kernel shared-base maps, indexes, proof/search storage and sparse local projections retain accepted standard allocations. |
+| Revision queries | Borrowed KerML/SysML evaluators, semantic element/source lookup, metadata and native completeness/evidence. |
+| Verification | Ten explicit accepted-cache tests; the five-document self-model; mixed edits; invalid Working repair; 100 documents, five revisions, four concurrent readers. |
+
+The ordinary API offers `add_document`, explicit `add_kerml`/`add_sysml`,
+`edit_document`, `remove_document` and atomic batches of `ProjectChange`. A stale
+head or operational error publishes no revision. An incomplete language result
+can publish Working and refuses Validated promotion. Accepted publication
+authentication is performed by the language facade before workspace construction.
+
+The following sections preserve the original design and review rationale. Their
+statements about unimplemented storage/frontend seams describe the pre-integration
+baseline, not the prepared implementation above. Concrete acceptance remains
+unproven until the recorded tests pass against real accepted dependencies. Phase 2
+is specified separately in the [roadmap](modeling-platform-phase2-roadmap.md).
 
 ## Ownership and identity
 
