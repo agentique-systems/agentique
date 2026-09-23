@@ -61,6 +61,34 @@ pub struct DerivationBuildMetrics {
     /// The earlier overlay had no remaining readers, so its maps were moved.
     pub reused_owned_storage: bool,
 }
+
+/// Optional precise support for one reference appended to an ordered stored slot.
+///
+/// This kernel-created cache records the append's own rule, explicit evidence,
+/// owner/target existence and batch searches. It excludes earlier append proofs
+/// and other targets' automatic existence dependencies. The position identifies
+/// the entry in the current ordered slot; it is not proof that an arbitrary
+/// filtered population is complete. Callers must retain their population search.
+///
+/// Graph archives omit this optimization. Missing metadata requires aggregate
+/// slot evidence, and invalidates any transported proof which relied on it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrderedReferenceContribution {
+    position: usize,
+    explanation: Arc<Explanation>,
+    searches: Arc<BTreeSet<StructuralSearch>>,
+}
+impl OrderedReferenceContribution {
+    pub fn position(&self) -> usize {
+        self.position
+    }
+    pub fn explanation(&self) -> &Explanation {
+        &self.explanation
+    }
+    pub fn searches(&self) -> &BTreeSet<StructuralSearch> {
+        &self.searches
+    }
+}
 impl DerivedOverlay {
     /// Original declared revision, without any inferred slots or elements.
     pub fn declared(&self) -> &Snapshot {
@@ -382,6 +410,7 @@ impl<Input> DerivationBuilder<Input> {
         let mut records = parts.records;
         let mut links = parts.links;
         let mut derived_navigation = parts.derived_navigation;
+        let mut reference_contributions = parts.reference_contributions;
         let mut metrics = DerivationBuildMetrics {
             new_elements: self.elements.len(),
             new_association_occurrences: self.occurrences.len(),
@@ -505,6 +534,7 @@ impl<Input> DerivationBuilder<Input> {
             records.insert(id, Arc::new(record));
         }
         let mut extended = BTreeSet::new();
+        let mut appended = BTreeSet::new();
         for (element, property, additions, mut explanation) in self.extensions {
             self.declared
                 .check_dependency_write(FactKey::Property { element, property })?;
@@ -526,6 +556,13 @@ impl<Input> DerivationBuilder<Input> {
             let key = FactKey::Property { element, property };
             if !extended.insert(key) || changed_facts.contains(&key) {
                 return Err(DerivationError::DuplicateFact(key));
+            }
+            // Preserve the exact append event before whole-slot evidence is
+            // unioned with previous events and automatic sibling dependencies.
+            let contribution_proof = explanation.clone();
+            let contribution_searches = self.searches.get(&key).cloned().unwrap_or_default();
+            if !additions.is_empty() {
+                appended.insert(key);
             }
             if let Some(previous) = explanations.get(&key) {
                 changed_existing_explanation = true;
@@ -553,6 +590,25 @@ impl<Input> DerivationBuilder<Input> {
                 if values.contains(&value) {
                     return Err(DerivationError::InvalidCollectionExtension { element, property });
                 }
+                let mut proof = contribution_proof.clone();
+                for subject in [element, addition] {
+                    let fact = FactKey::Element(subject);
+                    proof
+                        .dependencies
+                        .insert(if self.declared.has_declared_fact(fact) {
+                            Dependency::Declared(fact)
+                        } else {
+                            Dependency::Derived(fact)
+                        });
+                }
+                reference_contributions.insert(
+                    (element, property, addition),
+                    Arc::new(OrderedReferenceContribution {
+                        position: values.len(),
+                        explanation: evidence_pool.intern(proof),
+                        searches: search_pool.intern_shared(contribution_searches.clone()),
+                    }),
+                );
                 values.push(value);
                 explanation.dependencies.insert(
                     if self.declared.has_declared_fact(FactKey::Element(addition)) {
@@ -627,6 +683,7 @@ impl<Input> DerivationBuilder<Input> {
         model.declared_source = Some(self.declared.clone());
         model.statuses = parts.statuses;
         model.searches = parts.searches;
+        model.reference_contributions = reference_contributions;
         for ((element, property), mut failure) in self.failures {
             self.declared
                 .check_dependency_write(FactKey::Property { element, property })?;
@@ -723,6 +780,15 @@ impl<Input> DerivationBuilder<Input> {
         for (fact, searches) in self.searches {
             if !explanations.contains_key(&fact) {
                 return Err(DerivationError::MissingSearchSubject(fact));
+            }
+            // A later whole-slot search submission cannot be attributed to an
+            // earlier append event. Discard precision rather than miss new reads.
+            if !appended.contains(&fact)
+                && let FactKey::Property { element, property } = fact
+            {
+                model
+                    .reference_contributions
+                    .retain(|&(owner, slot, _), _| (owner, slot) != (element, property));
             }
             merge_searches(&mut model.searches, &mut search_pool, fact, searches);
         }
@@ -924,6 +990,15 @@ pub enum StructuralSearch {
     DeclaredProperty {
         element: ElementId,
         property: PropertyId,
+    },
+    /// Exact optional append-event support for one ordered reference. Readers
+    /// compare the contribution and its position across reconstruction, including
+    /// Some/None availability. Missing metadata is not an empty proof. This is
+    /// separate from the current population search and its provider obligations.
+    OrderedReferenceContribution {
+        element: ElementId,
+        property: PropertyId,
+        target: ElementId,
     },
 }
 /// Explicit unsuccessful computation; never an empty value.

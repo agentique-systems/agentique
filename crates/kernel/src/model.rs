@@ -237,6 +237,10 @@ pub struct ModelView {
     pub(crate) statuses: BTreeMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
     pub(crate) searches:
         BTreeMap<crate::provenance::FactKey, Arc<BTreeSet<crate::derived::StructuralSearch>>>,
+    pub(crate) reference_contributions: BTreeMap<
+        (ElementId, PropertyId, ElementId),
+        Arc<crate::derived::OrderedReferenceContribution>,
+    >,
 }
 
 /// Mutable ownership transferred only inside an unpublished derivation batch.
@@ -248,6 +252,10 @@ pub(crate) struct DerivationModelParts {
     pub derived_navigation: crate::association::Navigation,
     pub statuses: BTreeMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
     pub searches: BTreeMap<FactKey, Arc<BTreeSet<crate::derived::StructuralSearch>>>,
+    pub reference_contributions: BTreeMap<
+        (ElementId, PropertyId, ElementId),
+        Arc<crate::derived::OrderedReferenceContribution>,
+    >,
 }
 
 impl ModelView {
@@ -258,6 +266,7 @@ impl ModelView {
             derived_navigation: self.derived_navigation.clone(),
             statuses: self.statuses.clone(),
             searches: self.searches.clone(),
+            reference_contributions: self.reference_contributions.clone(),
         }
     }
 
@@ -268,6 +277,7 @@ impl ModelView {
             derived_navigation: self.derived_navigation,
             statuses: self.statuses,
             searches: self.searches,
+            reference_contributions: self.reference_contributions,
         }
     }
 
@@ -431,6 +441,7 @@ impl ModelView {
             derived_navigation,
             statuses: BTreeMap::new(),
             searches: BTreeMap::new(),
+            reference_contributions: BTreeMap::new(),
         })
     }
     /// Explicit property/navigation state, resolving only unambiguous class aliases.
@@ -646,6 +657,35 @@ impl ModelView {
                 .and_then(|source| source.model().declared_slot(element, property)),
         }
     }
+    /// Optional precise support captured by an ordered-reference append. Resolve
+    /// property aliases before lookup. Absence requires ordinary aggregate slot
+    /// evidence; it never establishes that the reference or its proof is absent.
+    /// Archives intentionally omit this cache, so consumers retaining a selected
+    /// contribution must invalidate on changed evidence or lost availability.
+    pub fn ordered_reference_contribution(
+        &self,
+        element: ElementId,
+        property: PropertyId,
+        target: ElementId,
+    ) -> Option<&crate::derived::OrderedReferenceContribution> {
+        self.reference_contributions
+            .get(&(element, property, target))
+            .map(Arc::as_ref)
+    }
+    /// Cached append contributions in deterministic owner/property/target order.
+    /// This is an evidence cache, not the ordered slot's complete population.
+    pub fn ordered_reference_contributions(
+        &self,
+    ) -> impl Iterator<
+        Item = (
+            (ElementId, PropertyId, ElementId),
+            &crate::derived::OrderedReferenceContribution,
+        ),
+    > {
+        self.reference_contributions
+            .iter()
+            .map(|(key, value)| (*key, value.as_ref()))
+    }
     /// Original submitted evidence, even when an overlay extends the same slot.
     /// Association projections are not independent declared facts; inspect their
     /// canonical occurrences instead. No inferred origin is reported as declared.
@@ -703,6 +743,7 @@ impl Snapshot {
                     derived_navigation: BTreeMap::new(),
                     statuses: BTreeMap::new(),
                     searches: BTreeMap::new(),
+                    reference_contributions: BTreeMap::new(),
                 },
                 used_ids: BTreeSet::new(),
                 used_links: BTreeSet::new(),
@@ -737,6 +778,7 @@ impl Snapshot {
         model.declared_source = original.declared_source.clone();
         model.statuses = original.statuses.clone();
         model.searches = original.searches.clone();
+        model.reference_contributions = original.reference_contributions.clone();
         Ok(Self::with_dependency_model(dependency, model))
     }
     fn with_dependency_model(
@@ -798,6 +840,7 @@ impl Snapshot {
         model.statuses = self.model().statuses.clone();
         model.declared_source = self.model().declared_source.clone();
         model.searches = self.model().searches.clone();
+        model.reference_contributions = self.model().reference_contributions.clone();
         Ok(Self {
             inner: Arc::new(SnapshotData {
                 revision: changes.revision,
@@ -831,6 +874,7 @@ impl Snapshot {
         model.statuses = self.model().statuses.clone();
         model.declared_source = self.model().declared_source.clone();
         model.searches = self.model().searches.clone();
+        model.reference_contributions = self.model().reference_contributions.clone();
         Ok(ConstructionView {
             base: self.clone(),
             used_ids,
