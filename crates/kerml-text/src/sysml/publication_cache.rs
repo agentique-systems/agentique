@@ -151,6 +151,10 @@ impl CanonicalSysmlSystemsLibrary {
             serde_json::to_writer(&mut digest, value)?;
             entries.insert(name, digest.identity());
         }
+        // These entries are complete. Release their expanded JSON before the
+        // kernel archive allocates its proof and search serialization tables.
+        drop(metadata);
+        drop(closure);
         archive.start_file("kernel.jsonl", options)?;
         let mut digest = DigestWriter::new(&mut archive);
         agq_kernel::archive::write_dependent_overlay(&self.overlay, &mut digest)?;
