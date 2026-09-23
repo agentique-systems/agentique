@@ -164,7 +164,14 @@ impl KerMlQueries<'_> {
                 "Pending owned memberships do not establish the first eligible cross Feature",
             );
         }
-        let memberships = self.memberships(feature);
+        // Only this population can select a cross Feature. Snapshot creation
+        // appends FeatureMemberships, which the rule excludes independently of
+        // their endpoints; retaining a broad membership search would make that
+        // unrelated writer reopen this end's own typing producer.
+        let excluded =
+            std::iter::once(c::FEATURE_MEMBERSHIP).chain(corrected.then_some(c::FEATURE_VALUE));
+        let memberships =
+            self.owned_relationships_excluding(feature, c::OWNING_MEMBERSHIP, excluded);
         // Do not use an arbitrary candidate from an incomplete ordered projection.
         let ordered = memberships.value.clone();
         out.merge(memberships);
