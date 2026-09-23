@@ -494,6 +494,11 @@ pub struct ProducerDescriptor {
     /// records. A fresh FeatureTyping targeting an existing Feature belongs in
     /// `effects`, even though its relationship identity is new.
     pub fresh_effects: BTreeSet<ProducerEffect>,
+    /// Every new subject is detached or canonically owned below a target in
+    /// this family's existing effect scope. The promise is transitive across
+    /// fresh helper records and is checked when a production plan is audited.
+    /// False preserves unrestricted future-subject activation.
+    pub scoped_fresh_ownership: bool,
     /// Optional exact metaclasses of relationship records this family may
     /// create. This bounds potential output, not the records observed so far.
     /// `None` permits every relationship class covered by its effects.
@@ -525,6 +530,7 @@ impl ProducerDescriptor {
             id,
             effects: effects.into_iter().collect(),
             fresh_effects: BTreeSet::new(),
+            scoped_fresh_ownership: false,
             relationship_classes: None,
             derivation_rules: None,
             feature_populations: None,
@@ -534,7 +540,7 @@ impl ProducerDescriptor {
             minimum_stratum: ResultStructureStratum::Structural,
         }
     }
-    fn can_create_subjects(&self) -> bool {
+    pub(crate) fn can_create_subjects(&self) -> bool {
         !self.fresh_effects.is_empty()
             || self
                 .effects
@@ -581,6 +587,84 @@ fn future_cross_subject_families<'a>(
             ) || has_reference_scalar(descriptor, model)
                 || (ownership_mutable && descriptor.scope.depends_on_ownership()))
     })
+}
+
+/// Existing subjects reachable by future owner-scoped writers. A fresh subject
+/// cannot acquire an unrelated existing owner if every possible creator obeys
+/// its attachment scope and no producer/provider can relocate existing records.
+/// Unknown creation contracts deliberately retain the model-wide fallback.
+fn future_owner_targets(
+    model: &ModelView,
+    registry: &ProducerRegistry,
+    subject: ElementId,
+    descriptor: &ProducerDescriptor,
+    provider_ownership_open: bool,
+) -> Option<BTreeSet<ElementId>> {
+    use agq_kerml::properties as p;
+    if provider_ownership_open
+        || descriptor.scope == ProducerEffectScope::Model
+        || registry.descriptors.iter().any(|family| {
+            family.applicability != ProducerApplicability::Never
+                && (family.effects.contains(&ProducerEffect::Ownership)
+                    || has_reference_scalar(family, model)
+                    || family.can_create_subjects() && !family.scoped_fresh_ownership
+                    || family.scope == ProducerEffectScope::Model)
+        })
+    {
+        return None;
+    }
+    let mut roots = BTreeSet::from([subject]);
+    if !matches!(
+        descriptor.scope,
+        ProducerEffectScope::Subject | ProducerEffectScope::SubjectAndOwners
+    ) {
+        // Selector scopes are safely bounded by their containing owned tree.
+        // The exact target selector still governs present-subject effect audit.
+        let mut pending = vec![subject];
+        while let Some(owner) = pending.pop() {
+            for property in [
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            ] {
+                match model.property_state(owner, property) {
+                    Ok(agq_kernel::derived::PropertyState::Computed(slot)) => {
+                        for value in slot.value().values() {
+                            let agq_kernel::value::Value::Reference(child) = value else {
+                                return None;
+                            };
+                            if roots.insert(*child) {
+                                pending.push(*child);
+                            }
+                        }
+                    }
+                    Ok(agq_kernel::derived::PropertyState::Absent) => {}
+                    // The property may not be applicable to this metaclass.
+                    Err(_)
+                        if model.element(owner).is_some_and(|record| {
+                            model
+                                .registry()
+                                .resolve_property(record.metaclass(), property)
+                                .is_ok_and(|value| value.is_none())
+                        }) => {}
+                    _ => return None,
+                }
+            }
+        }
+    }
+    let mut pending: Vec<_> = roots.iter().copied().collect();
+    while let Some(child) = pending.pop() {
+        for property in [
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        ] {
+            for incoming in model.incoming_for_property(child, property) {
+                if roots.insert(incoming.source) {
+                    pending.push(incoming.source);
+                }
+            }
+        }
+    }
+    Some(roots)
 }
 
 /// Explicit effect requirements of exhaustive queries. Positive witnesses do
@@ -731,7 +815,7 @@ impl ProducerRegistry {
             }
         }
         let mut hash = Sha256::new();
-        hash.update(b"agq-producer-registry/4");
+        hash.update(b"agq-producer-registry/5");
         // Debug is deterministic for these ordered value-only declarations;
         // its encoding is versioned by the registry schema above.
         hash.update(format!("{descriptors:?}").as_bytes());
@@ -1031,6 +1115,9 @@ impl ProducerEvaluationTable {
                 })
         };
         let mut future_effects_applied = false;
+        let provider_ownership_open = provider_masks
+            .iter()
+            .any(|mask| mask & SemanticClosureRequirement::EffectiveOwnership.bit() != 0);
         while let Some(pair) = pending.pop_front() {
             let subject = subjects[pair / families];
             let descriptor = &registry.descriptors[pair % families];
@@ -1042,8 +1129,23 @@ impl ProducerEvaluationTable {
                 && !future_effects_applied
                 && !future_effects.is_empty()
             {
-                future_effects_applied = true;
+                let future_targets = future_owner_targets(
+                    model,
+                    registry,
+                    subject,
+                    descriptor,
+                    provider_ownership_open,
+                );
+                // A bounded creator affects only its own roots. Other pending
+                // creators still need their distinct attachment frontier.
+                future_effects_applied = future_targets.is_none();
                 for (read_subject, reads) in &readers {
+                    if future_targets
+                        .as_ref()
+                        .is_some_and(|targets| !targets.contains(read_subject))
+                    {
+                        continue;
+                    }
                     for (read, reader) in reads {
                         if future_families.iter().any(|future| {
                             if immutable(*read_subject)
@@ -1536,6 +1638,9 @@ impl ProducerClosureCertificate {
         let future_effects = future_cross_subject_effects(registry, model);
         let mut states = vec![0; (subjects.len() * families).div_ceil(4)];
         let mut blocked = pending_provider_masks(model, context, &subjects, &positions, &immutable);
+        let provider_ownership_open = blocked
+            .iter()
+            .any(|mask| mask & SemanticClosureRequirement::EffectiveOwnership.bit() != 0);
         let mut inherited_blocks = vec![0_u8; subjects.len()];
         let mut descendant_blocks = vec![0_u8; subjects.len()];
         let mut owner_blocks = vec![0_u8; subjects.len()];
@@ -1591,12 +1696,29 @@ impl ProducerClosureCertificate {
                     ProducerEvaluationState::Pending | ProducerEvaluationState::EvaluatedIncomplete
                 ) {
                     if descriptor.can_create_subjects() {
+                        let future_targets = future_owner_targets(
+                            model,
+                            registry,
+                            subject,
+                            descriptor,
+                            provider_ownership_open,
+                        );
                         for requirement in SemanticClosureRequirement::ALL {
                             if future_effects
                                 .iter()
                                 .any(|&effect| requirement.requires_in_model(effect, model))
                             {
-                                global_block |= requirement.bit();
+                                if let Some(targets) = &future_targets {
+                                    for target in targets {
+                                        if !immutable(*target)
+                                            && let Some(&target) = positions.get(target)
+                                        {
+                                            blocked[target] |= requirement.bit();
+                                        }
+                                    }
+                                } else {
+                                    global_block |= requirement.bit();
+                                }
                                 if future_cross_subject_families(registry, model).any(|family| {
                                     (family.scope == ProducerEffectScope::Model
                                         || has_reference_scalar(family, model)

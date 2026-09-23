@@ -210,6 +210,7 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
                 effects,
                 ProducerApplicability::Subtypes(classes),
             );
+            descriptor.scoped_fresh_ownership = true;
             if rule == "checkTransitionUsagePayloadSpecialization" {
                 // Only the second input parameter receives a new Subsetting.
                 // FeatureChaining belongs to the newly created payload chain,

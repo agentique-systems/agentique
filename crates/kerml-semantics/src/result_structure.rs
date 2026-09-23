@@ -14,6 +14,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 mod contributions;
+#[cfg(test)]
+#[path = "../tests/unit/producer_fresh_ownership.rs"]
+mod fresh_ownership_tests;
 
 /// Publication closes positive structural implications before choosing nearest
 /// featuring contexts. The second stratum still runs all ordinary producers on
@@ -345,6 +348,7 @@ mod navigation_evidence_regression {
             direct_searches: BTreeSet::new(),
             touched_records: BTreeSet::new(),
             contributed_properties: BTreeMap::new(),
+            producer_sources: BTreeMap::new(),
         };
         let mut proof = q.result(());
         q.fact(&mut proof, projected);
@@ -464,6 +468,7 @@ struct Graph<'a> {
     direct_searches: BTreeSet<SearchDependency>,
     touched_records: BTreeSet<ElementId>,
     contributed_properties: BTreeMap<(ElementId, PropertyId), contributions::PropertyContribution>,
+    producer_sources: BTreeMap<ElementId, BTreeSet<(ElementId, ProducerFamilyId)>>,
 }
 impl<'a> Graph<'a> {
     fn finish_subject(
@@ -482,8 +487,17 @@ impl<'a> Graph<'a> {
         family: ProducerFamilyId,
         production: &mut QueryResult<T>,
     ) -> crate::producer_closure::ProducerReads {
+        self.attribute_touched(subject, family);
         self.retain_producer_searches(production);
         crate::producer_read_trace::reads(subject, family, production, self.model)
+    }
+    fn attribute_touched(&mut self, subject: ElementId, family: ProducerFamilyId) {
+        for &element in &self.touched_records {
+            self.producer_sources
+                .entry(element)
+                .or_default()
+                .insert((subject, family));
+        }
     }
     fn retain_producer_searches<T>(&mut self, production: &mut QueryResult<T>) {
         // Output provenance belongs to the family that produced it. The
@@ -1785,6 +1799,131 @@ impl ResultStructurePlan<'_> {
                 detail: details,
             }))
         };
+        let every_emitter =
+            |element, permits: &dyn Fn(ElementId, &crate::ProducerDescriptor) -> bool| {
+                self.graph.producer_sources.get(&element).map_or_else(
+                    || {
+                        descriptors.iter().any(|&(subject, descriptor)| {
+                            !descriptor.scoped_fresh_ownership && permits(subject, descriptor)
+                        })
+                    },
+                    |sources| {
+                        !sources.is_empty()
+                            && sources.iter().all(|&(subject, family)| {
+                                descriptors
+                                    .iter()
+                                    .find(|&&(candidate, descriptor)| {
+                                        candidate == subject && descriptor.id == family
+                                    })
+                                    .is_some_and(|&(_, descriptor)| permits(subject, descriptor))
+                            })
+                    },
+                )
+            };
+        // Audit fresh attachment separately from existing-subject effects: a
+        // new helper's eventual owner can activate a later owner-scoped family.
+        // Detached roots are harmless here; adopting them after materialization
+        // requires the existing ownership capability and its global guard.
+        let mut proposed_owners: BTreeMap<ElementId, BTreeSet<ElementId>> = BTreeMap::new();
+        for (&owner, record) in &self.graph.records {
+            for property in [
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            ] {
+                for value in record
+                    .slots
+                    .get(&property)
+                    .into_iter()
+                    .flat_map(|slot| slot.values())
+                {
+                    if let Value::Reference(child) = value {
+                        proposed_owners.entry(*child).or_default().insert(owner);
+                    }
+                }
+            }
+        }
+        for (&owner, children) in &self.graph.attachments {
+            for child in children {
+                proposed_owners.entry(*child).or_default().insert(owner);
+                if model.element(*child).is_some()
+                    && !model
+                        .incoming_for_property(*child, p::ELEMENT_OWNED_RELATIONSHIP)
+                        .any(|incoming| incoming.source == owner)
+                {
+                    let permitted = every_emitter(*child, &|subject, descriptor| {
+                        descriptor.effects.contains(&ProducerEffect::Ownership)
+                            && descriptor.affects_subject(model, *child)
+                            && fresh_attachment_root_in_scope(
+                                model,
+                                subject,
+                                *child,
+                                descriptor.scope,
+                            )
+                    });
+                    if !permitted {
+                        return Err(audit_failure(
+                            "existing relationship adoption", FactKey::Element(*child),
+                            self.graph.records.get(child).map_or_else(
+                                || rule_id(self.graph.profile, "structural-result-ownership/1"), |record| record.key.rule),
+                            self.graph.producer_sources.get(child).and_then(|sources| sources.first()).map(|source| source.0), *child,
+                            "a new owner of an existing carrier requires an applicable ownership contract".into(),
+                        ));
+                    }
+                }
+            }
+        }
+        for (&fresh, record) in &self.graph.records {
+            if model.element(fresh).is_some() {
+                continue;
+            }
+            let creation_permitted = every_emitter(fresh, &|_subject, descriptor| {
+                owns_rule(descriptor, record.key.rule, record.key.subject)
+                    && descriptor.can_create_subjects()
+            });
+            if !creation_permitted {
+                return Err(audit_failure(
+                    "fresh subject creation",
+                    FactKey::Element(fresh),
+                    record.key.rule,
+                    self.graph
+                        .producer_sources
+                        .get(&fresh)
+                        .and_then(|sources| sources.first())
+                        .map(|source| source.0),
+                    fresh,
+                    "no applicable, attributed contract permits subject creation".into(),
+                ));
+            }
+            let mut visited = BTreeSet::new();
+            let mut pending = vec![fresh];
+            while let Some(current) = pending.pop() {
+                if !visited.insert(current) {
+                    continue;
+                }
+                if model.element(current).is_some() {
+                    let permitted = every_emitter(fresh, &|subject, descriptor| {
+                        owns_rule(descriptor, record.key.rule, record.key.subject)
+                            && descriptor.can_create_subjects()
+                            && (!descriptor.scoped_fresh_ownership
+                                || fresh_attachment_root_in_scope(
+                                    model,
+                                    subject,
+                                    current,
+                                    descriptor.scope,
+                                ))
+                    });
+                    if !permitted {
+                        return Err(audit_failure(
+                            "fresh subject ownership", FactKey::Element(fresh), record.key.rule,
+                            Some(record.key.subject), current,
+                            "fresh subject reaches an existing attachment root outside every applicable creation contract".into(),
+                        ));
+                    }
+                } else if let Some(owners) = proposed_owners.get(&current) {
+                    pending.extend(owners);
+                }
+            }
+        }
         for (&(target, property), contribution) in &self.graph.contributed_properties {
             let Some(record) = model.element(target) else {
                 continue;
@@ -1850,7 +1989,7 @@ impl ResultStructurePlan<'_> {
                     Value::Reference(child) if model.element(*child).is_some() => Some(*child),
                     _ => None,
                 }) {
-                    let permitted = descriptors.iter().any(|&(subject, descriptor)| {
+                    let permitted = every_emitter(relationship, &|subject, descriptor| {
                         owns_rule(descriptor, record.key.rule, record.key.subject)
                             && descriptor.effects.contains(&ProducerEffect::Ownership)
                             && descriptor.affects_subject(model, child)
@@ -2026,7 +2165,7 @@ impl ResultStructurePlan<'_> {
                 continue;
             };
             let fresh = model.element(source).is_none();
-            let permitted = descriptors.iter().any(|&(subject, descriptor)| {
+            let permitted = every_emitter(relationship, &|subject, descriptor| {
                 owns_rule(descriptor, record.key.rule, record.key.subject)
                     && descriptor
                         .feature_populations
@@ -2076,6 +2215,24 @@ impl ResultStructurePlan<'_> {
         }
         Ok(())
     }
+    /// Attribute extension outputs to the evaluated producer. This plan-local
+    /// audit metadata never changes canonical derivation keys or provenance.
+    /// Scoped creation contracts require attribution for every new output.
+    pub fn attribute_producer_outputs(
+        &mut self,
+        subject: ElementId,
+        family: ProducerFamilyId,
+        outputs: impl IntoIterator<Item = ElementId>,
+    ) {
+        for element in outputs {
+            self.graph
+                .producer_sources
+                .entry(element)
+                .or_default()
+                .insert((subject, family));
+        }
+    }
+
     /// Record one family's exact query reads as well as evaluation status.
     pub fn record_producer_evaluation_evidence<T>(
         &mut self,
@@ -2253,6 +2410,13 @@ impl ResultStructurePlan<'_> {
                 return Err(DerivationError::DuplicateFact(FactKey::Element(id)));
             }
         }
+        for (id, source) in other.graph.producer_sources {
+            self.graph
+                .producer_sources
+                .entry(id)
+                .or_default()
+                .extend(source);
+        }
         for (id, mut record) in other.graph.records {
             record.explanation = self.graph.evidence_pool.intern_shared(record.explanation);
             self.graph.records.insert(id, record);
@@ -2322,6 +2486,24 @@ impl ResultStructurePlan<'_> {
             contextual_results: self.contextual_results,
         })
     }
+}
+
+fn fresh_attachment_root_in_scope(
+    model: &agq_kernel::ModelView,
+    subject: ElementId,
+    target: ElementId,
+    scope: ProducerEffectScope,
+) -> bool {
+    scope == ProducerEffectScope::Model
+        || scope.includes_subject() && subject == target
+        || matches!(
+            scope,
+            ProducerEffectScope::SubjectAndOwned | ProducerEffectScope::OwnedDescendants
+        ) && owned_below(model, target, subject)
+        || scope == ProducerEffectScope::SubjectAndOwners && owned_below(model, subject, target)
+        || scope == ProducerEffectScope::OwnedParameterFeatures
+            && crate::producer_closure::owned_parameter_scope(model, subject, false)
+                .is_ok_and(|targets| targets.contains(&target))
 }
 
 fn owned_below(model: &agq_kernel::ModelView, source: ElementId, ancestor: ElementId) -> bool {
@@ -2456,6 +2638,7 @@ impl<'m> KerMlQueries<'m> {
             direct_searches: BTreeSet::new(),
             touched_records: BTreeSet::new(),
             contributed_properties: BTreeMap::new(),
+            producer_sources: BTreeMap::new(),
         };
         let mut aggregate = self.result(vec![]);
         let mut contextual_results = vec![];
@@ -3084,6 +3267,7 @@ impl<'m> KerMlQueries<'m> {
                     // Valuation typing and its helper chain are independent of
                     // the later binding domain. Freeze their exact evidence
                     // before observing variable featuring or contextual reads.
+                    graph.attribute_touched(subject, ProducerFamily::FeatureValuation.id());
                     graph.retain_producer_searches(&mut proof);
                     structural_proof.merge(proof.clone());
                     if let Some((expression, raw, rule, contextual)) = prepared {
@@ -3192,6 +3376,7 @@ impl<'m> KerMlQueries<'m> {
                             }
                         }
                     }
+                    graph.attribute_touched(subject, ProducerFamily::FeatureValue.id());
                     graph.retain_producer_searches(&mut proof);
                     binding_proof.merge(proof);
                 }

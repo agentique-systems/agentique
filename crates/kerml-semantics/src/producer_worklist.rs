@@ -304,6 +304,7 @@ impl ProducerFamily {
             }
             _ => ProducerEffectScope::Subject,
         };
+        descriptor.scoped_fresh_ownership = true;
         descriptor
     }
     pub const ALL: [Self; 12] = [
