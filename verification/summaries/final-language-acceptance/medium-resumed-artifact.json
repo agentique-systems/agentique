@@ -1,0 +1,34 @@
+{
+  "format": "agq-resumed-medium-artifact-audit/1",
+  "passed": true,
+  "accepted_authority": false,
+  "fresh_uninterrupted_comparison_still_required": true,
+  "report_path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\medium-resumed-handoff\\report.json",
+  "report_sha256": "82acc25a1431d1594e7eeff0120e0b284c92043a32e1ebc225c92aa018a9222a",
+  "helper_source_sha256": "a13c305e07149c6e206ecea75d2c8ea2dd8bd96135d2f67c2fd4e00f896f7701",
+  "elapsed_seconds": 18.203,
+  "evidence": {
+    "journal_sha256": "e52b6ac5a104bbbc6f5d6773d754f5c70426e73621fd94d88448768a25292183",
+    "archive_sha256": "b6e4d1d6b81a66882205dfc9e4584eafd08e0f039af292ae2b279a82f12931a3",
+    "source_identity": "f3c70dc4ea579e1d66b10ab17a3056b3ce7e651e5cea52fe83cabd89be55f7c4",
+    "contributions": 4252,
+    "selected_reference_digest": "cacc79b48c4dd4c27041accb9db39bdac1c34ddcb403f3326b28776be022adfd"
+  },
+  "decoded_state_sha256": "356bc21ebb77764d9748b4bf893950257f4eaaa425dbb5aa0f191b81000b1d82",
+  "decoded_graph_sha256": "5f4b57f00c9d6d5496f56991c1ea1a99bfe73303b638b4534fe7f6812f1e065e",
+  "certificate_digests": {
+    "model_digest": "88f2692c6a800877922abb29da274471457a269b6cefb2f132963729bd514c2f",
+    "semantic_closure_digest": "cf5e0de1ee46a4e9420da9687a0357bf1ee18b8024f63c52b72805a45aa02871",
+    "digest": "56b663e538b7a522b582d9993ea66628a1b31eef20378e395f837bf7551b73eb",
+    "context_contract_digest": "cd352cd6c690b58a54f3816233a824acd76706808a4f3901762f12babe3ad742",
+    "producer_registry_digest": "f543800a5d3b0645d099c7608aa9ea29100307323357b087c2cb8adb68969b70"
+  },
+  "checkpoint_statistics": {
+    "committed_checkpoints": 1,
+    "restored_completed_invocations": 3,
+    "restored_invocations": 4,
+    "skipped_rounds": 60
+  },
+  "command": "python - (stdin driver imports verification/scripts/frontier_artifact_evidence.py and calls checkpoint_evidence(report) once)",
+  "exit_code": 0
+}
