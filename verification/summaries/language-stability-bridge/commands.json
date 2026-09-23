@@ -10269,6 +10269,50 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "target/foundation-integration"
       }
+    },
+    {
+      "name": "bridge-medium-publication-release",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4fdaf2be7ae12e60c103234c10c3d46fe0cfccf7",
+      "working_changes_sha256": "46cd710133d17a3652a58e46d85a8cf329c4049deea38c9bb508b1d78d2e6608",
+      "output_sha256": "16909276da002b06cb812f7711af272f4f5cbeb5dd5f70de4a0711e93c2eb9fd",
+      "duration_seconds": 52.38,
+      "output": "verification/generated/language-stability-bridge/bridge-medium-publication-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
+    },
+    {
+      "name": "bridge-actions-complete-coverage-integrity",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "1867776bfe4640c6539d81b5e7256887d2378580",
+      "working_changes_sha256": "4ae65f768ac70e3674d7ed75f086bf959f679b150d583f008a2be187e8ffbdc2",
+      "output_sha256": "62b47319c3b3acf7c406b09bce4274cc42160bbac51b32fe7f06400c71f96508",
+      "duration_seconds": 0.55,
+      "output": "verification/generated/language-stability-bridge/bridge-actions-complete-coverage-integrity.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [

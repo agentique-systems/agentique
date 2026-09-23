@@ -118,7 +118,7 @@
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 publication; exact Operational v2 SysML Systems parsing and declared lowering. The latest completed eight-document Actions audit has complete references and zero kernel obligations but incomplete producer closure. Full Systems acceptance, language readiness and production modeling workspace remain gated. No full conformance, application migration or execution claim.",
+  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 publication; exact Operational v2 SysML Systems parsing and declared lowering. The latest completed eight-document Actions audit has Complete references, zero kernel obligations and fully closed producer evidence. Full Systems acceptance, language readiness and production modeling workspace remain gated. No full conformance, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": {
     "stage": "structural-runtime-v3",
@@ -549,7 +549,7 @@
     "systems_publication": "not accepted"
   },
   "sysml_systems_library_publication": {
-    "status": "incomplete-producer-closure",
+    "status": "actions-scoped-complete-full-publication-pending",
     "profile": "agentique-sysml-2.0-operational/2",
     "evidence": "verification/summaries/language-stability-bridge/README.md",
     "kerML_dependency": "exact accepted immutable Operational v9 /26; no producer replay",
@@ -561,7 +561,7 @@
     "semantic_authority": "standards/sysml-2.0-operational-semantic-v2.json",
     "authority_decisions_pending": 0,
     "latest_completed_scope": {
-      "run": "actions-end-and-index",
+      "run": "actions-owned-cross-subsetting",
       "documents": [
         "Actions",
         "Connections",
@@ -582,14 +582,15 @@
         "endpoint_mismatch": 0
       },
       "kernel_construction_obligations": 0,
-      "producer_closure": "Incomplete",
+      "producer_closure": "Complete",
       "producer_converged": true,
-      "certificate_fully_closed": false,
-      "incomplete_producer_pairs": 4,
+      "certificate_fully_closed": true,
+      "incomplete_producer_pairs": 0,
       "authority_conflicts": 0,
-      "evidence": "verification/summaries/language-stability-bridge/publication-commands.json"
+      "evidence": "verification/summaries/language-stability-bridge/publication-commands.json",
+      "producer_diagnostics": 0
     },
-    "focused_corrections": "End membership filtering, directed valuation evidence and indexed argument populations pass actual-planner and combined-closure regressions; subsequent corpus acceptance is a separate gate.",
+    "focused_corrections": "Producer closure integration and targeted generic semantic corrections pass matching fixtures, soundness guards and the eight-document Actions corpus gate; medium/full Systems publication remains separate.",
     "full_publication_this_bridge": "not yet run; scoped counts are not full-corpus acceptance",
     "systems_publication": "not accepted",
     "accepted_bindings": false,
