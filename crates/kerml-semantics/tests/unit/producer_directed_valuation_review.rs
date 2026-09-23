@@ -40,7 +40,10 @@ fn evaluation(plan: &ResultStructurePlan<'_>, family: ProducerFamily) -> Complet
         .2
 }
 
-fn reads<'a>(plan: &'a ResultStructurePlan<'_>, family: ProducerFamily) -> &'a [ProducerRead] {
+fn reads<'a>(
+    plan: &'a ResultStructurePlan<'_>,
+    family: ProducerFamily,
+) -> &'a crate::producer_closure::ProducerReads {
     &plan
         .producer_reads
         .iter()
@@ -49,7 +52,7 @@ fn reads<'a>(plan: &'a ResultStructurePlan<'_>, family: ProducerFamily) -> &'a [
         .2
 }
 
-fn result_read(reads: &[ProducerRead]) -> bool {
+fn result_read(reads: &crate::producer_closure::ProducerReads) -> bool {
     reads.contains(&ProducerRead::Owned(id(2), c::RETURN_PARAMETER_MEMBERSHIP))
 }
 

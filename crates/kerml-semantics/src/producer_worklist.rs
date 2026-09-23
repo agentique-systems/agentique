@@ -998,6 +998,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                     .as_ref()
                     .is_none_or(|old| old.digest() != issued.digest());
                 certificate = Some(issued);
+                evaluations.prune_unused_reads();
                 if changed_witness
                     && status
                         .values()
@@ -1065,6 +1066,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             counters.certificate_bytes = issued.storage_bytes();
             Some(issued)
         };
+        evaluations.prune_unused_reads();
         population.extend(new_subjects);
         worklist = match options.strategy {
             PublicationClosureStrategy::Worklist => index

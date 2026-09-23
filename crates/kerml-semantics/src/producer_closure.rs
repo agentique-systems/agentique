@@ -15,9 +15,18 @@ pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
 #[path = "producer_closure_trace.rs"]
 mod trace;
 
+#[path = "producer_read_storage.rs"]
+mod read_storage;
+use read_storage::ProducerReadPool;
+pub(crate) use read_storage::ProducerReads;
+
 #[cfg(test)]
 #[path = "../tests/unit/producer_read_interning.rs"]
 mod read_interning_tests;
+
+#[cfg(test)]
+#[path = "../tests/unit/producer_read_sharing.rs"]
+mod read_sharing_tests;
 
 /// Precise scalar reads coexist with conservative structural population reads.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -40,7 +49,6 @@ pub(crate) enum ProducerRead {
     /// producers, but source reconstruction may change or remove the record.
     Identity(ElementId),
 }
-pub(crate) type ProducerReads = Arc<[ProducerRead]>;
 pub(crate) fn producer_reads<T>(
     answer: &crate::QueryResult<T>,
     model: &ModelView,
@@ -1055,10 +1063,11 @@ impl ProducerRegistry {
 
 /// Compressed evaluation table retained only by the scheduler. The outer index
 /// is one entry per subject; there is no tree node per subject/family pair.
-#[derive(Clone, Debug, Default)]
+#[derive(Debug, Default)]
 pub(crate) struct ProducerEvaluationTable {
     rows: BTreeMap<ElementId, Vec<ProducerEvaluationState>>,
     reads: BTreeMap<ElementId, Vec<(usize, ProducerReads)>>,
+    read_pool: ProducerReadPool,
 }
 impl ProducerEvaluationTable {
     pub(crate) fn invalidate(&mut self, changed: &BTreeSet<ElementId>) {
@@ -1190,9 +1199,9 @@ impl ProducerEvaluationTable {
                     .reads
                     .get(&subject)
                     .and_then(|reads| reads.iter().find(|(family, _)| *family == j))
-                    .map(|(_, reads)| reads.as_ref());
+                    .map(|(_, reads)| reads);
                 if let Some(reads) = reads {
-                    for read in reads {
+                    for read in reads.iter() {
                         // Protected dependency records and their ownership
                         // collections cannot change. Arbitrary inverse/source
                         // relationship searches remain open: local carriers
@@ -1549,19 +1558,18 @@ impl ProducerEvaluationTable {
             if let Some(index) = registry.index(*family) {
                 let entries = self.reads.entry(*subject).or_default();
                 if let Some((_, prior)) = entries.iter_mut().find(|(family, _)| *family == index) {
-                    *prior = prior
-                        .iter()
-                        .chain(reads.iter())
-                        .cloned()
-                        .collect::<BTreeSet<_>>()
-                        .into_iter()
-                        .collect::<Vec<_>>()
-                        .into();
+                    let union = prior.iter().chain(reads.iter()).collect::<BTreeSet<_>>();
+                    *prior = self.read_pool.intern_values(union.into_iter());
                 } else {
-                    entries.push((index, reads.clone()));
+                    entries.push((index, self.read_pool.intern(reads)));
                 }
             }
         }
+    }
+    /// Run after replacing the previous certificate: externally retained rows
+    /// remain live, while the interner alone must not keep obsolete atoms alive.
+    pub(crate) fn prune_unused_reads(&mut self) {
+        self.read_pool.prune();
     }
     pub(crate) fn record(
         &mut self,
@@ -1642,7 +1650,7 @@ pub enum ClosureSource {
 
 impl ProducerClosureCertificate {
     pub(crate) fn evaluation_table(&self) -> ProducerEvaluationTable {
-        ProducerEvaluationTable {
+        let mut table = ProducerEvaluationTable {
             rows: self
                 .subjects
                 .iter()
@@ -1659,7 +1667,14 @@ impl ProducerClosureCertificate {
                 })
                 .collect(),
             reads: self.transport_reads.as_ref().clone(),
+            read_pool: ProducerReadPool::default(),
+        };
+        for row in table.reads.values_mut() {
+            for (_, reads) in row {
+                *reads = table.read_pool.intern(reads);
+            }
         }
+        table
     }
 
     /// Identify the proof boundary for Explain without fabricating a model fact.

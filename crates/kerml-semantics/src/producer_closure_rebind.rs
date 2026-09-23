@@ -79,19 +79,22 @@ impl ProducerClosureCertificate {
         )
     }
 
-    /// Retained scheduler read metadata, outside the compact receipt payload.
-    /// This metadata is optional on trusted restoration; it is not acceptance authority.
+    /// Retained scheduler read payload/reference bytes, outside the compact
+    /// receipt. Shared rows and atoms count once, including Arc counters and
+    /// exclusion slices; allocator and map-node overhead is excluded. This
+    /// optional restoration metadata is not acceptance authority.
     pub fn revalidation_storage_bytes(&self) -> usize {
-        self.transport_reads
+        let rows = self
+            .transport_reads
             .values()
-            .map(|row| {
-                std::mem::size_of_val(row.as_slice())
-                    + row
-                        .iter()
-                        .map(|(_, reads)| std::mem::size_of_val(reads.as_ref()))
-                        .sum::<usize>()
-            })
-            .sum()
+            .map(|row| row.capacity() * std::mem::size_of::<(usize, ProducerReads)>())
+            .sum::<usize>();
+        rows + read_storage::ReadStorage::observe(
+            self.transport_reads
+                .values()
+                .flat_map(|row| row.iter().map(|(_, reads)| reads)),
+        )
+        .bytes()
     }
 }
 
