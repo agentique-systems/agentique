@@ -8,6 +8,7 @@ const WRITER: ProducerFamilyId = ProducerFamilyId::new("Fixture.ComponentWriter"
 struct ReadOnlyFixture {
     provider: ElementId,
     pending_writer: bool,
+    writer_scope: ProducerEffectScope,
 }
 impl PublicationProducerExtension for ReadOnlyFixture {
     fn descriptors(&self) -> Vec<ProducerDescriptor> {
@@ -21,7 +22,8 @@ impl PublicationProducerExtension for ReadOnlyFixture {
             [ProducerEffect::Membership],
             ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
         );
-        writer.scope = ProducerEffectScope::Model;
+        writer.scope = self.writer_scope;
+        writer.scoped_fresh_ownership = true;
         vec![reader, writer]
     }
     fn applies(&self, model: &ModelView, class: MetaclassId) -> bool {
@@ -107,6 +109,7 @@ fn invalid_split_keeps_future_writer_and_negative_search_obligations_open() {
     let extension = ReadOnlyFixture {
         provider: id(1),
         pending_writer: true,
+        writer_scope: ProducerEffectScope::Model,
     };
     let registry = registry(&extension);
     let closure = run(&snapshot, &extension, PublicationWorklistOrder::Fifo);
@@ -157,10 +160,12 @@ fn complete_zero_output_searches_are_bound_even_when_flat_receipt_is_identical()
     let extension = ReadOnlyFixture {
         provider: id(1),
         pending_writer: false,
+        writer_scope: ProducerEffectScope::Model,
     };
     let changed = ReadOnlyFixture {
         provider: id(2),
         pending_writer: false,
+        writer_scope: ProducerEffectScope::Model,
     };
     let registry = registry(&extension);
     let original = run(&snapshot, &extension, PublicationWorklistOrder::Fifo);
@@ -198,6 +203,7 @@ fn audit_identity_is_independent_of_scheduler_order_and_allocation() {
     let extension = ReadOnlyFixture {
         provider: id(1),
         pending_writer: false,
+        writer_scope: ProducerEffectScope::Model,
     };
     let registry = registry(&extension);
     let mut expected = None;
@@ -229,6 +235,7 @@ fn restored_flat_receipt_does_not_supply_new_component_search_evidence() {
     let extension = ReadOnlyFixture {
         provider: id(1),
         pending_writer: false,
+        writer_scope: ProducerEffectScope::Model,
     };
     let registry = registry(&extension);
     let closure = run(&snapshot, &extension, PublicationWorklistOrder::Fifo);
@@ -263,6 +270,7 @@ fn audit_rejects_missing_population_wrong_registry_and_wrong_graph() {
     let extension = ReadOnlyFixture {
         provider: id(1),
         pending_writer: false,
+        writer_scope: ProducerEffectScope::Model,
     };
     let registry = registry(&extension);
     let closure = run(&snapshot, &extension, PublicationWorklistOrder::Fifo);
@@ -294,4 +302,47 @@ fn audit_rejects_missing_population_wrong_registry_and_wrong_graph() {
         certificate.audit_component(&wrong_context, &registry, &subjects),
         Err(ContextError::ProducerClosureMismatch)
     ));
+}
+
+#[test]
+fn disjoint_subject_writer_still_encounters_the_global_membership_proof_guard() {
+    let snapshot = fixture();
+    let extension = ReadOnlyFixture {
+        provider: id(1),
+        pending_writer: true,
+        writer_scope: ProducerEffectScope::Subject,
+    };
+    let registry = registry(&extension);
+    let closure = run(&snapshot, &extension, PublicationWorklistOrder::Fifo);
+    assert!(closure.converged);
+    assert_eq!(closure.completeness, Completeness::Incomplete);
+    let context = context(&closure, &registry);
+    let certificate = closure.certificate.as_ref().unwrap();
+    for family in [READER, WRITER] {
+        assert_eq!(
+            certificate.evaluation(id(1), registry.index(family).unwrap()),
+            Some(ProducerEvaluationState::EvaluatedComplete),
+            "the precise causal analysis does not connect the disjoint later writer to subject 1"
+        );
+    }
+    let audit = certificate
+        .audit_component(&context, &registry, &BTreeSet::from([id(1)]))
+        .unwrap();
+    assert_eq!(audit.applicable_pairs(), audit.closed_pairs());
+    assert!(!audit.local_obligations_closed());
+    assert!(
+        audit
+            .findings()
+            .contains(&ComponentClosureFinding::OpenRequirement {
+                subject: id(1),
+                requirement: SemanticClosureRequirement::EffectiveMembership,
+            })
+    );
+    assert!(
+        audit
+            .findings()
+            .iter()
+            .all(|finding| matches!(finding, ComponentClosureFinding::OpenRequirement { .. })),
+        "only the conservative requirement-footprint guard blocks the earlier component"
+    );
 }

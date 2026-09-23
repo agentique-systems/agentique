@@ -27,6 +27,15 @@ subject 1's reader as Pending and its EffectiveMembership requirement open. A
 proposed component containing only subject 1 fails the audit. Local callback
 success cannot bypass the later writer's effect contract.
 
+A control uses the same pending Membership producer with `Subject` scope and
+scoped fresh ownership. Subject 2 is disjoint from the earlier negative search on
+subject 1. The precise causal analysis now closes both subject 1 evaluations and
+every applicable pair. Nevertheless EffectiveMembership remains open, with only
+open-requirement audit findings. This isolates the existing conservative global
+requirement-footprint guard from the genuinely unsafe model-wide writer case;
+it is a proof-architecture limitation, not evidence of a semantic cycle between
+these two subjects.
+
 Separately, two complete runs with no derived output and identical flat closure
 receipts read different negative populations. Their audit read-evidence digests
 differ. The current compact receipt deliberately omits optional scheduler reads;
@@ -41,9 +50,9 @@ provides it. No proposed component is sealed by this change.
 
 ## Verification
 
-The five actual scheduler tests pass, including invalid split rejection,
-zero-output evidence identity, legal scheduler order permutations, restoration
-evidence limits, and wrong graph/registry/population rejection. Package Clippy
+The six actual scheduler tests pass, including invalid split rejection, its
+disjoint-scope control, zero-output evidence identity, legal scheduler order
+permutations, restoration evidence limits, and wrong graph/registry/population rejection. Package Clippy
 for library/tests with warnings denied and workspace formatting pass.
 
 [Commands and actual outputs](certificate-audit-commands.json) retain the initial
