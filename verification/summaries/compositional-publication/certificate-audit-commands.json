@@ -1,0 +1,58 @@
+{
+    "format":  "agq-compositional-certificate-audit-verification/1",
+    "source_commit":  "527d4c62acbae0459df48e830aedd106b13cf904",
+    "environment":  {
+                        "CARGO_INCREMENTAL":  "0",
+                        "CARGO_BUILD_JOBS":  "1",
+                        "CARGO_PROFILE_DEV_DEBUG":  "0",
+                        "CARGO_PROFILE_TEST_DEBUG":  "0",
+                        "CARGO_TARGET_DIR":  "C:/Users/phili/github/agentique-systems/agentique/target/comp-cert"
+                    },
+    "tested_files":  [
+                         {
+                             "path":  "crates/kerml-semantics/src/producer_closure.rs",
+                             "sha256":  "C9772CA247F9B561D0B81C8A973130F12C02F4CBE11E3898A5DDA6E664FA6807"
+                         },
+                         {
+                             "path":  "crates/kerml-semantics/src/component_closure_audit.rs",
+                             "sha256":  "82AD85B482316A9F85F41D0B3EFEFC69DD5B7401AEBB08607A27ED0DC2D5F1D9"
+                         },
+                         {
+                             "path":  "crates/kerml-semantics/tests/unit/component_closure_audit.rs",
+                             "sha256":  "68270D2DF8FC0F99338BE516D5CE5C424AFEF0E0FC8A71576DDC9A235E87F25F"
+                         }
+                     ],
+    "commands":  [
+                     {
+                         "command":  "cargo test --locked --offline -p agq-kerml-semantics --lib component_closure_audit -- --nocapture",
+                         "exit_code":  101,
+                         "output_sha256":  "D7B8C62D0C77C96EBB9D409FA7003D0783390EC7B096A938B30CD4AFB22625A3",
+                         "output":  "cargo :    Compiling proc-macro2 v1.0.107\r\nAt line:9 char:1\r\n+ cargo test --locked --offline -p agq-kerml-semantics --lib component_ ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (   Compiling proc-macro2 v1.0.107:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n   Compiling quote v1.0.47\r\n   Compiling unicode-ident v1.0.24\r\n   Compiling version_check v0.9.5\r\n   Compiling generic-array v0.14.7\r\n   Compiling syn v3.0.5\r\n   Compiling typenum v1.20.1\r\n   Compiling serde_core v1.0.229\r\n   Compiling autocfg v1.5.1\r\n   Compiling num-traits v0.2.19\r\n   Compiling zmij v1.0.23\r\n   Compiling cfg-if v1.0.5\r\n   Compiling serde v1.0.229\r\n   Compiling getrandom v0.4.3\r\n   Compiling block-buffer v0.10.4\r\n   Compiling crypto-common v0.1.7\r\n   Compiling serde_derive v1.0.229\r\n   Compiling serde_json v1.0.151\r\n   Compiling thiserror v2.0.20\r\n   Compiling digest v0.10.7\r\n   Compiling num-integer v0.1.47\r\n   Compiling thiserror-impl v2.0.20\r\n   Compiling cpufeatures v0.2.17\r\n   Compiling memchr v2.8.3\r\n   Compiling itoa v1.0.18\r\n   Compiling sha1_smol v1.0.1\r\n   Compiling uuid v1.26.1\r\n   Compiling sha2 v0.10.9\r\n   Compiling num-bigint v0.4.8\r\n   Compiling agq-kernel v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\kernel)\r\n   Compiling agq-kerml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\kerml)\r\n   Compiling agq-sysml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\sysml)\r\n   Compiling agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\kerml-semantics)\r\nerror[E0308]: mismatched types\r\n  --\u003e crates\\kerml-semantics\\src\\..\\tests\\unit\\component_closure_audit.rs:40:31\r\n   |\r\n40 |         plan.observe_evidence(negative)?;\r\n   |              ---------------- ^^^^^^^^ expected `QueryResult\u003c()\u003e`, found `QueryResult\u003cVec\u003cElementId\u003e\u003e`\r\n   |              |\r\n   |              arguments to this method are incorrect\r\n   |\r\n   = note: expected struct `contract::QueryResult\u003c()\u003e`\r\n              found struct `contract::QueryResult\u003cVec\u003cagq_kernel::ElementId\u003e\u003e`\r\nnote: method defined here\r\n  --\u003e crates\\kerml-semantics\\src\\result_structure\\contributions.rs:56:12\r\n   |\r\n56 |     pub fn observe_evidence(\u0026mut self, evidence: QueryResult\u003c()\u003e) -\u003e Result\u003c(), DerivationError\u003e {\r\n   |            ^^^^^^^^^^^^^^^^            -------------------------\r\n\r\nFor more information about this error, try `rustc --explain E0308`.\r\nerror: could not compile `agq-kerml-semantics` (lib test) due to 1 previous error\r\n"
+                     },
+                     {
+                         "command":  "cargo test --locked --offline -p agq-kerml-semantics --lib component_closure_audit -- --nocapture",
+                         "exit_code":  0,
+                         "output_sha256":  "53CBA76B9E0608C4704319424F42DA3424FD0A1CB42466C45239716180314197",
+                         "output":  "cargo :    Compiling agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\kerml-semantics)\r\nAt line:8 char:1\r\n+ cargo test --locked --offline -p agq-kerml-semantics --lib component_ ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (   Compiling ag...erml-semantics):String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n    Finished `test` profile [unoptimized] target(s) in 36.61s\r\n     Running unittests src\\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target/comp-cert\\debug\\deps\\agq_kerml_semantics-545605f4b8d80094.exe)\r\n\r\nrunning 0 tests\r\n\r\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 271 filtered out; finished in 0.00s\r\n\r\n"
+                     },
+                     {
+                         "command":  "cargo test --locked --offline -p agq-kerml-semantics --lib component_audit -- --nocapture",
+                         "exit_code":  0,
+                         "output_sha256":  "F799E8397ACBF007B89D0BFF0B87C5A36A08ED6110E91240E9136210DA07D21B",
+                         "output":  "cargo :     Finished `test` profile [unoptimized] target(s) in 0.13s\r\nAt line:8 char:1\r\n+ cargo test --locked --offline -p agq-kerml-semantics --lib component_ ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (    Finished `t...get(s) in 0.13s:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n     Running unittests src\\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target/comp-cert\\debug\\deps\\agq_kerml_semantics-545605f4b8d80094.exe)\r\n\r\nrunning 5 tests\r\ntest producer_closure::component_audit::tests::restored_flat_receipt_does_not_supply_new_component_search_evidence ... ok\r\ntest producer_closure::component_audit::tests::audit_rejects_missing_population_wrong_registry_and_wrong_graph ... ok\r\ntest producer_closure::component_audit::tests::invalid_split_keeps_future_writer_and_negative_search_obligations_open ... ok\r\ntest producer_closure::component_audit::tests::complete_zero_output_searches_are_bound_even_when_flat_receipt_is_identical ... ok\r\ntest producer_closure::component_audit::tests::audit_identity_is_independent_of_scheduler_order_and_allocation ... ok\r\n\r\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 266 filtered out; finished in 0.49s\r\n\r\n"
+                     },
+                     {
+                         "command":  "cargo fmt --all -- --check",
+                         "exit_code":  0,
+                         "output_sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                         "output":  ""
+                     },
+                     {
+                         "command":  "cargo clippy --locked --offline -p agq-kerml-semantics --lib --tests -- -D warnings",
+                         "exit_code":  0,
+                         "output_sha256":  "972F650676F52EE4669B39176E672D240743F7F1BCE4954A8C247F01D40A665A",
+                         "output":  "cargo :     Checking typenum v1.20.1\r\nAt line:8 char:1\r\n+ cargo clippy --locked --offline -p agq-kerml-semantics --lib --tests  ...\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (    Checking typenum v1.20.1:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n    Checking generic-array v0.14.7\r\n    Checking serde_core v1.0.229\r\n    Checking cfg-if v1.0.5\r\n    Checking num-traits v0.2.19\r\n    Checking block-buffer v0.10.4\r\n    Checking crypto-common v0.1.7\r\n    Checking serde v1.0.229\r\n    Checking digest v0.10.7\r\n    Checking num-integer v0.1.47\r\n    Checking getrandom v0.4.3\r\n    Checking zmij v1.0.23\r\n    Checking memchr v2.8.3\r\n    Checking itoa v1.0.18\r\n    Checking cpufeatures v0.2.17\r\n    Checking sha1_smol v1.0.1\r\n    Checking uuid v1.26.1\r\n    Checking sha2 v0.10.9\r\n    Checking serde_json v1.0.151\r\n    Checking thiserror v2.0.20\r\n    Checking num-bigint v0.4.8\r\n    Checking agq-kernel v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\kernel)\r\n    Checking agq-kerml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\kerml)\r\n    Checking agq-sysml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\sysml)\r\n    Checking agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert\\crates\\kerml-semantics)\r\n    Finished `dev` profile [unoptimized] target(s) in 29.63s\r\n"
+                     }
+                 ],
+    "note":  "The first attempt failed to compile a test fixture; the second selected zero tests and is not counted as verification. The corrected third command ran and passed all five tests."
+}

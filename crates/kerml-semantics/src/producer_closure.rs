@@ -12,6 +12,10 @@ use std::sync::Arc;
 mod rebind;
 pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
 
+#[path = "component_closure_audit.rs"]
+mod component_audit;
+pub use component_audit::{ComponentClosureAudit, ComponentClosureFinding};
+
 #[path = "producer_closure_trace.rs"]
 mod trace;
 
