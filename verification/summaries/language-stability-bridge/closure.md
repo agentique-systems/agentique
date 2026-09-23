@@ -1,14 +1,14 @@
 # Producer closure integration and regressions
 
 Current status: focused corrections are integrated; Systems publication and
-language readiness remain unaccepted. The latest completed corpus gate (`d594006`) has
+language readiness remain unaccepted. The latest completed corpus gate (`b4ce4e2`) has
 532/534 Actions references Complete, two Incomplete and zero kernel obligations.
 Following the earlier 499/534 audit, the loop, assertion and receiver regressions close; the receiver
 passed on `55b5af8` in 33.80 seconds. The complete SysML package then passed
 73 tests in 71.38 seconds, including unsupported variation remaining Incomplete.
 The positive-exclusion audit takes 875.047 seconds (exit 1; peak private
 5,209.6 MiB). Trigger `35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6` now has all
-producer evaluations Complete but EffectiveTyping remains open through dependencies.
+producer evaluations Complete but EffectiveTyping remains open.
 The two child positional-redefinition evaluations remain Incomplete. Final
 certificate totals are 6,063 closed pairs and 163 explicitly incomplete; earlier
 intermediate traces are not the final trigger state.
@@ -37,7 +37,7 @@ open; acceptance rejects that certificate, accepts the linked control and reject
 missing subject coverage. The report includes required/closed requirement counts.
 Two coverage tests, four dependency tests, example Clippy and formatting pass;
 exact commands and hashes are in
-[closure-coverage-commands.json](closure-coverage-commands.json). This changes no
+[commands.json](commands.json). This changes no
 producer semantics, accepted identity or cache bytes and performs no replay.
 Read-only preflight also verified normal preparation reaches strict publication,
 accepted reference counts come from its independent audit, all 69 role bindings
@@ -69,13 +69,18 @@ ranges; the retained observation table covers older Markdown-only results.
 | A selected appended relationship fell back to the complete owner-slot proof, importing unrelated snapshot contributions | Kernel per-reference support retains explicit append/adoption proof, only owner/selected-target automatic dependencies, position and batch searches. Broad current reads still merge in either order; search-only updates evict unattributable precision | Kernel `b6bcfaa`; five final independent semantic regressions pass; production `fa3bbdd`, tests `dc888fd` / `7adca6b` (root `4f18a0d`); earlier failed guard/proof assertions are retained in the ledger |
 | A newly created helper's initial two-FeatureChaining slot had no per-reference support, leaving seven receiver producer pairs open | Initial ordered derived slots retain selected target and validated owner creation evidence, including record/slot negative searches. Repeated targets fall back to aggregate evidence. Copy-on-write, construction and dependency paths preserve the optional cache | `4fa87cd` / root `55b5af8`; seven kernel regressions and 119 package tests plus three doc tests pass; receiver test now Complete in 33.80 s |
 | Positive SelfLink/HappensLink/composite Action exclusion imported an unrelated ancestor's mayTimeVary proof | Select a canonical positive specialization witness while retaining owner, scalar and role antecedents. No witness preserves the exhaustive ancestry and negative closure requirements | Reproduction `afb092a` failed for Action and SelfLink; correction `039a035` / root `f15cfca` passes five focused tests, receiver Complete in 27.18 s, all-target SysML Clippy and formatting. Actual corrected corpus: 532/534; trigger own evaluations Complete, transitive typing open |
-| Nonterminal chain typing kept the chain's EffectiveTyping open despite a closed terminal | Typing follows only the canonical last FeatureChaining endpoint. Every endpoint must be established; future chain, ownership and reference-scalar writers remain blockers. Other requirement masks retain all components because featuring uses the head | Reproduction `eff127a`; correction `df11c96` / root `2be4fc9`. Six chain guards and 103 producer tests pass (two existing ignores), as do five accepted-KerML restoration guards, two-package all-target Clippy and formatting. Independent semantic review permits the same bounded Actions audit; corpus result pending |
+| Nonterminal chain typing kept the chain's EffectiveTyping open despite a closed terminal | Typing follows only the canonical last FeatureChaining endpoint. Every endpoint must be established; future chain, ownership and reference-scalar writers remain blockers. Other requirement masks retain all components because featuring uses the head | Reproduction `eff127a`; correction `df11c96` / root `2be4fc9`. Six chain guards and 103 producer tests pass (two existing ignores), as do five accepted-KerML restoration guards, two-package all-target Clippy and formatting. Independent semantic review permits the same bounded Actions audit; actual `b4ce4e2` Actions result remains 532/534, 871.047 seconds, 5,209.3 MiB; initial trigger typing mask remains blocked |
 
 The contribution cache is optional, read-only kernel evidence. Local archives omit
 it without changing canonical bytes; a missing entry requires aggregate query
 fallback and reopens transported selected-support reads. Exact supplied immutable
 dependency entries remain available. Population searches and recursively retained
 positive/negative premises are still required; the cache is not closure authority.
+
+The final chain-correction trace finds Trigger's initial typing mask blocked,
+with no pending/incomplete local typing family and no transitive blocker path.
+Its ancestor's descendant write scope is under investigation; the chain fix
+corrects a proven generic false cycle but does not close this corpus boundary.
 
 The chain correction preserves the EffectiveTyping contract, registry and archive/
 certificate formats; corrected closure bits change the normal certificate digest.
