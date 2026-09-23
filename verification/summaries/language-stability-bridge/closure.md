@@ -642,3 +642,42 @@ Independent review (`4d9c806`) also passes all five FeatureChain scope controls
 and permits bounded integration. The planner footprint, alias/unknown-state
 handling, pending provider guards, output attribution and reconstruction were
 reviewed against the shared selector. It grants no corpus acceptance.
+
+
+The directed-input correction `0c84fce` (regression `8cf95d8`, local source
+`b5e3dd5`) preserves both simple controls but does not yet close the compound
+graph. The same three-test command exited 101: two passed, one failed in 64.63 s
+(75.51 s including compilation), output SHA-256
+`0c9e0d5263697d48e0294d140529398106e24ce2c093fb9151841b2839f77a21`.
+The same filtered compound trace command exited 101 in 32.79 s (33.01 s wall),
+output SHA-256 `1432600d49e2c2c2d6f8e935dcd14bb0a4b00b35391960b4463f320a4d1f0fd4`.
+It retains the single `73011/deriveUsageMayTimeVary` blocker and the broad
+membership reads described above. Inspection identifies a separate broad read
+in `reference_referent`, which selects the first non-parameter membership but
+merges the whole membership population. Merely excluding FeatureMembership
+would alter the existing selection semantics; any refinement must retain exact
+ordering and unresolved/provider guards. No further run or nested-chain
+extension was made before resolving this residual.
+
+First-input population controls preserve exact `in` selection, return memberships,
+canonical order, absent direction and pending/invalid inputs. The private Directed
+projection composes the existing Parameter and Result search contracts; no public
+population kind is added. Two focused tests, two-package all-target Clippy and fmt
+pass (`first-input-population-review.json` source-ledger range).
+
+The actual Index/Select planner writes only its own structural result and fresh
+contextual helpers. Publication-producer profiles enforce that ownership before
+emitting; older profiles retain their original scope. The descriptor now uses
+SubjectAndOwnedResults. Its future-helper ancestry reuses the exact selected
+roots as Feature containment does, retaining conservative fallback for unknown
+endpoints, providers, ownership/reference writers and unscoped creators. Five
+focused tests cover both expression types, the Array guard, inherited-result
+staging, causal readers, effect audit and reconstruction. A descriptor-only
+intermediate correction fixed initial masks but still failed the future-reader
+control; the final shared roots correction closes both. The producer sweep
+passes 129 tests (two existing scale ignores), all-target semantic Clippy and
+formatting pass, and independent review permits bounded integration. Exact
+commands and the initial fixture errors are retained in the
+`index-select-scope-commands.json` source-ledger range. Canonical outputs, rule
+IDs and accepted KerML bytes remain unchanged; the combined descriptor digest
+changes. No corpus result follows from these focused checks.
