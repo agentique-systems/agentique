@@ -4,7 +4,7 @@ use agq_kerml_syntax::production::SysmlSyntaxProfile;
 use agq_kerml_text::{
     library::CanonicalKermlStandardLibraries,
     sysml::{
-        prepare_systems_library_slice_with_semantic_progress,
+        SYSTEMS_PUBLICATION_MAX_ROUNDS, prepare_systems_library_slice_with_semantic_progress,
         prepare_systems_library_with_semantic_progress,
     },
 };
@@ -397,7 +397,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "formal_target":conflict.formal_target,"original_declaration":conflict.original_declaration,
         })).collect::<Vec<_>>(),
         "documents":documents,
-        "construction_producers":candidate.production().map(|production|json!({"final_predicates":production.final_predicates,"completeness":format!("{:?}",production.completeness),"converged":production.converged,"rounds":production.counters.fixed_point_rounds,"subjects_evaluated":production.counters.subjects_evaluated,"derived_elements":production.counters.new_elements_proposed,"closure_counters":closure_counters(&production.counters),"diagnostics":production.stages.last().map(|stage|stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>())})), "publication_accepted":false,
+        "construction_producers":candidate.production().map(|production|json!({"final_predicates":production.final_predicates,"completeness":format!("{:?}",production.completeness),"converged":production.converged,"rounds":production.counters.fixed_point_rounds,"round_limit":SYSTEMS_PUBLICATION_MAX_ROUNDS,"round_limit_reached":!production.converged && production.counters.fixed_point_rounds >= SYSTEMS_PUBLICATION_MAX_ROUNDS,"subjects_evaluated":production.counters.subjects_evaluated,"derived_elements":production.counters.new_elements_proposed,"closure_counters":closure_counters(&production.counters),"diagnostics":production.stages.last().map(|stage|stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>())})), "publication_accepted":false,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
     });
     drop(queries);
@@ -426,7 +426,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::publish(
         candidate,
         &sources,
-        Default::default(),
+        agq_kerml_semantics::PublicationClosureOptions {
+            max_rounds: SYSTEMS_PUBLICATION_MAX_ROUNDS,
+            ..Default::default()
+        },
         |round, done, total, planned| {
             if done.is_multiple_of(256) || done == total {
                 println!(

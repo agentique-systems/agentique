@@ -1606,6 +1606,99 @@ fn resource_limit_does_not_claim_closure() {
     assert_eq!(result.completeness, Completeness::Incomplete);
 }
 
+#[test]
+fn stratum_handoff_needs_budget_and_sufficient_limits_preserve_complete_outputs() {
+    // The same function/result/reference shape exercised by the full-scan
+    // comparison below, without a standard-library cache or fixture anchors.
+    let base = Snapshot::new(Arc::new(
+        agq_kerml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8).unwrap(),
+    ));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(1, c::FUNCTION);
+    f.create(2, c::FEATURE_REFERENCE_EXPRESSION);
+    for n in [3, 4, 5] {
+        f.create(n, c::FEATURE);
+    }
+    member(&mut f, 1, 2, 101, c::RESULT_EXPRESSION_MEMBERSHIP);
+    member(&mut f, 2, 3, 102, c::RETURN_PARAMETER_MEMBERSHIP);
+    member(&mut f, 1, 4, 103, c::FEATURE_MEMBERSHIP);
+    member(&mut f, 1, 5, 104, c::RETURN_PARAMETER_MEMBERSHIP);
+    f.enumeration(3, p::FEATURE_DIRECTION, "out");
+    f.enumeration(5, p::FEATURE_DIRECTION, "out");
+    relation(
+        &mut f,
+        2,
+        4,
+        105,
+        c::MEMBERSHIP,
+        p::MEMBERSHIP_MEMBER_ELEMENT,
+    );
+    type_featuring(&mut f, 2, 1, 106);
+    let snapshot = f.finish();
+    let run = |max_rounds| {
+        close(
+            &snapshot,
+            None,
+            PublicationClosureOptions {
+                max_rounds,
+                ..Default::default()
+            },
+        )
+    };
+    let sufficient = run(64);
+    assert!(sufficient.converged, "{:?}", sufficient.stages);
+    assert_eq!(sufficient.completeness, Completeness::Complete);
+    assert!(
+        sufficient
+            .certificate
+            .as_ref()
+            .unwrap()
+            .is_fully_closed(sufficient.overlay.model())
+    );
+    let handoff = sufficient
+        .stages
+        .iter()
+        .find(|stage| stage.stratum == ResultStructureStratum::ContextualBindings)
+        .expect("the fixture must require deferred contextual bindings")
+        .stage;
+    assert!(handoff > 0);
+    let limited = run(handoff);
+    assert_eq!(limited.counters.fixed_point_rounds, handoff);
+    assert!(!limited.converged);
+    assert_eq!(limited.completeness, Completeness::Incomplete);
+    assert_eq!(limited.stages.last().unwrap().added_elements, 0);
+    assert_ne!(
+        limited.stages.last().unwrap().stratum,
+        ResultStructureStratum::ContextualBindings
+    );
+    assert!(
+        !limited
+            .certificate
+            .as_ref()
+            .unwrap()
+            .is_fully_closed(limited.overlay.model())
+    );
+    // Spending exactly the observed necessary budget and allowing a larger
+    // ceiling must retain the same canonical IDs, facts and proof identities.
+    let completed = run(sufficient.counters.fixed_point_rounds);
+    assert!(
+        completed
+            .certificate
+            .as_ref()
+            .unwrap()
+            .is_fully_closed(completed.overlay.model())
+    );
+    compare(&sufficient, &completed, None);
+    assert_eq!(
+        sufficient.certificate.as_ref().unwrap().digest(),
+        completed.certificate.as_ref().unwrap().digest()
+    );
+}
+
 struct AdditionalSpecialization {
     general: ElementId,
 }

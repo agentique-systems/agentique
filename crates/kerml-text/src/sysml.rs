@@ -46,6 +46,13 @@ mod tests;
 #[path = "sysml_views_shape_tests.rs"]
 mod views_shape_tests;
 
+/// Resource budget for combined Systems publication preparation and its normal
+/// strict acceptance run. Structural, stable-property and contextual-binding
+/// frontiers share this budget, including certificate-driven reevaluations.
+/// Exhaustion remains Incomplete; this changes no semantic acceptance criterion
+/// or generic KerML scheduler default. Explicit publication options are honored.
+pub const SYSTEMS_PUBLICATION_MAX_ROUNDS: usize = 64;
+
 /// Exact-source construction status, never a Systems Library publication claim.
 #[derive(Clone, Debug)]
 pub struct SystemsDocumentStatus {
@@ -466,7 +473,10 @@ fn prepare_systems_library_scope(
                     let mut reopened_closure_evaluations = 0;
                     let closure = agq_kerml_semantics::close_construction_structure_with_extension(
                         current.candidate_shared(),
-                        Default::default(),
+                        agq_kerml_semantics::PublicationClosureOptions {
+                            max_rounds: SYSTEMS_PUBLICATION_MAX_ROUNDS,
+                            ..Default::default()
+                        },
                         |overlay| {
                             let context = systems_overlay_context(
                                 overlay,
