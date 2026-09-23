@@ -393,3 +393,43 @@ audit: requested exit 124, 177.437 seconds, 2,743.0 MiB peak private memory. No
 authored construction/query verdict was produced. The unused experimental harness
 is not integrated; all three actual command records are retained in the
 `accepted-trigger-probe-commands.json` source-ledger range of `commands.json`.
+
+The final `actions-sealed-proof` audit resolves all 534 scoped mandatory references,
+but its remaining 103 incomplete producer pairs do not establish publication
+acceptance. Source-only parsing maps 42 residual subjects to `EmptyFeature`, which
+the SysML frontend lowers to **ReferenceUsage**, not plain KerML Feature. In
+Items.sysml:86, `00719337` is the direct return of `contains(...)`; `017049d9` is
+the return of nested FeatureReferenceExpression `inter` in
+`inter.intersectionsOf`. Both are owned through ReturnParameterMembership with
+output direction. The four FeatureValue diagnostics concern Actions.sysml:63
+`(that as Action).this`, :220 `aState.aTransition.accepter.acceptedMessage`, :518
+`seq#(index)`, and Items.sysml:103 `isEmpty(voids)`; all require complete featuring
+domains. This mapping does not prove one common cause for the other concrete
+end/occurrence usages.
+
+Test-only `0338c59` (base `83ca429`) models `isSolid = isEmpty(voids)` over genuinely
+closed synthetic dependency layers. Both variants remain red: plain Feature
+results leave three incomplete pairs; frontend-equivalent ReferenceUsage results
+leave five. The latter exposes direct invocation result typing and nested result
+snapshot failures. Its causal trace shows Invocation reading nested expression/
+result populations and mayTimeVary depending on the same subject's
+VariableFeaturing through the derived mayTimeVary property. Descriptor/proof
+corrections require a separate passing verification; no production code or
+accepted cache was changed by this diagnosis.
+
+| Exact observed command | Result | Exit |
+| --- | --- | --- |
+| `target/foundation-evidence/debug/examples/sysml_diagnostic_sources.exe verification/generated/language-stability-bridge/actions-sealed-proof/diagnostic-subjects.json` | Existing parser-only binary; 103 exact source locators; 9.80 s | 0 |
+| `cargo test -p agq-sysml-semantics --lib expression_usage_tests -- --nocapture` | Test implementation in `0338c59`, before formatting; 2 failed, 15.87 s | 101 |
+| `cargo test -p agq-sysml-semantics --lib tests::producer_tests::expression_usage_tests::invocation_value_with_frontend_reference_usage_results_closes -- --exact --nocapture` | Same test source, `AGQ_PRODUCER_CAUSAL_TRACE=1`; 1 failed, 15.93 s | 101 |
+| `cargo fmt --all -- --check` and `git diff --check` | `0338c59`; no output | 0 |
+
+Raw ignored output SHA-256 values: source locators
+`a7c9a19866a075d08f78382242f5f0c619207e1398ef5cf3c7af1c799c338cfd`;
+paired test `a281692257c3990205f9aa276fec7915c51e386866277c731b73401acb4a968e`;
+causal trace `1578eb8f10dcecbc63cf2aac3c7993590a9800d8da70827210c71923785eaebb`.
+The first source adapter attempt contained a UTF-8 BOM and exited 1 before parsing;
+the corrected input used UTF-8 without BOM. An initial unqualified `--exact` test
+filter selected zero tests and establishes no result. The qualified rerun above
+is the recorded regression. No graph cache, producer corpus, or publication run
+was used for source mapping.
