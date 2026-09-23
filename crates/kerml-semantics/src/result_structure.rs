@@ -1856,7 +1856,7 @@ impl ResultStructurePlan<'_> {
                                         model,
                                         subject,
                                         *child,
-                                        descriptor.scope,
+                                        descriptor.effect_scope(ProducerEffect::Ownership),
                                     )
                             });
                             if !permitted {
@@ -1886,7 +1886,7 @@ impl ResultStructurePlan<'_> {
                                 model,
                                 subject,
                                 *child,
-                                descriptor.scope,
+                                descriptor.effect_scope(ProducerEffect::Ownership),
                             )
                     });
                     if !permitted {
@@ -1960,33 +1960,36 @@ impl ResultStructurePlan<'_> {
             let permitted = descriptors.iter().any(|&(subject, descriptor)| {
                 owns_rule(descriptor, contribution.explanation.rule, target)
                     && descriptor.affects_subject(model, target)
-                    && descriptor.effects.iter().any(|effect| match effect {
-                        ProducerEffect::Scalar(written) => {
-                            *written == property
-                                || model
-                                    .registry()
-                                    .resolve_property(record.metaclass(), *written)
-                                    .ok()
-                                    .flatten()
-                                    .is_some_and(|resolved| resolved.id == property)
-                        }
-                        _ => false,
+                    && descriptor.effects.iter().any(|effect| {
+                        let scope = descriptor.effect_scope(*effect);
+                        let matches_property = match effect {
+                            ProducerEffect::Scalar(written) => {
+                                *written == property
+                                    || model
+                                        .registry()
+                                        .resolve_property(record.metaclass(), *written)
+                                        .ok()
+                                        .flatten()
+                                        .is_some_and(|resolved| resolved.id == property)
+                            }
+                            _ => false,
+                        };
+                        matches_property
+                            && (scope == ProducerEffectScope::Model
+                                || (scope.includes_subject() && subject == target)
+                                || scope.selected_targets(model, subject, false).is_some_and(
+                                    |targets| {
+                                        targets.is_ok_and(|targets| targets.contains(&target))
+                                    },
+                                )
+                                || (scope == ProducerEffectScope::SubjectAndOwned
+                                    && owned_below(model, target, subject))
+                                || (scope == ProducerEffectScope::OwnedDescendants
+                                    && target != subject
+                                    && owned_below(model, target, subject))
+                                || (scope == ProducerEffectScope::SubjectAndOwners
+                                    && owned_below(model, subject, target)))
                     })
-                    && (descriptor.scope == ProducerEffectScope::Model
-                        || (descriptor.scope.includes_subject() && subject == target)
-                        || descriptor
-                            .scope
-                            .selected_targets(model, subject, false)
-                            .is_some_and(|targets| {
-                                targets.is_ok_and(|targets| targets.contains(&target))
-                            })
-                        || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
-                            && owned_below(model, target, subject))
-                        || (descriptor.scope == ProducerEffectScope::OwnedDescendants
-                            && target != subject
-                            && owned_below(model, target, subject))
-                        || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
-                            && owned_below(model, subject, target)))
             });
             if !permitted {
                 return Err(audit_failure(
@@ -2019,23 +2022,21 @@ impl ResultStructurePlan<'_> {
                     _ => None,
                 }) {
                     let permitted = every_emitter(relationship, &|subject, descriptor| {
+                        let scope = descriptor.effect_scope(ProducerEffect::Ownership);
                         owns_rule(descriptor, record.key.rule, record.key.subject)
                             && descriptor.effects.contains(&ProducerEffect::Ownership)
                             && descriptor.affects_subject(model, child)
-                            && (descriptor.scope == ProducerEffectScope::Model
-                                || (descriptor.scope.includes_subject() && subject == child)
-                                || descriptor
-                                    .scope
-                                    .selected_targets(model, subject, false)
-                                    .is_some_and(|targets| {
-                                        targets.is_ok_and(|targets| targets.contains(&child))
-                                    })
-                                || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
+                            && (scope == ProducerEffectScope::Model
+                                || (scope.includes_subject() && subject == child)
+                                || scope.selected_targets(model, subject, false).is_some_and(
+                                    |targets| targets.is_ok_and(|targets| targets.contains(&child)),
+                                )
+                                || (scope == ProducerEffectScope::SubjectAndOwned
                                     && owned_below(model, child, subject))
-                                || (descriptor.scope == ProducerEffectScope::OwnedDescendants
+                                || (scope == ProducerEffectScope::OwnedDescendants
                                     && child != subject
                                     && owned_below(model, child, subject))
-                                || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
+                                || (scope == ProducerEffectScope::SubjectAndOwners
                                     && owned_below(model, subject, child)))
                     });
                     if !permitted {
@@ -2195,6 +2196,7 @@ impl ResultStructurePlan<'_> {
             };
             let fresh = model.element(source).is_none();
             let permitted = every_emitter(relationship, &|subject, descriptor| {
+                let scope = descriptor.effect_scope(effect);
                 owns_rule(descriptor, record.key.rule, record.key.subject)
                     && descriptor
                         .feature_populations
@@ -2212,20 +2214,19 @@ impl ResultStructurePlan<'_> {
                         || (descriptor.effects.contains(&effect)
                             && (fresh || descriptor.affects_subject(model, source))
                             && (fresh
-                                || descriptor.scope == ProducerEffectScope::Model
-                                || (descriptor.scope.includes_subject() && subject == source)
-                                || descriptor
-                                    .scope
-                                    .selected_targets(model, subject, false)
-                                    .is_some_and(|targets| {
+                                || scope == ProducerEffectScope::Model
+                                || (scope.includes_subject() && subject == source)
+                                || scope.selected_targets(model, subject, false).is_some_and(
+                                    |targets| {
                                         targets.is_ok_and(|targets| targets.contains(&source))
-                                    })
-                                || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
+                                    },
+                                )
+                                || (scope == ProducerEffectScope::SubjectAndOwned
                                     && owned_below(model, source, subject))
-                                || (descriptor.scope == ProducerEffectScope::OwnedDescendants
+                                || (scope == ProducerEffectScope::OwnedDescendants
                                     && source != subject
                                     && owned_below(model, source, subject))
-                                || (descriptor.scope == ProducerEffectScope::SubjectAndOwners
+                                || (scope == ProducerEffectScope::SubjectAndOwners
                                     && owned_below(model, subject, source)))))
             });
             if !permitted {

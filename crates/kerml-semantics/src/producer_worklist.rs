@@ -224,6 +224,11 @@ impl ProducerFamily {
         .into_iter()
         .collect();
         if self == Self::VariableFeaturing {
+            // TypeFeaturing is emitted only on the variable Feature. Snapshot
+            // creation changes its owner's membership, not the owner's featuring.
+            descriptor
+                .effect_scopes
+                .insert(E::Featuring, ProducerEffectScope::Subject);
             // Existing effects concern the variable Feature and its owning
             // Type, never intermediate membership carrier records.
             descriptor.effect_targets = Some(BTreeSet::from([c::TYPE]));

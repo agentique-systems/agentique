@@ -575,7 +575,12 @@ pub struct ProducerDescriptor {
     /// Fresh-subject effects have their separate contract above.
     pub effect_targets: Option<BTreeSet<MetaclassId>>,
     pub applicability: ProducerApplicability,
+    /// Default existing-subject effect scope and fresh attachment envelope.
     pub scope: ProducerEffectScope,
+    /// Exact overrides for individual existing-subject effects. Keys must be
+    /// present in `effects`; fresh-subject effects retain their separate contract.
+    /// Changing an override changes the registry and closure identity.
+    pub effect_scopes: BTreeMap<ProducerEffect, ProducerEffectScope>,
     pub minimum_stratum: ResultStructureStratum,
 }
 impl ProducerDescriptor {
@@ -595,8 +600,16 @@ impl ProducerDescriptor {
             effect_targets: None,
             applicability,
             scope: ProducerEffectScope::SubjectAndOwned,
+            effect_scopes: BTreeMap::new(),
             minimum_stratum: ResultStructureStratum::Structural,
         }
+    }
+    /// Scope of one existing-subject effect, falling back to the default scope.
+    pub fn effect_scope(&self, effect: ProducerEffect) -> ProducerEffectScope {
+        self.effect_scopes
+            .get(&effect)
+            .copied()
+            .unwrap_or(self.scope)
     }
     pub(crate) fn can_create_subjects(&self) -> bool {
         !self.fresh_effects.is_empty()
@@ -625,8 +638,21 @@ fn future_cross_subject_effects(
     registry: &ProducerRegistry,
     model: &ModelView,
 ) -> BTreeSet<ProducerEffect> {
+    let ownership_mutable = registry.descriptors.iter().any(|descriptor| {
+        descriptor.effects.contains(&ProducerEffect::Ownership)
+            || has_reference_scalar(descriptor, model)
+    });
     future_cross_subject_families(registry, model)
-        .flat_map(|descriptor| descriptor.effects.iter().copied())
+        .flat_map(|descriptor| {
+            descriptor.effects.iter().copied().filter(move |&effect| {
+                effect_reaches_future_existing_subjects(
+                    descriptor,
+                    effect,
+                    ownership_mutable,
+                    model,
+                )
+            })
+        })
         .collect()
 }
 fn future_cross_subject_families<'a>(
@@ -639,12 +665,29 @@ fn future_cross_subject_families<'a>(
     });
     registry.descriptors.iter().filter(move |descriptor| {
         descriptor.applicability != ProducerApplicability::Never
-            && (matches!(
-                descriptor.scope,
-                ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
-            ) || has_reference_scalar(descriptor, model)
-                || (ownership_mutable && descriptor.scope.depends_on_ownership()))
+            && descriptor.effects.iter().any(|&effect| {
+                effect_reaches_future_existing_subjects(
+                    descriptor,
+                    effect,
+                    ownership_mutable,
+                    model,
+                )
+            })
     })
+}
+
+fn effect_reaches_future_existing_subjects(
+    descriptor: &ProducerDescriptor,
+    effect: ProducerEffect,
+    ownership_mutable: bool,
+    model: &ModelView,
+) -> bool {
+    let scope = descriptor.effect_scope(effect);
+    matches!(
+        scope,
+        ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
+    ) || reference_scalar(effect, model)
+        || scope.depends_on_ownership() && ownership_mutable
 }
 
 /// Existing subjects reachable by future owner-scoped writers. A fresh subject
@@ -666,7 +709,11 @@ fn future_owner_targets(
                 && (family.effects.contains(&ProducerEffect::Ownership)
                     || has_reference_scalar(family, model)
                     || family.can_create_subjects() && !family.scoped_fresh_ownership
-                    || family.scope == ProducerEffectScope::Model)
+                    || family.scope == ProducerEffectScope::Model
+                    || family
+                        .effects
+                        .iter()
+                        .any(|&effect| family.effect_scope(effect) == ProducerEffectScope::Model))
         })
     {
         return None;
@@ -865,6 +912,13 @@ impl ProducerRegistry {
     ) -> Result<Self, ProducerFamilyId> {
         let mut descriptors: Vec<_> = descriptors.into_iter().collect();
         for descriptor in &mut descriptors {
+            if descriptor
+                .effect_scopes
+                .keys()
+                .any(|effect| !descriptor.effects.contains(effect))
+            {
+                return Err(descriptor.id);
+            }
             if let ProducerApplicability::Subtypes(classes) = &mut descriptor.applicability {
                 classes.sort();
                 classes.dedup();
@@ -885,7 +939,7 @@ impl ProducerRegistry {
             }
         }
         let mut hash = Sha256::new();
-        hash.update(b"agq-producer-registry/5");
+        hash.update(b"agq-producer-registry/6");
         // Debug is deterministic for these ordered value-only declarations;
         // its encoding is versioned by the registry schema above.
         hash.update(format!("{descriptors:?}").as_bytes());
@@ -1213,14 +1267,20 @@ impl ProducerEvaluationTable {
                     |read_subject: &ElementId, reads: &[(ProducerRead, usize)]| {
                         for (read, reader) in reads {
                             if future_families.iter().any(|future| {
-                                if immutable(*read_subject)
-                                    && future.scope != ProducerEffectScope::Model
-                                    && !has_reference_scalar(future, model)
-                                    && !(ownership_mutable && future.scope.depends_on_ownership())
-                                {
-                                    return false;
-                                }
                                 future.effects.iter().any(|&effect| {
+                                    let scope = future.effect_scope(effect);
+                                    if !effect_reaches_future_existing_subjects(
+                                        future,
+                                        effect,
+                                        ownership_mutable,
+                                        model,
+                                    ) || immutable(*read_subject)
+                                        && scope != ProducerEffectScope::Model
+                                        && !reference_scalar(effect, model)
+                                        && !(ownership_mutable && scope.depends_on_ownership())
+                                    {
+                                        return false;
+                                    }
                                     descriptor_changes_read(
                                         future,
                                         effect,
@@ -1266,84 +1326,85 @@ impl ProducerEvaluationTable {
             {
                 affected.append(&mut inverse);
             }
-            let mut consume = |reads: &[(ProducerRead, usize)]| {
-                for (read, reader) in reads {
-                    if descriptor.effects.iter().any(|&effect| {
-                        descriptor_changes_read(
+            for &effect in &descriptor.effects {
+                let scope_kind = descriptor.effect_scope(effect);
+                let mut consume = |reads: &[(ProducerRead, usize)]| {
+                    for (read, reader) in reads {
+                        if descriptor_changes_read(
                             descriptor,
                             effect,
                             read,
                             model,
                             &mutable_feature_populations,
-                        )
-                    }) {
-                        if !blocked.contains(reader)
-                            && trace_pair(subject, subjects[*reader / families])
-                        {
-                            eprintln!(
-                                "closure direct cause {subject}/{} -> {}/{} read={read:?}",
-                                descriptor.id.name(),
-                                subjects[*reader / families],
-                                registry.descriptors[*reader % families].id.name()
-                            );
-                        }
-                        affected.push(*reader);
-                    }
-                }
-            };
-            if descriptor.scope == ProducerEffectScope::Model
-                || has_reference_scalar(descriptor, model)
-                || (ownership_mutable && descriptor.scope.depends_on_ownership())
-            {
-                for reads in readers.values() {
-                    consume(reads);
-                }
-            } else if let Some(targets) = descriptor.scope.selected_targets(
-                model,
-                subject,
-                mutable_feature_populations.contains(&crate::FeaturePopulationKind::Parameter),
-            ) {
-                match targets {
-                    Ok(targets) => {
-                        for target in targets {
-                            if let Some(reads) = readers.get(&target) {
-                                consume(reads);
+                        ) {
+                            if !blocked.contains(reader)
+                                && trace_pair(subject, subjects[*reader / families])
+                            {
+                                eprintln!(
+                                    "closure direct cause {subject}/{} -> {}/{} read={read:?}",
+                                    descriptor.id.name(),
+                                    subjects[*reader / families],
+                                    registry.descriptors[*reader % families].id.name()
+                                );
                             }
+                            affected.push(*reader);
                         }
                     }
-                    Err(()) => {
-                        for (target, reads) in &readers {
-                            if !immutable(*target) {
-                                consume(reads);
-                            }
-                        }
-                    }
-                }
-            } else {
-                let mut scope = vec![subject];
-                let mut seen = BTreeSet::new();
-                while let Some(source) = scope.pop() {
-                    if !seen.insert(source) {
-                        continue;
-                    }
-                    if (descriptor.scope != ProducerEffectScope::OwnedDescendants
-                        || source != subject)
-                        && let Some(reads) = readers.get(&source)
-                    {
+                };
+                if scope_kind == ProducerEffectScope::Model
+                    || reference_scalar(effect, model)
+                    || (ownership_mutable && scope_kind.depends_on_ownership())
+                {
+                    for reads in readers.values() {
                         consume(reads);
                     }
-                    if matches!(
-                        descriptor.scope,
-                        ProducerEffectScope::SubjectAndOwned
-                            | ProducerEffectScope::OwnedDescendants
-                    ) && let Some(children) = owned.get(&source)
-                    {
-                        scope.extend(children);
+                } else if let Some(targets) = scope_kind.selected_targets(
+                    model,
+                    subject,
+                    mutable_feature_populations.contains(&crate::FeaturePopulationKind::Parameter),
+                ) {
+                    match targets {
+                        Ok(targets) => {
+                            for target in targets {
+                                if let Some(reads) = readers.get(&target) {
+                                    consume(reads);
+                                }
+                            }
+                        }
+                        Err(()) => {
+                            for (target, reads) in &readers {
+                                if !immutable(*target) {
+                                    consume(reads);
+                                }
+                            }
+                        }
                     }
-                    if descriptor.scope == ProducerEffectScope::SubjectAndOwners
-                        && let Some(parents) = owners.get(&source)
-                    {
-                        scope.extend(parents);
+                } else {
+                    let mut scope = vec![subject];
+                    let mut seen = BTreeSet::new();
+                    while let Some(source) = scope.pop() {
+                        if !seen.insert(source) {
+                            continue;
+                        }
+                        if (scope_kind != ProducerEffectScope::OwnedDescendants
+                            || source != subject)
+                            && let Some(reads) = readers.get(&source)
+                        {
+                            consume(reads);
+                        }
+                        if matches!(
+                            scope_kind,
+                            ProducerEffectScope::SubjectAndOwned
+                                | ProducerEffectScope::OwnedDescendants
+                        ) && let Some(children) = owned.get(&source)
+                        {
+                            scope.extend(children);
+                        }
+                        if scope_kind == ProducerEffectScope::SubjectAndOwners
+                            && let Some(parents) = owners.get(&source)
+                        {
+                            scope.extend(parents);
+                        }
                     }
                 }
             }
@@ -1796,68 +1857,66 @@ impl ProducerClosureCertificate {
                                     global_block |= requirement.bit();
                                 }
                                 if future_cross_subject_families(registry, model).any(|family| {
-                                    (family.scope == ProducerEffectScope::Model
-                                        || has_reference_scalar(family, model)
-                                        || ownership_mutable && family.scope.depends_on_ownership())
-                                        && family.effects.iter().any(|&effect| {
-                                            requirement.requires_in_model(effect, model)
-                                        })
+                                    family.effects.iter().any(|&effect| {
+                                        let scope = family.effect_scope(effect);
+                                        (scope == ProducerEffectScope::Model
+                                            || reference_scalar(effect, model)
+                                            || ownership_mutable && scope.depends_on_ownership())
+                                            && requirement.requires_in_model(effect, model)
+                                    })
                                 }) {
                                     dependency_global_block |= requirement.bit();
                                 }
                             }
                         }
                     }
-                    let mask = SemanticClosureRequirement::ALL
-                        .into_iter()
-                        .filter(|r| {
-                            descriptor
-                                .effects
-                                .iter()
-                                .any(|&e| r.requires_in_model(e, model))
-                        })
-                        .fold(0, |mask, r| mask | r.bit());
-                    // Other query families have additional domain/member dependencies.
-                    // Until their precise footprint traversal is implemented,
-                    // a relevant unfinished producer conservatively blocks them
-                    // throughout the graph instead of claiming local absence.
-                    global_block |= mask & !SemanticClosureRequirement::EffectiveTyping.bit();
-                    if descriptor.scope == ProducerEffectScope::Model
-                        || has_reference_scalar(descriptor, model)
-                        || ownership_mutable && descriptor.scope.depends_on_ownership()
-                    {
-                        dependency_global_block |= mask;
-                    }
-                    match descriptor.scope {
-                        _ if has_reference_scalar(descriptor, model) => global_block |= mask,
-                        scope if ownership_mutable && scope.depends_on_ownership() => {
-                            global_block |= mask
+                    for &effect in &descriptor.effects {
+                        let scope = descriptor.effect_scope(effect);
+                        let mask = SemanticClosureRequirement::ALL
+                            .into_iter()
+                            .filter(|r| r.requires_in_model(effect, model))
+                            .fold(0, |mask, r| mask | r.bit());
+                        // Other query families have additional domain/member dependencies.
+                        // Until their precise footprint traversal is implemented,
+                        // a relevant unfinished producer conservatively blocks them
+                        // throughout the graph instead of claiming local absence.
+                        global_block |= mask & !SemanticClosureRequirement::EffectiveTyping.bit();
+                        if scope == ProducerEffectScope::Model
+                            || reference_scalar(effect, model)
+                            || ownership_mutable && scope.depends_on_ownership()
+                        {
+                            dependency_global_block |= mask;
                         }
-                        ProducerEffectScope::Model => global_block |= mask,
-                        ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
-                        ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
-                        ProducerEffectScope::OwnedParameterFeatures
-                        | ProducerEffectScope::SubjectAndOwnedResults
-                        | ProducerEffectScope::SubjectAndOwnedFeatures => {
-                            match descriptor
-                                .scope
-                                .selected_targets(model, subject, direction_mutable)
-                                .expect("selected scope")
-                            {
-                                Ok(targets) => {
-                                    for target in targets {
-                                        if let Some(&target) = positions.get(&target) {
-                                            blocked[target] |= mask;
+                        match scope {
+                            _ if reference_scalar(effect, model) => global_block |= mask,
+                            scope if ownership_mutable && scope.depends_on_ownership() => {
+                                global_block |= mask
+                            }
+                            ProducerEffectScope::Model => global_block |= mask,
+                            ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
+                            ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
+                            ProducerEffectScope::OwnedParameterFeatures
+                            | ProducerEffectScope::SubjectAndOwnedResults
+                            | ProducerEffectScope::SubjectAndOwnedFeatures => {
+                                match scope
+                                    .selected_targets(model, subject, direction_mutable)
+                                    .expect("selected scope")
+                                {
+                                    Ok(targets) => {
+                                        for target in targets {
+                                            if let Some(&target) = positions.get(&target) {
+                                                blocked[target] |= mask;
+                                            }
                                         }
                                     }
-                                }
-                                Err(()) => {
-                                    global_block |= mask;
+                                    Err(()) => {
+                                        global_block |= mask;
+                                    }
                                 }
                             }
+                            ProducerEffectScope::SubjectAndOwners => owner_blocks[i] |= mask,
+                            ProducerEffectScope::Subject => blocked[i] |= mask,
                         }
-                        ProducerEffectScope::SubjectAndOwners => owner_blocks[i] |= mask,
-                        ProducerEffectScope::Subject => blocked[i] |= mask,
                     }
                 }
             }
