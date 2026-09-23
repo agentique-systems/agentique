@@ -15,6 +15,15 @@ fn audit_subsetting(
     rule: RuleId,
     registry: &ProducerRegistry,
 ) -> Result<(), PublicationOverlayError> {
+    audit_subsetting_for_subjects(snapshot, rule, registry, &[id(1)])
+}
+
+fn audit_subsetting_for_subjects(
+    snapshot: &Snapshot,
+    rule: RuleId,
+    registry: &ProducerRegistry,
+    scheduled: &[ElementId],
+) -> Result<(), PublicationOverlayError> {
     let queries = KerMlQueries::new(
         SemanticContext::for_snapshot(
             snapshot,
@@ -49,7 +58,7 @@ fn audit_subsetting(
         &evidence,
     )
     .unwrap();
-    plan.validate_declared_effects(&[id(1)], registry)
+    plan.validate_declared_effects(scheduled, registry)
 }
 
 #[test]
@@ -104,6 +113,26 @@ fn inapplicable_rule_owner_cannot_fall_back_to_unclaimed_effect_permissions() {
             Err(PublicationOverlayError::ProducerEffectViolation(_))
         ));
     }
+}
+
+#[test]
+fn rule_claim_checks_key_subject_even_when_another_scheduled_subject_applies() {
+    let rule = RuleId::from_u128(0xfeed06);
+    let mut owner = ProducerDescriptor::new(
+        ProducerFamilyId::new("Fixture.OtherSubject"),
+        [ProducerEffect::Subsetting],
+        ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+    );
+    owner.scope = ProducerEffectScope::Model;
+    let snapshot = subjects();
+    let ordinary = ProducerRegistry::new([owner.clone()]).unwrap();
+    assert!(audit_subsetting_for_subjects(&snapshot, rule, &ordinary, &[id(1), id(3)]).is_ok());
+    owner.derivation_rules = Some(BTreeSet::from([rule]));
+    let claimed = ProducerRegistry::new([owner]).unwrap();
+    assert!(matches!(
+        audit_subsetting_for_subjects(&snapshot, rule, &claimed, &[id(1), id(3)]),
+        Err(PublicationOverlayError::ProducerEffectViolation(_))
+    ));
 }
 
 #[test]
