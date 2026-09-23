@@ -32,7 +32,9 @@ producer evaluations now complete; effective typing remains open.
 The subsequent terminal-only chain correction passes its six regressions and
 103 producer tests but the `b4ce4e2` Actions audit remains 532/534. Bounded
 tracing places the remaining typing block in the trigger's initial mask; the
-ancestor producer write scope is under investigation.
+ancestor producer write scope was reproduced and narrowed to directly owned
+parameters (`bd096ec`). Its six scope guards, 109 producer tests and all 76 SysML
+package tests pass; the corrected corpus audit is pending.
 The text frontend
 package passed 91 tests with two explicit accepted-cache ignores before that fix.
 See [closure.md](closure.md) for the defects, proof boundaries, regressions and

@@ -80,8 +80,9 @@ positive/negative premises are still required; the cache is not closure authorit
 
 The final chain-correction trace finds Trigger's initial typing mask blocked,
 with no pending/incomplete local typing family and no transitive blocker path.
-Its ancestor's descendant write scope is under investigation; the chain fix
-corrects a proven generic false cycle but does not close this corpus boundary.
+The ancestor's descendant scope subsequently reproduced a separate false cycle
+and is narrowed by `bd096ec`; its corpus result is pending. The chain fix
+corrects its own proven generic false cycle without closing the earlier corpus.
 
 The chain correction preserves the EffectiveTyping contract, registry and archive/
 certificate formats; corrected closure bits change the normal certificate digest.
