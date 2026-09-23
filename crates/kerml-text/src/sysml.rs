@@ -28,6 +28,9 @@ pub(crate) use source::{AcceptedSourceDependency, lower_accepted_source};
 #[path = "sysml_index_shape_tests.rs"]
 mod index_shape_tests;
 #[cfg(test)]
+#[path = "sysml_flow_end_shape_tests.rs"]
+mod flow_end_shape_tests;
+#[cfg(test)]
 #[path = "sysml_tests.rs"]
 mod tests;
 
