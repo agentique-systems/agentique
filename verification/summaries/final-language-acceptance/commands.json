@@ -120,6 +120,151 @@
       "duration_seconds": 1.89,
       "output": "verification/generated/final-language-acceptance/frontend-build.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "view-metadata-frontend",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "view_metadata_acceptance_fixture",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eb1dbd457148b0b89d00b4d8b9f05a250907a7e3",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "fd456f0fcc750b06b8e16b6a4518fddfe60d96f394aef941c4c3b3fbc86f86f7",
+      "duration_seconds": 44.05,
+      "output": "verification/generated/final-language-acceptance/view-metadata-frontend.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
+      }
+    },
+    {
+      "name": "view-metadata-shape-diagnosis",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "view_metadata_acceptance_fixture",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eb1dbd457148b0b89d00b4d8b9f05a250907a7e3",
+      "working_changes_sha256": "d9cd0a1d0eac965f495ff0442b2b00c5e43071d63f74befe6526125a912d2b28",
+      "output_sha256": "6603af5018c2fab7642c7d6a0a1165e0219c6b484f215dbcc8d02a7c2541bd0f",
+      "duration_seconds": 15.95,
+      "output": "verification/generated/final-language-acceptance/view-metadata-shape-diagnosis.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
+      }
+    },
+    {
+      "name": "view-metadata-prefix-frontend",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "view_metadata_acceptance_fixture",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eb1dbd457148b0b89d00b4d8b9f05a250907a7e3",
+      "working_changes_sha256": "8ea8c521d04f94c5241a3244a39caf58e1507e9e7131993c1e3a3e0ed91124ba",
+      "output_sha256": "52557ffcefc3fe2060277aff8fccc56458b25ae13475d61086d352d08e194c25",
+      "duration_seconds": 2.12,
+      "output": "verification/generated/final-language-acceptance/view-metadata-prefix-frontend.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
+      }
+    },
+    {
+      "name": "view-metadata-prefix-frontend-fixed",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "view_metadata_acceptance_fixture",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eb1dbd457148b0b89d00b4d8b9f05a250907a7e3",
+      "working_changes_sha256": "5681ba350041fa8e63e7054c72a331f9bb1edce50298d34519999fecda9bf513",
+      "output_sha256": "15169828e3ef739083179129dc3af732c3a1a6609d62ef953bf1c1b3248c7e0d",
+      "duration_seconds": 12.06,
+      "output": "verification/generated/final-language-acceptance/view-metadata-prefix-frontend-fixed.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
+      }
+    },
+    {
+      "name": "independent-self-model-traceability",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "agentique_implementation_traceability_is_separate",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eb1dbd457148b0b89d00b4d8b9f05a250907a7e3",
+      "working_changes_sha256": "5681ba350041fa8e63e7054c72a331f9bb1edce50298d34519999fecda9bf513",
+      "output_sha256": "43cb608eff30d4b8946f6c9ea0c1e2fea99a0a757eb2f4a49414e2c1b396700c",
+      "duration_seconds": 1.56,
+      "output": "verification/generated/final-language-acceptance/independent-self-model-traceability.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
+      }
     }
   ]
 }

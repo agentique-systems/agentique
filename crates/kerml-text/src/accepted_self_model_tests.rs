@@ -28,13 +28,14 @@ fn view_metadata_acceptance_fixture_preserves_real_frontend_classes() {
         ("ArchitectureView", s::VIEW_DEFINITION),
         ("ReviewMetadata", s::METADATA_DEFINITION),
         ("architecture", s::VIEW_USAGE),
-        ("review", s::METADATA_USAGE),
     ] {
         assert_eq!(
             model.element(named(model, name)).unwrap().metaclass(),
-            class
+            class,
+            "{name}"
         );
     }
+    assert_eq!(model.instances(s::METADATA_USAGE, false).unwrap().count(), 1);
 }
 
 fn accepted_view_metadata(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
@@ -74,12 +75,27 @@ fn accepted_view_metadata(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
     let q = revision.sysml_queries().unwrap();
     let inherited = q.effective_usages(authored_named(q.model(), "SpecializedPresentation"));
     complete(&inherited);
+    let metadata = q
+        .model()
+        .elements()
+        .find(|record| {
+            record.metaclass() == s::METADATA_USAGE
+                && matches!(
+                    record.origin(),
+                    Origin::Declared(DeclaredOrigin::Authored { .. })
+                )
+        })
+        .expect("authored prefix MetadataUsage")
+        .id();
     for (definition, usage, role) in [
-        ("ArchitectureView", "architecture", StandardSysmlRole::View),
-        ("ReviewMetadata", "review", StandardSysmlRole::MetadataItem),
+        (
+            "ArchitectureView",
+            authored_named(q.model(), "architecture"),
+            StandardSysmlRole::View,
+        ),
+        ("ReviewMetadata", metadata, StandardSysmlRole::MetadataItem),
     ] {
         let definition = authored_named(q.model(), definition);
-        let usage = authored_named(q.model(), usage);
         let parents = q.effective_supertypes(definition);
         complete(&parents);
         assert!(
@@ -90,11 +106,13 @@ fn accepted_view_metadata(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
         let types = q.effective_usage_types(usage);
         complete(&types);
         assert!(types.value().contains(&definition));
-        assert!(
-            inherited.value().contains(&usage),
-            "inheritance retains original identities"
-        );
     }
+    assert!(
+        inherited
+            .value()
+            .contains(&authored_named(q.model(), "architecture")),
+        "inherited ViewUsage retains its original identity"
+    );
 }
 
 #[test]
