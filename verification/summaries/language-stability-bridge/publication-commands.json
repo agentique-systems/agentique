@@ -170,6 +170,43 @@
         "min_free_disk_bytes": 1073741824
       },
       "output_sha256": "01b0a0ed8b65bc2cd7eb73b398c597aa24f12fb4e7ebc0fc9db797f64c6b4f44"
+    },
+    {
+      "name": "actions-exact-contributions",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-exact-contributions/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "08e4a83d402526fdf298a692f8e4df399285347c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "4b2fa25a-70b3-5cd3-8f2e-d63fc2fa3160,b5c5b6b4-4413-5a08-92bb-5d9a85244d6d,9a58b06c-845d-5a9c-9632-ce3ff269c842,b7597899-b3ac-5da6-a5be-46141714bb05,864cabf4-8d1c-522b-bf8e-58da22285d7b,b7b86df4-8805-553a-bc23-6100f616573c,35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-exact-contributions",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 6248,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 27509678080,
+      "safety_stop": null,
+      "duration_seconds": 894.063,
+      "peak_rss_bytes": 5458296832,
+      "peak_private_bytes": 5541195776,
+      "samples": 894,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "70736a8eb75d2199028ae01125d86be762ae376d727002fd216e41915400736c"
     }
   ]
 }
