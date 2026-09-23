@@ -355,6 +355,45 @@
         "min_free_disk_bytes": 1073741824
       },
       "output_sha256": "ae117bb9f7ddad81e35368f5b17f37d01d289d71c0f33387884451c23072b121"
+    },
+    {
+      "name": "actions-read-origins",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-read-origins/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "83ca429c41bf46bb5faa8eaff273d220b5e22359",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_PRODUCER_READ_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_READ_FAMILIES": "KerML.PositionalRedefinition,KerML.FeatureValuation,KerML.FeatureValue,KerML.VariableFeaturing,deriveUsageMayTimeVary",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "00719337-c7e6-51f4-afa4-7d6328592096,017049d9-963d-5134-ba5b-28eb4045690c,042923d6-97a3-5b93-9d20-b4c1217ad9d9,70506936-f8f9-5057-9e36-37230a4e02df,a1ff5677-154c-54fa-b0b4-78c9a54a3c73,3af5418b-509c-5284-a0ee-019494766fa1,80ea68eb-545d-53d2-81a4-33a860f22b60,c1b4b0c5-c0bb-5c16-bead-506e035c3c25,d32765d8-ddf2-5f1f-9662-a200aefd1b2e"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-read-origins",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 20084,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 26223669248,
+      "safety_stop": "requested",
+      "duration_seconds": 195.766,
+      "peak_rss_bytes": 4711034880,
+      "peak_private_bytes": 4775813120,
+      "samples": 196,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "e189741767a5dd71f694b0862abd21471e94984209954e7816b57a65f93693b1"
     }
   ]
 }

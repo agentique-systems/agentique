@@ -42,6 +42,24 @@ retained facts per search and labels unknown origins. The disabled hook changes
 no evidence or acceptance. Two-package all-target compilation, Clippy and fmt pass;
 records are in the `producer-read-trace-review.json` range of `commands.json`.
 
+The pre-regression integration sweep on clean `a80cd1b` passes all 76 SysML
+semantic tests and 93 text frontend tests (two explicit accepted-cache ignores),
+including doc tests. Exact commands are consolidated from
+`sealed-boundary-integration-commands.json`; these earlier results do not supersede
+the subsequently added red expression fixture. The compiled inverse inventory
+finds only two scalar inverse-storage properties in Published/v9, both already
+using ownership-bounded source searches. Generalizing every inverse query to
+source relationships would be unsound for remote-target carriers; no such change
+was made. The inventory test and fmt pass (`inverse-read-review.json` range).
+
+The `actions-read-origins` diagnostic was deliberately stopped after 195.766
+seconds (requested exit 124, 4,554.6 MiB peak private memory), without a final
+semantic result. Existing `closure future cause` records identify the remaining
+global edge: pending subject creators activate hypothetical future owner writers
+against unrelated read targets. This is now covered by a focused regression;
+no medium/full attempt was consumed. The latest completed corpus counts above
+remain authoritative until a corrected scoped run completes.
+
 These synthetic fixtures use genuinely closed
 layered dependencies, not fabricated accepted standard publications.
 

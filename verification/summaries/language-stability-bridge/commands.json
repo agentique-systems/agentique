@@ -4858,6 +4858,112 @@
         "CARGO_PROFILE_RELEASE_LTO": "false",
         "CARGO_PROFILE_RELEASE_DEBUG": "0"
       }
+    },
+    {
+      "name": "sealed-boundary-sysml-semantics-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a80cd1b798a0e53fe778bced1193a17df29b1318",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "1b4deb94fef1783fe0236d12b7d6a255bb0ef5123045357a5e357237b2e92742",
+      "duration_seconds": 239.14,
+      "output": "verification/generated/language-stability-bridge/sealed-boundary-sysml-semantics-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "sealed-boundary-kerml-text-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a80cd1b798a0e53fe778bced1193a17df29b1318",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "a65ecc0e19649a0d46daf8584b79da0347b23e9854cdd8b6aaa7b5bd87389740",
+      "duration_seconds": 250.95,
+      "output": "verification/generated/language-stability-bridge/sealed-boundary-kerml-text-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "inverse-storage-inventory",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "scalar_inverse_inventory_is_ownership_bounded",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "1348cab5c12fc3c5ef6a687b21bf4dccb0393daa",
+      "working_changes_sha256": "f7c8d7d49e4f79b5e591dbd94e24dc785695b5da0f1f025342ecbc4eccbe7777",
+      "output_sha256": "320f29f4a49468072bf057e6c3ef7aa81e8767ac535a652f13a9fcbe43e7fa86",
+      "duration_seconds": 15.99,
+      "output": "verification/generated/language-stability-bridge/inverse-storage-inventory.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "inverse-storage-inventory-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2d845465864737ed429567d2417320132842abee",
+      "working_changes_sha256": "073d20efd0c12c2a31919ce21c4fc7dfbab05e22d087ab4b213a663077eba893",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.44,
+      "output": "verification/generated/language-stability-bridge/inverse-storage-inventory-fmt.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
     }
   ],
   "source_ledgers": [
@@ -5028,6 +5134,20 @@
       "source_blob_sha256": "db0a9d412565d331073d207c2b3ec560595ee98cad70a212950799575b02c14b",
       "first_command": 175,
       "command_count": 3
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/sealed-boundary-integration-commands.json",
+      "source_commit": "296c0671adf6404825dcbdd72b5aa2a7eff98200",
+      "source_blob_sha256": "788477bd5ddc76c82d1f50900febc6b0e155dd202aa83423bfcc738330e1c01e",
+      "first_command": 179,
+      "command_count": 2
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/inverse-read-review.json",
+      "source_commit": "59b0fcd8381ef3ebbcdeeebcfb4d9bd5c3799561",
+      "source_blob_sha256": "8096b534ffb5a31d7f6746ebf792da1e1982d68545967aaec360ae0b55bf3098",
+      "first_command": 181,
+      "command_count": 2
     }
   ]
 }
