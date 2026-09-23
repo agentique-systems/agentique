@@ -8,6 +8,10 @@ use agq_kernel::{
 };
 use std::collections::BTreeSet;
 
+#[cfg(test)]
+#[path = "../tests/unit/reference_prefix.rs"]
+mod reference_prefix_tests;
+
 /// A connector check retains ordinary and operational endpoint decisions separately.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConnectorFeaturing {
