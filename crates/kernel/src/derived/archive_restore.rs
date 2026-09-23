@@ -193,6 +193,39 @@ fn restore(
             }
         }
     }
+    // Selected ordered supports are independently retained evidence. They may
+    // narrow an aggregate slot proof, but may never introduce an unsupported
+    // dependency or a search absent from that slot/element's complete evidence.
+    // Subset validation also inherits the aggregate proof's cycle check below.
+    for (&(element, property, _), contribution) in &model.reference_contributions {
+        let fact = FactKey::Property { element, property };
+        let Some(Origin::Derived(aggregate)) =
+            model.navigation_slot(element, property).map(Slot::origin)
+        else {
+            return Err(ArchiveError::Invalid(
+                "ordered contribution has no inferred slot",
+            ));
+        };
+        if !contribution
+            .explanation()
+            .dependencies
+            .is_subset(&aggregate.dependencies)
+        {
+            return Err(ArchiveError::Invalid(
+                "ordered contribution has unsupported proof dependencies",
+            ));
+        }
+        let slot_searches = model.searches.get(&fact);
+        let element_searches = model.searches.get(&FactKey::Element(element));
+        if contribution.searches().iter().any(|search| {
+            !slot_searches.is_some_and(|searches| searches.contains(search))
+                && !element_searches.is_some_and(|searches| searches.contains(search))
+        }) {
+            return Err(ArchiveError::Invalid(
+                "ordered contribution has unsupported search evidence",
+            ));
+        }
+    }
     let mut search_pool = StructuralSearchPool::default();
     for (fact, searches) in &mut model.searches {
         if !explanations.contains_key(fact) {

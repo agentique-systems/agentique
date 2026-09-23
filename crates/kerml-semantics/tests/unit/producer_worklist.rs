@@ -1,6 +1,9 @@
 use crate as agq_kerml_semantics;
 include!("../common/result_fixture.rs");
 
+#[path = "publication_frontier.rs"]
+mod frontier_tests;
+
 fn variable_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
     let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));

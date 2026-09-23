@@ -42,6 +42,33 @@ target `target/bridge-self-model`, `CARGO_PROFILE_DEV_DEBUG=0`,
 | `cargo check -p agq-kerml-text` | 0 | Finished dev profile in 1.00s |
 | `cargo fmt --all` | 0 | No output |
 
-Focused frontier equivalence/tamper tests are the next stage gate. This compiler
-record does not claim checkpoint semantic equivalence, medium acceptance or
-Systems publication acceptance.
+Focused equivalence and tamper stage gates now pass with the integrated
+incremental certificate builder and round instrumentation. The four scheduler
+tests include externally interrupting actual Structural-to-ContextualBindings
+work, restoring it, and comparing canonical records, ordered contributions,
+proof/search sets, query answers, certificate rows/read transport and digests.
+Both strict and construction frontiers are exercised. A two-invocation session
+restores its earlier completed invocation without producer replay, then resumes
+the unfinished construction invocation. Changed source pins, initial graphs,
+semantic contexts, journal bytes and archive bytes are rejected.
+
+The kernel archive group passes 9 tests, including exact frontier roundtrips,
+retained construction deficits/protected dependency sharing, legacy archive byte
+compatibility, and missing/cyclic selected-contribution evidence rejection.
+All 38 active producer-worklist regressions pass; the two explicitly ignored
+scale probes are unchanged. The four checkpoint tests also pass with
+`AGQ_CERTIFICATE_VERIFY_FULL_REBUILD=1`, comparing incremental and reference
+certificate issuance throughout uninterrupted and resumed computations.
+
+Checkpoint serialization streams logical read rows from borrowed storage and
+retains only a unique-atom lookup, rather than copying every row into index
+vectors. The transport digest streams atom hashes. Resume releases the obsolete
+initial overlay before decoding the saved successor. The journal uses a synced
+temporary file followed by rename; partial writes cannot occupy its final
+content-addressed pathname. Existing graph/journal objects are authenticated
+before reuse. Decoded-stream pins prevent a hash-then-reopen race from changing
+the restored state or graph.
+
+Actual focused command results are in `checkpoint-commands.json`. Medium
+uninterrupted/resumed corpus equivalence and full Systems acceptance remain lead
+integration gates; this record does not assert either outcome.

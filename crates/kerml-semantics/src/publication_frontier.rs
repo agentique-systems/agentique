@@ -64,7 +64,7 @@ struct Entry {
 /// Exact state at the start of the next round; the graph contains all writes
 /// from the completed frontier. Observational timing is never resume authority.
 #[derive(Serialize, Deserialize)]
-pub(super) struct State {
+pub(super) struct State<Certificate = FrontierCertificate> {
     pub round: usize,
     pub converged: bool,
     pub stratum: ResultStructureStratum,
@@ -78,7 +78,7 @@ pub(super) struct State {
     pub seen: BTreeSet<ElementId>,
     pub deferred_bindings: BTreeSet<ElementId>,
     pub dependencies: BTreeMap<ElementId, Box<[InvalidationKey]>>,
-    pub certificate: FrontierCertificate,
+    pub certificate: Certificate,
     /// Evaluations are separately retained: certificate causal closure can mark
     /// an evaluated row pending without discarding its recorded evaluation.
     pub evaluation_rows: Vec<(ElementId, Vec<u8>)>,
@@ -282,6 +282,9 @@ impl PublicationFrontierSession {
 }
 
 impl Invocation<'_> {
+    pub(super) fn has_saved_frontier(&self) -> bool {
+        self.previous.is_some()
+    }
     pub(super) fn should_capture(
         &self,
         round: usize,
@@ -325,26 +328,29 @@ impl Invocation<'_> {
         if graph_reader.digest() != entry.graph_sha256 {
             return Err(failure("decoded frontier graph authentication mismatch"));
         }
+        Ok(Some((overlay, state)))
+    }
+
+    pub(super) fn restored(&self, round: usize, stratum: ResultStructureStratum, converged: bool) {
         self.session
             .restored_invocations
             .fetch_add(1, Ordering::Relaxed);
         self.session
             .restored_completed_invocations
-            .fetch_add(usize::from(state.converged), Ordering::Relaxed);
+            .fetch_add(usize::from(converged), Ordering::Relaxed);
         self.session
             .skipped_rounds
-            .fetch_add(state.round, Ordering::Relaxed);
+            .fetch_add(round, Ordering::Relaxed);
         eprintln!(
             "Publication checkpoint restored: invocation={} round={} stratum={:?} converged={}",
-            self.index, state.round, state.stratum, state.converged
+            self.index, round, stratum, converged
         );
-        Ok(Some((overlay, state)))
     }
 
-    pub(super) fn capture<O: ProducerFrontier>(
+    pub(super) fn capture<O: ProducerFrontier, C: Serialize>(
         &self,
         overlay: &O,
-        state: &State,
+        state: &State<C>,
     ) -> Result<(), PublicationOverlayError> {
         static TEMP: AtomicUsize = AtomicUsize::new(0);
         let temp = self.session.directory.join(format!(
@@ -415,13 +421,20 @@ impl Invocation<'_> {
             .directory
             .join(format!("journal-{}.json", hex(journal_digest)));
         if !path.exists() {
+            let pending = self.session.directory.join(format!(
+                "journal-{}-{}.tmp",
+                std::process::id(),
+                TEMP.fetch_add(1, Ordering::Relaxed)
+            ));
             let mut file = OpenOptions::new()
                 .write(true)
                 .create_new(true)
-                .open(&path)
+                .open(&pending)
                 .map_err(failure)?;
             file.write_all(&bytes).map_err(failure)?;
             file.sync_all().map_err(failure)?;
+            drop(file);
+            std::fs::rename(&pending, &path).map_err(failure)?;
         } else if digest_file(&path)? != journal_digest {
             return Err(failure("frontier immutable journal collision"));
         }

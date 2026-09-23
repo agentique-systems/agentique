@@ -1,0 +1,58 @@
+{
+  "format": "agq-verification-commands/1",
+  "scope": "authenticated unaccepted publication frontier continuation",
+  "environment": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
+  },
+  "results": [
+    {
+      "command": "cargo test -p agq-kernel --test archive",
+      "exit_code": 0,
+      "output": "Finished test profile in 6.85s; 9 passed; 0 failed; 0 ignored; finished in 0.03s"
+    },
+    {
+      "command": "cargo test -p agq-kerml-semantics --lib frontier_tests",
+      "exit_code": 0,
+      "output": "Finished test profile in 1m 23s; 3 passed; 0 failed; 0 ignored; 293 filtered out; finished in 2.79s"
+    },
+    {
+      "command": "cargo clippy -p agq-kernel -p agq-kerml-semantics -p agq-kerml-text --all-targets -- -D warnings",
+      "exit_code": 0,
+      "output": "Finished dev profile in 31.89s"
+    },
+    {
+      "command": "cargo test -p agq-kerml-semantics --lib producer_worklist_tests",
+      "environment_extra": { "AGQ_CLOSURE_CERTIFICATE_REFERENCE_VERIFY": "1" },
+      "note": "The named environment variable is unused. Explicit ReferenceFullScan comparison tests did run. This entry does not claim per-certificate oracle mode.",
+      "exit_code": 0,
+      "output": "Finished test profile in 1m 21s; 38 passed; 0 failed; 2 ignored; 256 filtered out; finished in 41.68s"
+    },
+    {
+      "command": "cargo test -p agq-kerml-semantics --lib frontier_tests",
+      "environment_extra": { "AGQ_CLOSURE_CERTIFICATE_REFERENCE_VERIFY": "1" },
+      "note": "Adds construction interruption and sequential invocation recovery; unused environment variable does not enable the oracle.",
+      "exit_code": 0,
+      "output": "Finished test profile in 1m 10s; 4 passed; 0 failed; 0 ignored; 293 filtered out; finished in 4.36s"
+    },
+    {
+      "command": "cargo test -p agq-kerml-semantics --lib frontier_tests",
+      "environment_extra": { "AGQ_CERTIFICATE_VERIFY_FULL_REBUILD": "1" },
+      "exit_code": 0,
+      "output": "Finished test profile in 0.11s; 4 passed; 0 failed; 0 ignored; 293 filtered out; finished in 4.29s"
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "cargo clippy -p agq-kerml-semantics --all-targets -- -D warnings",
+      "exit_code": 0,
+      "output": "Finished dev profile in 20.12s"
+    }
+  ]
+}

@@ -801,6 +801,13 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         let invocation =
             session.begin(initial.id(), &options, extension.has_stable_properties())?;
         drop(initial);
+        if invocation.has_saved_frontier() {
+            // Release the reconstructed initial overlay before decoding its
+            // saved successor; retain only the shared declared/dependency input.
+            overlay = Overlay::empty(input)?;
+            certificate = None;
+            evaluations = Default::default();
+        }
         if let Some((restored, state)) = invocation.restore::<Overlay>(input)? {
             overlay = restored;
             let restored_context = context_factory(&overlay)?
@@ -843,6 +850,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 index.replace_keys(subject, keys.into_iter().collect(), &mut counters);
             }
             counters = state.counters;
+            invocation.restored(first_round, stratum, converged);
         }
         registry = Some(combined);
         Some(invocation)

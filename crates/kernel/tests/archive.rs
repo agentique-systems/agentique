@@ -564,3 +564,121 @@ fn portable_ids_and_source_ranges_survive_json_values_without_numeric_loss() {
     assert!(serde_json::from_value::<ByteRange>(serde_json::json!([8, 3])).is_err());
     assert!(serde_json::from_value::<ElementId>(serde_json::json!("invalid")).is_err());
 }
+
+#[test]
+fn publication_frontier_preserves_ordered_support_without_changing_legacy_archive() {
+    let original = overlay();
+    assert!(original.model().ordered_reference_contributions().count() > 0);
+    let mut bytes = vec![];
+    write_publication_frontier(&original, &mut bytes).unwrap();
+    assert!(
+        read_overlay(Cursor::new(&bytes), registry()).is_err(),
+        "frontier is not an accepted-cache format"
+    );
+    let restored = read_publication_frontier(Cursor::new(&bytes), registry(), None).unwrap();
+    assert!(original.facts().eq(restored.facts()));
+    assert!(
+        original
+            .model()
+            .ordered_reference_contributions()
+            .eq(restored.model().ordered_reference_contributions())
+    );
+    assert!(
+        original
+            .model()
+            .computation_searches()
+            .eq(restored.model().computation_searches())
+    );
+    let mut again = vec![];
+    write_publication_frontier(&restored, &mut again).unwrap();
+    assert_eq!(bytes, again);
+    let mut legacy = vec![];
+    write_overlay(&original, &mut legacy).unwrap();
+    let legacy = read_overlay(Cursor::new(legacy), registry()).unwrap();
+    assert_eq!(legacy.model().ordered_reference_contributions().count(), 0);
+}
+
+#[test]
+fn construction_frontier_roundtrip_keeps_obligations_and_protected_dependency() {
+    let dependency = Arc::new(overlay());
+    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let mut changes = base.change_set();
+    let pending = ElementId::from_u128(750);
+    changes.create(pending, SPECIALIZATION, authored());
+    changes.set(pending, SPECIFIC, scalar_ref(VEHICLE), authored());
+    let declared = Arc::new(base.preview(&changes).unwrap());
+    assert!(!declared.obligations().is_empty());
+    let original = ConstructionDerivationBuilder::for_construction(declared)
+        .build()
+        .unwrap();
+    let mut bytes = vec![];
+    write_construction_frontier(&original, &mut bytes).unwrap();
+    assert!(
+        read_publication_frontier(Cursor::new(&bytes), registry(), Some(dependency.clone()))
+            .is_err()
+    );
+    let restored =
+        read_construction_frontier(Cursor::new(&bytes), registry(), Some(dependency.clone()))
+            .unwrap();
+    assert!(Arc::ptr_eq(
+        restored.declared().immutable_dependency().unwrap(),
+        &dependency
+    ));
+    assert_eq!(original.obligations(), restored.obligations());
+    assert_eq!(
+        original.declared().obligations(),
+        restored.declared().obligations()
+    );
+    assert!(original.model().elements().eq(restored.model().elements()));
+    assert!(
+        original
+            .model()
+            .ordered_reference_contributions()
+            .eq(restored.model().ordered_reference_contributions())
+    );
+    let mut again = vec![];
+    write_construction_frontier(&restored, &mut again).unwrap();
+    assert_eq!(bytes, again);
+    assert!(
+        read_construction_frontier(
+            Cursor::new(&bytes),
+            registry(),
+            Some(Arc::new(
+                DerivationBuilder::new(vertical()).build().unwrap()
+            ))
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn frontier_rejects_selected_support_with_missing_or_cyclic_evidence() {
+    let mut bytes = vec![];
+    write_publication_frontier(&overlay(), &mut bytes).unwrap();
+    let entries: Vec<serde_json::Value> = String::from_utf8(bytes)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    for dependency in [
+        Dependency::Declared(FactKey::Element(ElementId::from_u128(99999))),
+        Dependency::Derived(FactKey::Property {
+            element: OWNS,
+            property: SOURCES,
+        }),
+    ] {
+        let mut changed = entries.clone();
+        let next_proof = changed
+            .iter()
+            .filter(|entry| entry.get("Proof").is_some())
+            .count();
+        let position = changed
+            .iter()
+            .position(|entry| entry.get("ReferenceContribution").is_some())
+            .unwrap();
+        changed[position]["ReferenceContribution"]["proof"] = serde_json::json!(next_proof);
+        changed.insert(position, serde_json::json!({"Proof": Explanation { rule: key(0).rule, dependencies: BTreeSet::from([dependency]) }}));
+        let bytes: String = changed.iter().map(|entry| format!("{entry}\n")).collect();
+        assert!(read_publication_frontier(Cursor::new(bytes), registry(), None).is_err());
+    }
+}

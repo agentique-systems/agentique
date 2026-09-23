@@ -1,13 +1,104 @@
 //! Exact, interned scheduler transport for separately authenticated frontiers.
 //! These bytes are not a trusted publication receipt and expose no public restore.
 use super::*;
+use serde::ser::{SerializeSeq, SerializeStruct};
 use serde::{Deserialize, Serialize};
+
+type StoredReadRows = Vec<(ElementId, Vec<(usize, Vec<usize>)>)>;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct FrontierCertificate {
     receipt: serde_json::Value,
     atoms: Vec<ProducerRead>,
-    rows: Vec<(ElementId, Vec<(usize, Vec<usize>)>)>,
+    rows: StoredReadRows,
+}
+
+pub(crate) struct FrontierCertificateRef<'a>(&'a ProducerClosureCertificate);
+
+impl Serialize for FrontierCertificateRef<'_> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        // Only unique atoms need an index. The potentially large logical rows
+        // remain borrowed and stream directly into the compressed output.
+        let mut atoms = BTreeMap::<&ProducerRead, usize>::new();
+        let mut ordered = Vec::new();
+        for reads in self
+            .0
+            .transport_reads
+            .values()
+            .flat_map(|row| row.iter().map(|(_, reads)| reads))
+        {
+            for read in reads.iter() {
+                let next = atoms.len();
+                if let std::collections::btree_map::Entry::Vacant(entry) = atoms.entry(read) {
+                    entry.insert(next);
+                    ordered.push(read);
+                }
+            }
+        }
+        let mut state = serializer.serialize_struct("FrontierCertificate", 3)?;
+        state.serialize_field("receipt", &self.0.receipt_value())?;
+        state.serialize_field("atoms", &ordered)?;
+        state.serialize_field(
+            "rows",
+            &BorrowedRows {
+                rows: &self.0.transport_reads,
+                atoms: &atoms,
+            },
+        )?;
+        state.end()
+    }
+}
+
+struct BorrowedRows<'a> {
+    rows: &'a BTreeMap<ElementId, Vec<(usize, ProducerReads)>>,
+    atoms: &'a BTreeMap<&'a ProducerRead, usize>,
+}
+impl Serialize for BorrowedRows<'_> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut sequence = serializer.serialize_seq(Some(self.rows.len()))?;
+        for (subject, row) in self.rows {
+            sequence.serialize_element(&(
+                subject,
+                BorrowedFamilies {
+                    row,
+                    atoms: self.atoms,
+                },
+            ))?;
+        }
+        sequence.end()
+    }
+}
+struct BorrowedFamilies<'a> {
+    row: &'a [(usize, ProducerReads)],
+    atoms: &'a BTreeMap<&'a ProducerRead, usize>,
+}
+impl Serialize for BorrowedFamilies<'_> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut sequence = serializer.serialize_seq(Some(self.row.len()))?;
+        for (family, reads) in self.row {
+            sequence.serialize_element(&(
+                family,
+                BorrowedIndexes {
+                    reads,
+                    atoms: self.atoms,
+                },
+            ))?;
+        }
+        sequence.end()
+    }
+}
+struct BorrowedIndexes<'a> {
+    reads: &'a ProducerReads,
+    atoms: &'a BTreeMap<&'a ProducerRead, usize>,
+}
+impl Serialize for BorrowedIndexes<'_> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut sequence = serializer.serialize_seq(Some(self.reads.len()))?;
+        for read in self.reads.iter() {
+            sequence.serialize_element(&self.atoms[read])?;
+        }
+        sequence.end()
+    }
 }
 
 impl ProducerEvaluationTable {
@@ -52,44 +143,44 @@ impl ProducerClosureCertificate {
     /// Exact negative/provider/search transport identity, independent of Arc
     /// allocation and distinct from the compact semantic closure receipt.
     pub fn revalidation_digest(&self) -> [u8; 32] {
-        let state = self.frontier_state();
-        Sha256::digest(
-            serde_json::to_vec(&(state.atoms, state.rows)).expect("serializable producer reads"),
-        )
-        .into()
-    }
-    pub(crate) fn frontier_state(&self) -> FrontierCertificate {
-        let mut atoms = BTreeMap::<&ProducerRead, usize>::new();
-        let rows = self
-            .transport_reads
-            .iter()
-            .map(|(&subject, families)| {
-                let families = families
-                    .iter()
-                    .map(|(family, reads)| {
-                        let reads = reads
-                            .iter()
-                            .map(|read| {
-                                let next = atoms.len();
-                                *atoms.entry(read).or_insert(next)
-                            })
-                            .collect();
-                        (*family, reads)
-                    })
-                    .collect();
-                (subject, families)
-            })
-            .collect();
-        let mut ordered: Vec<_> = atoms
-            .into_iter()
-            .map(|(read, index)| (index, read.clone()))
-            .collect();
-        ordered.sort_by_key(|(index, _)| *index);
-        FrontierCertificate {
-            receipt: self.receipt_value(),
-            atoms: ordered.into_iter().map(|(_, read)| read).collect(),
-            rows,
+        struct HashWriter(Sha256);
+        impl std::io::Write for HashWriter {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                self.0.update(bytes);
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
         }
+        let mut hash = Sha256::new();
+        hash.update(b"agq-producer-transport/1\0");
+        let mut atoms = std::collections::HashMap::new();
+        for (subject, families) in self.transport_reads.iter() {
+            hash.update(subject.as_u128().to_le_bytes());
+            hash.update((families.len() as u64).to_le_bytes());
+            for (family, reads) in families {
+                hash.update((*family as u64).to_le_bytes());
+                hash.update((reads.len() as u64).to_le_bytes());
+                for read in reads.iter() {
+                    // Addresses accelerate repeated immutable atoms; only their
+                    // semantic bytes enter the digest, including unshared rows.
+                    let digest: &[u8; 32] = atoms
+                        .entry(std::ptr::from_ref(read) as usize)
+                        .or_insert_with(|| {
+                            let mut writer = HashWriter(Sha256::new());
+                            serde_json::to_writer(&mut writer, read)
+                                .expect("serializable producer read");
+                            writer.0.finalize().into()
+                        });
+                    hash.update(digest);
+                }
+            }
+        }
+        hash.finalize().into()
+    }
+    pub(crate) fn frontier_state(&self) -> FrontierCertificateRef<'_> {
+        FrontierCertificateRef(self)
     }
 
     pub(crate) fn restore_frontier_state(
