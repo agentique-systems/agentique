@@ -49,39 +49,73 @@ fn selected_append_and_whole_slot_reads_keep_broad_evidence_in_both_merge_orders
     let overlay = plan.materialize(&snapshot).unwrap().overlay;
     let context =
         SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap();
-    for queries in [
-        KerMlQueries::new(context.fork()),
-        KerMlQueries::for_production(context.fork()),
+    let whole_slot = FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    };
+    for (producer_mode, queries) in [
+        (false, KerMlQueries::new(context.fork())),
+        (true, KerMlQueries::for_production(context.fork())),
     ] {
         let selected = queries
             .owned_relationships_of_type(id(1), c::SUBSETTING)
             .map(|_| ());
+        // Compact producer evidence retains immediate DAG edges and searches,
+        // rather than expanding declared leaves into positive_dependencies.
         assert!(
             selected
-                .positive_dependencies
-                .contains(&FactKey::Element(id(3)))
+                .canonical_dependencies
+                .contains(&Dependency::Derived(FactKey::Element(key(1).element_id())))
         );
         assert!(
             !selected
-                .positive_dependencies
-                .contains(&FactKey::Element(id(4)))
+                .canonical_dependencies
+                .contains(&Dependency::Derived(FactKey::Element(key(2).element_id())))
         );
-        let broad = queries.canonical_fact_evidence(FactKey::Property {
-            element: id(1),
-            property: p::ELEMENT_OWNED_RELATIONSHIP,
-        });
+        assert!(
+            !selected
+                .canonical_dependencies
+                .contains(&Dependency::Derived(whole_slot))
+        );
+        if !producer_mode {
+            assert!(
+                selected
+                    .positive_dependencies
+                    .contains(&FactKey::Element(id(3)))
+            );
+            assert!(
+                !selected
+                    .positive_dependencies
+                    .contains(&FactKey::Element(id(4)))
+            );
+        }
+        let broad = queries.canonical_fact_evidence(whole_slot);
         assert!(
             broad
-                .positive_dependencies
-                .contains(&FactKey::Element(id(4)))
+                .canonical_dependencies
+                .contains(&Dependency::Derived(whole_slot))
         );
+        if !producer_mode {
+            assert!(
+                broad
+                    .positive_dependencies
+                    .contains(&FactKey::Element(id(4)))
+            );
+        }
         for (mut combined, other) in [(selected.clone(), broad.clone()), (broad, selected)] {
             combined.merge_evidence(other).unwrap();
             assert!(
                 combined
-                    .positive_dependencies
-                    .contains(&FactKey::Element(id(4)))
+                    .canonical_dependencies
+                    .contains(&Dependency::Derived(whole_slot))
             );
+            if !producer_mode {
+                assert!(
+                    combined
+                        .positive_dependencies
+                        .contains(&FactKey::Element(id(4)))
+                );
+            }
             assert!(
                 crate::producer_closure::producer_reads(&combined, overlay.model()).contains(
                     &crate::producer_closure::ProducerRead::Property(
