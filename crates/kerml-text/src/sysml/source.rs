@@ -272,11 +272,13 @@ pub(crate) fn lower_accepted_source(
             }
         }
     }
-    let desired = draft.strict_snapshot()?;
-    let snapshot = if let Some(previous) = previous {
-        crate::lowering::publish(previous.snapshot(), &desired)?
-    } else {
-        desired
+    let snapshot = {
+        let desired = draft.strict_snapshot()?;
+        if let Some(previous) = previous {
+            crate::lowering::publish(previous.snapshot(), &desired)?
+        } else {
+            desired
+        }
     };
     // Final strict reconstruction changes graph identity. Retain only evaluations
     // whose actual semantic reads survive the checked delta. Prior revisions are
@@ -294,6 +296,13 @@ pub(crate) fn lower_accepted_source(
     } else {
         None
     };
+    // The final audit needs only source metadata. Release construction indexes,
+    // any partial overlay and the temporary mount before strict closure starts.
+    // The checkpoint retains semantic fingerprints, not the previous graph.
+    let pending_references = draft.references().to_vec();
+    let source_map = draft.source_map().clone();
+    drop(draft);
+    drop(base);
     let closed = agq_kerml_semantics::close_result_structure_with_extension(
         &snapshot,
         Default::default(),
@@ -334,7 +343,8 @@ pub(crate) fn lower_accepted_source(
         },
     };
     let queries = KerMlQueries::new(effective.context(root));
-    let (references, diagnostics) = source_references(inputs, &draft, root, &queries)?;
+    let (references, diagnostics) =
+        source_references(inputs, &pending_references, &source_map, root, &queries)?;
     drop(queries);
     Ok(SourceModel {
         snapshot,
@@ -342,7 +352,7 @@ pub(crate) fn lower_accepted_source(
         publication: dependency.publication.accepted_kerml().clone(),
         references,
         diagnostics,
-        source_map: draft.source_map().clone(),
+        source_map,
         effective: Some(Box::new(effective)),
     })
 }

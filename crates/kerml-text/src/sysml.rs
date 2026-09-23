@@ -754,7 +754,8 @@ pub(crate) fn lower_source(
             .project_context(&snapshot, root, BTreeSet::new(), BTreeSet::new())
             .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?,
     );
-    let (references, diagnostics) = source_references(inputs, &draft, root, &q)?;
+    let (references, diagnostics) =
+        source_references(inputs, draft.references(), draft.source_map(), root, &q)?;
     drop(q);
     Ok(SourceModel {
         snapshot,
@@ -769,15 +770,16 @@ pub(crate) fn lower_source(
 
 fn source_references(
     inputs: &[SourceInput<'_>],
-    draft: &LibraryDraft,
+    pending_references: &[library::PendingLibraryReference],
+    source_map: &LibrarySourceMap,
     root: ElementId,
     q: &KerMlQueries<'_>,
 ) -> Result<(Vec<ReferenceAssertion>, Vec<FrontendDiagnostic>), LibraryLoadError> {
     let model = q.model();
     let mut references = Vec::new();
     let mut diagnostics = Vec::new();
-    for reference in draft.references() {
-        let source = &draft.source_map()[&FactKey::Element(reference.relationship)];
+    for reference in pending_references {
+        let source = &source_map[&FactKey::Element(reference.relationship)];
         let alias_source = inputs
             .iter()
             .find(|input| input.syntax.document() == source.document)

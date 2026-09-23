@@ -287,6 +287,51 @@ fn all_pinned_systems_documents_construct_with_source_provenance() {
 }
 
 #[test]
+fn source_reference_audit_outlives_construction_without_retaining_its_graph() {
+    let syntax = parse(
+        "package Architecture { part def Engine; part def Vehicle { part engine : Engine; } private alias Motor for Engine; }",
+    );
+    let draft = lower(&syntax);
+    let construction = Arc::downgrade(draft.candidate_shared());
+    let snapshot = draft.strict_snapshot().unwrap();
+    let pending = draft.references().to_vec();
+    let sources = draft.source_map().clone();
+    drop(draft);
+    assert!(construction.upgrade().is_none());
+
+    let root = named(snapshot.model(), "Architecture");
+    let engine = named(snapshot.model(), "Engine");
+    let inputs = [SourceInput {
+        syntax: &syntax,
+        library: None,
+        sysml: true,
+    }];
+    let (references, diagnostics) =
+        source_references(&inputs, &pending, &sources, root, &q(&snapshot)).unwrap();
+    assert!(diagnostics.is_empty(), "{diagnostics:?}");
+    assert_eq!(references.len(), 2);
+    for reference in &references {
+        assert_eq!(reference.origin.document, syntax.document());
+        assert_eq!(reference.resolution.completeness, Completeness::Complete);
+        assert_eq!(reference.resolution.value, Resolution::Resolved(engine));
+        assert_eq!(
+            reference.origin,
+            pending
+                .iter()
+                .find(|input| input.relationship == reference.relationship)
+                .unwrap()
+                .origin
+        );
+    }
+    let alias = references
+        .iter()
+        .find(|reference| reference.kind == ReferenceKind::Alias)
+        .unwrap();
+    assert_eq!(alias.alias(), Some("Motor"));
+    assert_eq!(alias.visibility, Visibility::Private);
+}
+
+#[test]
 fn reference_metadata_preserves_private_aliases_and_imports_and_rejects_unknown_kinds() {
     let syntax = parse(
         "package Supply { part def Original; } package User { private import Supply::*; private alias Hidden for Supply::Original; }",
