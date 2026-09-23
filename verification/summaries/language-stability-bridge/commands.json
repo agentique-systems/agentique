@@ -11571,6 +11571,41 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "bridge-full-publication-release",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "692ed8ebba2c8a24bb228bf8ecce56f68fbeff4d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "aba2a0834209986eeec9f773feb0d81459b437879cd5292ad8639a4fc2ca8ce8",
+      "duration_seconds": 218.39,
+      "output": "verification/generated/language-stability-bridge/bridge-full-publication-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "binary": {
+        "path": "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "sha256": "ae61879c82a56226f845e33b015e73b299c9880b9ab2e5fd7439686de1d1e228"
+      }
     }
   ],
   "source_ledgers": [
