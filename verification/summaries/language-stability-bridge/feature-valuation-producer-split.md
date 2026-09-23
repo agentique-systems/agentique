@@ -27,7 +27,8 @@ Validation (one build job, incremental/debug disabled):
 - Follow-up `cargo test -p agq-kerml-semantics`: exit 0; 327 passed,
   2 ignored across unit/integration tests. Documentation tests also passed.
 
-The receiver fixture remains Incomplete because a separate transition payload
-proof still imports pending descendant/standard-anchor evidence. This change
-does not claim receiver, Actions or Systems publication acceptance. Raw bounded
-test output is ignored under `verification/generated/language-stability-bridge/`.
+The receiver fixture now reaches Complete with the selected transition witness
+and exact creation/append contribution support. The full SysML package passes
+73 tests; see `selected-append-merge-regression.md`. Actions/Systems publication
+acceptance remains a separate gate. Raw bounded test output is ignored under
+`verification/generated/language-stability-bridge/`.

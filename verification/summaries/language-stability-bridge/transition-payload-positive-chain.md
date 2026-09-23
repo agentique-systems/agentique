@@ -17,7 +17,7 @@ output IDs remain asserted.
 - `cargo clippy -p agq-sysml-semantics --all-targets -- -D warnings`: exit 0.
 - `cargo fmt --all -- --check`: exit 0.
 
-The broader receiver fixture is still Incomplete. Its trigger parameter query
-also imports unrelated ownership append proofs when a selected relationship
-was derived; exact kernel contribution evidence is being handled separately.
-No publication acceptance is claimed here.
+The broader receiver fixture now reaches Complete with exact kernel creation
+and append contribution evidence. Its trigger parameter query no longer imports
+unrelated ownership proofs. The full SysML package passes 73 tests; publication
+acceptance remains a separate gate.
