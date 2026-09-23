@@ -995,3 +995,36 @@ Fifteen crossing/profile integration tests, two-package all-target Clippy and
 formatting pass. The ten actual attempts, including corrected test assertions,
 are retained in the `variable-end-causality.json` range of `commands.json`.
 These focused results do not supersede the latest failed Actions audit.
+
+## Indexed assignment: directed valuation and argument populations
+
+The permanent real-frontend test establishes the exact Actions line 518 shape:
+a ReferenceUsage assignment input owns a noninitial FeatureValue and IndexExpression;
+the Index result is a declared plain Feature, while both nested reference
+expression results are ReferenceUsages. A genuine closed Action/Occurrence and
+AssignmentAction dependency, including target(in)/replacementValues(inout),
+reproduces all four remaining assignment producer failures in 22.19 s.
+
+Correction `ee0fb76` closes the known-directed input's inapplicable valuation
+without waiting on the indexed result. It retains canonical direction evidence;
+unknown or failed aliases cannot certify nonapplicability. FeatureValue binding
+keeps its required result/context reads. Independent review and four adversarial
+groups pass, including all directions, both evaluator modes, pending writers,
+checkpoint invalidation and unchanged Published versus v9 output targets.
+The existing value-stratum test, Clippy and formatting also pass. Exact commands
+are in the `directed-valuation-review.json` source-ledger range.
+
+A separate valid ReferenceUsage Index-result control exposes an independent
+argument-population overread. Correction `8286e2a` reads ParameterMembership
+excluding ReturnParameterMembership, then FeatureValue, preserving first-eligible
+order and endpoint evidence. Three guard tests retain eligible direct/future
+writers, unknown providers and independently requested broad reads; selected
+endpoint/ownership changes reopen the transported certificate.
+
+On combined source `6dc335f`, all six expression fixtures pass in 132.26 s and the
+connection-end fixture passes in 15.33 s. Both indexed cases assert true
+mayTimeVary/isVariable, a fully closed certificate and the exact shared dependency.
+Strict all-target Clippy for all three affected packages and formatting pass.
+The `index-usage-commands.json` range retains every attempt and fixture correction;
+raw output hashes were checked when consolidating. Root release source `905e4ee`
+then builds successfully. The next Actions audit remains a separate required gate.
