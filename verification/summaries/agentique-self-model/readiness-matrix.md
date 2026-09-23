@@ -56,3 +56,54 @@ verification, actor, objective and result memberships, deliberately retaining
 unresolved standard paths when no standards are supplied. It does not discharge
 the accepted positive gate. The held rich equivalence summary also now covers
 effective nested usages and composite subitem/subpart populations.
+
+## Follow-up review at the authored acceptance boundary
+
+Source `3241748f2b8fc711547120a2860ee4c4279394d1`, based on root `aef4cd0`.
+All requested G1–G5 structural families have concrete query methods or explicit
+composition through the borrowed KerML facade. No additional public method or
+producer behavior was needed. Owned state/transition roles remain the documented
+plural structural projection; this does not adopt unresolved singular formulas
+or add execution semantics.
+
+The accepted harness now directly checks effective Usage typing, PortDefinition
+typing, subsetting, composite subactions and constraint populations in both text
+and independent programmatic models. Connection and interface end queries must
+return the same two canonical PortUsage end IDs, each with its own ordered
+ReferenceSubsetting target. Case/verification subjects, actors, objectives and
+return parameters retain their existing positive assertions, supplemented by
+Requirement population selection. The edit fixture now proves that r3 suppresses
+the original inherited port and r2's complete port population remains unchanged.
+The dependency assertion borrows the accepted overlay directly instead of
+materializing a throwaway project snapshot just to inspect its Arc identity.
+
+The G4 correction is substantive terminology/coverage, not a new API:
+`payloadParameter` is not the library's `acceptedMessage` feature. The pinned
+Actions source and metamodel expose these distinct concepts; the new canonical
+regression proves the distinction with honest Incomplete effective answers
+without a certificate. The held actual-library assertion separately requires
+Complete trigger, payload, effective member and qualified member-lookup results.
+The old synthetic Actions micro's parameter named `acceptedMessage` remains
+useful for generic lookup/payload tests, but is not evidence of actual accepted
+message-role semantics.
+
+Checks used `CARGO_INCREMENTAL=0`, `CARGO_PROFILE_DEV_DEBUG=0`,
+`CARGO_PROFILE_TEST_DEBUG=0`, `CARGO_BUILD_JOBS=2` and the isolated
+`../agentique/target/bridge-self-model` target. No cache load or corpus run occurred.
+Combined output is ignored under
+`verification/generated/agentique-self-model/effective-api-review/` where retained.
+
+| Exact command | Exit / result | Output SHA-256 |
+| --- | --- | --- |
+| `cargo test -p agq-sysml-semantics --lib structural_query_tests` | 0; 8 passed | Unavailable; tool output only |
+| `cargo test -p agq-kerml-text --lib` | 0; 43 passed, 1 accepted-cache gate ignored | `59cd23c4a1993f30d48d34eb67d5b8c4427a618e93b4fbaf946aa8daba1f3819` |
+| `cargo clippy -p agq-sysml-semantics -p agq-kerml-text --all-targets -- -D warnings` | 0 | `9d07f1e062512d6e9446a5b3ec0c08de29524740345a0cc7bfcec3aed2e91290` |
+| `cargo fmt --all -- --check` | 0; empty output | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `git diff --check` | 0; empty output | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+The added accepted assertions are compiled, not passed. Systems acceptance and
+the resulting closed authored/programmatic and edit runs remain required; this
+review does not establish language readiness. Graph-sharing observations also
+remain subject to the separate
+[storage review](../../../docs/modeling-workspace-frontend-boundary.md#shared-dependency-storage-review):
+record/Arc identity checks alone do not establish I8's no-standard-graph-copy gate.
