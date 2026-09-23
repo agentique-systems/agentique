@@ -18,13 +18,14 @@ is not fully closed. The scoped acceptance guard correctly rejects this result.
 Medium/full publication has not run;
 the full-publication attempt budget is unused.
 
-All four genuine layered expression fixtures now pass with fully closed
-certificates: plain and frontend-shaped invocation results, a compound chain,
-and a deeper nested chain. The actual planner and independent adversarial tests
-confirm precise per-effect and immediate owning-Type writer scopes. These are
-synthetic dependencies, not accepted standard publications; the corrected
-Actions corpus audit still identifies remaining end-usage and indexed-assignment closure gaps. See [closure.md](closure.md) for each defect,
-permanent regression and its exact evidence boundary.
+All six genuine layered expression fixtures and the connection-end fixture pass
+with fully closed certificates. The indexed assignment now matches the real
+frontend and authentic Action/Occurrence ancestry. Actual-planner and independent
+guards verify the end-membership filter, directed valuation proof separation,
+eligible argument populations and the earlier per-effect/immediate owning-Type
+writer scopes. These synthetic dependency results are not publication acceptance.
+The rebuilt `actions-end-and-index` audit is running; its result is not yet known.
+See [closure.md](closure.md) for each correction and exact evidence boundary.
 
 The [Gen1/Gen2 audit](../gen1-gen2-audit/README.md), proposed
 [ADR 0026](../../../docs/adr/0026-language-foundation-stability-contract.md) and
