@@ -27,6 +27,12 @@ The regression matrix (`54b10be`) covers both evaluator modes, derived records a
 selected appends, archive fallback, changed inverse projections and both merge
 orders. Independent review permits the corrected Actions audit; no corpus result
 is inferred from these focused checks. Accepted KerML bytes and identity are unchanged.
+The producer sweep passes 113 tests with two existing ignores. The full KerML
+semantic package passes 352 tests (two existing ignores), including all five
+trusted-restoration guards and doc tests, in 174.00 seconds. Two-package
+all-target Clippy and formatting pass after test-only Copy cleanup `3a3095d`.
+Exact commands, the red reproduction and the initial lint failure are retained in
+`commands.json` under the `positional-broad-reads-review.json` source-ledger range.
 
 These synthetic fixtures use genuinely closed
 layered dependencies, not fabricated accepted standard publications.

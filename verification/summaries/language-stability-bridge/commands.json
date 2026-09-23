@@ -4489,6 +4489,262 @@
         "min_free_disk_bytes": 1073741824
       },
       "output_sha256": "8447313031bd83362d5a1f6ebb24282fceca59a1da839abbf0cb29983f59b98c"
+    },
+    {
+      "name": "positional-bounded-reads",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "ordinary_positional_parameter_reads",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "42fad18949f3375ae6978da6ad120a8b903879ff",
+      "working_changes_sha256": "6f61dd04828c78e7f025bc9495b8b0b9fa0a8faf57bf1a5e885ad54e70be21f9",
+      "output_sha256": "edee76b8ca10243c8a749914fcdb9548cb61256e4deec8c9733aa0cbaf24e193",
+      "duration_seconds": 26.59,
+      "output": "verification/generated/language-stability-bridge/positional-bounded-reads.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "sealed-proof-broad-read-red",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "sealed_dependency_proof_searches",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "42fad18949f3375ae6978da6ad120a8b903879ff",
+      "working_changes_sha256": "7034c8a839b94751a5b98107a1b5551d5fcc63300ea6ee30c90366a10abf4c32",
+      "output_sha256": "11a09ee943825b0fb3d902c683e4c51d4571e0bc5c617dbdf47c14700537896b",
+      "duration_seconds": 26.52,
+      "output": "verification/generated/language-stability-bridge/sealed-proof-broad-read-red.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "sealed-proof-broad-read-green",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_broad_reads",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "76bedd682088aa5a9649d94f96bc114fed4ece98",
+      "working_changes_sha256": "72c16a21489e1493f9ec6479323cbc75add5bb1c6dc2ba1a4351f9babae56844",
+      "output_sha256": "3b8d55fc3de2373825646a6ddd614504da1e01f356f1edf556de6d1e89ed8bf1",
+      "duration_seconds": 26.19,
+      "output": "verification/generated/language-stability-bridge/sealed-proof-broad-read-green.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "sealed-proof-boundary-controls",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_broad_reads",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2a5bfbfb8faf1f6483e7183911da26de58330c7d",
+      "working_changes_sha256": "1c7dc045ace7d5a86b4ba6c5812a2979fa5d744d13d344f8a94af5b39672e998",
+      "output_sha256": "3db5a47ce20852c897b10dd0924b084014c2052afa85a748231c226923581c6f",
+      "duration_seconds": 28.95,
+      "output": "verification/generated/language-stability-bridge/sealed-proof-boundary-controls.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "sealed-proof-producer-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4d233e9157e1c3966905b6df164fe3f6084728fe",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "480db8a3ea0b323da066241cb37b60bbc489e317a0b771b8f6f9fabbe5d5312f",
+      "duration_seconds": 37.59,
+      "output": "verification/generated/language-stability-bridge/sealed-proof-producer-regressions.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "sealed-proof-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4d233e9157e1c3966905b6df164fe3f6084728fe",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "7e2f13f6a2245a5f4f3ae06ddd8ec4674e99ed5ff22796d947e97648ee74169f",
+      "duration_seconds": 10.58,
+      "output": "verification/generated/language-stability-bridge/sealed-proof-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "sealed-proof-clippy-final",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3a81354db6b889406845175730dd3a2bda5d8834",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "cf3b7fdde72f53f1fbbd497f3ce0e22e01b259e51fbba34d21d4e2317284c717",
+      "duration_seconds": 3.8,
+      "output": "verification/generated/language-stability-bridge/sealed-proof-clippy-final.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "sealed-proof-kerml-package",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3a81354db6b889406845175730dd3a2bda5d8834",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "3938d88516844eb4ee74187da83fc942a425cc52225a8bf19ec823894b5fca47",
+      "duration_seconds": 174.0,
+      "output": "verification/generated/language-stability-bridge/sealed-proof-kerml-package.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "sealed-proof-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3a81354db6b889406845175730dd3a2bda5d8834",
+      "working_changes_sha256": "908f70f311cd298226bcb88640174a3f63bd34947f555200b24779a693d4f862",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.44,
+      "output": "verification/generated/language-stability-bridge/sealed-proof-fmt.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
     }
   ],
   "source_ledgers": [
@@ -4645,6 +4901,13 @@
       "source_blob_sha256": "ef0214b610eee1f984b31ada3bead48801cec28bb43483d640a3bcaa1ff5794c",
       "first_command": 163,
       "command_count": 3
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/positional-broad-reads-review.json",
+      "source_commit": "1627a42885e2c80ad96eb3670a0232083949f3d2",
+      "source_blob_sha256": "0e815ae29a5459e53d13f4fe8466d43555ef829066d06b0f2cfec733f9024ea8",
+      "first_command": 166,
+      "command_count": 9
     }
   ]
 }
