@@ -27,7 +27,9 @@ but still fails the scoped gate. No full-publication acceptance is inferred.
 A subsequent regression reproduced an unrelated ancestor's variable-property
 premise entering an otherwise sufficient Action/SelfLink exclusion proof.
 The selected-witness correction (`f15cfca`) passes five focused tests, the receiver
-fixture and all 74 SysML package tests; its corrected Actions audit remains pending. The text frontend
+fixture and all 74 SysML package tests; its corrected Actions audit finished at 532/534 Complete. The trigger's own
+producer evaluations now complete; transitive typing dependencies remain open.
+The text frontend
 package passed 91 tests with two explicit accepted-cache ignores before that fix.
 See [closure.md](closure.md) for the defects, proof boundaries, regressions and
 historical failed/passing observations. Full KerML verification also passes
@@ -51,7 +53,7 @@ Exit 124 is a requested workflow stop, not a semantic result; peak private memor
 was 4,515.0 MiB. No final reference audit exists for that run. Provisional endpoint
 selections are never Complete-reference counts.
 
-Five corrected scoped audits finished normally with exit 1 and no watchdog stop.
+Six corrected scoped audits finished normally with exit 1 and no watchdog stop.
 Each parsed/constructed 8/8 documents, selected 534 endpoints and had zero kernel
 obligations. These remain failed scoped gates, not Systems acceptance:
 
@@ -62,12 +64,13 @@ obligations. These remain failed scoped gates, not Systems acceptance:
 | `actions-selected-populations` | 1,066.390 | 5,037.0 | 1 owner-type, 169 producer-closure, 13 value-context, 62 variable-featuring |
 | `actions-positive-witness` | 788.969 | 4,955.0 | 1 owner-type, 122 producer-closure, 13 value-context, 62 variable-featuring |
 | `actions-exact-contributions` (`08e4a83`) | 894.063 | 5,284.5 | 106 producer-closure, 11 value-context, 45 variable-featuring |
+| `actions-positive-exclusion` (`d594006`) | 875.047 | 5,209.6 | 106 producer-closure, 11 value-context, 45 variable-featuring |
 
-The latest audit has 162 diagnostics, 22 rounds, 10,917 subjects and 2,441 derived
-elements. Its certificate records 10,017 applicable subject/family pairs, 6,061
-closed and 164 explicitly incomplete, with 379,104 closed requirements. The compact
+The latest audit has 162 diagnostics, 22 rounds, 10,799 subjects and 2,441 derived
+elements. Its certificate records 10,017 applicable subject/family pairs, 6,063
+closed and 163 explicitly incomplete, with 379,104 closed requirements. The compact
 certificate is 2,594,064 bytes; optional revalidation reads are separately
-406,184,536 bytes. Two rebindings retain 1,233 evaluations and reopen 10,419.
+382,830,808 bytes. Two rebindings retain 1,233 evaluations and reopen 10,419.
 A final pass's individual counters do not replace aggregate reconstruction
 observations. Per-subject explanations remain diagnostic evidence, not acceptance.
 

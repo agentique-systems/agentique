@@ -1,11 +1,18 @@
 # Producer closure integration and regressions
 
 Current status: focused corrections are integrated; Systems publication and
-language readiness remain unaccepted. The latest completed corpus gate (`08e4a83`) has
+language readiness remain unaccepted. The latest completed corpus gate (`d594006`) has
 532/534 Actions references Complete, two Incomplete and zero kernel obligations.
 Following the earlier 499/534 audit, the loop, assertion and receiver regressions close; the receiver
 passed on `55b5af8` in 33.80 seconds. The complete SysML package then passed
 73 tests in 71.38 seconds, including unsupported variation remaining Incomplete.
+The positive-exclusion audit takes 875.047 seconds (exit 1; peak private
+5,209.6 MiB). Trigger `35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6` now has all
+producer evaluations Complete but EffectiveTyping remains open through dependencies.
+The two child positional-redefinition evaluations remain Incomplete. Final
+certificate totals are 6,063 closed pairs and 163 explicitly incomplete; earlier
+intermediate traces are not the final trigger state.
+
 These synthetic fixtures use genuinely closed
 layered dependencies, not fabricated accepted standard publications.
 
