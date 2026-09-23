@@ -597,7 +597,7 @@
       "producer_rounds": 32,
       "boundary": "The 32-round resource limit was exhausted before convergence; final diagnostics do not establish a persistent semantic cycle."
     },
-    "focused_corrections": "Producer closure integration and targeted generic corrections pass matching fixtures, soundness guards and the Actions scoped gate. The medium candidate completes all references but exhausts its scheduler round budget before convergence; diagnosis continues before retry. Full publication remains separate.",
+    "focused_corrections": "Actions scoped gate passes. The first medium audit completes all references but exhausts 32 rounds. A faithful inherited-result Interfaces fixture separately reproduces and fixes an ExpressionResult positional-population overclaim; full closure, source shape and Clippy pass. Systems preparation now allows 64 rounds without weakening acceptance. Medium retry and full publication remain unrun.",
     "full_publication_this_bridge": "not yet run; scoped counts are not full-corpus acceptance",
     "systems_publication": "not accepted",
     "accepted_bindings": false,

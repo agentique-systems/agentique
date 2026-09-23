@@ -11285,6 +11285,22 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "bridge-expression-population-standards",
+      "command": [
+        "npm.cmd",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "499d0b1e52003bbd78ce8bab9bb9dc3be93fa55d",
+      "working_changes_sha256": "5683c36ef3ef07e2b383c659d79c42d130629fffb72fee1b46b1d37f86fb3a39",
+      "output_sha256": "2b6e40ce0d29efcdfa020268a3b681efd97c6285da60951f08a48c34d79687b4",
+      "duration_seconds": 0.47,
+      "output": "verification/generated/language-stability-bridge/bridge-expression-population-standards.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [
