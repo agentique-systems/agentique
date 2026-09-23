@@ -9,7 +9,8 @@ The existing semantic stores and language frontends are replaced for Gen2;
 transaction/authority, progress, SQLite reliability, jobs, transport and paging
 patterns can be migrated or adapted above the language boundary. SourceProject
 is useful Gen2 source-history infrastructure but currently rejects recovered
-mixed syntax and does not attach an accepted Systems publication.
+mixed syntax. The bridge adds an accepted-Systems constructor and shared dependency
+contexts; actual accepted authored integration remains gated by Systems publication.
 
 Reproduce the dependency check and its adversarial tests without compiling Rust:
 
