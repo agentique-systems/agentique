@@ -1,21 +1,21 @@
 # Producer closure integration and regressions
 
 Current status: focused corrections are integrated; Systems publication and
-language readiness remain unaccepted. The latest completed corpus gate (`42fad18`)
+language readiness remain unaccepted. The latest completed corpus gate (`bca8702`)
 has **534/534 Actions references Complete**, zero kernel obligations and zero
-unresolved, incomplete, ambiguous, invalid or mismatched references. The eight
-documents parse and construct byte-exactly. Producer closure remains Incomplete:
-158 evaluations are incomplete and only 379,147/401,664 requirements are closed.
-The full-certificate acceptance guard correctly keeps this scoped gate failed.
+unresolved, incomplete, ambiguous, invalid or mismatched references. All eight
+documents parse and construct byte-exactly. Closure is converged but Incomplete:
+103 evaluations remain incomplete and 379,814/403,806 requirements are closed.
+The full-certificate guard correctly rejects the scoped gate. No medium or full
+publication has run.
 
-The owned-parameter scope correction closes Trigger EffectiveTyping. Its payload
-and receiver retain causally reopened positional evaluations; final traces link
-an expression producer through a broad read bucket rather than a direct scoped
-read. The expression producer really adds an owning membership, so removing its
-membership effect is not justified. Further investigation targets the query read.
-No medium or full publication has run.
+The sealed-proof correction closes typing for the original trigger, payload,
+receiver, transition and state. Remaining incomplete evaluations are 68 Usage
+mayTimeVary predicates, 31 FeatureReferenceExpression producers and 4 FeatureValue
+producers. Their unresolved contextual featuring/membership evidence is the next
+bounded diagnosis; the accepted dependency proof defect is independently fixed.
 
-The next reproduced defect is historical proof-search contamination across an
+The reproduced defect was historical proof-search contamination across an
 authenticated dependency boundary. A closed dependency's derived parameter proof
 retained an incoming/model search; importing it into the project made an unrelated
 expression producer reopen positional redefinition. `f73f8ec` seals only exact,
@@ -33,6 +33,14 @@ trusted-restoration guards and doc tests, in 174.00 seconds. Two-package
 all-target Clippy and formatting pass after test-only Copy cleanup `3a3095d`.
 Exact commands, the red reproduction and the initial lint failure are retained in
 `commands.json` under the `positional-broad-reads-review.json` source-ledger range.
+
+Broad-read diagnosis uses `AGQ_PRODUCER_READ_TRACE=1`, an explicit
+`AGQ_PRODUCER_CAUSAL_SUBJECTS` list and optional `AGQ_PRODUCER_READ_FAMILIES` names.
+At most 16 records per evaluation identify direct language reads, shared/expanded
+kernel searches and missing read-row fallbacks. Attribution scans at most 4096
+retained facts per search and labels unknown origins. The disabled hook changes
+no evidence or acceptance. Two-package all-target compilation, Clippy and fmt pass;
+records are in the `producer-read-trace-review.json` range of `commands.json`.
 
 These synthetic fixtures use genuinely closed
 layered dependencies, not fabricated accepted standard publications.

@@ -4745,6 +4745,89 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
       }
+    },
+    {
+      "name": "producer-read-trace-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "--all-targets"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a80cd1b798a0e53fe778bced1193a17df29b1318",
+      "working_changes_sha256": "e0630ba110f304dabf9569f5972989937f33910bf6fb081ffd3e68dbd7c82e0f",
+      "output_sha256": "e08810a0f4173ea8d2857e98e940acdcfc3a6dc4f73824b2b87d75c9465efde2",
+      "duration_seconds": 15.34,
+      "output": "verification/generated/language-stability-bridge/producer-read-trace-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "producer-read-trace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a80cd1b798a0e53fe778bced1193a17df29b1318",
+      "working_changes_sha256": "185652e6d8d855443ec475d84aef25d82327f63fc446c1088fb83cfabf9e292b",
+      "output_sha256": "7de8e3980ab78f31d074175787069bb0400fd54397a0bcd988478bdd5a665b0c",
+      "duration_seconds": 11.27,
+      "output": "verification/generated/language-stability-bridge/producer-read-trace-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "producer-read-trace-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a80cd1b798a0e53fe778bced1193a17df29b1318",
+      "working_changes_sha256": "185652e6d8d855443ec475d84aef25d82327f63fc446c1088fb83cfabf9e292b",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.53,
+      "output": "verification/generated/language-stability-bridge/producer-read-trace-fmt.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
     }
   ],
   "source_ledgers": [
@@ -4908,6 +4991,13 @@
       "source_blob_sha256": "0e815ae29a5459e53d13f4fe8466d43555ef829066d06b0f2cfec733f9024ea8",
       "first_command": 166,
       "command_count": 9
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/producer-read-trace-review.json",
+      "source_commit": "4a94a4b3c28aceab2efaede3bc207928bab4f5ef",
+      "source_blob_sha256": "db0a9d412565d331073d207c2b3ec560595ee98cad70a212950799575b02c14b",
+      "first_command": 175,
+      "command_count": 3
     }
   ]
 }

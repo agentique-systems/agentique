@@ -13,7 +13,7 @@ completed corpus result is the eight-document Actions/dependency scope:
 **534/534 mandatory references Complete**, zero unresolved, incomplete,
 ambiguous, invalid or mismatched references, and zero kernel obligations. All eight
 documents parse and construct byte-exactly. The scheduler converges but producer
-closure remains Incomplete: 158 evaluations remain incomplete and the certificate
+closure remains Incomplete: 103 evaluations remain incomplete and the certificate
 is not fully closed. The scoped acceptance guard correctly rejects this result.
 Medium/full publication has not run;
 the full-publication attempt budget is unused.
@@ -60,7 +60,7 @@ Exit 124 is a requested workflow stop, not a semantic result; peak private memor
 was 4,515.0 MiB. No final reference audit exists for that run. Provisional endpoint
 selections are never Complete-reference counts.
 
-Eight corrected scoped audits finished normally with exit 1 and no watchdog stop.
+Nine corrected scoped audits finished normally with exit 1 and no watchdog stop.
 Each parsed/constructed 8/8 documents, selected 534 endpoints and had zero kernel
 obligations. These remain failed scoped gates, not Systems acceptance:
 
@@ -74,15 +74,17 @@ obligations. These remain failed scoped gates, not Systems acceptance:
 | `actions-positive-exclusion` (`d594006`) | 875.047 | 5,209.6 | 106 producer-closure, 11 value-context, 45 variable-featuring |
 | `actions-chain-terminal` (`b4ce4e2`) | 871.047 | 5,209.3 | 106 producer-closure, 11 value-context, 45 variable-featuring |
 
-The latest `actions-owned-parameters` audit (`42fad18`) took 842.016 seconds,
-peaked at 5,214.7 MiB private memory, and exited 1 without a watchdog stop. It has
-158 diagnostics (103 producer-closure, 44 variable-featuring, 11 value-context),
-21 rounds, 10,787 evaluated subjects and 2,447 derived elements. Its certificate
-records 10,023 applicable subject/family pairs, 6,076 closed and 158 explicitly
-incomplete, with 379,147/401,664 closed requirements (`fully_closed=false`). The
-compact certificate is 2,594,296 bytes; optional revalidation reads are separately
-385,126,952 bytes. Trigger EffectiveTyping is now closed; its payload and receiver
-retain causally reopened positional evaluations.
+The latest `actions-sealed-proof` audit (`bca8702`) took 981.234 seconds,
+peaked at 5,489.4 MiB private memory, and exited 1 without a watchdog stop. Its
+534/534 references remain Complete. It has 107 diagnostics (68 producer-closure,
+35 variable-featuring, 4 value-context), 26 rounds, 12,035 evaluated subjects and
+2,804 derived elements. The certificate records 10,587 applicable pairs, 6,162
+closed and 103 explicitly incomplete; 379,814/403,806 requirements are closed
+(`fully_closed=false`). Compact certificate: 2,608,130 bytes; optional revalidation
+reads: 474,003,784 bytes. Rebinding retained 1,225 evaluations and reopened 10,531.
+Trigger, payload, receiver, transition and state typing now close. Contextual
+featuring/membership closure remains open. The prior owned-parameter audit took
+842.016 seconds, peaked at 5,214.7 MiB, and had 158 incomplete evaluations.
 A final pass's individual counters do not replace aggregate reconstruction
 observations. Per-subject explanations remain diagnostic evidence, not acceptance.
 
