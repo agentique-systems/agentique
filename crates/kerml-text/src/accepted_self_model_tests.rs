@@ -517,7 +517,63 @@ fn architecture_invariants(q: &SysmlQueries<'_>) {
         BTreeSet::from(["SemanticKernel".into()])
     );
     assert_eq!(deps("SysMLEngine"), BTreeSet::from(["KerMLEngine".into()]));
+    assert_eq!(
+        deps("ProjectWorkspace"),
+        BTreeSet::from(["StandardLibraryManager".into(), "SysMLEngine".into()])
+    );
     assert_eq!(deps("ViewService"), BTreeSet::from(["QueryService".into()]));
+    assert_eq!(
+        deps("ExecutionCompiler"),
+        BTreeSet::from(["ValidationService".into()])
+    );
+    for (owner, declarations) in [
+        (
+            "Agentique",
+            &[
+                ("languageSubsystem", "LanguageEngine"),
+                ("modeling", "ModelingPlatform"),
+                ("execution", "ExecutionSubsystem"),
+            ][..],
+        ),
+        (
+            "LanguageEngine",
+            &[
+                ("semanticKernel", "SemanticKernel"),
+                ("kermlEngine", "KerMLEngine"),
+                ("sysmlEngine", "SysMLEngine"),
+                ("standardLibraries", "StandardLibraryManager"),
+            ][..],
+        ),
+        (
+            "ExecutionSubsystem",
+            &[
+                ("compiler", "ExecutionCompiler"),
+                ("executionIR", "ExecutionIR"),
+                ("simulation", "SimulationRuntime"),
+            ][..],
+        ),
+    ] {
+        let parts = q.owned_usages_of_kind(authored_named(model, owner), UsageKind::Part);
+        complete(&parts);
+        assert_eq!(
+            names(q, parts.value().iter().copied()),
+            declarations
+                .iter()
+                .map(|(name, _)| (*name).into())
+                .collect::<BTreeSet<_>>(),
+            "{owner} composition"
+        );
+        for (name, definition) in declarations {
+            let part = authored_named(model, name);
+            assert!(parts.value().contains(&part), "{owner}::{name}");
+            let types = q.effective_part_definitions(part);
+            complete(&types);
+            assert!(
+                types.value().contains(&authored_named(model, definition)),
+                "{owner}::{name}: {types:?}"
+            );
+        }
+    }
     let workspace = q.effective_usages(authored_named(model, "ProjectWorkspace"));
     complete(&workspace);
     for declaration in ["kermlPublication", "systemsPublication", "languageQueries"] {
@@ -624,6 +680,13 @@ fn rich_summary(q: &SysmlQueries<'_>, dependency: &ModelView) -> RichSummary {
             q.effective_subactions(authored_named(q.model(), "ModelingPlatform")),
         ),
         (
+            "occurrences",
+            q.effective_usages_of_kind(
+                authored_named(q.model(), "ModelingPlatform"),
+                UsageKind::Occurrence,
+            ),
+        ),
+        (
             "constraints",
             q.effective_usages_of_kind(
                 authored_named(q.model(), "ImmutableRevisions"),
@@ -669,6 +732,7 @@ fn rich_summary(q: &SysmlQueries<'_>, dependency: &ModelView) -> RichSummary {
             "interface" => &["requester", "responder"],
             "parameters" => &["workingState", "checkedState"],
             "subactions" => &["validate"],
+            "occurrences" => &["workspace", "validate", "operating"],
             "constraints" => &["preservesPriorState"],
             "entry" => &["startServing"],
             "do" => &["checkRevision"],
