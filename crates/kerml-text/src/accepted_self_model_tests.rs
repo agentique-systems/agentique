@@ -26,8 +26,10 @@ fn view_metadata_acceptance_fixture_preserves_real_frontend_classes() {
     let model = draft.candidate().model();
     for (name, class) in [
         ("ArchitectureView", s::VIEW_DEFINITION),
+        ("ArchitecturePerspective", s::VIEWPOINT_DEFINITION),
         ("ReviewMetadata", s::METADATA_DEFINITION),
         ("architecture", s::VIEW_USAGE),
+        ("perspective", s::VIEWPOINT_USAGE),
     ] {
         assert_eq!(
             model.element(named(model, name)).unwrap().metaclass(),
@@ -97,6 +99,11 @@ fn accepted_view_metadata(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
             StandardSysmlRole::View,
         ),
         ("ReviewMetadata", metadata, StandardSysmlRole::MetadataItem),
+        (
+            "ArchitecturePerspective",
+            authored_named(q.model(), "perspective"),
+            StandardSysmlRole::ViewpointCheck,
+        ),
     ] {
         let definition = authored_named(q.model(), definition);
         let parents = q.effective_supertypes(definition);
@@ -115,6 +122,12 @@ fn accepted_view_metadata(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
             .value()
             .contains(&authored_named(q.model(), "architecture")),
         "inherited ViewUsage retains its original identity"
+    );
+    assert!(
+        inherited
+            .value()
+            .contains(&authored_named(q.model(), "perspective")),
+        "inherited ViewpointUsage retains its original identity"
     );
 }
 

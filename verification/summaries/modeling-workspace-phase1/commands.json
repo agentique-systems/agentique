@@ -429,6 +429,53 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "0c4c0adae19125c5a72b3e3521c7df1c6c6d84f0",
+      "working_changes_sha256": "30684f3c0d94c493f83dd9c63eac614cbd3db2809424136e4ac4b2bfee9df00b",
+      "output_sha256": "d080b6784b7c1c3e3ecd16b4db8798809576fe1000ba742bb60b6269781b6a23",
+      "duration_seconds": 1.0,
+      "output": "verification/generated/modeling-workspace-phase1/node-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "0c4c0adae19125c5a72b3e3521c7df1c6c6d84f0",
+      "working_changes_sha256": "30684f3c0d94c493f83dd9c63eac614cbd3db2809424136e4ac4b2bfee9df00b",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.42,
+      "output": "verification/generated/modeling-workspace-phase1/frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "0c4c0adae19125c5a72b3e3521c7df1c6c6d84f0",
+      "working_changes_sha256": "30684f3c0d94c493f83dd9c63eac614cbd3db2809424136e4ac4b2bfee9df00b",
+      "output_sha256": "7434a09be26a90b949a87d0c1568322eca8ccde6d2724c384feca465cbb1bcf9",
+      "duration_seconds": 2.72,
+      "output": "verification/generated/modeling-workspace-phase1/frontend-build.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [

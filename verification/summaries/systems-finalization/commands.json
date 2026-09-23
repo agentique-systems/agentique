@@ -1,0 +1,26 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "retained-frontier-authentication",
+      "command": [
+        "python",
+        "verification/scripts/audit_stopped_systems_frontier.py",
+        "--repository",
+        ".",
+        "--journal",
+        "verification\\generated\\final-language-acceptance\\full-frontiers\\journal-735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5.json",
+        "--journal-sha256",
+        "735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5",
+        "--output",
+        "verification/generated/systems-finalization/authentication.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "0c4c0adae19125c5a72b3e3521c7df1c6c6d84f0",
+      "duration_seconds": 29.859,
+      "result_sha256": "86cd9f24036de6fb13cddbbca76ab0d48ce899d06cffebc6a67f56f65057a1ba",
+      "result": "verification/summaries/systems-finalization/authentication.json"
+    }
+  ]
+}

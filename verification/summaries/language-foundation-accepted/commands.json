@@ -1,0 +1,20 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "dependency-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "0c4c0adae19125c5a72b3e3521c7df1c6c6d84f0",
+      "working_changes_sha256": "28d1e50491b0c483fa09e78d0097c5df2ec8f4747db5e0e90bede164a1713ca9",
+      "output_sha256": "4b46c49f77531a7a4652e7a79f7004a097d42001186db5c21968bfc8afb2ce13",
+      "duration_seconds": 0.23,
+      "output": "verification/generated/language-foundation-accepted/dependency-boundary.log",
+      "environment_overrides": {}
+    }
+  ]
+}
