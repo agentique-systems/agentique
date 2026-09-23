@@ -8,6 +8,9 @@ mod context;
 mod context_digest;
 mod contract;
 mod cross_features;
+#[cfg(test)]
+#[path = "../tests/unit/expression_result_population_review.rs"]
+mod expression_result_population_review_tests;
 mod expression_structure;
 mod featuring;
 mod formal_targets;
