@@ -19,6 +19,10 @@ pub use component_audit::{ComponentClosureAudit, ComponentClosureFinding};
 #[path = "producer_closure_trace.rs"]
 mod trace;
 
+#[path = "publication_dependencies.rs"]
+mod publication_dependencies;
+pub use publication_dependencies::*;
+
 #[path = "producer_read_storage.rs"]
 mod read_storage;
 use read_storage::ProducerReadPool;
