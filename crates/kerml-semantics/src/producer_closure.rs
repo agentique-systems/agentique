@@ -1549,10 +1549,14 @@ impl ProducerClosureCertificate {
                     global_block
                 };
         }
-        // Exhaustive typing follows canonical specialization/conjugation/chains.
+        // Exhaustive typing follows canonical specialization/conjugation and
+        // only the terminal of a canonical feature chain. Other requirements
+        // retain the conservative all-component footprint (featuring uses the
+        // first component). A head's own typing cannot change the terminal.
         // Include all specialization subtypes conservatively, including incoming
         // nonowned relationships. This catches a delayed producer on a target.
         let mut dependents = vec![Vec::new(); subjects.len()];
+        let mut typing_dependents = vec![Vec::new(); subjects.len()];
         for record in model.elements() {
             let class = record.metaclass();
             let is = |base| model.registry().is_subtype(class, base).unwrap_or(false);
@@ -1583,6 +1587,9 @@ impl ProducerClosureCertificate {
                             (positions.get(&source), positions.get(&target))
                         {
                             dependents[j].push(i);
+                            if !is(c::FEATURE_CHAINING) {
+                                typing_dependents[j].push(i);
+                            }
                         }
                     }
                 }
@@ -1591,7 +1598,22 @@ impl ProducerClosureCertificate {
                 for target in refs(record.id(), property) {
                     if let Some(&j) = positions.get(&target) {
                         dependents[j].push(positions[&record.id()]);
+                        if property != p::FEATURE_CHAINING_FEATURE {
+                            typing_dependents[j].push(positions[&record.id()]);
+                        }
                     }
+                }
+            }
+            if is(c::FEATURE) {
+                let i = positions[&record.id()];
+                match canonical_chain_terminal(model, record.id()) {
+                    Ok(Some(terminal)) => {
+                        if let Some(&j) = positions.get(&terminal) {
+                            typing_dependents[j].push(i);
+                        }
+                    }
+                    Ok(None) => {}
+                    Err(()) => blocked[i] |= SemanticClosureRequirement::EffectiveTyping.bit(),
                 }
             }
         }
@@ -1609,13 +1631,30 @@ impl ProducerClosureCertificate {
                         let target = bindings.get(role);
                         if let Some(&j) = positions.get(&target) {
                             dependents[j].push(positions[&record.id()]);
+                            typing_dependents[j].push(positions[&record.id()]);
                         }
                     }
                 }
             }
         }
-        trace::typing_blockers(model, &subjects, &blocked, &dependents, registry, &states);
+        let typing = SemanticClosureRequirement::EffectiveTyping.bit();
+        let mut typing_blocked: Vec<_> = blocked.iter().map(|mask| mask & typing).collect();
+        for mask in &mut blocked {
+            *mask &= !typing;
+        }
+        trace::typing_blockers(
+            model,
+            &subjects,
+            &typing_blocked,
+            &typing_dependents,
+            registry,
+            &states,
+        );
         propagate(&mut blocked, &dependents);
+        propagate(&mut typing_blocked, &typing_dependents);
+        for (mask, typing) in blocked.iter_mut().zip(typing_blocked) {
+            *mask |= typing;
+        }
         let closed: Vec<_> = blocked
             .into_iter()
             .enumerate()
@@ -1652,6 +1691,60 @@ impl ProducerClosureCertificate {
             incomplete_pairs,
         }
     }
+}
+
+/// The structural footprint shared by chaining_features, feature_target and
+/// supertypes: canonical owned order and every established endpoint, with only
+/// the last component supplying inherited typing. This does not certify the
+/// population against future writers: issue's ordinary producer/provider masks
+/// still cover FeatureChain, ownership and reference-valued scalar changes.
+fn canonical_chain_terminal(
+    model: &ModelView,
+    subject: ElementId,
+) -> Result<Option<ElementId>, ()> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{derived::PropertyState, value::Value};
+
+    let owned = match model.property_state(subject, p::ELEMENT_OWNED_RELATIONSHIP) {
+        Ok(PropertyState::Computed(slot)) => slot,
+        Ok(PropertyState::Absent) => return Ok(None),
+        _ => return Err(()),
+    };
+    let mut terminal = None;
+    for value in owned.value().values() {
+        let Value::Reference(relationship) = value else {
+            return Err(());
+        };
+        let record = model.element(*relationship).ok_or(())?;
+        if !model
+            .registry()
+            .is_subtype(record.metaclass(), c::FEATURE_CHAINING)
+            .map_err(|_| ())?
+        {
+            continue;
+        }
+        let endpoint =
+            match model.property_state(*relationship, p::FEATURE_CHAINING_CHAINING_FEATURE) {
+                Ok(PropertyState::Computed(slot)) => slot,
+                _ => return Err(()),
+            };
+        let mut values = endpoint.value().values();
+        let Some(Value::Reference(target)) = values.next() else {
+            return Err(());
+        };
+        if values.next().is_some()
+            || !model.element(*target).is_some_and(|record| {
+                model
+                    .registry()
+                    .is_subtype(record.metaclass(), c::FEATURE)
+                    .unwrap_or(false)
+            })
+        {
+            return Err(());
+        }
+        terminal = Some(*target);
+    }
+    Ok(terminal)
 }
 
 fn certificate_digest(
