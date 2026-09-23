@@ -14,7 +14,8 @@ completed corpus result is the eight-document Actions/dependency scope:
 ambiguous, invalid or mismatched references, zero kernel obligations. All eight
 documents parse and construct byte-exactly; all 534 endpoints are selected. The scheduler
 converges but closure remains Incomplete. The remaining references are
-`Anything` and `receiver` on TriggerAction `35c0b23f?`. Medium/full publication has not run;
+`Anything` and `receiver` on TriggerAction `35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6`.
+Medium/full publication has not run;
 the full-publication attempt budget is unused.
 
 Subsequent focused corrections close the while-loop, inherited assertion-result
@@ -23,6 +24,11 @@ the complete SysML package subsequently passed 73 tests in 71.38 seconds. These
 results cover faithful synthetic layered fixtures, not accepted corpus closure.
 The completed `08e4a83` audit improves the prior 499/534 result by 33 references
 but still fails the scoped gate. No full-publication acceptance is inferred.
+A subsequent regression reproduced an unrelated ancestor's variable-property
+premise entering an otherwise sufficient Action/SelfLink exclusion proof.
+The selected-witness correction (`f15cfca`) passes five focused tests and the
+receiver fixture; its corrected Actions audit remains pending. The text frontend
+package passed 91 tests with two explicit accepted-cache ignores before that fix.
 See [closure.md](closure.md) for the defects, proof boundaries, regressions and
 historical failed/passing observations. Full KerML verification also passes
 336 tests (173 unit, 163 integration), with two existing scale ignores; the
