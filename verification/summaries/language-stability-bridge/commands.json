@@ -9019,6 +9019,22 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "bridge-current-coverage-integrity",
+      "command": [
+        "npm.cmd",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "59497285fc34bd9e376902f480dd8715b917f67a",
+      "working_changes_sha256": "6ad9b13154cc04fec48d1388831ebbd48b63914777856e5f25ac0b0df0139754",
+      "output_sha256": "7f0f0623a75cf993598b5d39ef7df566f5a143d5554b22b76fbae0d390992fbe",
+      "duration_seconds": 0.55,
+      "output": "verification/generated/language-stability-bridge/bridge-current-coverage-integrity.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [
