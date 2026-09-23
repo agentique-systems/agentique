@@ -478,10 +478,12 @@ impl<'a> Graph<'a> {
     }
     fn finish_producer<T>(
         &mut self,
+        subject: ElementId,
+        family: ProducerFamilyId,
         production: &mut QueryResult<T>,
     ) -> crate::producer_closure::ProducerReads {
         self.retain_producer_searches(production);
-        crate::producer_closure::producer_reads(production, self.model)
+        crate::producer_read_trace::reads(subject, family, production, self.model)
     }
     fn retain_producer_searches<T>(&mut self, production: &mut QueryResult<T>) {
         // Output provenance belongs to the family that produced it. The
@@ -2084,7 +2086,7 @@ impl ResultStructurePlan<'_> {
         self.producer_reads.push((
             subject,
             family,
-            crate::producer_closure::producer_reads(evidence, self.graph.model),
+            crate::producer_read_trace::reads(subject, family, evidence, self.graph.model),
         ));
     }
 
@@ -2497,7 +2499,11 @@ impl<'m> KerMlQueries<'m> {
                     producer_reads.push((
                         subject,
                         ProducerFamily::OwnedInstantiationResult.id(),
-                        graph.finish_producer(&mut proof),
+                        graph.finish_producer(
+                            subject,
+                            ProducerFamily::OwnedInstantiationResult.id(),
+                            &mut proof,
+                        ),
                     ));
                     production.merge(proof);
                     graph.finish_subject(&mut production, &mut aggregate);
@@ -2511,7 +2517,11 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::OwnedInstantiationResult.id(),
-                    graph.finish_producer(&mut proof),
+                    graph.finish_producer(
+                        subject,
+                        ProducerFamily::OwnedInstantiationResult.id(),
+                        &mut proof,
+                    ),
                 ));
             }
             if profile.supports_publication_producers() && self.is(subject, c::FEATURE) {
@@ -2556,7 +2566,11 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::PositionalRedefinition.id(),
-                    graph.finish_producer(&mut redefinitions),
+                    graph.finish_producer(
+                        subject,
+                        ProducerFamily::PositionalRedefinition.id(),
+                        &mut redefinitions,
+                    ),
                 ));
                 production.merge(redefinitions);
                 let mut proof = self.result(());
@@ -2634,7 +2648,11 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::VariableFeaturing.id(),
-                    graph.finish_producer(&mut proof),
+                    graph.finish_producer(
+                        subject,
+                        ProducerFamily::VariableFeaturing.id(),
+                        &mut proof,
+                    ),
                 ));
                 production.merge(proof);
             }
@@ -2709,7 +2727,7 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::OwnedCrossing.id(),
-                    graph.finish_producer(&mut proof),
+                    graph.finish_producer(subject, ProducerFamily::OwnedCrossing.id(), &mut proof),
                 ));
                 production.merge(proof);
             }
@@ -2755,7 +2773,7 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::CrossDomain.id(),
-                    graph.finish_producer(&mut proof),
+                    graph.finish_producer(subject, ProducerFamily::CrossDomain.id(), &mut proof),
                 ));
                 production.merge(proof);
             }
@@ -2812,7 +2830,7 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::Invocation.id(),
-                    graph.finish_producer(&mut proof),
+                    graph.finish_producer(subject, ProducerFamily::Invocation.id(), &mut proof),
                 ));
                 production.merge(proof);
             }
@@ -2861,7 +2879,11 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::FeatureChainExpression.id(),
-                    graph.finish_producer(&mut proof),
+                    graph.finish_producer(
+                        subject,
+                        ProducerFamily::FeatureChainExpression.id(),
+                        &mut proof,
+                    ),
                 ));
                 production.merge(proof);
             }
@@ -2897,7 +2919,11 @@ impl<'m> KerMlQueries<'m> {
                     producer_reads.push((
                         subject,
                         ProducerFamily::FeatureReferenceExpression.id(),
-                        graph.finish_producer(&mut proof),
+                        graph.finish_producer(
+                            subject,
+                            ProducerFamily::FeatureReferenceExpression.id(),
+                            &mut proof,
+                        ),
                     ));
                     production.merge(proof);
                 }
@@ -2963,7 +2989,11 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::ExpressionResult.id(),
-                    graph.finish_producer(&mut proof),
+                    graph.finish_producer(
+                        subject,
+                        ProducerFamily::ExpressionResult.id(),
+                        &mut proof,
+                    ),
                 ));
                 production.merge(proof);
             }
@@ -3172,7 +3202,11 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::FeatureValuation.id(),
-                    graph.finish_producer(&mut structural_proof),
+                    graph.finish_producer(
+                        subject,
+                        ProducerFamily::FeatureValuation.id(),
+                        &mut structural_proof,
+                    ),
                 ));
                 if !deferred_bindings.contains(&subject)
                     || stratum == ResultStructureStratum::ContextualBindings
@@ -3185,7 +3219,11 @@ impl<'m> KerMlQueries<'m> {
                     producer_reads.push((
                         subject,
                         ProducerFamily::FeatureValue.id(),
-                        graph.finish_producer(&mut binding_proof),
+                        graph.finish_producer(
+                            subject,
+                            ProducerFamily::FeatureValue.id(),
+                            &mut binding_proof,
+                        ),
                     ));
                 }
                 production.merge(structural_proof);
@@ -3276,7 +3314,11 @@ impl<'m> KerMlQueries<'m> {
                 producer_reads.push((
                     subject,
                     ProducerFamily::IndexSelectResult.id(),
-                    graph.finish_producer(&mut proof),
+                    graph.finish_producer(
+                        subject,
+                        ProducerFamily::IndexSelectResult.id(),
+                        &mut proof,
+                    ),
                 ));
                 production.merge(proof);
             }

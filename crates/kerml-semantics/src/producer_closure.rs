@@ -944,6 +944,7 @@ impl ProducerEvaluationTable {
                         }
                     }
                 } else {
+                    crate::producer_read_trace::missing_reads(subject, registry.descriptors[j].id);
                     global.push(pair);
                 }
             }

@@ -33,6 +33,7 @@ mod producer_closure_tests;
 #[cfg(test)]
 #[path = "../tests/unit/producer_parameter_scope.rs"]
 mod producer_parameter_scope_tests;
+mod producer_read_trace;
 #[cfg(test)]
 #[path = "../tests/unit/producer_rule_ownership.rs"]
 mod producer_rule_ownership_tests;
