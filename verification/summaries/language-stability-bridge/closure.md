@@ -85,6 +85,45 @@ Exact commands, earlier failing controls and output hashes are in
 the `invocation-scope-commands.json` source-ledger range of `commands.json`. The combined language expression gate and corpus
 acceptance remain separate checks.
 
+The audited fresh-ownership contract is integrated in registry `/5`. New
+records retain plan-local emitter claims independently of their canonical identity
+keys; every claimant must satisfy creation, scope and existing-effect permissions.
+Both attachment contributions and ownership slots on fresh parents require an
+Ownership capability when adopting an existing child. Unknown creation contracts,
+remote writers and pending ownership providers retain conservative global bounds.
+The future-owner proof follows only the permitted attachment ancestry when these
+contracts are established. Focused independent review permits this scope boundary.
+On `577492f`, the producer sweep passes 120 tests (two existing ignores), and the
+full KerML semantic package passes 368 tests across 36 suites (two existing ignores,
+142.67 seconds), including all five trusted-restoration guards. These checks
+precede the separate instantiation read correction below. Exact failing and final
+passing records are retained in the two `future-scope-review` source-ledger ranges.
+
+The pinned KerML 1.0 `InstantiationExpression::instantiatedType` operation
+(`standards/normative/kerml-1.0/KerML.xmi`, lines 496–515) rejects
+FeatureMemberships before selecting the first remaining owned Membership.
+The query previously selected that same target but retained the entire
+Membership population as a producer dependency. A pending writer of only
+FeatureMemberships therefore reopened an otherwise complete Invocation row.
+
+The query now uses the existing `owned_relationships_excluding` contract.
+It preserves canonical ownership order, accepts eligible declared and derived
+memberships, and retains the selected member endpoint evidence. It does not
+certify absence from an incomplete source or change operator target lookup.
+
+The targeted red regression used the actual Invocation descriptor and a pending
+subject-scoped FeatureMembership writer. It returned the correct Function but
+left Invocation Pending in both query evaluator modes. The precise query makes
+that row Complete; unknown or qualifying Membership writers and explicit broad
+reads merged in either order still reopen it. Additional controls exercise
+selected target reconstruction and derived eligible memberships.
+
+Exact commands, exits, source identities and output hashes are in
+the `instantiation-population-commands.json` source-ledger range of `commands.json`. The initial additional-control build
+failed because the test used nonexistent convenience methods; the corrected
+fixture uses the ordinary context and materialization APIs. No standard
+publication/cache was loaded and no historical accepted KerML identity changed.
+
 These synthetic fixtures use genuinely closed
 layered dependencies, not fabricated accepted standard publications.
 
