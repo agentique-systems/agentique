@@ -38,6 +38,9 @@ mod read_dependencies;
 mod relationship_sources;
 mod resolution;
 mod result_structure;
+#[cfg(test)]
+#[path = "../tests/unit/selected_contribution_merge.rs"]
+mod selected_contribution_merge_tests;
 mod specialization_witness;
 mod status_queries;
 mod structural;
