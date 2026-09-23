@@ -371,3 +371,11 @@ they are unavailable, not reconstructed:
 | `cargo test -p agq-sysml-semantics` | 73 passed, 71.38 s; docs passed | 0 |
 
 </details>
+
+An auxiliary accepted-ancestry diagnostic projection (`2b83b1c`, retained on its
+agent branch) compiled, parsed and passed example Clippy. Its single debug cache
+restoration was deliberately canceled to free the host for the corrected Actions
+audit: requested exit 124, 177.437 seconds, 2,743.0 MiB peak private memory. No
+authored construction/query verdict was produced. The unused experimental harness
+is not integrated; all three actual command records are retained in the
+`accepted-trigger-probe-commands.json` source-ledger range of `commands.json`.

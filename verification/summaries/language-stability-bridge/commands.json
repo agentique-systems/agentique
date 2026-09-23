@@ -4398,6 +4398,97 @@
         "CARGO_PROFILE_RELEASE_LTO": "false",
         "CARGO_PROFILE_RELEASE_DEBUG": "0"
       }
+    },
+    {
+      "name": "accepted-trigger-probe-syntax",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "accepted_trigger_probe",
+        "--",
+        "--syntax-only"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e53faec17662adf4890c96f91fa5346124946d7a",
+      "working_changes_sha256": "84d75398730f430b59426ab759dbf823331646d4a1c25b03a5e7260537ffd905",
+      "output_sha256": "19091c412ff0684736d93631d6ebef02f624398c44020f36e89c3cd8dc025b14",
+      "duration_seconds": 17.41,
+      "output": "verification/generated/language-stability-bridge/accepted-trigger-probe-syntax.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "accepted-trigger-probe-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "accepted_trigger_probe",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e53faec17662adf4890c96f91fa5346124946d7a",
+      "working_changes_sha256": "84d75398730f430b59426ab759dbf823331646d4a1c25b03a5e7260537ffd905",
+      "output_sha256": "e6bc775a86f273d9325121ce6c265dcdf85cc526da8034ab4a611c30c94484c4",
+      "duration_seconds": 6.19,
+      "output": "verification/generated/language-stability-bridge/accepted-trigger-probe-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "accepted-trigger-probe",
+      "command": [
+        "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure/debug/examples/accepted_trigger_probe.exe",
+        "--cache=C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/accepted-trigger-probe/report.json"
+      ],
+      "source_commit": "e53faec17662adf4890c96f91fa5346124946d7a",
+      "working_changes_sha256": "84d75398730f430b59426ab759dbf823331646d4a1c25b03a5e7260537ffd905",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/accepted-trigger-probe",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 25776,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 26798190592,
+      "safety_stop": "requested",
+      "duration_seconds": 177.437,
+      "peak_rss_bytes": 2779971584,
+      "peak_private_bytes": 2876215296,
+      "samples": 178,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "8447313031bd83362d5a1f6ebb24282fceca59a1da839abbf0cb29983f59b98c"
     }
   ],
   "source_ledgers": [
@@ -4547,6 +4638,13 @@
       "source_blob_sha256": "f0596de147f005786745726f5169caf66097444211932072f9fc08d5ae783751",
       "first_command": 150,
       "command_count": 10
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/accepted-trigger-probe-commands.json",
+      "source_commit": "98f7461a2d3c8ce972064e3e7a73522dbd6e57e8",
+      "source_blob_sha256": "ef0214b610eee1f984b31ada3bead48801cec28bb43483d640a3bcaa1ff5794c",
+      "first_command": 163,
+      "command_count": 3
     }
   ]
 }
