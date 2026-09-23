@@ -15,6 +15,19 @@ read. The expression producer really adds an owning membership, so removing its
 membership effect is not justified. Further investigation targets the query read.
 No medium or full publication has run.
 
+The next reproduced defect is historical proof-search contamination across an
+authenticated dependency boundary. A closed dependency's derived parameter proof
+retained an incoming/model search; importing it into the project made an unrelated
+expression producer reopen positional redefinition. `f73f8ec` seals only exact,
+unchanged Element/Property/AssociationOccurrence facts from an authenticated
+dependency. Canonical proof roots and declared origins remain available, with
+historical evidence interpreted in the dependency's context. Explicit current
+inverse/source searches remain live. Untrusted immutable graphs confer no seal.
+The regression matrix (`54b10be`) covers both evaluator modes, derived records and
+selected appends, archive fallback, changed inverse projections and both merge
+orders. Independent review permits the corrected Actions audit; no corpus result
+is inferred from these focused checks. Accepted KerML bytes and identity are unchanged.
+
 These synthetic fixtures use genuinely closed
 layered dependencies, not fabricated accepted standard publications.
 

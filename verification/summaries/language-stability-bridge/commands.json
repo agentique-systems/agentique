@@ -4344,6 +4344,60 @@
         "CARGO_PROFILE_RELEASE_LTO": "false",
         "CARGO_PROFILE_RELEASE_DEBUG": "0"
       }
+    },
+    {
+      "name": "bridge-sealed-proof-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f73f8ec9b57a8b5233049c25bb619f91430681ba",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.48,
+      "output": "verification/generated/language-stability-bridge/bridge-sealed-proof-format.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "bridge-sealed-proof-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f73f8ec9b57a8b5233049c25bb619f91430681ba",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "27a565465e5f8db51a10ec52617eee2cddf4c5517f486296e032e5b802bef29d",
+      "duration_seconds": 222.0,
+      "output": "verification/generated/language-stability-bridge/bridge-sealed-proof-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
     }
   ],
   "source_ledgers": [
