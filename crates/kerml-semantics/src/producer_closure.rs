@@ -15,6 +15,10 @@ pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
 #[path = "producer_closure_trace.rs"]
 mod trace;
 
+#[cfg(test)]
+#[path = "../tests/unit/producer_read_interning.rs"]
+mod read_interning_tests;
+
 /// Precise scalar reads coexist with conservative structural population reads.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum ProducerRead {
