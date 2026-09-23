@@ -274,6 +274,103 @@ fn variable_featuring_pending_child_cannot_change_ancestor_type_featuring() {
         );
     }
 }
+#[test]
+fn variable_end_snapshot_cannot_reopen_its_own_crossing_or_positional_rule() {
+    use crate::producer_closure::ProducerEvaluationTable;
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let (snapshot, bindings) = nested_variable_fixture();
+    let mut changes = snapshot.change_set();
+    changes.set(
+        id(10),
+        p::FEATURE_IS_END,
+        SlotValue::Scalar(Value::Boolean(true)),
+        origin(),
+    );
+    let snapshot = snapshot.apply(&changes).unwrap();
+    let registry = ProducerRegistry::new(
+        ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(profile)),
+    )
+    .unwrap();
+    let mut context = SemanticContext::for_snapshot(
+        &snapshot,
+        SemanticOptions {
+            baseline_profile: profile,
+            ..Default::default()
+        },
+        BTreeSet::new(),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    context.id.standard_bindings = Some(bindings);
+    let q = KerMlQueries::for_production(context.fork());
+    let plan = q.plan_result_structure([id(10)]);
+    plan.validate_declared_effects(&[id(10)], &registry)
+        .unwrap();
+    for family in [
+        ProducerFamily::OwnedCrossing,
+        ProducerFamily::PositionalRedefinition,
+    ] {
+        assert!(
+            plan.producer_evaluations
+                .contains(&(id(10), family.id(), Completeness::Complete))
+        );
+    }
+    let mut table = ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        table.pending(record.id(), snapshot.model(), &registry);
+        for descriptor in registry.descriptors() {
+            if descriptor
+                .applicability
+                .applies(snapshot.model(), record.metaclass())
+            {
+                table
+                    .record(
+                        &[(
+                            record.id(),
+                            descriptor.id,
+                            if record.id() == id(10)
+                                && descriptor.id == ProducerFamily::VariableFeaturing.id()
+                            {
+                                Completeness::Incomplete
+                            } else {
+                                Completeness::Complete
+                            },
+                        )],
+                        &registry,
+                    )
+                    .unwrap();
+            }
+        }
+    }
+    table.record_reads(&plan.producer_reads, &registry);
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    for family in [
+        ProducerFamily::OwnedCrossing,
+        ProducerFamily::PositionalRedefinition,
+    ] {
+        let reads = plan
+            .producer_reads
+            .iter()
+            .find(|(subject, f, _)| *subject == id(10) && *f == family.id())
+            .unwrap();
+        assert_eq!(
+            certificate.evaluation(id(10), registry.index(family.id()).unwrap()),
+            Some(ProducerEvaluationState::EvaluatedComplete),
+            "{family:?}: {:?}",
+            reads.2
+        );
+    }
+}
+
 fn expression_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
     expression_fixture_with_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8)
 }
