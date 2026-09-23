@@ -423,7 +423,7 @@ fn effective_answers_expose_missing_base_rules_and_derived_may_time_vary() {
     );
 }
 
-fn library_fixture(class: MetaclassId, duplicated: bool) -> Snapshot {
+pub(crate) fn library_fixture(class: MetaclassId, duplicated: bool) -> Snapshot {
     let mut f = Fixture::new();
     f.origin = DeclaredOrigin::StandardLibrary {
         library: SystemsLibraryIdentity::LIBRARY,

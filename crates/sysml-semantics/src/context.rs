@@ -214,14 +214,7 @@ impl<'m> SysmlSemanticContext<'m> {
                 "producer-closed dependency witness",
             ));
         }
-        let registry = agq_kerml_semantics::ProducerRegistry::new(
-            agq_kerml_semantics::ProducerFamily::ALL
-                .into_iter()
-                .map(|family| family.descriptor(kerml.id().options.baseline_profile))
-                .chain(crate::sysml_producer_descriptors()),
-        )
-        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
-        let kerml = kerml.with_producer_registry_digest(registry.digest())?;
+        let kerml = producer_context(kerml)?;
         Self::attach(kerml.model(), kerml, trusted, bindings)
     }
     /// Attach scheduler evidence to the exact composed graph and dependency
@@ -232,17 +225,16 @@ impl<'m> SysmlSemanticContext<'m> {
         mut self,
         certificate: Arc<agq_kerml_semantics::ProducerClosureCertificate>,
     ) -> Result<Self, SysmlContextError> {
-        let registry = agq_kerml_semantics::ProducerRegistry::new(
-            agq_kerml_semantics::ProducerFamily::ALL
-                .into_iter()
-                .map(|family| family.descriptor(self.kerml.id().options.baseline_profile))
-                .chain(crate::sysml_producer_descriptors()),
-        )
-        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
-        self.kerml = self
-            .kerml
-            .with_producer_registry_digest(registry.digest())?
-            .with_producer_closure(certificate)?;
+        let kerml = producer_context(self.kerml)?;
+        // Opting in authenticates the original declared populations as well as
+        // the aggregate graph. Bindings made against a current-graph context
+        // cannot silently retain the old, narrower graph identity.
+        if !self.bindings.valid_for_context(&kerml) {
+            return Err(SysmlContextError::IdentityMismatch(
+                "standard SysML bindings graph",
+            ));
+        }
+        self.kerml = kerml.with_producer_closure(certificate)?;
         self.id.kerml = self.kerml.id().clone();
         Ok(self)
     }
@@ -322,6 +314,25 @@ impl<'m> SysmlSemanticContext<'m> {
         let kerml = accepted.project_overlay_context(overlay, local_roots)?;
         Self::attach(overlay.model(), kerml, trusted, bindings)
     }
+    /// Bind producer-aware queries to an overlay with the exact accepted KerML
+    /// dependency. The full KerML/SysML producer registry is independently
+    /// established before validating bindings against the source-sensitive
+    /// graph identity. This does not assert producer closure; attach the exact
+    /// scheduler certificate with [`Self::with_producer_closure`].
+    pub fn for_producer_overlay(
+        overlay: &'m DerivedOverlay,
+        accepted: &CompletePublicationOverlay,
+        local_roots: &[ElementId],
+        expected: &SysmlDependencyContract,
+        bindings: StandardSysmlBindings,
+    ) -> Result<Self, SysmlContextError> {
+        let trusted =
+            SysmlDependencyContract::checked_in_for_profile(&bindings, expected.sysml_profile)?;
+        validate_contract(expected, &trusted)?;
+        validate_accepted(accepted.context(), &trusted)?;
+        let kerml = producer_context(accepted.project_overlay_context(overlay, local_roots)?)?;
+        Self::attach(overlay.model(), kerml, trusted, bindings)
+    }
     fn attach(
         model: &'m ModelView,
         kerml: SemanticContext<'m>,
@@ -362,6 +373,17 @@ impl<'m> SysmlSemanticContext<'m> {
     pub fn model(&self) -> &'m ModelView {
         self.model
     }
+}
+
+fn producer_context(kerml: SemanticContext<'_>) -> Result<SemanticContext<'_>, SysmlContextError> {
+    let registry = agq_kerml_semantics::ProducerRegistry::new(
+        agq_kerml_semantics::ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(kerml.id().options.baseline_profile))
+            .chain(crate::sysml_producer_descriptors()),
+    )
+    .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
+    Ok(kerml.with_producer_registry_digest(registry.digest())?)
 }
 
 fn sysml_naming_extension() -> Arc<dyn agq_kerml_semantics::SemanticNamingExtension> {

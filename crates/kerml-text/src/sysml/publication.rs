@@ -302,6 +302,15 @@ impl CanonicalSysmlSystemsLibrary {
             ));
             return Err(SystemsPublicationError::Rejected(Box::new(audit)));
         };
+        // Validate final bindings under the independently required registry;
+        // the certificate cannot choose which producers the publication owes.
+        let registry = agq_kerml_semantics::ProducerRegistry::new(
+            agq_kerml_semantics::ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(inputs.accepted_kerml.profile()))
+                .chain(agq_sysml_semantics::sysml_producer_descriptors()),
+        )
+        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
         let q = KerMlQueries::new(
             inputs
                 .accepted_kerml
@@ -314,9 +323,7 @@ impl CanonicalSysmlSystemsLibrary {
                         Arc::new(agq_sysml_semantics::SysmlNamingExtension),
                     )
                 })
-                .and_then(|context| {
-                    context.with_producer_registry_digest(certificate.registry_digest())
-                })
+                .and_then(|context| context.with_producer_registry_digest(registry.digest()))
                 .and_then(|context| context.with_producer_closure(certificate.clone()))
                 .map_err(PublicationOverlayError::Context)?,
         );
@@ -385,7 +392,7 @@ impl CanonicalSysmlSystemsLibrary {
         if let Some(bindings) = &bindings {
             // Typed current-graph queries validate narrowed SysML domains. The
             // separate producer gate is responsible for the closure claim.
-            let context = SysmlSemanticContext::for_overlay(
+            let context = SysmlSemanticContext::for_producer_overlay(
                 &closure.overlay,
                 inputs.accepted_kerml.complete_overlay(),
                 &inputs.roots,
@@ -475,7 +482,7 @@ impl CanonicalSysmlSystemsLibrary {
     pub fn producer_closed_dependency(
         &self,
     ) -> Result<Arc<agq_kerml_semantics::ProducerClosedDependency>, SysmlContextError> {
-        let context = SysmlSemanticContext::for_overlay(
+        let context = SysmlSemanticContext::for_producer_overlay(
             &self.overlay,
             self.accepted_kerml.complete_overlay(),
             &self.roots,
@@ -498,22 +505,16 @@ impl CanonicalSysmlSystemsLibrary {
         .map_err(SysmlContextError::KerMl)
     }
     pub fn queries(&self) -> KerMlQueries<'_> {
-        KerMlQueries::new(
-            self.accepted_kerml
-                .complete_overlay()
-                .project_overlay_context(&self.overlay, &self.roots)
-                .expect("accepted immutable Systems dependency")
-                .with_naming_extension(
-                    SYSML_SEMANTIC_CONTEXT_DOMAIN,
-                    self.identity.dependencies.context_identity_digest(),
-                    Arc::new(agq_sysml_semantics::SysmlNamingExtension),
-                )
-                .and_then(|context| {
-                    context.with_producer_registry_digest(self.producer_closure.registry_digest())
-                })
-                .and_then(|context| context.with_producer_closure(self.producer_closure.clone()))
-                .expect("accepted SysML context identity and producer closure"),
+        let context = SysmlSemanticContext::for_producer_overlay(
+            &self.overlay,
+            self.accepted_kerml.complete_overlay(),
+            &self.roots,
+            &self.identity.dependencies,
+            self.bindings.clone(),
         )
+        .and_then(|context| context.with_producer_closure(self.producer_closure.clone()))
+        .expect("accepted SysML context identity, bindings and producer closure");
+        KerMlQueries::new(context.kerml_context().fork())
     }
 }
 impl std::fmt::Debug for CanonicalSysmlSystemsLibrary {
