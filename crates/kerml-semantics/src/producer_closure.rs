@@ -12,6 +12,9 @@ use std::sync::Arc;
 mod rebind;
 pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
 
+#[path = "producer_closure_trace.rs"]
+mod trace;
+
 /// Precise scalar reads coexist with conservative structural population reads.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum ProducerRead {
@@ -1611,6 +1614,7 @@ impl ProducerClosureCertificate {
                 }
             }
         }
+        trace::typing_blockers(model, &subjects, &blocked, &dependents, registry, &states);
         propagate(&mut blocked, &dependents);
         let closed: Vec<_> = blocked
             .into_iter()
