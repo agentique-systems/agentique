@@ -365,7 +365,7 @@ fn inverse_ownership_uses_selected_edge_proof_and_keeps_derived_and_broad_reads(
         } else {
             KerMlQueries::new(context)
         };
-        for (selected, appended, owner, property, class, child) in [
+        for (selected, appended, owner, property, class, child, appended_child) in [
             (
                 q.owning_related_element(id(3)),
                 q.owning_related_element(id(4)),
@@ -373,6 +373,7 @@ fn inverse_ownership_uses_selected_edge_proof_and_keeps_derived_and_broad_reads(
                 p::ELEMENT_OWNED_RELATIONSHIP,
                 c::ELEMENT,
                 3,
+                4,
             ),
             (
                 q.owning_relationship(id(7)),
@@ -381,6 +382,7 @@ fn inverse_ownership_uses_selected_edge_proof_and_keeps_derived_and_broad_reads(
                 p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
                 c::RELATIONSHIP,
                 7,
+                8,
             ),
         ] {
             let fact = FactKey::Property {
@@ -406,8 +408,14 @@ fn inverse_ownership_uses_selected_edge_proof_and_keeps_derived_and_broad_reads(
             assert_eq!(appended.value, Some(id(owner)));
             assert!(
                 appended
-                    .canonical_dependencies
-                    .contains(&Dependency::Derived(fact))
+                    .search_dependencies
+                    .contains(&SearchDependency::Kernel(
+                        StructuralSearch::OrderedReferenceContribution {
+                            element: id(owner),
+                            property,
+                            target: id(appended_child),
+                        }
+                    ))
             );
             assert!(
                 producer_reads(&appended, overlay.model())
@@ -1357,29 +1365,19 @@ fn typed_population_retains_broad_reads_only_when_actually_observed() {
     let q = KerMlQueries::new(
         SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
     );
-    let mut evidence = q.canonical_fact_evidence(FactKey::Property {
-        element: id(1),
-        property: p::ELEMENT_OWNED_RELATIONSHIP,
-    });
-    evidence.search_dependencies.clear();
-    evidence
-        .search_dependencies
-        .insert(SearchDependency::OwnedRelationships {
-            owner: id(1),
-            class: c::FEATURE_TYPING,
-        });
+    let mut evidence = q
+        .owned_relationships_of_type(id(1), c::FEATURE_TYPING)
+        .map(|_| ());
     let reads = producer_reads(&evidence, q.model());
     assert!(reads.contains(&ProducerRead::Owned(id(1), c::FEATURE_TYPING)));
     assert!(!reads.contains(&ProducerRead::Property(
         id(1),
         p::ELEMENT_OWNED_RELATIONSHIP
     )));
-    evidence
-        .search_dependencies
-        .insert(SearchDependency::PropertySet {
-            element: id(1),
-            property: p::ELEMENT_OWNED_RELATIONSHIP,
-        });
+    evidence.merge(q.canonical_fact_evidence(FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    }));
     assert!(
         producer_reads(&evidence, q.model()).contains(&ProducerRead::Property(
             id(1),
@@ -3533,17 +3531,34 @@ fn filtered_declared_ownership_keeps_original_proof_after_unrelated_append() {
                 Origin::Declared(_)
             ));
         }
-        for later in [
-            q.owned_relationships_of_type(id(1), c::FEATURE_MEMBERSHIP),
-            q.owned_relationships_of_type(id(1), c::RELATIONSHIP),
-            q.owned_relationships(id(1)),
+        for (later, broad) in [
+            (
+                q.owned_relationships_of_type(id(1), c::FEATURE_MEMBERSHIP),
+                false,
+            ),
+            (q.owned_relationships_of_type(id(1), c::RELATIONSHIP), false),
+            (q.owned_relationships(id(1)), true),
         ] {
             assert!(later.value.contains(&id(4)));
-            assert!(
-                later
-                    .canonical_dependencies
-                    .contains(&Dependency::Derived(fact))
-            );
+            if broad {
+                assert!(
+                    later
+                        .canonical_dependencies
+                        .contains(&Dependency::Derived(fact))
+                );
+            } else {
+                assert!(
+                    later
+                        .search_dependencies
+                        .contains(&SearchDependency::Kernel(
+                            StructuralSearch::OrderedReferenceContribution {
+                                element: id(1),
+                                property: p::ELEMENT_OWNED_RELATIONSHIP,
+                                target: id(4),
+                            }
+                        ))
+                );
+            }
             assert!(
                 producer_reads(&later, overlay.model())
                     .contains(&ProducerRead::Requirement(id(2), requirement))
