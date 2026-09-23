@@ -31,6 +31,9 @@ mod producer_closure;
 #[path = "../tests/unit/producer_closure.rs"]
 mod producer_closure_tests;
 #[cfg(test)]
+#[path = "../tests/unit/producer_invocation_scope.rs"]
+mod producer_invocation_scope_tests;
+#[cfg(test)]
 #[path = "../tests/unit/producer_parameter_scope.rs"]
 mod producer_parameter_scope_tests;
 mod producer_read_trace;
