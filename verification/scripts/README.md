@@ -32,7 +32,7 @@ Isolated worktrees must use distinct target directories (the wrapper's `--target
 argument). A shared Cargo lock serializes builds but does not make one worktree's
 artifacts suitable as another worktree's verification evidence.
 
-The language-closure milestone's full Systems attempt uses the watchdog with
+The historical language-closure milestone's full Systems attempt used the watchdog with
 `--wall-seconds 2100 --private-mib 6656 --min-free-mib 1024`. Run the targeted
 Actions and authority slices first. The example's `--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States`
 and `--audit-only` arguments select exact pinned documents by stem; all transitive source and
@@ -66,9 +66,17 @@ assertions and overflow checks retain their normal test-profile defaults.
 Crossing it terminates the command tree with a recorded `disk_space` stop; the
 wrapper never removes files to recover space.
 
-Only after all publication preflights pass, the lead may run the release binary
-under the milestone's limits above. This Systems milestone permits one full
-attempt and one retry only after fixing a concrete defect found in that attempt.
+That historical milestone permitted one full attempt and one retry after a
+concrete defect. It does not authorize further retries in the
+[final language acceptance milestone](../summaries/final-language-acceptance/README.md).
+The current milestone permits one new full attempt only after exact medium
+uninterrupted/resumed equivalence, using `--wall-seconds 3600 --private-mib 6656
+--min-free-mib 1024 --stall-seconds 600`. The stall progress pattern observes
+completed frontiers, changed closed-pair counts or changed planned/output
+populations; evaluated-subject counters and repeated heartbeats do not reset it.
+An external interruption may resume an authenticated frontier; a semantic defect
+invalidates it. No competing heavy Rust build runs during publication.
+
 `--progress-pattern` optionally captures named regex groups from a bounded stdout
 tail into resource observations. Create the run directory's `stop` file to request
 a recorded process-tree termination. Raw logs and samples remain available there.

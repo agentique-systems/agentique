@@ -28,7 +28,10 @@ without a completed frontier, changed closed-pair count or changed planned/outpu
 population. Repeated messages, timestamps and evaluated-subject counters do not
 reset this clock. No competing heavy Rust build runs during full publication.
 External interruption may resume an authenticated checkpoint; a semantic defect
-invalidates it. No full attempt has been launched by the preparatory checks.
+invalidates it. The [medium prerequisite](phase-f.md) passed, including exact
+uninterrupted/resumed artifact equivalence. The single full attempt is now
+running with the same pinned executable; `publication-commands.json` will retain
+its completed watchdog record. This is an execution status, not acceptance.
 
 Strict Systems acceptance still requires 21/21 exact parses and constructions,
 zero kernel obligations, converged Complete producers, a fully closed certificate,

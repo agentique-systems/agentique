@@ -62,7 +62,7 @@ cleaned, and after the run the verified executable was retained separately befor
 cleaning disposable Cargo release/Rustdoc artifacts. The original sources,
 libraries, accepted caches, checkpoints and verification evidence were preserved.
 
-The single full candidate remains gated on that equivalence result. Its limits
+That equivalence result authorized the single full candidate, now running. Its limits
 are 3,600 seconds, 6,656 MiB private memory, 1,024 MiB free disk, and a 600-second
 stall timeout observing changed frontier, planned population or closed-pair
 count. Resource limits are workflow stops and cannot relax semantic acceptance.
