@@ -1,4 +1,6 @@
 use super::*;
+#[path = "producer_end_usage_tests.rs"]
+mod end_usage_tests;
 #[path = "producer_expression_usage_tests.rs"]
 mod expression_usage_tests;
 #[path = "producer_trigger_tests.rs"]
