@@ -71,6 +71,102 @@ fn composed_fact_observation_retains_failed_and_absent_read_evidence() {
 }
 
 #[test]
+fn shared_search_expansion_matches_eager_public_evidence_exactly() {
+    let mut fixture = Fixture::new();
+    fixture.create(1, c::TYPE);
+    let snapshot = fixture.finish();
+    let slots: Vec<_> = snapshot
+        .model()
+        .element(id(1))
+        .unwrap()
+        .slots()
+        .map(|(property, slot)| (property, slot.value().clone()))
+        .collect();
+    let searches: Arc<BTreeSet<_>> = Arc::new(
+        (20_000..22_048)
+            .map(|n| StructuralSearch::Incoming(id(n)))
+            .collect(),
+    );
+    let distinct_searches = Arc::new(BTreeSet::from([StructuralSearch::ElementIdentity(id(
+        99_999,
+    ))]));
+    let mut builder = DerivationBuilder::new(snapshot);
+    let mut previous = None;
+    let mut facts = BTreeSet::from([FactKey::Element(id(1))]);
+    for index in 0..64 {
+        let key = DerivationKey {
+            rule: RuleId::from_u128(998),
+            subject: id(1),
+            output: OutputKey::from_u128(index),
+        };
+        let mut dependencies = BTreeSet::from([Dependency::Declared(FactKey::Element(id(1)))]);
+        if let Some(previous) = previous {
+            dependencies.insert(Dependency::Derived(previous));
+        }
+        let fact = FactKey::Element(key.element_id());
+        builder.element(key, c::TYPE, slots.clone(), dependencies);
+        builder.searches_shared(
+            fact,
+            if index == 31 {
+                distinct_searches.clone()
+            } else {
+                searches.clone()
+            },
+        );
+        facts.insert(fact);
+        previous = Some(fact);
+    }
+    let overlay = builder.build().unwrap();
+    let q = KerMlQueries::new(context(&overlay));
+    let root = previous.unwrap();
+    let mut actual = q.result(());
+    q.fact(&mut actual, root);
+    let mut eager = q.result(());
+    q.fact_with_search_sharing::<false, _>(&mut eager, root);
+    assert_eq!(actual, eager);
+    assert_eq!(format!("{actual:?}"), format!("{eager:?}"));
+    assert!(!actual.producer_evidence);
+    assert!(actual.shared_search_dependencies.iter().next().is_none());
+    assert_eq!(actual.positive_dependencies, facts);
+    assert_eq!(
+        actual.fact_origins.keys().copied().collect::<BTreeSet<_>>(),
+        facts
+    );
+    assert_eq!(actual.declared_fact_origins.len(), 1);
+    assert!(
+        actual
+            .declared_fact_origins
+            .contains_key(&FactKey::Element(id(1)))
+    );
+    assert_eq!(
+        actual.search_dependencies,
+        searches
+            .iter()
+            .chain(distinct_searches.iter())
+            .cloned()
+            .map(SearchDependency::Kernel)
+            .collect()
+    );
+    assert_eq!(
+        actual.canonical_dependencies,
+        BTreeSet::from([Dependency::Derived(root)])
+    );
+
+    // New independent output and repeated observations remain fully eager; no
+    // global "already expanded" state can discard their negative searches.
+    let independent = q.canonical_fact_evidence(root);
+    for search in searches.iter().chain(distinct_searches.iter()) {
+        assert!(
+            independent
+                .search_dependencies
+                .contains(&SearchDependency::Kernel(search.clone()))
+        );
+    }
+    q.fact(&mut actual, root);
+    assert_eq!(actual, eager);
+}
+
+#[test]
 fn a_million_logical_search_entries_stay_shared_through_subquery_merges() {
     let mut fixture = Fixture::new();
     fixture.create(1, c::TYPE);
