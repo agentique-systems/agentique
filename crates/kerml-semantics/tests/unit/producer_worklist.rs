@@ -534,15 +534,32 @@ fn assert_chain_query_ignores_result_snapshot_membership(
     query: impl FnOnce(&KerMlQueries<'_>) -> QueryResult<Option<ElementId>>,
     expected: ElementId,
 ) {
-    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    assert_chain_reads_ignore_result_snapshot_membership(
+        |q| {
+            let answer = query(q);
+            assert_eq!(answer.completeness, Completeness::Complete);
+            assert_eq!(answer.value, Some(expected));
+            crate::producer_closure::producer_reads(&answer, q.model())
+        },
+        true,
+        false,
+    );
+}
+
+fn assert_chain_reads_ignore_result_snapshot_membership(
+    read_set: impl FnOnce(&KerMlQueries<'_>) -> crate::producer_closure::ProducerReads,
+    existing_source_target: bool,
+    materialized: bool,
+) {
+    use crate::producer_closure::ProducerEvaluationTable;
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V9;
-    let (snapshot, _) = expression_nested_result_fixture(true);
+    let (snapshot, bindings) = expression_nested_result_fixture(existing_source_target);
     let registry = ProducerRegistry::new([
         ProducerFamily::FeatureChainExpression.descriptor(profile),
         ProducerFamily::VariableFeaturing.descriptor(profile),
     ])
     .unwrap();
-    let context = SemanticContext::for_snapshot(
+    let mut context = SemanticContext::for_snapshot(
         &snapshot,
         SemanticOptions {
             baseline_profile: profile,
@@ -553,18 +570,34 @@ fn assert_chain_query_ignores_result_snapshot_membership(
     .unwrap()
     .with_producer_registry_digest(registry.digest())
     .unwrap();
+    context.id.standard_bindings = Some(bindings.clone());
+    let first = materialized.then(|| {
+        KerMlQueries::for_production(context.fork())
+            .plan_result_structure([id(1)])
+            .materialize(&snapshot)
+            .unwrap()
+    });
+    let mut context = if let Some(first) = &first {
+        SemanticContext::for_overlay(
+            &first.overlay,
+            context.id().options.clone(),
+            BTreeSet::new(),
+        )
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap()
+    } else {
+        context
+    };
+    context.id.standard_bindings = Some(bindings);
     let q = KerMlQueries::for_production(context.fork());
-    let input = query(&q);
-    assert_eq!(input.completeness, Completeness::Complete);
-    assert_eq!(input.value, Some(expected));
+    let model = q.model();
+    let reads = read_set(&q);
     let mut table = ProducerEvaluationTable::default();
-    for record in snapshot.model().elements() {
-        table.pending(record.id(), snapshot.model(), &registry);
+    for record in model.elements() {
+        table.pending(record.id(), model, &registry);
         for descriptor in registry.descriptors() {
-            if !descriptor
-                .applicability
-                .applies(snapshot.model(), record.metaclass())
-            {
+            if !descriptor.applicability.applies(model, record.metaclass()) {
                 continue;
             }
             table
@@ -590,7 +623,7 @@ fn assert_chain_query_ignores_result_snapshot_membership(
                     if record.id() == id(1)
                         && descriptor.id == ProducerFamily::FeatureChainExpression.id()
                     {
-                        producer_reads(&input, snapshot.model())
+                        reads.clone()
                     } else {
                         Vec::new().into()
                     },
@@ -599,13 +632,8 @@ fn assert_chain_query_ignores_result_snapshot_membership(
             );
         }
     }
-    let certificate = ProducerClosureCertificate::issue(
-        snapshot.model(),
-        context.id(),
-        &registry,
-        &table,
-        |_| None,
-    );
+    let certificate =
+        ProducerClosureCertificate::issue(model, context.id(), &registry, &table, |_| None);
     assert_eq!(
         certificate.evaluation(
             id(1),
@@ -614,7 +642,7 @@ fn assert_chain_query_ignores_result_snapshot_membership(
                 .unwrap()
         ),
         Some(ProducerEvaluationState::EvaluatedComplete),
-        "a result snapshot cannot displace the established chain query answer"
+        "a result snapshot cannot displace the established chain query answer: {reads:?}"
     );
 }
 
@@ -2093,4 +2121,32 @@ fn formal_binding_read_metadata_rebinds_to_each_publication_frontier() {
     assert!(digests.len() > 1);
     assert!(result.converged);
     assert_eq!(result.completeness, Completeness::Complete);
+}
+
+#[test]
+fn actual_chain_planner_does_not_wait_for_result_snapshot_membership() {
+    for (existing_source_target, materialized) in
+        [(false, false), (true, false), (false, true), (true, true)]
+    {
+        assert_chain_reads_ignore_result_snapshot_membership(
+            |q| {
+                let plan = q.plan_result_structure([id(1)]);
+                assert!(plan.producer_evaluations.contains(&(
+                    id(1),
+                    ProducerFamily::FeatureChainExpression.id(),
+                    Completeness::Complete,
+                )));
+                plan.producer_reads
+                    .iter()
+                    .find(|(subject, family, _)| {
+                        *subject == id(1) && *family == ProducerFamily::FeatureChainExpression.id()
+                    })
+                    .expect("actual chain producer read row")
+                    .2
+                    .clone()
+            },
+            existing_source_target,
+            materialized,
+        );
+    }
 }

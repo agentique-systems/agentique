@@ -681,3 +681,14 @@ commands and the initial fixture errors are retained in the
 `index-select-scope-commands.json` source-ledger range. Canonical outputs, rule
 IDs and accepted KerML bytes remain unchanged; the combined descriptor digest
 changes. No corpus result follows from these focused checks.
+
+The complete FeatureChain planner's retained-read control passes on both fresh
+and materialized frontiers, with source-target present and absent (four cases,
+0.64 seconds). An otherwise Complete chain row remains Complete with its direct
+result's VariableFeaturing row pending. This confirms the chain queries together
+no longer carry that false direct cycle; it does not establish the enclosing
+SysML expression's closure. The latest full expression trace locates the
+remaining path through the nested FeatureReferenceExpression's ancestor-context
+reads. `bridge-actual-chain-planner` and `bridge-materialized-chain-planner` are
+recorded in `commands.json`. A speculative release build was explicitly stopped
+(exit 4294967295) when the combined fixture remained red; no corpus used it.

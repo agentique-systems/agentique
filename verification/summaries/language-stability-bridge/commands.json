@@ -6558,6 +6558,94 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "bridge-expression-closure-release",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 4294967295,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0ddafbc09c5ad90866ac2ee7228c76b805e726d0",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "196c88c53950f31755982514165b89c5ded612b7ff08d51d718673c6b83b7074",
+      "duration_seconds": 53.22,
+      "output": "verification/generated/language-stability-bridge/bridge-expression-closure-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      },
+      "workflow_observation": "Requested stop after the independent combined expression fixture remained Incomplete; build not used for publication.",
+      "requested_stop": true
+    },
+    {
+      "name": "bridge-actual-chain-planner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "actual_chain_planner_does_not_wait_for_result_snapshot_membership",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0ddafbc09c5ad90866ac2ee7228c76b805e726d0",
+      "working_changes_sha256": "26ff6c59593da90641944ebabe202a1b0f7683c21caa9d5016cb6523306cf034",
+      "output_sha256": "60d88efee90f028b6f90b6c5f761f13a06345675297799727c79468802b2f560",
+      "duration_seconds": 30.8,
+      "output": "verification/generated/language-stability-bridge/bridge-actual-chain-planner.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
+    },
+    {
+      "name": "bridge-materialized-chain-planner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "actual_chain_planner_does_not_wait_for_result_snapshot_membership",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0ddafbc09c5ad90866ac2ee7228c76b805e726d0",
+      "working_changes_sha256": "a7475e475a962e925c66e97b150d58f354a35883433ad94e204f52137c3953b3",
+      "output_sha256": "d85e18d1e4685361f3c70f8682607c1fb137fd4de736f4751e82d8405e531e90",
+      "duration_seconds": 29.45,
+      "output": "verification/generated/language-stability-bridge/bridge-materialized-chain-planner.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
     }
   ],
   "source_ledgers": [
