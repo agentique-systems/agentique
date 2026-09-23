@@ -70,6 +70,7 @@ ranges; the retained observation table covers older Markdown-only results.
 | A newly created helper's initial two-FeatureChaining slot had no per-reference support, leaving seven receiver producer pairs open | Initial ordered derived slots retain selected target and validated owner creation evidence, including record/slot negative searches. Repeated targets fall back to aggregate evidence. Copy-on-write, construction and dependency paths preserve the optional cache | `4fa87cd` / root `55b5af8`; seven kernel regressions and 119 package tests plus three doc tests pass; receiver test now Complete in 33.80 s |
 | Positive SelfLink/HappensLink/composite Action exclusion imported an unrelated ancestor's mayTimeVary proof | Select a canonical positive specialization witness while retaining owner, scalar and role antecedents. No witness preserves the exhaustive ancestry and negative closure requirements | Reproduction `afb092a` failed for Action and SelfLink; correction `039a035` / root `f15cfca` passes five focused tests, receiver Complete in 27.18 s, all-target SysML Clippy and formatting. Actual corrected corpus: 532/534; trigger own evaluations Complete, transitive typing open |
 | Nonterminal chain typing kept the chain's EffectiveTyping open despite a closed terminal | Typing follows only the canonical last FeatureChaining endpoint. Every endpoint must be established; future chain, ownership and reference-scalar writers remain blockers. Other requirement masks retain all components because featuring uses the head | Reproduction `eff127a`; correction `df11c96` / root `2be4fc9`. Six chain guards and 103 producer tests pass (two existing ignores), as do five accepted-KerML restoration guards, two-package all-target Clippy and formatting. Independent semantic review permits the same bounded Actions audit; actual `b4ce4e2` Actions result remains 532/534, 871.047 seconds, 5,209.3 MiB; initial trigger typing mask remains blocked |
+| Transition payload's transitive descendant write scope reopened the trigger and its nested parameters, although the actual rule writes only the transition's second directly owned input | Generic `OwnedParameterFeatures` bounds existing writes to direct directed non-result FeatureMembership children. Closure masks, causal reader propagation and output auditing share that bound; unknown inputs remain open, existing direction/ownership/reference writers widen it, and reconstruction recomputes it | Actual planner/descriptor counterexample `8f8e89f` exits 101; `9cd8f80` passes seven transition tests, six scope guards, aliased unknown/failed direction coverage and 109 producer tests (two existing ignores). Full SysML package: 76 passed in 50.44 s; five KerML restoration guards, two-package all-target Clippy and formatting pass. Independent review GO; no corpus acceptance claim |
 
 The contribution cache is optional, read-only kernel evidence. Local archives omit
 it without changing canonical bytes; a missing entry requires aggregate query
@@ -87,6 +88,16 @@ certificate formats; corrected closure bits change the normal certificate digest
 Specialization and conjugation propagation remain unchanged. Its exact command
 records are consolidated from `c38b203` into `commands.json`, including fixture
 compilation corrections and the superseded zero-test restoration filter.
+
+The parameter scope is appended without changing existing scope discriminants.
+Only the SysML transition descriptor changes its existing-subject capability;
+the combined registry digest changes normally. Historical KerML descriptor
+identities, query meanings and archive/certificate formats remain unchanged.
+The scope deliberately includes all direct directed parameters, not just the
+second input. Fresh-only direction effects do not reclassify an existing trigger;
+unknown local membership cannot acquire a protected dependency element. Exact
+focused commands, including the initial missing-endpoint fixture's unnecessary
+obligation assertion and its correction, are retained in the transition scope ledger.
 
 The bounded residual review of the 532/534 audit (`fc04dfa`) found 105 incomplete
 mayTimeVary, 11 value-binding and two positional evaluations among diagnostic
