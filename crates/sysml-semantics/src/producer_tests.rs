@@ -2306,6 +2306,24 @@ fn closed_kernel_anchor_fixture(
     LibrarySetIdentity,
     Vec<ElementId>,
 ) {
+    closed_kernel_anchor_fixture_with(
+        with_snapshot_typing,
+        with_time_enclosed_occurrences,
+        with_boolean_inheritance,
+        |_, _| {},
+    )
+}
+
+fn closed_kernel_anchor_fixture_with(
+    with_snapshot_typing: bool,
+    with_time_enclosed_occurrences: bool,
+    with_boolean_inheritance: bool,
+    customize: impl FnOnce(&mut Fixture, &agq_kerml_semantics::StandardKermlBindings),
+) -> (
+    Arc<agq_kerml_semantics::ProducerClosedDependency>,
+    LibrarySetIdentity,
+    Vec<ElementId>,
+) {
     use agq_kerml_semantics::{
         ProducerClosedDependency, ProducerFamily, ProducerRegistry, PublicationOverlayError,
         close_result_structure_with_extension,
@@ -2442,6 +2460,21 @@ fn closed_kernel_anchor_fixture(
             kernel.changes.clear(id(245_006), kp::ELEMENT_DECLARED_NAME);
         }
     }
+    let context = SemanticContext::for_snapshot(
+        &all_kernel,
+        SemanticOptions {
+            baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+            ..Default::default()
+        },
+        BTreeSet::new(),
+    )
+    .unwrap()
+    .with_standard_bindings(&kernel_roots, &libraries)
+    .unwrap();
+    customize(
+        &mut kernel,
+        context.id().standard_bindings.as_ref().unwrap(),
+    );
     let kernel = kernel.finish();
     let extension = SysmlProducerExtension::new(
         SysmlBaselineProfile::OPERATIONAL_V2,

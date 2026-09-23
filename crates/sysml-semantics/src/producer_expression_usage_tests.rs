@@ -1,5 +1,7 @@
 //! Frontend-equivalent expression result shape from Items::Item::isSolid.
 use super::*;
+#[path = "producer_index_usage_tests.rs"]
+mod index_usage_tests;
 use agq_kerml_semantics::{
     ProducerClosedDependency, ProducerFamily, ProducerRegistry, PublicationOverlayError,
     SemanticClosureRequirement, close_result_structure_with_extension,
@@ -134,7 +136,26 @@ fn expression_dependency_with_signature(
     function: &str,
     parameters: &[&str],
 ) -> (Arc<ProducerClosedDependency>, Vec<ElementId>) {
-    let (dependency, _, mut roots) = closed_kernel_anchor_fixture(true, false, false);
+    let (dependency, _, roots) = closed_kernel_anchor_fixture(true, false, false);
+    expression_dependency_from_kernel(dependency, roots, function, parameters)
+}
+
+fn expression_dependency_from_kernel(
+    dependency: Arc<ProducerClosedDependency>,
+    roots: Vec<ElementId>,
+    function: &str,
+    parameters: &[&str],
+) -> (Arc<ProducerClosedDependency>, Vec<ElementId>) {
+    expression_dependency_from_kernel_with(dependency, roots, function, parameters, |_, _, _| {})
+}
+
+fn expression_dependency_from_kernel_with(
+    dependency: Arc<ProducerClosedDependency>,
+    mut roots: Vec<ElementId>,
+    function: &str,
+    parameters: &[&str],
+    customize: impl FnOnce(&mut Fixture, &BTreeMap<StandardSysmlRole, u128>, ElementId),
+) -> (Arc<ProducerClosedDependency>, Vec<ElementId>) {
     let occurrence = dependency
         .context()
         .standard_bindings
@@ -197,6 +218,7 @@ fn expression_dependency_with_signature(
         set_enum(&mut f, feature, kp::FEATURE_DIRECTION, direction);
         f.member(71_000, feature, feature + 100_000, member);
     }
+    customize(&mut f, &roles, occurrence);
     let snapshot = without_membership_names(f.finish());
     let extension = SysmlProducerExtension::new(
         SysmlBaselineProfile::OPERATIONAL_V2,
