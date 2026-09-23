@@ -147,6 +147,125 @@ index rebuilding as an explicit initial limitation. The review also identifies
 construction-draft lifetime reductions for the accepted authored fixture; it does
 not claim measured savings or authorize production workspace integration early.
 
+### Minimum shared-storage implementation
+
+Read-only design review at `e75d15e`; no storage implementation or benchmark is
+claimed. Keep the current public `ModelView`, Snapshot, construction and overlay
+contracts. Use the existing immutable dependency handle as the shared base and
+ordinary local `BTreeMap` storage; no new collection dependency is needed.
+
+The proposed private representation is:
+
+```rust,ignore
+struct ModelView {
+    registry: Arc<MetamodelRegistry>,
+    dependency: Option<Arc<DerivedOverlay>>,
+    declared_source: Option<DerivationInput>,
+    local: Arc<LocalModelTables>,
+    indexes: Arc<LocalIndexes>,
+}
+```
+
+`LocalModelTables` contains only this project's current records, occurrences,
+derived navigation, computation failures, searches and optional ordered-reference
+contributions. A standalone publication uses the same representation without a
+base; a dependent publication can itself retain its existing dependency chain.
+Record IDs and occurrence IDs must be disjoint from the entire base, not resolved
+by a local-wins overwrite rule. Local records may reference protected IDs.
+
+Each revision owns its complete local population; it does not point to the prior
+revision as another lookup layer. This bounds dependency traversal by publication
+depth rather than edit count. Published tables/indexes are immutable. Staging
+clones only local maps, sharing record payloads; additive materialization moves
+local storage with `Arc::try_unwrap` when possible. Old readers force local copies
+only. A local derived overlay can initially copy the local declared map; avoiding
+that authored copy is not required for phase 1.
+
+Implement the storage boundary in this order:
+
+| Files / internal boundary | Required change |
+| --- | --- |
+| `kernel/src/model.rs` (`ModelView`, `DerivationModelParts`, `Snapshot::stage`, `apply`, `preview`) | Introduce the private local tables/indexes and a borrowed candidate lookup over dependency plus local tables. Mounting creates empty local storage. Builders mutate local tables only; collision checks and endpoint lookup see both populations. Replace direct map access with explicit local-mutation or combined-read helpers. |
+| `model.rs` (`SnapshotData`, `ConstructionView`) and `derivation_input.rs` | Keep only local live/retired identity reservations. `has_used` checks local history, dependency live derived IDs and dependency reserved history recursively. Preserve protection of retired dependency IDs as well as live records. Construction/strict equivalence compares the same dependency, local data and local identity history. |
+| `model.rs` query methods and `association.rs::project` | Preserve borrowed results, ordering and merged navigation using the index rules below. Give validators borrowed combined lookup/iteration instead of requiring one flattened map. Keep strict bounds, endpoint typing, uniqueness, inverse multiplicity and protected composite ownership checks. |
+| `derived.rs`, `derived/construction.rs`, `derived/archive_restore.rs`, `derived/proof_graph.rs` | Store local explanation lookup/interner tables; `explain`, `facts`, proof-existence checks and search lookup fall back to the exact dependency. Do not clone its explanation/search pools or cached proof adjacency. Local proofs may cite base facts; base proofs cannot acquire local premises. Preserve local cycle checks, failure checks and exact-input strict promotion. |
+| `archive.rs` | Decode dependent archives directly into local tables and retain the supplied dependency. Stop extending decoded maps with its records, occurrences and metadata. Encode the same logical ordered entries/reservations as today through merged iterators, preserving archive bytes and existing trusted receipts. Validate reservation subsets by borrowed membership; discard redundant decoded base reservations after validation. |
+| `kerml-semantics/src/producer_closed_dependency.rs` and the authored frontend | Continue mounting the same authenticated publication Arc. Reuse one witness across workspace revisions; do not add a language acceptance constructor in the kernel. The existing source-input/result carrier owns local compilation and the workspace owns history. |
+
+The kernel may use a private `model/storage.rs` module for borrowed lookup and
+sorted merge helpers. These are implementation helpers, not a generic storage
+backend trait or a new public collection API. Keep the extension-registry check:
+old descriptor/class/index meanings must remain valid under
+`require_extension_of`. Validate any newly applicable navigation obligations in
+the combined registry; do not assume that all required association navigation
+is covered by the old class property set. Such validation can borrow the base
+without rebuilding its tables. The ordinary accepted Systems project mount uses
+the already combined registry.
+
+#### Index and navigation rules
+
+Record/class/occurrence iteration merges disjoint sorted streams. Incoming,
+outgoing and incidence queries merge base and local occurrences, preserving
+today's sort key and carrier identity. `incoming_for_property` filters each
+layer's indexed bucket, then merges; base offsets cannot index a combined vector.
+Class queries retain the current exact/subtype-inclusive meaning. No query may
+return only the base answer merely because its subject is a standard ID.
+
+`navigation_slot` returns `Option<&Slot>`, so a temporary concatenated value is
+insufficient. `LocalIndexes` must retain sparse **combined projection slots** for
+each association/inverse group touched by local carriers. Build those slots from
+both populations, validate the complete group's bounds, uniqueness and ordering,
+and retain all contributing occurrence provenance. Untouched groups borrow the
+base projection. Scalar inverse conflicts remain errors. These project-only
+projections do not replace a standard record or mutate the publication's view.
+
+Association reference positions need special care: `ModelView::build` currently
+enumerates unordered occurrence positions in occurrence-ID order. A local link
+whose ID sorts before a base link changes the latter's position in the combined
+view. Rebuild reference entries for that affected `(source, property)` group and
+suppress its old base entries during merged incoming/outgoing reads. Apply this
+replacement to every affected target/property bucket, retaining occurrence IDs;
+do not blindly append local entries or deduplicate equal endpoints. Ordered
+positions remain explicit and must pass the existing contiguous-order check.
+Allocate only touched groups/buckets, never all standard index buckets.
+
+Local edits/removals rebuild local indexes and touched projections from the base
+and current local population, so stale local inverse entries need no historical
+tombstone chain. Reject composite crossings before treating containment as
+independent local/base graphs: neither a new local owner of a standard element
+nor new ownership under a protected standard record is permitted. Noncomposite
+incoming relationships remain visible to project queries and their provider
+closure checks. Full borrowed validation/digest scans may remain initially;
+temporary allocations must be measured separately and must not flatten the base
+into new graph/index tables as a hidden builder step.
+
+Original declared-slot lookup must route standard subjects to the dependency's
+declared projection and local subjects to this revision's declared input. Derived
+status, proof and contribution-cache lookup follows the same partition. Preserve
+the existing archive omission/fallback of local contribution metadata, checked
+checkpoint invalidation, canonical context digest and all Complete/Incomplete
+meanings. Shared storage does not itself justify preserving a closure witness.
+
+#### Storage-specific acceptance matrix
+
+Extend the existing kernel tests before using the representation in the workspace:
+
+| Existing test area | Additional discriminator |
+| --- | --- |
+| `immutable_dependencies`, `snapshots`, `construction` | Two projects and retained old revisions share the exact dependency tables/indexes. Local edit/remove/recovery cannot rewrite dependency records, occurrences, composite ownership or retired identities. Local tables contain no protected records or copied base reservation population. |
+| `association_slots`, `derived_associations` | Local noncomposite carriers into a base subject appear in combined incoming, property-filtered incoming, incidence and navigation; the base facade stays unchanged. Check scalar inverse conflict, duplicate targets with distinct occurrences, ordered positions and a smaller local occurrence ID shifting unordered positions. Removing the local link restores the exact base projection. |
+| `registry_extensions` | Existing classes reuse base index populations under a compatible extension; new local subclasses are found correctly. Incompatible descriptors and newly unsatisfied navigation bounds still reject. |
+| `derivations`, `reference_contributions`, `structural_search_sharing` | Local proofs resolve base premises without copied base pools. Strict/construction/additive paths preserve declared versus derived facts, exact contribution support and fallback; changing a local carrier still reopens relevant negative/provider closure. |
+| `archive`, accepted publication restoration | Dependent roundtrip retains the supplied base allocation and canonical bytes/digests. Protected archive writes/reservations reject, local contribution metadata remains optional, and historical accepted receipt checks still pass. |
+| Workspace 100-document/five-revision fixture | Observe local/base table entries, index entries, proof-pool entries and touched projection sizes, plus unique retained storage and peak temporary memory. Empty mounts allocate no standard-sized maps; tiny edits rebuild only authored/touched index populations. Parallel readers see revision-specific results and no standard producer replay. |
+
+For small neutral graphs, compare every public graph/query projection with an
+independently flattened test oracle using the existing builder, including order,
+origins, failures and search evidence. Keep this oracle test-only. Add internal
+storage observations rather than exposing allocator identity as a semantic API.
+Run the kernel and language package gates, archive/receipt checks and workspace
+fixture after implementation; none has been run for this design-only review.
+
 Future work may refine document dependency invalidation, persistent authored
 indexes, incremental derivation and revision retention policies. It must preserve
 the immutable revision and evidence contracts. SQLite persistence, network APIs,
