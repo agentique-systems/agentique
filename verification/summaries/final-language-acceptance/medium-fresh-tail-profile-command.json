@@ -1,0 +1,85 @@
+{
+  "scope": "Offline completed fresh-medium profiling only; no Rust build, corpus execution, semantic narrowing, or acceptance issuance.",
+  "analysis_source_commit": "817f7b853936a31d609c89550f6c0f75667217f1",
+  "command": {
+    "command": "python verification/summaries/final-language-acceptance/medium-tail-profile.py C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/medium-fresh/report.stages.jsonl --watchdog C:/Users/phili/github/agentique-systems/agentique/verification/generated/overnight-convergence/foundation-medium-fresh/observations.jsonl --output-log C:/Users/phili/github/agentique-systems/agentique/verification/generated/overnight-convergence/foundation-medium-fresh/output.log --run-result C:/Users/phili/github/agentique-systems/agentique/verification/generated/overnight-convergence/foundation-medium-fresh/result.json --audit-report C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/medium-fresh/report.json --output verification/summaries/final-language-acceptance/medium-fresh-tail-profile.json --markdown verification/summaries/final-language-acceptance/medium-fresh-tail-profile.md",
+    "exit_code": 0,
+    "wall_time_seconds": 0.6113161,
+    "output": {
+      "completed_rows": 70,
+      "invocations": [
+        {
+          "ordinal": 0,
+          "phase": "construction",
+          "stages": [
+            0,
+            12
+          ],
+          "tail_frontiers": 0
+        },
+        {
+          "ordinal": 1,
+          "phase": "construction",
+          "stages": [
+            0,
+            11
+          ],
+          "tail_frontiers": 0
+        },
+        {
+          "ordinal": 2,
+          "phase": "construction",
+          "stages": [
+            0,
+            11
+          ],
+          "tail_frontiers": 0
+        },
+        {
+          "ordinal": 3,
+          "phase": "construction",
+          "stages": [
+            0,
+            32
+          ],
+          "tail_frontiers": 18
+        }
+      ]
+    }
+  },
+  "checks": [
+    {
+      "command": "@'\nimport hashlib,json,pathlib,re,runpy,subprocess\nbase=pathlib.Path('verification/summaries/final-language-acceptance')\np=json.loads((base/'medium-fresh-tail-profile.json').read_text())\nsource_pins=[p['source'],p['certificate_trace_source'],p['watchdog']['source'],p['completed_run']['watchdog_result_source'],p['completed_run']['audit_report_source']]\nfor pin in source_pins:\n raw=pathlib.Path(pin['path']).read_bytes()\n assert hashlib.sha256(raw).hexdigest()==pin['sha256'],pin['path']\nscript=base/'medium-tail-profile.py'\nassert runpy.run_path(str(script))['render'](p)==(base/'medium-fresh-tail-profile.md').read_text()\nold=['medium-tail-profile.md','medium-tail-profile.json','medium-tail-profile-command.json']\nassert subprocess.check_output(['git','diff','HEAD','--',*[str(base/f) for f in old]])==b''\nmd=base/'medium-fresh-tail-profile.md'\nfor relative in re.findall(r'\\]\\(([^)]+)\\)',md.read_text()):\n assert (md.parent/relative).exists(),relative\nprint(json.dumps({'source_files_authenticated':len(source_pins),'historical_partial_files_unchanged':old,'render_reproducible':True,'script_sha256':hashlib.sha256(script.read_bytes()).hexdigest(),'output_sha256':{name:hashlib.sha256((base/name).read_bytes()).hexdigest() for name in ('medium-fresh-tail-profile.json','medium-fresh-tail-profile.md')}}))\n'@ | python -",
+      "exit_code": 0,
+      "wall_time_seconds": 0.7566037,
+      "output": {
+        "source_files_authenticated": 5,
+        "historical_partial_files_unchanged": [
+          "medium-tail-profile.md",
+          "medium-tail-profile.json",
+          "medium-tail-profile-command.json"
+        ],
+        "render_reproducible": true,
+        "script_sha256": "8697a046b3f9c84e0c387ab43b34949ceb7ab5674e999117d11134920a208895",
+        "output_sha256": {
+          "medium-fresh-tail-profile.json": "9775a755ba22f4b18d289cf63497d9cd9507a5d176b75a1349f1f344d34adeb7",
+          "medium-fresh-tail-profile.md": "77abebdad9f0b6a5c5f840a5042584e1fbffa90e2a800aa5529fe4a411ef2b4a"
+        }
+      }
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "wall_time_seconds": 0.556179,
+      "output": "warning: in the working copy of 'verification/summaries/final-language-acceptance/medium-tail-profile.py', CRLF will be replaced by LF the next time Git touches it"
+    }
+  ],
+  "notes": [
+    "All five source files are pinned and rechecked against exact SHA-256 hashes in the profile.",
+    "Earlier partial MD/JSON/command evidence remains byte-for-byte unchanged.",
+    "Run source commit and working patch hash are copied from the completed watchdog result, not inferred from current main.",
+    "Script/output SHA-256 values identify actual worktree bytes; platform newline conversion is not semantic publication authority.",
+    "Independent exact uninterrupted/resumed acceptance is owned by the lead; this profile observes only the completed fresh run."
+  ],
+  "tool": "Python 3.12.10"
+}

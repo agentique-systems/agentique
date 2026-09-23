@@ -28,6 +28,12 @@ def snapshot(path):
                   "completed_lines": len(rows), "sha256": hashlib.sha256(retained).hexdigest()}
 
 
+def document(path):
+    raw = path.read_bytes()
+    return json.loads(raw), {"path": str(path), "bytes": len(raw),
+                             "sha256": hashlib.sha256(raw).hexdigest()}
+
+
 def aggregate(rows):
     counts = collections.Counter()
     timings = collections.Counter()
@@ -76,7 +82,9 @@ def aggregate(rows):
 
 
 def render(profile):
-    lines = ["# Measured medium scheduler tail", "",
+    completed = profile.get("completed_run")
+    title = "# Completed fresh medium scheduler tail" if completed else "# Measured medium scheduler tail"
+    lines = [title, "",
              "Observational profile of completed frontiers; this document does not establish publication acceptance.",
              "The zero-based stage threshold is 15. Counter resets identify separate invocations; JSONL row ordinals are never treated as rounds.", "",
              "| Invocation | Phase | Completed stages | Tail frontiers |",
@@ -87,7 +95,12 @@ def render(profile):
     latest_tail = latest["tail"]["frontiers"]
     if latest_tail:
         last = latest_tail[-1]
-        lines += ["", f"This snapshot ends at invocation {latest['ordinal']}, {latest['phase']} stage {last['stage']} ({last['stratum']}, {last['completeness']}). It includes only completed measurements available at that point; later frontiers and the independent acceptance report are outside this snapshot."]
+        suffix = ("The independently recorded scoped audit completed; no later frontiers belong to this run. The earlier partial profile remains unchanged in medium-tail-profile.md/JSON."
+                  if completed else "It includes only completed measurements available at that point; later frontiers and the independent acceptance report are outside this snapshot.")
+        lines += ["", f"This snapshot ends at invocation {latest['ordinal']}, {latest['phase']} stage {last['stage']} ({last['stratum']}, {last['completeness']}). {suffix}"]
+    if completed:
+        lines += ["", f"The recorded command exited {completed['command_exit_code']} after {completed['duration_seconds']:.3f}s: {completed['references_complete']}/{completed['references_total']} references Complete, {completed['kernel_obligations']} kernel obligations, {completed['closed_pairs']}/{completed['applicable_pairs']} producer pairs closed, {completed['closed_requirements']}/{completed['required_requirements']} requirements closed. The scoped construction scheduler converged Complete and its certificate is fully closed. Publication attempted/accepted are both false; this profile makes no full Systems acceptance or uninterrupted/resumed equivalence claim.",
+                  "", f"Run source commit `{completed['source_commit']}`, working patch SHA-256 `{completed['working_changes_sha256']}`. Incremental/full certificate comparison was enabled. Resource figures come from the completed watchdog result; its last observation can precede process completion."]
     lines += ["", "## Timing by invocation and stratum", "",
               "All durations are seconds. Certificate timing includes incremental issuance, the full reference rebuild, and exact comparison in this verification run. It is not the production-only incremental cost.", "",
               "| Invocation / stratum | Stages | Total | Planning incl. queries/cache | Certificate | Materialization | Read indexing | Certificate revalidation | Other |",
@@ -101,25 +114,43 @@ def render(profile):
     lines += ["", "Other time includes uninstrumented round work such as context construction and checkpoint capture. No distinct query/cache timer exists; queries and cache work remain inside planning.", "",
               "## Measured producer costs", "",
               "Exclusive family blocks can be ranked against planning. Shared values are inclusive callback attribution: they overlap across participating families and must not be summed."]
+    if completed:
+        tail_time = sum(inv['tail']['timings'].get('elapsed_micros', 0) for inv in profile['invocations'])
+        planning = sum(inv['tail']['timings'].get('planning_including_query_cache_micros', 0) for inv in profile['invocations'])
+        certificate = sum(inv['tail']['timings'].get('certificate_build_micros', 0) for inv in profile['invocations'])
+        lines += ["", f"Across the observed tail, planning occupies {planning/tail_time*100:.1f}% of measured round time and certificate construction including its full oracle occupies {certificate/tail_time*100:.1f}%. VariableFeaturing dominates StableProperties; VariableFeaturing, FeatureReferenceExpression and PositionalRedefinition dominate ContextualBindings. These are measured profile priorities, not evidence that any existing negative/provider read can be removed."]
     for inv in profile["invocations"]:
         for stratum, data in inv["tail_by_stratum"].items():
             lines += ["", f"### Invocation {inv['ordinal']}, {stratum}", "",
-                      "| Family | Attempts | Exclusive seconds | Overlapping shared seconds |",
-                      "| --- | ---: | ---: | ---: |"]
+                      "| Family | Attempts | Exclusive seconds | Share of planning | Overlapping shared seconds |",
+                      "| --- | ---: | ---: | ---: | ---: |"]
             ranked = sorted(data["families"].items(), key=lambda item: item[1]["planning_micros"], reverse=True)
             selected = [(n,m) for n,m in ranked[:6] if m["planning_micros"]]
             shared = sorted(data["families"].items(), key=lambda item: item[1]["shared_planning_micros"], reverse=True)
             selected += [(n,m) for n,m in shared[:3] if m["shared_planning_micros"] and n not in {k for k,_ in selected}]
             for name, family in selected:
-                lines.append(f"| {name} | {family['attempts']} | {family['planning_micros']/1e6:.3f} | {family['shared_planning_micros']/1e6:.3f} |")
+                share = family['planning_micros'] / data['timings']['planning_including_query_cache_micros'] * 100
+                lines.append(f"| {name} | {family['attempts']} | {family['planning_micros']/1e6:.3f} | {share:.1f}% | {family['shared_planning_micros']/1e6:.3f} |")
             lines += ["", f"The combined FeatureValue/FeatureValuation block costs {data['feature_value_valuation_shared_micros_counted_once']/1e6:.3f}s, counted once. Neither family's share is independently measured."]
             c=data["counts"]; d=data["certificate_delta"]
             lines += ["", f"Subjects evaluated/skipped/reopened: {c['subjects_evaluated']}/{c['subjects_skipped']}/{c['subjects_reopened']}. Planned element outputs: {c['planned_elements']}; accepted elements/occurrences: {c['accepted_elements']}/{c['accepted_occurrences']}."]
-            lines += ["", "| Next-frontier reason | Subject enqueues |", "| --- | ---: |"]
+            lines += ["", "| Next-frontier reason | Subject enqueues | Share of next-frontier enqueues |", "| --- | ---: | ---: |"]
             for reason,count in sorted(data["next_dirty_by_reason"].items(),key=lambda item:item[1],reverse=True):
-                lines.append(f"| {reason} | {count} |")
+                share = count / c['next_dirty_subjects'] * 100 if c['next_dirty_subjects'] else 0
+                lines.append(f"| {reason} | {count} | {share:.1f}% |")
+            lines += ["", f"Denominator: {c['next_dirty_subjects']} summed next-frontier subject enqueues. Categories overlap and percentages must not be added."]
+            if completed:
+                lines += ["", "| Dominant exclusive family | Attempt carrying a reason | Count / attempts |", "| --- | --- | ---: |"]
+                for name, family in ranked[:3]:
+                    for reason, count in sorted(family['reopened_by_reason'].items(), key=lambda item:item[1], reverse=True)[:3]:
+                        lines.append(f"| {name} | {reason} | {count}/{family['attempts']} ({count/family['attempts']*100:.1f}%) |")
             if d:
                 lines += ["", f"Certificate row work across these frontiers: topology rebuilt {d['topology_rebuilt']}, retained {d['topology_retained']}; producer scope rebuilt {d['scope_rebuilt']}, retained {d['scope_retained']}. Retained counts are per-frontier reuse events, not distinct rows."]
+                if completed:
+                    topology = d['topology_retained'] / (d['topology_retained'] + d['topology_rebuilt']) * 100
+                    scope = d['scope_retained'] / (d['scope_retained'] + d['scope_rebuilt']) * 100
+                    peak = max(data['frontiers'], key=lambda row:row['certificate_build_micros'])
+                    lines += ["", f"Observed row reuse: topology {topology:.2f}%, scope {scope:.2f}%. Largest completed certificate build in this stratum's tail: {peak['certificate_build_micros']/1e6:.3f}s at stage {peak['stage']}; this includes the full oracle. Summed certificate time is cumulative, not a single frontier's cost."]
     lines += ["", "Reason categories overlap. Graph/provider labels describe conservative invalidation keys, not independently proved changed answers. Family-specific reason counts are in the JSON artifact; a subject reopening evaluates its applicable family blocks together.", "",
               "## Retained writer and read guards", "",
               "No scope was narrowed and no running executable was changed for this analysis.", "",
@@ -135,9 +166,12 @@ def render(profile):
               "| deriveUsageMayTimeVary | StableProperties; only the subject's mayTimeVary/isVariable scalars. Positive selected canonical paths and complete negative ownership/typing/exclusion evidence are retained. |", "",
               "Contracts are defined in [producer_worklist.rs](../../../crates/kerml-semantics/src/producer_worklist.rs), [result_structure.rs](../../../crates/kerml-semantics/src/result_structure.rs), [implicit.rs](../../../crates/kerml-semantics/src/implicit.rs), and [SysML producers](../../../crates/sysml-semantics/src/producers.rs). Existing scope counterexamples remain in the producer closure/worklist suites; this observational run adds no semantic claim beyond those guards.", "",
               "## Reproduction and limits", "",
-              f"Source prefix: {profile['source']['completed_lines']} completed rows, {profile['source']['completed_bytes']} bytes, SHA-256 `{profile['source']['sha256']}`. The source may continue growing; the byte prefix makes this snapshot independently reproducible.", "",
+              f"Source prefix: {profile['source']['completed_lines']} completed rows, {profile['source']['completed_bytes']} bytes, SHA-256 `{profile['source']['sha256']}`. " + ("This is the completed fresh run's entire stage file." if completed else "The source may continue growing; the byte prefix makes this snapshot independently reproducible."), "",
               "`medium-tail-profile.py` reads only stage JSONL and watchdog logs. It validates per-round sums against each invocation's cumulative evaluated/skipped/reopened/certificate counters, rejects overlapping timing categories, checks paired shared timers, and matches certificate trace records to completed phase/stage records. The tracked JSON preserves per-frontier measurements and per-family reopen aggregates."]
-    if profile.get("watchdog",{}).get("last"):
+    if completed:
+        lines += ["", "Completed-run mode additionally reads the scoped audit and watchdog result, authenticates the output-log hash, requires a zero command/monitor exit and no safety stop, and checks the final stage's closure counts against the scoped report. It does not rerun the publication or the exact archive comparator.",
+                  "", f"Watchdog completion: {completed['duration_seconds']:.3f}s, peak private memory {completed['peak_private_bytes']/2**30:.3f} GiB, minimum disk reserve {completed['minimum_free_disk_bytes']/2**30:.3f} GiB. These are resource observations, not acceptance evidence."]
+    elif profile.get("watchdog",{}).get("last"):
         w=profile["watchdog"]
         lines += ["", f"Watchdog at snapshot: elapsed {w['last']['elapsed_seconds']:.3f}s, peak private memory {w['peak_private_bytes']/2**30:.3f} GiB, minimum disk reserve {w['minimum_free_disk_bytes']/2**30:.3f} GiB. These are resource observations, not acceptance evidence."]
     return "\n".join(lines)+"\n"
@@ -149,7 +183,11 @@ def main():
     parser.add_argument("--output-log", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--markdown", type=Path)
+    parser.add_argument("--run-result", type=Path, help="completed watchdog result; requires --audit-report")
+    parser.add_argument("--audit-report", type=Path, help="completed scoped audit; requires --run-result")
     args = parser.parse_args()
+    if bool(args.run_result) != bool(args.audit_report):
+        parser.error("--run-result and --audit-report must be supplied together")
     rows, source = snapshot(args.stages)
     trace_source = None
     if args.output_log:
@@ -212,6 +250,38 @@ def main():
                                "last": observations[-1] if observations else None,
                                "peak_private_bytes": max((r.get("peak_private_bytes", 0) for r in observations), default=0),
                                "minimum_free_disk_bytes": min((r["free_disk_bytes"] for r in observations), default=0)}
+    if args.run_result:
+        run, run_source = document(args.run_result)
+        audit, audit_source = document(args.audit_report)
+        assert run['exit_code'] == run['command_exit_code'] == 0
+        assert run['safety_stop'] is None and run['monitor_error'] is None
+        assert source['completed_bytes'] == args.stages.stat().st_size
+        assert trace_source and trace_source['matched_frontiers'] == len(rows)
+        assert trace_source['sha256'] == run['output_sha256']
+        assert audit['scoped_preflight_passed'] and audit['construction_complete']
+        assert audit['incremental_certificate_reference_check']
+        assert audit['construction_producers']['converged']
+        assert audit['construction_producers']['completeness'] == 'Complete'
+        assert audit['producer_closure']['fully_closed']
+        assert not audit['publication_attempted'] and not audit['publication_accepted']
+        closure = audit['producer_closure']
+        final = rows[-1]['closure_counters']
+        for key in ('closed_pairs', 'closed_requirements', 'incomplete_pairs'):
+            assert final[key] == closure[key]
+        refs = audit['mandatory_references']
+        assert refs['counts']['complete'] == refs['total'] and not refs['failures']
+        assert all(value == 0 for key, value in refs['counts'].items() if key != 'complete')
+        result['completed_run'] = {
+            'watchdog_result_source': run_source, 'audit_report_source': audit_source,
+            **{key:run[key] for key in ('source_commit', 'working_changes_sha256', 'command_exit_code',
+                                      'duration_seconds', 'peak_private_bytes', 'minimum_free_disk_bytes')},
+            'scope': audit['scope'], 'publication_accepted': False, 'publication_attempted': False,
+            'references_total': refs['total'], 'references_complete': refs['counts']['complete'],
+            'kernel_obligations': audit['kernel_obligations'],
+            **{key:closure[key] for key in ('closed_pairs', 'applicable_pairs', 'closed_requirements', 'required_requirements')},
+            'construction_reference_semantic_digest': bytes(audit['construction_reference_semantic_digest']).hex(),
+            'certificate_semantic_digest': bytes(closure['semantic_closure_digest']).hex(),
+        }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if args.markdown:
