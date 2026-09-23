@@ -1,17 +1,19 @@
 # Producer closure integration and regressions
 
 Current status: focused corrections are integrated; Systems publication and
-language readiness remain unaccepted. The latest completed corpus gate (`b4ce4e2`) has
-532/534 Actions references Complete, two Incomplete and zero kernel obligations.
-Following the earlier 499/534 audit, the loop, assertion and receiver regressions close; the receiver
-passed on `55b5af8` in 33.80 seconds. The complete SysML package then passed
-73 tests in 71.38 seconds, including unsupported variation remaining Incomplete.
-The positive-exclusion audit takes 875.047 seconds (exit 1; peak private
-5,209.6 MiB). Trigger `35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6` now has all
-producer evaluations Complete but EffectiveTyping remains open.
-The two child positional-redefinition evaluations remain Incomplete. Final
-certificate totals are 6,063 closed pairs and 163 explicitly incomplete; earlier
-intermediate traces are not the final trigger state.
+language readiness remain unaccepted. The latest completed corpus gate (`42fad18`)
+has **534/534 Actions references Complete**, zero kernel obligations and zero
+unresolved, incomplete, ambiguous, invalid or mismatched references. The eight
+documents parse and construct byte-exactly. Producer closure remains Incomplete:
+158 evaluations are incomplete and only 379,147/401,664 requirements are closed.
+The full-certificate acceptance guard correctly keeps this scoped gate failed.
+
+The owned-parameter scope correction closes Trigger EffectiveTyping. Its payload
+and receiver retain causally reopened positional evaluations; final traces link
+an expression producer through a broad read bucket rather than a direct scoped
+read. The expression producer really adds an owning membership, so removing its
+membership effect is not justified. Further investigation targets the query read.
+No medium or full publication has run.
 
 These synthetic fixtures use genuinely closed
 layered dependencies, not fabricated accepted standard publications.

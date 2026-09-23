@@ -10,11 +10,11 @@ is unchanged. Generation-1 release evidence remains independent.
 
 **Systems publication and foundation readiness remain unaccepted.** The latest
 completed corpus result is the eight-document Actions/dependency scope:
-**532/534 mandatory references Complete, two Incomplete**, zero unresolved,
-ambiguous, invalid or mismatched references, zero kernel obligations. All eight
-documents parse and construct byte-exactly; all 534 endpoints are selected. The scheduler
-converges but closure remains Incomplete. The remaining references are
-`Anything` and `receiver` on TriggerAction `35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6`.
+**534/534 mandatory references Complete**, zero unresolved, incomplete,
+ambiguous, invalid or mismatched references, and zero kernel obligations. All eight
+documents parse and construct byte-exactly. The scheduler converges but producer
+closure remains Incomplete: 158 evaluations remain incomplete and the certificate
+is not fully closed. The scoped acceptance guard correctly rejects this result.
 Medium/full publication has not run;
 the full-publication attempt budget is unused.
 
@@ -34,7 +34,8 @@ The subsequent terminal-only chain correction passes its six regressions and
 tracing places the remaining typing block in the trigger's initial mask; the
 ancestor producer write scope was reproduced and narrowed to directly owned
 parameters (`bd096ec`). Its six scope guards, 109 producer tests and all 76 SysML
-package tests pass; the corrected corpus audit is pending.
+package tests pass. The corrected `42fad18` corpus audit reaches 534/534 Complete;
+remaining global/inverse causal reads keep producer closure incomplete.
 The text frontend
 package passed 91 tests with two explicit accepted-cache ignores before that fix.
 See [closure.md](closure.md) for the defects, proof boundaries, regressions and
@@ -59,7 +60,7 @@ Exit 124 is a requested workflow stop, not a semantic result; peak private memor
 was 4,515.0 MiB. No final reference audit exists for that run. Provisional endpoint
 selections are never Complete-reference counts.
 
-Seven corrected scoped audits finished normally with exit 1 and no watchdog stop.
+Eight corrected scoped audits finished normally with exit 1 and no watchdog stop.
 Each parsed/constructed 8/8 documents, selected 534 endpoints and had zero kernel
 obligations. These remain failed scoped gates, not Systems acceptance:
 
@@ -73,11 +74,15 @@ obligations. These remain failed scoped gates, not Systems acceptance:
 | `actions-positive-exclusion` (`d594006`) | 875.047 | 5,209.6 | 106 producer-closure, 11 value-context, 45 variable-featuring |
 | `actions-chain-terminal` (`b4ce4e2`) | 871.047 | 5,209.3 | 106 producer-closure, 11 value-context, 45 variable-featuring |
 
-The latest audit has 162 diagnostics, 22 rounds, 10,799 subjects and 2,441 derived
-elements. Its certificate records 10,017 applicable subject/family pairs, 6,063
-closed and 163 explicitly incomplete, with 379,104 closed requirements. The compact
-certificate is 2,594,064 bytes; optional revalidation reads are separately
-382,830,808 bytes. Two rebindings retain 1,233 evaluations and reopen 10,419.
+The latest `actions-owned-parameters` audit (`42fad18`) took 842.016 seconds,
+peaked at 5,214.7 MiB private memory, and exited 1 without a watchdog stop. It has
+158 diagnostics (103 producer-closure, 44 variable-featuring, 11 value-context),
+21 rounds, 10,787 evaluated subjects and 2,447 derived elements. Its certificate
+records 10,023 applicable subject/family pairs, 6,076 closed and 158 explicitly
+incomplete, with 379,147/401,664 closed requirements (`fully_closed=false`). The
+compact certificate is 2,594,296 bytes; optional revalidation reads are separately
+385,126,952 bytes. Trigger EffectiveTyping is now closed; its payload and receiver
+retain causally reopened positional evaluations.
 A final pass's individual counters do not replace aggregate reconstruction
 observations. Per-subject explanations remain diagnostic evidence, not acceptance.
 
