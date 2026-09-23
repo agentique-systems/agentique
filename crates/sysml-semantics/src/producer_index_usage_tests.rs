@@ -224,6 +224,16 @@ fn assignment_index_value(index_result_class: MetaclassId) {
             .unwrap()
             .is_fully_closed(closed.overlay.model())
     );
+    for property in [
+        agq_sysml::properties::USAGE_MAY_TIME_VARY,
+        kp::FEATURE_IS_VARIABLE,
+    ] {
+        assert!(
+            matches!(closed.overlay.model().property_state(id(74_006),property),
+                Ok(agq_kernel::derived::PropertyState::Computed(slot)) if slot.value()==&SlotValue::Scalar(Value::Boolean(true))),
+            "assignment input must exercise the real variable branch"
+        );
+    }
     assert!(Arc::ptr_eq(
         closed.overlay.declared().immutable_dependency().unwrap(),
         dependency.overlay()

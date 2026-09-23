@@ -2,6 +2,9 @@
 use crate::*;
 
 #[cfg(test)]
+#[path = "../tests/unit/argument_population.rs"]
+mod argument_population_tests;
+#[cfg(test)]
 #[path = "../tests/unit/positioned_guards.rs"]
 mod positioned_guard_tests;
 use agq_kerml::{classes as c, properties as p};
@@ -42,21 +45,19 @@ impl KerMlQueries<'_> {
         out: &mut QueryResult<T>,
         expression: ElementId,
     ) -> Option<ElementId> {
-        let members = self.memberships(expression);
-        let parameter = members.value.iter().copied().find(|m| {
-            self.is(*m, c::PARAMETER_MEMBERSHIP) && !self.is(*m, c::RETURN_PARAMETER_MEMBERSHIP)
-        });
+        let members = self.owned_relationships_excluding(
+            expression,
+            c::PARAMETER_MEMBERSHIP,
+            [c::RETURN_PARAMETER_MEMBERSHIP],
+        );
+        let parameter = members.value.first().copied();
         out.merge(members);
         let parameter = parameter?;
         let member = self.member(parameter);
         let feature = member.value;
         out.merge(member);
-        let owned = self.owned_relationships(feature?);
-        let value = owned
-            .value
-            .iter()
-            .copied()
-            .find(|r| self.is(*r, c::FEATURE_VALUE));
+        let owned = self.owned_relationships_of_type(feature?, c::FEATURE_VALUE);
+        let value = owned.value.first().copied();
         out.merge(owned);
         self.read_reference(out, value?, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
     }
