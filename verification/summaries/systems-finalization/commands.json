@@ -21,6 +21,57 @@
       "duration_seconds": 29.859,
       "result_sha256": "86cd9f24036de6fb13cddbbca76ab0d48ce899d06cffebc6a67f56f65057a1ba",
       "result": "verification/summaries/systems-finalization/authentication.json"
+    },
+    {
+      "name": "finalization-artifact-guards",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_systems_publication_gate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "8d875535ce4fc9c11bdc036d2843a954beac42a0",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "35bba77e8d6dc989ba88b32c417dcc4fce299665512770fa676a2da9bcbd02bd",
+      "duration_seconds": 0.31,
+      "output": "verification/generated/systems-finalization/finalization-artifact-guards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "finalizer-release",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a7d803c7cc40ef73c57135f2e780903582300bf3",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "3a6f1177e91f45e2c31d566a86bbcd81ba2e3d43df664743c02bbd2e0dd421b3",
+      "duration_seconds": 400.38,
+      "output": "verification/generated/systems-finalization/finalizer-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
     }
   ]
 }
