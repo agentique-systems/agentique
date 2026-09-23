@@ -2501,9 +2501,9 @@ fn fresh_attachment_root_in_scope(
             ProducerEffectScope::SubjectAndOwned | ProducerEffectScope::OwnedDescendants
         ) && owned_below(model, target, subject)
         || scope == ProducerEffectScope::SubjectAndOwners && owned_below(model, subject, target)
-        || scope == ProducerEffectScope::OwnedParameterFeatures
-            && crate::producer_closure::owned_parameter_scope(model, subject, false)
-                .is_ok_and(|targets| targets.contains(&target))
+        || scope
+            .selected_targets(model, subject, false)
+            .is_some_and(|targets| targets.is_ok_and(|targets| targets.contains(&target)))
 }
 
 fn owned_below(model: &agq_kernel::ModelView, source: ElementId, ancestor: ElementId) -> bool {
