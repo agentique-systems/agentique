@@ -748,6 +748,120 @@
       "name": "component-audit-8",
       "output_encoding": "utf-16-le-bom",
       "source_ledger": "certificate-audit-commands.json"
+    },
+    {
+      "name": "workspace-fmt-check",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "14941b5b9576451368eb8cb7820a172efb83f73c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.59,
+      "output": "verification/generated/compositional-publication/workspace-fmt-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "systems-plan-release-build",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--config",
+        "profile.release.codegen-units=16",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "systems_declared_compositional_dependency_plan",
+        "--no-run"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f1cbe182ad79b8fa63ad94f6c9a3f3f35e914897",
+      "working_changes_sha256": "afeaee82b3d45d950a5ebdd6a7e62c4ce69efc25d0cd7af0ef9773cbb3d7bbd8",
+      "output_sha256": "a8a19eb2a7a9da5e609a7338c0e5e077135b2d649c763a51fdd2fe61b8b87a2d",
+      "duration_seconds": 558.95,
+      "output": "verification/generated/compositional-publication/systems-plan-release-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "compositional-systems-release-plan",
+      "command": [
+        "target/foundation-integration/release/deps/agq_kerml_text-848e1dedf44bdcc4.exe",
+        "systems_declared_compositional_dependency_plan",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_commit": "14941b5b9576451368eb8cb7820a172efb83f73c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_ACCEPTED_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGQ_COMPONENT_PLAN_REPORT": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/compositional-publication/systems-plan.json"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/compositional-systems-release-plan",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 6064,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 18260910080,
+      "safety_stop": null,
+      "duration_seconds": 201.5,
+      "peak_rss_bytes": 4735324160,
+      "peak_private_bytes": 4830801920,
+      "samples": 202,
+      "limits": {
+        "wall_seconds": 600.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "21902e549d5b217d0ff213c2b2405ea6eaf2c119830250e8f43ea4f6d82167b0",
+      "executable_sha256": "57931c4eb4f48f8c6aa2779cbf76bd55b5ce28e2fe4065a08c3e1e49a7a822d7",
+      "executable_build_command": "systems-plan-release-build"
+    },
+    {
+      "name": "workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "14941b5b9576451368eb8cb7820a172efb83f73c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "f2eeca3ea5e4fb27dcc552cb76ed999086db7a2693a52e7d67b6003fbe358652",
+      "duration_seconds": 1307.12,
+      "output": "verification/generated/compositional-publication/workspace-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "RUST_TEST_THREADS": "1"
+      }
     }
   ],
   "source_ledgers": {
@@ -805,5 +919,12 @@
       "final_source_commit": "b08b4cbb212ac9462a1306e6567e3238b13f3ea6",
       "worktree": "C:\\Users\\phili\\github\\agentique-systems\\agq-comp-cert"
     }
-  }
+  },
+  "artifacts": [
+    {
+      "path": "verification/generated/compositional-publication/systems-plan.json",
+      "sha256": "34d849cf78d2f499d868d75ff53bfbf28e23dd952a8422c3da024ce7bde11f5c",
+      "boundary": "Provisional declared Systems dependency plan; not a closure or publication certificate"
+    }
+  ]
 }

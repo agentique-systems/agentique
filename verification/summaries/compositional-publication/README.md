@@ -46,6 +46,56 @@ compositional scheduler. The [independent boundary review](audit-boundary.md)
 also records the ordered-contribution evidence that checkpoint restore must
 preserve; a graph archive alone is insufficient for the proposed new proof.
 
+## Actual Systems dependency probe
+
+The release planning fixture passed in **201.5 seconds**, peak private memory
+**4,607.0 MiB**, with no watchdog stop. It restored the accepted KerML publication,
+parsed all 21 original Operational v2 documents byte-exactly, constructed their
+declared graph and refined source references. It invoked no producer scheduler.
+The earlier unoptimized probe was deliberately stopped during cache restoration
+after 283.0 seconds (exit 124, 3,817.6 MiB peak); it yielded no planning result.
+
+The provisional SCC plan contains **one component**:
+
+```text
+component 0
+  documents: Actions, Allocations, AnalysisCases, Attributes, Calculations,
+    Cases, Connections, Constraints, Flows, Interfaces, Items, Metadata,
+    Parts, Ports, Requirements, StandardViewDefinitions, States, SysML,
+    UseCases, VerificationCases, Views
+  local predecessor components: none
+  known immutable external provider: accepted KerML Operational v9
+  declared subjects: 7,591
+  applicable declared producer pairs: 20,274
+  mandatory source references: 1,327
+  explicit dependency edges: 601,470
+  provider edges: 577,207
+  edges to accepted dependency subjects: 404,181
+  potential writer rows: 70,608 (8,830 from future subjects)
+  writer rows with current global requirement guards: 70,608
+  unbounded record-writer rows: 0
+  cross-component reads / writable effects: 0 / 0
+```
+
+This is a conservative proof-dependency plan, **not** a proved minimal semantic
+partition of the final closed Systems graph. Generic query reads retain broad
+invalidation dependencies; no source-reference read set supplies the missing
+producer-family evidence. The plan records 1,327 global provider observations,
+2,871 subjects missing producer evidence and 12 open provider requirements.
+Its zero cross-component counts follow from placing everything in one component;
+they do not prove an independently sealable boundary.
+
+This fresh declared-only graph has 1,323 selected endpoints, four kernel
+construction obligations, and reference outcomes of 1,252 Complete / 75
+Incomplete. Producers were intentionally not run, so these are not a regression
+or replacement for the earlier completed construction audit below. No component
+sealed, and no certificate composition/equivalence claim follows from this probe.
+
+The generated report is `verification/generated/compositional-publication/systems-plan.json`,
+SHA-256 `34d849cf78d2f499d868d75ff53bfbf28e23dd952a8422c3da024ce7bde11f5c`.
+It retains source-byte, accepted-dependency, context, registry, graph and plan
+identities. Commands and resource limits are in the consolidated ledger.
+
 ## Publication and readiness
 
 `SYSML SYSTEMS LIBRARY CANONICAL PUBLICATION INCOMPLETE`
@@ -68,6 +118,30 @@ No production modeling workspace crate or platform integrations are introduced.
 Gen1 release obligations and original authority/library bytes are unchanged.
 
 ## Reproduction and remaining proof
+
+The final integrated checks all exited **0**:
+
+| Command | Result |
+| --- | --- |
+| `cargo fmt --all -- --check` | Pass |
+| `cargo clippy --workspace --all-targets -- -D warnings` | Pass |
+| `cargo test --workspace` | 900 passed, 0 failed, 5 ignored across 126 test groups |
+| `npm run check` | Pass |
+| `npm run build` | Pass |
+| `npm test` | Pass |
+| `npm run test:e2e` | Pass, 4 browser tests |
+| `npm run standards:check` | Pass |
+| `cargo run --locked --offline -p agq-metamodel-gen -- --check` | Pass |
+| `cargo doc --locked --offline --no-deps -p agq-kerml-semantics -p agq-kerml-text` | Pass with `RUSTDOCFLAGS=-Dwarnings` |
+
+The workspace test command ran once on integrated source commit `14941b5`,
+with one build job and one test thread in the low-artifact environment; it took
+1,307.12 seconds. Explicitly ignored corpus/cache tests were not silently counted
+as passes. The separate bounded Systems planning fixture above was run explicitly.
+Initial focused development failures, a corrected zero-test filter attempt and
+the deliberately stopped unoptimized probe remain in the ledger. Subsequent
+focused checks passed. These integration results verify the implemented changes;
+they do not establish compositional publication acceptance.
 
 Actual verification commands, source identities, output hashes and exit codes
 are recorded in `commands.json`; raw output stays under ignored
