@@ -1,6 +1,8 @@
 # Transactional Systems artifact issuance
 
 Implementation base: `0c4c0adae19125c5a72b3e3521c7df1c6c6d84f0`.
+Combined Rust verification tree: `4c0a455` (issuance `bb30b21` plus finalization
+API `c67bacd`; only this evidence paragraph changed afterwards).
 This implementation evidence does not claim Systems acceptance or activate the
 compiled receipt catalogue. The lead publication run records the final result.
 
@@ -49,10 +51,17 @@ Focused checks (Rust `1.92.0`, Node `v22.11.0`, Python `3.12.10`):
 | `node --test tools/sysml-publication-stale.test.mjs tools/sysml-artifacts.test.mjs` | 0 | 8 passed; includes changed source/descriptor/registry/semantic/binding and partial-installation rejection |
 | `python -m unittest discover -s verification/scripts -p test_systems_publication_gate.py` | 0 | 4 passed; strict artifact gate now requires candidate restoration and atomic promotion evidence |
 | `cargo fmt --all -- --check` | 0 | Passed |
+| `cargo check --locked --offline -p agq-kerml-text --example sysml_systems_publication` | 0 | Combined finalizer/issuance compile passed (3.72 s) |
+| `cargo test --locked --offline -p agq-kerml-text --example sysml_systems_publication` | 0 | 3 passed: interruption invisibility, complete bundle promotion, destination collision preservation |
+| `cargo clippy --locked --offline -p agq-kerml-text --all-targets -- -D warnings` | 0 | Passed (6.77 s) |
+| `cargo test --locked --offline -p agq-kerml-text --lib sysml::publication::cache::restoration::tests` | 0 | 4 passed: schema, archive bounds/inventory and stale source rejection |
 
 Initial combined Node execution failed because this isolated worktree had no
 `fflate` package (exit 1). A local ignored junction to the existing installed
 package resolved that environment issue; the command above then passed. Raw
 focused logs are ignored under `verification/generated/systems-finalization-issuance/`.
-Rust atomic promotion tests and the full original-cache restoration gate remain
-for the coordinated compiler/publication resource window.
+Rust checks used the shared ignored `target/platform-finalization` directory with
+`CARGO_INCREMENTAL=0`, `CARGO_PROFILE_DEV_DEBUG=0`, `CARGO_PROFILE_TEST_DEBUG=0`
+and `CARGO_BUILD_JOBS=2`. No publication finalizer or producer scheduler ran in
+this workstream. The full original-cache restoration gate remains for the lead
+after real acceptance and compiled catalogue activation.
