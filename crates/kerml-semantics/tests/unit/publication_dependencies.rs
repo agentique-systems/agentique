@@ -288,3 +288,67 @@ fn deep_dependency_graph_uses_no_recursive_traversal() {
         &BTreeSet::from([id(11_999)])
     );
 }
+
+#[test]
+fn immutable_dependency_requires_authenticated_closure() {
+    let overlay = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(nodes(2))
+            .build()
+            .unwrap(),
+    );
+    let base = Snapshot::with_immutable_dependency(overlay.clone());
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(10, c::CLASSIFIER);
+    let snapshot = f.finish();
+    let registry = ProducerRegistry::new([]).unwrap();
+    let mut context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    // Neither physical protection nor a caller-supplied digest is authority.
+    context.id.publication_dependency_digest = Some([7; 32]);
+    let unproven = PublicationDependencyPlan::build(
+        &context,
+        &registry,
+        BTreeSet::from([id(10)]),
+        [edge(10, 0)],
+        [],
+    );
+    assert!(
+        unproven
+            .diagnostics()
+            .contains(&PublicationPlanDiagnostic::MissingCandidateSubject(id(0)))
+    );
+    assert!(
+        unproven
+            .diagnostics()
+            .contains(&PublicationPlanDiagnostic::UnknownProvider {
+                consumer: id(10),
+                provider: id(0)
+            })
+    );
+
+    let context = SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let context = context.with_producer_closure(certificate).unwrap();
+    let dependency = ProducerClosedDependency::new(overlay.clone(), &context, &registry).unwrap();
+    let context = dependency
+        .project_context(&snapshot, &[id(10)], BTreeSet::new(), BTreeSet::new())
+        .unwrap();
+    let proven = PublicationDependencyPlan::build(
+        &context,
+        &registry,
+        BTreeSet::from([id(10)]),
+        [edge(10, 0)],
+        [],
+    );
+    assert!(proven.diagnostics().is_empty());
+    assert_eq!(proven.components().len(), 1);
+}

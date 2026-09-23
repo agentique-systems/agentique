@@ -133,11 +133,9 @@ impl PublicationDependencyPlan {
         let mut dependencies: BTreeSet<_> = dependencies.into_iter().collect();
         let mut writers = Vec::new();
         let mut applicable_pairs = 0;
-        let protected = |id| {
-            context
-                .immutable_dependency
-                .is_some_and(|view| view.element(id).is_some())
-        };
+        // Physical immutability alone does not establish a closed semantic
+        // provider. Reuse the certificate's authenticated dependency boundary.
+        let protected = |id| context.dependency_closure_source(id).is_some();
         if context.id.producer_registry_digest != Some(registry.digest()) {
             diagnostics.insert(PublicationPlanDiagnostic::ProducerRegistryMismatch);
         }

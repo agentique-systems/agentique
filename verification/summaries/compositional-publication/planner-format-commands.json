@@ -18,6 +18,24 @@
       "duration_seconds": 2.56,
       "output": "verification/generated/compositional-publication/dependency-plan-format.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "dependency-plan-authenticated-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a041f2f9afb36437e4297e2159f60610c581bba2",
+      "working_changes_sha256": "980e5745cdf9265cf3e1caa252ed99b1985c8f9ccf2f8de112572e450d2602f2",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.64,
+      "output": "verification/generated/compositional-publication/dependency-plan-authenticated-format.log",
+      "environment_overrides": {}
     }
   ]
 }

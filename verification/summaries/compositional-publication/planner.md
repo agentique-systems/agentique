@@ -24,10 +24,14 @@ dependencies, potential writers and findings; it never hashes pointer identity
 or Debug output. Proposed orders that split an SCC or put a provider later are
 rejected, without claiming that an otherwise consistent order is certified.
 
-Focused verification: eight tests pass, covering linear/diamond/cyclic graphs,
+Focused verification: nine tests pass, covering linear/diamond/cyclic graphs,
 32 input permutations, canonical typing/subsetting carriers, a forbidden later
 writer split, negative/unknown reads, future writer activation, missing subjects
-and a 12,000-subject chain. The first run compiled successfully but failed one
+and a 12,000-subject chain. An independent review added an authenticated-provider
+regression: a physically immutable overlay and caller-supplied digest retain
+missing/unknown provider findings; an actual `ProducerClosedDependency` mount
+passes. The planner now reuses certificate issuance's exact
+`dependency_closure_source` boundary. The first run compiled successfully but failed one
 malformed test fixture missing FeatureTyping::typedFeature; the required endpoint
 was supplied and all eight then passed. This was a fixture correction, not an
 expected negative acceptance result.

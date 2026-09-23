@@ -88,6 +88,65 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\comp-plan"
       }
+    },
+    {
+      "name": "dependency-plan-authenticated-boundary",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "publication_dependencies",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a041f2f9afb36437e4297e2159f60610c581bba2",
+      "working_changes_sha256": "405fdf0386ee7f1c37047bd31a01f712491f22caeccbeddc682782a84ff0ad61",
+      "output_sha256": "a9d13211c8de1e3367ca36150560c5822ed2b9d2f1a12880a9f9a3c16705e320",
+      "duration_seconds": 37.7,
+      "output": "verification/generated/compositional-publication/dependency-plan-authenticated-boundary.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\comp-plan"
+      }
+    },
+    {
+      "name": "dependency-plan-authenticated-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "--tests",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a041f2f9afb36437e4297e2159f60610c581bba2",
+      "working_changes_sha256": "405fdf0386ee7f1c37047bd31a01f712491f22caeccbeddc682782a84ff0ad61",
+      "output_sha256": "42e7390be7a700337b839fc70ec9f6421968eeec3d8762e850841a9ca295c215",
+      "duration_seconds": 10.58,
+      "output": "verification/generated/compositional-publication/dependency-plan-authenticated-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\comp-plan"
+      }
     }
   ]
 }
