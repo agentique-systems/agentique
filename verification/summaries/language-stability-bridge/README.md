@@ -69,8 +69,9 @@ The final retained frontier closes 22,236/24,732 applicable pairs and reports
 395,011 closed requirements, six incomplete pairs and 15 diagnostics; these are
 **intermediate strict observations**, not final acceptance counts. Exact command,
 output/stage hashes, memory/time measurements and the frontier are in the
-publication ledger. The normal full attempt is used. One retry remains, only
-after a concrete allocation fix and its focused checks; limits stay unchanged.
+publication ledger. At that stop, one retry remained after a concrete allocation
+fix and its focused checks. That retry is now running as recorded above; limits
+stay unchanged and no further full attempt remains in this milestone's budget.
 
 The publication example now records elapsed seconds for reference and producer
 progress and every retained frontier. These observations do not enter graph,
