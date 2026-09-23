@@ -531,6 +531,92 @@ fn feature_chain_scope_audits_targets_and_rebinds_changed_containment() {
 }
 
 #[test]
+fn first_input_population_does_not_wait_for_result_snapshot_membership() {
+    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V9;
+    let (snapshot, _) = expression_nested_result_fixture(true);
+    let registry = ProducerRegistry::new([
+        ProducerFamily::FeatureChainExpression.descriptor(profile),
+        ProducerFamily::VariableFeaturing.descriptor(profile),
+    ])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(
+        &snapshot,
+        SemanticOptions {
+            baseline_profile: profile,
+            ..Default::default()
+        },
+        BTreeSet::new(),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let q = KerMlQueries::for_production(context.fork());
+    let input = q.first_input(id(1));
+    assert_eq!(input.completeness, Completeness::Complete);
+    assert_eq!(input.value, Some(id(2)));
+    let mut table = ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        table.pending(record.id(), snapshot.model(), &registry);
+        for descriptor in registry.descriptors() {
+            if !descriptor
+                .applicability
+                .applies(snapshot.model(), record.metaclass())
+            {
+                continue;
+            }
+            table
+                .record(
+                    &[(
+                        record.id(),
+                        descriptor.id,
+                        if record.id() == id(5000)
+                            && descriptor.id == ProducerFamily::VariableFeaturing.id()
+                        {
+                            Completeness::Incomplete
+                        } else {
+                            Completeness::Complete
+                        },
+                    )],
+                    &registry,
+                )
+                .unwrap();
+            table.record_reads(
+                &[(
+                    record.id(),
+                    descriptor.id,
+                    if record.id() == id(1)
+                        && descriptor.id == ProducerFamily::FeatureChainExpression.id()
+                    {
+                        producer_reads(&input, snapshot.model())
+                    } else {
+                        Vec::new().into()
+                    },
+                )],
+                &registry,
+            );
+        }
+    }
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    assert_eq!(
+        certificate.evaluation(
+            id(1),
+            registry
+                .index(ProducerFamily::FeatureChainExpression.id())
+                .unwrap()
+        ),
+        Some(ProducerEvaluationState::EvaluatedComplete),
+        "a result snapshot adds no input parameter to the chain expression"
+    );
+}
+
+#[test]
 fn feature_chain_source_target_declares_membership_on_its_existing_input() {
     let (snapshot, bindings) = expression_fixture();
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
