@@ -243,7 +243,7 @@ fn positive_path_respects_conjugation_state_and_pending_providers() {
                         ComputationFailure::Incomplete {
                             reason: IncompleteReason::MissingInput,
                             explanation: proof,
-                            searches: BTreeSet::new().into(),
+                            searches: BTreeSet::new(),
                         },
                     )
                     .unwrap();
@@ -256,7 +256,7 @@ fn positive_path_respects_conjugation_state_and_pending_providers() {
                         ComputationFailure::Invalid {
                             diagnostic: "fixture unknown conjugation".into(),
                             explanation: proof,
-                            searches: BTreeSet::new().into(),
+                            searches: BTreeSet::new(),
                         },
                     )
                     .unwrap();
