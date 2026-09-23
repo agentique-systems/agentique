@@ -36,6 +36,9 @@ mod index_shape_tests;
 #[cfg(test)]
 #[path = "sysml_tests.rs"]
 mod tests;
+#[cfg(test)]
+#[path = "sysml_views_shape_tests.rs"]
+mod views_shape_tests;
 
 /// Exact-source construction status, never a Systems Library publication claim.
 #[derive(Clone, Debug)]

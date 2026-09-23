@@ -2,6 +2,8 @@
 use super::*;
 #[path = "producer_index_usage_tests.rs"]
 mod index_usage_tests;
+#[path = "producer_views_satisfaction_tests.rs"]
+mod views_satisfaction_tests;
 use agq_kerml_semantics::{
     ProducerClosedDependency, ProducerFamily, ProducerRegistry, PublicationOverlayError,
     SemanticClosureRequirement, close_result_structure_with_extension,
