@@ -375,6 +375,149 @@ fn expression_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
     expression_fixture_with_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8)
 }
 
+#[test]
+fn owned_crossing_population_keeps_eligible_direct_and_future_writers_open() {
+    use crate::producer_closure::ProducerEvaluationTable;
+    const EXTRA: ProducerFamilyId = ProducerFamilyId::new("Fixture.CrossMemberWriter");
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let (snapshot, bindings) = nested_variable_fixture();
+    let mut changes = snapshot.change_set();
+    changes.set(
+        id(10),
+        p::FEATURE_IS_END,
+        SlotValue::Scalar(Value::Boolean(true)),
+        origin(),
+    );
+    let snapshot = snapshot.apply(&changes).unwrap();
+    for (name, future_only, class, effect, expected) in [
+        (
+            "direct eligible",
+            false,
+            Some(c::OWNING_MEMBERSHIP),
+            ProducerEffect::Membership,
+            ProducerEvaluationState::Pending,
+        ),
+        (
+            "future eligible",
+            true,
+            Some(c::OWNING_MEMBERSHIP),
+            ProducerEffect::Membership,
+            ProducerEvaluationState::Pending,
+        ),
+        (
+            "future excluded",
+            true,
+            Some(c::FEATURE_MEMBERSHIP),
+            ProducerEffect::Membership,
+            ProducerEvaluationState::EvaluatedComplete,
+        ),
+        (
+            "future unknown",
+            true,
+            None,
+            ProducerEffect::Membership,
+            ProducerEvaluationState::Pending,
+        ),
+        (
+            "ownership mutation",
+            false,
+            None,
+            ProducerEffect::Ownership,
+            ProducerEvaluationState::Pending,
+        ),
+        (
+            // Additive producers cannot replace an existing stored scalar.
+            "stored end flag is fixed",
+            false,
+            None,
+            ProducerEffect::Scalar(p::FEATURE_IS_END),
+            ProducerEvaluationState::EvaluatedComplete,
+        ),
+    ] {
+        let mut extra = ProducerDescriptor::new(
+            EXTRA,
+            [effect],
+            ProducerApplicability::Subtypes(vec![if future_only {
+                c::EXPRESSION
+            } else {
+                c::FEATURE
+            }]),
+        );
+        extra.scope = if future_only {
+            ProducerEffectScope::SubjectAndOwningType
+        } else {
+            ProducerEffectScope::Subject
+        };
+        extra.scoped_fresh_ownership = true;
+        extra.relationship_classes = class.map(|class| BTreeSet::from([class]));
+        let registry = ProducerRegistry::new(
+            ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(profile))
+                .chain([extra]),
+        )
+        .unwrap();
+        let mut context = SemanticContext::for_snapshot(
+            &snapshot,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+        context.id.standard_bindings = Some(bindings.clone());
+        let q = KerMlQueries::for_production(context.fork());
+        let plan = q.plan_result_structure([id(10)]);
+        let mut table = ProducerEvaluationTable::default();
+        for record in snapshot.model().elements() {
+            table.pending(record.id(), snapshot.model(), &registry);
+            for descriptor in registry.descriptors() {
+                if descriptor
+                    .applicability
+                    .applies(snapshot.model(), record.metaclass())
+                {
+                    table
+                        .record(
+                            &[(
+                                record.id(),
+                                descriptor.id,
+                                if record.id() == id(10)
+                                    && [ProducerFamily::VariableFeaturing.id(), EXTRA]
+                                        .contains(&descriptor.id)
+                                {
+                                    Completeness::Incomplete
+                                } else {
+                                    Completeness::Complete
+                                },
+                            )],
+                            &registry,
+                        )
+                        .unwrap();
+                }
+            }
+        }
+        table.record_reads(&plan.producer_reads, &registry);
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &table,
+            |_| None,
+        );
+        assert_eq!(
+            certificate.evaluation(
+                id(10),
+                registry.index(ProducerFamily::OwnedCrossing.id()).unwrap()
+            ),
+            Some(expected),
+            "{name}"
+        );
+    }
+}
+
 fn expression_fixture_with_profile(
     profile: agq_kerml::BaselineProfile,
 ) -> (Snapshot, Arc<StandardKermlBindings>) {
