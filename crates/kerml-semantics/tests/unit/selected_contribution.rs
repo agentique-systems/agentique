@@ -30,6 +30,9 @@ fn fixture(dependency: Option<Arc<DerivedOverlay>>, changed_guard: bool) -> Snap
     for n in [6, 20, 21, 22] {
         f.create(n, c::FEATURE);
     }
+    for n in [21, 22] {
+        f.value(n, p::ELEMENT_DECLARED_NAME, Value::String(format!("guard{n}")));
+    }
     f.value(
         20,
         p::ELEMENT_DECLARED_NAME,
