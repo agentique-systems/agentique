@@ -11681,6 +11681,290 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "systems-interned-reads-release",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "076005455e169dfaf7f229edd3290c310290f5ba",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "05b875bff0af0f2f3934ae392d559dde415dc7c4c8f981e0ef9e7c6d582119fe",
+      "duration_seconds": 230.03,
+      "output": "verification/generated/language-stability-bridge/systems-interned-reads-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      },
+      "release_binary": {
+        "path": "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "sha256": "fc0092259cee4533f7481803d5255539c5e1121185257b748e52e1021f059f4d",
+        "bytes": 16762880,
+        "source_commit": "076005455e169dfaf7f229edd3290c310290f5ba",
+        "profile": "release; debug=0; incremental=false; lto=false; one build job"
+      }
+    },
+    {
+      "name": "producer-read-sharing-independent",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_closure::read_sharing_tests::shared_atoms_keep_row_local_broad_negative_and_provider_rebind_guards",
+        "--",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2daa421277b160d5718d040281254ab724539b3b",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_equivalence": "git diff --exit-code e3d06e3 -- crates/kerml-semantics returned 0 with empty output; production and unit fixtures are identical to the closure owner's source.",
+      "output": "verification/generated/language-stability-bridge/producer-read-sharing-independent.log",
+      "output_sha256": "067e3c5bb783ad5ef7329d642722fe685191c52654900777ef6bb50afd913856",
+      "duration_seconds": 37.456575,
+      "result": "1 passed, 0 failed, 0 ignored; test runtime 0.16 seconds. Exact atom pointers shared across four family/subject rows; row-local union/reset, old broad checkpoint, negative source invalidation and unresolved-provider reopening passed.",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
+      },
+      "output_capture": "PowerShell redirects native stdout/stderr to the raw log; its NativeCommandError formatting around Cargo's compile progress is capture formatting. The native process exit and test result are both successful."
+    },
+    {
+      "name": "producer-read-atoms-baseline",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "repeated_population_reads_share_atom_allocations",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2e7a7baae692f56e4674e08a32f659a112e62e4d",
+      "working_changes_sha256": "9e389bf5b46d4fcbec28260ce75f433dd714e9200cb75c8ed173fed2c103fe61",
+      "output_sha256": "49c839bd587e8a7fb531ec3acf8a5cb13f6440781e2c57f8a826bed58781540b",
+      "duration_seconds": 67.58,
+      "output": "verification/generated/language-stability-bridge/producer-read-atoms-baseline.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "producer-read-atoms-shared",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "producer_closure::read_",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f302d8bb158341c74b4fdc9715f864b2d9ead63b",
+      "working_changes_sha256": "9abe6092c0b528771b16cb854ba60378d900f5130f807d701c747ce5975b89aa",
+      "output_sha256": "137d294838d0f33e078ccbad2c741918c6cfbfff240c8f45c61ecc970ee9b33c",
+      "duration_seconds": 34.7,
+      "output": "verification/generated/language-stability-bridge/producer-read-atoms-shared.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "producer-read-atoms-shared",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "producer_closure::read_",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f302d8bb158341c74b4fdc9715f864b2d9ead63b",
+      "working_changes_sha256": "104f22b12caea6ebdaa4241cd7f3953c651a81256fb5e5d1238a8b367682e3c0",
+      "output_sha256": "6691e97679205a3113a9c2f0942ca2f740ca5de6df905fe5d1a9a727c86a829f",
+      "duration_seconds": 34.39,
+      "output": "verification/generated/language-stability-bridge/producer-read-atoms-shared-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "producer-read-atoms-shared",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "producer_closure::read_",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f302d8bb158341c74b4fdc9715f864b2d9ead63b",
+      "working_changes_sha256": "4c0a19361180dc58be909add00e7419df3562e37c3577671f0485b20a88d5a66",
+      "output_sha256": "a36a33f3f8cea3d41ed63006b0b2fb1adcdf1b919974f0ea1c8a934a5443761e",
+      "duration_seconds": 43.7,
+      "output": "verification/generated/language-stability-bridge/producer-read-atoms-shared-3.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "producer-read-atoms-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "160f0e35be090ba8f07780a98fa05deb3ac4378c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "0e070c9c496f85e0b56b529ee54f439c385d918b05f1b137e54e3d7c20dd61b4",
+      "duration_seconds": 19.88,
+      "output": "verification/generated/language-stability-bridge/producer-read-atoms-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "producer-read-atoms-producer-suite",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "producer_",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "160f0e35be090ba8f07780a98fa05deb3ac4378c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "d4f0e654b87f97f69db4755749ac0ddaa5d802380ddcc6d2ac3f9cee289bdf88",
+      "duration_seconds": 158.38,
+      "output": "verification/generated/language-stability-bridge/producer-read-atoms-producer-suite.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "producer-read-atoms-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "160f0e35be090ba8f07780a98fa05deb3ac4378c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.56,
+      "output": "verification/generated/language-stability-bridge/producer-read-atoms-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "producer-read-atoms-diff",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "160f0e35be090ba8f07780a98fa05deb3ac4378c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.05,
+      "output": "verification/generated/language-stability-bridge/producer-read-atoms-diff.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [
@@ -12116,6 +12400,30 @@
         },
         "setup_failure": "The initial test compile used an owned certificate where Arc was required. Corrected in the test fixture; the failed command is retained. This was not a semantic regression.",
         "limits": "No ordering-query change, cache load, corpus or publication run. Registry identity authenticates the new descriptor; the accepted historical KerML receipt is unchanged. These focused checks do not establish full Systems publication acceptance."
+      }
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/producer-read-sharing-independent.json",
+      "source_commit": "1ef83ffeb7a60ba2ba3dd10027941ac24b0d22dd",
+      "source_blob_sha256": "0677a8a47d69d3c2d9aa251f906f413c1e931bd97f511727e3ec152a41ca24c9",
+      "first_command": 427,
+      "command_count": 1,
+      "review": "Independent review GO: complete read values determine interning and ordering; row lists and atoms remain immutable; replacing live rows preserves prior certificate/checkpoint guards; allocation addresses affect storage accounting only. No graph, registry, certificate digest or receipt encoding change. This focused result does not establish full Systems publication acceptance."
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/producer-read-atoms-commands.json",
+      "source_commit": "5c044d240453ca529719b964ed78082bedc995e0",
+      "source_blob_sha256": "380e21100e029e7c40b1943ac3e133ededd61e92ef1beaa23cb1c34f63417e37",
+      "first_command": 428,
+      "command_count": 8,
+      "review": {
+        "production_commit": "e3d06e3",
+        "root_equivalent_commit": "0760054",
+        "rehydration_control": "160f0e3",
+        "result": "153 producer tests passed (152 unit, one integration), two existing scale probes ignored. Three-package all-target Clippy, formatting and diff checks pass. Independent architecture and semantic reviews GO.",
+        "expected_red": "Baseline physical-sharing assertion fails; no semantic failure.",
+        "compile_corrections": "Two initial builds found old valuation test helpers requiring contiguous slices. Both signatures changed to the read wrapper; assertions unchanged.",
+        "measurement": "68096 logical atoms, 260 distinct live atoms; accounted payload 575840 bytes versus 4358144 unshared enum bytes. Tree/allocator overhead excluded; no corpus or private-memory saving claimed."
       }
     }
   ]

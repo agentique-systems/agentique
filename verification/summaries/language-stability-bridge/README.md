@@ -68,6 +68,29 @@ certificate or publication identities. Its offline example check passes; the
 first formatting check identified one layout correction, applied with
 `cargo fmt --all` (exit 0).
 
+The concrete allocation correction interns retained `ProducerRead` values by
+exact content across subject/family rows. Temporary query capture stays
+contiguous; immutable row lists share atoms, and scheduler pools release atoms
+after their last retained row disappears. Rehydration seeds the pool from existing
+rows. No evidence is pruned, and certificate/registry formats and digests are
+unchanged. Independent reviews checked exact content ordering, borrowed reverse
+indexes, negative/provider invalidation, row reset/union and checkpoint lifetimes.
+
+The real-query allocation fixture first fails on the missing sharing assertion:
+68,096 retained enum values contain only 260 distinct facts. With sharing, the
+three new focused tests pass in 2.50 seconds. Accounted row/atom/Arc and pool
+reference payload falls from 4,358,144 unshared enum bytes to 575,840 bytes (86.8%
+lower). Tree-node and allocator overhead are excluded; this is not a corpus or
+private-memory measurement. A raw/shared certificate comparison retains identical
+receipt values and semantic closure digests. Full retry acceptance remains pending.
+
+The existing producer filter then passes 152 unit tests and one integration test
+(two preexisting scale probes ignored). Three-package all-target Clippy with
+warnings denied, formatting and the release build pass. A separate independent
+reconstruction control passes at equivalent source (one test, 0.16 seconds).
+The rehydration control additionally checks reuse of existing row and atom
+allocations and deduplication of newly captured reads against transported atoms.
+
 The passed `systems-medium-result-populations` audit uses clean source `9152fb9`
 and release build `b018b18`. It exits 0 in **1,726.844 seconds**, peak **6,435.4 MiB
 private memory**, without a watchdog stop. All **14,791/14,791 applicable pairs**
