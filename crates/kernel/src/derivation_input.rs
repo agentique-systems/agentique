@@ -39,6 +39,49 @@ pub(crate) enum DerivationInput {
     Construction(Arc<ConstructionView>),
 }
 impl DerivationInput {
+    /// Exact canonical input authentication for attaching a decoded frontier to
+    /// its caller's original transaction. Reconstruction may assign a fresh
+    /// revision label; declarations, evidence and reservations must still match.
+    pub(crate) fn matches_archive_input(&self, supplied: &Self) -> bool {
+        let history_matches = match (self, supplied) {
+            (Self::Strict(decoded), Self::Strict(supplied)) => {
+                decoded.inner.used_ids == supplied.inner.used_ids
+                    && decoded.inner.used_links == supplied.inner.used_links
+            }
+            (Self::Construction(decoded), Self::Construction(supplied)) => {
+                decoded.used_ids == supplied.used_ids
+                    && decoded.used_links == supplied.used_links
+                    && decoded.obligations == supplied.obligations
+            }
+            _ => false,
+        };
+        let dependency_matches =
+            match (self.immutable_dependency(), supplied.immutable_dependency()) {
+                (None, None) => true,
+                (Some(decoded), Some(supplied)) => Arc::ptr_eq(decoded, supplied),
+                _ => false,
+            };
+        let decoded = self.model();
+        let supplied = supplied.model();
+        let registry_matches = Arc::ptr_eq(&decoded.registry, &supplied.registry)
+            || (decoded
+                .registry
+                .require_extension_of(&supplied.registry)
+                .is_ok()
+                && supplied
+                    .registry
+                    .require_extension_of(&decoded.registry)
+                    .is_ok());
+        history_matches
+            && dependency_matches
+            && registry_matches
+            && decoded.records == supplied.records
+            && decoded.links == supplied.links
+            && decoded.derived_navigation == supplied.derived_navigation
+            && decoded.statuses == supplied.statuses
+            && decoded.searches == supplied.searches
+            && decoded.reference_contributions == supplied.reference_contributions
+    }
     pub(crate) fn model(&self) -> &ModelView {
         match self {
             Self::Strict(v) => v.model(),

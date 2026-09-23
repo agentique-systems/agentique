@@ -72,6 +72,10 @@ fn structural_checkpoint_resume_is_exact_including_queries_and_transport() {
         .expect("Structural frontier committed");
     let resumed = Arc::new(PublicationFrontierSession::resume(&journal, pin, [3; 32], 0).unwrap());
     let actual = run(&snapshot, Some(resumed.clone()), |_| {}).unwrap();
+    assert!(std::ptr::eq(
+        actual.overlay.declared().model(),
+        snapshot.model()
+    ));
     compare(&uninterrupted, &actual, None);
     uninterrupted
         .certificate
@@ -99,11 +103,19 @@ fn completed_invocation_restores_without_producer_replay() {
     let original = run(&snapshot, Some(session.clone()), |_| {}).unwrap();
     let (journal, pin) = session.latest_checkpoint().unwrap().unwrap();
     let resumed = Arc::new(PublicationFrontierSession::resume(journal, pin, [4; 32], 0).unwrap());
-    let restored = run(&snapshot, Some(resumed.clone()), |_| {
+    let reconstructed = snapshot.apply(&snapshot.change_set()).unwrap();
+    // Query results bind the supplied revision, so the exact uninterrupted
+    // oracle must use that same revision, including its context identity.
+    let expected = run(&reconstructed, None, |_| {}).unwrap();
+    let restored = run(&reconstructed, Some(resumed.clone()), |_| {
         panic!("completed invocation replayed")
     })
     .unwrap();
-    compare(&original, &restored, None);
+    assert!(std::ptr::eq(
+        restored.overlay.declared().model(),
+        reconstructed.model()
+    ));
+    compare(&expected, &restored, None);
     original
         .certificate
         .as_ref()
@@ -133,8 +145,10 @@ fn construction_stratum_resume_and_prior_invocation_restore_share_exact_semantic
         )
         .map_err(PublicationOverlayError::Context)
     }
+    let reconstructed = Arc::new(snapshot.preview(&snapshot.change_set()).unwrap());
+    assert!(!Arc::ptr_eq(&input, &reconstructed));
     let expected = close_construction_structure_with_extension(
-        &input,
+        &reconstructed,
         Default::default(),
         context,
         &(),
@@ -171,7 +185,7 @@ fn construction_stratum_resume_and_prior_invocation_restore_share_exact_semantic
     .unwrap();
     compare(&first, &restored_first, None);
     let actual = close_construction_structure_with_extension(
-        &input,
+        &reconstructed,
         PublicationClosureOptions {
             frontier_checkpoints: Some(resumed.clone()),
             ..Default::default()
@@ -182,6 +196,11 @@ fn construction_stratum_resume_and_prior_invocation_restore_share_exact_semantic
         |_| {},
     )
     .unwrap();
+    // LibraryDraft::set_semantic_candidate requires this exact ownership identity.
+    assert!(Arc::ptr_eq(
+        actual.overlay.declared_shared(),
+        &reconstructed
+    ));
     assert_eq!(expected.completeness, actual.completeness);
     assert_eq!(expected.converged, actual.converged);
     assert!(
@@ -217,6 +236,46 @@ fn construction_stratum_resume_and_prior_invocation_restore_share_exact_semantic
     );
     assert_eq!(resumed.statistics().restored_invocations, 2);
     assert_eq!(resumed.statistics().restored_completed_invocations, 1);
+
+    // Real publication also resumes completed construction invocations before
+    // handing them back to the independently reconstructed LibraryDraft.
+    let (journal, pin) = resumed.latest_checkpoint().unwrap().unwrap();
+    let resumed = Arc::new(PublicationFrontierSession::resume(&journal, pin, [9; 32], 0).unwrap());
+    run(&snapshot, Some(resumed.clone()), |_| {
+        panic!("strict replay")
+    })
+    .unwrap();
+    let reconstructed = Arc::new((*reconstructed).clone());
+    assert!(!Arc::ptr_eq(
+        actual.overlay.declared_shared(),
+        &reconstructed
+    ));
+    let completed = close_construction_structure_with_extension(
+        &reconstructed,
+        PublicationClosureOptions {
+            frontier_checkpoints: Some(resumed.clone()),
+            ..Default::default()
+        },
+        context,
+        &(),
+        |_, _, _, _| {},
+        |_| panic!("completed construction replayed"),
+    )
+    .unwrap();
+    assert!(Arc::ptr_eq(
+        completed.overlay.declared_shared(),
+        &reconstructed
+    ));
+    actual
+        .certificate
+        .as_ref()
+        .unwrap()
+        .assert_exact(completed.certificate.as_ref().unwrap());
+    crate::closure_equivalence_tests::assert_exact_queries(
+        &KerMlQueries::new(context(&actual.overlay).unwrap()),
+        &KerMlQueries::new(context(&completed.overlay).unwrap()),
+    );
+    assert_eq!(resumed.statistics().restored_completed_invocations, 2);
 }
 
 #[test]

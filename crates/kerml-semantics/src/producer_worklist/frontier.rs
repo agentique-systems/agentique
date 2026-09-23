@@ -70,11 +70,7 @@ impl ProducerFrontier for DerivedOverlay {
         reader: &mut dyn std::io::BufRead,
         input: &Self::Input,
     ) -> Result<Self, agq_kernel::archive::ArchiveError> {
-        agq_kernel::archive::read_publication_frontier(
-            reader,
-            Arc::new(input.model().registry().clone()),
-            input.immutable_dependency().cloned(),
-        )
+        agq_kernel::archive::read_publication_frontier_on(reader, input.clone())
     }
     fn prepare(
         plan: ResultStructurePlan<'_>,
@@ -126,11 +122,7 @@ impl ProducerFrontier for ConstructionOverlay {
         reader: &mut dyn std::io::BufRead,
         input: &Self::Input,
     ) -> Result<Self, agq_kernel::archive::ArchiveError> {
-        agq_kernel::archive::read_construction_frontier(
-            reader,
-            Arc::new(input.model().registry().clone()),
-            input.immutable_dependency().cloned(),
-        )
+        agq_kernel::archive::read_construction_frontier_on(reader, input.clone())
     }
     fn prepare(
         plan: ResultStructurePlan<'_>,

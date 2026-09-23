@@ -639,6 +639,28 @@ fn construction_frontier_roundtrip_keeps_obligations_and_protected_dependency() 
     let mut again = vec![];
     write_construction_frontier(&restored, &mut again).unwrap();
     assert_eq!(bytes, again);
+    let reconstructed = Arc::new(base.preview(&changes).unwrap());
+    assert!(!Arc::ptr_eq(original.declared_shared(), &reconstructed));
+    let attached =
+        read_construction_frontier_on(Cursor::new(&bytes), reconstructed.clone()).unwrap();
+    assert!(Arc::ptr_eq(attached.declared_shared(), &reconstructed));
+    assert_eq!(attached.base_revision(), reconstructed.revision());
+    assert_eq!(attached.obligations(), original.obligations());
+    assert!(attached.model().elements().eq(original.model().elements()));
+    assert!(attached.facts().eq(original.facts()));
+    assert!(
+        attached
+            .model()
+            .ordered_reference_contributions()
+            .eq(original.model().ordered_reference_contributions())
+    );
+    ConstructionDerivationBuilder::for_construction(reconstructed)
+        .build_on_construction_overlay(attached)
+        .unwrap();
+    changes.set(pending, GENERAL, scalar_ref(VEHICLE), authored());
+    let changed = Arc::new(base.preview(&changes).unwrap());
+    assert!(changed.obligations().is_empty());
+    assert!(read_construction_frontier_on(Cursor::new(&bytes), changed).is_err());
     assert!(
         read_construction_frontier(
             Cursor::new(&bytes),
@@ -649,6 +671,74 @@ fn construction_frontier_roundtrip_keeps_obligations_and_protected_dependency() 
         )
         .is_err()
     );
+}
+
+#[test]
+fn strict_frontier_attaches_exact_input_and_rejects_changed_declarations_and_history() {
+    let original = overlay();
+    let mut bytes = vec![];
+    write_publication_frontier(&original, &mut bytes).unwrap();
+    let declared = original.declared();
+    let reconstructed = declared.apply(&declared.change_set()).unwrap();
+    assert_ne!(declared.revision(), reconstructed.revision());
+    let attached =
+        read_publication_frontier_on(Cursor::new(&bytes), reconstructed.clone()).unwrap();
+    assert!(std::ptr::eq(
+        attached.declared().model(),
+        reconstructed.model()
+    ));
+    assert_eq!(attached.base_revision(), reconstructed.revision());
+    assert!(attached.model().elements().eq(original.model().elements()));
+    assert!(attached.facts().eq(original.facts()));
+    assert!(
+        attached
+            .model()
+            .computation_searches()
+            .eq(original.model().computation_searches())
+    );
+    assert!(
+        attached
+            .model()
+            .ordered_reference_contributions()
+            .eq(original.model().ordered_reference_contributions())
+    );
+    DerivationBuilder::new(reconstructed)
+        .build_on_overlay(attached)
+        .unwrap();
+
+    // Same value with changed provenance is not the same declared assertion.
+    for value in [text("changed source"), text("exact source")] {
+        let mut changes = declared.change_set();
+        changes.set(ENGINE, NAME, value, authored());
+        let changed = declared.apply(&changes).unwrap();
+        assert!(read_publication_frontier_on(Cursor::new(&bytes), changed).is_err());
+    }
+
+    // An otherwise valid archive may reserve additional retired identities;
+    // attaching it to a caller that lacks those reservations must fail.
+    for (field, extra) in [
+        ("used_ids", serde_json::json!(ElementId::from_u128(9000))),
+        (
+            "used_links",
+            serde_json::json!(AssociationOccurrenceId::from_u128(9001)),
+        ),
+    ] {
+        let mut entries: Vec<serde_json::Value> = String::from_utf8(bytes.clone())
+            .unwrap()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        entries
+            .iter_mut()
+            .find_map(|entry| entry.get_mut("Snapshot"))
+            .unwrap()[field]
+            .as_array_mut()
+            .unwrap()
+            .push(extra);
+        let changed: String = entries.iter().map(|entry| format!("{entry}\n")).collect();
+        assert!(read_publication_frontier(Cursor::new(&changed), registry(), None).is_ok());
+        assert!(read_publication_frontier_on(Cursor::new(changed), declared.clone()).is_err());
+    }
 }
 
 #[test]

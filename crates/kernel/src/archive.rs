@@ -826,6 +826,55 @@ pub fn read_construction_frontier(
     }
 }
 
+/// Restore a strict unaccepted frontier on the caller's exact declared snapshot.
+/// The decoded declarations, provenance, reserved identities, registry and
+/// immutable dependency must equal this input before it is adopted. A fresh
+/// revision label is permitted, but no canonical assertion may change. Full
+/// overlay validation then uses this original snapshot; no acceptance is issued.
+pub fn read_publication_frontier_on(
+    mut reader: impl BufRead,
+    declared: Snapshot,
+) -> Result<DerivedOverlay, ArchiveError> {
+    match read_input_on(
+        &mut reader,
+        declared.model().registry.clone(),
+        declared.immutable_dependency().cloned(),
+        false,
+        ArchiveFormat::Frontier,
+        Some(DerivationInput::Strict(declared)),
+    )?
+    .1
+    {
+        Some(Frontier::Strict(overlay)) => Ok(overlay),
+        _ => Err(ArchiveError::Invalid("expected strict frontier")),
+    }
+}
+
+/// Restore an unaccepted construction frontier on the original candidate Arc.
+/// Exact declared input authentication includes lower-bound obligations and
+/// retired identity reservations. Fresh revision labels are permitted; changed
+/// declarations or evidence are rejected. The supplied Arc becomes the declared
+/// input for every subsequent frontier and normal kernel validation is retained.
+/// This never promotes a construction candidate or confers publication authority.
+pub fn read_construction_frontier_on(
+    mut reader: impl BufRead,
+    declared: Arc<ConstructionView>,
+) -> Result<crate::derived::ConstructionOverlay, ArchiveError> {
+    match read_input_on(
+        &mut reader,
+        declared.model().registry.clone(),
+        declared.immutable_dependency().cloned(),
+        true,
+        ArchiveFormat::Frontier,
+        Some(DerivationInput::Construction(declared)),
+    )?
+    .1
+    {
+        Some(Frontier::Construction(overlay)) => Ok(overlay),
+        _ => Err(ArchiveError::Invalid("expected construction frontier")),
+    }
+}
+
 enum Frontier {
     Strict(DerivedOverlay),
     Construction(crate::derived::ConstructionOverlay),
@@ -982,6 +1031,24 @@ fn read_input(
     construction: bool,
     archive_format: ArchiveFormat,
 ) -> Result<(DerivationInput, Option<Frontier>), ArchiveError> {
+    read_input_on(
+        reader,
+        registry,
+        dependency,
+        construction,
+        archive_format,
+        None,
+    )
+}
+
+fn read_input_on(
+    reader: &mut impl BufRead,
+    registry: Arc<MetamodelRegistry>,
+    dependency: Option<Arc<DerivedOverlay>>,
+    construction: bool,
+    archive_format: ArchiveFormat,
+    mut supplied_input: Option<DerivationInput>,
+) -> Result<(DerivationInput, Option<Frontier>), ArchiveError> {
     let mut line = Vec::new();
     let has_overlay = match (next(reader, &mut line)?, &dependency) {
         (
@@ -1080,6 +1147,14 @@ fn read_input(
                     dependency.clone(),
                     construction,
                 )?;
+                let declared = if let Some(supplied) = supplied_input.take() {
+                    if !declared.matches_archive_input(&supplied) {
+                        return Err(ArchiveError::Invalid("frontier declared input mismatch"));
+                    }
+                    supplied
+                } else {
+                    declared
+                };
                 records = declared.model().records.clone();
                 links = declared.model().links.clone();
                 snapshot = Some(declared);
