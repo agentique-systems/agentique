@@ -256,12 +256,8 @@ impl KerMlQueries<'_> {
         {
             return out;
         }
-        let owned = self.owned_relationships(feature);
-        let selected = owned
-            .value
-            .iter()
-            .copied()
-            .find(|&r| self.is(r, c::CROSS_SUBSETTING));
+        let owned = self.owned_relationships_of_type(feature, c::CROSS_SUBSETTING);
+        let selected = owned.value.first().copied();
         out.merge(owned);
         if self
             .context()
