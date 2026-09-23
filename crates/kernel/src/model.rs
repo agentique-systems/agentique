@@ -1,3 +1,4 @@
+use crate::shared_map::{SharedMap, SharedSet};
 #[path = "archive.rs"]
 pub mod archive;
 use crate::association::AssociationOccurrence;
@@ -14,13 +15,20 @@ use std::sync::Arc;
 
 #[path = "derivation_input.rs"]
 mod derivation_input;
+#[cfg(any(test, feature = "verification"))]
+#[path = "storage_observer.rs"]
+pub mod storage_observer;
 pub(crate) use derivation_input::DerivationInput;
 
+#[path = "declared_history.rs"]
+mod declared_history;
+pub use declared_history::{DeclaredConstructionHistory, DeclaredIdentitySet};
+
 type StagedRecords = (
-    BTreeMap<ElementId, Arc<ElementRecord>>,
-    BTreeSet<ElementId>,
-    BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
-    BTreeSet<AssociationOccurrenceId>,
+    SharedMap<ElementId, Arc<ElementRecord>>,
+    SharedSet<ElementId>,
+    SharedMap<AssociationOccurrenceId, AssociationOccurrence>,
+    SharedSet<AssociationOccurrenceId>,
 );
 
 /// A lower bound that must be satisfied before a construction can be published.
@@ -36,8 +44,8 @@ pub struct ConstructionObligation {
 #[derive(Clone, Debug)]
 pub struct ConstructionView {
     base: Snapshot,
-    used_ids: BTreeSet<ElementId>,
-    used_links: BTreeSet<AssociationOccurrenceId>,
+    used_ids: SharedSet<ElementId>,
+    used_links: SharedSet<AssociationOccurrenceId>,
     revision: RevisionId,
     model: ModelView,
     obligations: Vec<ConstructionObligation>,
@@ -213,7 +221,9 @@ pub struct ReferenceOccurrence {
 
 #[derive(Clone, Debug, Default)]
 struct Indexes {
-    inverse_slots: BTreeMap<(ElementId, PropertyId), Slot>,
+    base: Option<Arc<Indexes>>,
+    association_navigation: crate::association::Navigation,
+    inverse_slots: crate::association::Navigation,
     incidence: BTreeMap<ElementId, BTreeSet<AssociationOccurrenceId>>,
     exact_class: BTreeMap<MetaclassId, BTreeSet<ElementId>>,
     by_supertype: BTreeMap<MetaclassId, BTreeSet<ElementId>>,
@@ -221,6 +231,107 @@ struct Indexes {
     // Offsets preserve the canonical incoming order without copying occurrences.
     incoming_by_property: BTreeMap<(ElementId, PropertyId), Vec<usize>>,
     outgoing: BTreeMap<ElementId, Vec<ReferenceOccurrence>>,
+    replaced_link_groups: BTreeSet<(ElementId, PropertyId)>,
+}
+
+impl Indexes {
+    fn replaces_reference(&self, r: &ReferenceOccurrence) -> bool {
+        matches!(r.carrier, ReferenceCarrier::AssociationOccurrence(_))
+            && self.replaced_link_groups.contains(&(r.source, r.property))
+    }
+    fn incident(
+        &self,
+        element: ElementId,
+    ) -> Box<dyn Iterator<Item = &AssociationOccurrenceId> + '_> {
+        let inherited = self
+            .base
+            .as_ref()
+            .map(|base| base.incident(element))
+            .into_iter()
+            .flatten();
+        Box::new(crate::shared_map::merge(
+            inherited,
+            self.incidence.get(&element).into_iter().flatten(),
+            Ord::cmp,
+        ))
+    }
+    fn instances(
+        &self,
+        class: MetaclassId,
+        subtypes: bool,
+    ) -> Box<dyn Iterator<Item = &ElementId> + '_> {
+        let inherited = self
+            .base
+            .as_ref()
+            .map(|base| base.instances(class, subtypes))
+            .into_iter()
+            .flatten();
+        let local = if subtypes {
+            &self.by_supertype
+        } else {
+            &self.exact_class
+        };
+        Box::new(crate::shared_map::merge(
+            inherited,
+            local.get(&class).into_iter().flatten(),
+            Ord::cmp,
+        ))
+    }
+    fn references(
+        &self,
+        element: ElementId,
+        incoming: bool,
+    ) -> Box<dyn Iterator<Item = &ReferenceOccurrence> + '_> {
+        let inherited = self
+            .base
+            .as_ref()
+            .map(|base| base.references(element, incoming))
+            .into_iter()
+            .flatten()
+            .filter(|r| !self.replaces_reference(r));
+        let local = if incoming {
+            &self.incoming
+        } else {
+            &self.outgoing
+        };
+        Box::new(crate::shared_map::merge(
+            inherited,
+            local.get(&element).into_iter().flatten(),
+            compare_references,
+        ))
+    }
+    fn incoming_property(
+        &self,
+        target: ElementId,
+        property: PropertyId,
+    ) -> Box<dyn Iterator<Item = &ReferenceOccurrence> + '_> {
+        let inherited = self
+            .base
+            .as_ref()
+            .map(|base| base.incoming_property(target, property))
+            .into_iter()
+            .flatten()
+            .filter(|r| !self.replaces_reference(r));
+        let incoming = self.incoming.get(&target).map_or(&[][..], Vec::as_slice);
+        let local = self
+            .incoming_by_property
+            .get(&(target, property))
+            .into_iter()
+            .flatten()
+            .map(move |&offset| &incoming[offset]);
+        Box::new(crate::shared_map::merge(
+            inherited,
+            local,
+            compare_references,
+        ))
+    }
+}
+fn compare_references(
+    left: &ReferenceOccurrence,
+    right: &ReferenceOccurrence,
+) -> std::cmp::Ordering {
+    let key = |r: &ReferenceOccurrence| (r.source, r.property, r.position, r.target, r.carrier);
+    key(left).cmp(&key(right))
 }
 
 /// Read-only semantic queries shared by declared snapshots and derived views.
@@ -230,14 +341,14 @@ struct Indexes {
 pub struct ModelView {
     pub(crate) declared_source: Option<DerivationInput>,
     pub(crate) registry: Arc<MetamodelRegistry>,
-    pub(crate) records: BTreeMap<ElementId, Arc<ElementRecord>>,
-    indexes: Indexes,
-    pub(crate) links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    pub(crate) records: SharedMap<ElementId, Arc<ElementRecord>>,
+    indexes: Arc<Indexes>,
+    pub(crate) links: SharedMap<AssociationOccurrenceId, AssociationOccurrence>,
     derived_navigation: crate::association::Navigation,
-    pub(crate) statuses: BTreeMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
+    pub(crate) statuses: SharedMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
     pub(crate) searches:
-        BTreeMap<crate::provenance::FactKey, Arc<BTreeSet<crate::derived::StructuralSearch>>>,
-    pub(crate) reference_contributions: BTreeMap<
+        SharedMap<crate::provenance::FactKey, Arc<BTreeSet<crate::derived::StructuralSearch>>>,
+    pub(crate) reference_contributions: SharedMap<
         (ElementId, PropertyId, ElementId),
         Arc<crate::derived::OrderedReferenceContribution>,
     >,
@@ -247,18 +358,36 @@ pub struct ModelView {
 /// Reconstructible indexes are intentionally absent: callers never clone them
 /// just to discard them during validation of the next semantic frontier.
 pub(crate) struct DerivationModelParts {
-    pub records: BTreeMap<ElementId, Arc<ElementRecord>>,
-    pub links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    pub records: SharedMap<ElementId, Arc<ElementRecord>>,
+    pub links: SharedMap<AssociationOccurrenceId, AssociationOccurrence>,
     pub derived_navigation: crate::association::Navigation,
-    pub statuses: BTreeMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
-    pub searches: BTreeMap<FactKey, Arc<BTreeSet<crate::derived::StructuralSearch>>>,
-    pub reference_contributions: BTreeMap<
+    pub statuses: SharedMap<(ElementId, PropertyId), crate::derived::ComputationFailure>,
+    pub searches: SharedMap<FactKey, Arc<BTreeSet<crate::derived::StructuralSearch>>>,
+    pub reference_contributions: SharedMap<
         (ElementId, PropertyId, ElementId),
         Arc<crate::derived::OrderedReferenceContribution>,
     >,
 }
 
 impl ModelView {
+    pub(crate) fn fork_in_registry(&self, registry: Arc<MetamodelRegistry>) -> Self {
+        Self {
+            declared_source: self.declared_source.clone(),
+            registry,
+            records: self.records.fork(),
+            links: self.links.fork(),
+            derived_navigation: self.derived_navigation.fork(),
+            statuses: self.statuses.fork(),
+            searches: self.searches.fork(),
+            reference_contributions: self.reference_contributions.fork(),
+            indexes: Arc::new(Indexes {
+                base: Some(self.indexes.clone()),
+                association_navigation: self.indexes.association_navigation.fork(),
+                inverse_slots: self.indexes.inverse_slots.fork(),
+                ..Default::default()
+            }),
+        }
+    }
     pub(crate) fn derivation_parts(&self) -> DerivationModelParts {
         DerivationModelParts {
             records: self.records.clone(),
@@ -281,29 +410,25 @@ impl ModelView {
         }
     }
 
-    pub(crate) fn build(
-        registry: Arc<MetamodelRegistry>,
-        records: BTreeMap<ElementId, Arc<ElementRecord>>,
-        links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
-        derived_navigation: crate::association::Navigation,
-    ) -> Result<Self, ModelError> {
-        Self::build_with_validation(
-            registry,
-            records,
-            links,
-            derived_navigation,
-            &mut Validation::strict(),
-        )
-    }
     fn build_with_validation(
         registry: Arc<MetamodelRegistry>,
-        records: BTreeMap<ElementId, Arc<ElementRecord>>,
-        links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+        records: SharedMap<ElementId, Arc<ElementRecord>>,
+        links: SharedMap<AssociationOccurrenceId, AssociationOccurrence>,
         derived_navigation: crate::association::Navigation,
         validation: &mut Validation,
+        base_indexes: Option<Arc<Indexes>>,
     ) -> Result<Self, ModelError> {
-        let mut projected = crate::association::project(&registry, &records, &links, validation)?;
-        for (&(element, property), slot) in &derived_navigation {
+        let inherited_navigation = base_indexes
+            .as_ref()
+            .map(|base| &base.association_navigation);
+        let mut projected = crate::association::project(
+            &registry,
+            &records,
+            &links,
+            validation,
+            inherited_navigation,
+        )?;
+        for (&(element, property), slot) in derived_navigation.local_iter() {
             let p = registry.property(property)?;
             if !p.derived || !matches!(p.owner, crate::metamodel::PropertyOwner::Association(_)) {
                 return Err(ModelError::DerivedWrite { element, property });
@@ -316,16 +441,22 @@ impl ModelView {
             }
         }
         validate(&registry, &records, &projected, validation)?;
+        let inverse_slots = base_indexes.as_ref().map_or_else(
+            || projected.clone(),
+            |base| projected.clone().replace_base(&base.inverse_slots),
+        );
         let mut indexes = Indexes {
-            inverse_slots: projected,
+            base: base_indexes,
+            association_navigation: projected,
+            inverse_slots,
             ..Indexes::default()
         };
-        for link in links.values() {
+        for link in links.local_values() {
             for &end in link.ends.values() {
                 indexes.incidence.entry(end).or_default().insert(link.id);
             }
         }
-        for record in records.values() {
+        for record in records.local_values() {
             indexes
                 .exact_class
                 .entry(record.metaclass)
@@ -346,16 +477,13 @@ impl ModelView {
                                 value: SlotValue::Scalar(Value::Reference(record.id)),
                                 origin: slot.origin.clone(),
                             };
-                            if indexes
-                                .inverse_slots
-                                .insert((*target, inverse), slot)
-                                .is_some()
-                            {
+                            if indexes.inverse_slots.contains_key(&(*target, inverse)) {
                                 return Err(ModelError::InverseMultiplicity {
                                     element: *target,
                                     property: inverse,
                                 });
                             }
+                            indexes.inverse_slots.insert((*target, inverse), slot);
                         }
                         let occurrence = ReferenceOccurrence {
                             carrier: ReferenceCarrier::Slot,
@@ -378,26 +506,32 @@ impl ModelView {
                 }
             }
         }
-        let mut positions = BTreeMap::<(ElementId, PropertyId), usize>::new();
-        for link in links.values() {
-            for (&property, &target) in &link.ends {
-                let p = registry.property(property)?;
-                let source = link.ends[p.opposite_ends.first().expect("binary integrity")];
-                let count = positions.entry((source, property)).or_default();
-                let position = link.positions.get(&property).copied().unwrap_or(*count);
-                *count += 1;
+        // Only touched groups are reprojected. Unordered occurrence positions
+        // enumerate the complete group by occurrence identity, so adding a local
+        // link may shift inherited positions. The base indexes stay immutable.
+        for (&(source, property), slot) in indexes.association_navigation.local_iter() {
+            let Origin::AssociationOccurrences(ids) = slot.origin() else {
+                continue;
+            };
+            indexes.replaced_link_groups.insert((source, property));
+            for (ordinal, id) in ids.iter().enumerate() {
+                let link = &links[id];
                 let occurrence = ReferenceOccurrence {
-                    carrier: ReferenceCarrier::AssociationOccurrence(link.id),
+                    carrier: ReferenceCarrier::AssociationOccurrence(*id),
                     source,
                     property,
-                    position,
-                    target,
+                    position: link.positions.get(&property).copied().unwrap_or(ordinal),
+                    target: link.ends[&property],
                 };
                 indexes.outgoing.entry(source).or_default().push(occurrence);
-                indexes.incoming.entry(target).or_default().push(occurrence);
+                indexes
+                    .incoming
+                    .entry(occurrence.target)
+                    .or_default()
+                    .push(occurrence);
             }
         }
-        for (&(source, property), slot) in &derived_navigation {
+        for (&(source, property), slot) in derived_navigation.local_iter() {
             for (position, value) in slot.value.values().enumerate() {
                 if let Value::Reference(target) = value {
                     let occurrence = ReferenceOccurrence {
@@ -436,12 +570,12 @@ impl ModelView {
             declared_source: None,
             registry,
             records,
-            indexes,
+            indexes: Arc::new(indexes),
             links,
             derived_navigation,
-            statuses: BTreeMap::new(),
-            searches: BTreeMap::new(),
-            reference_contributions: BTreeMap::new(),
+            statuses: SharedMap::new(),
+            searches: SharedMap::new(),
+            reference_contributions: SharedMap::new(),
         })
     }
     /// Explicit property/navigation state, resolving only unambiguous class aliases.
@@ -540,12 +674,7 @@ impl ModelView {
         &self,
         element: ElementId,
     ) -> impl Iterator<Item = &AssociationOccurrence> {
-        self.indexes
-            .incidence
-            .get(&element)
-            .into_iter()
-            .flatten()
-            .map(|id| &self.links[id])
+        self.indexes.incident(element).map(|id| &self.links[id])
     }
     /// Occurrences classified under this association or its descendants. End identities
     /// remain those of the actual association; no implicit end alignment is invented.
@@ -592,20 +721,14 @@ impl ModelView {
         include_subtypes: bool,
     ) -> Result<impl Iterator<Item = &ElementRecord>, MetamodelError> {
         self.registry.class(class)?;
-        let index = if include_subtypes {
-            &self.indexes.by_supertype
-        } else {
-            &self.indexes.exact_class
-        };
-        Ok(index
-            .get(&class)
-            .into_iter()
-            .flatten()
+        Ok(self
+            .indexes
+            .instances(class, include_subtypes)
             .map(|id| self.records[id].as_ref()))
     }
     /// References sorted by source, property, then value position.
     pub fn incoming(&self, id: ElementId) -> impl Iterator<Item = &ReferenceOccurrence> {
-        self.indexes.incoming.get(&id).into_iter().flatten()
+        self.indexes.references(id, true)
     }
     /// References to `target` through exactly `property`, in the same order as
     /// [`Self::incoming`]. Includes declared slots, association occurrences and
@@ -618,21 +741,11 @@ impl ModelView {
         target: ElementId,
         property: PropertyId,
     ) -> impl Iterator<Item = &ReferenceOccurrence> {
-        let incoming = self
-            .indexes
-            .incoming
-            .get(&target)
-            .map_or(&[][..], Vec::as_slice);
-        self.indexes
-            .incoming_by_property
-            .get(&(target, property))
-            .into_iter()
-            .flatten()
-            .map(move |&offset| &incoming[offset])
+        self.indexes.incoming_property(target, property)
     }
     /// References sorted by property, then value position.
     pub fn outgoing(&self, id: ElementId) -> impl Iterator<Item = &ReferenceOccurrence> {
-        self.indexes.outgoing.get(&id).into_iter().flatten()
+        self.indexes.references(id, false)
     }
     /// Stored slot or reconstructible scalar association navigation. Inverse
     /// projections are never independently writable and are not record slots.
@@ -714,8 +827,8 @@ impl ModelView {
 struct SnapshotData {
     revision: RevisionId,
     model: ModelView,
-    used_ids: BTreeSet<ElementId>,
-    used_links: BTreeSet<AssociationOccurrenceId>,
+    used_ids: SharedSet<ElementId>,
+    used_links: SharedSet<AssociationOccurrenceId>,
     dependency: Option<Arc<crate::derived::DerivedOverlay>>,
 }
 
@@ -737,16 +850,16 @@ impl Snapshot {
                 model: ModelView {
                     declared_source: None,
                     registry,
-                    records: BTreeMap::new(),
-                    indexes: Indexes::default(),
-                    links: BTreeMap::new(),
-                    derived_navigation: BTreeMap::new(),
-                    statuses: BTreeMap::new(),
-                    searches: BTreeMap::new(),
-                    reference_contributions: BTreeMap::new(),
+                    records: SharedMap::new(),
+                    indexes: Arc::new(Indexes::default()),
+                    links: SharedMap::new(),
+                    derived_navigation: SharedMap::new(),
+                    statuses: SharedMap::new(),
+                    searches: SharedMap::new(),
+                    reference_contributions: SharedMap::new(),
                 },
-                used_ids: BTreeSet::new(),
-                used_links: BTreeSet::new(),
+                used_ids: SharedSet::new(),
+                used_links: SharedSet::new(),
                 dependency: None,
             }),
         }
@@ -756,7 +869,9 @@ impl Snapshot {
     /// remove, reorder or transfer ownership of dependency facts. This generic
     /// operation confers no language-specific publication acceptance.
     pub fn with_immutable_dependency(dependency: Arc<crate::derived::DerivedOverlay>) -> Self {
-        let model = dependency.model().clone();
+        let model = dependency
+            .model()
+            .fork_in_registry(dependency.model().registry.clone());
         Self::with_dependency_model(dependency, model)
     }
     /// Mount the exact immutable dependency under a compatible larger registry.
@@ -769,26 +884,24 @@ impl Snapshot {
     ) -> Result<Self, ModelError> {
         let original = dependency.model();
         registry.require_extension_of(original.registry())?;
-        let mut model = ModelView::build(
-            registry,
-            original.records.clone(),
-            original.links.clone(),
-            original.derived_navigation.clone(),
+        // New association-owned navigations can add obligations on an existing
+        // class without changing its class-owned effective-property contract.
+        // Check those bounds read-only; accepted table allocations stay shared.
+        crate::association::validate_required_navigation(
+            &registry,
+            &original.records,
+            &original.indexes.association_navigation,
+            &mut Validation::strict(),
         )?;
-        model.declared_source = original.declared_source.clone();
-        model.statuses = original.statuses.clone();
-        model.searches = original.searches.clone();
-        model.reference_contributions = original.reference_contributions.clone();
+        let model = original.fork_in_registry(registry);
         Ok(Self::with_dependency_model(dependency, model))
     }
     fn with_dependency_model(
         dependency: Arc<crate::derived::DerivedOverlay>,
         model: ModelView,
     ) -> Self {
-        let mut used_ids = dependency.declared().inner.used_ids.clone();
-        used_ids.extend(dependency.model().elements().map(|r| r.id()));
-        let mut used_links = dependency.declared().inner.used_links.clone();
-        used_links.extend(dependency.model().association_occurrences().map(|r| r.id()));
+        let used_ids = dependency.element_reservations().fork();
+        let used_links = dependency.occurrence_reservations().fork();
         Self {
             inner: Arc::new(SnapshotData {
                 revision: RevisionId::new(),
@@ -830,11 +943,13 @@ impl Snapshot {
     /// must precede edits to that record, but reference targets may be created later.
     pub fn apply(&self, changes: &ChangeSet) -> Result<Self, ModelError> {
         let (records, used_ids, links, used_links) = self.stage(changes)?;
-        let mut model = ModelView::build(
+        let mut model = ModelView::build_with_validation(
             self.model().registry.clone(),
             records,
             links,
             self.model().derived_navigation.clone(),
+            &mut Validation::strict(),
+            self.model().indexes.base.clone(),
         )?;
         self.check_dependency_ownership(&model)?;
         model.statuses = self.model().statuses.clone();
@@ -869,6 +984,7 @@ impl Snapshot {
             links,
             self.model().derived_navigation.clone(),
             &mut validation,
+            self.model().indexes.base.clone(),
         )?;
         self.check_dependency_ownership(&model)?;
         model.statuses = self.model().statuses.clone();
@@ -1354,6 +1470,8 @@ impl ChangeSet {
 /// Structural validation failure, preserving semantic identifiers and value shape.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum ModelError {
+    #[error("declared construction history mismatch: {0}")]
+    ConstructionHistory(&'static str),
     #[error("immutable dependency fact cannot be changed: {0:?}")]
     ImmutableDependency(FactKey),
     #[error("invalid insertion position {position} for association property {property}")]
@@ -1455,7 +1573,7 @@ struct Containment {
 
 fn validate(
     registry: &MetamodelRegistry,
-    records: &BTreeMap<ElementId, Arc<ElementRecord>>,
+    records: &SharedMap<ElementId, Arc<ElementRecord>>,
     projected: &crate::association::Navigation,
     validation: &mut Validation,
 ) -> Result<(), ModelError> {
@@ -1533,7 +1651,7 @@ fn validate(
 
 fn validate_slot(
     registry: &MetamodelRegistry,
-    records: &BTreeMap<ElementId, Arc<ElementRecord>>,
+    records: &SharedMap<ElementId, Arc<ElementRecord>>,
     record: &ElementRecord,
     property: PropertyId,
     slot: &Slot,

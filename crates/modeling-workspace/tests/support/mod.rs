@@ -199,7 +199,18 @@ pub fn assert_shared(revision: &WorkingProjectRevision) {
     }
     // Test-only scheduler observer, specified in README. Counting evaluations
     // alone cannot establish that accepted standard subjects were never replayed.
-    for subject in agq_modeling_workspace::testing::producer_subjects(revision) {
+    let observed: BTreeSet<_> =
+        agq_modeling_workspace::testing::producer_subjects(revision).collect();
+    if revision
+        .producer_status()
+        .is_some_and(|status| status.counters.subjects_evaluated > 0)
+    {
+        assert!(
+            !observed.is_empty(),
+            "the scheduler evaluated subjects but its verification observer recorded none"
+        );
+    }
+    for subject in observed {
         assert!(
             accepted.overlay().model().element(subject).is_none(),
             "replayed accepted standard subject {subject}"

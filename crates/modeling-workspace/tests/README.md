@@ -1,33 +1,26 @@
 # Held phase-1 integration tests
 
-These are executable Rust integration-test bodies for the additive
-`agq-modeling-workspace` boundary selected by ADR 0024. There is deliberately no
-crate manifest, production implementation, root workspace membership or Gen1
-adapter in this change. The language readiness gate remains required.
+These integration tests exercise the additive `agq-modeling-workspace` boundary
+selected by ADR 0024. Its production implementation, manifest and root workspace
+membership are prepared in an isolated worktree. Integration remains gated by
+the language readiness contract. There is no Gen1 adapter.
 
 The authority for the prospective interface is
 [the phase-1 design](../../../docs/modeling-workspace-phase1-design.md) and
 [the frontend boundary](../../../docs/modeling-workspace-frontend-boundary.md).
-The symbols below make their conceptual interface concrete for implementation;
-they are not claims that those methods already exist. Method spelling may be
-adapted during implementation without weakening the observable assertions.
+The symbols below describe the implementation and its observable assertions.
 
 ## Current blockers and execution
 
-The actual command
+After language readiness, the explicit accepted-publication command is
 
 ```powershell
-cargo test --manifest-path crates/modeling-workspace/Cargo.toml --test phase1 --features verification -- --ignored --test-threads=1
+cargo test --locked --offline -p agq-modeling-workspace --features verification -- --ignored --test-threads=1
 ```
 
-currently exits 1: `manifest path crates/modeling-workspace/Cargo.toml does not
-exist`. Consequently these five integration tests have **not been type-checked
-or executed** against a workspace implementation. Rustfmt checks their Rust
-syntax; that is not a substitute for compilation.
-
-After the readiness gate and implementation, add `--test working_states` to run
-the supplemental recovery/identity and unsupported-capability tests as well.
-Those bodies also remain uncompiled and unexecuted while the manifest is absent.
+This runs the mixed-document, recovery, scale and self-model dogfooding tests.
+Accepted-cache semantic tests have not yet run; their status is recorded in the
+final-language-acceptance verification ledger separately from compilation.
 The tests require `AGENTIQUE_KERML_CACHE` and `AGENTIQUE_SYSTEMS_CACHE`, both exact
 trusted accepted publications. Missing paths, invalid receipts or unavailable
 accepted Systems restoration fail the requested test; they never skip a test,
@@ -37,24 +30,15 @@ A process-wide `OnceLock`
 shares the restored facade across the tests. Ignored tests are excluded from
 ordinary package verification until explicitly requested.
 
-Further concrete prerequisites are:
+`SourceInputs`/`SourceCompilation` retain current recovered bytes and their
+construction frontier independently from the existing strict `SourceProject`
+API. Kernel-owned identity history distinguishes temporary omission from
+deletion, including deletion while the current revision remains Working.
+Verification-only observers record actual scheduler evaluations and retained
+kernel table ownership. Trusted Systems restoration still requires an accepted
+receipt; the existing language acceptance harness remains independently gated.
 
-1. `ProjectWorkspace`, immutable Working/Validated handles and independent
-   workspace revision IDs do not exist yet.
-2. The proposed frontend `SourceInputs`/`SourceCompilation` boundary does not
-   exist. Current `SourceProject::apply` rejects recovered documents, and accepted
-   lowering requires a strict snapshot. Wrapping that API unchanged cannot pass
-   the recovery, unresolved-reference and removal tests.
-3. Trusted Systems restoration still requires a genuinely accepted receipt.
-   The existing language acceptance harness remains independently gated.
-4. A test-only scheduler observer must retain every subject actually evaluated
-   during each authored compilation. Total counters alone cannot prove that
-   accepted standard producers were not replayed.
-5. A test-only storage observer must distinguish retained publication tables from
-   copied dependency entries and sparse projections contributed by local carriers.
-   Shared facade/record `Arc`s alone do not establish the no-copy requirement.
-
-## Proposed facade used by the tests
+## Facade used by the tests
 
 All fallible operations return typed errors with Debug implementations. These
 tests do not freeze error formatting or invent a semantic DTO representation.
@@ -79,7 +63,7 @@ types, closure/evidence structures and all semantic queries used in the tests
 already exist in Gen2. Reuse those contracts; the workspace owns history and
 atomic publication of the prepared frontend result.
 
-These verification observers are proposed implementation hooks, not stable public
+These verification observers are implementation hooks, not stable public
 product APIs. Equivalent internal callbacks or observations are acceptable. The
 scheduling assertion is that no accepted standard subject is evaluated during a
 local edit. No ordinary caller receives graph mutation.
@@ -115,7 +99,7 @@ capabilities still prevent validation. Pointer assertions cover payload/syntax
 sharing; the separate storage observer tests that base maps, indexes and proof
 tables were not copied. There is no speed threshold. Rebuilding authored
 semantics remains permitted; copying accepted graphs or rerunning their producers
-does not. These are prepared assertions, not passed workspace checks.
+does not. Prepared assertions are not passed workspace acceptance checks.
 
 The separate `agq-kerml-text --test workspace_edit_inputs` preflight runs now
 against the real production frontend. It covers all base/edited/recovered fixture

@@ -8,6 +8,7 @@
 use super::*;
 use crate::derived::{ComputationFailure, DerivedOverlay, IncompleteReason, StructuralSearch};
 use crate::provenance::{Explanation, ExplanationPool};
+use crate::shared_map::{SharedMap, SharedSet};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -521,12 +522,16 @@ fn write_input(
                 DerivationInput::Strict(v) => &v.inner.used_ids,
                 DerivationInput::Construction(v) => &v.used_ids,
             }
-            .clone(),
+            .iter()
+            .copied()
+            .collect(),
             used_links: match snapshot {
                 DerivationInput::Strict(v) => &v.inner.used_links,
                 DerivationInput::Construction(v) => &v.used_links,
             }
-            .clone(),
+            .iter()
+            .copied()
+            .collect(),
         },
     )?;
     let mut tables = Tables::new();
@@ -884,8 +889,8 @@ enum Frontier {
 fn declared_input(
     registry: Arc<MetamodelRegistry>,
     revision: RevisionId,
-    mut records: BTreeMap<ElementId, Arc<ElementRecord>>,
-    mut links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    mut records: SharedMap<ElementId, Arc<ElementRecord>>,
+    mut links: SharedMap<AssociationOccurrenceId, AssociationOccurrence>,
     used_ids: BTreeSet<ElementId>,
     used_links: BTreeSet<AssociationOccurrenceId>,
     dependency: Option<Arc<DerivedOverlay>>,
@@ -927,8 +932,12 @@ fn declared_input(
             .require_extension_of(dependency.model().registry())
             .map_err(ModelError::from)?;
         let base = Snapshot::with_immutable_dependency(dependency.clone());
-        if !base.inner.used_ids.is_subset(&used_ids)
-            || !base.inner.used_links.is_subset(&used_links)
+        if !base.inner.used_ids.iter().all(|id| used_ids.contains(id))
+            || !base
+                .inner
+                .used_links
+                .iter()
+                .all(|id| used_links.contains(id))
         {
             return Err(ArchiveError::Invalid(
                 "missing dependency identity reservation",
@@ -939,23 +948,11 @@ fn declared_input(
         {
             return Err(ArchiveError::Invalid("protected dependency identity"));
         }
-        records.extend(
-            dependency
-                .model()
-                .records
-                .iter()
-                .map(|(&id, record)| (id, record.clone())),
-        );
-        links.extend(
-            dependency
-                .model()
-                .links
-                .iter()
-                .map(|(&id, link)| (id, link.clone())),
-        );
-        dependency.model().derived_navigation.clone()
+        records = records.with_base(&dependency.model().records);
+        links = links.with_base(&dependency.model().links);
+        dependency.model().derived_navigation.fork()
     } else {
-        BTreeMap::new()
+        SharedMap::new()
     };
     let mut validation = Validation {
         deficits: construction.then(BTreeMap::new),
@@ -966,16 +963,25 @@ fn declared_input(
         links,
         navigation,
         &mut validation,
+        dependency.as_ref().map(|d| d.model().indexes.clone()),
     )?;
     if let Some(dependency) = &dependency {
         model.declared_source = dependency.model().declared_source.clone();
-        model.statuses = dependency.model().statuses.clone();
-        model.searches = dependency.model().searches.clone();
+        model.statuses = dependency.model().statuses.fork();
+        model.searches = dependency.model().searches.fork();
         // Evidence on the separately supplied immutable dependency remains
         // authenticated by that exact object. Lossless archive formats restore
         // local selected contributions after constructing the overlay.
-        model.reference_contributions = dependency.model().reference_contributions.clone();
+        model.reference_contributions = dependency.model().reference_contributions.fork();
     }
+    let mut retained_ids = dependency
+        .as_ref()
+        .map_or_else(SharedSet::new, |d| d.element_reservations().fork());
+    retained_ids.extend(used_ids);
+    let mut retained_links = dependency
+        .as_ref()
+        .map_or_else(SharedSet::new, |d| d.occurrence_reservations().fork());
+    retained_links.extend(used_links);
     if construction {
         let base = dependency.as_ref().map_or_else(
             || Snapshot::new(registry),
@@ -984,8 +990,8 @@ fn declared_input(
         base.check_dependency_ownership(&model)?;
         return Ok(DerivationInput::Construction(Arc::new(ConstructionView {
             base,
-            used_ids,
-            used_links,
+            used_ids: retained_ids,
+            used_links: retained_links,
             revision,
             model,
             dependency,
@@ -1000,8 +1006,8 @@ fn declared_input(
         inner: Arc::new(SnapshotData {
             revision,
             model,
-            used_ids,
-            used_links,
+            used_ids: retained_ids,
+            used_links: retained_links,
             dependency,
         }),
     };
@@ -1096,12 +1102,12 @@ fn read_input_on(
         searches: vec![],
         search_pool: crate::derived::StructuralSearchPool::default(),
     };
-    let mut records = BTreeMap::new();
-    let mut links = BTreeMap::new();
-    let mut navigation = BTreeMap::new();
-    let mut failures = BTreeMap::new();
-    let mut searches = BTreeMap::new();
-    let mut contributions = BTreeMap::new();
+    let mut records = SharedMap::new();
+    let mut links = SharedMap::new();
+    let mut navigation = SharedMap::new();
+    let mut failures = SharedMap::new();
+    let mut searches = SharedMap::new();
+    let mut contributions = SharedMap::new();
     let mut snapshot = None;
     let mut changed_records = BTreeSet::new();
     let mut changed_links = BTreeSet::new();
@@ -1252,9 +1258,9 @@ fn read_input_on(
     drop(line);
     if let Some(snapshot) = snapshot {
         if let Some(dependency) = &dependency {
-            navigation.extend(dependency.model().derived_navigation.clone());
-            failures.extend(dependency.model().statuses.clone());
-            searches.extend(dependency.model().searches.clone());
+            navigation = navigation.with_base(&dependency.model().derived_navigation);
+            failures = failures.with_base(&dependency.model().statuses);
+            searches = searches.with_base(&dependency.model().searches);
         }
         let (mut model, obligations) =
             snapshot.build_model(registry, records, links, navigation)?;
@@ -1267,9 +1273,9 @@ fn read_input_on(
         }
         model.reference_contributions = contributions;
         if let Some(dependency) = &dependency {
-            model
+            model.reference_contributions = model
                 .reference_contributions
-                .extend(dependency.model().reference_contributions.clone());
+                .with_base(&dependency.model().reference_contributions);
         }
         let overlay = match &snapshot {
             DerivationInput::Strict(declared) => {

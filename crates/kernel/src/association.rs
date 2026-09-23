@@ -2,6 +2,7 @@
 use crate::metamodel::{MetamodelRegistry, ValueKind};
 use crate::model::{ElementRecord, Slot};
 use crate::provenance::{DeclaredOrigin, Origin};
+use crate::shared_map::SharedMap;
 use crate::value::{SlotValue, Value};
 use crate::{AssociationId, AssociationOccurrenceId, ElementId, ModelError, PropertyId};
 use std::{
@@ -44,18 +45,19 @@ impl AssociationOccurrence {
     }
 }
 
-pub(crate) type Navigation = BTreeMap<(ElementId, PropertyId), Slot>;
+pub(crate) type Navigation = SharedMap<(ElementId, PropertyId), Slot>;
 
 /// Validate incidence, both inverse bounds and order before publishing projections.
 pub(crate) fn project(
     registry: &MetamodelRegistry,
-    records: &BTreeMap<ElementId, Arc<ElementRecord>>,
-    links: &BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+    records: &SharedMap<ElementId, Arc<ElementRecord>>,
+    links: &SharedMap<AssociationOccurrenceId, AssociationOccurrence>,
     validation: &mut crate::model::Validation,
+    inherited: Option<&Navigation>,
 ) -> Result<Navigation, ModelError> {
     type Group<'a> = Vec<(Option<usize>, ElementId, &'a AssociationOccurrence)>;
     let mut groups: BTreeMap<(ElementId, PropertyId), Group<'_>> = BTreeMap::new();
-    for link in links.values() {
+    for link in links.local_values() {
         let association = registry.association(link.association)?;
         let supported = if matches!(link.origin, Origin::Derived(_)) {
             registry.supports_derived_occurrence_storage(link.association)?
@@ -103,7 +105,21 @@ pub(crate) fn project(
             return Err(ModelError::InvalidAssociationOccurrence(link.id));
         }
     }
-    let mut navigation = BTreeMap::new();
+    // Reproject only groups touched by a local carrier. Inherited groups retain
+    // their shared slots; extending one group retains exact prior occurrences.
+    for (&(context, end), values) in &mut groups {
+        if let Some(slot) = inherited.and_then(|base| base.get(&(context, end))) {
+            if let Origin::AssociationOccurrences(ids) = &slot.origin {
+                for id in ids {
+                    let link = &links[id];
+                    values.push((link.positions.get(&end).copied(), link.ends[&end], link));
+                }
+            } else {
+                return Err(ModelError::UnsupportedAssociationStorage(end));
+            }
+        }
+    }
+    let mut navigation = inherited.map_or_else(SharedMap::new, SharedMap::fork);
     for ((context, end), mut values) in groups {
         let p = registry.property(end)?;
         if records[&context].slot(end).is_some() {
@@ -151,6 +167,16 @@ pub(crate) fn project(
         };
         navigation.insert((context, end), Slot { value, origin });
     }
+    validate_required_navigation(registry, records, &navigation, validation)?;
+    Ok(navigation)
+}
+
+pub(crate) fn validate_required_navigation(
+    registry: &MetamodelRegistry,
+    records: &SharedMap<ElementId, Arc<ElementRecord>>,
+    navigation: &Navigation,
+    validation: &mut crate::model::Validation,
+) -> Result<(), ModelError> {
     // Navigable required ends are obligations on their context instances. A
     // non-navigable inverse lower bound applies to participating occurrences;
     // it does not manufacture an authored property on every target instance.
@@ -173,5 +199,5 @@ pub(crate) fn project(
             }
         }
     }
-    Ok(navigation)
+    Ok(())
 }

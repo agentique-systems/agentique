@@ -698,3 +698,33 @@ fn derived_navigation_cannot_take_ownership_of_an_immutable_dependency() {
     }
     assert!(project.model().navigation_slot(VEHICLE, LEFT).is_none());
 }
+
+#[test]
+fn shared_registry_mount_preserves_new_association_navigation_obligations() {
+    let mut base_descriptors = descriptors(false, false, None);
+    base_descriptors.properties.clear();
+    base_descriptors.associations.clear();
+    let base_registry = Arc::new(MetamodelRegistry::from_descriptors(base_descriptors).unwrap());
+    let empty = Snapshot::new(base_registry.clone());
+    let mut edit = empty.change_set();
+    edit.create(ENGINE, ELEMENT, authored());
+    let accepted = Arc::new(
+        DerivationBuilder::new(empty.apply(&edit).unwrap())
+            .build()
+            .unwrap(),
+    );
+    let mut extended = descriptors(false, false, None);
+    extended.properties[0].multiplicity.lower = 1;
+    let registry = Arc::new(MetamodelRegistry::from_descriptors(extended).unwrap());
+    registry.require_extension_of(&base_registry).unwrap();
+    assert!(matches!(
+        Snapshot::with_immutable_dependency_in_registry(accepted.clone(), registry),
+        Err(ModelError::Multiplicity {
+            element: ENGINE,
+            property: LEFT,
+            actual: 0,
+            ..
+        })
+    ));
+    assert!(accepted.model().navigation_slot(ENGINE, LEFT).is_none());
+}

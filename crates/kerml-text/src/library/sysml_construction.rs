@@ -227,10 +227,10 @@ pub(super) fn sysml_class(node: Node<'_>) -> Result<Option<MetaclassId>, Library
                 || name.ends_with("Member")
                 || name == "ConjugatedPortTyping"
             {
-                return Err(LibraryLoadError::Interpretation(format!(
-                    "SysML canonical production {name} at {:?}",
-                    node.range()
-                )));
+                return Err(LibraryLoadError::UnsupportedSource {
+                    origin: Box::new(node.origin()),
+                    construct: format!("SysML canonical production {name}"),
+                });
             }
             return Ok(None);
         }

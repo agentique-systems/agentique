@@ -644,6 +644,16 @@ fn construction_frontier_roundtrip_keeps_obligations_and_protected_dependency() 
     let attached =
         read_construction_frontier_on(Cursor::new(&bytes), reconstructed.clone()).unwrap();
     assert!(Arc::ptr_eq(attached.declared_shared(), &reconstructed));
+    #[cfg(feature = "verification")]
+    {
+        let storage = agq_kernel::storage_observer::construction_storage(&attached);
+        assert_eq!(
+            storage.base_tables,
+            agq_kernel::storage_observer::publication_storage(&dependency),
+            "authenticated input attachment retains the original dependency tables"
+        );
+        assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
+    }
     assert_eq!(attached.base_revision(), reconstructed.revision());
     assert_eq!(attached.obligations(), original.obligations());
     assert!(attached.model().elements().eq(original.model().elements()));
@@ -825,6 +835,16 @@ fn strict_dependent_evidence_roundtrip_is_lossless_and_separate_from_frontiers()
     let restored =
         read_dependent_overlay_with_evidence(Cursor::new(&bytes), registry(), dependency.clone())
             .unwrap();
+    #[cfg(feature = "verification")]
+    {
+        let storage = agq_kernel::storage_observer::overlay_storage(&restored);
+        assert_eq!(
+            storage.base_tables,
+            agq_kernel::storage_observer::publication_storage(&dependency),
+            "lossless selected-evidence restoration retains the actual publication tables"
+        );
+        assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
+    }
     assert!(Arc::ptr_eq(
         restored.declared().immutable_dependency().unwrap(),
         &dependency

@@ -2,6 +2,7 @@
 use super::*;
 use crate::archive::ArchiveError;
 use crate::metamodel::ValueKind;
+use crate::shared_map::SharedMap;
 use crate::value::Value;
 
 impl DerivedOverlay {
@@ -54,8 +55,12 @@ fn restore(
             return Err(invalid());
         }
     }
-    let mut explanations = BTreeMap::new();
-    let mut evidence_pool = ExplanationPool::default();
+    let mut explanations = declared
+        .immutable_dependency()
+        .map_or_else(SharedMap::new, |d| d.inner.explanations.fork());
+    let mut evidence_pool = declared
+        .immutable_dependency()
+        .map_or_else(ExplanationPool::default, |d| d.inner.evidence_pool.fork());
     for record in model.elements() {
         let previous = declared.model().element(record.id());
         if previous.is_none()
@@ -131,7 +136,7 @@ fn restore(
             &mut evidence_pool,
         );
     }
-    for (&(element, property), failure) in &model.statuses {
+    for (&(element, property), failure) in model.statuses.local_iter() {
         let record = model
             .element(element)
             .ok_or(ModelError::UnknownElement(element))?;
@@ -226,7 +231,11 @@ fn restore(
             ));
         }
     }
-    let mut search_pool = StructuralSearchPool::default();
+    let mut search_pool = declared
+        .immutable_dependency()
+        .map_or_else(StructuralSearchPool::default, |d| {
+            d.inner.search_pool.fork()
+        });
     for (fact, searches) in &mut model.searches {
         if !explanations.contains_key(fact) {
             return Err(DerivationError::MissingSearchSubject(*fact).into());
@@ -258,15 +267,20 @@ fn restore(
         evidence_pool,
         search_pool,
         build_metrics,
+        element_reservations: OnceLock::new(),
+        occurrence_reservations: OnceLock::new(),
     }))
 }
 fn origin(
     fact: FactKey,
     origin: &Origin,
-    explanations: &mut BTreeMap<FactKey, Arc<Explanation>>,
+    explanations: &mut SharedMap<FactKey, Arc<Explanation>>,
     pool: &mut ExplanationPool,
 ) {
     if let Origin::Derived(proof) = origin {
+        if explanations.get(&fact) == Some(proof) {
+            return;
+        }
         explanations.insert(fact, pool.intern_shared(proof.clone()));
     }
 }

@@ -6,6 +6,7 @@ use agq_kerml_semantics::{
 };
 use agq_kernel::derived::DerivedOverlay;
 use agq_sysml_semantics::{SysmlProducerExtension, SysmlQueries, SysmlSemanticContext};
+use std::collections::BTreeMap;
 
 /// Result of the combined authored producer scheduler, independently of syntax
 /// and mandatory reference diagnostics. This is not full language validation.
@@ -26,7 +27,7 @@ pub struct AuthoredProducerStatus {
 #[derive(Debug)]
 pub(crate) struct AcceptedSourceDependency {
     pub(crate) publication: Arc<CanonicalSysmlSystemsLibrary>,
-    mounted: Arc<ProducerClosedDependency>,
+    pub(crate) mounted: Arc<ProducerClosedDependency>,
 }
 impl AcceptedSourceDependency {
     pub(crate) fn syntax_profile(&self) -> production::SysmlSyntaxProfile {
@@ -56,7 +57,7 @@ impl AcceptedSourceDependency {
             mounted,
         }))
     }
-    fn registry(&self) -> ProducerRegistry {
+    pub(crate) fn registry(&self) -> ProducerRegistry {
         ProducerRegistry::new(
             ProducerFamily::ALL
                 .into_iter()
@@ -77,31 +78,32 @@ impl AcceptedSourceDependency {
             .with_producer_closure(certificate)
             .map_err(interpretation)
     }
-    fn candidate_queries<'m>(
-        &self,
-        draft: &'m LibraryDraft,
-        root: ElementId,
-    ) -> Result<KerMlQueries<'m>, LibraryLoadError> {
-        Ok(KerMlQueries::new(self.candidate_context(draft, root)?))
-    }
     fn candidate_context<'m>(
         &self,
         draft: &'m LibraryDraft,
         root: ElementId,
+    ) -> Result<SemanticContext<'m>, LibraryLoadError> {
+        self.candidate_context_with_pending(draft, root, &BTreeSet::new())
+    }
+    pub(crate) fn candidate_context_with_pending<'m>(
+        &self,
+        draft: &'m LibraryDraft,
+        root: ElementId,
+        pending: &BTreeSet<ElementId>,
     ) -> Result<SemanticContext<'m>, LibraryLoadError> {
         let context = if let Some(overlay) = draft.semantic_candidate() {
             self.mounted.project_construction_overlay_context(
                 overlay,
                 &[root],
                 BTreeSet::new(),
-                BTreeSet::new(),
+                pending.clone(),
             )
         } else {
             self.mounted.project_construction_context(
                 draft.candidate(),
                 &[root],
                 BTreeSet::new(),
-                BTreeSet::new(),
+                pending.clone(),
             )
         }
         .map_err(interpretation)?;
@@ -114,7 +116,11 @@ impl AcceptedSourceDependency {
         };
         Ok(context)
     }
-    fn extension(&self, root: ElementId, final_predicates: bool) -> SysmlProducerExtension {
+    pub(crate) fn extension(
+        &self,
+        root: ElementId,
+        final_predicates: bool,
+    ) -> SysmlProducerExtension {
         let roots = std::iter::once(root)
             .chain(self.publication.roots().iter().copied())
             .chain(self.publication.accepted_kerml().roots().iter().copied())
@@ -137,6 +143,10 @@ pub(super) struct EffectiveSourceModel {
     pub(super) status: AuthoredProducerStatus,
 }
 impl EffectiveSourceModel {
+    #[cfg(feature = "verification")]
+    pub(super) fn dependency_storage(&self) -> agq_kernel::storage_observer::DependencyStorage {
+        agq_kernel::storage_observer::overlay_storage(&self.overlay)
+    }
     pub(super) fn model(&self) -> &ModelView {
         self.overlay.model()
     }
@@ -169,35 +179,48 @@ fn interpretation(error: impl std::fmt::Debug) -> LibraryLoadError {
     LibraryLoadError::Interpretation(format!("{error:?}"))
 }
 
-pub(crate) fn lower_accepted_source(
+pub(crate) fn prepare_accepted_source(
     inputs: &[SourceInput<'_>],
-    previous: Option<&SourceModel>,
     root: ElementId,
     origin: DeclaredOrigin,
     dependency: Arc<AcceptedSourceDependency>,
-) -> Result<SourceModel, LibraryLoadError> {
+    pending: &BTreeSet<ElementId>,
+    history: Option<&agq_kernel::DeclaredConstructionHistory>,
+) -> Result<PreparedSource, LibraryLoadError> {
     let base = dependency.mounted.project_snapshot();
     let profile = dependency.publication.accepted_kerml().profile();
     let registry = dependency.registry();
     let mut retained_evaluations = 0;
     let mut reopened_evaluations = 0;
+    let mut status = None;
+    let construct = |resolved: &BTreeMap<(ElementId, agq_kernel::PropertyId), ElementId>| {
+        let draft = construction::construct_on(
+            inputs,
+            resolved,
+            profile,
+            base.clone(),
+            Some((root, origin.clone())),
+        )?;
+        if let Some(history) = history {
+            Ok(draft.reconcile_declared(history)?.1)
+        } else {
+            Ok(draft)
+        }
+    };
     let mut draft = library::refinement::refine(
-        |resolved| {
-            construction::construct_on(
-                inputs,
-                resolved,
-                profile,
-                base.clone(),
-                Some((root, origin.clone())),
+        &construct,
+        |draft| {
+            Ok(
+                KerMlQueries::new(dependency.candidate_context_with_pending(draft, root, pending)?)
+                    .status_queries(),
             )
         },
-        |draft| Ok(dependency.candidate_queries(draft, root)?.status_queries()),
         ReferenceRefinementStrategy::DependencyDriven,
         |_| {},
     )?;
     // A missing endpoint may require an inherited or producer-created member.
     // Keep these consequences separate from canonical declared construction.
-    if !draft.candidate().obligations().is_empty() {
+    if !draft.candidate().obligations().is_empty() || !pending.is_empty() {
         for final_predicates in [false, true] {
             let mut checkpoint: Option<agq_kerml_semantics::ProducerClosureCheckpoint> = None;
             let endpoints = draft
@@ -223,13 +246,7 @@ pub(crate) fn lower_accepted_source(
             draft = library::refinement::refine_from(
                 endpoints,
                 |resolved| {
-                    let mut draft = construction::construct_on(
-                        inputs,
-                        resolved,
-                        profile,
-                        base.clone(),
-                        Some((root, origin.clone())),
-                    )?;
+                    let mut draft = construct(resolved)?;
                     let mut seed = checkpoint.take();
                     let closed = agq_kerml_semantics::close_construction_structure_with_extension(
                         draft.candidate_shared(),
@@ -241,7 +258,7 @@ pub(crate) fn lower_accepted_source(
                                     overlay,
                                     &[root],
                                     BTreeSet::new(),
-                                    BTreeSet::new(),
+                                    pending.clone(),
                                 )
                                 .map_err(PublicationOverlayError::Context)?;
                             if let Some(previous) = seed.take() {
@@ -269,17 +286,30 @@ pub(crate) fn lower_accepted_source(
                                 &closed.overlay,
                                 &[root],
                                 BTreeSet::new(),
-                                BTreeSet::new(),
+                                pending.clone(),
                             )
                             .map_err(interpretation)?;
                         checkpoint =
                             Some(certificate.checkpoint(&context).map_err(interpretation)?);
                     }
+                    status = Some(AuthoredProducerStatus {
+                        completeness: closed.completeness,
+                        converged: closed.converged,
+                        stages: closed.stages,
+                        counters: closed.counters,
+                        retained_evaluations,
+                        reopened_evaluations,
+                    });
                     draft.set_semantic_candidate(closed.overlay);
                     draft.set_producer_closure(closed.certificate);
                     Ok(draft)
                 },
-                |draft| Ok(dependency.candidate_queries(draft, root)?.status_queries()),
+                |draft| {
+                    Ok(KerMlQueries::new(
+                        dependency.candidate_context_with_pending(draft, root, pending)?,
+                    )
+                    .status_queries())
+                },
                 ReferenceRefinementStrategy::DependencyDriven,
                 |_| {},
             )?;
@@ -288,7 +318,57 @@ pub(crate) fn lower_accepted_source(
             }
         }
     }
-    let snapshot = {
+    Ok(PreparedSource {
+        draft,
+        status,
+        retained_evaluations,
+        reopened_evaluations,
+    })
+}
+
+pub(crate) struct PreparedSource {
+    pub(crate) draft: LibraryDraft,
+    pub(crate) status: Option<AuthoredProducerStatus>,
+    retained_evaluations: usize,
+    reopened_evaluations: usize,
+}
+
+pub(crate) fn lower_accepted_source(
+    inputs: &[SourceInput<'_>],
+    previous: Option<&SourceModel>,
+    root: ElementId,
+    origin: DeclaredOrigin,
+    dependency: Arc<AcceptedSourceDependency>,
+) -> Result<SourceModel, LibraryLoadError> {
+    let prepared = prepare_accepted_source(
+        inputs,
+        root,
+        origin,
+        dependency.clone(),
+        &BTreeSet::new(),
+        None,
+    )?;
+    finish_accepted_source(inputs, prepared, previous, root, dependency, None)
+}
+
+pub(crate) fn finish_accepted_source(
+    inputs: &[SourceInput<'_>],
+    prepared: PreparedSource,
+    previous: Option<&SourceModel>,
+    root: ElementId,
+    dependency: Arc<AcceptedSourceDependency>,
+    desired: Option<Snapshot>,
+) -> Result<SourceModel, LibraryLoadError> {
+    let PreparedSource {
+        draft,
+        mut retained_evaluations,
+        mut reopened_evaluations,
+        ..
+    } = prepared;
+    let registry = dependency.registry();
+    let snapshot = if let Some(snapshot) = desired {
+        snapshot
+    } else {
         let desired = draft.strict_snapshot()?;
         if let Some(previous) = previous {
             crate::lowering::publish(previous.snapshot(), &desired)?
@@ -318,7 +398,6 @@ pub(crate) fn lower_accepted_source(
     let pending_references = draft.references().to_vec();
     let source_map = draft.source_map().clone();
     drop(draft);
-    drop(base);
     let closed = agq_kerml_semantics::close_result_structure_with_extension(
         &snapshot,
         Default::default(),

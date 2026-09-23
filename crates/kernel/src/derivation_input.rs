@@ -1,5 +1,6 @@
 //! Shared validation input; construction views are never promoted to snapshots.
 use super::*;
+use crate::shared_map::SharedMap;
 
 impl ConstructionView {
     /// Same identity history, canonical declarations and immutable
@@ -82,6 +83,19 @@ impl DerivationInput {
             && decoded.searches == supplied.searches
             && decoded.reference_contributions == supplied.reference_contributions
     }
+    pub(crate) fn element_reservations(&self) -> &SharedSet<ElementId> {
+        match self {
+            Self::Strict(v) => &v.inner.used_ids,
+            Self::Construction(v) => &v.used_ids,
+        }
+    }
+    pub(crate) fn occurrence_reservations(&self) -> &SharedSet<AssociationOccurrenceId> {
+        match self {
+            Self::Strict(v) => &v.inner.used_links,
+            Self::Construction(v) => &v.used_links,
+        }
+    }
+
     pub(crate) fn model(&self) -> &ModelView {
         match self {
             Self::Strict(v) => v.model(),
@@ -145,8 +159,8 @@ impl DerivationInput {
     pub(crate) fn build_model(
         &self,
         registry: Arc<MetamodelRegistry>,
-        records: BTreeMap<ElementId, Arc<ElementRecord>>,
-        links: BTreeMap<AssociationOccurrenceId, AssociationOccurrence>,
+        records: SharedMap<ElementId, Arc<ElementRecord>>,
+        links: SharedMap<AssociationOccurrenceId, AssociationOccurrence>,
         navigation: crate::association::Navigation,
     ) -> Result<(ModelView, Vec<ConstructionObligation>), ModelError> {
         let mut validation = match self {
@@ -161,6 +175,7 @@ impl DerivationInput {
             links,
             navigation,
             &mut validation,
+            self.model().indexes.base.clone(),
         )?;
         Ok((
             model,

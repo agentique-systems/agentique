@@ -175,7 +175,12 @@ pub(crate) fn construct_on(
                 Some(match declaration.kind() {
                     P::MembershipImport => c::MEMBERSHIP_IMPORT,
                     P::NamespaceImport => c::NAMESPACE_IMPORT,
-                    _ => return Err(LibraryLoadError::Interpretation("filtered import".into())),
+                    _ => {
+                        return Err(LibraryLoadError::UnsupportedSource {
+                            origin: Box::new(node.origin()),
+                            construct: "filtered import".into(),
+                        });
+                    }
                 })
             } else if matches!(node.kind(), P::MembershipImport | P::NamespaceImport)
                 || (node.kind() == P::FeatureChain && job.inline_chain)
@@ -782,9 +787,10 @@ impl Builder {
                 ),
             )?,
             P::LiteralString => {
-                return Err(LibraryLoadError::Interpretation(
-                    "string literal unescaping".into(),
-                ));
+                return Err(LibraryLoadError::UnsupportedSource {
+                    origin: Box::new(node.origin()),
+                    construct: "string literal unescaping".into(),
+                });
             }
             P::BinaryOperator
             | P::UnaryOperator

@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 description = "Pure, evidence-bearing KerML semantic queries over immutable snapshots"
 
+[features]
+verification = []
+
 [dependencies]
 agq-kernel = { path = "../kernel" }
 agq-kerml = { path = "../kerml" }

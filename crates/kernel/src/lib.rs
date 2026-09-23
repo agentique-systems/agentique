@@ -40,11 +40,16 @@ pub mod metamodel;
 mod model;
 pub mod numeric;
 pub mod provenance;
+mod shared_map;
 pub mod value;
 
 pub use ids::*;
 pub use model::archive;
 pub use model::{
-    ChangeSet, ConstructionObligation, ConstructionView, ElementRecord, ModelError, ModelView,
-    ReferenceCarrier, ReferenceOccurrence, Slot, SlotShape, Snapshot,
+    ChangeSet, ConstructionObligation, ConstructionView, DeclaredConstructionHistory,
+    DeclaredIdentitySet, ElementRecord, ModelError, ModelView, ReferenceCarrier,
+    ReferenceOccurrence, Slot, SlotShape, Snapshot,
 };
+
+#[cfg(any(test, feature = "verification"))]
+pub use model::storage_observer;

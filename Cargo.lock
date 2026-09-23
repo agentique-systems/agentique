@@ -143,6 +143,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-modeling-workspace"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml",
+ "agq-kerml-semantics",
+ "agq-kerml-syntax",
+ "agq-kerml-text",
+ "agq-kernel",
+ "agq-standard-libraries",
+ "agq-sysml-semantics",
+ "thiserror",
+]
+
+[[package]]
 name = "agq-semantics"
 version = "0.1.0"
 dependencies = [

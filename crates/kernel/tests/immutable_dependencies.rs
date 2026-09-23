@@ -386,3 +386,115 @@ fn extension_registry_keeps_shared_dependency_and_transaction_guards() {
         Err(DerivationError::Model(ModelError::ImmutableDependency(_)))
     ));
 }
+
+#[cfg(feature = "verification")]
+#[test]
+fn nested_publications_share_every_physical_table_across_edits_and_proof_frontiers() {
+    use agq_kernel::storage_observer::*;
+    let first = publication();
+    let mut middle_builder = DerivationBuilder::new(Snapshot::with_immutable_dependency(first));
+    let middle_key = key(VEHICLE, 440);
+    middle_builder.element(
+        middle_key,
+        PART_DEF,
+        [(NAME, text("middle"))],
+        BTreeSet::new(),
+    );
+    middle_builder.searches(
+        FactKey::Element(middle_key.element_id()),
+        BTreeSet::from([StructuralSearch::Model]),
+    );
+    let accepted = Arc::new(middle_builder.build().unwrap());
+    let expected_tables = publication_storage(&accepted);
+    assert!(!expected_tables.is_empty());
+    let r1 = Snapshot::with_immutable_dependency(accepted.clone());
+    let candidate = r1.preview(&r1.change_set()).unwrap();
+    let candidate_overlay =
+        ConstructionDerivationBuilder::for_construction(Arc::new(candidate.clone()))
+            .build()
+            .unwrap();
+    for storage in [
+        snapshot_storage(&r1),
+        declared_construction_storage(&candidate),
+        construction_storage(&candidate_overlay),
+    ] {
+        assert_eq!(storage.base_tables, expected_tables);
+        assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
+    }
+    let local = ElementId::from_u128(991000);
+    let mut edit = r1.change_set();
+    edit.create(local, PART_DEF, authored())
+        .set(local, NAME, text("local"), authored());
+    let r2 = r1.apply(&edit).unwrap();
+    let mut builder = DerivationBuilder::new(r2.clone());
+    let local_key = key(local, 441);
+    builder.element(
+        local_key,
+        PART_DEF,
+        [(NAME, text("local inferred"))],
+        BTreeSet::new(),
+    );
+    builder.searches(
+        FactKey::Element(local_key.element_id()),
+        BTreeSet::from([StructuralSearch::Model]),
+    );
+    let overlay = builder.build().unwrap();
+    let old = overlay.clone();
+    let mut builder = DerivationBuilder::from_overlay(overlay);
+    builder.element(
+        key(local, 442),
+        PART_DEF,
+        [(NAME, text("next inferred"))],
+        BTreeSet::new(),
+    );
+    let next = builder.build().unwrap();
+    let mut removal = r2.change_set();
+    removal.remove(local);
+    let r3 = r2.apply(&removal).unwrap();
+    for storage in [
+        snapshot_storage(&r2),
+        snapshot_storage(&r3),
+        overlay_storage(&old),
+        overlay_storage(&next),
+    ] {
+        assert_eq!(storage.base_tables, expected_tables);
+        assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
+    }
+    assert!(r1.model().element(local).is_none());
+    assert!(r2.model().element(local).is_some());
+    assert!(r3.model().element(local).is_none());
+    assert!(old.model().element(key(local, 442).element_id()).is_none());
+    assert!(next.model().element(key(local, 442).element_id()).is_some());
+    assert_eq!(expected_tables, publication_storage(&accepted));
+}
+
+#[test]
+fn dependency_search_evidence_cannot_be_rewritten_or_invalidate_inherited_contributions() {
+    let accepted = publication();
+    let source = Snapshot::with_immutable_dependency(accepted.clone());
+    let before = accepted
+        .model()
+        .computation_searches()
+        .map(|(fact, searches)| (*fact, searches.clone()))
+        .collect::<Vec<_>>();
+    let mut builder = DerivationBuilder::new(source);
+    builder.searches(
+        FactKey::Property {
+            element: OWNS,
+            property: SOURCES,
+        },
+        BTreeSet::from([StructuralSearch::Model]),
+    );
+    assert!(matches!(
+        builder.build(),
+        Err(DerivationError::Model(ModelError::ImmutableDependency(_)))
+    ));
+    assert_eq!(
+        before,
+        accepted
+            .model()
+            .computation_searches()
+            .map(|(fact, searches)| (*fact, searches.clone()))
+            .collect::<Vec<_>>()
+    );
+}

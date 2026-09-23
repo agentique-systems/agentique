@@ -121,12 +121,13 @@ pub struct Explanation {
 /// order never participate in semantic identity or validation.
 #[derive(Clone, Debug, Default)]
 pub struct ExplanationPool {
-    entries: HashSet<Arc<Explanation>>,
+    base: Option<Arc<ExplanationPool>>,
+    entries: Arc<HashSet<Arc<Explanation>>>,
     // Every address is kept alive by `entries`. This only avoids re-hashing an
     // already interned immutable allocation; equality still decides sharing for
     // distinct allocations. Addresses never become semantic identities.
-    allocations: HashSet<usize>,
-    derived_dependencies: HashMap<usize, Vec<FactKey>>,
+    allocations: Arc<HashSet<usize>>,
+    derived_dependencies: Arc<HashMap<usize, Vec<FactKey>>>,
     statistics: ExplanationPoolStatistics,
 }
 
@@ -138,6 +139,26 @@ pub struct ExplanationPoolStatistics {
 }
 
 impl ExplanationPool {
+    pub(crate) fn fork(&self) -> Self {
+        Self {
+            base: Some(Arc::new(self.clone())),
+            statistics: self.statistics,
+            ..Default::default()
+        }
+    }
+    fn contains_allocation(&self, allocation: usize) -> bool {
+        self.allocations.contains(&allocation)
+            || self
+                .base
+                .as_ref()
+                .is_some_and(|base| base.contains_allocation(allocation))
+    }
+    fn find(&self, explanation: &Arc<Explanation>) -> Option<&Arc<Explanation>> {
+        self.entries
+            .get(explanation)
+            .or_else(|| self.base.as_ref()?.find(explanation))
+    }
+
     /// Counts requests, including equal proofs supplied in separate allocations.
     pub fn statistics(&self) -> ExplanationPoolStatistics {
         self.statistics
@@ -150,17 +171,17 @@ impl ExplanationPool {
     /// Reuse an already shared proof without copying its dependency set.
     pub fn intern_shared(&mut self, explanation: Arc<Explanation>) -> Arc<Explanation> {
         let allocation = Arc::as_ptr(&explanation) as usize;
-        if self.allocations.contains(&allocation) {
+        if self.contains_allocation(allocation) {
             self.statistics.reused += 1;
             return explanation;
         }
-        if let Some(existing) = self.entries.get(&explanation) {
+        if let Some(existing) = self.find(&explanation).cloned() {
             self.statistics.reused += 1;
-            existing.clone()
+            existing
         } else {
-            self.entries.insert(explanation.clone());
-            self.allocations.insert(allocation);
-            self.derived_dependencies.insert(
+            Arc::make_mut(&mut self.entries).insert(explanation.clone());
+            Arc::make_mut(&mut self.allocations).insert(allocation);
+            Arc::make_mut(&mut self.derived_dependencies).insert(
                 allocation,
                 explanation
                     .dependencies
@@ -179,7 +200,15 @@ impl ExplanationPool {
     /// Borrow the unique proof's positive derived adjacency without rescanning
     /// declared evidence for every output that shares this proof.
     pub(crate) fn derived_dependencies(&self, explanation: &Arc<Explanation>) -> &[FactKey] {
-        &self.derived_dependencies[&(Arc::as_ptr(explanation) as usize)]
+        self.derived_dependencies
+            .get(&(Arc::as_ptr(explanation) as usize))
+            .map(Vec::as_slice)
+            .or_else(|| {
+                self.base
+                    .as_ref()
+                    .map(|base| base.derived_dependencies(explanation))
+            })
+            .expect("interned proof dependencies")
     }
 }
 
@@ -202,5 +231,55 @@ impl<'de> serde::Deserialize<'de> for ByteRange {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let (start, end) = <(u64, u64) as serde::Deserialize>::deserialize(deserializer)?;
         Self::new(start, end).map_err(serde::de::Error::custom)
+    }
+}
+
+#[cfg(any(test, feature = "verification"))]
+impl ExplanationPool {
+    pub(crate) fn storage_tables(
+        &self,
+        out: &mut std::collections::BTreeSet<crate::storage_observer::StorageTableIdentity>,
+    ) {
+        use crate::storage_observer::table;
+        table(out, "proof_intern", Arc::as_ptr(&self.entries) as usize);
+        table(
+            out,
+            "proof_allocations",
+            Arc::as_ptr(&self.allocations) as usize,
+        );
+        table(
+            out,
+            "proof_adjacency",
+            Arc::as_ptr(&self.derived_dependencies) as usize,
+        );
+        if let Some(base) = &self.base {
+            base.storage_tables(out);
+        }
+    }
+    pub(crate) fn storage_observation(&self, out: &mut crate::storage_observer::DependencyStorage) {
+        if let Some(base) = &self.base {
+            base.storage_tables(&mut out.base_tables);
+            out.copied_dependency_entries.add(
+                "proof_intern",
+                self.entries
+                    .iter()
+                    .filter(|proof| base.find(proof).is_some())
+                    .count(),
+            );
+            out.copied_dependency_entries.add(
+                "proof_allocations",
+                self.allocations
+                    .iter()
+                    .filter(|id| base.contains_allocation(**id))
+                    .count(),
+            );
+            out.copied_dependency_entries.add(
+                "proof_adjacency",
+                self.derived_dependencies
+                    .keys()
+                    .filter(|id| base.contains_allocation(**id))
+                    .count(),
+            );
+        }
     }
 }

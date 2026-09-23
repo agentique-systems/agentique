@@ -1,0 +1,152 @@
+{
+  "worktree": "C:/Users/phili/github/agentique-systems/agentique-modeling-workspace",
+  "branch": "foundation/modeling-workspace-held",
+  "environment": {
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/comp-cert",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  },
+  "status": "Production and held integration suites compiled with real storage observers; accepted-cache workspace tests unrun and integration remains gated.",
+  "commands": [
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib source_inputs --features verification",
+      "exit_code": 101,
+      "output_summary": "2 passed; 1 failed. Identity regression assumed the exact first rejected ID among multiple retired declarations.",
+      "log": "verification/generated/final-language-acceptance/workspace/source-input-retirement-initial-failure.txt",
+      "sha256": "e08a217faef4756f04f515b6f7f044a15020e6a873094d96693851de5870f58f"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib source_inputs --features verification",
+      "exit_code": 0,
+      "output_summary": "3 passed; 0 failed; 54 filtered out.",
+      "log": "verification/generated/final-language-acceptance/workspace/source-input-tests.txt",
+      "sha256": "d8796884395e88abe14bbc105583afda893b4f6ceb50c59d43a3f41e6456f565"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace -p agq-kerml-text --lib -- -D warnings",
+      "exit_code": 101,
+      "output_summary": "22 result_large_err errors after adding the source-origin error variant.",
+      "log": "verification/generated/final-language-acceptance/workspace/clippy-lib-initial-failure.txt",
+      "sha256": "e826437702674c843230b6702a0bdbb1b035cba21ff5d11df73852f87c3c2a05"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace -p agq-kerml-text --lib -- -D warnings",
+      "exit_code": 101,
+      "output_summary": "Two E0308 errors from a boxing edit applied to the wrong origin field.",
+      "log": "verification/generated/final-language-acceptance/workspace/clippy-lib-boxing-failure.txt",
+      "sha256": "b10a1f27bf3941d1cfde48bb4d79a5ac763731e5679d566bb08c654ee2a514a3"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace -p agq-kerml-text --lib -- -D warnings",
+      "exit_code": 101,
+      "output_summary": "large_enum_variant on SourceFrontier.",
+      "log": "verification/generated/final-language-acceptance/workspace/clippy-lib-enum-failure.txt",
+      "sha256": "74c69ab141af0a0abc231323dcd99031868cced9fadb9bd3061261b939ab530a"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace -p agq-kerml-text --lib -- -D warnings",
+      "exit_code": 0,
+      "output_summary": "Finished dev profile in 1.49s.",
+      "log": "verification/generated/final-language-acceptance/workspace/clippy-lib.txt",
+      "sha256": "88ea6ecbfab8457a11b1e43747b830eb0719391d3201040c9e268dc5e13ea59f"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib project::",
+      "exit_code": 0,
+      "output_summary": "3 passed; 0 failed; 54 filtered out. This module filter selects the new source-input tests, not the separate project integration target.",
+      "log": "verification/generated/final-language-acceptance/workspace/project-tests.txt",
+      "sha256": "a3615b78bc8bfb6c8403b8f25258f6db6906c92da609730e1d40408cbe103f1d"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --test project --test workspace_edit_inputs --test workspace_working_inputs",
+      "exit_code": 0,
+      "output_summary": "project:13 passed; workspace_edit_inputs:2 passed; workspace_working_inputs:3 passed.",
+      "log": "verification/generated/final-language-acceptance/workspace/frontend-integration-tests.txt",
+      "sha256": "669e50d91ffaa8bd4735bc7ef6adbefc4b3e570b46f138e71774148bf8241410"
+    },
+    {
+      "command": "cargo fmt --all",
+      "exit_code": 0,
+      "output_summary": "No output.",
+      "log": "verification/generated/final-language-acceptance/workspace/fmt-apply.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "RUSTDOCFLAGS='-D warnings' cargo doc --locked --offline -p agq-modeling-workspace --no-deps",
+      "exit_code": 0,
+      "output_summary": "Generated agq_modeling_workspace/index.html; finished in 2.18s.",
+      "log": "verification/generated/final-language-acceptance/workspace/rustdoc.txt",
+      "sha256": "201582d77eb5022b324b9013519b1d42dc79fad7e28090b071cd0591390e691b"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib source_inputs",
+      "exit_code": 0,
+      "output_summary": "3 passed; 0 failed; 54 filtered out. Includes exact arbitrary-precision integer construction.",
+      "log": "verification/generated/final-language-acceptance/workspace/source-input-final-tests.txt",
+      "sha256": "e4cce2ec2bbc43a9c3193146ce1f55f110b4f0820a2158e2059dc1f531799964"
+    },
+    {
+      "command": "cargo tree --locked --offline -p agq-modeling-workspace --edges normal --prefix none",
+      "exit_code": 0,
+      "output_summary": "No normal dependency matching ^agq-(model|semantics|workspace|application) .",
+      "log": "verification/generated/final-language-acceptance/workspace/dependency-tree.txt",
+      "sha256": "4db520c12ff6d6e9f047980b30134a6ee21d0bfbb07762ffa79446e925c37854"
+    },
+    {
+      "command": "cargo clean --target-dir C:/Users/phili/github/agentique-systems/agentique-modeling-workspace/target",
+      "exit_code": 0,
+      "output_summary": "Removed 535 files, 239.6MiB total.",
+      "log": "verification/generated/final-language-acceptance/workspace/accidental-target-clean.txt",
+      "sha256": "fbc0bc98954db58579e07318ed4d2ba12222281b9a3836d176247e0239e23102"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace -p agq-kerml-text --all-targets -- -D warnings",
+      "exit_code": 0,
+      "output_summary": "Finished dev profile in 8.05s.",
+      "log": "verification/generated/final-language-acceptance/workspace/clippy-all-targets.txt",
+      "sha256": "b5270cfc1d26e93a2231515f9b73f99f63c9524444204347ca8c597915f45168"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-modeling-workspace --features verification --no-run",
+      "exit_code": 0,
+      "output_summary": "Compiled library and phase1, self_model, working_states integration targets; finished in 49.00s. No accepted tests executed.",
+      "log": "verification/generated/final-language-acceptance/workspace/workspace-held-compile.txt",
+      "sha256": "fc0044dbaaa3d9b998e2ccc5667728e6c6df4cb839926e4360c985fc91f30007"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace -p agq-kerml-text -p agq-kerml-semantics --all-targets --features verification -- -D warnings",
+      "exit_code": 0,
+      "output_summary": "Finished dev profile in 32.26s.",
+      "log": "verification/generated/final-language-acceptance/workspace/clippy-verification.txt",
+      "sha256": "d37ca7665febf0ab28c77792d3044ca5aed7b6c5431eb8e79424625d33813af8"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --features verification --lib source_inputs",
+      "exit_code": 0,
+      "output_summary": "3 passed; 0 failed; 54 filtered out; shared-storage/history/checkpoint integration present.",
+      "log": "verification/generated/final-language-acceptance/workspace/shared-source-input-tests.txt",
+      "sha256": "62bb455bd9f3feb35f82aea3600921c8f6d1baa5af2bd55be1a7dccf53a022d1"
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "output_summary": "No output.",
+      "log": "verification/generated/final-language-acceptance/workspace/fmt-check.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "RUSTDOCFLAGS='-D warnings' cargo doc --locked --offline -p agq-modeling-workspace --features verification --no-deps",
+      "exit_code": 0,
+      "output_summary": "Generated agq_modeling_workspace/index.html; finished in 12.52s.",
+      "log": "verification/generated/final-language-acceptance/workspace/rustdoc-verification.txt",
+      "sha256": "741a091a12d7e4739a5a98802b42c414452805b198e47d40db6eb2b04be35c96"
+    }
+  ],
+  "dependencies": {
+    "main": "bf02cf8",
+    "declared_history": "5fbe883",
+    "shared_storage": "845c125"
+  }
+}

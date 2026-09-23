@@ -1045,6 +1045,8 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 counters.subjects_evaluated += batch.len();
                 counters.producer_families_attempted += part.producer_families_attempted;
                 for &subject in batch {
+                    #[cfg(feature = "verification")]
+                    crate::testing::record(subject);
                     // The reference batch shares a graph/proof accumulator;
                     // retain its conservative reads for every batch member.
                     let index_started = Instant::now();
@@ -1070,6 +1072,8 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 plan.merge(part)?;
             } else {
                 for &subject in batch {
+                    #[cfg(feature = "verification")]
+                    crate::testing::record(subject);
                     counters.subjects_evaluated += 1;
                     counters.dirty_reevaluations += usize::from(!seen.insert(subject));
                     let mut part = q.plan_result_structure_in_stratum([subject], kerml_stratum);

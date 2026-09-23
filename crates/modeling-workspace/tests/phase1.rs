@@ -1,5 +1,4 @@
-//! Executable acceptance specification, held until the production crate and
-//! Working frontend carrier exist. See README for exact compile blockers.
+//! Accepted-publication integration tests; integration remains gated by language readiness.
 mod support;
 use agq_kerml_semantics::{Completeness, QualifiedName};
 use agq_kerml_syntax::production::Production;
@@ -321,6 +320,24 @@ fn operational_failures_publish_nothing_and_independent_projects_share_only_stan
     );
     assert!(Arc::ptr_eq(workspace.head(), &r1));
     assert_eq!(immutable_signature(workspace.head()), signature);
+    let history_count = workspace.revisions().count();
+    assert!(
+        workspace
+            .apply(
+                r1.revision(),
+                [
+                    add("Prepared.sysml", SourceLanguage::SysMl, "package Prepared;"),
+                    ProjectChange::Remove {
+                        document: DocumentId::new()
+                    },
+                ]
+            )
+            .is_err()
+    );
+    assert!(Arc::ptr_eq(workspace.head(), &r1));
+    assert_eq!(workspace.revisions().count(), history_count);
+    assert_eq!(immutable_signature(workspace.head()), signature);
+    assert!(workspace.head().document_at("Prepared.sysml").is_none());
     let unicode = "package Labels { part def 'révision'; }\n";
     let r2 = workspace
         .add_sysml(r1.revision(), "Labels.sysml", unicode)

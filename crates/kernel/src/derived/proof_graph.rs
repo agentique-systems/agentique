@@ -1,6 +1,7 @@
 //! Validation of a dependency graph factored through shared immutable proofs.
 use crate::model::cyclic_nodes_by;
 use crate::provenance::{Explanation, ExplanationPool, FactKey};
+use crate::shared_map::SharedMap;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
@@ -8,7 +9,7 @@ use std::sync::Arc;
 /// dependencies. This factors N outputs sharing M premises into N + M edges,
 /// rather than expanding the same M premises N times during cycle validation.
 pub(super) fn cyclic_explanations(
-    explanations: &BTreeMap<FactKey, Arc<Explanation>>,
+    explanations: &SharedMap<FactKey, Arc<Explanation>>,
     pool: &ExplanationPool,
     changed: &BTreeSet<FactKey>,
     include_previous: bool,
@@ -75,7 +76,7 @@ mod tests {
         let changed = facts.iter().copied().collect();
         for mask in 0..(1 << 9) {
             let mut pool = ExplanationPool::default();
-            let mut explanations = BTreeMap::new();
+            let mut explanations = SharedMap::new();
             for (source, &fact) in facts.iter().enumerate() {
                 let dependencies = facts
                     .iter()

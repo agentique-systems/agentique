@@ -1,0 +1,33 @@
+[package]
+name = "agq-modeling-workspace"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Immutable in-memory Gen2 authored modeling workspace"
+
+[features]
+verification = ["agq-kerml-text/verification"]
+
+[dependencies]
+agq-kernel = { path = "../kernel" }
+agq-kerml-text = { path = "../kerml-text" }
+agq-kerml-semantics = { path = "../kerml-semantics" }
+agq-sysml-semantics = { path = "../sysml-semantics" }
+thiserror.workspace = true
+
+[dev-dependencies]
+agq-kerml = { path = "../kerml" }
+agq-kerml-syntax = { path = "../kerml-syntax" }
+agq-standard-libraries = { path = "../standard-libraries" }
+
+[[test]]
+name = "phase1"
+required-features = ["verification"]
+
+[[test]]
+name = "working_states"
+required-features = ["verification"]
+
+[[test]]
+name = "self_model"
+required-features = ["verification"]

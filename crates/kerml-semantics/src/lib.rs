@@ -116,3 +116,6 @@ mod closure_equivalence_tests;
 #[cfg(test)]
 #[path = "../tests/unit/producer_worklist.rs"]
 mod producer_worklist_tests;
+
+#[cfg(feature = "verification")]
+pub mod testing;

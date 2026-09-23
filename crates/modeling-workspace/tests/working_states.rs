@@ -1,5 +1,4 @@
-//! Held acceptance tests for Working inputs. No manifest or production workspace
-//! exists yet; see the frontend-boundary design and tests/README.md.
+//! Accepted-publication tests for current Working inputs; see tests/README.md.
 #[path = "../../../verification/fixtures/modeling-workspace-phase1/working_state_inputs.rs"]
 mod inputs;
 #[allow(dead_code)]
@@ -116,6 +115,103 @@ fn temporary_recovery_preserves_reconciled_identity_until_explicit_removal() {
         valid.document_at("Contracts.kerml").unwrap(),
         repaired.document_at("Contracts.kerml").unwrap()
     ));
+    // Explicit deletion must retire the identity from the current Working
+    // history even while its whole document is omitted from construction.
+    let recovered_again = workspace
+        .apply(
+            repaired.revision(),
+            [edit(
+                &repaired,
+                "Identity.sysml",
+                start,
+                start + inputs::COMPLETE_EDITED_DECLARATION.len(),
+                inputs::RECOVERED_EDITED_DECLARATION,
+            )],
+        )
+        .unwrap();
+    let recovered_signature = immutable_signature(&recovered_again);
+    let retained_start = recovered_again
+        .document_at("Identity.sysml")
+        .unwrap()
+        .source()
+        .find(inputs::RETAINED_DECLARATION)
+        .unwrap();
+    let deleted = workspace
+        .apply(
+            recovered_again.revision(),
+            [edit(
+                &recovered_again,
+                "Identity.sysml",
+                retained_start,
+                retained_start + inputs::RETAINED_DECLARATION.len(),
+                "",
+            )],
+        )
+        .unwrap();
+    let deleted_document = deleted.document_at("Identity.sysml").unwrap();
+    assert_eq!(deleted_document.status(), DocumentStatus::Recovered);
+    assert_eq!(deleted_document.id(), document_id);
+    assert!(
+        !deleted_document
+            .production_syntax()
+            .unwrap()
+            .nodes()
+            .any(|node| node.id() == node_id)
+    );
+    assert!(deleted.validate().is_err());
+    assert_shared(&recovered_again);
+    assert_shared(&deleted);
+    let deleted_signature = immutable_signature(&deleted);
+    let repair_start = deleted_document
+        .source()
+        .find(inputs::RECOVERED_EDITED_DECLARATION)
+        .unwrap();
+    let repaired = workspace
+        .apply(
+            deleted.revision(),
+            [
+                edit(
+                    &deleted,
+                    "Identity.sysml",
+                    repair_start,
+                    repair_start + inputs::RECOVERED_EDITED_DECLARATION.len(),
+                    inputs::COMPLETE_EDITED_DECLARATION,
+                ),
+                edit(
+                    &deleted,
+                    "Identity.sysml",
+                    retained_start,
+                    retained_start,
+                    inputs::RETAINED_DECLARATION,
+                ),
+            ],
+        )
+        .unwrap();
+    assert_valid(&repaired);
+    assert_eq!(
+        repaired.document_at("Identity.sysml").unwrap().source(),
+        inputs::IDENTITY_DOCUMENT
+    );
+    assert_eq!(
+        repaired.document_at("Identity.sysml").unwrap().id(),
+        document_id
+    );
+    assert_ne!(
+        retained_node(repaired.document_at("Identity.sysml").unwrap()),
+        node_id
+    );
+    let replacement = element(&repaired, &["IdentityStable", "Retained"]);
+    assert_ne!(replacement, semantic_id);
+    assert!(
+        repaired
+            .semantic_model()
+            .unwrap()
+            .element(semantic_id)
+            .is_none()
+    );
+    assert_eq!(immutable_signature(&recovered_again), recovered_signature);
+    assert_eq!(immutable_signature(&deleted), deleted_signature);
+    let semantic_id = replacement;
     let removed = workspace
         .apply(
             repaired.revision(),
@@ -440,4 +536,53 @@ fn parsed_unsupported_variation_cannot_validate_even_when_producers_finish() {
             .completeness(),
         Completeness::Incomplete
     );
+}
+
+#[test]
+#[ignore = "requires the accepted publication caches; never rebuilds standards"]
+fn unsupported_source_has_exact_origin_and_remains_working_until_repaired() {
+    let mut workspace = open();
+    let previous = workspace.head().clone();
+    let before = immutable_signature(&previous);
+    let working = workspace
+        .add_kerml(
+            previous.revision(),
+            "Message.kerml",
+            "package Messages { feature payload = \"unsupported\"; }",
+        )
+        .unwrap();
+    let document = working.document_at("Message.kerml").unwrap();
+    assert_eq!(document.status(), DocumentStatus::Parsed);
+    assert!(working.validate().is_err());
+    assert!(working.diagnostics().iter().any(|diagnostic| {
+        matches!(diagnostic, agq_kerml_text::SourceDiagnostic::Unsupported { origin, construct }
+            if origin.document == document.id() && origin.revision == document.revision()
+                && construct == "string literal unescaping"
+                && document.production_syntax().unwrap().text(origin.range).unwrap() == "\"unsupported\"")
+    }));
+    let answer = working.kerml_queries().unwrap().lookup_path(
+        working.root(),
+        &QualifiedName {
+            absolute: false,
+            segments: vec!["Messages".into()],
+        },
+    );
+    assert_ne!(answer.completeness, Completeness::Complete);
+    assert!(answer.value.is_empty());
+    assert_shared(&working);
+    let signature = immutable_signature(&working);
+    let repaired = workspace
+        .apply(
+            working.revision(),
+            [replace_by_edit(
+                &working,
+                "Message.kerml",
+                "package Messages { feature payload; }",
+            )],
+        )
+        .unwrap();
+    assert_valid(&repaired);
+    element(&repaired, &["Messages", "payload"]);
+    assert_eq!(immutable_signature(&working), signature);
+    assert_eq!(immutable_signature(&previous), before);
 }

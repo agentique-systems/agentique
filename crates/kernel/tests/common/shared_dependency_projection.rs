@@ -126,6 +126,15 @@ fn shared_storage_oracle_local_occurrences_reindex_touched_groups_and_removal_re
     let dependency = Arc::new(independent_flattened(registry.clone(), &[]).unwrap());
     let independent_base = independent_flattened(registry.clone(), &[]).unwrap();
     let mount = Snapshot::with_immutable_dependency(dependency.clone());
+    #[cfg(feature = "verification")]
+    {
+        let storage = agq_kernel::storage_observer::snapshot_storage(&mount);
+        assert_eq!(
+            storage.base_tables,
+            agq_kernel::storage_observer::publication_storage(&dependency)
+        );
+        assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
+    }
     let local_links = [
         (LOCAL_EARLY, ENGINE, SPORTS),
         (LOCAL_DUPLICATE, ENGINE, VEHICLE),
@@ -142,6 +151,16 @@ fn shared_storage_oracle_local_occurrences_reindex_touched_groups_and_removal_re
     let oracle = independent_flattened(registry.clone(), &local_links).unwrap();
     assert!(oracle.declared().immutable_dependency().is_none());
     assert_projection_equivalent(&combined, &oracle);
+    #[cfg(feature = "verification")]
+    {
+        let storage = agq_kernel::storage_observer::overlay_storage(&combined);
+        assert_eq!(
+            storage.base_tables,
+            agq_kernel::storage_observer::publication_storage(&dependency)
+        );
+        assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
+        assert!(storage.local_projection_entries["inherited_link_reprojections"] > 0);
+    }
     assert_eq!(
         combined
             .model()
@@ -238,6 +257,15 @@ fn shared_storage_oracle_local_occurrences_reindex_touched_groups_and_removal_re
         archive::read_dependent_overlay(Cursor::new(&bytes), registry.clone(), dependency.clone())
             .unwrap();
     assert_projection_equivalent(&restored, &oracle);
+    #[cfg(feature = "verification")]
+    {
+        let storage = agq_kernel::storage_observer::overlay_storage(&restored);
+        assert_eq!(
+            storage.base_tables,
+            agq_kernel::storage_observer::publication_storage(&dependency)
+        );
+        assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
+    }
     assert!(Arc::ptr_eq(
         restored.declared().immutable_dependency().unwrap(),
         &dependency
@@ -265,6 +293,15 @@ fn shared_storage_oracle_rejects_combined_scalar_inverse_conflict_atomically() {
     let dependency = Arc::new(independent_flattened(registry.clone(), &[]).unwrap());
     let oracle = independent_flattened(registry.clone(), &[]).unwrap();
     let mount = Snapshot::with_immutable_dependency(dependency.clone());
+    #[cfg(feature = "verification")]
+    {
+        let storage = agq_kernel::storage_observer::snapshot_storage(&mount);
+        assert_eq!(
+            storage.base_tables,
+            agq_kernel::storage_observer::publication_storage(&dependency)
+        );
+        assert!(storage.copied_dependency_entries.is_zero(), "{storage:?}");
+    }
     let mut conflict = mount.change_set();
     conflict.create(SPORTS, ELEMENT, authored()).link(
         LOCAL_EARLY,

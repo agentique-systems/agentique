@@ -4,6 +4,9 @@ use agq_kerml_semantics::KerMlQueries;
 use agq_kernel::{DocumentId, ElementId, GeneratorId, RevisionId, Snapshot, SourceRevisionId};
 use std::{collections::BTreeMap, sync::Arc};
 use syntax::{ParseLimits, SourceError, SyntaxDocument, SyntaxStatus, TextEdit};
+#[path = "source_inputs.rs"]
+mod source_inputs;
+pub use source_inputs::*;
 
 /// Project identity is allocated independently of paths, document and semantic IDs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -516,73 +519,15 @@ impl SourceProject {
         if base != self.current.revision() {
             return Err(ProjectError::StaleRevision(base));
         }
-        let mut documents = self.current.documents.clone();
-        for change in changes {
-            if let ProjectChange::Add {
-                path,
-                language,
-                source,
-            } = change
-            {
-                check_path(&documents, &path)?;
-                documents.insert(
-                    path,
-                    Arc::new(ProjectDocument::parse(
-                        DocumentId::new(),
-                        language,
-                        source.into(),
-                        self.limits,
-                        self.production_frontend,
-                        self.accepted_sysml
-                            .as_ref()
-                            .map(|dependency| dependency.syntax_profile()),
-                    )?),
-                );
-                continue;
-            }
-            let id = match &change {
-                ProjectChange::Edit { document, .. }
-                | ProjectChange::Replace { document, .. }
-                | ProjectChange::Remove { document }
-                | ProjectChange::RenameDocument { document, .. } => *document,
-                ProjectChange::Add { .. } => unreachable!(),
-            };
-            let path = documents
-                .iter()
-                .find(|(_, d)| d.id == id)
-                .map(|(p, _)| p.clone())
-                .ok_or(ProjectError::MissingDocument(id))?;
-            match change {
-                ProjectChange::Edit { edit, .. } => {
-                    let next = documents[&path].edit(&edit, self.limits)?;
-                    documents.insert(path, Arc::new(next));
-                }
-                ProjectChange::Replace { source, .. } => {
-                    let next = ProjectDocument::parse(
-                        id,
-                        documents[&path].language,
-                        source.into(),
-                        self.limits,
-                        self.production_frontend,
-                        self.accepted_sysml
-                            .as_ref()
-                            .map(|dependency| dependency.syntax_profile()),
-                    )?;
-                    documents.insert(path, Arc::new(next));
-                }
-                ProjectChange::Remove { .. } => {
-                    documents.remove(&path);
-                }
-                ProjectChange::RenameDocument { path: next, .. } => {
-                    if path != next {
-                        check_path(&documents, &next)?;
-                        let doc = documents.remove(&path).expect("checked document");
-                        documents.insert(next, doc);
-                    }
-                }
-                ProjectChange::Add { .. } => unreachable!(),
-            }
-        }
+        let documents = prepare_documents(
+            &self.current.documents,
+            changes,
+            self.limits,
+            self.production_frontend,
+            self.accepted_sysml
+                .as_ref()
+                .map(|dependency| dependency.syntax_profile()),
+        )?;
         let model = if self.production_frontend {
             let inputs: Vec<_> = documents
                 .values()
@@ -671,4 +616,77 @@ fn check_path(
     } else {
         Ok(())
     }
+}
+
+fn prepare_documents(
+    current: &BTreeMap<String, Arc<ProjectDocument>>,
+    changes: impl IntoIterator<Item = ProjectChange>,
+    limits: ParseLimits,
+    production_frontend: bool,
+    sysml_profile: Option<syntax::production::SysmlSyntaxProfile>,
+) -> Result<BTreeMap<String, Arc<ProjectDocument>>, ProjectError> {
+    let mut documents = current.clone();
+    for change in changes {
+        if let ProjectChange::Add {
+            path,
+            language,
+            source,
+        } = change
+        {
+            check_path(&documents, &path)?;
+            documents.insert(
+                path,
+                Arc::new(ProjectDocument::parse(
+                    DocumentId::new(),
+                    language,
+                    source.into(),
+                    limits,
+                    production_frontend,
+                    sysml_profile,
+                )?),
+            );
+            continue;
+        }
+        let id = match &change {
+            ProjectChange::Edit { document, .. }
+            | ProjectChange::Replace { document, .. }
+            | ProjectChange::Remove { document }
+            | ProjectChange::RenameDocument { document, .. } => *document,
+            ProjectChange::Add { .. } => unreachable!(),
+        };
+        let path = documents
+            .iter()
+            .find(|(_, d)| d.id == id)
+            .map(|(p, _)| p.clone())
+            .ok_or(ProjectError::MissingDocument(id))?;
+        match change {
+            ProjectChange::Edit { edit, .. } => {
+                let next = documents[&path].edit(&edit, limits)?;
+                documents.insert(path, Arc::new(next));
+            }
+            ProjectChange::Replace { source, .. } => {
+                let next = ProjectDocument::parse(
+                    id,
+                    documents[&path].language,
+                    source.into(),
+                    limits,
+                    production_frontend,
+                    sysml_profile,
+                )?;
+                documents.insert(path, Arc::new(next));
+            }
+            ProjectChange::Remove { .. } => {
+                documents.remove(&path);
+            }
+            ProjectChange::RenameDocument { path: next, .. } => {
+                if path != next {
+                    check_path(&documents, &next)?;
+                    let doc = documents.remove(&path).expect("checked document");
+                    documents.insert(next, doc);
+                }
+            }
+            ProjectChange::Add { .. } => unreachable!(),
+        }
+    }
+    Ok(documents)
 }

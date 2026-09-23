@@ -22,7 +22,7 @@ use agq_standard_libraries::{LibraryLanguage, VerifiedLibrarySet};
 use std::{collections::BTreeSet, sync::Arc};
 mod publication;
 pub use publication::*;
-mod source;
+pub(crate) mod source;
 pub(crate) use source::{AcceptedSourceDependency, lower_accepted_source};
 #[cfg(test)]
 #[path = "sysml_case_shape_tests.rs"]
@@ -765,6 +765,13 @@ pub(crate) struct SourceModel {
     effective: Option<Box<source::EffectiveSourceModel>>,
 }
 impl SourceModel {
+    #[cfg(feature = "verification")]
+    pub(crate) fn dependency_storage(&self) -> agq_kernel::storage_observer::DependencyStorage {
+        self.effective.as_ref().map_or_else(
+            || agq_kernel::storage_observer::snapshot_storage(&self.snapshot),
+            |effective| effective.dependency_storage(),
+        )
+    }
     pub(crate) fn snapshot(&self) -> &Snapshot {
         &self.snapshot
     }
@@ -890,7 +897,7 @@ pub(crate) fn lower_source(
     })
 }
 
-fn source_references(
+pub(crate) fn source_references(
     inputs: &[SourceInput<'_>],
     pending_references: &[library::PendingLibraryReference],
     source_map: &LibrarySourceMap,

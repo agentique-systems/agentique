@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 description = "KerML source revisions, conservative identity and normative kernel lowering"
 
+[features]
+verification = ["agq-kerml-semantics/verification", "agq-kernel/verification"]
+
 [dependencies]
 agq-kernel = { path = "../kernel" }
 agq-kerml = { path = "../kerml" }

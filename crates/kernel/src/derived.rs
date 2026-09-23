@@ -2,13 +2,14 @@
 use crate::association::AssociationOccurrence;
 use crate::model::{DerivationInput, Slot};
 use crate::provenance::{Dependency, Explanation, ExplanationPool, FactKey, Origin};
+use crate::shared_map::SharedMap;
 use crate::value::SlotValue;
 use crate::{
     AssociationId, AssociationOccurrenceId, DerivationKey, ElementId, ElementRecord, MetaclassId,
     ModelError, ModelView, PropertyId, RevisionId, Snapshot,
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 mod archive_restore;
 mod construction;
@@ -32,10 +33,12 @@ struct OverlayData {
     declared: DerivationInput,
     model: ModelView,
     obligations: Vec<crate::ConstructionObligation>,
-    explanations: BTreeMap<FactKey, Arc<Explanation>>,
+    explanations: SharedMap<FactKey, Arc<Explanation>>,
     evidence_pool: ExplanationPool,
     search_pool: StructuralSearchPool,
     build_metrics: DerivationBuildMetrics,
+    element_reservations: OnceLock<crate::shared_map::SharedSet<ElementId>>,
+    occurrence_reservations: OnceLock<crate::shared_map::SharedSet<AssociationOccurrenceId>>,
 }
 
 /// Work performed by the latest additive overlay materialization. These counters
@@ -91,6 +94,23 @@ impl OrderedReferenceContribution {
     }
 }
 impl DerivedOverlay {
+    pub(crate) fn element_reservations(&self) -> &crate::shared_map::SharedSet<ElementId> {
+        self.inner.element_reservations.get_or_init(|| {
+            let mut reserved = self.inner.declared.element_reservations().clone();
+            reserved.extend(self.model().records.local_values().map(|r| r.id()));
+            reserved
+        })
+    }
+    pub(crate) fn occurrence_reservations(
+        &self,
+    ) -> &crate::shared_map::SharedSet<AssociationOccurrenceId> {
+        self.inner.occurrence_reservations.get_or_init(|| {
+            let mut reserved = self.inner.declared.occurrence_reservations().clone();
+            reserved.extend(self.model().links.local_values().map(|r| r.id()));
+            reserved
+        })
+    }
+
     /// Original declared revision, without any inferred slots or elements.
     pub fn declared(&self) -> &Snapshot {
         self.inner.declared.strict()
@@ -150,7 +170,7 @@ pub struct DerivationBuilder<Input = Snapshot> {
     properties: Vec<(ElementId, PropertyId, SlotValue, Explanation)>,
     extensions: Vec<(ElementId, PropertyId, Vec<ElementId>, Explanation)>,
     failures: BTreeMap<(ElementId, PropertyId), ComputationFailure>,
-    searches: BTreeMap<FactKey, Arc<BTreeSet<StructuralSearch>>>,
+    searches: SharedMap<FactKey, Arc<BTreeSet<StructuralSearch>>>,
     search_pool: StructuralSearchPool,
 }
 impl DerivationBuilder {
@@ -188,7 +208,7 @@ impl<Input> DerivationBuilder<Input> {
             properties: Vec::new(),
             extensions: Vec::new(),
             failures: BTreeMap::new(),
-            searches: BTreeMap::new(),
+            searches: SharedMap::new(),
             search_pool: StructuralSearchPool::default(),
         }
     }
@@ -383,16 +403,16 @@ impl<Input> DerivationBuilder<Input> {
                         self.declared.immutable_dependency().map_or_else(
                             || {
                                 (
-                                    BTreeMap::new(),
+                                    SharedMap::new(),
                                     ExplanationPool::default(),
                                     StructuralSearchPool::default(),
                                 )
                             },
                             |p| {
                                 (
-                                    p.inner.explanations.clone(),
-                                    p.inner.evidence_pool.clone(),
-                                    p.inner.search_pool.clone(),
+                                    p.inner.explanations.fork(),
+                                    p.inner.evidence_pool.fork(),
+                                    p.inner.search_pool.fork(),
                                 )
                             },
                         );
@@ -821,7 +841,8 @@ impl<Input> DerivationBuilder<Input> {
                 }
             }
         }
-        for (fact, searches) in self.searches {
+        for (fact, searches) in self.searches.into_local() {
+            self.declared.check_dependency_write(fact)?;
             if !explanations.contains_key(&fact) {
                 return Err(DerivationError::MissingSearchSubject(fact));
             }
@@ -866,12 +887,14 @@ impl<Input> DerivationBuilder<Input> {
             evidence_pool,
             search_pool,
             build_metrics: metrics,
+            element_reservations: OnceLock::new(),
+            occurrence_reservations: OnceLock::new(),
         }))
     }
 }
 
 fn merge_searches(
-    output: &mut BTreeMap<FactKey, Arc<BTreeSet<StructuralSearch>>>,
+    output: &mut SharedMap<FactKey, Arc<BTreeSet<StructuralSearch>>>,
     pool: &mut StructuralSearchPool,
     fact: FactKey,
     searches: Arc<BTreeSet<StructuralSearch>>,
@@ -1074,4 +1097,63 @@ pub enum PropertyState<'m> {
     Computed(&'m Slot),
     Incomplete(&'m ComputationFailure),
     Invalid(&'m ComputationFailure),
+}
+
+#[cfg(any(test, feature = "verification"))]
+impl DerivedOverlay {
+    pub(crate) fn storage_tables(&self) -> BTreeSet<crate::storage_observer::StorageTableIdentity> {
+        use crate::storage_observer::*;
+        let mut out = BTreeSet::new();
+        model_tables(self.model(), &mut out);
+        self.storage_proof_tables(&mut out);
+        map_tables(
+            &self.element_reservations().0,
+            "element_reservations",
+            &mut out,
+        );
+        map_tables(
+            &self.occurrence_reservations().0,
+            "occurrence_reservations",
+            &mut out,
+        );
+        out
+    }
+    pub(crate) fn storage_proof_tables(
+        &self,
+        out: &mut BTreeSet<crate::storage_observer::StorageTableIdentity>,
+    ) {
+        crate::storage_observer::map_tables(&self.inner.explanations, "explanations", out);
+        self.inner.evidence_pool.storage_tables(out);
+        self.inner.search_pool.storage_tables(out);
+    }
+    pub(crate) fn storage_observation(&self) -> crate::storage_observer::DependencyStorage {
+        self.inner.storage_observation()
+    }
+}
+#[cfg(any(test, feature = "verification"))]
+impl OverlayData {
+    fn storage_observation(&self) -> crate::storage_observer::DependencyStorage {
+        use crate::storage_observer::*;
+        let dependency = self.declared.immutable_dependency();
+        let mut out = model_observation(&self.model, dependency.map(|d| d.model()));
+        observe_model(
+            self.declared.model(),
+            dependency.map(|d| d.model()),
+            &mut out,
+        );
+        authoritative_map_observation(
+            &self.explanations,
+            dependency.map(|d| &d.inner.explanations),
+            "explanations",
+            &mut out,
+        );
+        self.evidence_pool.storage_observation(&mut out);
+        self.search_pool.storage_observation(&mut out);
+        reservation_observation(
+            self.declared.element_reservations(),
+            self.declared.occurrence_reservations(),
+            &mut out,
+        );
+        out
+    }
 }

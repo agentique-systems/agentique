@@ -49,6 +49,21 @@ pub struct LibraryDraft {
     superseded_references: Vec<PendingLibraryReference>,
 }
 impl LibraryDraft {
+    /// Attach checked authored reservations before constructing semantic overlays.
+    pub(crate) fn reconcile_declared(
+        mut self,
+        history: &agq_kernel::DeclaredConstructionHistory,
+    ) -> Result<(agq_kernel::DeclaredConstructionHistory, Self), LibraryLoadError> {
+        if self.semantic_candidate.is_some() {
+            return Err(LibraryLoadError::Interpretation(
+                "history must precede semantic construction".into(),
+            ));
+        }
+        let (history, candidate) =
+            history.reconcile(std::sync::Arc::unwrap_or_clone(self.candidate))?;
+        self.candidate = std::sync::Arc::new(candidate);
+        Ok((history, self))
+    }
     /// Revalidate every source record and occurrence with ordinary strict kernel
     /// construction. This discharges storage obligations only; it does not assert
     /// semantic producer closure, reference resolution or canonical publication.
@@ -251,6 +266,11 @@ pub enum LibraryLoadError {
     Syntax(String),
     #[error("unsupported canonical grammar interpretation: {0}")]
     Interpretation(String),
+    #[error("unsupported source construct: {construct} at {origin:?}")]
+    UnsupportedSource {
+        origin: Box<SourceOrigin>,
+        construct: String,
+    },
     #[error("semantic producer closure failed: {0}")]
     ProducerClosure(#[from] agq_kerml_semantics::PublicationOverlayError),
 }

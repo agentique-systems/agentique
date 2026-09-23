@@ -1,0 +1,56 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "workspace-authenticated-frontier-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+      "working_changes_sha256": "9cd4756d7c70a795896bcd2b2404d90299188af8ce9dda4bd17d450206552192",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 4.5,
+      "output": "verification/generated/final-language-acceptance/workspace-authenticated-frontier-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "workspace-authenticated-frontier-diff",
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "HEAD"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+      "working_changes_sha256": "9cd4756d7c70a795896bcd2b2404d90299188af8ce9dda4bd17d450206552192",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.06,
+      "output": "verification/generated/final-language-acceptance/workspace-authenticated-frontier-diff.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "workspace-authenticated-frontier-source",
+      "command": [
+        "python",
+        "-c",
+        "from pathlib import Path\nimport re\nimport subprocess\nBASE = '7223938'\ndef old(path):\n    return subprocess.check_output(['git', 'show', BASE + ':' + path]).decode()\ndef current(path):\n    return Path(path).read_text(encoding='utf-8')\ndef exact(pattern, path):\n    before = re.search(pattern, old(path), re.S)\n    after = re.search(pattern, current(path), re.S)\n    assert before is not None and after is not None, path\n    assert before.group() == after.group(), path\n    print('exact preserved: ' + path + ' / ' + before.group().splitlines()[0])\nexact(r'    pub\\(crate\\) fn matches_archive_input\\(.*?\\n    }', 'crates/kernel/src/derivation_input.rs')\nfor name in ['read_publication_frontier_on', 'read_construction_frontier_on']:\n    exact(r'pub fn ' + name + r'\\(.*?\\n}', 'crates/kernel/src/archive.rs')\nexact(r'                let declared = if let Some\\(supplied\\) = supplied_input.take\\(\\) \\{.*?\\n                };', 'crates/kernel/src/archive.rs')\nfor path in ['crates/kerml-semantics/src/producer_worklist/frontier.rs', 'crates/kerml-semantics/tests/unit/publication_frontier.rs', 'crates/kerml-text/src/accepted_self_model_tests.rs']:\n    assert old(path) == current(path), path\n    print('exact preserved: ' + path)\nexact(r'fn strict_frontier_attaches_exact_input_and_rejects_changed_declarations_and_history\\(.*?\\n}', 'crates/kernel/tests/archive.rs')\nassert 'self.iter().eq(other.iter())' in current('crates/kernel/src/shared_map.rs')\nprint('content equality retained: SharedMap effective ordered iterator')\nprint('source audit passed; no Rust compilation or semantic execution')"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+      "working_changes_sha256": "9cd4756d7c70a795896bcd2b2404d90299188af8ce9dda4bd17d450206552192",
+      "output_sha256": "72e9357995f9febda60698fff4960b7c0a267b744ecfdbb853ed104dd39338b5",
+      "duration_seconds": 0.28,
+      "output": "verification/generated/final-language-acceptance/workspace-authenticated-frontier-source.log",
+      "environment_overrides": {}
+    }
+  ]
+}

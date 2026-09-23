@@ -154,3 +154,10 @@ impl DerivationBuilder<Arc<ConstructionView>> {
             .map(|inner| ConstructionOverlay { inner })
     }
 }
+
+#[cfg(any(test, feature = "verification"))]
+impl ConstructionOverlay {
+    pub(crate) fn storage_observation(&self) -> crate::storage_observer::DependencyStorage {
+        self.inner.storage_observation()
+    }
+}
