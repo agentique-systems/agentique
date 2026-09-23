@@ -96,6 +96,12 @@ reference completeness or closure evidence; run medium only after Actions passes
 
 ## Integration verification and retained evidence
 
+The integrated KerML semantic package at clean source `3506712` passes: **394
+tests passed, zero failures**, two existing release-only scale probes ignored.
+All 36 suites reported success; the one-thread, one-build-job, low-artifact command
+exited 0 in 295.03 seconds. Its exact command and source/output hashes are retained
+in `commands.json`. Later descriptor changes require their own focused gates.
+
 Early integration passed 134 KerML semantic library tests (two existing profiling
 ignores) and 36 text tests, including exact 21-document construction and all 1,327
 source assertions, rejection gates, shared KerML and four self-model tests. Those

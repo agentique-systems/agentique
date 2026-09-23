@@ -7117,6 +7117,33 @@
       "duration_seconds": 2.31,
       "output": "verification/generated/language-stability-bridge/compatible-witness-fmt.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "kerml-semantics-integrated-3506712",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "35067128f24741b6dc79266ae344537d0aa7181b",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "0b01dc013bcc8f4b3e48ae393919d67edb90d444f8d22c330c4929d760723410",
+      "duration_seconds": 295.03,
+      "output": "verification/generated/language-stability-bridge/kerml-semantics-integrated-3506712.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ],
   "source_ledgers": [
@@ -7392,6 +7419,13 @@
       "source_blob_sha256": "cede23176d2639951ee6a75c8b0ef49d66d0da34c82da46fec12e46a47477d62",
       "first_command": 252,
       "command_count": 7
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/kerml-semantics-integrated-3506712-commands.json",
+      "source_commit": "d4c715d3d01c263686e7a1276d069e184e5b479c",
+      "source_blob_sha256": "06a3c84b601c47ab150bd4fe90a6cd3997155e148601ea3d6a71f696ddb79d2c",
+      "first_command": 259,
+      "command_count": 1
     }
   ]
 }

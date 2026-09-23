@@ -38,6 +38,93 @@ fn without_membership_names(snapshot: Snapshot) -> Snapshot {
     snapshot.apply(&changes).unwrap()
 }
 
+/// Opt-in, bounded diagnostic for exact retained proof roots from a causal trace.
+fn trace_helper_origins(overlay: &agq_kernel::derived::DerivedOverlay) {
+    use agq_kernel::provenance::{FactKey, Origin};
+    let Ok(selected) = std::env::var("AGQ_EXPRESSION_HELPER_ORIGINS") else {
+        return;
+    };
+    let model = overlay.model();
+    let registry = ProducerRegistry::new(
+        ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V9))
+            .chain(sysml_producer_descriptors()),
+    )
+    .unwrap();
+    for encoded in selected.split(',').take(4) {
+        let subject = ElementId::from_u128(
+            u128::from_str_radix(&encoded.trim().replace('-', ""), 16).unwrap(),
+        );
+        let Some(record) = model.element(subject) else {
+            eprintln!("helper-origin {subject}: absent");
+            continue;
+        };
+        eprintln!(
+            "helper-origin {subject}: class={} ({})",
+            model.registry().class(record.metaclass()).unwrap().name,
+            record.metaclass()
+        );
+        if let Origin::Derived(proof) = record.origin() {
+            let families: Vec<_> = registry
+                .descriptors()
+                .iter()
+                .filter(|descriptor| {
+                    descriptor
+                        .derivation_rules
+                        .as_ref()
+                        .is_some_and(|rules| rules.contains(&proof.rule))
+                })
+                .map(|descriptor| descriptor.id.name())
+                .collect();
+            eprintln!(
+                "helper-proof rule={} families={families:?} dependencies={} (first 64)",
+                proof.rule,
+                proof.dependencies.len()
+            );
+            for dependency in proof.dependencies.iter().take(64) {
+                eprintln!("helper-dependency {dependency:?}");
+            }
+        }
+        for (property, slot) in record.slots().take(12) {
+            eprintln!(
+                "helper-slot {}: {:?}",
+                model.registry().property(property).unwrap().name,
+                slot.value()
+            );
+        }
+        for reference in model.incoming(subject).filter(|reference| {
+            [
+                kp::ELEMENT_OWNED_RELATIONSHIP,
+                kp::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            ]
+            .contains(&reference.property)
+        }) {
+            eprintln!("helper-owner {reference:?}");
+        }
+        for search in model
+            .computation_searches_for(FactKey::Element(subject))
+            .filter(|search| {
+                matches!(
+                    search,
+                    agq_kernel::derived::StructuralSearch::OwnedRelationships { owner, .. }
+                    if (73_000..=73_019).contains(&owner.as_u128())
+                )
+            })
+            .take(32)
+        {
+            if let agq_kernel::derived::StructuralSearch::OwnedRelationships { owner, class } =
+                search
+            {
+                eprintln!(
+                    "helper-owned-search {owner} class={} ({class})",
+                    model.registry().class(*class).unwrap().name
+                );
+            }
+        }
+    }
+}
+
 /// Real scheduler closure of synthetic anchors, never a publication receipt.
 fn expression_dependency() -> (Arc<ProducerClosedDependency>, Vec<ElementId>) {
     expression_dependency_with_signature("isEmpty", &["seq"])
@@ -357,6 +444,7 @@ fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
     .unwrap();
     assert!(closed.converged);
     if closed.completeness != Completeness::Complete {
+        trace_helper_origins(&closed.overlay);
         let registry = ProducerRegistry::new(
             ProducerFamily::ALL
                 .into_iter()
