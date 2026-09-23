@@ -210,10 +210,26 @@ fn view_requirement_satisfaction_subject_value_and_required_constraint_close() {
             .with_producer_closure(certificate)
             .unwrap(),
     );
-    assert_eq!(q.feature_with_value(id(178_004)).value, Some(id(78_003)));
-    assert_eq!(q.structural_result(id(78_004)).value, Some(id(78_005)));
-    assert_eq!(q.owning_type(id(78_003)).value, Some(id(78_002)));
-    assert!(q.redefined_features(id(78_003)).value.contains(&id(78_900)));
+    let valued_feature = q.feature_with_value(id(178_004));
+    assert_eq!(
+        valued_feature.completeness,
+        Completeness::Complete,
+        "{valued_feature:?}"
+    );
+    assert_eq!(valued_feature.value, Some(id(78_003)));
+    let result = q.structural_result(id(78_004));
+    assert_eq!(result.completeness, Completeness::Complete, "{result:?}");
+    assert_eq!(result.value, Some(id(78_005)));
+    let owner = q.owning_type(id(78_003));
+    assert_eq!(owner.completeness, Completeness::Complete, "{owner:?}");
+    assert_eq!(owner.value, Some(id(78_002)));
+    let redefined = q.redefined_features(id(78_003));
+    assert_eq!(
+        redefined.completeness,
+        Completeness::Complete,
+        "{redefined:?}"
+    );
+    assert!(redefined.value.contains(&id(78_900)));
     assert!(Arc::ptr_eq(
         closed.overlay.declared().immutable_dependency().unwrap(),
         dependency.overlay()
