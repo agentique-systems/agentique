@@ -32,6 +32,7 @@ pub use cache::SystemsPublicationCacheError;
 #[path = "publication_finalization.rs"]
 mod finalization;
 use finalization::AuditLog;
+pub use finalization::SystemsFinalizationAuditMode;
 
 /// Publication capabilities, not the complete set of SysML validation rules.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -491,9 +492,13 @@ impl CanonicalSysmlSystemsLibrary {
                 bindings.clone(),
             )?
             .with_producer_closure(certificate.clone())?;
-            for batch in local.chunks(32) {
-                audit_sysml_population(&SysmlQueries::new(context.fork()), batch, &mut audit);
-            }
+            audit_population_batches(&local, &mut audit, observer, |batch| {
+                let queries = SysmlQueries::new(context.fork());
+                debug_assert!(std::ptr::eq(queries.model(), context.model()));
+                let mut findings = SystemsPublicationAudit::default();
+                audit_sysml_population(&queries, batch, &mut findings);
+                findings
+            })?;
         }
         observer.end(
             "effective_sysml_population_audit",
@@ -897,6 +902,70 @@ fn audit_source_fact(
     } else {
         audit.checked(SystemsPublicationFamily::IdentityProvenance, 1);
     }
+}
+
+/// Bound live query caches to eight subjects per worker and at most two workers.
+/// Windows contain at most two compact reports; completed query/proof payloads
+/// are dropped in their worker before joining. No corpus-sized query memo grows.
+fn audit_population_batches(
+    subjects: &[ElementId],
+    audit: &mut SystemsPublicationAudit,
+    observer: &mut AuditLog,
+    run_batch: impl Fn(&[ElementId]) -> SystemsPublicationAudit + Sync,
+) -> Result<(), SystemsPublicationError> {
+    const BATCH_SIZE: usize = 8;
+    let workers = observer.effective_workers();
+    let timed = |batch: &[ElementId]| {
+        let started = std::time::Instant::now();
+        let report = run_batch(batch);
+        (report, started.elapsed().as_micros())
+    };
+    for (window_index, window) in subjects.chunks(BATCH_SIZE * workers).enumerate() {
+        let first_batch = window_index * workers;
+        for (offset, batch) in window.chunks(BATCH_SIZE).enumerate() {
+            observer.effective_batch(first_batch + offset, batch, subjects.len(), None, 0)?;
+        }
+        let reports = if workers == 1 {
+            vec![timed(window)]
+        } else {
+            std::thread::scope(|scope| {
+                let handles: Vec<_> = window
+                    .chunks(BATCH_SIZE)
+                    .map(|batch| {
+                        let timed = &timed;
+                        scope.spawn(move || timed(batch))
+                    })
+                    .collect();
+                handles
+                    .into_iter()
+                    .map(|handle| {
+                        handle
+                            .join()
+                            .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
+                    })
+                    .collect()
+            })
+        };
+        // Join/merge in the exact input semantic identity order, regardless of
+        // completion order. Diagnostics retain each subject's original query order.
+        for (offset, (report, elapsed)) in reports.into_iter().enumerate() {
+            let batch = &window[offset * BATCH_SIZE..((offset + 1) * BATCH_SIZE).min(window.len())];
+            observer.effective_batch(
+                first_batch + offset,
+                batch,
+                subjects.len(),
+                Some(elapsed),
+                report.findings.len(),
+            )?;
+            for (family, count) in report.checked {
+                audit.checked(family, count);
+            }
+            audit.mandatory_references += report.mandatory_references;
+            audit.complete_references += report.complete_references;
+            audit.findings.extend(report.findings);
+        }
+    }
+    Ok(())
 }
 
 fn audit_sysml_population<'m>(
@@ -1457,6 +1526,103 @@ fn publication_identity(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn bounded_effective_audit_workers_merge_findings_in_original_subject_order() {
+        use std::sync::{
+            Barrier,
+            atomic::{AtomicUsize, Ordering},
+        };
+        let subjects: Vec<_> = (1..=23).map(ElementId::from_u128).collect();
+        let run = |mode| {
+            let mut observer = AuditLog::disabled_with_mode(mode);
+            let mut report = SystemsPublicationAudit::default();
+            let active = AtomicUsize::new(0);
+            let maximum = AtomicUsize::new(0);
+            let barrier = Barrier::new(2);
+            audit_population_batches(&subjects, &mut report, &mut observer, |batch| {
+                assert!(batch.len() <= 8);
+                let live = active.fetch_add(1, Ordering::SeqCst) + 1;
+                maximum.fetch_max(live, Ordering::SeqCst);
+                if mode == SystemsFinalizationAuditMode::ParallelTwo && batch[0].as_u128() <= 9 {
+                    barrier.wait();
+                    if batch[0] == subjects[0] {
+                        // Complete the second batch first; semantic output must
+                        // retain the serial subject and per-query finding order.
+                        std::thread::sleep(std::time::Duration::from_millis(20));
+                    }
+                }
+                let mut findings = SystemsPublicationAudit::default();
+                for &subject in batch {
+                    findings.checked(SystemsPublicationFamily::DefinitionUsage, 3);
+                    for (code, message) in [
+                        ("SQ_INCOMPLETE", "first query"),
+                        ("SQ_INVALID", "second query"),
+                    ] {
+                        findings
+                            .findings
+                            .push(SystemsPublicationFinding::Capability {
+                                family: SystemsPublicationFamily::DefinitionUsage,
+                                diagnostic: Diagnostic {
+                                    code,
+                                    subject,
+                                    message: message.into(),
+                                },
+                            });
+                    }
+                }
+                active.fetch_sub(1, Ordering::SeqCst);
+                findings
+            })
+            .unwrap();
+            assert_eq!(active.load(Ordering::SeqCst), 0);
+            assert_eq!(
+                maximum.load(Ordering::SeqCst),
+                if mode == SystemsFinalizationAuditMode::Serial {
+                    1
+                } else {
+                    2
+                }
+            );
+            let findings: Vec<_> = report
+                .findings
+                .into_iter()
+                .map(|finding| match finding {
+                    SystemsPublicationFinding::Capability { family, diagnostic } => {
+                        (family, diagnostic)
+                    }
+                    other => panic!("unexpected finding {other:?}"),
+                })
+                .collect();
+            (report.checked, findings)
+        };
+        let serial = run(SystemsFinalizationAuditMode::Serial);
+        let parallel = run(SystemsFinalizationAuditMode::ParallelTwo);
+        assert_eq!(serial, parallel);
+        assert_eq!(
+            parallel.0[&SystemsPublicationFamily::DefinitionUsage],
+            subjects.len() * 3
+        );
+        assert_eq!(parallel.1.len(), subjects.len() * 2);
+    }
+
+    #[test]
+    fn bounded_effective_audit_worker_panic_cannot_be_accepted_as_an_empty_report() {
+        let subjects: Vec<_> = (1..=16).map(ElementId::from_u128).collect();
+        let mut audit = SystemsPublicationAudit::default();
+        let mut observer = AuditLog::disabled_with_mode(SystemsFinalizationAuditMode::ParallelTwo);
+        let failed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            audit_population_batches(&subjects, &mut audit, &mut observer, |batch| {
+                if batch[0] == ElementId::from_u128(9) {
+                    panic!("audit worker failure");
+                }
+                SystemsPublicationAudit::default()
+            })
+            .unwrap();
+        }));
+        assert!(failed.is_err());
+        assert!(audit.checked.is_empty(), "no partial window is promoted");
+    }
+
     #[test]
     fn pinned_reference_population_rejects_omissions_and_duplicate_padding() {
         let references: Vec<_> = (0..SYSTEMS_MANDATORY_REFERENCE_ASSERTIONS)

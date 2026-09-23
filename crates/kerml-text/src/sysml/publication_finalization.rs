@@ -10,20 +10,48 @@ use std::{
     time::Instant,
 };
 
+/// Resource policy for read-only effective API acceptance. Both modes execute
+/// the identical queries and merge findings in the original subject order.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SystemsFinalizationAuditMode {
+    #[default]
+    Serial,
+    ParallelTwo,
+}
+impl SystemsFinalizationAuditMode {
+    fn workers(self) -> usize {
+        match self {
+            Self::Serial => 1,
+            Self::ParallelTwo => 2,
+        }
+    }
+}
+
 /// Observational journal only. Each complete line is flushed and synchronized;
 /// an interrupted stage never acquires an end record or publication authority.
 pub(super) struct AuditLog {
     file: Option<File>,
     started: Instant,
+    effective_mode: SystemsFinalizationAuditMode,
 }
 impl AuditLog {
     pub(super) fn disabled() -> Self {
+        Self::disabled_with_mode(SystemsFinalizationAuditMode::Serial)
+    }
+    pub(super) fn disabled_with_mode(effective_mode: SystemsFinalizationAuditMode) -> Self {
         Self {
             file: None,
             started: Instant::now(),
+            effective_mode,
         }
     }
-    fn create(directory: &Path) -> std::io::Result<Self> {
+    pub(super) fn effective_workers(&self) -> usize {
+        self.effective_mode.workers()
+    }
+    fn create(
+        directory: &Path,
+        effective_mode: SystemsFinalizationAuditMode,
+    ) -> std::io::Result<Self> {
         std::fs::create_dir_all(directory)?;
         let file = OpenOptions::new()
             .create_new(true)
@@ -32,6 +60,7 @@ impl AuditLog {
         Ok(Self {
             file: Some(file),
             started: Instant::now(),
+            effective_mode,
         })
     }
     pub(super) fn begin(&mut self, stage: &str) -> std::io::Result<Instant> {
@@ -46,6 +75,44 @@ impl AuditLog {
         findings: usize,
     ) -> std::io::Result<()> {
         self.event(stage, "end", started.elapsed().as_micros(), findings)
+    }
+    pub(super) fn effective_batch(
+        &mut self,
+        batch_index: usize,
+        subjects: &[ElementId],
+        total_subjects: usize,
+        elapsed_micros: Option<u128>,
+        findings: usize,
+    ) -> std::io::Result<()> {
+        if let Some(file) = &mut self.file {
+            let event = if elapsed_micros.is_some() {
+                "end"
+            } else {
+                "begin"
+            };
+            let first_subject = subjects.first().expect("nonempty effective audit batch");
+            let last_subject = subjects.last().expect("nonempty effective audit batch");
+            serde_json::to_writer(
+                &mut *file,
+                &serde_json::json!({
+                    "format":"agq-systems-finalization-audit/1", "stage":"effective_sysml_population_batch",
+                    "event":event, "batch_index":batch_index,
+                    "first_subject":first_subject, "last_subject":last_subject,
+                    "subjects":subjects.len(), "total_subjects":total_subjects,
+                    "workers":self.effective_mode.workers(),
+                    "elapsed_micros":elapsed_micros, "findings":findings,
+                    "run_elapsed_micros":self.started.elapsed().as_micros(), "publication_authority":false,
+                }),
+            )?;
+            file.write_all(b"\n")?;
+            file.flush()?;
+            file.sync_all()?;
+            eprintln!(
+                "Systems effective audit batch {batch_index} {event}: {} subjects ({first_subject} .. {last_subject}), {elapsed_micros:?} us, {findings} findings",
+                subjects.len()
+            );
+        }
+        Ok(())
     }
     fn event(
         &mut self,
@@ -85,7 +152,28 @@ impl CanonicalSysmlSystemsLibrary {
         expected_journal_sha256: [u8; 32],
         audit_directory: impl AsRef<Path>,
     ) -> Result<Self, SystemsPublicationError> {
-        let mut observer = AuditLog::create(audit_directory.as_ref())?;
+        Self::finalize_from_converged_frontier_with_audit_mode(
+            sources,
+            accepted_kerml,
+            journal,
+            expected_journal_sha256,
+            audit_directory,
+            SystemsFinalizationAuditMode::Serial,
+        )
+    }
+
+    /// The same authenticated finalization with an explicit bounded read-only
+    /// audit resource policy. Parallel execution creates at most two eight-subject
+    /// query contexts over the identical immutable graph, never parallel producers.
+    pub fn finalize_from_converged_frontier_with_audit_mode(
+        sources: &VerifiedLibrarySet,
+        accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
+        journal: impl AsRef<Path>,
+        expected_journal_sha256: [u8; 32],
+        audit_directory: impl AsRef<Path>,
+        audit_mode: SystemsFinalizationAuditMode,
+    ) -> Result<Self, SystemsPublicationError> {
+        let mut observer = AuditLog::create(audit_directory.as_ref(), audit_mode)?;
         let started = observer.begin("frontier_authentication")?;
         let source_identity = super::super::systems_frontier_source_identity(
             sources,
