@@ -189,6 +189,16 @@ alone. Typed closure search evidence explains which subject and requirement the
 certificate covers. Without that evidence, a negative formal antecedent remains
 Incomplete; a proved positive antecedent need not await unrelated producers.
 
+[ADR 0027](adr/0027-compositional-semantic-publication.md) defines the additional
+proof needed to compose semantic components. A dependency DAG and a projection
+of an existing certificate are inspectable planning evidence, not acceptance.
+Local record immutability does not freeze incoming searches: a later local
+relationship can reference an earlier subject without changing its record.
+Potential writers, zero-output evaluation reads and structural/contextual phase
+dependencies must all be discharged before a component can seal. Existing
+conservative global requirement masks cannot be removed merely by partitioning
+the scheduler population.
+
 Scoped publication also carries `PublicationProviderReads`. It distinguishes
 observations of fixed declared identities and names from reads that can require
 additional additive producers. General revision invalidation retains all reads.

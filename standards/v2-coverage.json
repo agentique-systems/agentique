@@ -1,6 +1,25 @@
 {
   "format": "agentique-generation-2-coverage/1",
   "generation": 2,
+  "compositional_semantic_publication": {
+    "status": "incomplete-dependency-and-proof-boundary-analysis",
+    "evidence": "verification/summaries/compositional-publication/README.md",
+    "contract": "docs/adr/0027-compositional-semantic-publication.md",
+    "implemented": [
+      "Conservative subject dependency/effect SCC planning using the existing producer registry and authenticated dependency boundaries",
+      "Read-only component audits retaining existing closed requirements and exact zero-output provider evidence",
+      "Exact canonical content, proof, search, query and requirement comparator for reference full scan and worklist"
+    ],
+    "sealed_strata": false,
+    "composite_certificate": false,
+    "resumable_component_checkpoints": false,
+    "medium_compositional_equivalence": "not run; compositional execution remains unimplemented",
+    "systems_publication": "not accepted",
+    "blocking_proof_obligation": "Existing non-typing requirement guards remain global even for disjoint subject-scoped writers. Complete bounded requirement/provider footprints and future-writer exclusion are not established; planning success cannot authorize sealing.",
+    "production_modeling_workspace": "gated; ADR 0026 remains proposed",
+    "accepted_kerml": "unchanged Operational v9",
+    "generation_1_release_obligations": "unchanged"
+  },
   "kerml_standard_library_bootstrap": {
     "historical": true,
     "superseded_by": "kerml_canonical_publication",

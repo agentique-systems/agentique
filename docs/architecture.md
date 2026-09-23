@@ -134,6 +134,14 @@ Current-graph answers do not certify unfinished SysML producer closure.
 No Systems publication is accepted. Mandatory reference and combined producer
 closure remain pending. Operational v2 records the three bounded canonical target
 corrections while Published and Operational v1 remain reproducible.
+Compositional publication is specified in
+[ADR 0027](adr/0027-compositional-semantic-publication.md). Its semantic subject
+dependency planner preserves potential writers and negative/provider searches;
+document boundaries do not establish independently sealable components. Planning
+and component evidence audits remain distinct from issuing a sealed stratum.
+The existing global closure guards stay in force until narrower footprints have
+an equivalent proof. See the
+[compositional publication evidence](../verification/summaries/compositional-publication/README.md).
 `CanonicalSysmlSystemsLibrary` rejects any failed construction,
 reference, producer, capability, binding, provenance or authority gate. Canonical
 identities retain their source provenance through lowering and refinement;

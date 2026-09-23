@@ -92,7 +92,8 @@ cache data that can affect precise producer evidence. No medium or full publicat
 run was started during this review.
 
 Actual focused commands, output hashes and exit codes are recorded in
-`audit-commands.json`; raw output stays in ignored generated storage. Final
+the `audit-commands.json` source-ledger records in `commands.json`; raw output
+stays in ignored generated storage. Final
 formatting and package all-target Clippy with warnings denied pass. The final
 semantic library run passes 269 tests with two existing scale probes ignored;
 this includes all five new comparator mutation controls and 33 worklist tests.
