@@ -1,0 +1,155 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "working-retirement-parser",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_working_inputs",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "9e69c2801960d77605365edb75e6f2e4794d4b8f2b8505789770bbe7255b8a19",
+      "output_sha256": "298b4577033b4721ad7d9317a1d423cafc3105f191027d41708a9c64cf6695f9",
+      "duration_seconds": 15.89,
+      "output": "verification/generated/language-stability-bridge/working-retirement-parser.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "working-retirement-parser",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_working_inputs",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "53fbc8e1bae633d795390dabf2d042be70aa5de4e3fe0ac9cdc082271b57443f",
+      "duration_seconds": 0.7,
+      "output": "verification/generated/language-stability-bridge/working-retirement-parser-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "working-retirement-held-boundary",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "crates/modeling-workspace/Cargo.toml",
+        "--test",
+        "working_states",
+        "--features",
+        "verification",
+        "--",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "aeb0c77f79ae26b25589666f82a9427ff98486d326951bf4ed33fc238a8f4b60",
+      "duration_seconds": 0.08,
+      "output": "verification/generated/language-stability-bridge/working-retirement-held-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "working-retirement-held-format",
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/modeling-workspace/tests/working_states.rs"
+      ],
+      "exit_code": 0,
+      "tool_version": "rustfmt 1.8.0-stable (ded5c06cf2 2025-12-08)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/language-stability-bridge/working-retirement-held-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "working-retirement-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.69,
+      "output": "verification/generated/language-stability-bridge/working-retirement-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "working-retirement-parser-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_working_inputs",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "43984ba512f93fbec07d11fbb76cddb81842583d59e0fe1a675d4025b79afc70",
+      "duration_seconds": 4.2,
+      "output": "verification/generated/language-stability-bridge/working-retirement-parser-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    }
+  ]
+}

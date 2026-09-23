@@ -175,6 +175,7 @@ These cases distinguish input publication, query completeness and validation:
 | A disjoint declaration survives temporary recovery | A targeted edit makes a later package in the same document malformed. Record a new Working head with exact source and syntax; the initial safe-lowering policy omits that document's semantic contribution. | The earlier complete PartDefinition retains its syntax-node identity across malformed and repaired inputs. Repair retains its semantic ID because that reconciled declaration was never explicitly deleted. During recovery, the omitted declaration cannot appear as a stale current answer and its absence cannot produce a Complete negative. |
 | The same document is explicitly removed and re-added | Remove the repaired document, then add identical bytes at the same path. | The fresh DocumentId, syntax-node ID and authored ElementId differ. The prior retained validated handle still reports its original source, context and answers. Recovery omission and deletion cannot share an indiscriminate retirement path. |
 | A mandatory type target becomes unresolved | Replace only `Storage::Repository` with `Storage::MissingRepository`; syntax remains Parsed and the current input becomes Working. | Keep the failed reference assertion even if the required relationship cannot be materialized. Its origin names the current DocumentId, SourceRevisionId and source range; available reference/query contexts belong to the current frontier. No answer retains the old provider as its type, and effective type queries cannot claim Complete from a missing provider population. |
+| The provider is removed while its consumer is already Working | Starting from that unresolved input, remove the provider document, restore the original reference name while the provider remains absent, then re-add the provider. | Every intermediate Working head keeps the failed assertion and current origin/context; neither raw typing endpoints nor type answers retain the retired provider. Re-addition allocates a fresh provider/document identity and resolves the unchanged consumer only to that provider. Every retained earlier revision keeps its own source, context and answer. |
 | Parsed variation remains unsupported | Add `variation part selected` under a PartDefinition, preserving its canonical flag and queryable authored value. | The real scheduler converges and the certificate covers the entire graph, while `effective_usages` remains Incomplete with `PendingSysmlRule::Variation`. Validation rejects with a capability diagnostic. Removing the modifier can validate; the old Working answer remains Incomplete. |
 
 The last case is an explicit Operational v2 capability boundary already exercised
@@ -183,6 +184,23 @@ new requirement to implement variation in this milestone. A future profile that
 implements that capability must deliberately replace this negative fixture with
 another documented unsupported case or its positive acceptance test. Do not
 silently make the assertion disappear because producer completion now succeeds.
+
+The real parser preflight additionally deletes and reinserts the disjoint
+declaration while its document remains recovered, then repairs the other package.
+Unchanged nodes can survive temporary recovery, but a deleted node must not regain
+its old syntax identity when identical bytes return. This preflight tests the
+existing `production::Document::edit` reconciliation contract only; it does not
+establish semantic identity retirement or successful Working publication.
+
+Source inspection at `0e3d7f5` confirms why the semantic sequence remains held:
+`SourceProject::apply` clones the current document map, reconciles edits, and rejects
+incomplete production syntax before lowering. `lower_accepted_source` requires
+`draft.strict_snapshot()?` before assembling the final reference assertions. A
+rejected batch updates neither the head nor history. Successful Working input
+publication must therefore be implemented at the proposed additive boundary; it
+cannot be inferred from the current strict path's atomic error behavior. Retirement
+must follow the latest successful Working inputs across consecutive failures of
+language validation, rather than restarting from the last Validated snapshot.
 
 The private Validated constructor must evaluate the supported platform contract
 in addition to `is_fully_closed(model)`, zero kernel obligations and mandatory

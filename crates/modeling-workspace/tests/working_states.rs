@@ -8,6 +8,7 @@ mod support;
 use agq_kerml_semantics::{Completeness, QualifiedName, Resolution};
 use agq_kerml_syntax::{SyntaxNodeId, production::Production};
 use agq_kerml_text::{DocumentStatus, ProjectChange, ProjectDocument};
+use agq_kernel::value::Value;
 use agq_sysml_semantics::PendingSysmlRule;
 use std::sync::Arc;
 use support::*;
@@ -151,7 +152,7 @@ fn temporary_recovery_preserves_reconciled_identity_until_explicit_removal() {
 
 #[test]
 #[ignore = "requires the accepted publication caches; never rebuilds standards"]
-fn unresolved_mandatory_reference_keeps_current_origin_and_incomplete_effective_answers() {
+fn unresolved_reference_then_provider_removal_and_repair_never_resurrects_old_endpoint() {
     let mut workspace = open();
     let valid = seed(&mut workspace);
     assert_valid(&valid);
@@ -198,6 +199,18 @@ fn unresolved_mandatory_reference_keeps_current_origin_and_incomplete_effective_
     ));
     if let Ok(q) = unresolved.kerml_queries() {
         assert_eq!(&reference.resolution.context, q.context());
+        assert!(
+            q.model()
+                .navigation_slot(
+                    reference.relationship,
+                    agq_kerml::properties::FEATURE_TYPING_TYPE
+                )
+                .is_none_or(|slot| slot
+                    .value()
+                    .values()
+                    .all(|value| value != &Value::Reference(provider))),
+            "an unresolved reference cannot retain its old canonical endpoint"
+        );
         if q.model().element(reference.specific).is_some() {
             assert!(
                 !q.direct_feature_types(reference.specific)
@@ -213,6 +226,154 @@ fn unresolved_mandatory_reference_keeps_current_origin_and_incomplete_effective_
     }
     assert_eq!(immutable_signature(&valid), old_signature);
     assert_eq!(element(&valid, &["Storage", "Repository"]), provider);
+
+    // Retirement must advance from the current Working inputs, not from the
+    // last validated revision. The consumer stays unresolved across removal.
+    let unresolved_signature = immutable_signature(&unresolved);
+    let provider_document = valid.document_at("Repository.sysml").unwrap();
+    let removed = workspace
+        .apply(
+            unresolved.revision(),
+            [ProjectChange::Remove {
+                document: provider_document.id(),
+            }],
+        )
+        .unwrap();
+    assert_eq!(removed.parent(), Some(unresolved.revision()));
+    assert!(removed.document_at("Repository.sysml").is_none());
+    assert_unresolved(&removed, Some(provider));
+    assert!(std::ptr::eq(
+        removed.document_at("Workspace.sysml").unwrap(),
+        current
+    ));
+    let removed_reference = removed
+        .references()
+        .iter()
+        .find(|reference| reference.name.segments == ["Storage", "MissingRepository"])
+        .expect("Working-to-Working removal retains the exact mandatory failure");
+    assert_eq!(removed_reference.origin.document, current.id());
+    assert_eq!(removed_reference.origin.revision, current.revision());
+    assert!(!matches!(
+        removed_reference.resolution.value,
+        Resolution::Resolved(_)
+    ));
+    if let Ok(q) = removed.kerml_queries() {
+        assert_eq!(&removed_reference.resolution.context, q.context());
+        assert!(
+            !q.direct_feature_types(removed_reference.specific)
+                .value
+                .contains(&provider)
+        );
+    }
+    let removed_signature = immutable_signature(&removed);
+
+    // Restoring the original name while its provider is absent must still
+    // publish Working with current source evidence and no historical endpoint.
+    let waiting = workspace
+        .apply(
+            removed.revision(),
+            [edit(
+                &removed,
+                "Workspace.sysml",
+                start,
+                start + "Storage::MissingRepository".len(),
+                "Storage::Repository",
+            )],
+        )
+        .unwrap();
+    assert_eq!(waiting.parent(), Some(removed.revision()));
+    assert!(Arc::ptr_eq(workspace.head(), &waiting));
+    assert_unresolved(&waiting, Some(provider));
+    let waiting_document = waiting.document_at("Workspace.sysml").unwrap();
+    assert_eq!(waiting_document.source(), document.source());
+    assert_eq!(waiting_document.id(), document.id());
+    assert_ne!(waiting_document.revision(), current.revision());
+    let waiting_reference = waiting
+        .references()
+        .iter()
+        .find(|reference| reference.name.segments == ["Storage", "Repository"])
+        .expect("repairing only the name retains the still-missing mandatory reference");
+    assert_eq!(waiting_reference.origin.document, waiting_document.id());
+    assert_eq!(
+        waiting_reference.origin.revision,
+        waiting_document.revision()
+    );
+    assert!(
+        waiting_document
+            .production_syntax()
+            .unwrap()
+            .text(waiting_reference.origin.range)
+            .unwrap()
+            .contains("Storage::Repository")
+    );
+    assert!(!matches!(
+        waiting_reference.resolution.value,
+        Resolution::Resolved(_)
+    ));
+    if let Ok(q) = waiting.kerml_queries() {
+        assert_eq!(&waiting_reference.resolution.context, q.context());
+        assert!(
+            !q.direct_feature_types(waiting_reference.specific)
+                .value
+                .contains(&provider)
+        );
+        assert!(
+            q.model()
+                .navigation_slot(
+                    waiting_reference.relationship,
+                    agq_kerml::properties::FEATURE_TYPING_TYPE
+                )
+                .is_none_or(|slot| slot
+                    .value()
+                    .values()
+                    .all(|value| value != &Value::Reference(provider)))
+        );
+    }
+    let waiting_signature = immutable_signature(&waiting);
+    let repaired = workspace
+        .add_sysml(
+            waiting.revision(),
+            "Repository.sysml",
+            provider_document.source(),
+        )
+        .unwrap();
+    assert_valid(&repaired);
+    let new_provider = element(&repaired, &["Storage", "Repository"]);
+    assert_ne!(new_provider, provider);
+    assert_ne!(
+        repaired.document_at("Repository.sysml").unwrap().id(),
+        provider_document.id()
+    );
+    assert!(
+        repaired
+            .semantic_model()
+            .unwrap()
+            .element(provider)
+            .is_none()
+    );
+    assert!(std::ptr::eq(
+        repaired.document_at("Workspace.sysml").unwrap(),
+        waiting_document
+    ));
+    let repaired_reference = repaired
+        .references()
+        .iter()
+        .find(|reference| reference.name.segments == ["Storage", "Repository"])
+        .unwrap();
+    assert_eq!(
+        repaired_reference.resolution.value,
+        Resolution::Resolved(new_provider)
+    );
+    let q = repaired.kerml_queries().unwrap();
+    assert_eq!(&repaired_reference.resolution.context, q.context());
+    let types = q.direct_feature_types(repaired_reference.specific);
+    assert_eq!(types.completeness, Completeness::Complete);
+    assert!(types.value.contains(&new_provider));
+    assert!(!types.value.contains(&provider));
+    assert_eq!(immutable_signature(&valid), old_signature);
+    assert_eq!(immutable_signature(&unresolved), unresolved_signature);
+    assert_eq!(immutable_signature(&removed), removed_signature);
+    assert_eq!(immutable_signature(&waiting), waiting_signature);
 }
 
 #[test]
