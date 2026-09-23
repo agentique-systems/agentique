@@ -1,0 +1,3063 @@
+{
+  "certificate_trace_source": {
+    "bytes": 108452,
+    "matched_frontiers": 65,
+    "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\overnight-convergence\\foundation-systems-full\\output.log",
+    "sha256": "ae46992cf2955400314e96e40ac693b4d87b2e03b25dc05742f018ea93db94bd"
+  },
+  "interpretation": {
+    "certificate_time": "includes full oracle plus exact comparison when AGQ_CERTIFICATE_VERIFY_FULL_REBUILD is set",
+    "query_cache_time": "included in planning; no distinct exclusive timer",
+    "reopen_reasons": "overlapping invalidation-key categories; not proved changed semantic answers",
+    "shared_family_time": "inclusive; never sum across families",
+    "stage": "zero-based scheduler frontier, resets per invocation"
+  },
+  "invocations": [
+    {
+      "all": {
+        "certificate_delta": {
+          "scope_rebuilt": 83955,
+          "scope_retained": 851335,
+          "topology_rebuilt": 73939,
+          "topology_retained": 861351
+        },
+        "counts": {
+          "accepted_elements": 3692,
+          "accepted_occurrences": 20,
+          "next_dirty_subjects": 14198,
+          "planned_elements": 7399,
+          "subjects_evaluated": 13879,
+          "subjects_reopened": 10506,
+          "subjects_skipped": 7910
+        },
+        "feature_value_valuation_shared_micros_counted_once": 3619706,
+        "frontier_count": 13,
+        "next_dirty_by_reason": {
+          "CertificateTransportChanged": 132,
+          "ContextualBindingDependency": 196,
+          "GraphFactChanged": 9503,
+          "NewHelperCreated": 3692,
+          "NewProducerOpportunity": 3692,
+          "NewRelationshipEndpoint": 4482,
+          "ProviderSearchChanged": 8939
+        },
+        "timings": {
+          "certificate_build_micros": 44130871,
+          "certificate_revalidation_micros": 143995,
+          "dependency_index_micros": 1901612,
+          "elapsed_micros": 154255970,
+          "model_materialization_micros": 7420656,
+          "planning_including_query_cache_micros": 47090762
+        },
+        "unattributed_micros": 53568074
+      },
+      "ordinal": 0,
+      "phase": "construction",
+      "stage_end": 12,
+      "stage_start": 0,
+      "tail": {
+        "certificate_delta": {},
+        "counts": {},
+        "families": {},
+        "feature_value_valuation_shared_micros_counted_once": 0,
+        "frontier_count": 0,
+        "frontiers": [],
+        "next_dirty_by_reason": {},
+        "timings": {},
+        "unattributed_micros": 0
+      },
+      "tail_by_stratum": {}
+    },
+    {
+      "all": {
+        "certificate_delta": {
+          "scope_rebuilt": 83976,
+          "scope_retained": 779851,
+          "topology_rebuilt": 73949,
+          "topology_retained": 789878
+        },
+        "counts": {
+          "accepted_elements": 3700,
+          "accepted_occurrences": 20,
+          "next_dirty_subjects": 14215,
+          "planned_elements": 7435,
+          "subjects_evaluated": 13890,
+          "subjects_reopened": 10515,
+          "subjects_skipped": 7916
+        },
+        "feature_value_valuation_shared_micros_counted_once": 3338226,
+        "frontier_count": 12,
+        "next_dirty_by_reason": {
+          "CertificateTransportChanged": 128,
+          "ContextualBindingDependency": 196,
+          "GraphFactChanged": 9518,
+          "NewHelperCreated": 3700,
+          "NewProducerOpportunity": 3700,
+          "NewRelationshipEndpoint": 4488,
+          "ProviderSearchChanged": 8951
+        },
+        "timings": {
+          "certificate_build_micros": 37521044,
+          "certificate_revalidation_micros": 174705,
+          "dependency_index_micros": 1520095,
+          "elapsed_micros": 139206528,
+          "model_materialization_micros": 6540651,
+          "planning_including_query_cache_micros": 42513163
+        },
+        "unattributed_micros": 50936870
+      },
+      "ordinal": 1,
+      "phase": "construction",
+      "stage_end": 11,
+      "stage_start": 0,
+      "tail": {
+        "certificate_delta": {},
+        "counts": {},
+        "families": {},
+        "feature_value_valuation_shared_micros_counted_once": 0,
+        "frontier_count": 0,
+        "frontiers": [],
+        "next_dirty_by_reason": {},
+        "timings": {},
+        "unattributed_micros": 0
+      },
+      "tail_by_stratum": {}
+    },
+    {
+      "all": {
+        "certificate_delta": {
+          "scope_rebuilt": 83974,
+          "scope_retained": 779853,
+          "topology_rebuilt": 73949,
+          "topology_retained": 789878
+        },
+        "counts": {
+          "accepted_elements": 3700,
+          "accepted_occurrences": 20,
+          "next_dirty_subjects": 14215,
+          "planned_elements": 7435,
+          "subjects_evaluated": 13890,
+          "subjects_reopened": 10515,
+          "subjects_skipped": 7916
+        },
+        "feature_value_valuation_shared_micros_counted_once": 3262891,
+        "frontier_count": 12,
+        "next_dirty_by_reason": {
+          "CertificateTransportChanged": 128,
+          "ContextualBindingDependency": 196,
+          "GraphFactChanged": 9518,
+          "NewHelperCreated": 3700,
+          "NewProducerOpportunity": 3700,
+          "NewRelationshipEndpoint": 4488,
+          "ProviderSearchChanged": 8951
+        },
+        "timings": {
+          "certificate_build_micros": 35045076,
+          "certificate_revalidation_micros": 170892,
+          "dependency_index_micros": 1487391,
+          "elapsed_micros": 134903209,
+          "model_materialization_micros": 6269551,
+          "planning_including_query_cache_micros": 41807177
+        },
+        "unattributed_micros": 50123122
+      },
+      "ordinal": 2,
+      "phase": "construction",
+      "stage_end": 11,
+      "stage_start": 0,
+      "tail": {
+        "certificate_delta": {},
+        "counts": {},
+        "families": {},
+        "feature_value_valuation_shared_micros_counted_once": 0,
+        "frontier_count": 0,
+        "frontiers": [],
+        "next_dirty_by_reason": {},
+        "timings": {},
+        "unattributed_micros": 0
+      },
+      "tail_by_stratum": {}
+    },
+    {
+      "all": {
+        "certificate_delta": {
+          "scope_rebuilt": 101327,
+          "scope_retained": 1982575,
+          "topology_rebuilt": 77515,
+          "topology_retained": 2006387
+        },
+        "counts": {
+          "accepted_elements": 2333,
+          "accepted_occurrences": 0,
+          "next_dirty_subjects": 50001,
+          "planned_elements": 22484,
+          "subjects_evaluated": 43673,
+          "subjects_reopened": 39752,
+          "subjects_skipped": 17619
+        },
+        "feature_value_valuation_shared_micros_counted_once": 68091330,
+        "frontier_count": 28,
+        "next_dirty_by_reason": {
+          "CertificateTransportChanged": 1396,
+          "ContextualBindingDependency": 196,
+          "GraphFactChanged": 16358,
+          "NewHelperCreated": 2333,
+          "NewProducerOpportunity": 13624,
+          "NewRelationshipEndpoint": 9041,
+          "ProviderSearchChanged": 33276
+        },
+        "timings": {
+          "certificate_build_micros": 138798376,
+          "certificate_revalidation_micros": 1178118,
+          "dependency_index_micros": 66623051,
+          "elapsed_micros": 2513189022,
+          "model_materialization_micros": 13742078,
+          "planning_including_query_cache_micros": 2125017495
+        },
+        "unattributed_micros": 167829904
+      },
+      "ordinal": 3,
+      "phase": "publication",
+      "stage_end": 27,
+      "stage_start": 0,
+      "tail": {
+        "certificate_delta": {
+          "scope_rebuilt": 13862,
+          "scope_retained": 961567,
+          "topology_rebuilt": 1682,
+          "topology_retained": 973747
+        },
+        "counts": {
+          "accepted_elements": 1092,
+          "accepted_occurrences": 0,
+          "next_dirty_subjects": 21834,
+          "planned_elements": 19693,
+          "subjects_evaluated": 21071,
+          "subjects_reopened": 20771,
+          "subjects_skipped": 792
+        },
+        "families": {
+          "KerML.CrossDomain": {
+            "attempts": 21001,
+            "planning_micros": 46596199,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 49,
+              "ContextualBindingDependency": 196,
+              "GraphFactChanged": 7077,
+              "NewHelperCreated": 300,
+              "NewProducerOpportunity": 300,
+              "NewRelationshipEndpoint": 3916,
+              "ProviderSearchChanged": 20311
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.ExpressionResult": {
+            "attempts": 1266,
+            "planning_micros": 2076654,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 74,
+              "GraphFactChanged": 544,
+              "NewRelationshipEndpoint": 395,
+              "ProviderSearchChanged": 1157
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.FeatureChainExpression": {
+            "attempts": 136,
+            "planning_micros": 368604,
+            "reopened_by_reason": {
+              "GraphFactChanged": 24,
+              "NewRelationshipEndpoint": 13,
+              "ProviderSearchChanged": 136
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.FeatureReferenceExpression": {
+            "attempts": 657,
+            "planning_micros": 216547789,
+            "reopened_by_reason": {
+              "ContextualBindingDependency": 73,
+              "GraphFactChanged": 306,
+              "NewRelationshipEndpoint": 243,
+              "ProviderSearchChanged": 584
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.FeatureValuation": {
+            "attempts": 21001,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 49,
+              "ContextualBindingDependency": 196,
+              "GraphFactChanged": 7077,
+              "NewHelperCreated": 300,
+              "NewProducerOpportunity": 300,
+              "NewRelationshipEndpoint": 3916,
+              "ProviderSearchChanged": 20311
+            },
+            "shared_planning_micros": 51490688
+          },
+          "KerML.FeatureValue": {
+            "attempts": 21001,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 49,
+              "ContextualBindingDependency": 196,
+              "GraphFactChanged": 7077,
+              "NewHelperCreated": 300,
+              "NewProducerOpportunity": 300,
+              "NewRelationshipEndpoint": 3916,
+              "ProviderSearchChanged": 20311
+            },
+            "shared_planning_micros": 51490688
+          },
+          "KerML.IndexSelectResult": {
+            "attempts": 16,
+            "planning_micros": 468882,
+            "reopened_by_reason": {
+              "GraphFactChanged": 9,
+              "NewRelationshipEndpoint": 8,
+              "ProviderSearchChanged": 16
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.Invocation": {
+            "attempts": 178,
+            "planning_micros": 286671,
+            "reopened_by_reason": {
+              "GraphFactChanged": 56,
+              "NewRelationshipEndpoint": 37,
+              "ProviderSearchChanged": 175
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.OwnedCrossing": {
+            "attempts": 21001,
+            "planning_micros": 33769019,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 49,
+              "ContextualBindingDependency": 196,
+              "GraphFactChanged": 7077,
+              "NewHelperCreated": 300,
+              "NewProducerOpportunity": 300,
+              "NewRelationshipEndpoint": 3916,
+              "ProviderSearchChanged": 20311
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.OwnedInstantiationResult": {
+            "attempts": 178,
+            "planning_micros": 4762,
+            "reopened_by_reason": {
+              "GraphFactChanged": 56,
+              "NewRelationshipEndpoint": 37,
+              "ProviderSearchChanged": 175
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.PositionalRedefinition": {
+            "attempts": 21001,
+            "planning_micros": 95487764,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 49,
+              "ContextualBindingDependency": 196,
+              "GraphFactChanged": 7077,
+              "NewHelperCreated": 300,
+              "NewProducerOpportunity": 300,
+              "NewRelationshipEndpoint": 3916,
+              "ProviderSearchChanged": 20311
+            },
+            "shared_planning_micros": 0
+          },
+          "KerML.VariableFeaturing": {
+            "attempts": 21001,
+            "planning_micros": 629695893,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 49,
+              "ContextualBindingDependency": 196,
+              "GraphFactChanged": 7077,
+              "NewHelperCreated": 300,
+              "NewProducerOpportunity": 300,
+              "NewRelationshipEndpoint": 3916,
+              "ProviderSearchChanged": 20311
+            },
+            "shared_planning_micros": 0
+          },
+          "checkAcceptActionUsageSpecialization": {
+            "attempts": 3,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 3
+            },
+            "shared_planning_micros": 45183
+          },
+          "checkAcceptActionUsageSubactionSpecialization": {
+            "attempts": 3,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 3
+            },
+            "shared_planning_micros": 45183
+          },
+          "checkAcceptActionUsageTriggerActionSpecialization": {
+            "attempts": 3,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 3
+            },
+            "shared_planning_micros": 45183
+          },
+          "checkActionDefinitionSpecialization": {
+            "attempts": 69,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 65,
+              "NewRelationshipEndpoint": 3,
+              "ProviderSearchChanged": 8
+            },
+            "shared_planning_micros": 196387
+          },
+          "checkActionUsageOwnedActionSpecialization": {
+            "attempts": 527,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 2,
+              "ContextualBindingDependency": 1,
+              "GraphFactChanged": 283,
+              "NewRelationshipEndpoint": 101,
+              "ProviderSearchChanged": 419
+            },
+            "shared_planning_micros": 15759946
+          },
+          "checkActionUsageSpecialization": {
+            "attempts": 527,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 2,
+              "ContextualBindingDependency": 1,
+              "GraphFactChanged": 283,
+              "NewRelationshipEndpoint": 101,
+              "ProviderSearchChanged": 419
+            },
+            "shared_planning_micros": 15759946
+          },
+          "checkActionUsageSubactionSpecialization": {
+            "attempts": 527,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 2,
+              "ContextualBindingDependency": 1,
+              "GraphFactChanged": 283,
+              "NewRelationshipEndpoint": 101,
+              "ProviderSearchChanged": 419
+            },
+            "shared_planning_micros": 15759946
+          },
+          "checkAllocationUsageSpecialization": {
+            "attempts": 8,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "ProviderSearchChanged": 8
+            },
+            "shared_planning_micros": 53250
+          },
+          "checkAnalysisCaseDefinitionSpecialization": {
+            "attempts": 2,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 2
+            },
+            "shared_planning_micros": 10087
+          },
+          "checkAnalysisCaseUsageSpecialization": {
+            "attempts": 19,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 9,
+              "NewRelationshipEndpoint": 3,
+              "ProviderSearchChanged": 16
+            },
+            "shared_planning_micros": 865023
+          },
+          "checkAssignmentActionUsageSpecialization": {
+            "attempts": 19,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 13,
+              "NewRelationshipEndpoint": 2,
+              "ProviderSearchChanged": 16
+            },
+            "shared_planning_micros": 349814
+          },
+          "checkAssignmentActionUsageSubactionSpecialization": {
+            "attempts": 19,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 13,
+              "NewRelationshipEndpoint": 2,
+              "ProviderSearchChanged": 16
+            },
+            "shared_planning_micros": 349814
+          },
+          "checkAttributeUsageSpecialization": {
+            "attempts": 462,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "ContextualBindingDependency": 6,
+              "GraphFactChanged": 146,
+              "NewRelationshipEndpoint": 110,
+              "ProviderSearchChanged": 456
+            },
+            "shared_planning_micros": 1917425
+          },
+          "checkCalculationDefinitionSpecialization": {
+            "attempts": 20,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 16,
+              "NewRelationshipEndpoint": 3,
+              "ProviderSearchChanged": 8
+            },
+            "shared_planning_micros": 78394
+          },
+          "checkCalculationUsageSpecialization": {
+            "attempts": 119,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 58,
+              "NewRelationshipEndpoint": 26,
+              "ProviderSearchChanged": 104
+            },
+            "shared_planning_micros": 5954221
+          },
+          "checkCaseDefinitionSpecialization": {
+            "attempts": 8,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 8
+            },
+            "shared_planning_micros": 39926
+          },
+          "checkCaseUsageSpecialization": {
+            "attempts": 100,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 49,
+              "NewRelationshipEndpoint": 23,
+              "ProviderSearchChanged": 88
+            },
+            "shared_planning_micros": 5355393
+          },
+          "checkConcernUsageSpecialization": {
+            "attempts": 24,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 8,
+              "NewRelationshipEndpoint": 6,
+              "ProviderSearchChanged": 24
+            },
+            "shared_planning_micros": 1390941
+          },
+          "checkConnectionDefinitionBinarySpecialization": {
+            "attempts": 1,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 1
+            },
+            "shared_planning_micros": 6374
+          },
+          "checkConnectionDefinitionSpecializations": {
+            "attempts": 1,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 1
+            },
+            "shared_planning_micros": 6374
+          },
+          "checkConnectionUsageBinarySpecialization": {
+            "attempts": 46,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 6,
+              "ProviderSearchChanged": 40
+            },
+            "shared_planning_micros": 343968
+          },
+          "checkConnectionUsageSpecialization": {
+            "attempts": 46,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 6,
+              "ProviderSearchChanged": 40
+            },
+            "shared_planning_micros": 343968
+          },
+          "checkConstraintUsageCheckedConstraintSpecialization": {
+            "attempts": 260,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 1,
+              "GraphFactChanged": 97,
+              "NewRelationshipEndpoint": 77,
+              "ProviderSearchChanged": 256
+            },
+            "shared_planning_micros": 10099023
+          },
+          "checkConstraintUsageSpecialization": {
+            "attempts": 260,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 1,
+              "GraphFactChanged": 97,
+              "NewRelationshipEndpoint": 77,
+              "ProviderSearchChanged": 256
+            },
+            "shared_planning_micros": 10099023
+          },
+          "checkEventOccurrenceUsageSpecialization": {
+            "attempts": 49,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 1,
+              "GraphFactChanged": 25,
+              "NewRelationshipEndpoint": 20,
+              "ProviderSearchChanged": 48
+            },
+            "shared_planning_micros": 1148474
+          },
+          "checkFlowDefinitionSpecialization": {
+            "attempts": 8,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 8
+            },
+            "shared_planning_micros": 26717
+          },
+          "checkFlowUsageFlowSpecialization": {
+            "attempts": 24,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 6,
+              "ProviderSearchChanged": 24
+            },
+            "shared_planning_micros": 168011
+          },
+          "checkFlowUsageSpecialization": {
+            "attempts": 24,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 6,
+              "ProviderSearchChanged": 24
+            },
+            "shared_planning_micros": 168011
+          },
+          "checkInterfaceDefinitionBinarySpecialization": {
+            "attempts": 1,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 1
+            },
+            "shared_planning_micros": 6374
+          },
+          "checkInterfaceDefinitionSpecialization": {
+            "attempts": 1,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 1
+            },
+            "shared_planning_micros": 6374
+          },
+          "checkInterfaceUsageBinarySpecialization": {
+            "attempts": 16,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "ProviderSearchChanged": 16
+            },
+            "shared_planning_micros": 111781
+          },
+          "checkInterfaceUsageSpecialization": {
+            "attempts": 16,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "ProviderSearchChanged": 16
+            },
+            "shared_planning_micros": 111781
+          },
+          "checkItemDefinitionSpecialization": {
+            "attempts": 1,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 1
+            },
+            "shared_planning_micros": 6374
+          },
+          "checkItemUsageSpecialization": {
+            "attempts": 1915,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 2,
+              "GraphFactChanged": 905,
+              "NewRelationshipEndpoint": 677,
+              "ProviderSearchChanged": 1904
+            },
+            "shared_planning_micros": 51537907
+          },
+          "checkItemUsageSubitemSpecialization": {
+            "attempts": 1915,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 2,
+              "GraphFactChanged": 905,
+              "NewRelationshipEndpoint": 677,
+              "ProviderSearchChanged": 1904
+            },
+            "shared_planning_micros": 51537907
+          },
+          "checkOccurrenceUsageSpecialization": {
+            "attempts": 2906,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 11,
+              "ContextualBindingDependency": 5,
+              "GraphFactChanged": 1385,
+              "NewRelationshipEndpoint": 936,
+              "ProviderSearchChanged": 2779
+            },
+            "shared_planning_micros": 84764575
+          },
+          "checkOccurrenceUsageSuboccurrenceSpecialization": {
+            "attempts": 2906,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 11,
+              "ContextualBindingDependency": 5,
+              "GraphFactChanged": 1385,
+              "NewRelationshipEndpoint": 936,
+              "ProviderSearchChanged": 2779
+            },
+            "shared_planning_micros": 84764575
+          },
+          "checkPartDefinitionSpecialization": {
+            "attempts": 1,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 1
+            },
+            "shared_planning_micros": 6374
+          },
+          "checkPartUsageSpecialization": {
+            "attempts": 227,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 2,
+              "GraphFactChanged": 69,
+              "NewRelationshipEndpoint": 50,
+              "ProviderSearchChanged": 216
+            },
+            "shared_planning_micros": 5769364
+          },
+          "checkPartUsageSubpartSpecialization": {
+            "attempts": 227,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 2,
+              "GraphFactChanged": 69,
+              "NewRelationshipEndpoint": 50,
+              "ProviderSearchChanged": 216
+            },
+            "shared_planning_micros": 5769364
+          },
+          "checkPerformActionUsageSpecialization": {
+            "attempts": 33,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 1,
+              "GraphFactChanged": 17,
+              "NewRelationshipEndpoint": 14,
+              "ProviderSearchChanged": 32
+            },
+            "shared_planning_micros": 931227
+          },
+          "checkPortUsageOwnedPortSpecialization": {
+            "attempts": 64,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 32,
+              "NewRelationshipEndpoint": 29,
+              "ProviderSearchChanged": 64
+            },
+            "shared_planning_micros": 1999605
+          },
+          "checkPortUsageSpecialization": {
+            "attempts": 64,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 32,
+              "NewRelationshipEndpoint": 29,
+              "ProviderSearchChanged": 64
+            },
+            "shared_planning_micros": 1999605
+          },
+          "checkPortUsageSubportSpecialization": {
+            "attempts": 64,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 32,
+              "NewRelationshipEndpoint": 29,
+              "ProviderSearchChanged": 64
+            },
+            "shared_planning_micros": 1999605
+          },
+          "checkRenderingUsageSpecialization": {
+            "attempts": 84,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 1,
+              "GraphFactChanged": 22,
+              "NewRelationshipEndpoint": 18,
+              "ProviderSearchChanged": 80
+            },
+            "shared_planning_micros": 1791496
+          },
+          "checkRequirementUsageSpecialization": {
+            "attempts": 140,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 3,
+              "ContextualBindingDependency": 1,
+              "GraphFactChanged": 50,
+              "NewRelationshipEndpoint": 41,
+              "ProviderSearchChanged": 136
+            },
+            "shared_planning_micros": 6849449
+          },
+          "checkStateDefinitionSpecialization": {
+            "attempts": 3,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 3
+            },
+            "shared_planning_micros": 12101
+          },
+          "checkStateUsageExclusiveStateSpecialization": {
+            "attempts": 49,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 28,
+              "NewRelationshipEndpoint": 14,
+              "ProviderSearchChanged": 42
+            },
+            "shared_planning_micros": 2425088
+          },
+          "checkStateUsageOwnedStateSpecialization": {
+            "attempts": 49,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 28,
+              "NewRelationshipEndpoint": 14,
+              "ProviderSearchChanged": 42
+            },
+            "shared_planning_micros": 2425088
+          },
+          "checkStateUsageSpecialization": {
+            "attempts": 49,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 28,
+              "NewRelationshipEndpoint": 14,
+              "ProviderSearchChanged": 42
+            },
+            "shared_planning_micros": 2425088
+          },
+          "checkStateUsageSubstateSpecialization": {
+            "attempts": 49,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 28,
+              "NewRelationshipEndpoint": 14,
+              "ProviderSearchChanged": 42
+            },
+            "shared_planning_micros": 2425088
+          },
+          "checkTransitionUsageActionSpecialization": {
+            "attempts": 8,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 5,
+              "NewRelationshipEndpoint": 3,
+              "ProviderSearchChanged": 8
+            },
+            "shared_planning_micros": 892132
+          },
+          "checkTransitionUsagePayloadSpecialization": {
+            "attempts": 8,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 5,
+              "NewRelationshipEndpoint": 3,
+              "ProviderSearchChanged": 8
+            },
+            "shared_planning_micros": 892132
+          },
+          "checkTransitionUsageSpecialization": {
+            "attempts": 8,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 5,
+              "NewRelationshipEndpoint": 3,
+              "ProviderSearchChanged": 8
+            },
+            "shared_planning_micros": 892132
+          },
+          "checkTransitionUsageStateSpecialization": {
+            "attempts": 8,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 5,
+              "NewRelationshipEndpoint": 3,
+              "ProviderSearchChanged": 8
+            },
+            "shared_planning_micros": 892132
+          },
+          "checkUseCaseDefinitionSpecialization": {
+            "attempts": 2,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 2
+            },
+            "shared_planning_micros": 10730
+          },
+          "checkUseCaseUsageSpecialization": {
+            "attempts": 43,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 21,
+              "NewRelationshipEndpoint": 12,
+              "ProviderSearchChanged": 40
+            },
+            "shared_planning_micros": 2842307
+          },
+          "checkVerificationCaseSpecialization": {
+            "attempts": 2,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 2
+            },
+            "shared_planning_micros": 11036
+          },
+          "checkVerificationCaseUsageSpecialization": {
+            "attempts": 19,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 10,
+              "NewRelationshipEndpoint": 5,
+              "ProviderSearchChanged": 16
+            },
+            "shared_planning_micros": 905353
+          },
+          "checkViewUsageSpecialization": {
+            "attempts": 32,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 13,
+              "NewRelationshipEndpoint": 11,
+              "ProviderSearchChanged": 32
+            },
+            "shared_planning_micros": 1158800
+          },
+          "checkViewpointUsageSpecialization": {
+            "attempts": 24,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 8,
+              "NewRelationshipEndpoint": 6,
+              "ProviderSearchChanged": 24
+            },
+            "shared_planning_micros": 1243671
+          },
+          "checkWhileLoopActionUsageSpecialization": {
+            "attempts": 3,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 3
+            },
+            "shared_planning_micros": 56945
+          },
+          "checkWhileLoopActionUsageSubactionSpecialization": {
+            "attempts": 3,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "GraphFactChanged": 3
+            },
+            "shared_planning_micros": 56945
+          },
+          "deriveUsageMayTimeVary": {
+            "attempts": 5039,
+            "planning_micros": 0,
+            "reopened_by_reason": {
+              "CertificateTransportChanged": 49,
+              "ContextualBindingDependency": 20,
+              "GraphFactChanged": 2306,
+              "NewRelationshipEndpoint": 1620,
+              "ProviderSearchChanged": 4859
+            },
+            "shared_planning_micros": 120440014
+          }
+        },
+        "feature_value_valuation_shared_micros_counted_once": 51490688,
+        "frontier_count": 13,
+        "frontiers": [
+          {
+            "accepted_elements": 0,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 24732,
+            "certificate_build_micros": 6575159,
+            "certificate_revalidation_micros": 0,
+            "closed_pairs": 22232,
+            "closed_requirements": 395011,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 146868,
+            "elapsed_micros": 15468233,
+            "elapsed_seconds": 1979.3199732,
+            "incomplete_pairs": 10,
+            "model_materialization_micros": 1696,
+            "next_dirty_by_reason": {
+              "CertificateTransportChanged": 10
+            },
+            "next_dirty_subjects": 10,
+            "planned_elements": 0,
+            "planning_including_query_cache_micros": 5912667,
+            "stage": 15,
+            "stratum": "StableProperties",
+            "subjects_evaluated": 29,
+            "subjects_reopened": 29,
+            "subjects_skipped": 0,
+            "unattributed_micros": 2831843
+          },
+          {
+            "accepted_elements": 0,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 24732,
+            "certificate_build_micros": 7783324,
+            "certificate_revalidation_micros": 0,
+            "closed_pairs": 22236,
+            "closed_requirements": 395011,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 29698,
+            "elapsed_micros": 11791357,
+            "elapsed_seconds": 1991.1144803,
+            "incomplete_pairs": 6,
+            "model_materialization_micros": 477,
+            "next_dirty_by_reason": {
+              "CertificateTransportChanged": 6
+            },
+            "next_dirty_subjects": 6,
+            "planned_elements": 0,
+            "planning_including_query_cache_micros": 1158915,
+            "stage": 16,
+            "stratum": "StableProperties",
+            "subjects_evaluated": 10,
+            "subjects_reopened": 10,
+            "subjects_skipped": 0,
+            "unattributed_micros": 2818943
+          },
+          {
+            "accepted_elements": 0,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 24732,
+            "certificate_build_micros": 6864958,
+            "certificate_revalidation_micros": 0,
+            "closed_pairs": 22236,
+            "closed_requirements": 395011,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 11573,
+            "elapsed_micros": 10531879,
+            "elapsed_seconds": 2001.6493975,
+            "incomplete_pairs": 6,
+            "model_materialization_micros": 144,
+            "next_dirty_by_reason": {
+              "ContextualBindingDependency": 196
+            },
+            "next_dirty_subjects": 196,
+            "planned_elements": 0,
+            "planning_including_query_cache_micros": 309629,
+            "stage": 17,
+            "stratum": "StableProperties",
+            "subjects_evaluated": 6,
+            "subjects_reopened": 6,
+            "subjects_skipped": 0,
+            "unattributed_micros": 3345575
+          },
+          {
+            "accepted_elements": 789,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26310,
+            "certificate_build_micros": 4171168,
+            "certificate_revalidation_micros": 55455,
+            "closed_pairs": 17587,
+            "closed_requirements": 395379,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 465534,
+            "elapsed_micros": 110575138,
+            "elapsed_seconds": 2112.2273287,
+            "incomplete_pairs": 6,
+            "model_materialization_micros": 1272758,
+            "next_dirty_by_reason": {
+              "GraphFactChanged": 2270,
+              "NewHelperCreated": 789,
+              "NewProducerOpportunity": 789,
+              "NewRelationshipEndpoint": 1211,
+              "ProviderSearchChanged": 2314
+            },
+            "next_dirty_subjects": 3162,
+            "planned_elements": 2033,
+            "planning_including_query_cache_micros": 29772228,
+            "stage": 18,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 196,
+            "subjects_reopened": 196,
+            "subjects_skipped": 0,
+            "unattributed_micros": 74837995
+          },
+          {
+            "accepted_elements": 166,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26310,
+            "certificate_build_micros": 7111815,
+            "certificate_revalidation_micros": 287657,
+            "closed_pairs": 23288,
+            "closed_requirements": 396641,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 5635257,
+            "elapsed_micros": 194715859,
+            "elapsed_seconds": 2306.9470063,
+            "incomplete_pairs": 356,
+            "model_materialization_micros": 1159219,
+            "next_dirty_by_reason": {
+              "GraphFactChanged": 568,
+              "NewHelperCreated": 166,
+              "NewProducerOpportunity": 166,
+              "NewRelationshipEndpoint": 166,
+              "ProviderSearchChanged": 2556
+            },
+            "next_dirty_subjects": 2722,
+            "planned_elements": 2030,
+            "planning_including_query_cache_micros": 177766747,
+            "stage": 19,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 2636,
+            "subjects_reopened": 2373,
+            "subjects_skipped": 526,
+            "unattributed_micros": 2755164
+          },
+          {
+            "accepted_elements": 0,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26310,
+            "certificate_build_micros": 5653226,
+            "certificate_revalidation_micros": 136855,
+            "closed_pairs": 25438,
+            "closed_requirements": 397126,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 5484013,
+            "elapsed_micros": 180029042,
+            "elapsed_seconds": 2486.9982001,
+            "incomplete_pairs": 9,
+            "model_materialization_micros": 809405,
+            "next_dirty_by_reason": {
+              "GraphFactChanged": 136,
+              "NewRelationshipEndpoint": 107,
+              "ProviderSearchChanged": 2556
+            },
+            "next_dirty_subjects": 2560,
+            "planned_elements": 2207,
+            "planning_including_query_cache_micros": 164878500,
+            "stage": 20,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 2556,
+            "subjects_reopened": 2556,
+            "subjects_skipped": 166,
+            "unattributed_micros": 3067043
+          },
+          {
+            "accepted_elements": 15,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26328,
+            "certificate_build_micros": 3820668,
+            "certificate_revalidation_micros": 28399,
+            "closed_pairs": 20266,
+            "closed_requirements": 396081,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 5380029,
+            "elapsed_micros": 179668521,
+            "elapsed_seconds": 2666.6751583,
+            "incomplete_pairs": 0,
+            "model_materialization_micros": 897086,
+            "next_dirty_by_reason": {
+              "GraphFactChanged": 1369,
+              "NewHelperCreated": 15,
+              "NewProducerOpportunity": 15,
+              "NewRelationshipEndpoint": 1109,
+              "ProviderSearchChanged": 2559
+            },
+            "next_dirty_subjects": 2645,
+            "planned_elements": 2222,
+            "planning_including_query_cache_micros": 166575604,
+            "stage": 21,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 2560,
+            "subjects_reopened": 2560,
+            "subjects_skipped": 0,
+            "unattributed_micros": 2966735
+          },
+          {
+            "accepted_elements": 93,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26514,
+            "certificate_build_micros": 3897962,
+            "certificate_revalidation_micros": 130080,
+            "closed_pairs": 21607,
+            "closed_requirements": 396619,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 4625599,
+            "elapsed_micros": 157407634,
+            "elapsed_seconds": 2824.0905753,
+            "incomplete_pairs": 79,
+            "model_materialization_micros": 875257,
+            "next_dirty_by_reason": {
+              "GraphFactChanged": 1227,
+              "NewHelperCreated": 93,
+              "NewProducerOpportunity": 93,
+              "NewRelationshipEndpoint": 167,
+              "ProviderSearchChanged": 2561
+            },
+            "next_dirty_subjects": 2727,
+            "planned_elements": 1957,
+            "planning_including_query_cache_micros": 145164078,
+            "stage": 22,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 2633,
+            "subjects_reopened": 2630,
+            "subjects_skipped": 12,
+            "unattributed_micros": 2714658
+          },
+          {
+            "accepted_elements": 18,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26514,
+            "certificate_build_micros": 5662739,
+            "certificate_revalidation_micros": 210278,
+            "closed_pairs": 25269,
+            "closed_requirements": 397032,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 4548921,
+            "elapsed_micros": 157151026,
+            "elapsed_seconds": 2981.2600642,
+            "incomplete_pairs": 166,
+            "model_materialization_micros": 831907,
+            "next_dirty_by_reason": {
+              "GraphFactChanged": 438,
+              "NewHelperCreated": 18,
+              "NewProducerOpportunity": 18,
+              "NewRelationshipEndpoint": 18,
+              "ProviderSearchChanged": 2590
+            },
+            "next_dirty_subjects": 2608,
+            "planned_elements": 2264,
+            "planning_including_query_cache_micros": 143172113,
+            "stage": 23,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 2665,
+            "subjects_reopened": 2634,
+            "subjects_skipped": 62,
+            "unattributed_micros": 2725068
+          },
+          {
+            "accepted_elements": 9,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26532,
+            "certificate_build_micros": 4008900,
+            "certificate_revalidation_micros": 47590,
+            "closed_pairs": 20838,
+            "closed_requirements": 396443,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 4516551,
+            "elapsed_micros": 154041873,
+            "elapsed_seconds": 3135.31696,
+            "incomplete_pairs": 0,
+            "model_materialization_micros": 834755,
+            "next_dirty_by_reason": {
+              "GraphFactChanged": 1503,
+              "NewHelperCreated": 9,
+              "NewProducerOpportunity": 9,
+              "NewRelationshipEndpoint": 1139,
+              "ProviderSearchChanged": 2590
+            },
+            "next_dirty_subjects": 2599,
+            "planned_elements": 2309,
+            "planning_including_query_cache_micros": 141908633,
+            "stage": 24,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 2590,
+            "subjects_reopened": 2590,
+            "subjects_skipped": 18,
+            "unattributed_micros": 2725444
+          },
+          {
+            "accepted_elements": 2,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26532,
+            "certificate_build_micros": 5369634,
+            "certificate_revalidation_micros": 132858,
+            "closed_pairs": 25872,
+            "closed_requirements": 397110,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 4511913,
+            "elapsed_micros": 154587216,
+            "elapsed_seconds": 3289.9102718,
+            "incomplete_pairs": 53,
+            "model_materialization_micros": 822951,
+            "next_dirty_by_reason": {
+              "GraphFactChanged": 424,
+              "NewHelperCreated": 2,
+              "NewProducerOpportunity": 2,
+              "NewRelationshipEndpoint": 2,
+              "ProviderSearchChanged": 2593
+            },
+            "next_dirty_subjects": 2595,
+            "planned_elements": 2311,
+            "planning_including_query_cache_micros": 141018275,
+            "stage": 25,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 2593,
+            "subjects_reopened": 2590,
+            "subjects_skipped": 6,
+            "unattributed_micros": 2731585
+          },
+          {
+            "accepted_elements": 0,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26532,
+            "certificate_build_micros": 4821164,
+            "certificate_revalidation_micros": 0,
+            "closed_pairs": 26528,
+            "closed_requirements": 397556,
+            "completeness": "Incomplete",
+            "dependency_index_micros": 4523611,
+            "elapsed_micros": 153266541,
+            "elapsed_seconds": 3443.1853317,
+            "incomplete_pairs": 4,
+            "model_materialization_micros": 36642,
+            "next_dirty_by_reason": {
+              "CertificateTransportChanged": 4
+            },
+            "next_dirty_subjects": 4,
+            "planned_elements": 2336,
+            "planning_including_query_cache_micros": 141145945,
+            "stage": 26,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 2593,
+            "subjects_reopened": 2593,
+            "subjects_skipped": 2,
+            "unattributed_micros": 2739179
+          },
+          {
+            "accepted_elements": 0,
+            "accepted_occurrences": 0,
+            "applicable_pairs": 26532,
+            "certificate_build_micros": 2705052,
+            "certificate_revalidation_micros": 0,
+            "closed_pairs": 26532,
+            "closed_requirements": 452052,
+            "completeness": "Complete",
+            "dependency_index_micros": 22357,
+            "elapsed_micros": 6133077,
+            "elapsed_seconds": 3449.3239849,
+            "incomplete_pairs": 0,
+            "model_materialization_micros": 565,
+            "next_dirty_by_reason": {},
+            "next_dirty_subjects": 0,
+            "planned_elements": 24,
+            "planning_including_query_cache_micros": 836238,
+            "stage": 27,
+            "stratum": "ContextualBindings",
+            "subjects_evaluated": 4,
+            "subjects_reopened": 4,
+            "subjects_skipped": 0,
+            "unattributed_micros": 2568865
+          }
+        ],
+        "next_dirty_by_reason": {
+          "CertificateTransportChanged": 20,
+          "ContextualBindingDependency": 196,
+          "GraphFactChanged": 7935,
+          "NewHelperCreated": 1092,
+          "NewProducerOpportunity": 1092,
+          "NewRelationshipEndpoint": 3919,
+          "ProviderSearchChanged": 20319
+        },
+        "timings": {
+          "certificate_build_micros": 68445769,
+          "certificate_revalidation_micros": 1029172,
+          "dependency_index_micros": 39901924,
+          "elapsed_micros": 1485367396,
+          "model_materialization_micros": 7542862,
+          "planning_including_query_cache_micros": 1259619572
+        },
+        "unattributed_micros": 108828097
+      },
+      "tail_by_stratum": {
+        "ContextualBindings": {
+          "certificate_delta": {
+            "scope_rebuilt": 13835,
+            "scope_retained": 738844,
+            "topology_rebuilt": 1682,
+            "topology_retained": 750997
+          },
+          "counts": {
+            "accepted_elements": 1092,
+            "accepted_occurrences": 0,
+            "next_dirty_subjects": 21622,
+            "planned_elements": 19693,
+            "subjects_evaluated": 21026,
+            "subjects_reopened": 20726,
+            "subjects_skipped": 792
+          },
+          "families": {
+            "KerML.CrossDomain": {
+              "attempts": 20956,
+              "planning_micros": 46593472,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 4,
+                "ContextualBindingDependency": 196,
+                "GraphFactChanged": 7077,
+                "NewHelperCreated": 300,
+                "NewProducerOpportunity": 300,
+                "NewRelationshipEndpoint": 3916,
+                "ProviderSearchChanged": 20311
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.ExpressionResult": {
+              "attempts": 1263,
+              "planning_micros": 2076599,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 74,
+                "GraphFactChanged": 544,
+                "NewRelationshipEndpoint": 395,
+                "ProviderSearchChanged": 1157
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.FeatureChainExpression": {
+              "attempts": 136,
+              "planning_micros": 368604,
+              "reopened_by_reason": {
+                "GraphFactChanged": 24,
+                "NewRelationshipEndpoint": 13,
+                "ProviderSearchChanged": 136
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.FeatureReferenceExpression": {
+              "attempts": 657,
+              "planning_micros": 216547789,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 73,
+                "GraphFactChanged": 306,
+                "NewRelationshipEndpoint": 243,
+                "ProviderSearchChanged": 584
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.FeatureValuation": {
+              "attempts": 20956,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 4,
+                "ContextualBindingDependency": 196,
+                "GraphFactChanged": 7077,
+                "NewHelperCreated": 300,
+                "NewProducerOpportunity": 300,
+                "NewRelationshipEndpoint": 3916,
+                "ProviderSearchChanged": 20311
+              },
+              "shared_planning_micros": 51348380
+            },
+            "KerML.FeatureValue": {
+              "attempts": 20956,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 4,
+                "ContextualBindingDependency": 196,
+                "GraphFactChanged": 7077,
+                "NewHelperCreated": 300,
+                "NewProducerOpportunity": 300,
+                "NewRelationshipEndpoint": 3916,
+                "ProviderSearchChanged": 20311
+              },
+              "shared_planning_micros": 51348380
+            },
+            "KerML.IndexSelectResult": {
+              "attempts": 16,
+              "planning_micros": 468882,
+              "reopened_by_reason": {
+                "GraphFactChanged": 9,
+                "NewRelationshipEndpoint": 8,
+                "ProviderSearchChanged": 16
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.Invocation": {
+              "attempts": 178,
+              "planning_micros": 286671,
+              "reopened_by_reason": {
+                "GraphFactChanged": 56,
+                "NewRelationshipEndpoint": 37,
+                "ProviderSearchChanged": 175
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.OwnedCrossing": {
+              "attempts": 20956,
+              "planning_micros": 33766895,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 4,
+                "ContextualBindingDependency": 196,
+                "GraphFactChanged": 7077,
+                "NewHelperCreated": 300,
+                "NewProducerOpportunity": 300,
+                "NewRelationshipEndpoint": 3916,
+                "ProviderSearchChanged": 20311
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.OwnedInstantiationResult": {
+              "attempts": 178,
+              "planning_micros": 4762,
+              "reopened_by_reason": {
+                "GraphFactChanged": 56,
+                "NewRelationshipEndpoint": 37,
+                "ProviderSearchChanged": 175
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.PositionalRedefinition": {
+              "attempts": 20956,
+              "planning_micros": 94813222,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 4,
+                "ContextualBindingDependency": 196,
+                "GraphFactChanged": 7077,
+                "NewHelperCreated": 300,
+                "NewProducerOpportunity": 300,
+                "NewRelationshipEndpoint": 3916,
+                "ProviderSearchChanged": 20311
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.VariableFeaturing": {
+              "attempts": 20956,
+              "planning_micros": 624788935,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 4,
+                "ContextualBindingDependency": 196,
+                "GraphFactChanged": 7077,
+                "NewHelperCreated": 300,
+                "NewProducerOpportunity": 300,
+                "NewRelationshipEndpoint": 3916,
+                "ProviderSearchChanged": 20311
+              },
+              "shared_planning_micros": 0
+            },
+            "checkAcceptActionUsageSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 3
+              },
+              "shared_planning_micros": 45183
+            },
+            "checkAcceptActionUsageSubactionSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 3
+              },
+              "shared_planning_micros": 45183
+            },
+            "checkAcceptActionUsageTriggerActionSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 3
+              },
+              "shared_planning_micros": 45183
+            },
+            "checkActionDefinitionSpecialization": {
+              "attempts": 69,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 65,
+                "NewRelationshipEndpoint": 3,
+                "ProviderSearchChanged": 8
+              },
+              "shared_planning_micros": 196387
+            },
+            "checkActionUsageOwnedActionSpecialization": {
+              "attempts": 525,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 1,
+                "GraphFactChanged": 283,
+                "NewRelationshipEndpoint": 101,
+                "ProviderSearchChanged": 419
+              },
+              "shared_planning_micros": 15669398
+            },
+            "checkActionUsageSpecialization": {
+              "attempts": 525,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 1,
+                "GraphFactChanged": 283,
+                "NewRelationshipEndpoint": 101,
+                "ProviderSearchChanged": 419
+              },
+              "shared_planning_micros": 15669398
+            },
+            "checkActionUsageSubactionSpecialization": {
+              "attempts": 525,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 1,
+                "GraphFactChanged": 283,
+                "NewRelationshipEndpoint": 101,
+                "ProviderSearchChanged": 419
+              },
+              "shared_planning_micros": 15669398
+            },
+            "checkAllocationUsageSpecialization": {
+              "attempts": 8,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ProviderSearchChanged": 8
+              },
+              "shared_planning_micros": 53250
+            },
+            "checkAnalysisCaseDefinitionSpecialization": {
+              "attempts": 2,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 2
+              },
+              "shared_planning_micros": 10087
+            },
+            "checkAnalysisCaseUsageSpecialization": {
+              "attempts": 19,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 9,
+                "NewRelationshipEndpoint": 3,
+                "ProviderSearchChanged": 16
+              },
+              "shared_planning_micros": 865023
+            },
+            "checkAssignmentActionUsageSpecialization": {
+              "attempts": 19,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 13,
+                "NewRelationshipEndpoint": 2,
+                "ProviderSearchChanged": 16
+              },
+              "shared_planning_micros": 349814
+            },
+            "checkAssignmentActionUsageSubactionSpecialization": {
+              "attempts": 19,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 13,
+                "NewRelationshipEndpoint": 2,
+                "ProviderSearchChanged": 16
+              },
+              "shared_planning_micros": 349814
+            },
+            "checkAttributeUsageSpecialization": {
+              "attempts": 462,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 6,
+                "GraphFactChanged": 146,
+                "NewRelationshipEndpoint": 110,
+                "ProviderSearchChanged": 456
+              },
+              "shared_planning_micros": 1917425
+            },
+            "checkCalculationDefinitionSpecialization": {
+              "attempts": 20,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 16,
+                "NewRelationshipEndpoint": 3,
+                "ProviderSearchChanged": 8
+              },
+              "shared_planning_micros": 78394
+            },
+            "checkCalculationUsageSpecialization": {
+              "attempts": 119,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 58,
+                "NewRelationshipEndpoint": 26,
+                "ProviderSearchChanged": 104
+              },
+              "shared_planning_micros": 5954221
+            },
+            "checkCaseDefinitionSpecialization": {
+              "attempts": 8,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 8
+              },
+              "shared_planning_micros": 39926
+            },
+            "checkCaseUsageSpecialization": {
+              "attempts": 100,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 49,
+                "NewRelationshipEndpoint": 23,
+                "ProviderSearchChanged": 88
+              },
+              "shared_planning_micros": 5355393
+            },
+            "checkConcernUsageSpecialization": {
+              "attempts": 24,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 8,
+                "NewRelationshipEndpoint": 6,
+                "ProviderSearchChanged": 24
+              },
+              "shared_planning_micros": 1390941
+            },
+            "checkConnectionDefinitionBinarySpecialization": {
+              "attempts": 1,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 1
+              },
+              "shared_planning_micros": 6374
+            },
+            "checkConnectionDefinitionSpecializations": {
+              "attempts": 1,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 1
+              },
+              "shared_planning_micros": 6374
+            },
+            "checkConnectionUsageBinarySpecialization": {
+              "attempts": 46,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 6,
+                "ProviderSearchChanged": 40
+              },
+              "shared_planning_micros": 343968
+            },
+            "checkConnectionUsageSpecialization": {
+              "attempts": 46,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 6,
+                "ProviderSearchChanged": 40
+              },
+              "shared_planning_micros": 343968
+            },
+            "checkConstraintUsageCheckedConstraintSpecialization": {
+              "attempts": 257,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 1,
+                "GraphFactChanged": 97,
+                "NewRelationshipEndpoint": 77,
+                "ProviderSearchChanged": 256
+              },
+              "shared_planning_micros": 10025908
+            },
+            "checkConstraintUsageSpecialization": {
+              "attempts": 257,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 1,
+                "GraphFactChanged": 97,
+                "NewRelationshipEndpoint": 77,
+                "ProviderSearchChanged": 256
+              },
+              "shared_planning_micros": 10025908
+            },
+            "checkEventOccurrenceUsageSpecialization": {
+              "attempts": 48,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 25,
+                "NewRelationshipEndpoint": 20,
+                "ProviderSearchChanged": 48
+              },
+              "shared_planning_micros": 1092933
+            },
+            "checkFlowDefinitionSpecialization": {
+              "attempts": 8,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 8
+              },
+              "shared_planning_micros": 26717
+            },
+            "checkFlowUsageFlowSpecialization": {
+              "attempts": 24,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 6,
+                "ProviderSearchChanged": 24
+              },
+              "shared_planning_micros": 168011
+            },
+            "checkFlowUsageSpecialization": {
+              "attempts": 24,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 6,
+                "ProviderSearchChanged": 24
+              },
+              "shared_planning_micros": 168011
+            },
+            "checkInterfaceDefinitionBinarySpecialization": {
+              "attempts": 1,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 1
+              },
+              "shared_planning_micros": 6374
+            },
+            "checkInterfaceDefinitionSpecialization": {
+              "attempts": 1,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 1
+              },
+              "shared_planning_micros": 6374
+            },
+            "checkInterfaceUsageBinarySpecialization": {
+              "attempts": 16,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ProviderSearchChanged": 16
+              },
+              "shared_planning_micros": 111781
+            },
+            "checkInterfaceUsageSpecialization": {
+              "attempts": 16,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ProviderSearchChanged": 16
+              },
+              "shared_planning_micros": 111781
+            },
+            "checkItemDefinitionSpecialization": {
+              "attempts": 1,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 1
+              },
+              "shared_planning_micros": 6374
+            },
+            "checkItemUsageSpecialization": {
+              "attempts": 1912,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 2,
+                "GraphFactChanged": 905,
+                "NewRelationshipEndpoint": 677,
+                "ProviderSearchChanged": 1904
+              },
+              "shared_planning_micros": 51293520
+            },
+            "checkItemUsageSubitemSpecialization": {
+              "attempts": 1912,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 2,
+                "GraphFactChanged": 905,
+                "NewRelationshipEndpoint": 677,
+                "ProviderSearchChanged": 1904
+              },
+              "shared_planning_micros": 51293520
+            },
+            "checkOccurrenceUsageSpecialization": {
+              "attempts": 2895,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 5,
+                "GraphFactChanged": 1385,
+                "NewRelationshipEndpoint": 936,
+                "ProviderSearchChanged": 2779
+              },
+              "shared_planning_micros": 84338144
+            },
+            "checkOccurrenceUsageSuboccurrenceSpecialization": {
+              "attempts": 2895,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 5,
+                "GraphFactChanged": 1385,
+                "NewRelationshipEndpoint": 936,
+                "ProviderSearchChanged": 2779
+              },
+              "shared_planning_micros": 84338144
+            },
+            "checkPartDefinitionSpecialization": {
+              "attempts": 1,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 1
+              },
+              "shared_planning_micros": 6374
+            },
+            "checkPartUsageSpecialization": {
+              "attempts": 224,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 2,
+                "GraphFactChanged": 69,
+                "NewRelationshipEndpoint": 50,
+                "ProviderSearchChanged": 216
+              },
+              "shared_planning_micros": 5524977
+            },
+            "checkPartUsageSubpartSpecialization": {
+              "attempts": 224,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 2,
+                "GraphFactChanged": 69,
+                "NewRelationshipEndpoint": 50,
+                "ProviderSearchChanged": 216
+              },
+              "shared_planning_micros": 5524977
+            },
+            "checkPerformActionUsageSpecialization": {
+              "attempts": 32,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 17,
+                "NewRelationshipEndpoint": 14,
+                "ProviderSearchChanged": 32
+              },
+              "shared_planning_micros": 875686
+            },
+            "checkPortUsageOwnedPortSpecialization": {
+              "attempts": 64,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 32,
+                "NewRelationshipEndpoint": 29,
+                "ProviderSearchChanged": 64
+              },
+              "shared_planning_micros": 1999605
+            },
+            "checkPortUsageSpecialization": {
+              "attempts": 64,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 32,
+                "NewRelationshipEndpoint": 29,
+                "ProviderSearchChanged": 64
+              },
+              "shared_planning_micros": 1999605
+            },
+            "checkPortUsageSubportSpecialization": {
+              "attempts": 64,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 32,
+                "NewRelationshipEndpoint": 29,
+                "ProviderSearchChanged": 64
+              },
+              "shared_planning_micros": 1999605
+            },
+            "checkRenderingUsageSpecialization": {
+              "attempts": 81,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 1,
+                "GraphFactChanged": 22,
+                "NewRelationshipEndpoint": 18,
+                "ProviderSearchChanged": 80
+              },
+              "shared_planning_micros": 1547109
+            },
+            "checkRequirementUsageSpecialization": {
+              "attempts": 137,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "ContextualBindingDependency": 1,
+                "GraphFactChanged": 50,
+                "NewRelationshipEndpoint": 41,
+                "ProviderSearchChanged": 136
+              },
+              "shared_planning_micros": 6776334
+            },
+            "checkStateDefinitionSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 3
+              },
+              "shared_planning_micros": 12101
+            },
+            "checkStateUsageExclusiveStateSpecialization": {
+              "attempts": 49,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 28,
+                "NewRelationshipEndpoint": 14,
+                "ProviderSearchChanged": 42
+              },
+              "shared_planning_micros": 2425088
+            },
+            "checkStateUsageOwnedStateSpecialization": {
+              "attempts": 49,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 28,
+                "NewRelationshipEndpoint": 14,
+                "ProviderSearchChanged": 42
+              },
+              "shared_planning_micros": 2425088
+            },
+            "checkStateUsageSpecialization": {
+              "attempts": 49,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 28,
+                "NewRelationshipEndpoint": 14,
+                "ProviderSearchChanged": 42
+              },
+              "shared_planning_micros": 2425088
+            },
+            "checkStateUsageSubstateSpecialization": {
+              "attempts": 49,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 28,
+                "NewRelationshipEndpoint": 14,
+                "ProviderSearchChanged": 42
+              },
+              "shared_planning_micros": 2425088
+            },
+            "checkTransitionUsageActionSpecialization": {
+              "attempts": 8,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 5,
+                "NewRelationshipEndpoint": 3,
+                "ProviderSearchChanged": 8
+              },
+              "shared_planning_micros": 892132
+            },
+            "checkTransitionUsagePayloadSpecialization": {
+              "attempts": 8,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 5,
+                "NewRelationshipEndpoint": 3,
+                "ProviderSearchChanged": 8
+              },
+              "shared_planning_micros": 892132
+            },
+            "checkTransitionUsageSpecialization": {
+              "attempts": 8,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 5,
+                "NewRelationshipEndpoint": 3,
+                "ProviderSearchChanged": 8
+              },
+              "shared_planning_micros": 892132
+            },
+            "checkTransitionUsageStateSpecialization": {
+              "attempts": 8,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 5,
+                "NewRelationshipEndpoint": 3,
+                "ProviderSearchChanged": 8
+              },
+              "shared_planning_micros": 892132
+            },
+            "checkUseCaseDefinitionSpecialization": {
+              "attempts": 2,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 2
+              },
+              "shared_planning_micros": 10730
+            },
+            "checkUseCaseUsageSpecialization": {
+              "attempts": 43,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 21,
+                "NewRelationshipEndpoint": 12,
+                "ProviderSearchChanged": 40
+              },
+              "shared_planning_micros": 2842307
+            },
+            "checkVerificationCaseSpecialization": {
+              "attempts": 2,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 2
+              },
+              "shared_planning_micros": 11036
+            },
+            "checkVerificationCaseUsageSpecialization": {
+              "attempts": 19,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 10,
+                "NewRelationshipEndpoint": 5,
+                "ProviderSearchChanged": 16
+              },
+              "shared_planning_micros": 905353
+            },
+            "checkViewUsageSpecialization": {
+              "attempts": 32,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 13,
+                "NewRelationshipEndpoint": 11,
+                "ProviderSearchChanged": 32
+              },
+              "shared_planning_micros": 1158800
+            },
+            "checkViewpointUsageSpecialization": {
+              "attempts": 24,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 8,
+                "NewRelationshipEndpoint": 6,
+                "ProviderSearchChanged": 24
+              },
+              "shared_planning_micros": 1243671
+            },
+            "checkWhileLoopActionUsageSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 3
+              },
+              "shared_planning_micros": 56945
+            },
+            "checkWhileLoopActionUsageSubactionSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "GraphFactChanged": 3
+              },
+              "shared_planning_micros": 56945
+            },
+            "deriveUsageMayTimeVary": {
+              "attempts": 4994,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 4,
+                "ContextualBindingDependency": 20,
+                "GraphFactChanged": 2306,
+                "NewRelationshipEndpoint": 1620,
+                "ProviderSearchChanged": 4859
+              },
+              "shared_planning_micros": 119033503
+            }
+          },
+          "feature_value_valuation_shared_micros_counted_once": 51348380,
+          "frontier_count": 10,
+          "frontiers": [
+            {
+              "accepted_elements": 789,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26310,
+              "certificate_build_micros": 4171168,
+              "certificate_revalidation_micros": 55455,
+              "closed_pairs": 17587,
+              "closed_requirements": 395379,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 465534,
+              "elapsed_micros": 110575138,
+              "elapsed_seconds": 2112.2273287,
+              "incomplete_pairs": 6,
+              "model_materialization_micros": 1272758,
+              "next_dirty_by_reason": {
+                "GraphFactChanged": 2270,
+                "NewHelperCreated": 789,
+                "NewProducerOpportunity": 789,
+                "NewRelationshipEndpoint": 1211,
+                "ProviderSearchChanged": 2314
+              },
+              "next_dirty_subjects": 3162,
+              "planned_elements": 2033,
+              "planning_including_query_cache_micros": 29772228,
+              "stage": 18,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 196,
+              "subjects_reopened": 196,
+              "subjects_skipped": 0,
+              "unattributed_micros": 74837995
+            },
+            {
+              "accepted_elements": 166,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26310,
+              "certificate_build_micros": 7111815,
+              "certificate_revalidation_micros": 287657,
+              "closed_pairs": 23288,
+              "closed_requirements": 396641,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 5635257,
+              "elapsed_micros": 194715859,
+              "elapsed_seconds": 2306.9470063,
+              "incomplete_pairs": 356,
+              "model_materialization_micros": 1159219,
+              "next_dirty_by_reason": {
+                "GraphFactChanged": 568,
+                "NewHelperCreated": 166,
+                "NewProducerOpportunity": 166,
+                "NewRelationshipEndpoint": 166,
+                "ProviderSearchChanged": 2556
+              },
+              "next_dirty_subjects": 2722,
+              "planned_elements": 2030,
+              "planning_including_query_cache_micros": 177766747,
+              "stage": 19,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 2636,
+              "subjects_reopened": 2373,
+              "subjects_skipped": 526,
+              "unattributed_micros": 2755164
+            },
+            {
+              "accepted_elements": 0,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26310,
+              "certificate_build_micros": 5653226,
+              "certificate_revalidation_micros": 136855,
+              "closed_pairs": 25438,
+              "closed_requirements": 397126,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 5484013,
+              "elapsed_micros": 180029042,
+              "elapsed_seconds": 2486.9982001,
+              "incomplete_pairs": 9,
+              "model_materialization_micros": 809405,
+              "next_dirty_by_reason": {
+                "GraphFactChanged": 136,
+                "NewRelationshipEndpoint": 107,
+                "ProviderSearchChanged": 2556
+              },
+              "next_dirty_subjects": 2560,
+              "planned_elements": 2207,
+              "planning_including_query_cache_micros": 164878500,
+              "stage": 20,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 2556,
+              "subjects_reopened": 2556,
+              "subjects_skipped": 166,
+              "unattributed_micros": 3067043
+            },
+            {
+              "accepted_elements": 15,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26328,
+              "certificate_build_micros": 3820668,
+              "certificate_revalidation_micros": 28399,
+              "closed_pairs": 20266,
+              "closed_requirements": 396081,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 5380029,
+              "elapsed_micros": 179668521,
+              "elapsed_seconds": 2666.6751583,
+              "incomplete_pairs": 0,
+              "model_materialization_micros": 897086,
+              "next_dirty_by_reason": {
+                "GraphFactChanged": 1369,
+                "NewHelperCreated": 15,
+                "NewProducerOpportunity": 15,
+                "NewRelationshipEndpoint": 1109,
+                "ProviderSearchChanged": 2559
+              },
+              "next_dirty_subjects": 2645,
+              "planned_elements": 2222,
+              "planning_including_query_cache_micros": 166575604,
+              "stage": 21,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 2560,
+              "subjects_reopened": 2560,
+              "subjects_skipped": 0,
+              "unattributed_micros": 2966735
+            },
+            {
+              "accepted_elements": 93,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26514,
+              "certificate_build_micros": 3897962,
+              "certificate_revalidation_micros": 130080,
+              "closed_pairs": 21607,
+              "closed_requirements": 396619,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 4625599,
+              "elapsed_micros": 157407634,
+              "elapsed_seconds": 2824.0905753,
+              "incomplete_pairs": 79,
+              "model_materialization_micros": 875257,
+              "next_dirty_by_reason": {
+                "GraphFactChanged": 1227,
+                "NewHelperCreated": 93,
+                "NewProducerOpportunity": 93,
+                "NewRelationshipEndpoint": 167,
+                "ProviderSearchChanged": 2561
+              },
+              "next_dirty_subjects": 2727,
+              "planned_elements": 1957,
+              "planning_including_query_cache_micros": 145164078,
+              "stage": 22,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 2633,
+              "subjects_reopened": 2630,
+              "subjects_skipped": 12,
+              "unattributed_micros": 2714658
+            },
+            {
+              "accepted_elements": 18,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26514,
+              "certificate_build_micros": 5662739,
+              "certificate_revalidation_micros": 210278,
+              "closed_pairs": 25269,
+              "closed_requirements": 397032,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 4548921,
+              "elapsed_micros": 157151026,
+              "elapsed_seconds": 2981.2600642,
+              "incomplete_pairs": 166,
+              "model_materialization_micros": 831907,
+              "next_dirty_by_reason": {
+                "GraphFactChanged": 438,
+                "NewHelperCreated": 18,
+                "NewProducerOpportunity": 18,
+                "NewRelationshipEndpoint": 18,
+                "ProviderSearchChanged": 2590
+              },
+              "next_dirty_subjects": 2608,
+              "planned_elements": 2264,
+              "planning_including_query_cache_micros": 143172113,
+              "stage": 23,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 2665,
+              "subjects_reopened": 2634,
+              "subjects_skipped": 62,
+              "unattributed_micros": 2725068
+            },
+            {
+              "accepted_elements": 9,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26532,
+              "certificate_build_micros": 4008900,
+              "certificate_revalidation_micros": 47590,
+              "closed_pairs": 20838,
+              "closed_requirements": 396443,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 4516551,
+              "elapsed_micros": 154041873,
+              "elapsed_seconds": 3135.31696,
+              "incomplete_pairs": 0,
+              "model_materialization_micros": 834755,
+              "next_dirty_by_reason": {
+                "GraphFactChanged": 1503,
+                "NewHelperCreated": 9,
+                "NewProducerOpportunity": 9,
+                "NewRelationshipEndpoint": 1139,
+                "ProviderSearchChanged": 2590
+              },
+              "next_dirty_subjects": 2599,
+              "planned_elements": 2309,
+              "planning_including_query_cache_micros": 141908633,
+              "stage": 24,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 2590,
+              "subjects_reopened": 2590,
+              "subjects_skipped": 18,
+              "unattributed_micros": 2725444
+            },
+            {
+              "accepted_elements": 2,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26532,
+              "certificate_build_micros": 5369634,
+              "certificate_revalidation_micros": 132858,
+              "closed_pairs": 25872,
+              "closed_requirements": 397110,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 4511913,
+              "elapsed_micros": 154587216,
+              "elapsed_seconds": 3289.9102718,
+              "incomplete_pairs": 53,
+              "model_materialization_micros": 822951,
+              "next_dirty_by_reason": {
+                "GraphFactChanged": 424,
+                "NewHelperCreated": 2,
+                "NewProducerOpportunity": 2,
+                "NewRelationshipEndpoint": 2,
+                "ProviderSearchChanged": 2593
+              },
+              "next_dirty_subjects": 2595,
+              "planned_elements": 2311,
+              "planning_including_query_cache_micros": 141018275,
+              "stage": 25,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 2593,
+              "subjects_reopened": 2590,
+              "subjects_skipped": 6,
+              "unattributed_micros": 2731585
+            },
+            {
+              "accepted_elements": 0,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26532,
+              "certificate_build_micros": 4821164,
+              "certificate_revalidation_micros": 0,
+              "closed_pairs": 26528,
+              "closed_requirements": 397556,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 4523611,
+              "elapsed_micros": 153266541,
+              "elapsed_seconds": 3443.1853317,
+              "incomplete_pairs": 4,
+              "model_materialization_micros": 36642,
+              "next_dirty_by_reason": {
+                "CertificateTransportChanged": 4
+              },
+              "next_dirty_subjects": 4,
+              "planned_elements": 2336,
+              "planning_including_query_cache_micros": 141145945,
+              "stage": 26,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 2593,
+              "subjects_reopened": 2593,
+              "subjects_skipped": 2,
+              "unattributed_micros": 2739179
+            },
+            {
+              "accepted_elements": 0,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 26532,
+              "certificate_build_micros": 2705052,
+              "certificate_revalidation_micros": 0,
+              "closed_pairs": 26532,
+              "closed_requirements": 452052,
+              "completeness": "Complete",
+              "dependency_index_micros": 22357,
+              "elapsed_micros": 6133077,
+              "elapsed_seconds": 3449.3239849,
+              "incomplete_pairs": 0,
+              "model_materialization_micros": 565,
+              "next_dirty_by_reason": {},
+              "next_dirty_subjects": 0,
+              "planned_elements": 24,
+              "planning_including_query_cache_micros": 836238,
+              "stage": 27,
+              "stratum": "ContextualBindings",
+              "subjects_evaluated": 4,
+              "subjects_reopened": 4,
+              "subjects_skipped": 0,
+              "unattributed_micros": 2568865
+            }
+          ],
+          "next_dirty_by_reason": {
+            "CertificateTransportChanged": 4,
+            "GraphFactChanged": 7935,
+            "NewHelperCreated": 1092,
+            "NewProducerOpportunity": 1092,
+            "NewRelationshipEndpoint": 3919,
+            "ProviderSearchChanged": 20319
+          },
+          "timings": {
+            "certificate_build_micros": 47222328,
+            "certificate_revalidation_micros": 1029172,
+            "dependency_index_micros": 39713785,
+            "elapsed_micros": 1447575927,
+            "model_materialization_micros": 7540545,
+            "planning_including_query_cache_micros": 1252238361
+          },
+          "unattributed_micros": 99831736
+        },
+        "StableProperties": {
+          "certificate_delta": {
+            "scope_rebuilt": 27,
+            "scope_retained": 222723,
+            "topology_rebuilt": 0,
+            "topology_retained": 222750
+          },
+          "counts": {
+            "accepted_elements": 0,
+            "accepted_occurrences": 0,
+            "next_dirty_subjects": 212,
+            "planned_elements": 0,
+            "subjects_evaluated": 45,
+            "subjects_reopened": 45,
+            "subjects_skipped": 0
+          },
+          "families": {
+            "KerML.CrossDomain": {
+              "attempts": 45,
+              "planning_micros": 2727,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 45
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.ExpressionResult": {
+              "attempts": 3,
+              "planning_micros": 55,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.FeatureValuation": {
+              "attempts": 45,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 45
+              },
+              "shared_planning_micros": 142308
+            },
+            "KerML.FeatureValue": {
+              "attempts": 45,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 45
+              },
+              "shared_planning_micros": 142308
+            },
+            "KerML.OwnedCrossing": {
+              "attempts": 45,
+              "planning_micros": 2124,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 45
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.PositionalRedefinition": {
+              "attempts": 45,
+              "planning_micros": 674542,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 45
+              },
+              "shared_planning_micros": 0
+            },
+            "KerML.VariableFeaturing": {
+              "attempts": 45,
+              "planning_micros": 4906958,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 45
+              },
+              "shared_planning_micros": 0
+            },
+            "checkActionUsageOwnedActionSpecialization": {
+              "attempts": 2,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 2
+              },
+              "shared_planning_micros": 90548
+            },
+            "checkActionUsageSpecialization": {
+              "attempts": 2,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 2
+              },
+              "shared_planning_micros": 90548
+            },
+            "checkActionUsageSubactionSpecialization": {
+              "attempts": 2,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 2
+              },
+              "shared_planning_micros": 90548
+            },
+            "checkConstraintUsageCheckedConstraintSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 73115
+            },
+            "checkConstraintUsageSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 73115
+            },
+            "checkEventOccurrenceUsageSpecialization": {
+              "attempts": 1,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 1
+              },
+              "shared_planning_micros": 55541
+            },
+            "checkItemUsageSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 244387
+            },
+            "checkItemUsageSubitemSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 244387
+            },
+            "checkOccurrenceUsageSpecialization": {
+              "attempts": 11,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 11
+              },
+              "shared_planning_micros": 426431
+            },
+            "checkOccurrenceUsageSuboccurrenceSpecialization": {
+              "attempts": 11,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 11
+              },
+              "shared_planning_micros": 426431
+            },
+            "checkPartUsageSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 244387
+            },
+            "checkPartUsageSubpartSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 244387
+            },
+            "checkPerformActionUsageSpecialization": {
+              "attempts": 1,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 1
+              },
+              "shared_planning_micros": 55541
+            },
+            "checkRenderingUsageSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 244387
+            },
+            "checkRequirementUsageSpecialization": {
+              "attempts": 3,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 3
+              },
+              "shared_planning_micros": 73115
+            },
+            "deriveUsageMayTimeVary": {
+              "attempts": 45,
+              "planning_micros": 0,
+              "reopened_by_reason": {
+                "CertificateTransportChanged": 45
+              },
+              "shared_planning_micros": 1406511
+            }
+          },
+          "feature_value_valuation_shared_micros_counted_once": 142308,
+          "frontier_count": 3,
+          "frontiers": [
+            {
+              "accepted_elements": 0,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 24732,
+              "certificate_build_micros": 6575159,
+              "certificate_revalidation_micros": 0,
+              "closed_pairs": 22232,
+              "closed_requirements": 395011,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 146868,
+              "elapsed_micros": 15468233,
+              "elapsed_seconds": 1979.3199732,
+              "incomplete_pairs": 10,
+              "model_materialization_micros": 1696,
+              "next_dirty_by_reason": {
+                "CertificateTransportChanged": 10
+              },
+              "next_dirty_subjects": 10,
+              "planned_elements": 0,
+              "planning_including_query_cache_micros": 5912667,
+              "stage": 15,
+              "stratum": "StableProperties",
+              "subjects_evaluated": 29,
+              "subjects_reopened": 29,
+              "subjects_skipped": 0,
+              "unattributed_micros": 2831843
+            },
+            {
+              "accepted_elements": 0,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 24732,
+              "certificate_build_micros": 7783324,
+              "certificate_revalidation_micros": 0,
+              "closed_pairs": 22236,
+              "closed_requirements": 395011,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 29698,
+              "elapsed_micros": 11791357,
+              "elapsed_seconds": 1991.1144803,
+              "incomplete_pairs": 6,
+              "model_materialization_micros": 477,
+              "next_dirty_by_reason": {
+                "CertificateTransportChanged": 6
+              },
+              "next_dirty_subjects": 6,
+              "planned_elements": 0,
+              "planning_including_query_cache_micros": 1158915,
+              "stage": 16,
+              "stratum": "StableProperties",
+              "subjects_evaluated": 10,
+              "subjects_reopened": 10,
+              "subjects_skipped": 0,
+              "unattributed_micros": 2818943
+            },
+            {
+              "accepted_elements": 0,
+              "accepted_occurrences": 0,
+              "applicable_pairs": 24732,
+              "certificate_build_micros": 6864958,
+              "certificate_revalidation_micros": 0,
+              "closed_pairs": 22236,
+              "closed_requirements": 395011,
+              "completeness": "Incomplete",
+              "dependency_index_micros": 11573,
+              "elapsed_micros": 10531879,
+              "elapsed_seconds": 2001.6493975,
+              "incomplete_pairs": 6,
+              "model_materialization_micros": 144,
+              "next_dirty_by_reason": {
+                "ContextualBindingDependency": 196
+              },
+              "next_dirty_subjects": 196,
+              "planned_elements": 0,
+              "planning_including_query_cache_micros": 309629,
+              "stage": 17,
+              "stratum": "StableProperties",
+              "subjects_evaluated": 6,
+              "subjects_reopened": 6,
+              "subjects_skipped": 0,
+              "unattributed_micros": 3345575
+            }
+          ],
+          "next_dirty_by_reason": {
+            "CertificateTransportChanged": 16,
+            "ContextualBindingDependency": 196
+          },
+          "timings": {
+            "certificate_build_micros": 21223441,
+            "certificate_revalidation_micros": 0,
+            "dependency_index_micros": 188139,
+            "elapsed_micros": 37791469,
+            "model_materialization_micros": 2317,
+            "planning_including_query_cache_micros": 7381211
+          },
+          "unattributed_micros": 8996361
+        }
+      }
+    }
+  ],
+  "source": {
+    "completed_bytes": 1420483,
+    "completed_lines": 65,
+    "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\systems-full\\report.stages.jsonl",
+    "sha256": "17e7c5c0274357415cde3f0cc11aae178e97aac2af6cf41d7a8d0619175c3116"
+  },
+  "stage_threshold": 15,
+  "stopped_run": {
+    "checkpoint_invocation": 3,
+    "checkpoint_journal": {
+      "bytes": 2326,
+      "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\full-frontiers\\journal-735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5.json",
+      "sha256": "735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5"
+    },
+    "checkpoint_latest_entry": {
+      "archive_sha256": [
+        196,
+        45,
+        103,
+        157,
+        41,
+        8,
+        223,
+        123,
+        160,
+        168,
+        100,
+        113,
+        14,
+        218,
+        14,
+        78,
+        140,
+        140,
+        185,
+        126,
+        112,
+        234,
+        210,
+        239,
+        94,
+        156,
+        96,
+        72,
+        136,
+        189,
+        68,
+        125
+      ],
+      "graph_sha256": [
+        192,
+        86,
+        236,
+        245,
+        234,
+        75,
+        22,
+        130,
+        53,
+        103,
+        119,
+        99,
+        211,
+        178,
+        221,
+        100,
+        235,
+        239,
+        177,
+        95,
+        188,
+        113,
+        202,
+        67,
+        188,
+        238,
+        9,
+        8,
+        101,
+        177,
+        96,
+        138
+      ],
+      "input_identity": [
+        69,
+        95,
+        29,
+        98,
+        96,
+        61,
+        0,
+        133,
+        162,
+        238,
+        164,
+        205,
+        167,
+        179,
+        208,
+        75,
+        247,
+        115,
+        106,
+        144,
+        5,
+        243,
+        237,
+        79,
+        21,
+        26,
+        159,
+        46,
+        190,
+        149,
+        190,
+        188
+      ],
+      "state_sha256": [
+        169,
+        122,
+        108,
+        120,
+        185,
+        151,
+        109,
+        37,
+        218,
+        43,
+        70,
+        214,
+        21,
+        211,
+        54,
+        22,
+        102,
+        229,
+        9,
+        132,
+        124,
+        79,
+        100,
+        181,
+        237,
+        106,
+        51,
+        103,
+        236,
+        206,
+        179,
+        14
+      ]
+    },
+    "checkpoint_next_round": 28,
+    "command_exit_code": 124,
+    "duration_seconds": 3601.109,
+    "executable": {
+      "build_record": "verification/summaries/final-language-acceptance/commands.json#exact-handoff-publication-release",
+      "bytes": 18599424,
+      "executable": "verification/generated/final-language-acceptance/publication-release-candidate.exe",
+      "format": "agq-publication-executable-evidence/1",
+      "purpose": "Byte-identical medium-verified executable retained before disposable Cargo release artifacts are cleaned. Full attempt remains gated on medium-equivalence.json.",
+      "sha256": "237d2508dfa46f82390d317827deb4be22775e07d7bfab8e49f4a641d0b7d6c6",
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0"
+    },
+    "executable_record_source": {
+      "bytes": 650,
+      "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\summaries\\final-language-acceptance\\publication-executable-final.json",
+      "sha256": "a2542c71a73661112b108cd889808be22ce207abd9f8a105cd1d0da04d1f8546"
+    },
+    "first_final_frontier_observed_seconds": 3450.516,
+    "full_reference_rebuild_enabled": false,
+    "full_reference_rebuild_evidence": "launch owner confirmed inherited environment absent; override includes only TRACE=1",
+    "last_completed_frontier": {
+      "accepted_elements": 0,
+      "accepted_occurrences": 0,
+      "applicable_pairs": 26532,
+      "certificate_build_micros": 2705052,
+      "certificate_revalidation_micros": 0,
+      "closed_pairs": 26532,
+      "closed_requirements": 452052,
+      "completeness": "Complete",
+      "dependency_index_micros": 22357,
+      "elapsed_micros": 6133077,
+      "elapsed_seconds": 3449.3239849,
+      "incomplete_pairs": 0,
+      "model_materialization_micros": 565,
+      "next_dirty_by_reason": {},
+      "next_dirty_subjects": 0,
+      "planned_elements": 24,
+      "planning_including_query_cache_micros": 836238,
+      "stage": 27,
+      "stratum": "ContextualBindings",
+      "subjects_evaluated": 4,
+      "subjects_reopened": 4,
+      "subjects_skipped": 0,
+      "unattributed_micros": 2568865
+    },
+    "last_progress_age_seconds": 150.172,
+    "minimum_free_disk_bytes": 2929954816,
+    "missing_final_outputs": [
+      "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\systems-full\\report.json",
+      "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\systems-full\\canonical.publication.zip",
+      "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\systems-full\\accepted-publication.json",
+      "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\systems-full\\standard-bindings.json"
+    ],
+    "peak_private_bytes": 6057992192,
+    "post_frontier_observed_gap_seconds": 150.593,
+    "publication_accepted": false,
+    "safety_stop": "wall_time",
+    "source_commit": "ff2990a0c8be71e5fa00c41371382adb8a571d68",
+    "watchdog_result_source": {
+      "bytes": 1548,
+      "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\overnight-convergence\\foundation-systems-full\\result.json",
+      "sha256": "6b5361ccc2aaa0afd55c2045f37af5378c7e79746ad11e4bccd897aecae8764b"
+    },
+    "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "watchdog": {
+    "last": {
+      "elapsed_seconds": 3600.688,
+      "free_disk_bytes": 6272159744,
+      "peak_private_bytes": 6057992192,
+      "private_bytes": 5894647808,
+      "process_ids": [
+        5060,
+        20624
+      ],
+      "processes": 2,
+      "progress": {
+        "closed_pairs": "26532",
+        "frontier": "27",
+        "planned": "24"
+      },
+      "progress_age_seconds": 150.172,
+      "rss_bytes": 5387563008
+    },
+    "minimum_free_disk_bytes": 2929954816,
+    "peak_private_bytes": 6057992192,
+    "source": {
+      "completed_bytes": 1068882,
+      "completed_lines": 3594,
+      "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\overnight-convergence\\foundation-systems-full\\observations.jsonl",
+      "sha256": "eecac2a42b2988adedec742a839e87dc779c6a18fcdce6cc32cd0c3b609923ec"
+    }
+  }
+}

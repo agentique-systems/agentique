@@ -1,0 +1,86 @@
+{
+  "scope": "Offline completed-frontier performance evidence for the sole wall-time-stopped full attempt. No build, corpus execution, replay, resume, acceptance issuance or semantic narrowing.",
+  "analysis_source_commit": "75c4fa7a2695f7c9c19af654ab63fbb3d092342e",
+  "reviewed_integration_source_commit": "5e902e4c180d0b457e17491605fb5219b1da7517",
+  "tool": "Python 3.12.10",
+  "command": {
+    "command": "python verification/summaries/final-language-acceptance/medium-tail-profile.py C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/systems-full/report.stages.jsonl --watchdog C:/Users/phili/github/agentique-systems/agentique/verification/generated/overnight-convergence/foundation-systems-full/observations.jsonl --output-log C:/Users/phili/github/agentique-systems/agentique/verification/generated/overnight-convergence/foundation-systems-full/output.log --stopped-run-result C:/Users/phili/github/agentique-systems/agentique/verification/generated/overnight-convergence/foundation-systems-full/result.json --checkpoint-journal C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/full-frontiers/journal-735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5.json --executable-pin C:/Users/phili/github/agentique-systems/agentique/verification/summaries/final-language-acceptance/publication-executable-final.json --output verification/summaries/final-language-acceptance/full-frontier-profile.json --markdown verification/summaries/final-language-acceptance/full-frontier-profile.md",
+    "exit_code": 0,
+    "wall_time_seconds": 0.4698467,
+    "output": {
+      "completed_rows": 65,
+      "invocations": [
+        {
+          "ordinal": 0,
+          "phase": "construction",
+          "stages": [
+            0,
+            12
+          ],
+          "tail_frontiers": 0
+        },
+        {
+          "ordinal": 1,
+          "phase": "construction",
+          "stages": [
+            0,
+            11
+          ],
+          "tail_frontiers": 0
+        },
+        {
+          "ordinal": 2,
+          "phase": "construction",
+          "stages": [
+            0,
+            11
+          ],
+          "tail_frontiers": 0
+        },
+        {
+          "ordinal": 3,
+          "phase": "publication",
+          "stages": [
+            0,
+            27
+          ],
+          "tail_frontiers": 13
+        }
+      ]
+    }
+  },
+  "checks": [
+    {
+      "command": "@'\nimport hashlib,json,pathlib,re,runpy,subprocess\nbase=pathlib.Path('verification/summaries/final-language-acceptance')\np=json.loads((base/'full-frontier-profile.json').read_text())\nstopped=p['stopped_run']\npins=[p['source'],p['certificate_trace_source'],p['watchdog']['source'],stopped['watchdog_result_source'],stopped['checkpoint_journal'],stopped['executable_record_source']]\nfor pin in pins:\n with pathlib.Path(pin['path']).open('rb') as stream:\n  assert hashlib.file_digest(stream,'sha256').hexdigest()==pin['sha256'],pin['path']\nroot=pathlib.Path(stopped['executable_record_source']['path']).resolve().parents[3]\nexe=root/stopped['executable']['executable']\nwith exe.open('rb') as stream:\n assert hashlib.file_digest(stream,'sha256').hexdigest()==stopped['executable']['sha256']\nassert exe.stat().st_size==stopped['executable']['bytes']\nscript=base/'medium-tail-profile.py'\nrender=runpy.run_path(str(script))['render']\nassert render(p)==(base/'full-frontier-profile.md').read_text()\nfresh=json.loads((base/'medium-fresh-tail-profile.json').read_text())\nassert render(fresh)==(base/'medium-fresh-tail-profile.md').read_text()\nold=['medium-tail-profile.md','medium-tail-profile.json','medium-tail-profile-command.json','medium-fresh-tail-profile.md','medium-fresh-tail-profile.json','medium-fresh-tail-profile-command.json']\nassert subprocess.check_output(['git','diff','HEAD','--',*[str(base/name) for name in old]])==b''\nfor relative in re.findall(r'\\]\\(([^)]+)\\)',(base/'full-frontier-profile.md').read_text()):\n assert (base/relative).exists(),relative\nassert all(not pathlib.Path(path).exists() for path in stopped['missing_final_outputs'])\nprint(json.dumps({'source_files_authenticated':len(pins),'executable_bytes_authenticated':exe.stat().st_size,'earlier_medium_files_unchanged':len(old),'full_and_fresh_render_reproducible':True,'final_outputs_absent':len(stopped['missing_final_outputs']),'script_sha256':hashlib.sha256(script.read_bytes()).hexdigest(),'output_sha256':{name:hashlib.sha256((base/name).read_bytes()).hexdigest() for name in ('full-frontier-profile.json','full-frontier-profile.md')}}))\n'@ | python -",
+      "exit_code": 0,
+      "wall_time_seconds": 0.4942566,
+      "output": {
+        "source_files_authenticated": 6,
+        "executable_bytes_authenticated": 18599424,
+        "earlier_medium_files_unchanged": 6,
+        "full_and_fresh_render_reproducible": true,
+        "final_outputs_absent": 4,
+        "script_sha256": "616ec37ae84bb342eadc47175a1df467881c8fc360bf073bf296181bdcc2a0fa",
+        "output_sha256": {
+          "full-frontier-profile.json": "bab6a1427a7244ac086adc2bec40e397fb68b3a0b57b3783c0c7858fec288b73",
+          "full-frontier-profile.md": "c3a7d7b95ee6b94135b804d1a5fa5a4afc20ae71679c16a734bc452057964aca"
+        }
+      }
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "wall_time_seconds": 0.4986204,
+      "output": "warning: in the working copy of 'verification/summaries/final-language-acceptance/medium-tail-profile.py', CRLF will be replaced by LF the next time Git touches it"
+    }
+  ],
+  "notes": [
+    "Six evidence files and the actual 18,599,424-byte executable authenticate against their recorded SHA-256 values.",
+    "The earlier partial and completed medium MD/JSON/command artifacts remain unchanged; completed-medium rendering is still reproducible.",
+    "The run ended with watchdog exit124/wall_time. Last strict scheduler frontier Complete is not accepted Systems publication.",
+    "The 150.593-second same-watchdog-clock interval extends to stop completion and includes termination/monitor overhead; last live sample progress age is 150.172 seconds.",
+    "Final report/cache/receipt/binding export absence was checked. Terminal checkpoint journal was hashed, not restored.",
+    "The launch owner confirmed AGQ_CERTIFICATE_VERIFY_FULL_REBUILD was absent, so full-run certificate timing excludes the full oracle.",
+    "No further attempt or resume is authorized under the exhausted cap."
+  ]
+}
