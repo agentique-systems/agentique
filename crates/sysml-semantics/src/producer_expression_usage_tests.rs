@@ -4,6 +4,8 @@ use super::*;
 mod index_usage_tests;
 #[path = "producer_inline_function_tests.rs"]
 mod inline_function_tests;
+#[path = "producer_other_participants_tests.rs"]
+mod other_participants_tests;
 #[path = "producer_verification_case_tests.rs"]
 mod verification_case_tests;
 #[path = "producer_views_satisfaction_tests.rs"]
