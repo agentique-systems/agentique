@@ -45,6 +45,16 @@ the executable actual-cache gate.
 
 ## Publication observations
 
+The single permitted full retry, `systems-full-interned-reads-retry`, is running
+from clean source `97a79a9` after the independently reviewed allocation correction
+and passing controls below. Release source is `0760054`; its binary SHA-256 is
+`fc0092259cee4533f7481803d5255539c5e1121185257b748e52e1021f059f4d`.
+The command uses all 21 documents without `--audit-only`, the original accepted
+KerML cache, and the unchanged 2,100-second / 6,656-MiB-private / 1,024-MiB-reserve
+watchdog. Generated output is under
+`verification/generated/language-stability-bridge/systems-full-interned-reads-retry/`.
+This is a running observation, not acceptance; the retry budget is now used.
+
 The first normal full attempt, `systems-full-language-bridge`, ran at clean
 `530b430` using release build `692ed8e` (binary hash in `commands.json`). It
 selects all 21 documents without `--audit-only`. The unchanged watchdog stops it
