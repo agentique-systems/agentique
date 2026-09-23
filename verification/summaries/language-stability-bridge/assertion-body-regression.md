@@ -51,3 +51,26 @@ all emitted Relationship subclasses for Expression and Function in both the
 published and Operational v9 profiles. `cargo fmt --all -- --check` and
 `git diff --check` also pass. Verification used one build job and the low-disk
 profile; no corpus or accepted-cache load was run.
+## Independent effect-contract review
+
+**GO on `ba9f465`** (review-worktree equivalent `fb719b6`). The reviewer traced
+the ExpressionResult dispatch through every `contextual` and `binding` emission
+path, including FunctionResult and the earlier raw-inner profile branch. Only
+fresh helper Features receive FeatureChaining; existing expressions/functions
+receive memberships. Real existing-subject chaining remains rejected by effect
+validation. The initial draft omitted BindingConnector, itself a Relationship;
+the final seven-class set includes it. No other omitted emission was found.
+
+| Command | Actual result | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib producer_closure -- --nocapture` | 64 passed, 11.76 s, including exact actual relationship emission sets for Expression/Function under Published/v9 and existing/fresh effect enforcement | 0 |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib unnamed_assertion_body_closes_with_inherited_result_and_expression_binding -- --nocapture` | Complete, 1 passed, 19.27 s | 0 |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib publication_overlay::restoration::tests -- --nocapture` | All 5 accepted-restoration guards passed, 2.31 s | 0 |
+| `git diff --check` | No output | 0 |
+
+Actual low-artifact command/output records are in `expression-effects-review.json`.
+The combined producer-registry identity changes as required by the corrected
+contract. Historical accepted KerML `/26` artifacts and rule bodies are unchanged;
+the existing restoration checks retain historical context/protected dependency
+behavior and reject identity/source/capability tampering. This scoped review did
+not run a corpus publication or establish Systems acceptance.
