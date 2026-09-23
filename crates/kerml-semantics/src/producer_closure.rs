@@ -24,7 +24,9 @@ pub(crate) enum ProducerRead {
     Structural(ElementId),
     Source(ElementId, MetaclassId, PropertyId),
     Owned(ElementId, MetaclassId),
-    OwnedExcluding(ElementId, MetaclassId, Vec<MetaclassId>),
+    // Exclusions never grow after capture. A boxed slice avoids reserving Vec
+    // capacity metadata in every read variant in the retained evaluation table.
+    OwnedExcluding(ElementId, MetaclassId, Box<[MetaclassId]>),
     FeaturePopulation(ElementId, crate::FeaturePopulationKind),
     Inverse,
     Any(ElementId),
