@@ -1037,6 +1037,59 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "selected-initial-contribution-trigger",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "trigger_receiver_node_parameter_closes_with_nested_feature_value",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "55b5af80a5126d2a9e45e195f027e99f606646e7",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "f7fb6ea146406281d6da518bb6006d506cbe29820445c1b5cdedc9aec247e588",
+      "duration_seconds": 66.73,
+      "output": "verification/generated/language-stability-bridge/selected-initial-contribution-trigger.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "actions-exact-contributions-release-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "55b5af80a5126d2a9e45e195f027e99f606646e7",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "3adedbee5e2fcbfa14e65294d63ed539f2a12155b62d68a3285bc045155e6ee8",
+      "duration_seconds": 489.42,
+      "output": "verification/generated/language-stability-bridge/actions-exact-contributions-release-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }
