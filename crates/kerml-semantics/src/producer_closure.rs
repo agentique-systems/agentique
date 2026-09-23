@@ -362,6 +362,9 @@ pub enum ProducerEffectScope {
     /// population as `KerMlQueries::owned_parameter_features`. Neither the
     /// producer subject nor nested/inherited parameters are write targets.
     OwnedParameterFeatures,
+    /// The subject and Features directly owned through ReturnParameterMembership.
+    /// Nested and inherited result parameters are outside this write boundary.
+    SubjectAndOwnedResults,
 }
 impl ProducerEffectScope {
     fn depends_on_ownership(self) -> bool {
@@ -370,12 +373,33 @@ impl ProducerEffectScope {
             Self::SubjectAndOwned
                 | Self::OwnedDescendants
                 | Self::OwnedParameterFeatures
+                | Self::SubjectAndOwnedResults
                 | Self::SubjectAndOwners
         )
     }
 
     pub(crate) fn includes_subject(self) -> bool {
         !matches!(self, Self::OwnedDescendants | Self::OwnedParameterFeatures)
+    }
+
+    pub(crate) fn selected_targets(
+        self,
+        model: &ModelView,
+        subject: ElementId,
+        direction_may_change: bool,
+    ) -> Option<Result<BTreeSet<ElementId>, ()>> {
+        match self {
+            Self::OwnedParameterFeatures => {
+                Some(owned_parameter_scope(model, subject, direction_may_change))
+            }
+            Self::SubjectAndOwnedResults => Some(
+                owned_feature_scope(model, subject, true, false).map(|mut targets| {
+                    targets.insert(subject);
+                    targets
+                }),
+            ),
+            _ => None,
+        }
     }
 }
 
@@ -386,6 +410,15 @@ impl ProducerEffectScope {
 pub(crate) fn owned_parameter_scope(
     model: &ModelView,
     subject: ElementId,
+    direction_may_change: bool,
+) -> Result<BTreeSet<ElementId>, ()> {
+    owned_feature_scope(model, subject, false, direction_may_change)
+}
+
+fn owned_feature_scope(
+    model: &ModelView,
+    subject: ElementId,
+    results: bool,
     direction_may_change: bool,
 ) -> Result<BTreeSet<ElementId>, ()> {
     use agq_kerml::{classes as c, properties as p};
@@ -402,7 +435,11 @@ pub(crate) fn owned_parameter_scope(
         };
         let class = model.element(*membership).ok_or(())?.metaclass();
         let is = |base| model.registry().is_subtype(class, base).map_err(|_| ());
-        if !is(c::FEATURE_MEMBERSHIP)? || is(c::RETURN_PARAMETER_MEMBERSHIP)? {
+        if if results {
+            !is(c::RETURN_PARAMETER_MEMBERSHIP)?
+        } else {
+            !is(c::FEATURE_MEMBERSHIP)? || is(c::RETURN_PARAMETER_MEMBERSHIP)?
+        } {
             continue;
         }
         let endpoint =
@@ -423,6 +460,10 @@ pub(crate) fn owned_parameter_scope(
             })
         {
             return Err(());
+        }
+        if results {
+            targets.insert(*target);
+            continue;
         }
         match model.property_state(*target, p::FEATURE_DIRECTION) {
             Ok(PropertyState::Computed(_)) => {
@@ -1079,12 +1120,12 @@ impl ProducerEvaluationTable {
                 for reads in readers.values() {
                     consume(reads);
                 }
-            } else if descriptor.scope == ProducerEffectScope::OwnedParameterFeatures {
-                match owned_parameter_scope(
-                    model,
-                    subject,
-                    mutable_feature_populations.contains(&crate::FeaturePopulationKind::Parameter),
-                ) {
+            } else if let Some(targets) = descriptor.scope.selected_targets(
+                model,
+                subject,
+                mutable_feature_populations.contains(&crate::FeaturePopulationKind::Parameter),
+            ) {
+                match targets {
                     Ok(targets) => {
                         for target in targets {
                             if let Some(reads) = readers.get(&target) {
@@ -1597,8 +1638,13 @@ impl ProducerClosureCertificate {
                         ProducerEffectScope::Model => global_block |= mask,
                         ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
                         ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
-                        ProducerEffectScope::OwnedParameterFeatures => {
-                            match owned_parameter_scope(model, subject, direction_mutable) {
+                        ProducerEffectScope::OwnedParameterFeatures
+                        | ProducerEffectScope::SubjectAndOwnedResults => {
+                            match descriptor
+                                .scope
+                                .selected_targets(model, subject, direction_mutable)
+                                .expect("selected scope")
+                            {
                                 Ok(targets) => {
                                     for target in targets {
                                         if let Some(&target) = positions.get(&target) {

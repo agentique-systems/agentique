@@ -65,6 +65,182 @@ fn pending_invocation_cannot_change_nested_argument_result_typing() {
         certificate.is_closed(id(6), SemanticClosureRequirement::EffectiveTyping),
         "an enclosing invocation cannot type its nested argument expression's return"
     );
+    for unaffected in [2, 4, 5] {
+        assert!(certificate.is_closed(id(unaffected), SemanticClosureRequirement::EffectiveTyping));
+    }
+}
+
+#[test]
+fn invocation_scope_applies_to_causal_readers_and_effect_audits() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    const READER: ProducerFamilyId = ProducerFamilyId::new("Fixture.InvocationScopeReader");
+    let snapshot = invocation_fixture(false);
+    let descriptor =
+        ProducerFamily::Invocation.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V9);
+    let mut reader = ProducerDescriptor::new(
+        READER,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    reader.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([descriptor.clone(), reader]).unwrap();
+    let context = invocation_context(&snapshot)
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        table.pending(record.id(), snapshot.model(), &registry);
+        if snapshot
+            .model()
+            .registry()
+            .is_subtype(record.metaclass(), c::FEATURE)
+            .unwrap()
+        {
+            table
+                .record(&[(record.id(), READER, Completeness::Complete)], &registry)
+                .unwrap();
+            table.record_reads(
+                &[(
+                    record.id(),
+                    READER,
+                    vec![ProducerRead::Owned(record.id(), c::FEATURE_TYPING)].into(),
+                )],
+                &registry,
+            );
+        }
+    }
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    for (target, complete) in [(1, false), (3, false), (4, true), (5, true), (6, true)] {
+        assert_eq!(
+            certificate.evaluation(id(target), registry.index(READER).unwrap()),
+            Some(if complete {
+                ProducerEvaluationState::EvaluatedComplete
+            } else {
+                ProducerEvaluationState::Pending
+            }),
+            "reader on {target}"
+        );
+    }
+    let q = KerMlQueries::new(context);
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    for target in [1, 3, 4, 5, 6] {
+        let mut plan = q.plan_result_structure([]);
+        plan.add_derived_element(
+            DerivationKey {
+                subject: id(1),
+                rule: RuleId::from_u128(1000),
+                output: OutputKey::from_u128(target),
+            },
+            c::FEATURE_TYPING,
+            BTreeMap::from([
+                (
+                    p::FEATURE_TYPING_TYPED_FEATURE,
+                    SlotValue::Scalar(Value::Reference(id(target))),
+                ),
+                (
+                    p::FEATURE_TYPING_TYPE,
+                    SlotValue::Scalar(Value::Reference(id(2))),
+                ),
+            ]),
+            Some(id(target)),
+            &q.canonical_fact_evidence(FactKey::Element(id(target))),
+        )
+        .unwrap();
+        assert_eq!(
+            plan.validate_declared_effects(&[id(1)], &registry).is_ok(),
+            [1, 3].contains(&target)
+        );
+    }
+}
+
+#[test]
+fn invocation_result_scope_retains_unknown_endpoint_and_future_owner_guards() {
+    let snapshot = invocation_fixture(false);
+    let descriptor =
+        ProducerFamily::Invocation.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V9);
+    let registry = ProducerRegistry::new([descriptor.clone()]).unwrap();
+    let mut edit = snapshot.change_set();
+    edit.clear(id(13), p::RELATIONSHIP_OWNED_RELATED_ELEMENT);
+    let partial = snapshot.preview(&edit).unwrap();
+    let context = SemanticContext::for_construction(
+        &partial,
+        invocation_context(&snapshot).id().options.clone(),
+        BTreeSet::new(),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(!certificate.is_closed(id(6), SemanticClosureRequirement::EffectiveTyping));
+    assert!(
+        descriptor
+            .scope
+            .selected_targets(partial.model(), id(1), false)
+            .unwrap()
+            .is_err()
+    );
+    for effect in [
+        ProducerEffect::Ownership,
+        ProducerEffect::Scalar(p::RELATIONSHIP_OWNED_RELATED_ELEMENT),
+    ] {
+        let mut mutator = ProducerDescriptor::new(
+            ProducerFamilyId::new("Fixture.InvocationOwnerWriter"),
+            [effect],
+            ProducerApplicability::Any,
+        );
+        mutator.scope = ProducerEffectScope::Model;
+        let registry = ProducerRegistry::new([descriptor.clone(), mutator]).unwrap();
+        let context = invocation_context(&snapshot)
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+        assert!(!certificate.is_closed(id(6), SemanticClosureRequirement::EffectiveTyping));
+    }
+}
+
+#[test]
+fn invocation_result_scope_rebind_reopens_newly_direct_result() {
+    let snapshot = invocation_fixture(false);
+    let registry = ProducerRegistry::new([
+        ProducerFamily::Invocation.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V9)
+    ])
+    .unwrap();
+    let context = invocation_context(&snapshot)
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(certificate.is_closed(id(6), SemanticClosureRequirement::EffectiveTyping));
+    let mut edit = snapshot.change_set();
+    edit.set(
+        id(13),
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        SlotValue::Ordered(vec![Value::Reference(id(6))]),
+        origin(),
+    );
+    edit.clear(id(56), p::RELATIONSHIP_OWNED_RELATED_ELEMENT);
+    let changed = snapshot.apply(&edit).unwrap();
+    let next = invocation_context(&changed)
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = certificate.rebind(&context, &next, &registry).unwrap();
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(6), SemanticClosureRequirement::EffectiveTyping)
+    );
+    assert!(
+        rebound
+            .certificate
+            .is_closed(id(3), SemanticClosureRequirement::EffectiveTyping)
+    );
+    assert_eq!(ProducerEffectScope::OwnedParameterFeatures as u8, 5);
+    assert_eq!(ProducerEffectScope::SubjectAndOwnedResults as u8, 6);
 }
 
 #[test]

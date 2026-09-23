@@ -286,6 +286,9 @@ impl ProducerFamily {
         }
         if self == Self::FeatureChainExpression {
             descriptor.effects.insert(E::Subsetting);
+            // A missing source-target Feature is created below the existing
+            // first input Feature, so its membership is an existing-subject write.
+            descriptor.effects.insert(E::Membership);
         }
         if self == Self::FeatureReferenceExpression {
             descriptor.effects.insert(E::Membership);
@@ -295,7 +298,8 @@ impl ProducerFamily {
         }
         descriptor.scope = match self {
             Self::VariableFeaturing => ProducerEffectScope::SubjectAndOwners,
-            Self::Invocation | Self::FeatureChainExpression | Self::IndexSelectResult => {
+            Self::Invocation => ProducerEffectScope::SubjectAndOwnedResults,
+            Self::FeatureChainExpression | Self::IndexSelectResult => {
                 ProducerEffectScope::SubjectAndOwned
             }
             _ => ProducerEffectScope::Subject,

@@ -148,6 +148,66 @@ fn expression_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
     });
     (snapshot, bindings)
 }
+
+#[test]
+fn feature_chain_source_target_declares_membership_on_its_existing_input() {
+    let (snapshot, bindings) = expression_fixture();
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let options = SemanticOptions {
+        baseline_profile: profile,
+        ..Default::default()
+    };
+    let mut context =
+        SemanticContext::for_snapshot(&snapshot, options.clone(), BTreeSet::new()).unwrap();
+    context.id.standard_bindings = Some(bindings.clone());
+    let q = KerMlQueries::new(context);
+    let first = q
+        .plan_result_structure([id(1)])
+        .materialize(&snapshot)
+        .unwrap();
+    let mut context =
+        SemanticContext::for_overlay(&first.overlay, options, BTreeSet::new()).unwrap();
+    context.id.standard_bindings = Some(bindings);
+    let q = KerMlQueries::new(context);
+    assert!(q.direct_features(id(2)).value.is_empty());
+    let plan = q.plan_result_structure([id(1)]);
+    let descriptors: Vec<_> = ProducerFamily::ALL
+        .into_iter()
+        .map(|family| family.descriptor(profile))
+        .collect();
+    plan.validate_declared_effects(
+        &[id(1)],
+        &ProducerRegistry::new(descriptors.clone()).unwrap(),
+    )
+    .unwrap();
+    let deficient = ProducerRegistry::new(descriptors.into_iter().map(|mut descriptor| {
+        if descriptor.id == ProducerFamily::FeatureChainExpression.id() {
+            descriptor.effects.remove(&ProducerEffect::Membership);
+        }
+        descriptor
+    }))
+    .unwrap();
+    let error = plan
+        .validate_declared_effects(&[id(1)], &deficient)
+        .unwrap_err();
+    assert!(
+        matches!(error, PublicationOverlayError::ProducerEffectViolation(failure) if failure.semantic_target == id(2))
+    );
+    let second = plan.materialize_on_overlay(&first.overlay).unwrap();
+    let q = KerMlQueries::new(
+        SemanticContext::for_overlay(
+            &second.overlay,
+            SemanticOptions {
+                baseline_profile: profile,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap(),
+    );
+    assert_eq!(q.direct_features(id(2)).value.len(), 1);
+}
+
 fn crossing_fixture() -> Snapshot {
     let base = Snapshot::new(Arc::new(
         agq_kerml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V8).unwrap(),
