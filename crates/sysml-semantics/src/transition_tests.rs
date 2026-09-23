@@ -191,6 +191,63 @@ fn pending_extra_parameter_ancestors_do_not_suppress_known_payload_structure() {
 }
 
 #[test]
+fn pending_transition_payload_does_not_retype_trigger_or_its_parameters() {
+    use agq_kerml_semantics::{
+        ProducerClosureCertificate, ProducerFamilyId, ProducerRegistry, SemanticClosureRequirement,
+    };
+    let snapshot = fixture(true, true).finish();
+    let queries = q(&snapshot);
+    let plan = crate::transition::plan_transition_payload(
+        queries.kerml(),
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        id(100),
+    );
+    assert_eq!(plan.evidence.completeness, Completeness::Complete);
+    let existing_targets: Vec<_> = plan
+        .elements
+        .iter()
+        .filter_map(|element| element.owner)
+        .collect();
+    assert_eq!(
+        existing_targets,
+        [id(102)],
+        "only the second direct input is modified"
+    );
+    let descriptor = sysml_producer_descriptors()
+        .into_iter()
+        .find(|descriptor| {
+            descriptor.id == ProducerFamilyId::new("checkTransitionUsagePayloadSpecialization")
+        })
+        .unwrap();
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    let context = SemanticContext::for_snapshot(
+        &snapshot,
+        SemanticOptions {
+            baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+            ..Default::default()
+        },
+        BTreeSet::new(),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    let typing = SemanticClosureRequirement::EffectiveTyping;
+    assert!(
+        !certificate.is_closed(id(102), typing),
+        "the actual target remains open"
+    );
+    assert!(
+        certificate.is_closed(id(110), typing),
+        "the trigger is not a transition input"
+    );
+    assert!(
+        certificate.is_closed(id(111), typing),
+        "nested inputs belong to the trigger"
+    );
+}
+
+#[test]
 fn transition_payload_specialization_materializes_ordered_chain_and_is_idempotent() {
     let mut fixture = fixture(true, true);
     fixture.create(9000, kc::FEATURE, "unrelatedAncestor");
