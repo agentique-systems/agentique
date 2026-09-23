@@ -135,6 +135,7 @@ impl SourceCompilation {
     pub fn inputs(&self) -> &SourceInputs;
     pub fn strict_snapshot(&self) -> Option<&Snapshot>;
     pub fn construction(&self) -> Option<&ConstructionView>;
+    pub fn semantic_model(&self) -> Option<&ModelView>;
     pub fn kernel_revision(&self) -> Option<RevisionId>;
     pub fn diagnostics(&self) -> &[SourceDiagnostic];
     pub fn references(&self) -> &[ReferenceAssertion];
@@ -153,6 +154,23 @@ from an unsupported frontend/interpretation; it never selects an older revision.
 An available evaluator can return Incomplete/Invalid answers normally. Query
 availability is separate from validation, and a strict snapshot alone does not
 make a `ValidatedProjectRevision`.
+
+`strict_snapshot` and `construction` expose the declared frontier. `semantic_model`
+exposes the current construction or strict overlay when present, otherwise its
+current declared model; it returns `None` when no safe current graph exists.
+Both query factories must borrow that same model, and any returned producer
+certificate must be attached to its exact context. This is the graph-identity
+contract asserted by the held workspace tests.
+
+The workspace's checked `ValidatedProjectRevision` conversion cannot forward
+`ProjectRevision::is_complete_slice()`: that existing strict-source convenience
+check does not establish all workspace acceptance obligations. Apply the existing
+phase-1 criteria to the exact Working handle: a strict snapshot with zero
+construction obligations, authenticated dependencies, converged and Complete
+producer status with full certificate coverage, mandatory reference agreement,
+and no blocking source or capability diagnostics. The held
+unsupported-Variation case remains a Working-state discriminator even with full
+producer closure; it adds no foundation conformance gate.
 
 `SourceDiagnostic` may unify syntax, construction, reference and producer
 diagnostic envelopes while retaining their native evidence/source identities;
