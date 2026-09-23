@@ -510,3 +510,17 @@ exited 0: four controls passed in 0.11 s and five in 0.32 s, respectively. Their
 ledger records retain exact tested source/patch/output hashes. The reviewer did
 not repeat those runs. This scope-soundness verdict does not resolve the separately
 recorded expression micro failures or establish publication/readiness acceptance.
+
+The paired expression regression is now **green** with precise non-feature
+membership reads for `instantiated_type` (`53e0c6d`, regression `e0e68dc`, applied
+over `e623a48`; local source `b104f85`). The fixture now also asserts
+`certificate.is_fully_closed(closed.overlay.model())`, covering all local and
+dependency subjects in addition to the existing per-subject masks and shared
+dependency pointer. The exact paired command recorded above exited 0: two tests
+passed in 19.27 s. Both plain Feature and frontend-equivalent ReferenceUsage
+results converge Complete with fully closed certificates. No Function-specific
+result-write scope change was needed to resolve this regression. Formatting and
+diff checks passed. This is a bounded fixture result; actual Systems publication
+and accepted-source gates remain separate.
+Test output SHA-256:
+`22564b963b3f5c6d4a57740a7b4a3f3867506c9561057757c7e743c36f739f79`.

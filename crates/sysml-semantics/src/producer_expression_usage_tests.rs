@@ -223,6 +223,10 @@ fn invocation_value(result_class: MetaclassId) {
         closed.stages.last()
     );
     let certificate = closed.certificate.unwrap();
+    assert!(
+        certificate.is_fully_closed(closed.overlay.model()),
+        "result class {result_class:?}: the full graph must be producer-closed"
+    );
     for subject in 72_001..=72_007 {
         for requirement in SemanticClosureRequirement::ALL {
             assert!(
