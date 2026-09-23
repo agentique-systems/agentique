@@ -205,6 +205,42 @@ impl ProducerClosedDependency {
 }
 
 impl SemanticContext<'_> {
+    /// Exact canonical support from an authenticated immutable interpretation.
+    /// Subject membership alone does not seal a navigation projection: local
+    /// inverse carriers may change its value or occurrence provenance.
+    pub(crate) fn sealed_dependency_fact(&self, fact: agq_kernel::provenance::FactKey) -> bool {
+        use agq_kernel::provenance::FactKey;
+        fn same<T: PartialEq>(current: Option<&T>, dependency: Option<&T>) -> bool {
+            matches!((current, dependency), (Some(current), Some(dependency))
+                if std::ptr::eq(current, dependency) || current == dependency)
+        }
+        let closed = self.closed_dependency.as_ref().filter(|dependency| {
+            self.id.producer_registry_digest == Some(dependency.certificate.registry_digest())
+        });
+        [
+            self.accepted_dependency.as_deref(),
+            closed.map(|dependency| dependency.overlay.as_ref()),
+        ]
+        .into_iter()
+        .flatten()
+        .any(|dependency| {
+            let dependency = dependency.model();
+            match fact {
+                FactKey::Element(element) => {
+                    same(self.model.element(element), dependency.element(element))
+                }
+                FactKey::Property { element, property } => same(
+                    self.model.navigation_slot(element, property),
+                    dependency.navigation_slot(element, property),
+                ),
+                FactKey::AssociationOccurrence(occurrence) => same(
+                    self.model.association_occurrence(occurrence),
+                    dependency.association_occurrence(occurrence),
+                ),
+            }
+        })
+    }
+
     pub(crate) fn dependency_closure_source(&self, subject: ElementId) -> Option<ClosureSource> {
         if self
             .accepted_dependency

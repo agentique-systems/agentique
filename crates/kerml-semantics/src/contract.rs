@@ -291,12 +291,16 @@ pub struct QueryResult<T> {
     pub completeness: Completeness,
     pub diagnostics: BTreeSet<Diagnostic>,
     pub positive_dependencies: BTreeSet<FactKey>,
+    /// Searches of the current semantic context. Historical searches supporting
+    /// sealed dependency facts remain on their authenticated dependency overlay.
     pub search_dependencies: BTreeSet<SearchDependency>,
     /// Alternative proofs share conclusion keys; no feature or semantic ID is allocated.
     pub explanations: BTreeMap<Conclusion, BTreeSet<Explanation>>,
     /// Leaf evidence retains kernel declared origins and recursively expanded overlay proofs.
     /// Immutable origins are shared when answers are cloned; their content, not
     /// allocation identity, participates in answer equality and debugging output.
+    /// Sealed dependency roots retain their origin and link to the dependency's
+    /// proof DAG; historical facts are not flattened into current-context keys.
     pub fact_origins: BTreeMap<FactKey, Arc<Origin>>,
     /// Submitted source evidence beneath any extended collection with the same key.
     pub declared_fact_origins: BTreeMap<FactKey, Arc<DeclaredOrigin>>,

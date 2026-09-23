@@ -430,6 +430,12 @@ impl<'m> KerMlQueries<'m> {
             let mut queue = vec![key];
             while let Some(fact) = queue.pop() {
                 out.positive_dependencies.insert(fact);
+                if self.context.sealed_dependency_fact(fact) {
+                    // This proof was discharged in the authenticated dependency
+                    // interpretation. Keep its canonical DAG edge; its historical
+                    // searches are not queries of this project's populations.
+                    continue;
+                }
                 let origin = self.fact_origin(fact);
                 if matches!(origin.as_deref(), None | Some(Origin::Declared(_)))
                     || !out.producer_expanded_facts.insert(fact)
@@ -488,6 +494,21 @@ impl<'m> KerMlQueries<'m> {
             let Some(origin) = self.fact_origin(key) else {
                 continue;
             };
+            if self.context.sealed_dependency_fact(key) {
+                // Explain retains the sealed root and its exact dependency
+                // identity. Deeper historical proof remains on that immutable
+                // overlay, where identical FactKeys may have different inverse
+                // projections from this project. Current queries add their own
+                // live population searches independently.
+                out.positive_dependencies.insert(key);
+                if let Origin::Declared(source) = origin.as_ref() {
+                    out.declared_fact_origins
+                        .entry(key)
+                        .or_insert_with(|| Arc::new(source.clone()));
+                }
+                out.fact_origins.insert(key, origin);
+                continue;
+            }
             out.search_dependencies.extend(
                 self.model()
                     .computation_searches_for(key)
@@ -575,6 +596,12 @@ impl<'m> KerMlQueries<'m> {
                         .expect("selected original stored fact has declared provenance")
                 });
             }
+        } else if self.context.sealed_dependency_fact(fact) {
+            // A selected contribution can carry historical searches directly,
+            // before recursive fact expansion. Seal the exact unchanged slot,
+            // while preserving the caller's current population search.
+            self.fact(out, fact);
+            return Some(fact);
         } else if selected.iter().all(|target| {
             self.model()
                 .declared_slot(element, property)
