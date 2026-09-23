@@ -1,5 +1,7 @@
 //! Connection ends combine positional typing, cross selection and variable snapshots.
 use super::*;
+#[path = "producer_item_end_usage_tests.rs"]
+mod item_end_usage_tests;
 use agq_kerml_semantics::{
     ProducerClosedDependency, PublicationOverlayError, SemanticClosureRequirement,
     close_result_structure_with_extension,
