@@ -215,7 +215,7 @@ fn producer_descriptors_cover_exactly_implemented_rules_with_declared_effects() 
     );
     assert_eq!(
         payload.scope,
-        agq_kerml_semantics::ProducerEffectScope::OwnedDescendants
+        agq_kerml_semantics::ProducerEffectScope::OwnedParameterFeatures
     );
     assert_eq!(
         payload.fresh_effects,

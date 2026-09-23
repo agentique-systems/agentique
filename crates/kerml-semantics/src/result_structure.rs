@@ -1803,8 +1803,12 @@ impl ResultStructurePlan<'_> {
                         _ => false,
                     })
                     && (descriptor.scope == ProducerEffectScope::Model
-                        || (descriptor.scope != ProducerEffectScope::OwnedDescendants
-                            && subject == target)
+                        || (descriptor.scope.includes_subject() && subject == target)
+                        || (descriptor.scope == ProducerEffectScope::OwnedParameterFeatures
+                            && crate::producer_closure::owned_parameter_scope(
+                                model, subject, false,
+                            )
+                            .is_ok_and(|targets| targets.contains(&target)))
                         || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
                             && owned_below(model, target, subject))
                         || (descriptor.scope == ProducerEffectScope::OwnedDescendants
@@ -1848,8 +1852,13 @@ impl ResultStructurePlan<'_> {
                             && descriptor.effects.contains(&ProducerEffect::Ownership)
                             && descriptor.affects_subject(model, child)
                             && (descriptor.scope == ProducerEffectScope::Model
-                                || (descriptor.scope != ProducerEffectScope::OwnedDescendants
-                                    && subject == child)
+                                || (descriptor.scope.includes_subject() && subject == child)
+                                || (descriptor.scope
+                                    == ProducerEffectScope::OwnedParameterFeatures
+                                    && crate::producer_closure::owned_parameter_scope(
+                                        model, subject, false,
+                                    )
+                                    .is_ok_and(|targets| targets.contains(&child)))
                                 || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
                                     && owned_below(model, child, subject))
                                 || (descriptor.scope == ProducerEffectScope::OwnedDescendants
@@ -2033,8 +2042,13 @@ impl ResultStructurePlan<'_> {
                             && (fresh || descriptor.affects_subject(model, source))
                             && (fresh
                                 || descriptor.scope == ProducerEffectScope::Model
-                                || (descriptor.scope != ProducerEffectScope::OwnedDescendants
-                                    && subject == source)
+                                || (descriptor.scope.includes_subject() && subject == source)
+                                || (descriptor.scope
+                                    == ProducerEffectScope::OwnedParameterFeatures
+                                    && crate::producer_closure::owned_parameter_scope(
+                                        model, subject, false,
+                                    )
+                                    .is_ok_and(|targets| targets.contains(&source)))
                                 || (descriptor.scope == ProducerEffectScope::SubjectAndOwned
                                     && owned_below(model, source, subject))
                                 || (descriptor.scope == ProducerEffectScope::OwnedDescendants

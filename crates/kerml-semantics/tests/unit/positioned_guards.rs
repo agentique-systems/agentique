@@ -198,6 +198,26 @@ fn positioned_guard_computed_flags_preserve_unknown_and_failed_states() {
                     .unwrap();
             }
             let overlay = builder.build().unwrap();
+            if original == p::FEATURE_DIRECTION {
+                let mut writer = ProducerDescriptor::new(
+                    ProducerFamilyId::new("Fixture.UnknownParameterDirection"),
+                    [ProducerEffect::Subsetting],
+                    ProducerApplicability::Subtypes(vec![c::BEHAVIOR]),
+                );
+                writer.scope = ProducerEffectScope::OwnedParameterFeatures;
+                let registry = ProducerRegistry::new([writer]).unwrap();
+                let context =
+                    SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new())
+                        .unwrap()
+                        .with_producer_registry_digest(registry.digest())
+                        .unwrap();
+                let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+                assert!(!certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
+                assert!(
+                    crate::producer_closure::owned_parameter_scope(overlay.model(), id(1), false)
+                        .is_err()
+                );
+            }
             for production in [false, true] {
                 let context =
                     SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new())

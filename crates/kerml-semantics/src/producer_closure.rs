@@ -358,14 +358,84 @@ pub enum ProducerEffectScope {
     /// change an existing subject's ownership, this expands to `Model`.
     SubjectAndOwners,
     Model,
+    /// Directly owned, directed, non-result Features in the same canonical
+    /// population as `KerMlQueries::owned_parameter_features`. Neither the
+    /// producer subject nor nested/inherited parameters are write targets.
+    OwnedParameterFeatures,
 }
 impl ProducerEffectScope {
     fn depends_on_ownership(self) -> bool {
         matches!(
             self,
-            Self::SubjectAndOwned | Self::OwnedDescendants | Self::SubjectAndOwners
+            Self::SubjectAndOwned
+                | Self::OwnedDescendants
+                | Self::OwnedParameterFeatures
+                | Self::SubjectAndOwners
         )
     }
+
+    pub(crate) fn includes_subject(self) -> bool {
+        !matches!(self, Self::OwnedDescendants | Self::OwnedParameterFeatures)
+    }
+}
+
+/// A write-scope bound, not a semantic absence proof. Unknown canonical inputs
+/// prevent narrowing. Future ownership/reference writers are handled by the
+/// existing model-wide guard; primitive direction writers widen this population
+/// to all otherwise eligible direct members. Effect audits use actual direction.
+pub(crate) fn owned_parameter_scope(
+    model: &ModelView,
+    subject: ElementId,
+    direction_may_change: bool,
+) -> Result<BTreeSet<ElementId>, ()> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{derived::PropertyState, value::Value};
+    let owned = match model.property_state(subject, p::ELEMENT_OWNED_RELATIONSHIP) {
+        Ok(PropertyState::Computed(slot)) => slot,
+        Ok(PropertyState::Absent) => return Ok(BTreeSet::new()),
+        _ => return Err(()),
+    };
+    let mut targets = BTreeSet::new();
+    for value in owned.value().values() {
+        let Value::Reference(membership) = value else {
+            return Err(());
+        };
+        let class = model.element(*membership).ok_or(())?.metaclass();
+        let is = |base| model.registry().is_subtype(class, base).map_err(|_| ());
+        if !is(c::FEATURE_MEMBERSHIP)? || is(c::RETURN_PARAMETER_MEMBERSHIP)? {
+            continue;
+        }
+        let endpoint =
+            match model.property_state(*membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT) {
+                Ok(PropertyState::Computed(slot)) => slot,
+                _ => return Err(()),
+            };
+        let mut values = endpoint.value().values();
+        let Some(Value::Reference(target)) = values.next() else {
+            return Err(());
+        };
+        if values.next().is_some()
+            || !model.element(*target).is_some_and(|record| {
+                model
+                    .registry()
+                    .is_subtype(record.metaclass(), c::FEATURE)
+                    .unwrap_or(false)
+            })
+        {
+            return Err(());
+        }
+        match model.property_state(*target, p::FEATURE_DIRECTION) {
+            Ok(PropertyState::Computed(_)) => {
+                targets.insert(*target);
+            }
+            Ok(PropertyState::Absent) if direction_may_change => {
+                targets.insert(*target);
+            }
+            Ok(PropertyState::Absent) => {}
+            _ => return Err(()),
+        }
+    }
+    Ok(targets)
 }
 
 /// Immutable declaration under one semantic rule-set identity.
@@ -1008,6 +1078,27 @@ impl ProducerEvaluationTable {
                 for reads in readers.values() {
                     consume(reads);
                 }
+            } else if descriptor.scope == ProducerEffectScope::OwnedParameterFeatures {
+                match owned_parameter_scope(
+                    model,
+                    subject,
+                    mutable_feature_populations.contains(&crate::FeaturePopulationKind::Parameter),
+                ) {
+                    Ok(targets) => {
+                        for target in targets {
+                            if let Some(reads) = readers.get(&target) {
+                                consume(reads);
+                            }
+                        }
+                    }
+                    Err(()) => {
+                        for (target, reads) in &readers {
+                            if !immutable(*target) {
+                                consume(reads);
+                            }
+                        }
+                    }
+                }
             } else {
                 let mut scope = vec![subject];
                 let mut seen = BTreeSet::new();
@@ -1410,6 +1501,13 @@ impl ProducerClosureCertificate {
             descriptor.effects.contains(&ProducerEffect::Ownership)
                 || has_reference_scalar(descriptor, model)
         });
+        let direction_mutable = registry.descriptors.iter().any(|descriptor| {
+            descriptor.applicability != ProducerApplicability::Never
+                && descriptor.effects.iter().any(|effect| {
+                    matches!(effect, ProducerEffect::Scalar(property)
+                        if scalar_changes_feature_population(*property, crate::FeaturePopulationKind::Parameter, model))
+                })
+        });
         let mut global_block = 0;
         let mut dependency_global_block = 0;
         let mut applicable_pairs = 0;
@@ -1498,6 +1596,20 @@ impl ProducerClosureCertificate {
                         ProducerEffectScope::Model => global_block |= mask,
                         ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
                         ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
+                        ProducerEffectScope::OwnedParameterFeatures => {
+                            match owned_parameter_scope(model, subject, direction_mutable) {
+                                Ok(targets) => {
+                                    for target in targets {
+                                        if let Some(&target) = positions.get(&target) {
+                                            blocked[target] |= mask;
+                                        }
+                                    }
+                                }
+                                Err(()) => {
+                                    global_block |= mask;
+                                }
+                            }
+                        }
                         ProducerEffectScope::SubjectAndOwners => owner_blocks[i] |= mask,
                         ProducerEffectScope::Subject => blocked[i] |= mask,
                     }

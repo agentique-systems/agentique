@@ -214,7 +214,7 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
                 // Only the second input parameter receives a new Subsetting.
                 // FeatureChaining belongs to the newly created payload chain,
                 // and cannot change the transition's own effective typing.
-                descriptor.scope = agq_kerml_semantics::ProducerEffectScope::OwnedDescendants;
+                descriptor.scope = agq_kerml_semantics::ProducerEffectScope::OwnedParameterFeatures;
                 descriptor.fresh_effects = BTreeSet::from([
                     ProducerEffect::FeatureChain,
                     ProducerEffect::ResultStructure,

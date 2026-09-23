@@ -28,6 +28,9 @@ mod producer_closure;
 #[path = "../tests/unit/producer_closure.rs"]
 mod producer_closure_tests;
 #[cfg(test)]
+#[path = "../tests/unit/producer_parameter_scope.rs"]
+mod producer_parameter_scope_tests;
+#[cfg(test)]
 #[path = "../tests/unit/producer_rule_ownership.rs"]
 mod producer_rule_ownership_tests;
 #[cfg(test)]
