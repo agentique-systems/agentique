@@ -47,7 +47,7 @@ class ArtifactTests(unittest.TestCase):
             proofs.reverse()
             searches.reverse()
             row.update(proof=1, searches=1)
-        entries = ([{"Proof": value} for value in proofs]
+        entries = (["Overlay"] + [{"Proof": value} for value in proofs]
                    + [{"Search": value} for value in searches]
                    + [{"ReferenceContribution": row}])
         if duplicate:

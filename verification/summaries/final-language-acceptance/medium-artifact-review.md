@@ -51,3 +51,45 @@ proof/search content, journal/ZIP/decoded state/decoded graph tampering, stale
 state/report bindings, unfinished final state, invalid pool indexes, duplicate
 contributions, trailing graph rows, and escaped strings spanning stream chunks.
 No Rust build or new corpus run was performed for this change.
+
+## Real checkpoint format smoke check
+
+An existing completed scheduler invocation from the running medium session was
+read without replaying producers. This is a format/authentication smoke check,
+not the final medium equivalence gate: its minimal report bindings were obtained
+from that same checkpoint and were not claimed as independent acceptance evidence.
+
+The initial smoke command exited 1 (`ValueError: invalid graph row`) because the
+reader omitted the archive's `"Overlay"` unit variant. The reader and synthetic
+fixture now include it. The corrected command below exited 0, authenticated a
+31,991,877-byte state and 81,025,714-byte graph, and observed 2,568 selected
+contributions. Elapsed wall time was 12.047 seconds, including two state reads.
+
+```powershell
+@'
+import hashlib, json, pathlib, sys, time, zipfile
+sys.path.insert(0, 'verification/scripts')
+from frontier_artifact_evidence import StateReader, checkpoint_evidence
+root = pathlib.Path('C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/medium-frontiers')
+path = root / 'journal-48825c5d990b4c53a945eea0267b299abf9733329208764e564f86c71d938070.json'
+raw = path.read_bytes()
+entry = json.loads(raw)['entries'][-1]
+started = time.monotonic()
+with zipfile.ZipFile(root / (bytes(entry['archive_sha256']).hex() + '.zip')) as zipped:
+    with zipped.open('state.json') as source:
+        reader = StateReader(source)
+        state = reader.fields({'converged'}, {'certificate': {'receipt'}})
+        reader.whitespace()
+        assert not reader.peek()
+receipt = state['certificate']['receipt']
+report = {'checkpoint_session': {'latest': {'journal': str(path), 'sha256': hashlib.sha256(raw).hexdigest()}},
+          'producer_closure': {k: receipt[v] for k,v in [('model_digest','model_digest'),('context_contract_digest','context_contract_digest'),('producer_registry_digest','registry_digest'),('digest','digest')]}}
+print('Schema/authentication smoke only:', checkpoint_evidence(report), flush=True)
+print('Elapsed seconds:', round(time.monotonic()-started,3), flush=True)
+'@ | python -
+```
+
+Returned selected-reference evidence digest:
+`7f4fcc97ec4c23c95ba202be5f0588f75f0a5d984141e284bbda11dbb67bfbc9`.
+The 9-test command above was rerun after this correction: exit 0, 9 tests in
+0.599 seconds, OK.

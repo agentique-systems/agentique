@@ -202,6 +202,8 @@ def checkpoint_evidence(report):
                     if value == "End":
                         ended = True
                         continue
+                    if value == "Overlay":
+                        continue
                     require(isinstance(value, dict) and len(value) == 1, "invalid graph row")
                     if "Proof" in value:
                         proofs.append(content_hash(value["Proof"]))
