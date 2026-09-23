@@ -52,13 +52,22 @@ fn append_feature(
     feature: u128,
     guard: u128,
 ) {
+    let template = fixture(true);
+    let mut slots: BTreeMap<_, _> = template
+        .model()
+        .element(id(4))
+        .unwrap()
+        .slots()
+        .map(|(property, slot)| (property, slot.value().clone()))
+        .collect();
+    slots.insert(
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        SlotValue::Ordered(vec![Value::Reference(id(feature))]),
+    );
     builder.element(
         derivation,
         c::FEATURE_MEMBERSHIP,
-        BTreeMap::from([(
-            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
-            SlotValue::Ordered(vec![Value::Reference(id(feature))]),
-        )]),
+        slots,
         BTreeSet::from([Dependency::Declared(property(guard))]),
     );
     builder.searches(
