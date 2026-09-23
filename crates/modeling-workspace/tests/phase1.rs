@@ -445,12 +445,36 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
         );
     }
     let bus = element(&s2, &["Workbench025", "Worker", "bus"]);
-    let inherited = s3
-        .sysml_queries()
-        .unwrap()
-        .effective_ports(element(&s3, &["Workbench025", "SpecializedWorker"]));
-    assert_eq!(inherited.completeness(), Completeness::Complete);
-    assert!(inherited.value().contains(&bus));
+    {
+        let q = s3.sysml_queries().unwrap();
+        let specialized = element(&s3, &["Workbench025", "SpecializedWorker"]);
+        let inherited = q.effective_ports(specialized);
+        assert_eq!(inherited.completeness(), Completeness::Complete);
+        assert_eq!(
+            inherited.value(),
+            &vec![bus],
+            "the one inherited port retains its original identity without copies"
+        );
+        let owner = q.kerml().owning_type(bus);
+        assert_eq!(owner.completeness, Completeness::Complete);
+        assert_eq!(owner.value, Some(element(&s3, &["Workbench025", "Worker"])));
+        let engine = element(&s3, &["Workbench025", "SpecializedWorker", "engine"]);
+        assert_ne!(engine, original_engine);
+        let redefined = q.effective_redefined_features(engine);
+        assert_eq!(redefined.completeness(), Completeness::Complete);
+        assert!(redefined.value().contains(&original_engine));
+        let children = q.effective_usages(specialized);
+        assert_eq!(children.completeness(), Completeness::Complete);
+        assert_eq!(
+            children.value().iter().filter(|&&id| id == engine).count(),
+            1
+        );
+        assert!(!children.value().contains(&original_engine));
+        assert!(
+            q.model().element(original_engine).is_some(),
+            "redefinition suppresses the inherited member, not its original record"
+        );
+    }
     let provider = element(&s3, &["Contracts025", "RevisionValue"]);
     let old_document = s3.document_at("Contracts025.kerml").unwrap().id();
     let s4 = workspace

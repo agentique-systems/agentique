@@ -1001,13 +1001,18 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         retained_query
     );
     let audit_port = authored_named(r2.semantic_model(), "auditPort");
-    let r2_ports: BTreeSet<_> = {
+    let r2_ports = {
         let q = r2.sysml_queries().unwrap();
         let ports = q.effective_ports(authored_named(q.model(), "IncrementalWorkspace"));
         complete(&ports);
-        ports.value().iter().copied().collect()
+        assert!(ports.value().contains(&audit_port));
+        comparison_population(
+            q.kerml(),
+            accepted.overlay().model(),
+            ports.value(),
+            ComparisonOrder::Unordered,
+        )
     };
-    assert!(r2_ports.contains(&audit_port));
     let r3 = insert(
         &mut project,
         document,
@@ -1047,11 +1052,12 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     let retained_ports = q2.effective_ports(authored_named(q2.model(), "IncrementalWorkspace"));
     complete(&retained_ports);
     assert_eq!(
-        retained_ports
-            .value()
-            .iter()
-            .copied()
-            .collect::<BTreeSet<_>>(),
+        comparison_population(
+            q2.kerml(),
+            accepted.overlay().model(),
+            retained_ports.value(),
+            ComparisonOrder::Unordered,
+        ),
         r2_ports
     );
     drop(q2);
