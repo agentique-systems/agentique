@@ -208,17 +208,20 @@ identity: distinguish shared standard payloads, copied standard maps/indexes,
 local data and temporary compilation storage. Do not infer a 16 GiB fit from the
 eight-document publication peak.
 
-There is also a concrete authored peak-lifetime issue relevant to the self-model
-gate. `lower_accepted_source` retains its base mount, construction draft (and any
+The review also found an authored peak-lifetime issue relevant to the self-model
+gate. `lower_accepted_source` retained its base mount, construction draft (and any
 construction overlay), desired strict snapshot and final strict/derived result
 until its final reference audit. On edits the desired snapshot differs from the
 published snapshot. `source_references` only needs the draft's reference list and
 source map, so a metadata carrier can release the construction graph after strict
 conversion/checkpoint capture and before final closure, as the Systems
 `PublicationInputs::consume` path already does. Release an intermediate desired
-snapshot after publishing it, and use one frontend compilation owner rather than
-nesting a full `SourceProject` history under workspace history. These changes need
-measurement and focused validation; none is implemented or claimed here.
+snapshot after publishing it. Commit `9d32eef` implements these releases in the
+accepted authored path, preserving reference/source metadata and checked closure
+transport. Its regression audits typing and private aliases after the construction
+allocation is released. Peak-memory savings remain unmeasured; accepted Systems
+integration remains gated. Using one frontend compilation owner rather than
+nesting `SourceProject` history under workspace history remains a design proposal.
 
 Publication refinement already drops each prior draft before reconstruction;
 its checkpoint retains hashes and shared producer reads, not old graph maps.
