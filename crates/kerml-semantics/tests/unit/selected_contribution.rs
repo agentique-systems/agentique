@@ -165,7 +165,13 @@ fn certificate(
         table.pending(record.id(), overlay.model(), registry);
     }
     table
-        .record(&[(id(1), READER, Completeness::Complete)], registry)
+        .record(
+            &[
+                (id(1), READER, Completeness::Complete),
+                (id(2), READER, Completeness::Complete),
+            ],
+            registry,
+        )
         .unwrap();
     table.record_reads(
         &[(id(1), READER, producer_reads(answer, overlay.model()))],
@@ -307,8 +313,29 @@ fn dependent_archive_without_contribution_metadata_falls_back_and_reopens_precis
     let fallback = KerMlQueries::for_production(next_context.fork())
         .owned_relationships_of_type(id(1), c::SPECIALIZATION);
     assert_eq!(answer.value, fallback.value);
-    assert!(fallback.positive_dependencies.contains(&property(20)));
-    assert!(fallback.positive_dependencies.contains(&property(21)));
+    let aggregate = FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    };
+    assert!(
+        fallback
+            .canonical_dependencies
+            .contains(&Dependency::Derived(aggregate)),
+        "compact fallback retains the whole current owner-slot proof"
+    );
+    for guard in [20, 21] {
+        assert!(
+            restored
+                .explain(aggregate)
+                .unwrap()
+                .dependencies
+                .contains(&Dependency::Declared(property(guard)))
+        );
+    }
+    assert!(
+        producer_reads(&fallback, restored.model())
+            .contains(&ProducerRead::Property(id(20), p::ELEMENT_DECLARED_NAME,))
+    );
     assert!(
         producer_reads(&fallback, restored.model()).contains(&ProducerRead::Requirement(
             id(21),
@@ -316,6 +343,7 @@ fn dependent_archive_without_contribution_metadata_falls_back_and_reopens_precis
         ))
     );
     let certificate = certificate(&overlay, &old_context, &registry, &answer);
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
     let rebound = certificate
         .checkpoint(&old_context)
         .unwrap()
