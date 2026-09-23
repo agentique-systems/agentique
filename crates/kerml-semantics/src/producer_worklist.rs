@@ -66,6 +66,7 @@ pub enum ProducerFamily {
     ExpressionResult,
     FeatureValue,
     IndexSelectResult,
+    FeatureValuation,
 }
 impl ProducerFamily {
     pub const fn id(self) -> ProducerFamilyId {
@@ -81,6 +82,7 @@ impl ProducerFamily {
             Self::ExpressionResult => "KerML.ExpressionResult",
             Self::FeatureValue => "KerML.FeatureValue",
             Self::IndexSelectResult => "KerML.IndexSelectResult",
+            Self::FeatureValuation => "KerML.FeatureValuation",
         })
     }
     pub fn descriptor(self, profile: BaselineProfile) -> ProducerDescriptor {
@@ -147,14 +149,15 @@ impl ProducerFamily {
             Self::FeatureValue => (
                 vec![c::FEATURE],
                 vec![
-                    E::Subsetting,
-                    E::FeatureChain,
-                    E::Featuring,
                     E::Membership,
                     E::ValueBinding,
                     E::ResultStructure,
                     E::ConnectorStructure,
                 ],
+            ),
+            Self::FeatureValuation => (
+                vec![c::FEATURE],
+                vec![E::Subsetting, E::Membership, E::ResultStructure],
             ),
             Self::IndexSelectResult => (
                 vec![c::INDEX_EXPRESSION, c::SELECT_EXPRESSION],
@@ -205,6 +208,7 @@ impl ProducerFamily {
                 E::Membership,
             ],
             Self::FeatureChainExpression => vec![E::FeatureChain, E::Redefinition, E::Membership],
+            Self::FeatureValuation => vec![E::FeatureChain, E::Membership],
             Self::Invocation
             | Self::FeatureReferenceExpression
             | Self::ExpressionResult
@@ -249,6 +253,37 @@ impl ProducerFamily {
                 .collect(),
             );
         }
+        if matches!(self, Self::FeatureReferenceExpression | Self::FeatureValue) {
+            let mut classes = BTreeSet::from([
+                c::OWNING_MEMBERSHIP,
+                c::END_FEATURE_MEMBERSHIP,
+                c::REFERENCE_SUBSETTING,
+                c::TYPE_FEATURING,
+                c::BINDING_CONNECTOR,
+            ]);
+            if self == Self::FeatureValue {
+                classes.insert(c::FEATURE_CHAINING);
+            }
+            descriptor.relationship_classes = Some(classes);
+            descriptor.minimum_stratum = ResultStructureStratum::ContextualBindings;
+        }
+        if self == Self::FeatureValuation {
+            descriptor.derivation_rules = Some(BTreeSet::from([crate::result_structure::rule_id(
+                profile,
+                "checkFeatureValuationSpecialization",
+            )]));
+            descriptor.relationship_classes = Some(BTreeSet::from([
+                c::SUBSETTING,
+                c::OWNING_MEMBERSHIP,
+                c::FEATURE_CHAINING,
+            ]));
+        }
+        if self == Self::FeatureValue {
+            descriptor.derivation_rules = Some(BTreeSet::from([
+                crate::ImpliedBindingRole::FeatureValue.rule_id(profile),
+                crate::result_structure::rule_id(profile, "initial-feature-value-context/1"),
+            ]));
+        }
         if self == Self::FeatureChainExpression {
             descriptor.effects.insert(E::Subsetting);
         }
@@ -267,7 +302,7 @@ impl ProducerFamily {
         };
         descriptor
     }
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 12] = [
         Self::OwnedInstantiationResult,
         Self::PositionalRedefinition,
         Self::VariableFeaturing,
@@ -279,6 +314,7 @@ impl ProducerFamily {
         Self::ExpressionResult,
         Self::FeatureValue,
         Self::IndexSelectResult,
+        Self::FeatureValuation,
     ];
     fn applies(self, model: &ModelView, class: MetaclassId, profile: BaselineProfile) -> bool {
         let is = |parent| model.registry().is_subtype(class, parent).unwrap_or(false);
@@ -300,7 +336,7 @@ impl ProducerFamily {
             }
             Self::FeatureReferenceExpression => is(c::FEATURE_REFERENCE_EXPRESSION),
             Self::ExpressionResult => is(c::EXPRESSION) || is(c::FUNCTION),
-            Self::FeatureValue => is(c::FEATURE),
+            Self::FeatureValue | Self::FeatureValuation => is(c::FEATURE),
             Self::IndexSelectResult => is(c::INDEX_EXPRESSION) || is(c::SELECT_EXPRESSION),
         }
     }

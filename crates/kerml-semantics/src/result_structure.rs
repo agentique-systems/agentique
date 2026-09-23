@@ -367,7 +367,7 @@ mod navigation_evidence_regression {
         assert_eq!(explanation.dependencies, expected);
     }
 }
-fn rule_id(profile: BaselineProfile, rule: &str) -> RuleId {
+pub(crate) fn rule_id(profile: BaselineProfile, rule: &str) -> RuleId {
     RuleId::from_u128(identity(&[
         profile.id().as_bytes(),
         &profile.errata_manifest_sha256().unwrap_or_default(),
@@ -1708,7 +1708,8 @@ pub struct ResultStructurePlan<'m> {
 impl ResultStructurePlan<'_> {
     /// Defense-in-depth check against the batch's declared effect envelope.
     /// Descriptors remain trusted producer implementation contracts: this does
-    /// not infer effects from observed output or authenticate per-family origin.
+    /// not infer effects from observed output. Exclusive rule claims also
+    /// authenticate per-family origin before checking applicable effects.
     /// In particular a fresh relationship targeting an existing semantic subject
     /// is an existing-subject effect, never a fresh-output exemption.
     pub(crate) fn validate_declared_effects(
@@ -1730,6 +1731,22 @@ impl ResultStructurePlan<'_> {
                 })
             })
             .collect();
+        let owns_rule =
+            |descriptor: &crate::ProducerDescriptor, rule: RuleId, producer_subject: ElementId| {
+                registry.rule_owner(rule).is_none_or(|owner| {
+                    owner.id == descriptor.id
+                        && model
+                            .element(producer_subject)
+                            .map(|record| record.metaclass())
+                            .or_else(|| {
+                                self.graph
+                                    .records
+                                    .get(&producer_subject)
+                                    .map(|record| record.class)
+                            })
+                            .is_some_and(|class| owner.applicability.applies(model, class))
+                })
+            };
         let audit_failure = |operation,
                              fact,
                              origin_rule,
@@ -1771,7 +1788,8 @@ impl ResultStructurePlan<'_> {
                 continue;
             };
             let permitted = descriptors.iter().any(|&(subject, descriptor)| {
-                descriptor.affects_subject(model, target)
+                owns_rule(descriptor, contribution.explanation.rule, target)
+                    && descriptor.affects_subject(model, target)
                     && descriptor.effects.iter().any(|effect| match effect {
                         ProducerEffect::Scalar(written) => {
                             *written == property
@@ -1826,7 +1844,8 @@ impl ResultStructurePlan<'_> {
                     _ => None,
                 }) {
                     let permitted = descriptors.iter().any(|&(subject, descriptor)| {
-                        descriptor.effects.contains(&ProducerEffect::Ownership)
+                        owns_rule(descriptor, record.key.rule, record.key.subject)
+                            && descriptor.effects.contains(&ProducerEffect::Ownership)
                             && descriptor.affects_subject(model, child)
                             && (descriptor.scope == ProducerEffectScope::Model
                                 || (descriptor.scope != ProducerEffectScope::OwnedDescendants
@@ -1996,14 +2015,15 @@ impl ResultStructurePlan<'_> {
             };
             let fresh = model.element(source).is_none();
             let permitted = descriptors.iter().any(|&(subject, descriptor)| {
-                descriptor
-                    .feature_populations
-                    .as_ref()
-                    .is_none_or(|allowed| {
-                        feature_populations
-                            .as_ref()
-                            .is_some_and(|actual| actual.is_subset(allowed))
-                    })
+                owns_rule(descriptor, record.key.rule, record.key.subject)
+                    && descriptor
+                        .feature_populations
+                        .as_ref()
+                        .is_none_or(|allowed| {
+                            feature_populations
+                                .as_ref()
+                                .is_some_and(|actual| actual.is_subset(allowed))
+                        })
                     && descriptor
                         .relationship_classes
                         .as_ref()
@@ -2934,7 +2954,7 @@ impl<'m> KerMlQueries<'m> {
                 production.merge(proof);
             }
             if self.is(subject, c::FEATURE) {
-                producer_families_attempted += 1;
+                producer_families_attempted += 2;
                 let mut proof = self.result(());
                 let owned = self.owned_relationships_of_type(subject, c::FEATURE_VALUE);
                 // Direction and specialization constrain an actual valuation.
@@ -2957,7 +2977,11 @@ impl<'m> KerMlQueries<'m> {
                     proof.merge(specializations);
                     (undirected, all_implied)
                 };
+                proof.merge(owned.clone());
+                let mut structural_proof = proof.clone();
+                let mut binding_proof = proof.clone();
                 for &value in &owned.value {
+                    let mut proof = proof.clone();
                     let nondefault = matches!(
                         self.read_value(&mut proof, value, p::FEATURE_VALUE_IS_DEFAULT),
                         Some(Value::Boolean(false))
@@ -2969,7 +2993,7 @@ impl<'m> KerMlQueries<'m> {
                     let member = self.member(value);
                     let expression = member.value;
                     proof.merge(member);
-                    if let Some(expression) = expression
+                    let prepared = if let Some(expression) = expression
                         && let Some(raw) = self.required_structural_result(&mut proof, expression)
                         && proof.completeness == Completeness::Complete
                     {
@@ -3008,6 +3032,16 @@ impl<'m> KerMlQueries<'m> {
                                 &proof.canonical_dependencies,
                             );
                         }
+                        Some((expression, raw, rule, contextual))
+                    } else {
+                        None
+                    };
+                    // Valuation typing and its helper chain are independent of
+                    // the later binding domain. Freeze their exact evidence
+                    // before observing variable featuring or contextual reads.
+                    graph.retain_producer_searches(&mut proof);
+                    structural_proof.merge(proof.clone());
+                    if let Some((expression, raw, rule, contextual)) = prepared {
                         // A non-valuation chain has no structural consumer.
                         // Create it atomically with its binding once the context
                         // is complete, so a later frontier never has to attach
@@ -3113,19 +3147,35 @@ impl<'m> KerMlQueries<'m> {
                             }
                         }
                     }
+                    graph.retain_producer_searches(&mut proof);
+                    binding_proof.merge(proof);
                 }
-                proof.merge(owned);
                 producer_evaluations.push((
                     subject,
-                    ProducerFamily::FeatureValue.id(),
-                    proof.completeness,
+                    ProducerFamily::FeatureValuation.id(),
+                    structural_proof.completeness,
                 ));
                 producer_reads.push((
                     subject,
-                    ProducerFamily::FeatureValue.id(),
-                    graph.finish_producer(&mut proof),
+                    ProducerFamily::FeatureValuation.id(),
+                    graph.finish_producer(&mut structural_proof),
                 ));
-                production.merge(proof);
+                if !deferred_bindings.contains(&subject)
+                    || stratum == ResultStructureStratum::ContextualBindings
+                {
+                    producer_evaluations.push((
+                        subject,
+                        ProducerFamily::FeatureValue.id(),
+                        binding_proof.completeness,
+                    ));
+                    producer_reads.push((
+                        subject,
+                        ProducerFamily::FeatureValue.id(),
+                        graph.finish_producer(&mut binding_proof),
+                    ));
+                }
+                production.merge(structural_proof);
+                production.merge(binding_proof);
             }
             if self.is(subject, c::INDEX_EXPRESSION) || self.is(subject, c::SELECT_EXPRESSION) {
                 producer_families_attempted += 1;

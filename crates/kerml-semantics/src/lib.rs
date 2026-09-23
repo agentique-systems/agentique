@@ -24,6 +24,12 @@ mod producer_closure;
 #[cfg(test)]
 #[path = "../tests/unit/producer_closure.rs"]
 mod producer_closure_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_rule_ownership.rs"]
+mod producer_rule_ownership_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_value_strata.rs"]
+mod producer_value_strata_tests;
 mod producer_worklist;
 mod publication;
 mod publication_overlay;

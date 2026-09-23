@@ -3,7 +3,7 @@
 //! Descriptors declare potential writes, independently of observed outputs.
 //! Certificates are immutable, exact-frontier sidecars, never model facts.
 use crate::{Completeness, ResultStructureStratum, SemanticContextId};
-use agq_kernel::{ElementId, MetaclassId, ModelView, PropertyId};
+use agq_kernel::{ElementId, MetaclassId, ModelView, PropertyId, RuleId};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
@@ -358,6 +358,10 @@ pub struct ProducerDescriptor {
     /// create. This bounds potential output, not the records observed so far.
     /// `None` permits every relationship class covered by its effects.
     pub relationship_classes: Option<BTreeSet<MetaclassId>>,
+    /// Exclusive provenance rules emitted by this family. A claimed rule may
+    /// not borrow another family's effect permissions, including when its
+    /// owner is inapplicable. `None` retains the unclaimed effect contract.
+    pub derivation_rules: Option<BTreeSet<RuleId>>,
     /// Positional populations this family's membership effects may change.
     /// `None` is unconstrained. Existing scalar producer capabilities can reopen
     /// Parameter/End exclusions on newly created members.
@@ -382,6 +386,7 @@ impl ProducerDescriptor {
             effects: effects.into_iter().collect(),
             fresh_effects: BTreeSet::new(),
             relationship_classes: None,
+            derivation_rules: None,
             feature_populations: None,
             effect_targets: None,
             applicability,
@@ -577,8 +582,16 @@ impl ProducerRegistry {
                 return Err(pair[0].id);
             }
         }
+        let mut claimed_rules = BTreeSet::new();
+        for descriptor in &descriptors {
+            for rule in descriptor.derivation_rules.iter().flatten() {
+                if !claimed_rules.insert(*rule) {
+                    return Err(descriptor.id);
+                }
+            }
+        }
         let mut hash = Sha256::new();
-        hash.update(b"agq-producer-registry/3");
+        hash.update(b"agq-producer-registry/4");
         // Debug is deterministic for these ordered value-only declarations;
         // its encoding is versioned by the registry schema above.
         hash.update(format!("{descriptors:?}").as_bytes());
@@ -607,6 +620,14 @@ impl ProducerRegistry {
     }
     pub fn descriptors(&self) -> &[ProducerDescriptor] {
         &self.descriptors
+    }
+    pub(crate) fn rule_owner(&self, rule: RuleId) -> Option<&ProducerDescriptor> {
+        self.descriptors.iter().find(|descriptor| {
+            descriptor
+                .derivation_rules
+                .as_ref()
+                .is_some_and(|rules| rules.contains(&rule))
+        })
     }
     pub(crate) fn index(&self, id: ProducerFamilyId) -> Option<usize> {
         self.descriptors.binary_search_by_key(&id, |d| d.id).ok()
