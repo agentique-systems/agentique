@@ -10953,6 +10953,24 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "target/foundation-integration"
       }
+    },
+    {
+      "name": "bridge-expression-population-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b018b187194610dada1e5573263b3a4f0276bfe3",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.55,
+      "output": "verification/generated/language-stability-bridge/bridge-expression-population-format.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [

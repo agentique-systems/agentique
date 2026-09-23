@@ -79,6 +79,15 @@ accepted-cache result.
 
 Only after a genuine full publication, check in the generated receipt and binding
 manifest and activate the finite catalogue entry (`agq-sysml-accepted-publication/1`).
+The successful example writes `canonical.publication.zip`,
+`accepted-publication.json` and `standard-bindings.json` beside its report.
+Pin the latter two under `standards/` and add the single
+`sysml-systems-operational-v2` catalogue entry. `SysmlBaselineProfile` currently
+has no `OPERATIONAL` alias; add it as `OPERATIONAL_V2` only after acceptance.
+The read-only activation review confirms that the historical KerML `/26`
+receipt has no combined producer-registry or closure-certificate fields: new
+Systems descriptor digests are independently bound by the Systems receipt and
+do not change that historical restoration path. No cache was loaded by this review.
 At that point the unit test rejecting the currently unavailable Systems identifier
 must become a positive checked-in-authority assertion plus rejection of an unknown
 identifier; retain its caller-supplied JSON rejection. Do not leave an assertion
