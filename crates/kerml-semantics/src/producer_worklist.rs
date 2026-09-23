@@ -10,7 +10,12 @@ use agq_kernel::{ElementId, MetaclassId, ModelView, Snapshot, derived::DerivedOv
 use std::collections::{BTreeMap, BTreeSet};
 
 mod frontier;
+mod metrics;
 use frontier::ProducerFrontier;
+pub(crate) use metrics::FamilyTimer;
+use metrics::ReopenReasons;
+pub use metrics::{PublicationFamilyMetrics, PublicationReopenReason, PublicationRoundMetrics};
+use std::time::Instant;
 
 /// Additional language producers participating in the same immutable frontiers
 /// and positive/negative read index as KerML. Contributions must carry their
@@ -400,10 +405,12 @@ impl Default for PublicationClosureOptions {
         }
     }
 }
-/// Deterministic work accounting. Timing and allocator observations belong to
-/// the external watchdog; none of these counters participates in acceptance.
+/// Work accounting and bounded diagnostic observations. Neither counts nor
+/// elapsed times participate in acceptance or semantic identity.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PublicationCounters {
+    /// Latest completed frontier, including its own certificate work.
+    pub round: PublicationRoundMetrics,
     pub negative_queries_certified: usize,
     pub families_registered: usize,
     pub applicable_subject_family_pairs: usize,
@@ -511,12 +518,27 @@ impl DependencyIndex {
         counters.maximum_dependency_keys = counters.maximum_dependency_keys.max(self.readers.len());
         counters.maximum_dependency_edges = counters.maximum_dependency_edges.max(self.edges);
     }
+    #[cfg(test)]
     fn dirty(
         &self,
         changed: &BTreeSet<ElementId>,
         counters: &mut PublicationCounters,
     ) -> BTreeSet<ElementId> {
+        self.dirty_with_reasons(changed, counters, &mut BTreeMap::new())
+    }
+    fn dirty_with_reasons(
+        &self,
+        changed: &BTreeSet<ElementId>,
+        counters: &mut PublicationCounters,
+        reasons: &mut BTreeMap<ElementId, ReopenReasons>,
+    ) -> BTreeSet<ElementId> {
         let mut result = changed.clone();
+        for &subject in changed {
+            reasons
+                .entry(subject)
+                .or_default()
+                .insert(PublicationReopenReason::GraphFactChanged);
+        }
         for key in std::iter::once(InvalidationKey::Global).chain(
             changed
                 .iter()
@@ -525,10 +547,81 @@ impl DependencyIndex {
             if let Some(readers) = self.readers.get(&key) {
                 counters.dependency_edges_considered += readers.len();
                 result.extend(readers);
+                for &subject in readers {
+                    let subject_reasons = reasons.entry(subject).or_default();
+                    match key {
+                        InvalidationKey::Element(_) => {
+                            subject_reasons.insert(PublicationReopenReason::GraphFactChanged)
+                        }
+                        InvalidationKey::Incoming(_) => {
+                            subject_reasons.insert(PublicationReopenReason::ProviderSearchChanged);
+                            subject_reasons
+                                .insert(PublicationReopenReason::NewRelationshipEndpoint);
+                        }
+                        InvalidationKey::Global => {
+                            subject_reasons.insert(PublicationReopenReason::ProviderSearchChanged)
+                        }
+                    }
+                }
             }
         }
         result
     }
+}
+
+fn finish_stage(
+    mut stage: PublicationStage,
+    mut metrics: PublicationRoundMetrics,
+    counters: &mut PublicationCounters,
+    pending_reasons: &BTreeMap<ElementId, ReopenReasons>,
+    next_worklist: &BTreeSet<ElementId>,
+    stages: &mut Vec<PublicationStage>,
+    progress: &mut impl FnMut(&PublicationStage),
+) {
+    metrics.next_dirty_subjects = next_worklist.len();
+    for subject in next_worklist {
+        for reason in pending_reasons
+            .get(subject)
+            .copied()
+            .unwrap_or_default()
+            .iter()
+        {
+            *metrics.next_dirty_by_reason.entry(reason).or_default() += 1;
+        }
+    }
+    counters.round = metrics;
+    stage.counters = counters.clone();
+    progress(&stage);
+    stages.push(stage);
+}
+
+fn record_family_reopens(plan: &mut ResultStructurePlan<'_>, reasons: ReopenReasons) {
+    for metrics in plan.family_metrics.values_mut() {
+        for reason in reasons.iter() {
+            *metrics.reopened_by_reason.entry(reason).or_default() += 1;
+        }
+    }
+}
+
+fn contribute_with_metrics<'m>(
+    extension: &impl PublicationProducerExtension,
+    queries: &KerMlQueries<'m>,
+    subject: ElementId,
+    stratum: ResultStructureStratum,
+    plan: &mut ResultStructurePlan<'m>,
+) -> Result<(), agq_kernel::derived::DerivationError> {
+    let offset = plan.producer_evaluations.len();
+    let started = Instant::now();
+    extension.contribute(queries, subject, stratum, plan)?;
+    let elapsed = started.elapsed().as_micros();
+    // Extension callbacks may implement several registered families together.
+    // Attribute their shared work to actual recorded evaluations only.
+    for (_, family, _) in &plan.producer_evaluations[offset..] {
+        let metrics = plan.family_metrics.entry(*family).or_default();
+        metrics.attempts += 1;
+        metrics.shared_planning_micros += elapsed;
+    }
+    Ok(())
 }
 
 /// Close structural producers using immutable frontiers and query dependencies.
@@ -678,7 +771,14 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         });
     let mut stratum = ResultStructureStratum::Structural;
     let mut deferred_bindings = BTreeSet::new();
+    let mut pending_reasons = BTreeMap::<ElementId, ReopenReasons>::new();
     for round in 0..options.max_rounds {
+        let round_started = Instant::now();
+        let evaluated_before = counters.subjects_evaluated;
+        let skipped_before = counters.subjects_skipped_by_applicability;
+        let reopened_before = counters.dirty_reevaluations;
+        let certificate_before = counters.certificate_build_micros;
+        let mut round_metrics = PublicationRoundMetrics::default();
         let mut current_context = context_factory(&overlay)?;
         let registry = registry.get_or_insert_with(|| {
             let descriptors = ProducerFamily::ALL
@@ -698,10 +798,12 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             certificate = Some(witness.clone());
         }
         if certificate.is_none() && !unregistered_extension {
+            let started = Instant::now();
             certificate = Some(std::sync::Arc::new(
                 ProducerClosureCertificate::initial(&current_context, registry)
                     .map_err(PublicationOverlayError::Context)?,
             ));
+            counters.certificate_build_micros += started.elapsed().as_micros();
         }
         if let Some(witness) = &certificate {
             if witness.compatible_context(current_context.id()) {
@@ -798,6 +900,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         };
         let mut plan =
             KerMlQueries::new(context.fork()).plan_result_structure_in_stratum([], kerml_stratum);
+        let planning_started = Instant::now();
         for (batch_index, batch) in subjects.chunks(options.batch_size.max(1)).enumerate() {
             let q = match options.strategy {
                 PublicationClosureStrategy::Worklist => {
@@ -817,7 +920,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                             .expect("scheduled subject")
                             .metaclass(),
                     ) {
-                        extension.contribute(&q, subject, stratum, &mut part)?;
+                        contribute_with_metrics(extension, &q, subject, stratum, &mut part)?;
                     }
                 }
                 counters.subjects_evaluated += batch.len();
@@ -825,7 +928,9 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 for &subject in batch {
                     // The reference batch shares a graph/proof accumulator;
                     // retain its conservative reads for every batch member.
+                    let index_started = Instant::now();
                     index.replace(subject, &part.production, overlay.model(), &mut counters);
+                    round_metrics.dependency_index_micros += index_started.elapsed().as_micros();
                     counters.dirty_reevaluations += usize::from(!seen.insert(subject));
                     status.insert(
                         subject,
@@ -857,10 +962,12 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                             .expect("scheduled subject")
                             .metaclass(),
                     ) {
-                        extension.contribute(&q, subject, stratum, &mut part)?;
+                        contribute_with_metrics(extension, &q, subject, stratum, &mut part)?;
                     }
                     counters.producer_families_attempted += part.producer_families_attempted;
+                    let index_started = Instant::now();
                     index.replace(subject, &part.production, overlay.model(), &mut counters);
+                    round_metrics.dependency_index_micros += index_started.elapsed().as_micros();
                     status.insert(
                         subject,
                         (
@@ -876,6 +983,10 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                     part.producer_reads.clear();
                     part.producer_evaluations.clear();
                     part.discard_aggregate_proof();
+                    record_family_reopens(
+                        &mut part,
+                        pending_reasons.get(&subject).copied().unwrap_or_default(),
+                    );
                     plan.merge(part)?;
                 }
             }
@@ -887,6 +998,17 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 plan.planned_elements().count(),
             );
         }
+        round_metrics.planning_micros = planning_started
+            .elapsed()
+            .as_micros()
+            .saturating_sub(round_metrics.dependency_index_micros);
+        round_metrics.subjects_evaluated = counters.subjects_evaluated - evaluated_before;
+        round_metrics.subjects_skipped =
+            counters.subjects_skipped_by_applicability - skipped_before;
+        round_metrics.subjects_reopened = counters.dirty_reevaluations - reopened_before;
+        round_metrics.planned_elements = plan.planned_elements().count();
+        round_metrics.families = std::mem::take(&mut plan.family_metrics);
+        pending_reasons.clear();
         deferred_bindings.extend(plan.deferred_bindings.iter().copied());
         let mut changed = plan.changed_population();
         let prior_obligations = overlay.obligation_keys();
@@ -911,6 +1033,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         // deliberately does not trust the optimized additive change boundary.
         let reference_input = (options.strategy == PublicationClosureStrategy::ReferenceFullScan)
             .then(|| overlay.clone());
+        let materialization_started = Instant::now();
         let prepared = Overlay::prepare(plan, &overlay)?;
         drop(context);
         // Preparation validates every reused record and proposed slot even when
@@ -922,6 +1045,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         } else {
             overlay
         };
+        round_metrics.model_materialization_micros = materialization_started.elapsed().as_micros();
         changed.extend(
             prior_obligations
                 .symmetric_difference(&next.obligation_keys())
@@ -964,6 +1088,9 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         counters.new_elements_proposed += next.model().len() - input_elements;
         counters.new_association_occurrences_proposed +=
             next.model().association_occurrences().count() - input_occurrences;
+        round_metrics.accepted_elements = next.model().len() - input_elements;
+        round_metrics.accepted_occurrences =
+            next.model().association_occurrences().count() - input_occurrences;
         let record = PublicationStage {
             stratum,
             counters: counters.clone(),
@@ -974,8 +1101,6 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             completeness,
             diagnostics,
         };
-        progress(&record);
-        stages.push(record);
         if stable {
             if !unregistered_extension {
                 let started = std::time::Instant::now();
@@ -1025,6 +1150,24 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                         })
                         .collect();
                     counters.dirty_subjects_enqueued += worklist.len();
+                    for &subject in &worklist {
+                        pending_reasons
+                            .entry(subject)
+                            .or_default()
+                            .insert(PublicationReopenReason::CertificateTransportChanged);
+                    }
+                    round_metrics.certificate_build_micros =
+                        counters.certificate_build_micros - certificate_before;
+                    round_metrics.elapsed_micros = round_started.elapsed().as_micros();
+                    finish_stage(
+                        record,
+                        round_metrics,
+                        &mut counters,
+                        &pending_reasons,
+                        &worklist,
+                        &mut stages,
+                        &mut progress,
+                    );
                     overlay = next;
                     continue;
                 }
@@ -1033,6 +1176,24 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 stratum = ResultStructureStratum::StableProperties;
                 worklist = population.clone();
                 counters.dirty_subjects_enqueued += worklist.len();
+                for &subject in &worklist {
+                    pending_reasons
+                        .entry(subject)
+                        .or_default()
+                        .insert(PublicationReopenReason::NewProducerOpportunity);
+                }
+                round_metrics.certificate_build_micros =
+                    counters.certificate_build_micros - certificate_before;
+                round_metrics.elapsed_micros = round_started.elapsed().as_micros();
+                finish_stage(
+                    record,
+                    round_metrics,
+                    &mut counters,
+                    &pending_reasons,
+                    &worklist,
+                    &mut stages,
+                    &mut progress,
+                );
                 overlay = next;
                 continue;
             }
@@ -1051,9 +1212,39 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                     PublicationClosureStrategy::ReferenceFullScan => population.clone(),
                 };
                 counters.dirty_subjects_enqueued += worklist.len();
+                for &subject in &worklist {
+                    pending_reasons
+                        .entry(subject)
+                        .or_default()
+                        .insert(PublicationReopenReason::ContextualBindingDependency);
+                }
+                round_metrics.certificate_build_micros =
+                    counters.certificate_build_micros - certificate_before;
+                round_metrics.elapsed_micros = round_started.elapsed().as_micros();
+                finish_stage(
+                    record,
+                    round_metrics,
+                    &mut counters,
+                    &pending_reasons,
+                    &worklist,
+                    &mut stages,
+                    &mut progress,
+                );
                 overlay = next;
                 continue;
             }
+            round_metrics.certificate_build_micros =
+                counters.certificate_build_micros - certificate_before;
+            round_metrics.elapsed_micros = round_started.elapsed().as_micros();
+            finish_stage(
+                record,
+                round_metrics,
+                &mut counters,
+                &pending_reasons,
+                &BTreeSet::new(),
+                &mut stages,
+                &mut progress,
+            );
             converged = true;
             overlay = next;
             break;
@@ -1061,7 +1252,9 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         // Revalidate evaluations before rebinding evidence to the changed graph.
         // Unaffected read sets survive; new families/subjects and changed reads
         // reopen, and issue recomputes upstream causal blockers and closed masks.
+        let revalidation_started = Instant::now();
         evaluations.invalidate(&changed);
+        round_metrics.certificate_revalidation_micros += revalidation_started.elapsed().as_micros();
         certificate = if unregistered_extension {
             None
         } else {
@@ -1090,14 +1283,23 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 },
             );
             counters.certificate_build_micros += started.elapsed().as_micros();
+            counters.applicable_subject_family_pairs = issued.applicable_pairs();
+            counters.closed_producer_pairs = issued.closed_pairs();
+            counters.closed_producer_effects = issued.closed_effects();
+            counters.incomplete_producer_pairs = issued.incomplete_pairs();
             counters.certificate_bytes = issued.storage_bytes();
             Some(issued)
         };
         evaluations.prune_unused_reads();
+        for &subject in &new_subjects {
+            let reasons = pending_reasons.entry(subject).or_default();
+            reasons.insert(PublicationReopenReason::NewHelperCreated);
+            reasons.insert(PublicationReopenReason::NewProducerOpportunity);
+        }
         population.extend(new_subjects);
         worklist = match options.strategy {
             PublicationClosureStrategy::Worklist => index
-                .dirty(&changed, &mut counters)
+                .dirty_with_reasons(&changed, &mut counters, &mut pending_reasons)
                 .intersection(&population)
                 .copied()
                 .collect(),
@@ -1113,6 +1315,18 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             }
         };
         counters.dirty_subjects_enqueued += worklist.len();
+        round_metrics.certificate_build_micros =
+            counters.certificate_build_micros - certificate_before;
+        round_metrics.elapsed_micros = round_started.elapsed().as_micros();
+        finish_stage(
+            record,
+            round_metrics,
+            &mut counters,
+            &pending_reasons,
+            &worklist,
+            &mut stages,
+            &mut progress,
+        );
         overlay = next;
     }
     Ok(PublicationClosure {

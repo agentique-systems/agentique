@@ -1550,6 +1550,77 @@ fn empty_frontier_reuses_overlay_without_recounting_the_previous_build() {
 }
 
 #[test]
+fn completed_frontier_metrics_match_current_certificate_and_account_for_reopening() {
+    let snapshot = crossing_fixture();
+    let actual = close(&snapshot, None, PublicationClosureOptions::default());
+    let certificate = actual.certificate.as_ref().unwrap();
+    let last = actual.stages.last().unwrap();
+    // In particular, the final observer must not retain the preceding witness.
+    assert_eq!(
+        last.counters.closed_producer_pairs,
+        certificate.closed_pairs()
+    );
+    assert_eq!(
+        last.counters.closed_producer_effects,
+        certificate.closed_effects()
+    );
+    assert_eq!(
+        last.counters.incomplete_producer_pairs,
+        certificate.incomplete_pairs()
+    );
+    assert_eq!(last.counters, actual.counters);
+    let rounds: Vec<_> = actual
+        .stages
+        .iter()
+        .map(|stage| &stage.counters.round)
+        .collect();
+    assert_eq!(
+        rounds.iter().map(|r| r.subjects_evaluated).sum::<usize>(),
+        actual.counters.subjects_evaluated
+    );
+    assert_eq!(
+        rounds.iter().map(|r| r.subjects_reopened).sum::<usize>(),
+        actual.counters.dirty_reevaluations
+    );
+    assert_eq!(
+        rounds.iter().map(|r| r.subjects_skipped).sum::<usize>(),
+        actual.counters.subjects_skipped_by_applicability
+    );
+    assert_eq!(
+        rounds
+            .iter()
+            .flat_map(|r| r.families.values())
+            .map(|f| f.attempts)
+            .sum::<usize>(),
+        actual.counters.producer_families_attempted
+    );
+    assert_eq!(
+        rounds
+            .iter()
+            .map(|r| r.certificate_build_micros)
+            .sum::<u128>(),
+        actual.counters.certificate_build_micros
+    );
+    assert!(rounds.iter().any(|r| {
+        r.next_dirty_by_reason
+            .contains_key(&PublicationReopenReason::NewHelperCreated)
+    }));
+    assert!(rounds.iter().any(|r| r.families.values().any(|f| {
+        f.reopened_by_reason
+            .contains_key(&PublicationReopenReason::GraphFactChanged)
+    })));
+    for stage in &actual.stages {
+        assert_eq!(stage.counters.round.accepted_elements, stage.added_elements);
+        assert_eq!(
+            stage.counters.round.accepted_occurrences,
+            stage.added_occurrences
+        );
+        assert!(stage.counters.round.planned_elements >= stage.added_elements);
+    }
+    assert_eq!(last.counters.round.next_dirty_subjects, 0);
+}
+
+#[test]
 fn inapplicable_population_requires_only_the_initial_materialization() {
     let snapshot = synthetic_publication_fixture(0, 4);
     let actual = close(&snapshot, None, PublicationClosureOptions::default());
@@ -2492,48 +2563,111 @@ fn status_queries_preserve_reference_values_completeness_and_diagnostics() {
     }
 }
 
+fn reference_value_fixture(directed: bool) -> Snapshot {
+    let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
+    let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(1, c::FUNCTION);
+    f.create(2, c::FEATURE_REFERENCE_EXPRESSION);
+    for n in [3, 4, 5, 6] {
+        f.create(n, c::FEATURE);
+    }
+    member(&mut f, 1, 2, 101, c::RESULT_EXPRESSION_MEMBERSHIP);
+    member(&mut f, 2, 3, 102, c::RETURN_PARAMETER_MEMBERSHIP);
+    member(&mut f, 1, 4, 103, c::FEATURE_MEMBERSHIP);
+    member(&mut f, 1, 5, 104, c::RETURN_PARAMETER_MEMBERSHIP);
+    member(&mut f, 1, 6, 105, c::FEATURE_MEMBERSHIP);
+    if directed {
+        f.enumeration(6, p::FEATURE_DIRECTION, "in");
+    }
+    f.enumeration(3, p::FEATURE_DIRECTION, "out");
+    f.enumeration(5, p::FEATURE_DIRECTION, "out");
+    relation(
+        &mut f,
+        2,
+        4,
+        106,
+        c::MEMBERSHIP,
+        p::MEMBERSHIP_MEMBER_ELEMENT,
+    );
+    type_featuring(&mut f, 2, 1, 107);
+    f.create(7, c::EXPRESSION);
+    f.create(8, c::FEATURE);
+    f.enumeration(8, p::FEATURE_DIRECTION, "out");
+    member(&mut f, 7, 8, 108, c::RETURN_PARAMETER_MEMBERSHIP);
+    member(&mut f, 6, 7, 109, c::FEATURE_VALUE);
+    f.value(109, p::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(false));
+    f.value(109, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
+    f.finish()
+}
+
 #[test]
 fn worklist_matches_fullscan_for_reference_expression_and_feature_values() {
     for directed in [false, true] {
-        let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
-        let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
-        let mut f = Fixture {
-            changes: base.change_set(),
-            base,
-            owned: BTreeMap::new(),
-        };
-        f.create(1, c::FUNCTION);
-        f.create(2, c::FEATURE_REFERENCE_EXPRESSION);
-        for n in [3, 4, 5, 6] {
-            f.create(n, c::FEATURE);
-        }
-        member(&mut f, 1, 2, 101, c::RESULT_EXPRESSION_MEMBERSHIP);
-        member(&mut f, 2, 3, 102, c::RETURN_PARAMETER_MEMBERSHIP);
-        member(&mut f, 1, 4, 103, c::FEATURE_MEMBERSHIP);
-        member(&mut f, 1, 5, 104, c::RETURN_PARAMETER_MEMBERSHIP);
-        member(&mut f, 1, 6, 105, c::FEATURE_MEMBERSHIP);
-        if directed {
-            f.enumeration(6, p::FEATURE_DIRECTION, "in");
-        }
-        f.enumeration(3, p::FEATURE_DIRECTION, "out");
-        f.enumeration(5, p::FEATURE_DIRECTION, "out");
-        relation(
-            &mut f,
-            2,
-            4,
-            106,
-            c::MEMBERSHIP,
-            p::MEMBERSHIP_MEMBER_ELEMENT,
+        permutations(&reference_value_fixture(directed), None, None);
+    }
+}
+
+#[test]
+fn contextual_shape_profile_keeps_family_and_reopen_observations_bounded() {
+    for directed in [false, true] {
+        let result = close(
+            &reference_value_fixture(directed),
+            None,
+            PublicationClosureOptions::default(),
         );
-        type_featuring(&mut f, 2, 1, 107);
-        f.create(7, c::EXPRESSION);
-        f.create(8, c::FEATURE);
-        f.enumeration(8, p::FEATURE_DIRECTION, "out");
-        member(&mut f, 7, 8, 108, c::RETURN_PARAMETER_MEMBERSHIP);
-        member(&mut f, 6, 7, 109, c::FEATURE_VALUE);
-        f.value(109, p::FEATURE_VALUE_IS_DEFAULT, Value::Boolean(false));
-        f.value(109, p::FEATURE_VALUE_IS_INITIAL, Value::Boolean(false));
-        permutations(&f.finish(), None, None);
+        assert!(result.converged);
+        assert_eq!(result.completeness, Completeness::Complete);
+        assert!(
+            result
+                .certificate
+                .as_ref()
+                .unwrap()
+                .is_fully_closed(result.overlay.model())
+        );
+        let mut families = BTreeMap::<ProducerFamilyId, PublicationFamilyMetrics>::new();
+        let mut contextual_rounds = 0;
+        for stage in &result.stages {
+            if stage.stratum != ResultStructureStratum::ContextualBindings {
+                continue;
+            }
+            contextual_rounds += 1;
+            for (&family, metrics) in &stage.counters.round.families {
+                families.entry(family).or_default().merge(metrics.clone());
+            }
+        }
+        for family in [
+            ProducerFamily::FeatureValue,
+            ProducerFamily::FeatureReferenceExpression,
+            ProducerFamily::ExpressionResult,
+        ] {
+            let metrics = &families[&family.id()];
+            assert!(metrics.attempts > 0);
+            assert!(
+                metrics
+                    .reopened_by_reason
+                    .contains_key(&PublicationReopenReason::ContextualBindingDependency)
+            );
+        }
+        eprintln!(
+            "contextual-shape-profile {}",
+            serde_json::json!({
+                "directed": directed,
+                "rounds": result.stages.len(),
+                "contextual_rounds": contextual_rounds,
+                "rounds_at_or_after_15": result.stages.iter().filter(|stage| stage.stage >= 15).count(),
+                "families": families.iter().map(|(id, metrics)| (id.name(), serde_json::json!({
+                    "attempts": metrics.attempts,
+                    "planning_micros": metrics.planning_micros,
+                    "shared_planning_micros": metrics.shared_planning_micros,
+                    "reopened_by_reason": metrics.reopened_by_reason.iter().map(|(reason, count)| (format!("{reason:?}"), count)).collect::<BTreeMap<_, _>>()
+                }))).collect::<BTreeMap<_, _>>()
+            })
+        );
     }
 }
 

@@ -1,0 +1,372 @@
+{
+  "format": "agentique-scheduler-profile/1",
+  "historical_source": "verification/generated/language-stability-bridge/systems-medium-result-populations/report.stages.jsonl",
+  "historical_source_sha256": "80c8e737d05d878af2013690888a8be0bdb3cd3653bf2d85cab71efd5a2b2aca",
+  "historical_boundary": "Prior stage observer ran before certificate issue. Deltas are between observations, not the same logged frontier; cumulative totals are not per-frontier cost. No family timings were collected historically.",
+  "historical_late_frontiers": [
+    {
+      "logged_stage": 15,
+      "stratum": "StableProperties",
+      "added_elements": 10,
+      "logged_closed_pairs": 9114,
+      "cumulative_certificate_build_micros": 45119194,
+      "delta_from_previous_log_micros": 3676479
+    },
+    {
+      "logged_stage": 16,
+      "stratum": "StableProperties",
+      "added_elements": 0,
+      "logged_closed_pairs": 9114,
+      "cumulative_certificate_build_micros": 48043340,
+      "delta_from_previous_log_micros": 2924146
+    },
+    {
+      "logged_stage": 17,
+      "stratum": "StableProperties",
+      "added_elements": 8,
+      "logged_closed_pairs": 8930,
+      "cumulative_certificate_build_micros": 51745331,
+      "delta_from_previous_log_micros": 3701991
+    },
+    {
+      "logged_stage": 18,
+      "stratum": "StableProperties",
+      "added_elements": 0,
+      "logged_closed_pairs": 8930,
+      "cumulative_certificate_build_micros": 54671713,
+      "delta_from_previous_log_micros": 2926382
+    },
+    {
+      "logged_stage": 19,
+      "stratum": "StableProperties",
+      "added_elements": 0,
+      "logged_closed_pairs": 8931,
+      "cumulative_certificate_build_micros": 58414399,
+      "delta_from_previous_log_micros": 3742686
+    },
+    {
+      "logged_stage": 20,
+      "stratum": "StableProperties",
+      "added_elements": 0,
+      "logged_closed_pairs": 9128,
+      "cumulative_certificate_build_micros": 62104800,
+      "delta_from_previous_log_micros": 3690401
+    },
+    {
+      "logged_stage": 21,
+      "stratum": "StableProperties",
+      "added_elements": 0,
+      "logged_closed_pairs": 9149,
+      "cumulative_certificate_build_micros": 65809128,
+      "delta_from_previous_log_micros": 3704328
+    },
+    {
+      "logged_stage": 22,
+      "stratum": "StableProperties",
+      "added_elements": 0,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 69537625,
+      "delta_from_previous_log_micros": 3728497
+    },
+    {
+      "logged_stage": 23,
+      "stratum": "ContextualBindings",
+      "added_elements": 1890,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 73238529,
+      "delta_from_previous_log_micros": 3700904
+    },
+    {
+      "logged_stage": 24,
+      "stratum": "ContextualBindings",
+      "added_elements": 346,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 76500781,
+      "delta_from_previous_log_micros": 3262252
+    },
+    {
+      "logged_stage": 25,
+      "stratum": "ContextualBindings",
+      "added_elements": 0,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 81755738,
+      "delta_from_previous_log_micros": 5254957
+    },
+    {
+      "logged_stage": 26,
+      "stratum": "ContextualBindings",
+      "added_elements": 14,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 85825549,
+      "delta_from_previous_log_micros": 4069811
+    },
+    {
+      "logged_stage": 27,
+      "stratum": "ContextualBindings",
+      "added_elements": 72,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 89165773,
+      "delta_from_previous_log_micros": 3340224
+    },
+    {
+      "logged_stage": 28,
+      "stratum": "ContextualBindings",
+      "added_elements": 14,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 92721688,
+      "delta_from_previous_log_micros": 3555915
+    },
+    {
+      "logged_stage": 29,
+      "stratum": "ContextualBindings",
+      "added_elements": 9,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 97408187,
+      "delta_from_previous_log_micros": 4686499
+    },
+    {
+      "logged_stage": 30,
+      "stratum": "ContextualBindings",
+      "added_elements": 2,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 100935348,
+      "delta_from_previous_log_micros": 3527161
+    },
+    {
+      "logged_stage": 31,
+      "stratum": "ContextualBindings",
+      "added_elements": 0,
+      "logged_closed_pairs": 9153,
+      "cumulative_certificate_build_micros": 105391928,
+      "delta_from_previous_log_micros": 4456580
+    },
+    {
+      "logged_stage": 32,
+      "stratum": "ContextualBindings",
+      "added_elements": 0,
+      "logged_closed_pairs": 14787,
+      "cumulative_certificate_build_micros": 109544480,
+      "delta_from_previous_log_micros": 4152552
+    }
+  ],
+  "focused_profiles": [
+    {
+      "contextual_rounds": 2,
+      "directed": false,
+      "families": {
+        "KerML.CrossDomain": {
+          "attempts": 19,
+          "planning_micros": 2909,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 17,
+            "NewHelperCreated": 6,
+            "NewProducerOpportunity": 6,
+            "NewRelationshipEndpoint": 9,
+            "ProviderSearchChanged": 9
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.ExpressionResult": {
+          "attempts": 4,
+          "planning_micros": 2362,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 1,
+            "GraphFactChanged": 3,
+            "NewRelationshipEndpoint": 2,
+            "ProviderSearchChanged": 2
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.FeatureReferenceExpression": {
+          "attempts": 2,
+          "planning_micros": 7273,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 1,
+            "GraphFactChanged": 1,
+            "NewRelationshipEndpoint": 1,
+            "ProviderSearchChanged": 1
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.FeatureValuation": {
+          "attempts": 19,
+          "planning_micros": 0,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 17,
+            "NewHelperCreated": 6,
+            "NewProducerOpportunity": 6,
+            "NewRelationshipEndpoint": 9,
+            "ProviderSearchChanged": 9
+          },
+          "shared_planning_micros": 5823
+        },
+        "KerML.FeatureValue": {
+          "attempts": 19,
+          "planning_micros": 0,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 17,
+            "NewHelperCreated": 6,
+            "NewProducerOpportunity": 6,
+            "NewRelationshipEndpoint": 9,
+            "ProviderSearchChanged": 9
+          },
+          "shared_planning_micros": 5823
+        },
+        "KerML.OwnedCrossing": {
+          "attempts": 19,
+          "planning_micros": 2040,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 17,
+            "NewHelperCreated": 6,
+            "NewProducerOpportunity": 6,
+            "NewRelationshipEndpoint": 9,
+            "ProviderSearchChanged": 9
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.PositionalRedefinition": {
+          "attempts": 19,
+          "planning_micros": 5014,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 17,
+            "NewHelperCreated": 6,
+            "NewProducerOpportunity": 6,
+            "NewRelationshipEndpoint": 9,
+            "ProviderSearchChanged": 9
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.VariableFeaturing": {
+          "attempts": 19,
+          "planning_micros": 716,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 17,
+            "NewHelperCreated": 6,
+            "NewProducerOpportunity": 6,
+            "NewRelationshipEndpoint": 9,
+            "ProviderSearchChanged": 9
+          },
+          "shared_planning_micros": 0
+        }
+      },
+      "rounds": 4,
+      "rounds_at_or_after_15": 0
+    },
+    {
+      "contextual_rounds": 2,
+      "directed": true,
+      "families": {
+        "KerML.CrossDomain": {
+          "attempts": 20,
+          "planning_micros": 3016,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 18,
+            "NewHelperCreated": 7,
+            "NewProducerOpportunity": 7,
+            "NewRelationshipEndpoint": 10,
+            "ProviderSearchChanged": 10
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.ExpressionResult": {
+          "attempts": 4,
+          "planning_micros": 3172,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 1,
+            "GraphFactChanged": 3,
+            "NewRelationshipEndpoint": 3,
+            "ProviderSearchChanged": 3
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.FeatureReferenceExpression": {
+          "attempts": 2,
+          "planning_micros": 8070,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 1,
+            "GraphFactChanged": 1,
+            "NewRelationshipEndpoint": 1,
+            "ProviderSearchChanged": 1
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.FeatureValuation": {
+          "attempts": 20,
+          "planning_micros": 0,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 18,
+            "NewHelperCreated": 7,
+            "NewProducerOpportunity": 7,
+            "NewRelationshipEndpoint": 10,
+            "ProviderSearchChanged": 10
+          },
+          "shared_planning_micros": 5393
+        },
+        "KerML.FeatureValue": {
+          "attempts": 20,
+          "planning_micros": 0,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 18,
+            "NewHelperCreated": 7,
+            "NewProducerOpportunity": 7,
+            "NewRelationshipEndpoint": 10,
+            "ProviderSearchChanged": 10
+          },
+          "shared_planning_micros": 5393
+        },
+        "KerML.OwnedCrossing": {
+          "attempts": 20,
+          "planning_micros": 1963,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 18,
+            "NewHelperCreated": 7,
+            "NewProducerOpportunity": 7,
+            "NewRelationshipEndpoint": 10,
+            "ProviderSearchChanged": 10
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.PositionalRedefinition": {
+          "attempts": 20,
+          "planning_micros": 5602,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 18,
+            "NewHelperCreated": 7,
+            "NewProducerOpportunity": 7,
+            "NewRelationshipEndpoint": 10,
+            "ProviderSearchChanged": 10
+          },
+          "shared_planning_micros": 0
+        },
+        "KerML.VariableFeaturing": {
+          "attempts": 20,
+          "planning_micros": 730,
+          "reopened_by_reason": {
+            "ContextualBindingDependency": 2,
+            "GraphFactChanged": 18,
+            "NewHelperCreated": 7,
+            "NewProducerOpportunity": 7,
+            "NewRelationshipEndpoint": 10,
+            "ProviderSearchChanged": 10
+          },
+          "shared_planning_micros": 0
+        }
+      },
+      "rounds": 4,
+      "rounds_at_or_after_15": 0
+    }
+  ],
+  "focused_boundary": "Exact existing directed/undirected contextual binding shapes; four rounds each, including two ContextualBindings rounds. These timings identify the shape costs and are not measurements of medium rounds >=15. The integrated medium gate must supply late-round family measurements.",
+  "scope_changes": "None. No new counterexample justifies narrowing the existing ProducerEffect contracts."
+}

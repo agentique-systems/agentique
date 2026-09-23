@@ -1,0 +1,149 @@
+{
+  "format": "agentique-scheduler-verification/1",
+  "environment": {
+    "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0"
+  },
+  "initial_development_checks": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "observed_shell_exit_code": 1,
+      "output_excerpt": "Formatting differences in producer_worklist.rs and result_structure.rs; corrected by cargo fmt --all."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-semantics --lib producer_worklist_tests -- --nocapture",
+      "observed_shell_exit_code": 1,
+      "output_excerpt": "error[E0716]: temporary value dropped while borrowed; FamilyTimer static-slice temporaries at 11 call sites. Corrected with inline const-generic family arrays before passing rerun."
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_worklist_tests",
+        "--",
+        "--nocapture"
+      ],
+      "environment": {
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 83.391,
+      "output": "verification\\generated\\final-language-acceptance\\scheduler\\worklist-tests.log",
+      "output_sha256": "5b80779beb4fa02a871815ef0149f80e1e5f898847b70a2de4a8d9537a21977f",
+      "result_lines": [
+        "    Finished `test` profile [unoptimized] target(s) in 43.46s",
+        "test result: ok. 34 passed; 0 failed; 2 ignored; 0 measured; 251 filtered out; finished in 38.98s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "contextual_shape_profile",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 40.437,
+      "output": "verification\\generated\\final-language-acceptance\\scheduler\\contextual-profile.log",
+      "output_sha256": "f520e09267de3b97da4f50da709afbd9ccacab5c20501e6a32656962e72859c7",
+      "result_lines": [
+        "    Finished `test` profile [unoptimized] target(s) in 38.59s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 287 filtered out; finished in 1.38s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_worklist::dependency_index_tests"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.422,
+      "output": "verification\\generated\\final-language-acceptance\\scheduler\\dependency-index-tests.log",
+      "output_sha256": "e91449ad71757c53adfe675c97931d61bda4bdb80eab2d3dca3afebc3c17816f",
+      "result_lines": [
+        "    Finished `test` profile [unoptimized] target(s) in 0.12s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 286 filtered out; finished in 0.21s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 19.5,
+      "output": "verification\\generated\\final-language-acceptance\\scheduler\\scheduler-clippy.log",
+      "output_sha256": "cdfb17306ba0c8672dbf5d1d808dccc729dd074b49325310ceb3c16db114c3c4",
+      "result_lines": [
+        "    Finished `dev` profile [unoptimized] target(s) in 19.29s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 11.047,
+      "output": "verification\\generated\\final-language-acceptance\\scheduler\\example-check.log",
+      "output_sha256": "d4f7bae96c018350e9386d141ec9a434b6b63256f32096ac1908213b983dbbde",
+      "result_lines": [
+        "    Finished `dev` profile [unoptimized] target(s) in 10.95s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.469,
+      "output": "verification\\generated\\final-language-acceptance\\scheduler\\scheduler-fmt.log",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "result_lines": []
+    }
+  ]
+}

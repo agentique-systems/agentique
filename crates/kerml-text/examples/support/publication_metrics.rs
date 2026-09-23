@@ -1,9 +1,11 @@
-//! Deterministic closure counters, separate from resource observations.
-use agq_kerml_semantics::PublicationCounters;
+//! Bounded closure work and timing observations; never acceptance evidence.
+use agq_kerml_semantics::{PublicationCounters, PublicationRoundMetrics};
 use serde_json::{Value, json};
+use std::collections::BTreeMap;
 
 pub fn counters(c: &PublicationCounters) -> Value {
     json!({
+        "round": round(&c.round),
         "declared_subjects": c.declared_subjects,
         "subjects_considered": c.subjects_considered,
         "subjects_evaluated": c.subjects_evaluated,
@@ -32,5 +34,30 @@ pub fn counters(c: &PublicationCounters) -> Value {
         "maximum_dependency_keys": c.maximum_dependency_keys,
         "maximum_dependency_edges": c.maximum_dependency_edges,
         "fixed_point_rounds": c.fixed_point_rounds,
+    })
+}
+
+pub fn round(r: &PublicationRoundMetrics) -> Value {
+    json!({
+        "subjects_evaluated": r.subjects_evaluated,
+        "subjects_skipped": r.subjects_skipped,
+        "subjects_reopened": r.subjects_reopened,
+        "planned_elements": r.planned_elements,
+        "accepted_elements": r.accepted_elements,
+        "accepted_occurrences": r.accepted_occurrences,
+        "next_dirty_subjects": r.next_dirty_subjects,
+        "next_dirty_by_reason": r.next_dirty_by_reason.iter().map(|(reason, count)| (format!("{reason:?}"), count)).collect::<BTreeMap<_, _>>(),
+        "families": r.families.iter().map(|(family, metrics)| (family.name(), json!({
+            "attempts": metrics.attempts,
+            "planning_micros": metrics.planning_micros,
+            "shared_planning_micros": metrics.shared_planning_micros,
+            "reopened_by_reason": metrics.reopened_by_reason.iter().map(|(reason, count)| (format!("{reason:?}"), count)).collect::<BTreeMap<_, _>>(),
+        }))).collect::<BTreeMap<_, _>>(),
+        "planning_including_query_cache_micros": r.planning_micros,
+        "dependency_index_micros": r.dependency_index_micros,
+        "model_materialization_micros": r.model_materialization_micros,
+        "certificate_revalidation_micros": r.certificate_revalidation_micros,
+        "certificate_build_micros": r.certificate_build_micros,
+        "elapsed_micros": r.elapsed_micros,
     })
 }

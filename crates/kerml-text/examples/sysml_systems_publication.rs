@@ -19,6 +19,9 @@ use std::{
     time::Instant,
 };
 
+#[path = "support/publication_metrics.rs"]
+mod publication_metrics;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let argument = |prefix: &str| {
@@ -127,10 +130,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             stages.flush().expect("flush producer stage evidence");
         }
         println!(
-            "Systems: producer frontier={} stratum={:?} added={} completeness={:?} diagnostics={} elapsed={:.3}s",
+            "Systems: producer frontier={} stratum={:?} added={} closed_pairs={} completeness={:?} diagnostics={} elapsed={:.3}s",
             stage.stage,
             stage.stratum,
             stage.added_elements,
+            stage.counters.closed_producer_pairs,
             stage.completeness,
             stage.diagnostics.len(),
             started.elapsed().as_secs_f64()
@@ -578,14 +582,21 @@ fn audit_report(audit: &agq_kerml_text::sysml::SystemsPublicationAudit) -> serde
 }
 
 fn closure_counters(counters: &agq_kerml_semantics::PublicationCounters) -> serde_json::Value {
-    json!({
-        "families_registered":counters.families_registered,
-        "applicable_subject_family_pairs":counters.applicable_subject_family_pairs,
-        "closed_pairs":counters.closed_producer_pairs,
-        "closed_requirements":counters.closed_producer_effects,
-        "incomplete_pairs":counters.incomplete_producer_pairs,
-        "certificate_bytes":counters.certificate_bytes,
-        "certificate_build_micros":counters.certificate_build_micros,
-        "negative_queries_certified":counters.negative_queries_certified,
-    })
+    let mut result = publication_metrics::counters(counters);
+    result.as_object_mut().expect("counter object").extend(
+        json!({
+            "families_registered":counters.families_registered,
+            "applicable_subject_family_pairs":counters.applicable_subject_family_pairs,
+            "closed_pairs":counters.closed_producer_pairs,
+            "closed_requirements":counters.closed_producer_effects,
+            "incomplete_pairs":counters.incomplete_producer_pairs,
+            "certificate_bytes":counters.certificate_bytes,
+            "certificate_build_micros":counters.certificate_build_micros,
+            "negative_queries_certified":counters.negative_queries_certified,
+        })
+        .as_object()
+        .expect("closure counter object")
+        .clone(),
+    );
+    result
 }

@@ -1715,6 +1715,7 @@ pub struct ConstructionResultStructure {
 pub struct ResultStructurePlan<'m> {
     graph: Graph<'m>,
     pub(crate) producer_families_attempted: usize,
+    pub(crate) family_metrics: BTreeMap<ProducerFamilyId, PublicationFamilyMetrics>,
     pub(crate) producer_evaluations: Vec<(ElementId, ProducerFamilyId, Completeness)>,
     pub(crate) producer_reads: Vec<(
         ElementId,
@@ -2461,6 +2462,12 @@ impl ResultStructurePlan<'_> {
             .direct_searches
             .extend(other.graph.direct_searches);
         self.producer_families_attempted += other.producer_families_attempted;
+        for (family, metrics) in other.family_metrics {
+            self.family_metrics
+                .entry(family)
+                .or_default()
+                .merge(metrics);
+        }
         self.producer_evaluations.extend(other.producer_evaluations);
         self.producer_reads.extend(other.producer_reads);
         self.deferred_bindings.extend(other.deferred_bindings);
@@ -2676,6 +2683,7 @@ impl<'m> KerMlQueries<'m> {
         let mut aggregate = self.result(vec![]);
         let mut contextual_results = vec![];
         let mut producer_families_attempted = 0;
+        let mut family_metrics = BTreeMap::new();
         let mut producer_evaluations = vec![];
         let mut producer_reads = vec![];
         let mut deferred_bindings = BTreeSet::new();
@@ -2695,6 +2703,10 @@ impl<'m> KerMlQueries<'m> {
                 && self.is(subject, c::INSTANTIATION_EXPRESSION)
             {
                 producer_families_attempted += 1;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::OwnedInstantiationResult.id()],
+                );
                 let mut proof = self.result(());
                 let members = self.memberships_of_type(subject, c::RETURN_PARAMETER_MEMBERSHIP);
                 let has_owned_result = members
@@ -2743,6 +2755,10 @@ impl<'m> KerMlQueries<'m> {
             }
             if profile.supports_publication_producers() && self.is(subject, c::FEATURE) {
                 producer_families_attempted += 2;
+                let family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::PositionalRedefinition.id()],
+                );
                 let mut redefinitions = self.implied_redefinitions(subject);
                 if redefinitions.completeness == Completeness::Complete {
                     for &target in &redefinitions.value {
@@ -2790,6 +2806,11 @@ impl<'m> KerMlQueries<'m> {
                     ),
                 ));
                 production.merge(redefinitions);
+                drop(family_timer);
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::VariableFeaturing.id()],
+                );
                 let mut proof = self.result(());
                 if matches!(
                     self.read_value(&mut proof, subject, p::FEATURE_IS_VARIABLE),
@@ -2875,6 +2896,10 @@ impl<'m> KerMlQueries<'m> {
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
                 producer_families_attempted += 1;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::OwnedCrossing.id()],
+                );
                 let mut proof = self.owned_cross_feature(subject);
                 if let Some(cross) = proof.value {
                     let existing = self.owned_cross_subsetting(subject);
@@ -2950,6 +2975,10 @@ impl<'m> KerMlQueries<'m> {
             }
             if profile.corrects_owned_cross_domain() && self.is(subject, c::FEATURE) {
                 producer_families_attempted += 1;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::CrossDomain.id()],
+                );
                 let mut proof = self.owned_cross_feature_domain(subject);
                 if let Some(domain) = proof.value.clone() {
                     let mut inherited_domains = vec![];
@@ -2998,6 +3027,10 @@ impl<'m> KerMlQueries<'m> {
                 && self.is(subject, c::INVOCATION_EXPRESSION)
             {
                 producer_families_attempted += 1;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::Invocation.id()],
+                );
                 let mut proof = self.result(());
                 let instantiated = self.instantiated_type(subject);
                 if let Some(target) = instantiated.value {
@@ -3055,6 +3088,10 @@ impl<'m> KerMlQueries<'m> {
                 && self.is(subject, c::FEATURE_CHAIN_EXPRESSION)
             {
                 producer_families_attempted += 1;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::FeatureChainExpression.id()],
+                );
                 let mut proof = self.result(());
                 let input = self.first_input(subject);
                 let source_target = self.source_target_feature(subject);
@@ -3106,6 +3143,10 @@ impl<'m> KerMlQueries<'m> {
             }
             if self.is(subject, c::FEATURE_REFERENCE_EXPRESSION) {
                 producer_families_attempted += 1;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::FeatureReferenceExpression.id()],
+                );
                 if stratum == ResultStructureStratum::Structural {
                     deferred_bindings.insert(subject);
                 } else {
@@ -3147,6 +3188,10 @@ impl<'m> KerMlQueries<'m> {
             }
             if self.is(subject, c::EXPRESSION) || self.is(subject, c::FUNCTION) {
                 producer_families_attempted += 1;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::ExpressionResult.id()],
+                );
                 let mut proof = self.result(());
                 let members = self.memberships_of_type(subject, c::RESULT_EXPRESSION_MEMBERSHIP);
                 for &membership in &members.value {
@@ -3216,6 +3261,13 @@ impl<'m> KerMlQueries<'m> {
             }
             if self.is(subject, c::FEATURE) {
                 producer_families_attempted += 2;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [
+                        ProducerFamily::FeatureValue.id(),
+                        ProducerFamily::FeatureValuation.id(),
+                    ],
+                );
                 let mut proof = self.result(());
                 let owned = self.owned_relationships_of_type(subject, c::FEATURE_VALUE);
                 // Direction and specialization constrain an actual valuation.
@@ -3466,6 +3518,10 @@ impl<'m> KerMlQueries<'m> {
             }
             if self.is(subject, c::INDEX_EXPRESSION) || self.is(subject, c::SELECT_EXPRESSION) {
                 producer_families_attempted += 1;
+                let _family_timer = crate::producer_worklist::FamilyTimer::new(
+                    &mut family_metrics,
+                    [ProducerFamily::IndexSelectResult.id()],
+                );
                 let mut proof = self.result(());
                 if let Some(argument) = self.argument_expression(&mut proof, subject) {
                     let raw = self.required_structural_result(&mut proof, argument);
@@ -3573,6 +3629,7 @@ impl<'m> KerMlQueries<'m> {
         ResultStructurePlan {
             graph,
             producer_families_attempted,
+            family_metrics,
             producer_evaluations,
             producer_reads,
             deferred_bindings,
