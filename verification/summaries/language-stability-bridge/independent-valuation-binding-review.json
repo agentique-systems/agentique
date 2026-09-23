@@ -1,0 +1,59 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "independent-valuation-binding-producers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e15067d72477e0635a7d9c7db6646a96eaa52f3f",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "921eb286312d845a357eb69b873a000fbef8a559559fa946e44007855bcab66f",
+      "duration_seconds": 47.84,
+      "output": "verification/generated/language-stability-bridge/independent-valuation-binding-producers.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "independent-valuation-binding-accepted-restore",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "publication_overlay::restoration::tests"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e15067d72477e0635a7d9c7db6646a96eaa52f3f",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "713c7e62b67812aee5345c9a7848b52183fa6f0a58581dfac170a3ee9644b204",
+      "duration_seconds": 2.38,
+      "output": "verification/generated/language-stability-bridge/independent-valuation-binding-accepted-restore.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    }
+  ]
+}
