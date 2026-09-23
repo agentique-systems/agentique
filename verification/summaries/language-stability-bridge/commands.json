@@ -11496,6 +11496,81 @@
       "duration_seconds": 2.61,
       "output": "verification/generated/language-stability-bridge/bridge-acceptance-review-format.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "bridge-equivalence-normalization-control",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "comparison_preserves_unnamed_members_multiplicity_dependency_ids_and_order",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "ae3ce51573a67fff192bb6ffb97603e6268b0bae",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "b1a8d42411869eeaf368969948a2510ce6507372d7fa639e365953c15697e41f",
+      "duration_seconds": 22.83,
+      "output": "verification/generated/language-stability-bridge/bridge-equivalence-normalization-control.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "bridge-medium-complete-standards",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "ae3ce51573a67fff192bb6ffb97603e6268b0bae",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "d003045cef9a4f95612fab3a9e5f8ebacfeccb22c447370fd6ad3c472da33c2f",
+      "duration_seconds": 0.56,
+      "output": "verification/generated/language-stability-bridge/bridge-medium-complete-standards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "bridge-acceptance-review-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "ae3ce51573a67fff192bb6ffb97603e6268b0bae",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "5288060d917815e4648ccfe25b67a616255fcf034cc800e28d83ef99a9eb00f6",
+      "duration_seconds": 9.5,
+      "output": "verification/generated/language-stability-bridge/bridge-acceptance-review-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ],
   "source_ledgers": [

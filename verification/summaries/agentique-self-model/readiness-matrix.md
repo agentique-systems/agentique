@@ -161,12 +161,15 @@ The three hashed test logs are retained under ignored
 `verification/generated/agentique-self-model/effective-api-review/` as
 `duplicate-specialization-red.log`, `duplicate-carrier-red.log` and
 `harness-fixture-green.log`; integration verified their hashes before copying.
-# Equivalence assertion review
+## Equivalence assertion review
 
 `4f5a052` strengthens the held accepted-publication equivalence comparison:
 exact shared standard IDs, local canonical ownership/class/name/ordinal,
 unnamed elements, duplicate counts and ordered parameter/end/state-role results
 remain visible. The independent programmatic model and existing positive
 assertions are unchanged. A small real-frontend comparison control was added.
-Independent review and formatting pass; compilation and execution are pending
-while the medium publication audit runs. This is not language acceptance.
+Independent review and formatting pass. The new comparison control compiles and
+passes against the real frontend (1 test, 1.49 seconds); text-package all-target
+Clippy passes with warnings denied. Exact commands/source/output hashes are in
+the bridge `commands.json` ledger. Actual accepted self-model execution remains
+unrun; this control is not language acceptance.

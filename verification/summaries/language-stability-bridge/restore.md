@@ -119,7 +119,9 @@ before retaining its authored edit history, and drops unused empty projects
 before parallel reads. All prior assertions remain, including simultaneous
 retention of r1/r2/r3. Independent review approved these lifetime changes.
 Formatting passes at `4f5a052` (`bridge-acceptance-review-format` in
-`commands.json`); compilation and actual accepted-cache execution remain pending.
+`commands.json`). The updated harness compiles; its new equivalence control
+passes (1 test, 1.49 seconds), and text-package all-target Clippy passes with
+warnings denied. Actual accepted-cache execution remains pending.
 
 <details>
 <summary>Retained command observations from the consolidated Markdown</summary>
