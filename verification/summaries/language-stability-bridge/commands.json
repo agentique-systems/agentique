@@ -7909,7 +7909,8 @@
         "sysml_semantics_passed": 81
       },
       "exit_observation": "Original agent session unavailable. Native Cargo exit observed using a retained Windows process handle; no test rerun.",
-      "duration_note": "Original runner wall duration was not recovered. Per-suite runtimes are retained in the exact raw output."
+      "duration_seconds": 578.4682197000366,
+      "duration_note": "Original functions exec session 61583 was subsequently resumed and closed normally: Python subprocess returned exit 0 and this perf_counter wall duration with the identical retained output SHA-256. The earlier independent Windows process-handle recovery remains valid; no test rerun."
     },
     {
       "name": "variable-end-causal-red",
