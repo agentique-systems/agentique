@@ -62,9 +62,9 @@ pub struct DerivationBuildMetrics {
     pub reused_owned_storage: bool,
 }
 
-/// Optional precise support for one reference appended to an ordered stored slot.
+/// Optional precise support for one reference introduced into an ordered stored slot.
 ///
-/// This kernel-created cache records the append's own rule, explicit evidence,
+/// This kernel-created cache records the creation/append rule, explicit evidence,
 /// owner/target existence and batch searches. It excludes earlier append proofs
 /// and other targets' automatic existence dependencies. The position identifies
 /// the entry in the current ordered slot; it is not proof that an arbitrary
@@ -422,6 +422,7 @@ impl<Input> DerivationBuilder<Input> {
         let initial_pool = evidence_pool.statistics();
         let initial_search_pool = search_pool.statistics();
         let mut changed_facts = BTreeSet::new();
+        let mut contributed = BTreeSet::new();
         let mut changed_existing_explanation = false;
         for input in self.occurrences {
             let id = input
@@ -513,6 +514,49 @@ impl<Input> DerivationBuilder<Input> {
                     rule: input.key.rule,
                     dependencies: BTreeSet::from([Dependency::Derived(FactKey::Element(id))]),
                 };
+                if let SlotValue::Ordered(values) = &value {
+                    let targets: Vec<_> = values
+                        .iter()
+                        .filter_map(|value| match value {
+                            crate::value::Value::Reference(target) => Some(*target),
+                            _ => None,
+                        })
+                        .collect();
+                    // A target key cannot identify repeated positions in a
+                    // nonunique ordered slot. Such populations stay aggregate.
+                    if !targets.is_empty()
+                        && targets.len() == values.len()
+                        && targets.iter().copied().collect::<BTreeSet<_>>().len() == targets.len()
+                    {
+                        let record_searches = self
+                            .searches
+                            .get(&FactKey::Element(id))
+                            .cloned()
+                            .unwrap_or_default();
+                        let slot_searches = self.searches.get(&key).cloned().unwrap_or_default();
+                        let searches = search_pool.union_shared(&record_searches, slot_searches);
+                        for (position, target) in targets.into_iter().enumerate() {
+                            let mut proof = evidence.clone();
+                            let target_fact = FactKey::Element(target);
+                            proof.dependencies.insert(
+                                if self.declared.has_declared_fact(target_fact) {
+                                    Dependency::Declared(target_fact)
+                                } else {
+                                    Dependency::Derived(target_fact)
+                                },
+                            );
+                            reference_contributions.insert(
+                                (id, property, target),
+                                Arc::new(OrderedReferenceContribution {
+                                    position,
+                                    explanation: evidence_pool.intern(proof),
+                                    searches: searches.clone(),
+                                }),
+                            );
+                        }
+                        contributed.insert(key);
+                    }
+                }
                 add_reference_dependencies(&self.declared, &value, &mut evidence.dependencies);
                 let evidence = evidence_pool.intern(evidence);
                 if record
@@ -534,7 +578,6 @@ impl<Input> DerivationBuilder<Input> {
             records.insert(id, Arc::new(record));
         }
         let mut extended = BTreeSet::new();
-        let mut appended = BTreeSet::new();
         for (element, property, additions, mut explanation) in self.extensions {
             self.declared
                 .check_dependency_write(FactKey::Property { element, property })?;
@@ -562,7 +605,7 @@ impl<Input> DerivationBuilder<Input> {
             let contribution_proof = explanation.clone();
             let contribution_searches = self.searches.get(&key).cloned().unwrap_or_default();
             if !additions.is_empty() {
-                appended.insert(key);
+                contributed.insert(key);
             }
             if let Some(previous) = explanations.get(&key) {
                 changed_existing_explanation = true;
@@ -783,7 +826,7 @@ impl<Input> DerivationBuilder<Input> {
             }
             // A later whole-slot search submission cannot be attributed to an
             // earlier append event. Discard precision rather than miss new reads.
-            if !appended.contains(&fact)
+            if !contributed.contains(&fact)
                 && let FactKey::Property { element, property } = fact
             {
                 model

@@ -657,7 +657,7 @@ impl ModelView {
                 .and_then(|source| source.model().declared_slot(element, property)),
         }
     }
-    /// Optional precise support captured by an ordered-reference append. Resolve
+    /// Optional precise support captured by ordered-reference creation or append. Resolve
     /// property aliases before lookup. Absence requires ordinary aggregate slot
     /// evidence; it never establishes that the reference or its proof is absent.
     /// Archives intentionally omit this cache, so consumers retaining a selected
@@ -672,7 +672,7 @@ impl ModelView {
             .get(&(element, property, target))
             .map(Arc::as_ref)
     }
-    /// Cached append contributions in deterministic owner/property/target order.
+    /// Cached contributions in deterministic owner/property/target order.
     /// This is an evidence cache, not the ordered slot's complete population.
     pub fn ordered_reference_contributions(
         &self,

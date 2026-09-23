@@ -36,6 +36,138 @@ fn contribution(model: &ModelView, target: ElementId) -> &OrderedReferenceContri
 }
 
 #[test]
+fn initial_derived_references_keep_creation_reads_without_sibling_or_later_append_proofs() {
+    let owner = key(10);
+    let owner_id = owner.element_id();
+    let sibling = key(11);
+    let late = key(12);
+    let owner_fact = FactKey::Element(owner_id);
+    let slot_fact = FactKey::Property {
+        element: owner_id,
+        property: SOURCES,
+    };
+    let creation_read = StructuralSearch::Incoming(ElementId::from_u128(999));
+    let slot_read = StructuralSearch::ElementIdentity(ElementId::from_u128(998));
+    let explicit = Dependency::Declared(FactKey::Property {
+        element: SPORTS,
+        property: NAME,
+    });
+    let mut builder = DerivationBuilder::new(declared());
+    builder.element(sibling, PART_DEF, [], BTreeSet::new());
+    builder.element(
+        owner,
+        SPECIALIZATION,
+        [
+            (SPECIFIC, scalar_ref(VEHICLE)),
+            (GENERAL, scalar_ref(ENGINE)),
+            (SOURCES, ordered_refs(&[ENGINE, sibling.element_id()])),
+        ],
+        BTreeSet::from([explicit]),
+    );
+    builder.searches(owner_fact, BTreeSet::from([creation_read.clone()]));
+    builder.searches(slot_fact, BTreeSet::from([slot_read.clone()]));
+    let initial = builder.build().unwrap();
+    let support = initial
+        .model()
+        .ordered_reference_contribution(owner_id, SOURCES, ENGINE)
+        .unwrap()
+        .clone();
+    assert_eq!(support.position(), 0);
+    assert_eq!(
+        support.explanation().dependencies,
+        BTreeSet::from([
+            Dependency::Derived(owner_fact),
+            Dependency::Declared(FactKey::Element(ENGINE)),
+        ])
+    );
+    assert_eq!(
+        support.searches(),
+        &BTreeSet::from([creation_read.clone(), slot_read])
+    );
+    assert!(
+        initial
+            .explain(owner_fact)
+            .unwrap()
+            .dependencies
+            .contains(&explicit)
+    );
+    assert!(
+        initial
+            .model()
+            .computation_searches_for(owner_fact)
+            .any(|search| search == &creation_read)
+    );
+    let sibling_support = initial
+        .model()
+        .ordered_reference_contribution(owner_id, SOURCES, sibling.element_id())
+        .unwrap();
+    assert_eq!(sibling_support.position(), 1);
+    assert!(
+        sibling_support
+            .explanation()
+            .dependencies
+            .contains(&Dependency::Derived(FactKey::Element(sibling.element_id())))
+    );
+
+    let mut next = DerivationBuilder::from_overlay(initial.clone());
+    next.element(late, PART_DEF, [], BTreeSet::new());
+    next.extend_ordered_references(owner_id, SOURCES, vec![late.element_id()], proof([]));
+    next.searches(slot_fact, BTreeSet::from([StructuralSearch::Model]));
+    let next = next.build().unwrap();
+    assert_eq!(
+        next.model()
+            .ordered_reference_contribution(owner_id, SOURCES, ENGINE),
+        Some(&support)
+    );
+    assert!(!support.searches().contains(&StructuralSearch::Model));
+    assert!(
+        !support
+            .explanation()
+            .dependencies
+            .contains(&Dependency::Derived(FactKey::Element(late.element_id())))
+    );
+    assert!(
+        next.explain(slot_fact)
+            .unwrap()
+            .dependencies
+            .contains(&Dependency::Derived(FactKey::Element(late.element_id())))
+    );
+}
+
+#[test]
+fn repeated_initial_targets_retain_aggregate_evidence_for_each_position() {
+    let owner = key(20);
+    let mut builder = DerivationBuilder::new(declared());
+    builder.element(
+        owner,
+        SPECIALIZATION,
+        [
+            (SPECIFIC, scalar_ref(VEHICLE)),
+            (GENERAL, scalar_ref(ENGINE)),
+            (TARGETS, ordered_refs(&[ENGINE, ENGINE])),
+        ],
+        BTreeSet::new(),
+    );
+    let overlay = builder.build().unwrap();
+    assert!(
+        overlay
+            .model()
+            .ordered_reference_contribution(owner.element_id(), TARGETS, ENGINE)
+            .is_none()
+    );
+    assert_eq!(
+        overlay
+            .model()
+            .element(owner.element_id())
+            .unwrap()
+            .slot(TARGETS)
+            .unwrap()
+            .value(),
+        &ordered_refs(&[ENGINE, ENGINE])
+    );
+}
+
+#[test]
 fn separate_append_events_retain_only_their_own_support_and_searches() {
     let snapshot = declared();
     let old_search = StructuralSearch::Incoming(ENGINE);
