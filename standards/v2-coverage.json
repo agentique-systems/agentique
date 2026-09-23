@@ -598,8 +598,8 @@
       "boundary": "Medium scoped acceptance passes with exact fully closed certificate; full 21-document publication remains a separate gate.",
       "producer_round_limit": 64
     },
-    "focused_corrections": "Actions 534/534 and medium 695/695 scoped gates pass with zero obligations, diagnostics or authority conflicts and fully closed certificates. The inherited-result ExpressionResult population correction and Systems-only 64-round budget are verified by focused guards and the medium corpus. Full publication has not yet run.",
-    "full_publication_this_bridge": "not yet run; scoped counts are not full-corpus acceptance",
+    "focused_corrections": "Actions 534/534 and medium 695/695 scoped gates pass with zero obligations, diagnostics or authority conflicts and fully closed certificates. The inherited-result ExpressionResult population correction and Systems-only 64-round budget are verified by focused guards and the medium corpus. The first full publication attempt is in progress.",
+    "full_publication_this_bridge": "First normal full attempt systems-full-language-bridge in progress at source 530b430; no full acceptance result yet. One retry is permitted only after a concrete defect fix.",
     "systems_publication": "not accepted",
     "accepted_bindings": false,
     "trusted_receipt_catalogue": "unavailable until actual full publication acceptance",
