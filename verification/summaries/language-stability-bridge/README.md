@@ -15,8 +15,9 @@ parse and construct byte-exactly. Producer closure converges Complete in 33 roun
 with a fully closed certificate, zero incomplete evaluations and no diagnostics.
 The faithful inherited-result correction and sufficient Systems-only budget close
 the previously diagnosed boundary. The earlier eight-document Actions gate also
-passed with 534/534 Complete references and fully closed evidence. The first full publication attempt is now running; no full acceptance result
-has been recorded.
+passed with 534/534 Complete references and fully closed evidence. The first full publication attempt stopped at its private-memory limit. Its
+construction audit passed all 1,327 references with zero kernel obligations, but
+strict acceptance did not finish. No Systems receipt or accepted bindings exist.
 
 All six genuine layered expression fixtures and the connection-end fixture pass
 with fully closed certificates. The indexed assignment now matches the real
@@ -44,13 +45,22 @@ the executable actual-cache gate.
 
 ## Publication observations
 
-The first normal full attempt, `systems-full-language-bridge`, started on
-2026-09-23 at clean `530b430`, using the successful release build from `692ed8e`
-(binary SHA-256 in `commands.json`). It selects all 21 documents without
-`--audit-only`. The watchdog retains 2,100 seconds, 6,656 MiB private memory and
-1 GiB free disk. This attempt is **in progress**, not accepted; its completed
-result belongs in `publication-commands.json`. The normal full attempt is now
-used; the only permitted retry requires a concrete defect fix.
+The first normal full attempt, `systems-full-language-bridge`, ran at clean
+`530b430` using release build `692ed8e` (binary hash in `commands.json`). It
+selects all 21 documents without `--audit-only`. The unchanged watchdog stops it
+on **private memory** after **1,693.297 seconds**, with peak **6,656.6 MiB** against
+6,656 MiB. Its construction reference audit has **1,327/1,327 without failure**
+and its last refinement has zero kernel obligations. Strict publication remains
+unfinished: last completed frontier 18 is Incomplete, and the stop occurs during
+frontier 19 after 2,048/2,636 subject evaluations. No final report, accepted receipt
+or bindings were produced. This is a resource stop, not a semantic rejection.
+
+The final retained frontier closes 22,236/24,732 applicable pairs and reports
+395,011 closed requirements, six incomplete pairs and 15 diagnostics; these are
+**intermediate strict observations**, not final acceptance counts. Exact command,
+output/stage hashes, memory/time measurements and the frontier are in the
+publication ledger. The normal full attempt is used. One retry remains, only
+after a concrete allocation fix and its focused checks; limits stay unchanged.
 
 The passed `systems-medium-result-populations` audit uses clean source `9152fb9`
 and release build `b018b18`. It exits 0 in **1,726.844 seconds**, peak **6,435.4 MiB

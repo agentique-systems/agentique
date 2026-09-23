@@ -1453,6 +1453,147 @@
         "publication_accepted": false
       },
       "interpretation": "Medium scoped gate passed after the inherited-result population correction and sufficient Systems budget. Exact final certificate is fully closed. Full 21-document publication remains separate and has not been attempted."
+    },
+    {
+      "name": "systems-full-language-bridge",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/systems-full-language-bridge/report.json"
+      ],
+      "source_commit": "530b4302da085b66265bd2dd5abecf32d0125069",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/systems-full-language-bridge",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 23356,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 21253550080,
+      "safety_stop": "private_memory",
+      "duration_seconds": 1693.297,
+      "peak_rss_bytes": 6886055936,
+      "peak_private_bytes": 6979997696,
+      "samples": 1692,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "827f6919f8ebd748871d78d22b549f637b1e9e6f8e0ff99c59bf4b54e5d6818f",
+      "release_build_source_commit": "692ed8ebba2c8a24bb228bf8ecce56f68fbeff4d",
+      "release_binary_sha256": "ae61879c82a56226f845e33b015e73b299c9880b9ab2e5fd7439686de1d1e228",
+      "report_artifacts": [
+        {
+          "path": "verification/generated/language-stability-bridge/systems-full-language-bridge/report.stages.jsonl",
+          "sha256": "fe678f33769df34de6e1c6d9ffae03d21f754c286ce5b6cfd51282303551a043"
+        }
+      ],
+      "final_report_created": false,
+      "construction_observation": {
+        "reference_progress": "Systems: references round=2 selected=1327 obligations=0 evaluated=1327 reused=0",
+        "mandatory_audit_progress": "Systems: mandatory references audited=1327 failures=0"
+      },
+      "last_completed_stage": {
+        "added": 789,
+        "closure_counters": {
+          "applicable_subject_family_pairs": 24732,
+          "certificate_build_micros": 83778231,
+          "certificate_bytes": 2877404,
+          "closed_pairs": 22236,
+          "closed_requirements": 395011,
+          "families_registered": 87,
+          "incomplete_pairs": 6,
+          "negative_queries_certified": 98005
+        },
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "0fbd3c4e-90ef-5cdd-b7c4-badbbd0c22eb"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "420b87f6-0adf-5721-87ac-d0a91c0ffbab"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "645e8bcf-5b2b-5b10-82ff-49d0c7e4f012"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "7b1b5cfd-929c-58a3-a4e9-b9ea7d31db3c"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "a088065c-e638-56f4-aca0-eb31b392de20"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "3af5418b-509c-5284-a0ee-019494766fa1"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "80ea68eb-545d-53d2-81a4-33a860f22b60"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "f1e9f776-13cf-5f0b-b9e1-f2a7204a4a8d"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "fe3ae656-267a-5c7c-86c7-71ad9c0ce13e"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "0fbd3c4e-90ef-5cdd-b7c4-badbbd0c22eb"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "645e8bcf-5b2b-5b10-82ff-49d0c7e4f012"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "7b1b5cfd-929c-58a3-a4e9-b9ea7d31db3c"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "a088065c-e638-56f4-aca0-eb31b392de20"
+          }
+        ],
+        "phase": "publication",
+        "stage": 18,
+        "stratum": "ContextualBindings"
+      },
+      "last_progress_before_stop": "Systems publication: round=19 evaluated=2048/2636 planned=1547",
+      "interpretation": "First normal full attempt stopped by the unchanged private-memory watchdog. Construction audited all1327 references without failure and had zero kernel obligations, but strict publication was unfinished. No final report, accepted facade receipt or bindings were produced. This is a resource stop, not a semantic rejection. One retry remains only after a concrete defect fix."
     }
   ]
 }
