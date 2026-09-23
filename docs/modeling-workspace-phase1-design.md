@@ -263,6 +263,47 @@ legitimately create a bucket keyed by a dependency ID, so checking that every
 index key is authored would be wrong. Check retained entries and their carriers,
 plus unchanged dependency allocations, rather than keys or record pointers alone.
 
+#### Concrete kernel handoff after publication readiness
+
+Read-only recheck against `9152fb9`: the four slices above remain the minimum.
+`Snapshot::with_immutable_dependency` still clones `ModelView`, and the first
+`DerivationBuilder::build_inner` clones the dependency explanation/search pools.
+`ProducerClosedDependency::project_snapshot` adds no separate copying step or
+acceptance exception. No storage code, build or cache load accompanied this
+recheck.
+
+Use these private boundaries to make the first patches mechanical; the names
+below are proposed implementation names, not additional public graph contracts:
+
+| Slice | Concrete internal seam and acceptance discriminator |
+| --- | --- |
+| 1 | `model/storage.rs::CandidateView<'a>` borrows the registry, optional dependency and local records/occurrences. Supply `element`, `occurrence`, sorted record/occurrence cursors and reservation membership; use it in `model.rs::validate` and `association.rs::project` instead of concrete merged maps. A finite cursor holds one map/set iterator per publication layer and chooses the next key without collecting dependency keys. Public borrowed iterator signatures remain unchanged. |
+| 2 | `LocalIndexes` separates local entries from `replacement_groups: BTreeSet<(ElementId, PropertyId)>` and retained combined projection/reference entries. Suppress base reference entries only for these groups. Preserve reference ordering `(source, property, position, target, carrier)` independently of association slot ordering `(explicit_position, target, occurrence_id)`. In `shared_dependency_projection.rs`, the first oracle must still shift the untouched base occurrence to position 2, retain both duplicate-target occurrences, round-trip identically and restore the base projection after removal; the second must reject the scalar inverse conflict without reserving the rejected IDs. Add physical sharing assertions to these existing oracles. |
+| 3 | `OverlayData` owns a local explanation map and local interners. Add private `explanation_for`/`contains_derived_fact` lookup shared by strict/construction build, promotion and archive restoration; lookup falls back to the exact dependency. `proof_graph.rs` traverses local facts and their owning local pool, checking base premises before treating them as terminal. Do not intern base proofs merely to obtain cached adjacency. The minimum implementation needs no cross-layer interner deduplication: equal newly submitted local proofs may occupy the local pool. |
+| 4 | `archive.rs` serializes merged logical entries/reservations in existing order but restores only local containers. Keep `declared_slot`, original-origin lookup and optional contribution lookup layer-aware; retain sparse current navigation on standard IDs. Existing context/digest code continues consuming the same logical public iterators, so allocation tokens never enter identities and historical KerML receipts require no migration. |
+
+Introduce a non-default kernel `storage-observation` feature, forwarded by the
+held workspace's `verification` feature, for the physical observer. `cfg(test)`
+alone cannot expose it to downstream integration tests. A hidden testing module
+should report opaque allocation tokens plus typed entry counts for actual model
+tables, indexes, reservations, explanation lookup, proof adjacency, search pools
+and contribution tables, recursively for both accepted layers. Inspect retained
+containers; do not derive tokens from publication facades. Report locally
+recomputed projection groups separately, including their base carriers, rather
+than misclassifying those necessary projections as copied standards. This feeds
+the existing `publication_storage`/`dependency_storage` assertions at empty mount,
+two independent projects and all five retained 100-document revisions.
+
+One cross-owner API choice remains before Working implementation: a checked
+identity-lineage/reconstruction seam from a previous `ConstructionView`.
+Currently `preview` retains candidate reservations but exposes no operation to
+advance that lineage, and lowering publishes from a strict `Snapshot`. Kernel
+and frontend owners must settle its signature and recovery-versus-deletion
+reservation contract together; a fresh dependency mount per edit is insufficient.
+This does not require exposing local tables or changing publication acceptance.
+No remaining storage representation choice requires a new backend, inherited
+element copies or a change to query completeness.
+
 #### Index and navigation rules
 
 Record/class/occurrence iteration merges disjoint sorted streams. Incoming,
