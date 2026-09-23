@@ -15,6 +15,9 @@ use std::sync::Arc;
 
 mod contributions;
 #[cfg(test)]
+#[path = "../tests/unit/producer_directed_valuation_review.rs"]
+mod directed_valuation_review_tests;
+#[cfg(test)]
 #[path = "../tests/unit/producer_emitter_scope.rs"]
 mod emitter_scope_tests;
 #[cfg(test)]
