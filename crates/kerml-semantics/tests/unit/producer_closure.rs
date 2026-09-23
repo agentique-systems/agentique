@@ -1495,6 +1495,146 @@ fn generic_effects_cover_subtype_populations_but_membership_does_not_reown() {
 }
 
 #[test]
+fn expression_result_effects_preserve_subject_typing_and_restrict_value_carriers() {
+    use crate::producer_closure::{ProducerRead, descriptor_changes_read};
+    let mut f = Fixture::new();
+    f.create(1, c::EXPRESSION);
+    f.create(2, c::FEATURE);
+    let snapshot = f.finish();
+    let descriptor =
+        ProducerFamily::ExpressionResult.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V9);
+    let registry = ProducerRegistry::new([descriptor.clone()]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveMembership));
+    for (class, changes) in [
+        (c::FEATURE_VALUE, false),
+        (c::FEATURE_MEMBERSHIP, true),
+        (c::OWNING_MEMBERSHIP, true),
+    ] {
+        assert_eq!(
+            descriptor
+                .effects
+                .iter()
+                .any(|&effect| descriptor_changes_read(
+                    &descriptor,
+                    effect,
+                    &ProducerRead::Owned(id(1), class),
+                    snapshot.model(),
+                    &BTreeSet::new(),
+                )),
+            changes
+        );
+    }
+    // Actual effect validation must still reject a chaining on an existing
+    // subject while allowing exactly the same write on a generated helper.
+    let q = KerMlQueries::new(context);
+    for fresh_source in [false, true] {
+        let mut plan = q.plan_result_structure([]);
+        let evidence = q.canonical_fact_evidence(FactKey::Element(id(1)));
+        let helper = DerivationKey {
+            rule: RuleId::from_u128(98224),
+            subject: id(1),
+            output: OutputKey::from_u128(1),
+        };
+        if fresh_source {
+            plan.add_derived_element(helper, c::FEATURE, BTreeMap::new(), None, &evidence)
+                .unwrap();
+        }
+        plan.add_derived_element(
+            DerivationKey {
+                output: OutputKey::from_u128(2),
+                ..helper
+            },
+            c::FEATURE_CHAINING,
+            BTreeMap::from([(
+                p::FEATURE_CHAINING_CHAINING_FEATURE,
+                SlotValue::Scalar(Value::Reference(id(2))),
+            )]),
+            Some(if fresh_source {
+                helper.element_id()
+            } else {
+                id(1)
+            }),
+            &evidence,
+        )
+        .unwrap();
+        let audited = plan.validate_declared_effects(&[id(1)], &registry);
+        assert_eq!(audited.is_ok(), fresh_source, "{audited:?}");
+    }
+}
+
+#[test]
+fn expression_and_function_result_emissions_fit_exact_relationship_contract() {
+    use agq_kerml::BaselineProfile;
+    for profile in [
+        BaselineProfile::PublishedKerMl10,
+        BaselineProfile::OPERATIONAL_V9,
+    ] {
+        for (class, role) in [
+            (c::EXPRESSION, ImpliedBindingRole::ExpressionResult),
+            (c::FUNCTION, ImpliedBindingRole::FunctionResult),
+        ] {
+            let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+            let mut f = Fixture {
+                changes: base.change_set(),
+                base,
+                owned: BTreeMap::new(),
+            };
+            f.create(1, class);
+            f.create(2, c::FEATURE);
+            f.create(3, c::EXPRESSION);
+            f.create(4, c::FEATURE);
+            member(&mut f, 1, 2, 10, c::RETURN_PARAMETER_MEMBERSHIP);
+            member(&mut f, 1, 3, 11, c::RESULT_EXPRESSION_MEMBERSHIP);
+            member(&mut f, 3, 4, 12, c::RETURN_PARAMETER_MEMBERSHIP);
+            let snapshot = f.finish();
+            let q = KerMlQueries::new(
+                SemanticContext::for_snapshot(
+                    &snapshot,
+                    SemanticOptions {
+                        baseline_profile: profile,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .unwrap(),
+            );
+            let descriptor = ProducerFamily::ExpressionResult.descriptor(profile);
+            let registry = ProducerRegistry::new([descriptor.clone()]).unwrap();
+            q.plan_result_structure([id(1)])
+                .validate_declared_effects(&[id(1)], &registry)
+                .unwrap();
+            let expanded = q.derive_result_structure(&snapshot).unwrap();
+            let model = expanded.overlay.model();
+            let emitted: BTreeSet<_> = model
+                .elements()
+                .filter_map(|record| {
+                    let Origin::Derived(proof) = record.origin() else {
+                        return None;
+                    };
+                    (proof.rule == role.rule_id(profile)
+                        && model
+                            .registry()
+                            .is_subtype(record.metaclass(), c::RELATIONSHIP)
+                            .unwrap())
+                    .then_some(record.metaclass())
+                })
+                .collect();
+            assert!(emitted.contains(&c::BINDING_CONNECTOR));
+            assert!(
+                emitted.is_subset(descriptor.relationship_classes.as_ref().unwrap()),
+                "{profile:?} {role:?}: {emitted:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn pending_creator_cannot_hide_a_future_cross_subject_typing_family() {
     let snapshot = fixture();
     let mut creator = ProducerDescriptor::new(

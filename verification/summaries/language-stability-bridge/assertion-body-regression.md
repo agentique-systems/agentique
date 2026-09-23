@@ -30,3 +30,24 @@ trace is `verification/generated/language-stability-bridge/assertion-body-micro.
 This commit changes tests only; it does not assert a root cause or rerun a corpus
 publication. An earlier fixture draft correctly failed result arity and was fixed
 before retaining this regression.
+
+The reproduced defect was an overstated `ExpressionResult` producer contract.
+The existing Expression/Function only gains memberships; its contextual chaining,
+reference subsetting and featuring concern generated helper features. The
+descriptor now keeps chaining in fresh effects and enumerates all seven emitted
+relationship classes, including BindingConnector. It cannot introduce a
+FeatureValue carrier. No query or negative closure requirement was weakened.
+The registry digest changes; accepted historical KerML publication bytes and
+the `/26` identity remain untouched.
+
+The same assertion micro now reaches Complete (exit 0, 18.91 s). Its effective
+result remains the inherited canonical identity and its expression binding is
+materialized. Two focused KerML tests pass (exit 0):
+`expression_result_effects_preserve_subject_typing_and_restrict_value_carriers`
+and `expression_and_function_result_emissions_fit_exact_relationship_contract`.
+They check closure/read boundaries, reject chaining on the existing subject,
+allow chaining on a generated helper, audit actual producer output, and enumerate
+all emitted Relationship subclasses for Expression and Function in both the
+published and Operational v9 profiles. `cargo fmt --all -- --check` and
+`git diff --check` also pass. Verification used one build job and the low-disk
+profile; no corpus or accepted-cache load was run.

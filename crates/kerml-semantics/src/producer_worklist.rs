@@ -139,7 +139,6 @@ impl ProducerFamily {
                 vec![c::EXPRESSION, c::FUNCTION],
                 vec![
                     E::Membership,
-                    E::FeatureChain,
                     E::ValueBinding,
                     E::ResultStructure,
                     E::ConnectorStructure,
@@ -229,6 +228,25 @@ impl ProducerFamily {
                 [c::TYPE_FEATURING, c::FEATURE_MEMBERSHIP, c::REDEFINITION]
                     .into_iter()
                     .collect(),
+            );
+        }
+        if self == Self::ExpressionResult {
+            // The expression/function gains only contextual-result and binding
+            // memberships. Chaining, featuring and subsetting concern newly
+            // created helper features, never the existing producer subject.
+            // In particular no FeatureValue carrier is introduced by this rule.
+            descriptor.relationship_classes = Some(
+                [
+                    c::OWNING_MEMBERSHIP,
+                    c::FEATURE_MEMBERSHIP,
+                    c::END_FEATURE_MEMBERSHIP,
+                    c::FEATURE_CHAINING,
+                    c::REFERENCE_SUBSETTING,
+                    c::TYPE_FEATURING,
+                    c::BINDING_CONNECTOR,
+                ]
+                .into_iter()
+                .collect(),
             );
         }
         if self == Self::FeatureChainExpression {
