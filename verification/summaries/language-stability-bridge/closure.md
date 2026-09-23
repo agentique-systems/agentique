@@ -491,3 +491,22 @@ producers. Function-target result-write precision and target-membership read
 precision remain diagnostic hypotheses, not verified fixes. Output SHA-256:
 paired run `2fabde69ab5378d9a42622e6b572866dbc72943c06a1b417c5118ad87bbf9ca5`;
 trace `ac1aaaf984b23246c3488d674a7ac5e8117467a8acf027bb58caf45e6d897f7b`.
+
+Independent review of the future-owner bound is **GO** with guard follow-up
+`f6362bc` (integrated as `30d7413`). Fresh creation requires declared capability;
+all actual output emitters must satisfy their own scopes; ownership adoption is
+checked both in attachment maps and fresh-owner slots. Existing semantic source
+and canonical owner are audited separately, so a relationship owned by A cannot
+use another batch subject B's typing permission. Unknown/transitive creation,
+model-wide/reference-scalar writers and pending ownership providers retain the
+global fallback. Reconstruction recomputes masks against the current graph and
+registry. No further defect was found within these reviewed boundaries.
+
+Architecture's recorded commands `fresh-ownership-guards-concrete-carrier`
+(`cargo test --locked --offline -p agq-kerml-semantics --lib fresh_ownership_tests -- --nocapture`)
+and `emitter-shared-initial-value-control`
+(`cargo test --locked --offline -p agq-kerml-semantics --lib emitter_scope_tests -- --nocapture`)
+exited 0: four controls passed in 0.11 s and five in 0.32 s, respectively. Their
+ledger records retain exact tested source/patch/output hashes. The reviewer did
+not repeat those runs. This scope-soundness verdict does not resolve the separately
+recorded expression micro failures or establish publication/readiness acceptance.
