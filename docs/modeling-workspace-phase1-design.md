@@ -205,6 +205,38 @@ is covered by the old class property set. Such validation can borrow the base
 without rebuilding its tables. The ordinary accepted Systems project mount uses
 the already combined registry.
 
+#### Implementation ownership handoff
+
+Use three owners after readiness. The storage changes below remain sequential
+within the kernel owner; frontend preparation can proceed against the existing
+public graph APIs while that internal refactor runs.
+
+| Owner | Files and reusable boundary | Deliverable handed to the next owner |
+| --- | --- | --- |
+| Kernel shared storage | `crates/kernel/src/model.rs`, `derivation_input.rs`, `association.rs`, `derived.rs`, `derived/{construction,archive_restore,proof_graph}.rs` and `archive.rs`. Preserve `Snapshot::with_immutable_dependency`, construction/strict views, borrowed `ModelView` queries and derived builders. | Shared dependency tables plus local records, indexes, reservations and proof pools, with the existing public graph/query contracts. Supply the actual storage observations required by held `tests/support/mod.rs`; workspace code must not inspect private maps or manufacture tokens from facade pointers. |
+| Frontend Working compilation | `crates/kerml-text/src/project.rs`, `sysml.rs`, `sysml/source.rs`, `library/{mod,construction,refinement}.rs`, `lowering.rs` and the public exports in `lib.rs`. Extract the existing `ProjectDocument` parse/edit and `Arc` document map handling; reuse `AcceptedSourceDependency`, `LibraryDraft`, reference/source metadata and the existing local scheduler. | The additive `SourceInputs`/`SourceCompilation` boundary specified in the frontend review: immutable inputs, independently retained identity history, unavailable/construction/strict result, exact diagnostics/references and borrowed query factories. Preserve the strict `SourceProject` adapter. Own the small scheduler-observer plumbing in `kerml-semantics/src/producer_worklist.rs` so compilation retains actual evaluated subjects across reconstruction. |
+| Workspace revisions and validation | After the gate, add `crates/modeling-workspace/src/{lib,revision,validation}.rs` and its manifest/workspace registration. Implement against the frontend carrier; keep `tests/{phase1,working_states}.rs` and `tests/support/mod.rs` as the existing acceptance boundary. | Expected-head transactions, independent workspace revision IDs, retained Working handles, checked Validated handles and direct language query delegation. Expose verification-only storage/scheduler observations by forwarding the owning layers' observations. No second semantic store or nested `SourceProject` history. |
+
+Settle the frontend carrier signatures first so the workspace owner can implement
+history and error handling without editing lowering. `SourceProject` currently
+rejects recovered syntax before calling `lower_accepted_source`, which then
+requires `LibraryDraft::strict_snapshot`; neither is a Working result carrier.
+The frontend owner must retain the construction frontier and pending source
+populations before attempting strict promotion. Reuse
+`ProducerClosedDependency::{project_construction_context,project_construction_overlay_context,project_overlay_context}`
+and `SysmlSemanticContext::for_closed_dependency`; keep accepted mount ownership
+inside the frontend compilation rather than exporting its private helper.
+
+Two cross-owner boundaries need explicit review. The kernel owns checked live and
+retired identity reservations; the frontend owns the distinction between temporary
+recovery omission and explicit document removal across compilations. Any new
+construction-lineage operation must preserve both rather than minting a fresh
+identity history at each Working edit. The kernel also owns storage accounting,
+while the frontend owns scheduling observations; the workspace merely forwards
+them. Complete frontend Working tests and all four storage slices before the
+held 100-document/revision suite can establish phase I8. None of these owners
+needs a new language acceptance authority or an accepted-standard replay.
+
 #### First implementation slices after readiness
 
 Keep these as sequential, reviewable kernel changes before integrating the
