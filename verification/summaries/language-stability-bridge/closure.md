@@ -692,3 +692,34 @@ remaining path through the nested FeatureReferenceExpression's ancestor-context
 reads. `bridge-actual-chain-planner` and `bridge-materialized-chain-planner` are
 recorded in `commands.json`. A speculative release build was explicitly stopped
 (exit 4294967295) when the combined fixture remained red; no corpus used it.
+
+
+Nested-chain preparation `b7d3d99` adds
+`contains(inter.intersectionsOf.otherFeature, face)` as a separate unexecuted
+test. After importing the Index/Select result scope `4317e65` and referent-prefix
+source `17f93d4`, clean local source `0922022` was tested with
+`cargo test --locked --offline -p agq-sysml-semantics --lib expression_usage_tests -- --nocapture --test-threads=1 --skip invocation_nested_chain`.
+It exited 101: both simple controls passed and the original compound case still
+failed on `73011/deriveUsageMayTimeVary` (62.62 s tests, 73.69 s including build).
+Output SHA-256 `6ba508197cec8af1b3f423f237b8a47640b58e1f31a64937a720c2eb18c69f13`.
+The nested test remains unrun pending this base gate. An earlier runner started
+before prerequisite cherry-pick conflicts were resolved; it was explicitly
+terminated (shell exit 1) and excluded from these results. Its retained partial
+output hash is `888e33ffcbf8d3acaa17753cfa68abe864753c5a283715b4241f5ddd18801f1c`.
+
+The original-prefix referent correction has four adversarial controls covering
+pending/derived-only populations, current endpoint evidence, archive restoration,
+mixed broad reads and reconstruction. Independent review checks kernel append
+and archive prefix invariants; the four controls and causal regression pass
+independently. Two-package all-target Clippy and formatting pass. Exact commands,
+including the first missing-import compile error, are consolidated from
+`declared-referent-review.json` and `referent-prefix-independent-commands.json`.
+These controls establish the prefix boundary, not whole-expression acceptance.
+
+Bounded read-origin tracing now optionally covers Owned/Structural reads with
+`AGQ_PRODUCER_READ_TRACE_OWNED=1` and an optional comma-separated
+`AGQ_PRODUCER_READ_TARGETS` owner list. Existing subject/family filters and limits
+of 16 emitted records and 4096 inspected facts remain. Shared and explicit reads
+are labeled; absent attribution is not presented as a unique source. Disabled
+tracing changes no semantic evidence. Test-target compilation and fmt pass
+(`owned-read-origin-review.json` range); the hook has no publication effect.
