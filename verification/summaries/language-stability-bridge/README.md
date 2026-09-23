@@ -18,10 +18,12 @@ is not fully closed. The scoped acceptance guard correctly rejects this result.
 Medium/full publication has not run;
 the full-publication attempt budget is unused.
 
-The genuine layered expression fixtures independently exercise the observed
-producer cycles. The simple invocation is fully closed; the compound feature
-chain remains under focused correction. These are synthetic dependencies, not
-accepted standard publications. See [closure.md](closure.md) for each defect,
+All four genuine layered expression fixtures now pass with fully closed
+certificates: plain and frontend-shaped invocation results, a compound chain,
+and a deeper nested chain. The actual planner and independent adversarial tests
+confirm precise per-effect and immediate owning-Type writer scopes. These are
+synthetic dependencies, not accepted standard publications; the corrected
+Actions corpus audit remains the next gate. See [closure.md](closure.md) for each defect,
 permanent regression and its exact evidence boundary.
 
 The [Gen1/Gen2 audit](../gen1-gen2-audit/README.md), proposed

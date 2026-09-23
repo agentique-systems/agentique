@@ -912,3 +912,37 @@ expression uses the frontend's ReferenceUsage return shape. Raw outputs are
 `immediate-owner-combined.log` and `immediate-owner-nested.log` in the same
 ignored directory. Formatting and diff checks exited 0. No publication or
 accepted-cache operation was performed.
+
+## Immediate owning-Type scope and independent review
+
+Production `56fde0d` independently reviewed: GO, no finding. The five new
+controls passed (1.17 s), and the combined per-effect/immediate-owner control
+set passed all ten tests (1.84 s). Library/test Clippy with warnings denied and
+workspace formatting passed; every final command exited 0. Commands are recorded in
+the `owning-type-scope-independent-commands.json` source-ledger range in `commands.json`.
+
+The selector matches `owning_type`: Feature subject, its owning FeatureMembership,
+then that membership's owning Type. Both canonical backing hops are checked.
+It excludes lexical containers and non-FeatureMembership carriers. Tests cover
+reparenting, detached carriers, truly absent canonical inverse navigation, and
+NotComputed/Incomplete/Invalid inverse aliases. Unknown ownership, pending
+namespace providers, Ownership effects and reference-scalar writers retain the
+conservative fallback.
+
+Future immediate-owner writes use exact possible attachment roots; custom
+`SubjectAndOwners` contracts retain transitive ancestor reach. The independent
+future-reader and certificate-mask assertions cover both. Semantic-effect and
+fresh-attachment audits accept the subject/direct owner and reject ancestors
+and unrelated targets. Canonical IDs, historical KerML publication bytes and
+query evidence are unchanged.
+
+This review ran no package sweep, standard-library cache load or corpus. Systems
+publication and whole authored-fixture acceptance remain separate gates.
+
+The final producer sweep after the equivalent static future-requirement
+classification hoist `ff31820` passes 135 tests, with two existing scale probes
+ignored (34.61 s). Two-package all-target Clippy, strict KerML Rustdoc and
+formatting pass. The old transitive future-writer fixture now explicitly declares
+its custom SubjectAndOwners contract (`b533e52`), preserving its original nine
+adversarial expectations. Its initial failure and all final command results are
+retained in the `variable-immediate-owner-review.json` source-ledger range.
