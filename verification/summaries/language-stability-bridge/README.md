@@ -100,3 +100,17 @@ The [Gen1/Gen2 audit](../gen1-gen2-audit/README.md), proposed
 [workspace design](../modeling-workspace-phase1/README.md) are integrated. ADR
 adoption and production workspace integration remain gated on the explicit
 language-readiness criteria; unrelated full-conformance coverage is not a gate.
+
+The prepared Systems restoration implementation is integrated with an empty
+trusted-authority catalogue. Its exact-byte, context, registry and archive
+rejection checks pass; actual accepted-cache restoration remains gated. See
+[the preparation record](systems-restore-scaffold.md).
+
+The accepted self-model/case harness compiles, and its case source preflight
+passes one real-frontend test. The first command used an unqualified exact test
+filter and selected zero tests; the corrected command is separately recorded.
+Two workspace edit-input preflights pass, including the generated 100-document
+source set. The prospective workspace integration test bodies are present, but
+there is no production workspace crate or manifest yet and those bodies have not
+been type-checked. These preparations establish neither accepted authored closure
+nor the readiness gate.
