@@ -365,6 +365,9 @@ pub enum ProducerEffectScope {
     /// The subject and Features directly owned through ReturnParameterMembership.
     /// Nested and inherited result parameters are outside this write boundary.
     SubjectAndOwnedResults,
+    /// The subject and Features transitively contained through FeatureMembership.
+    /// Other ownership carriers, including FeatureValue, do not extend this scope.
+    SubjectAndOwnedFeatures,
 }
 impl ProducerEffectScope {
     fn depends_on_ownership(self) -> bool {
@@ -374,6 +377,7 @@ impl ProducerEffectScope {
                 | Self::OwnedDescendants
                 | Self::OwnedParameterFeatures
                 | Self::SubjectAndOwnedResults
+                | Self::SubjectAndOwnedFeatures
                 | Self::SubjectAndOwners
         )
     }
@@ -398,9 +402,63 @@ impl ProducerEffectScope {
                     targets
                 }),
             ),
+            Self::SubjectAndOwnedFeatures => Some(owned_feature_tree_scope(model, subject)),
             _ => None,
         }
     }
+}
+
+fn owned_feature_tree_scope(
+    model: &ModelView,
+    subject: ElementId,
+) -> Result<BTreeSet<ElementId>, ()> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{derived::PropertyState, value::Value};
+    let mut targets = BTreeSet::from([subject]);
+    let mut pending = vec![subject];
+    while let Some(owner) = pending.pop() {
+        let owned = match model.property_state(owner, p::ELEMENT_OWNED_RELATIONSHIP) {
+            Ok(PropertyState::Computed(slot)) => slot,
+            Ok(PropertyState::Absent) => continue,
+            _ => return Err(()),
+        };
+        for value in owned.value().values() {
+            let Value::Reference(membership) = value else {
+                return Err(());
+            };
+            let class = model.element(*membership).ok_or(())?.metaclass();
+            if !model
+                .registry()
+                .is_subtype(class, c::FEATURE_MEMBERSHIP)
+                .map_err(|_| ())?
+            {
+                continue;
+            }
+            let endpoint =
+                match model.property_state(*membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT) {
+                    Ok(PropertyState::Computed(slot)) => slot,
+                    _ => return Err(()),
+                };
+            let mut values = endpoint.value().values();
+            let Some(Value::Reference(target)) = values.next() else {
+                return Err(());
+            };
+            if values.next().is_some()
+                || !model.element(*target).is_some_and(|record| {
+                    model
+                        .registry()
+                        .is_subtype(record.metaclass(), c::FEATURE)
+                        .unwrap_or(false)
+                })
+            {
+                return Err(());
+            }
+            if targets.insert(*target) {
+                pending.push(*target);
+            }
+        }
+    }
+    Ok(targets)
 }
 
 /// A write-scope bound, not a semantic absence proof. Unknown canonical inputs
@@ -614,7 +672,13 @@ fn future_owner_targets(
         return None;
     }
     let mut roots = BTreeSet::from([subject]);
-    if !matches!(
+    if descriptor.scope == ProducerEffectScope::SubjectAndOwnedFeatures {
+        // Fresh outputs attach only below selected Feature containment roots.
+        // Other owned populations (for example nested value expressions) do
+        // not become possible owners of those helpers without an ownership
+        // writer, which already selects the model-wide fallback above.
+        roots = owned_feature_tree_scope(model, subject).ok()?;
+    } else if !matches!(
         descriptor.scope,
         ProducerEffectScope::Subject | ProducerEffectScope::SubjectAndOwners
     ) {
@@ -1767,7 +1831,8 @@ impl ProducerClosureCertificate {
                         ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
                         ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
                         ProducerEffectScope::OwnedParameterFeatures
-                        | ProducerEffectScope::SubjectAndOwnedResults => {
+                        | ProducerEffectScope::SubjectAndOwnedResults
+                        | ProducerEffectScope::SubjectAndOwnedFeatures => {
                             match descriptor
                                 .scope
                                 .selected_targets(model, subject, direction_mutable)

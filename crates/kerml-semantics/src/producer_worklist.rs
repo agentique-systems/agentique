@@ -299,9 +299,8 @@ impl ProducerFamily {
         descriptor.scope = match self {
             Self::VariableFeaturing => ProducerEffectScope::SubjectAndOwners,
             Self::Invocation => ProducerEffectScope::SubjectAndOwnedResults,
-            Self::FeatureChainExpression | Self::IndexSelectResult => {
-                ProducerEffectScope::SubjectAndOwned
-            }
+            Self::FeatureChainExpression => ProducerEffectScope::SubjectAndOwnedFeatures,
+            Self::IndexSelectResult => ProducerEffectScope::SubjectAndOwned,
             _ => ProducerEffectScope::Subject,
         };
         descriptor.scoped_fresh_ownership = true;
