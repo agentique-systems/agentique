@@ -302,7 +302,7 @@ impl ProducerFamily {
             descriptor.minimum_stratum = ResultStructureStratum::ContextualBindings;
         }
         descriptor.scope = match self {
-            Self::VariableFeaturing => ProducerEffectScope::SubjectAndOwners,
+            Self::VariableFeaturing => ProducerEffectScope::SubjectAndOwningType,
             Self::Invocation => ProducerEffectScope::SubjectAndOwnedResults,
             Self::FeatureChainExpression => ProducerEffectScope::SubjectAndOwnedFeatures,
             Self::IndexSelectResult if profile.supports_publication_producers() => {

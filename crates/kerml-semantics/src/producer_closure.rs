@@ -368,6 +368,9 @@ pub enum ProducerEffectScope {
     /// The subject and Features transitively contained through FeatureMembership.
     /// Other ownership carriers, including FeatureValue, do not extend this scope.
     SubjectAndOwnedFeatures,
+    /// The Feature subject and the Type owning its direct FeatureMembership.
+    /// Lexical containers and other ownership carriers are outside this scope.
+    SubjectAndOwningType,
 }
 impl ProducerEffectScope {
     fn depends_on_ownership(self) -> bool {
@@ -379,6 +382,7 @@ impl ProducerEffectScope {
                 | Self::SubjectAndOwnedResults
                 | Self::SubjectAndOwnedFeatures
                 | Self::SubjectAndOwners
+                | Self::SubjectAndOwningType
         )
     }
 
@@ -403,9 +407,62 @@ impl ProducerEffectScope {
                 }),
             ),
             Self::SubjectAndOwnedFeatures => Some(owned_feature_tree_scope(model, subject)),
+            Self::SubjectAndOwningType => Some(owning_type_scope(model, subject)),
             _ => None,
         }
     }
+}
+
+fn owning_type_scope(model: &ModelView, subject: ElementId) -> Result<BTreeSet<ElementId>, ()> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{derived::PropertyState, value::Value};
+    let is = |element, class| {
+        model.element(element).ok_or(()).and_then(|record| {
+            model
+                .registry()
+                .is_subtype(record.metaclass(), class)
+                .map_err(|_| ())
+        })
+    };
+    if !is(subject, c::FEATURE)? {
+        return Err(());
+    }
+    let reference = |element, property| -> Result<Option<ElementId>, ()> {
+        let slot = match model.property_state(element, property) {
+            Ok(PropertyState::Computed(slot)) => slot,
+            Ok(PropertyState::Absent) => return Ok(None),
+            _ => return Err(()),
+        };
+        let mut values = slot.value().values();
+        match (values.next(), values.next()) {
+            (None, None) => Ok(None),
+            (Some(Value::Reference(target)), None) => Ok(Some(*target)),
+            _ => Err(()),
+        }
+    };
+    let has_backing = |element, property, target| {
+        matches!(model.property_state(element, property), Ok(PropertyState::Computed(slot))
+            if slot.value().values().any(|value| *value == Value::Reference(target)))
+    };
+    let mut targets = BTreeSet::from([subject]);
+    let Some(membership) = reference(subject, p::ELEMENT_OWNING_RELATIONSHIP)? else {
+        return Ok(targets);
+    };
+    if !is(membership, c::FEATURE_MEMBERSHIP)? {
+        return Ok(targets);
+    }
+    // Authenticate the two inverse hops against their canonical owning carriers.
+    if reference(membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)? != Some(subject) {
+        return Err(());
+    }
+    let Some(owner) = reference(membership, p::RELATIONSHIP_OWNING_RELATED_ELEMENT)? else {
+        return Ok(targets);
+    };
+    if !is(owner, c::TYPE)? || !has_backing(owner, p::ELEMENT_OWNED_RELATIONSHIP, membership) {
+        return Err(());
+    }
+    targets.insert(owner);
+    Ok(targets)
 }
 
 fn owned_feature_tree_scope(
@@ -685,7 +742,9 @@ fn effect_reaches_future_existing_subjects(
     let scope = descriptor.effect_scope(effect);
     matches!(
         scope,
-        ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
+        ProducerEffectScope::Model
+            | ProducerEffectScope::SubjectAndOwners
+            | ProducerEffectScope::SubjectAndOwningType
     ) || reference_scalar(effect, model)
         || scope.depends_on_ownership() && ownership_mutable
 }
@@ -700,6 +759,7 @@ fn future_owner_targets(
     subject: ElementId,
     descriptor: &ProducerDescriptor,
     provider_ownership_open: bool,
+    transitive: bool,
 ) -> Option<BTreeSet<ElementId>> {
     use agq_kerml::properties as p;
     if provider_ownership_open
@@ -721,7 +781,9 @@ fn future_owner_targets(
     let mut roots = BTreeSet::from([subject]);
     if matches!(
         descriptor.scope,
-        ProducerEffectScope::SubjectAndOwnedFeatures | ProducerEffectScope::SubjectAndOwnedResults
+        ProducerEffectScope::SubjectAndOwnedFeatures
+            | ProducerEffectScope::SubjectAndOwnedResults
+            | ProducerEffectScope::SubjectAndOwningType
     ) {
         // Fresh outputs attach only below selected Feature/result roots.
         // Other owned populations (for example nested value expressions) do
@@ -767,6 +829,9 @@ fn future_owner_targets(
                 }
             }
         }
+    }
+    if !transitive && descriptor.scope != ProducerEffectScope::SubjectAndOwners {
+        return Some(roots);
     }
     let mut pending: Vec<_> = roots.iter().copied().collect();
     while let Some(child) = pending.pop() {
@@ -1259,6 +1324,15 @@ impl ProducerEvaluationTable {
                     subject,
                     descriptor,
                     provider_ownership_open,
+                    true,
+                );
+                let future_direct_targets = future_owner_targets(
+                    model,
+                    registry,
+                    subject,
+                    descriptor,
+                    provider_ownership_open,
+                    false,
                 );
                 // A bounded creator affects only its own roots. Other pending
                 // creators still need their distinct attachment frontier.
@@ -1269,6 +1343,13 @@ impl ProducerEvaluationTable {
                             if future_families.iter().any(|future| {
                                 future.effects.iter().any(|&effect| {
                                     let scope = future.effect_scope(effect);
+                                    if scope == ProducerEffectScope::SubjectAndOwningType
+                                        && future_direct_targets
+                                            .as_ref()
+                                            .is_some_and(|targets| !targets.contains(read_subject))
+                                    {
+                                        return false;
+                                    }
                                     if !effect_reaches_future_existing_subjects(
                                         future,
                                         effect,
@@ -1839,13 +1920,40 @@ impl ProducerClosureCertificate {
                             subject,
                             descriptor,
                             provider_ownership_open,
+                            true,
+                        );
+                        let future_direct_targets = future_owner_targets(
+                            model,
+                            registry,
+                            subject,
+                            descriptor,
+                            provider_ownership_open,
+                            false,
                         );
                         for requirement in SemanticClosureRequirement::ALL {
                             if future_effects
                                 .iter()
                                 .any(|&effect| requirement.requires_in_model(effect, model))
                             {
-                                if let Some(targets) = &future_targets {
+                                let transitive = future_cross_subject_families(registry, model)
+                                    .any(|family| {
+                                        family.effects.iter().any(|&effect| {
+                                            effect_reaches_future_existing_subjects(
+                                                family,
+                                                effect,
+                                                ownership_mutable,
+                                                model,
+                                            ) && requirement.requires_in_model(effect, model)
+                                                && family.effect_scope(effect)
+                                                    != ProducerEffectScope::SubjectAndOwningType
+                                        })
+                                    });
+                                let targets = if transitive {
+                                    &future_targets
+                                } else {
+                                    &future_direct_targets
+                                };
+                                if let Some(targets) = targets {
                                     for target in targets {
                                         if !immutable(*target)
                                             && let Some(&target) = positions.get(target)
@@ -1897,7 +2005,8 @@ impl ProducerClosureCertificate {
                             ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
                             ProducerEffectScope::OwnedParameterFeatures
                             | ProducerEffectScope::SubjectAndOwnedResults
-                            | ProducerEffectScope::SubjectAndOwnedFeatures => {
+                            | ProducerEffectScope::SubjectAndOwnedFeatures
+                            | ProducerEffectScope::SubjectAndOwningType => {
                                 match scope
                                     .selected_targets(model, subject, direction_mutable)
                                     .expect("selected scope")
