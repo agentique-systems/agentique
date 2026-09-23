@@ -114,3 +114,13 @@ source set. The prospective workspace integration test bodies are present, but
 there is no production workspace crate or manifest yet and those bodies have not
 been type-checked. These preparations establish neither accepted authored closure
 nor the readiness gate.
+
+The publication example now selects the normal preparation API for a full
+non-audit run. Scoped and audit-only runs still require their final construction
+predicate pass. Strict full publication retains its independent unrestricted
+scheduler and every acceptance check; this avoids an extra scoped final pass
+before the same strict boundary. Independent routing review found no gate bypass.
+On success, the report retains construction observations separately and exposes
+the accepted certificate and mandatory-reference totals as the final result.
+Example Clippy with warnings denied passes. This tooling preparation has not
+consumed a full-publication attempt.

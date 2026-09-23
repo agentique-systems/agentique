@@ -3,7 +3,10 @@ use agq_kerml_semantics::{Completeness, QualifiedName};
 use agq_kerml_syntax::production::SysmlSyntaxProfile;
 use agq_kerml_text::{
     library::CanonicalKermlStandardLibraries,
-    sysml::prepare_systems_library_slice_with_semantic_progress,
+    sysml::{
+        prepare_systems_library_slice_with_semantic_progress,
+        prepare_systems_library_with_semantic_progress,
+    },
 };
 use agq_kernel::value::Value;
 use agq_standard_libraries::VerifiedLibrarySet;
@@ -71,72 +74,87 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     let mut last_reference_round = None;
     let mut last_producer_stage = None;
-    let preparation = prepare_systems_library_slice_with_semantic_progress(
-        &sources,
-        accepted.clone(),
-        SysmlSyntaxProfile::OperationalV2,
-        &paths,
-        |round| {
-            last_reference_round = Some(json!({
-                "round":round.round,"selected":round.selected_endpoints,
-                "kernel_obligations":round.structural_obligations,
-                "evaluated":round.references_evaluated,"reused":round.references_reused
-            }));
-            println!(
-                "Systems: references round={} selected={} obligations={} evaluated={} reused={}",
-                round.round,
-                round.selected_endpoints,
-                round.structural_obligations,
-                round.references_evaluated,
-                round.references_reused
-            );
-            for (reference, candidates) in &round.withdrawn_endpoints {
-                println!("Systems: withdrawn reference={reference:?} candidates={candidates:?}");
-                if let Some(diagnostics) = round.withdrawal_diagnostics.get(reference) {
-                    for diagnostic in diagnostics {
-                        println!("Systems: withdrawal diagnostic={diagnostic:?}");
-                    }
+    let reference_progress = |round: &agq_kerml_text::library::ReferenceRefinementRound| {
+        last_reference_round = Some(json!({
+            "round":round.round,"selected":round.selected_endpoints,
+            "kernel_obligations":round.structural_obligations,
+            "evaluated":round.references_evaluated,"reused":round.references_reused
+        }));
+        println!(
+            "Systems: references round={} selected={} obligations={} evaluated={} reused={}",
+            round.round,
+            round.selected_endpoints,
+            round.structural_obligations,
+            round.references_evaluated,
+            round.references_reused
+        );
+        for (reference, candidates) in &round.withdrawn_endpoints {
+            println!("Systems: withdrawn reference={reference:?} candidates={candidates:?}");
+            if let Some(diagnostics) = round.withdrawal_diagnostics.get(reference) {
+                for diagnostic in diagnostics {
+                    println!("Systems: withdrawal diagnostic={diagnostic:?}");
                 }
             }
-        },
-        |round, done, total, planned| {
-            if done.is_multiple_of(256) || done == total {
-                println!(
-                    "Systems: producers round={round} evaluated={done}/{total} planned={planned}"
-                );
-            }
-        },
-        |stage| {
-            let mut diagnostic_counts = BTreeMap::<&str, usize>::new();
-            for diagnostic in &stage.diagnostics {
-                *diagnostic_counts.entry(diagnostic.code).or_default() += 1;
-            }
-            last_producer_stage = Some(json!({
-                "phase":"construction",
-                "stage":stage.stage,"stratum":format!("{:?}",stage.stratum),
-                "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
-                "closure_counters":closure_counters(&stage.counters),
-                "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>()
-            }));
-            // Persist each completed frontier so a watchdog stop still retains
-            // its diagnostics. This is observational evidence, never acceptance.
-            if let Some(stage) = &last_producer_stage {
-                writeln!(stages, "{stage}").expect("write producer stage evidence");
-                stages.flush().expect("flush producer stage evidence");
-            }
-            println!(
-                "Systems: producer frontier={} stratum={:?} added={} completeness={:?} diagnostics={}",
-                stage.stage,
-                stage.stratum,
-                stage.added_elements,
-                stage.completeness,
-                stage.diagnostics.len()
-            );
-            if !diagnostic_counts.is_empty() {
-                println!("Systems: producer diagnostics={diagnostic_counts:?}");
-            }
-        },
-    );
+        }
+    };
+    let batch_progress = |round: usize, done: usize, total: usize, planned: usize| {
+        if done.is_multiple_of(256) || done == total {
+            println!("Systems: producers round={round} evaluated={done}/{total} planned={planned}");
+        }
+    };
+    let producer_progress = |stage: &agq_kerml_semantics::PublicationStage| {
+        let mut diagnostic_counts = BTreeMap::<&str, usize>::new();
+        for diagnostic in &stage.diagnostics {
+            *diagnostic_counts.entry(diagnostic.code).or_default() += 1;
+        }
+        last_producer_stage = Some(json!({
+            "phase":"construction",
+            "stage":stage.stage,"stratum":format!("{:?}",stage.stratum),
+            "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
+            "closure_counters":closure_counters(&stage.counters),
+            "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>()
+        }));
+        // Persist each completed frontier so a watchdog stop still retains
+        // its diagnostics. This is observational evidence, never acceptance.
+        if let Some(stage) = &last_producer_stage {
+            writeln!(stages, "{stage}").expect("write producer stage evidence");
+            stages.flush().expect("flush producer stage evidence");
+        }
+        println!(
+            "Systems: producer frontier={} stratum={:?} added={} completeness={:?} diagnostics={}",
+            stage.stage,
+            stage.stratum,
+            stage.added_elements,
+            stage.completeness,
+            stage.diagnostics.len()
+        );
+        if !diagnostic_counts.is_empty() {
+            println!("Systems: producer diagnostics={diagnostic_counts:?}");
+        }
+    };
+    // Scoped audits must exercise final predicates. A normal full publication
+    // uses the standard preparation path and performs final closure under the
+    // strict publication contract below, without a redundant scoped final pass.
+    let preparation = if audit_only {
+        prepare_systems_library_slice_with_semantic_progress(
+            &sources,
+            accepted.clone(),
+            SysmlSyntaxProfile::OperationalV2,
+            &paths,
+            reference_progress,
+            batch_progress,
+            producer_progress,
+        )
+    } else {
+        prepare_systems_library_with_semantic_progress(
+            &sources,
+            accepted.clone(),
+            SysmlSyntaxProfile::OperationalV2,
+            reference_progress,
+            batch_progress,
+            producer_progress,
+        )
+    };
     let candidate = match preparation {
         Ok(candidate) => candidate,
         Err(error) => {
@@ -308,6 +326,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "profile":document.profile.id(),"parsed":document.parsed,"byte_exact":document.byte_exact,
             "recovery_count":document.recovery_count,"production_count":document.production_count,
             "construction_gap":document.construction_gap,
+            "reference_audit_scope":"construction",
             "mandatory_references":{"total":reference_total,"counts":reference_counts},
         })
     }).collect();
@@ -322,19 +341,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "systems_documents_constructed":constructed,
         "systems_documents_byte_exact":candidate.documents().iter().filter(|d|d.byte_exact).count(),
         "construction_complete":candidate.construction_complete(),
-        "producer_closure":draft.producer_closure().map(|certificate|json!({
-            "digest":certificate.digest(),
-            "semantic_closure_digest":certificate.semantic_closure_digest(),
-            "model_digest":certificate.model_digest(),
-            "producer_registry_digest":certificate.registry_digest(),
-            "context_contract_digest":certificate.context_contract_digest(),
-            "certificate_bytes":certificate.storage_bytes(),
-            "revalidation_bytes":certificate.revalidation_storage_bytes(),
-            "applicable_pairs":certificate.applicable_pairs(),
-            "closed_pairs":certificate.closed_pairs(),
-            "incomplete_pairs":certificate.incomplete_pairs(),
-            "closed_requirements":certificate.closed_effects(),
-        })),
+        "producer_closure":draft.producer_closure().map(|certificate|closure_report(certificate)),
         "kernel_obligations":draft.candidate().obligations().len(),
         "kernel_obligation_details":draft.candidate().obligations().iter().map(|obligation|
             json!({"element":obligation.element,"property":obligation.property,"actual":obligation.actual})
@@ -348,8 +355,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "total_reopened_evaluations":production.total_reopened_closure_evaluations,
         })),
         "closure_explanations":closure_explanations,
+        "closure_explanations_scope":"construction",
         "local_elements":model.elements().filter(|r|accepted.overlay().model().element(r.id()).is_none()).count(),
         "mandatory_references":{"total":draft.references().len(),"counts":counts,"failures":failures},
+        "reference_audit_scope":"construction",
         "authority_targets":authority,
         "authority_conflicts":authority_conflicts.iter().map(|conflict|json!({
             "rule":conflict.rule,"subject":conflict.subject,
@@ -377,6 +386,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         return Ok(());
     }
+    report["publication_attempted"] = json!(true);
     println!("Systems: evaluating immutable publication acceptance");
     match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::publish(
         candidate,
@@ -406,6 +416,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     ) {
         Ok(publication) => {
+            // The facade is returned only after the strict final reference and
+            // closure gates pass. Retain preparation observations separately;
+            // they are not the accepted publication's final counts or proof.
+            report["construction_reference_audit"] = report["mandatory_references"].take();
+            report["mandatory_references"] = json!({
+                "total":publication.audit().mandatory_references,
+                "counts":{
+                    "complete":publication.audit().complete_references,
+                    "incomplete":0,"unresolved":0,"ambiguous":0,
+                    "invalid":0,"endpoint_mismatch":0,
+                },
+                "failures":[],
+            });
+            report["reference_audit_scope"] = json!("accepted_publication");
+            report["construction_producer_closure"] = report["producer_closure"].take();
+            report["producer_closure"] = closure_report(publication.producer_closure());
+            report["publication_producers"] = json!({
+                "converged":true,"completeness":"Complete",
+            });
             report["publication_accepted"] = json!(true);
             report["publication_digest"] = json!(publication.publication_digest());
             report["semantic_digest"] = json!(publication.semantic_digest());
@@ -450,6 +479,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
     Ok(())
+}
+
+fn closure_report(
+    certificate: &agq_kerml_semantics::ProducerClosureCertificate,
+) -> serde_json::Value {
+    json!({
+        "digest":certificate.digest(),
+        "semantic_closure_digest":certificate.semantic_closure_digest(),
+        "model_digest":certificate.model_digest(),
+        "producer_registry_digest":certificate.registry_digest(),
+        "context_contract_digest":certificate.context_contract_digest(),
+        "certificate_bytes":certificate.storage_bytes(),
+        "revalidation_bytes":certificate.revalidation_storage_bytes(),
+        "applicable_pairs":certificate.applicable_pairs(),
+        "closed_pairs":certificate.closed_pairs(),
+        "incomplete_pairs":certificate.incomplete_pairs(),
+        "closed_requirements":certificate.closed_effects(),
+    })
 }
 
 fn write_report(
