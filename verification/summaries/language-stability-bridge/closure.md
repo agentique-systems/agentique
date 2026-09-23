@@ -623,7 +623,7 @@ close. The same low-disk environment was used. Captured output SHA-256:
 `8ad63416b1164cf3811c41a121671c62d4c40bbdf1ad82a94d807ae03b6f3b76`.
 
 A repeat of the exact compound command above with `AGQ_PRODUCER_CAUSAL_TRACE=1`
-and `AGQ_PRODUCER_CAUSAL_SUBJECTS` selecting canonical IDs 73005�73015 exited 101
+and `AGQ_PRODUCER_CAUSAL_SUBJECTS` selecting canonical IDs 73005–73015 exited 101
 (32.71 s test, 38.04 s including compilation). A test-only diagnostic prints the
 one EvaluatedIncomplete pair. The remaining chain-result VariableFeaturing
 writer reaches the chain planner through `Structural(73007)` and broad
@@ -723,3 +723,39 @@ of 16 emitted records and 4096 inspected facts remain. Shared and explicit reads
 are labeled; absent attribution is not presented as a unique source. Disabled
 tracing changes no semantic evidence. Test-target compilation and fmt pass
 (`owned-read-origin-review.json` range); the hook has no publication effect.
+
+
+Final-source diagnostics distinguish the remaining path from the earlier one.
+On `3213b35`, the exact compound command (without `--exact`) above with
+`AGQ_PRODUCER_CAUSAL_TRACE=1`, `AGQ_PRODUCER_READ_TRACE=1` and
+`AGQ_PRODUCER_CAUSAL_SUBJECTS=00000000-0000-0000-0000-000000011d2f,00000000-0000-0000-0000-000000011d33`
+exited 101 (33.63 s test, 33.86 s wall), output SHA-256
+`e7074ff4bcb5cf7f552f3f9bf2bfb3425a62b47ccea48f0ce3ac6affc1d41e35`.
+The direct chain-result VariableFeaturing→FeatureChainExpression edge is gone.
+The surviving route is result `73011` VariableFeaturing→nested expression
+`73009` FeatureReferenceExpression through ancestor owned/structural reads,
+then `73009`→chain `73007` through input `73008` reads. The original read-origin
+hook emits nothing here because it only covers Global/Inverse dependencies.
+
+Diagnostic-only hook `6066ec1` (local `e1f7080`) was then used for one repeat of
+that compound command with both trace flags above and these exact overrides:
+
+```text
+AGQ_PRODUCER_READ_TRACE_OWNED=1
+AGQ_PRODUCER_CAUSAL_SUBJECTS=00000000-0000-0000-0000-000000011d31
+AGQ_PRODUCER_READ_FAMILIES=KerML.FeatureReferenceExpression
+AGQ_PRODUCER_READ_TARGETS=00000000-0000-0000-0000-000000011d2f
+```
+
+It exited 101 (32.09 s test, 42.71 s including compilation), output SHA-256
+`3061e9f6c78749bc3e6a769bca4bf2042923e5471cef3b4ee93c4d223ef3742f`.
+The trace establishes a **direct-language current-query**
+`OwnedRelationships(73007, Membership)` read in `73009`'s producer. It also
+records imported-shared `RelationshipStructure(73007)` searches attached to
+facts `89ee892f-0787-5046-84f1-a8a16d0de7ca` and
+`b2de7a45-bdd1-5a35-bc7e-943c6743a8dc`; direct and imported evidence coexist.
+Inspection identifies the compatibility check's full `direct_features`
+populations as a candidate live-query origin, pending a focused planner proof.
+These are diagnostics, not passing gates; the nested case remains unrun. Both
+ignored logs are under `verification/generated/compound-expression/` as
+`final-source-trace.log` and `owned-origin-trace.log`.
