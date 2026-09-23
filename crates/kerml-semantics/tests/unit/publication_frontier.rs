@@ -331,3 +331,98 @@ fn checkpoint_rejects_changed_source_graph_context_journal_and_archive() {
     std::fs::write(&journal, b"{}").unwrap();
     assert!(PublicationFrontierSession::resume(&journal, pin, [5; 32], 0).is_err());
 }
+
+#[test]
+fn direct_converged_frontier_restores_without_any_scheduler_entry() {
+    let snapshot = reference_value_fixture(true);
+    let directory = Directory::new();
+    let session = Arc::new(PublicationFrontierSession::create(&directory.0, [27; 32], 0).unwrap());
+    let original = run(&snapshot, Some(session.clone()), |_| {}).unwrap();
+    let (journal, pin) = session.latest_checkpoint().unwrap().unwrap();
+    let resumed = PublicationFrontierSession::resume(journal, pin, [27; 32], 0).unwrap();
+    let frontier = resumed
+        .restore_converged_frontier(Arc::new(snapshot.model().registry().clone()), None)
+        .unwrap();
+    let registry = ProducerRegistry::new(
+        ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V8)),
+    )
+    .unwrap();
+    let other = resumed
+        .restore_converged_frontier(Arc::new(snapshot.model().registry().clone()), None)
+        .unwrap();
+    let unrelated: &'static agq_kernel::derived::DerivedOverlay =
+        Box::leak(Box::new(original.overlay.clone()));
+    assert!(
+        other
+            .authenticate(
+                |_| {
+                    SemanticContext::for_overlay(
+                        unrelated,
+                        SemanticOptions {
+                            baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V8,
+                            ..Default::default()
+                        },
+                        BTreeSet::new(),
+                    )
+                    .and_then(|context| context.with_producer_registry_digest(registry.digest()))
+                    .map_err(PublicationOverlayError::Context)
+                },
+                &registry
+            )
+            .is_err()
+    );
+    let restored = frontier
+        .authenticate(
+            |overlay| {
+                SemanticContext::for_overlay(
+                    overlay,
+                    SemanticOptions {
+                        baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V8,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .and_then(|context| context.with_producer_registry_digest(registry.digest()))
+                .map_err(PublicationOverlayError::Context)
+            },
+            &registry,
+        )
+        .unwrap();
+    original
+        .certificate
+        .as_ref()
+        .unwrap()
+        .assert_exact(restored.certificate.as_ref().unwrap());
+    assert_eq!(
+        original.certificate.as_ref().unwrap().revalidation_digest(),
+        restored.certificate.as_ref().unwrap().revalidation_digest()
+    );
+    assert_eq!(resumed.statistics().restored_completed_invocations, 2);
+    assert_eq!(resumed.statistics().committed_checkpoints, 0);
+}
+
+#[test]
+fn direct_finalization_rejects_open_frontier_before_graph_restore() {
+    let snapshot = reference_value_fixture(false);
+    let directory = Directory::new();
+    let session = Arc::new(PublicationFrontierSession::create(&directory.0, [28; 32], 0).unwrap());
+    let stopped = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        run(&snapshot, Some(session.clone()), |stage| {
+            if stage.stratum == ResultStructureStratum::ContextualBindings {
+                panic!("stop at open frontier");
+            }
+        })
+        .unwrap();
+    }));
+    assert!(stopped.is_err());
+    let (journal, pin) = session.latest_checkpoint().unwrap().unwrap();
+    let resumed = PublicationFrontierSession::resume(journal, pin, [28; 32], 0).unwrap();
+    assert!(
+        resumed
+            .restore_converged_frontier(Arc::new(snapshot.model().registry().clone()), None)
+            .is_err()
+    );
+    assert_eq!(resumed.statistics().restored_completed_invocations, 0);
+}

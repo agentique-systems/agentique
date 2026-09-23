@@ -19,7 +19,9 @@ use std::time::Instant;
 
 #[path = "publication_frontier.rs"]
 mod checkpoint;
-pub use checkpoint::{PublicationFrontierSession, PublicationFrontierStatistics};
+pub use checkpoint::{
+    ConvergedPublicationFrontier, PublicationFrontierSession, PublicationFrontierStatistics,
+};
 
 /// Additional language producers participating in the same immutable frontiers
 /// and positive/negative read index as KerML. Contributions must carry their

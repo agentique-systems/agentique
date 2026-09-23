@@ -29,6 +29,9 @@ use std::{collections::BTreeMap, sync::Arc};
 #[path = "publication_cache.rs"]
 mod cache;
 pub use cache::SystemsPublicationCacheError;
+#[path = "publication_finalization.rs"]
+mod finalization;
+use finalization::AuditLog;
 
 /// Publication capabilities, not the complete set of SysML validation rules.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -129,6 +132,8 @@ pub enum SystemsPublicationError {
     Context(#[from] SysmlContextError),
     #[error(transparent)]
     Overlay(#[from] PublicationOverlayError),
+    #[error("Systems finalization audit journal: {0}")]
+    AuditJournal(#[from] std::io::Error),
     #[error("Systems Library publication rejected: {} findings", .0.findings.len())]
     Rejected(Box<SystemsPublicationAudit>),
 }
@@ -293,6 +298,35 @@ impl CanonicalSysmlSystemsLibrary {
             batch_progress,
             stage_progress,
         )?;
+        Self::accept_closed(
+            closure,
+            inputs,
+            sources,
+            contract,
+            producer_bindings,
+            audit,
+            &mut AuditLog::disabled(),
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn accept_closed(
+        closure: agq_kerml_semantics::PublicationClosure,
+        inputs: PublicationInputs,
+        sources: &VerifiedLibrarySet,
+        contract: SysmlDependencyContract,
+        producer_bindings: StandardSysmlBindings,
+        mut audit: SystemsPublicationAudit,
+        observer: &mut AuditLog,
+    ) -> Result<Self, SystemsPublicationError> {
+        let profile = contract.sysml_profile;
+        let identity = contract.systems_library.clone();
+        let library = sources
+            .libraries()
+            .get(&identity.library)
+            .expect("verified Systems library");
+        let declared = closure.overlay.declared();
+        let contract_digest = contract.context_identity_digest();
         if closure.completeness != Completeness::Complete || !closure.converged {
             audit.findings.push(SystemsPublicationFinding::Producers {
                 completeness: closure.completeness,
@@ -307,6 +341,7 @@ impl CanonicalSysmlSystemsLibrary {
         };
         // Validate final bindings under the independently required registry;
         // the certificate cannot choose which producers the publication owes.
+        let started = observer.begin("producer_registry_reconstruction")?;
         let registry = agq_kerml_semantics::ProducerRegistry::new(
             agq_kerml_semantics::ProducerFamily::ALL
                 .into_iter()
@@ -314,6 +349,12 @@ impl CanonicalSysmlSystemsLibrary {
                 .chain(agq_sysml_semantics::sysml_producer_descriptors()),
         )
         .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
+        observer.end(
+            "producer_registry_reconstruction",
+            started,
+            audit.findings.len(),
+        )?;
+        let started = observer.begin("closure_coverage_verification")?;
         let q = KerMlQueries::new(
             inputs
                 .accepted_kerml
@@ -340,16 +381,51 @@ impl CanonicalSysmlSystemsLibrary {
                 "combined descriptor graph",
             ));
         }
+        observer.end(
+            "closure_coverage_verification",
+            started,
+            audit.findings.len(),
+        )?;
         let local: Vec<_> = q
             .model()
             .elements()
             .filter(|record| !declared.is_dependency_element(record.id()))
             .map(|record| record.id())
             .collect();
-        let kerml = q.audit_publication_capabilities_with_rules(
+        let mut observation_error = None;
+        let mut stage_started = None;
+        let kerml = q.audit_publication_capabilities_with_rules_and_progress(
             local.iter().copied(),
             sysml_producer_rule_ids(profile),
+            |stage, begin, findings| {
+                let name = match stage {
+                    agq_kerml_semantics::PublicationAuditPhase::Capabilities => {
+                        "kerml_capability_audit"
+                    }
+                    agq_kerml_semantics::PublicationAuditPhase::DerivedProvenance => {
+                        "derived_provenance_audit"
+                    }
+                };
+                let result = if begin {
+                    stage_started = Some(std::time::Instant::now());
+                    observer
+                        .begin(name)
+                        .map(|started| stage_started = Some(started))
+                } else {
+                    observer.end(
+                        name,
+                        stage_started.take().expect("audit stage began"),
+                        findings,
+                    )
+                };
+                if let Err(error) = result {
+                    observation_error = Some(error);
+                }
+            },
         );
+        if let Some(error) = observation_error {
+            return Err(error.into());
+        }
         for (family, count) in kerml.checked_items {
             audit.checked(map_family(family), count);
         }
@@ -363,12 +439,17 @@ impl CanonicalSysmlSystemsLibrary {
                     }
                 }));
         }
+        let started = observer.begin("authority_audit")?;
         audit.findings.extend(
             final_authority_conflicts(&closure.stages)
                 .into_iter()
                 .map(SystemsPublicationFinding::Authority),
         );
+        observer.end("authority_audit", started, audit.findings.len())?;
+        let started = observer.begin("mandatory_reference_audit")?;
         audit_references(&q, &inputs.references, &mut audit);
+        observer.end("mandatory_reference_audit", started, audit.findings.len())?;
+        let started = observer.begin("systems_binding_audit")?;
         let bindings = StandardSysmlBindings::validate(
             q.model(),
             &q,
@@ -397,6 +478,8 @@ impl CanonicalSysmlSystemsLibrary {
                 None
             }
         };
+        observer.end("systems_binding_audit", started, audit.findings.len())?;
+        let started = observer.begin("effective_sysml_population_audit")?;
         if let Some(bindings) = &bindings {
             // Typed current-graph queries validate narrowed SysML domains. The
             // separate producer gate is responsible for the closure claim.
@@ -412,9 +495,15 @@ impl CanonicalSysmlSystemsLibrary {
                 audit_sysml_population(&SysmlQueries::new(context.fork()), batch, &mut audit);
             }
         }
+        observer.end(
+            "effective_sysml_population_audit",
+            started,
+            audit.findings.len(),
+        )?;
         if !audit.findings.is_empty() {
             return Err(SystemsPublicationError::Rejected(Box::new(audit)));
         }
+        let started = observer.begin("identity_provenance_final_audit")?;
         let bindings = bindings.expect("binding failure is an acceptance finding");
         let semantic_context = q.context().clone();
         let publication_identity = publication_identity(contract.clone(), &semantic_context);
@@ -424,7 +513,13 @@ impl CanonicalSysmlSystemsLibrary {
             metamodel_version: agq_sysml_semantics::SYSML_METAMODEL_VERSION,
         };
         drop(q);
-        Ok(Self {
+        observer.end(
+            "identity_provenance_final_audit",
+            started,
+            audit.findings.len(),
+        )?;
+        let started = observer.begin("accepted_facade_construction")?;
+        let accepted = Self {
             overlay: Arc::new(closure.overlay),
             producer_closure: certificate,
             accepted_kerml: inputs.accepted_kerml,
@@ -436,7 +531,13 @@ impl CanonicalSysmlSystemsLibrary {
             documents: inputs.documents,
             audit,
             counters: closure.counters,
-        })
+        };
+        observer.end(
+            "accepted_facade_construction",
+            started,
+            accepted.audit.findings.len(),
+        )?;
+        Ok(accepted)
     }
     pub fn declared(&self) -> &Snapshot {
         self.overlay.declared()
@@ -905,6 +1006,27 @@ fn audit_sysml_population<'m>(
                 "current effective usages",
                 q.current_effective_usages(subject),
             );
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "effective usages",
+                q.effective_usages(subject),
+            );
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "effective ports",
+                q.effective_ports(subject),
+            );
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "effective return parameters",
+                q.effective_return_parameters(subject),
+            );
         }
         if is(sc::DEFINITION) {
             audit_typed_answer(
@@ -914,6 +1036,13 @@ fn audit_sysml_population<'m>(
                 "direct specializations",
                 q.direct_specializations(subject),
             );
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "effective supertypes",
+                q.effective_supertypes(subject),
+            );
         }
         if is(sc::USAGE) {
             audit_typed_answer(
@@ -922,6 +1051,27 @@ fn audit_sysml_population<'m>(
                 subject,
                 "current usage types",
                 q.current_usage_types(subject),
+            );
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "effective usage types",
+                q.effective_usage_types(subject),
+            );
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "effective subsetting",
+                q.effective_subsetted_features(subject),
+            );
+            audit_typed_answer(
+                audit,
+                &families,
+                subject,
+                "effective redefinition",
+                q.effective_redefined_features(subject),
             );
             let actual = q.model().property_state(subject, sp::USAGE_MAY_TIME_VARY);
             let valid = matches!(&actual, Ok(PropertyState::Computed(slot))
@@ -968,6 +1118,71 @@ fn audit_sysml_population<'m>(
                 sc::CONNECTOR_AS_USAGE,
                 "current connection related features",
                 SysmlQueries::current_connection_related_features,
+            ),
+            (
+                sc::ATTRIBUTE_USAGE,
+                "effective attribute definitions",
+                SysmlQueries::effective_attribute_definitions,
+            ),
+            (
+                sc::ITEM_USAGE,
+                "effective item definitions",
+                SysmlQueries::effective_item_definitions,
+            ),
+            (
+                sc::PART_USAGE,
+                "effective part definitions",
+                SysmlQueries::effective_part_definitions,
+            ),
+            (
+                sc::PORT_USAGE,
+                "effective port definitions",
+                SysmlQueries::effective_port_definitions,
+            ),
+            (
+                sc::CONNECTOR_AS_USAGE,
+                "effective connection related features",
+                SysmlQueries::effective_connection_related_features,
+            ),
+            (
+                sc::CONNECTOR_AS_USAGE,
+                "effective connection ends",
+                SysmlQueries::effective_connection_ends,
+            ),
+            (
+                sc::CONNECTION_DEFINITION,
+                "effective connection ends",
+                SysmlQueries::effective_connection_ends,
+            ),
+            (
+                sc::INTERFACE_DEFINITION,
+                "effective interface ends",
+                SysmlQueries::effective_interface_ends,
+            ),
+            (
+                sc::INTERFACE_USAGE,
+                "effective interface ends",
+                SysmlQueries::effective_interface_ends,
+            ),
+            (
+                sc::OCCURRENCE_DEFINITION,
+                "effective parameters",
+                SysmlQueries::effective_parameters,
+            ),
+            (
+                sc::OCCURRENCE_USAGE,
+                "effective parameters",
+                SysmlQueries::effective_parameters,
+            ),
+            (
+                sc::ACTION_DEFINITION,
+                "effective subactions",
+                SysmlQueries::effective_subactions,
+            ),
+            (
+                sc::ACTION_USAGE,
+                "effective subactions",
+                SysmlQueries::effective_subactions,
             ),
         ] {
             if is(applies) {
