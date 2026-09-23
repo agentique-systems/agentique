@@ -10971,6 +10971,320 @@
       "duration_seconds": 2.55,
       "output": "verification/generated/language-stability-bridge/bridge-expression-population-format.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "bridge-expression-population-release",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b018b187194610dada1e5573263b3a4f0276bfe3",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "83d141071091d60944236b723845f9d60c1933cce5f942b509d0ee0889f6c92f",
+      "duration_seconds": 372.88,
+      "output": "verification/generated/language-stability-bridge/bridge-expression-population-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
+    },
+    {
+      "name": "excluding-once-frontend-inventory",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "interfaces_inline_function_body_preserves_frontend_shape",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7638346446953aa550cb0514c25ac80f07a92fff",
+      "working_changes_sha256": "129c00f0db310b1516fb571eedb26a74807e63791e9b2fa8ba1753b9b7e94fe4",
+      "output_sha256": "db06a42f22408ecb267d7d5d0429a868d76a276097b38d2e7166e7e6b15389fc",
+      "duration_seconds": 28.02,
+      "output": "verification/generated/language-stability-bridge/excluding-once-frontend-inventory.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure",
+        "AGQ_INLINE_SHAPE_TRACE": "1"
+      }
+    },
+    {
+      "name": "excluding-once-frontend-inventory-corrected",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "interfaces_inline_function_body_preserves_frontend_shape",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7638346446953aa550cb0514c25ac80f07a92fff",
+      "working_changes_sha256": "1788cae5de1813c6ea085880536269f6177de29ea4d8df62042d897d19b842b2",
+      "output_sha256": "3a1f8af5f48fa4ae5066e2135575c13dd101c67fba0541fb114ddce781c6070b",
+      "duration_seconds": 13.24,
+      "output": "verification/generated/language-stability-bridge/excluding-once-frontend-inventory-corrected.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure",
+        "AGQ_INLINE_SHAPE_TRACE": "1"
+      }
+    },
+    {
+      "name": "full-excluding-once-first",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "full_excluding_once_range_capture_and_final_result_closes",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7638346446953aa550cb0514c25ac80f07a92fff",
+      "working_changes_sha256": "ec61634f7d41991dfa468b90c1329bf8316bf3ca11e570d7c65cb79bd62e4fac",
+      "output_sha256": "cfad4eed99023973a52e0ac75d8ebcc3b70818515011e636a6fd70f042bfd08d",
+      "duration_seconds": 42.2,
+      "output": "verification/generated/language-stability-bridge/full-excluding-once-first.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "excluding-once-inline-module",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "inline_function_tests",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7638346446953aa550cb0514c25ac80f07a92fff",
+      "working_changes_sha256": "d7c06d555b7283982fdc9bd11b2bc02737d0bd3a598958bf69c7b1467118df4f",
+      "output_sha256": "8046bacf67c348055bd7bc61fc181ab519a2dfb70d9f0608d070758865a6416a",
+      "duration_seconds": 65.81,
+      "output": "verification/generated/language-stability-bridge/excluding-once-inline-module.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "excluding-once-full-frontend-shape",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "interfaces_inline_function_body_preserves_frontend_shape",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7638346446953aa550cb0514c25ac80f07a92fff",
+      "working_changes_sha256": "d7c06d555b7283982fdc9bd11b2bc02737d0bd3a598958bf69c7b1467118df4f",
+      "output_sha256": "7cced1563ef60c2dd4ff4c80806079fe4b198a542910b9ab2c75a1dfaaa4456d",
+      "duration_seconds": 11.7,
+      "output": "verification/generated/language-stability-bridge/excluding-once-full-frontend-shape.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "full-excluding-once-causal",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "full_excluding_once_range_capture_and_final_result_closes",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7638346446953aa550cb0514c25ac80f07a92fff",
+      "working_changes_sha256": "d7c06d555b7283982fdc9bd11b2bc02737d0bd3a598958bf69c7b1467118df4f",
+      "output_sha256": "caee07a8dfe6631795329da379ee595048124dc4fda41d4f9efd4ccf1d82ccf8",
+      "duration_seconds": 28.94,
+      "output": "verification/generated/language-stability-bridge/full-excluding-once-causal.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure",
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "00000000-0000-0000-0000-0000000130b1,00000000-0000-0000-0000-0000000130b2"
+      }
+    },
+    {
+      "name": "full-excluding-once-typed-population",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "full_excluding_once_range_capture_and_final_result_closes",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "61e90d8539575713b28cf69c072cbf5bb6e21711",
+      "working_changes_sha256": "e7661b32c089a7bdf03af6111edab8602951ac04c537fca2e43e463842575bc5",
+      "output_sha256": "a8692eab4f7367d4066b71880ccf4fd64459982052d79d75699b8492bdc2af16",
+      "duration_seconds": 50.11,
+      "output": "verification/generated/language-stability-bridge/full-excluding-once-typed-population.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "excluding-once-final-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "6fecbdfb86d00713feca08cf3eb2c9358cf9a2a5",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.5,
+      "output": "verification/generated/language-stability-bridge/excluding-once-final-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "excluding-once-existing-inline-control",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "inline_function_body_with_outer_capture_and_index_closes",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "6fecbdfb86d00713feca08cf3eb2c9358cf9a2a5",
+      "working_changes_sha256": "b6eb42562ba5a716d825973195e0af73fe1bad7c06ff905901eab62f446fb004",
+      "output_sha256": "eb110a9cce2bdcfe8859296e154c73a8dde4c8f1488ae84e8698e7289baa6b5f",
+      "duration_seconds": 21.58,
+      "output": "verification/generated/language-stability-bridge/excluding-once-existing-inline-control.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "excluding-once-three-package-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "6fecbdfb86d00713feca08cf3eb2c9358cf9a2a5",
+      "working_changes_sha256": "b6eb42562ba5a716d825973195e0af73fe1bad7c06ff905901eab62f446fb004",
+      "output_sha256": "2564bc003993f8cde110e03dcde4ade7072efd87a6514d5e7b8a94938269e43e",
+      "duration_seconds": 19.45,
+      "output": "verification/generated/language-stability-bridge/excluding-once-three-package-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ],
   "source_ledgers": [
@@ -11369,6 +11683,13 @@
         "checks": "Whole certificate and every local requirement closed; reference targets and effective cross answers independently Complete; immutable dependency Arc retained. Frontend source test confirms caller classes, directions, flags, multiplicities, names and ownership.",
         "setup_failure": "First run rejected duplicate synthetic membership identity282006 before local closure; corrected invocation membership to284004. No kernel or semantic contract changed."
       }
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/excluding-once-commands.json",
+      "source_commit": "1f1815150af9c407748b7e4b16fc6fa1f9dec817",
+      "source_blob_sha256": "2a25f8bc5337d551de273fdf9768be7be389a18c2320f555465439fa25ab16dd",
+      "first_command": 400,
+      "command_count": 10
     }
   ]
 }

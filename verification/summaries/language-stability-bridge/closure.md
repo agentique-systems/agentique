@@ -1114,3 +1114,52 @@ that outcome is excluded as evidence of a scheduler defect. Raw logs are
 `systems-round-budget-{binding-regression,clippy,rustdoc,regression}.log` under
 the existing ignored bridge directory. No medium/full publication was rerun by
 this change's author; acceptance remains unestablished.
+
+## Interfaces excludingOnce: inherited result and positional closure
+
+Test source `61e90d8` extends the genuinely closed, layered inline-function fixture
+with the pinned `Interfaces.sysml` callee: `seq[1..*]`, `value[1] :> seq`,
+`position[1]`, `(1..size(seq))->selectOne{in i; seq#(i)==value}`, and the final
+`seq->excludingAt(position)`. The closed dependency supplies the operation
+parameter/result arities, the defaulted third `excludingAt` parameter, and
+Calculation → Action/ Evaluation → Performance → Occurrence ancestry. Function
+execution bodies are not replayed. The Calculation inherits the canonical
+Evaluation result; it has no copied or substitute local return.
+
+The permanent frontend assertion parses and lowers the byte-pinned original
+Interfaces document without an accepted cache. It checks input membership and
+multiplicity topology, value subsetting, range/size ownership, explicit
+ReferenceUsage expression results, plain implied literal results, and the
+absence of a Calculation-owned return. The existing captured-body checks remain.
+
+The faithful full fixture converged after 12 rounds but remained Incomplete with
+six producer pairs. Its `seq`/`value` EffectiveTyping and snapshot diagnostics
+reproduced the medium-run shape independently of the medium's separate 32-round
+limit. The retained causal trace shows ExpressionResult on the Calculation
+blocking both inputs' PositionalRedefinition via `FeaturePopulation(Parameter)`.
+An earlier draft with an artificial local result passed; that result suppressed
+the inherited-result dependency and was removed before accepting the fixture.
+
+Source correction `6fecbdf` bounds ExpressionResult's declared positional
+populations to End. Its contextual Feature and binding Connector are undirected;
+only fresh binding ends contribute a positional population. Result-suppression
+queries, canonical output identities, normative gates and accepted KerML bytes
+are unchanged. Existing descriptor hashing binds the corrected capability.
+
+The corrected full fixture passes in 27.25 s, converges in 10 rounds, and asserts
+the whole certificate, true mayTimeVary/isVariable for both inputs and position,
+the exact inherited dependency result, and immutable dependency Arc sharing.
+The isolated inline control also passes after the fix (21.34 s, 10 rounds).
+Independent direct/future population and scalar-writer controls are owned by the
+architecture review; their evidence is recorded separately.
+
+Exact commands, source/diff identities, output hashes, exits and elapsed times
+are in `excluding-once-commands.json`. Initial temporary instrumentation failed
+to compile because TextRange fields are private; the corrected inventory passed.
+The final frontend control passed (1 test, 0.23 s). Before the source correction,
+the two-test inline module recorded its full-case failure and passing isolated
+control (50.00 s), followed by the matching causal failure (28.72 s). These
+results are retained rather than overwritten. No cache or corpus run occurred.
+Final `cargo fmt --all -- --check` and all-target Clippy for
+`agq-kerml-semantics`, `agq-sysml-semantics`, and `agq-kerml-text` with
+`-D warnings` exit 0 (Clippy 19.25 s tool time). No package sweep was repeated.

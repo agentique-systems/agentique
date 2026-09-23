@@ -13,7 +13,9 @@ is unchanged. Generation-1 release evidence remains independent.
 reference failures, kernel obligations or authority conflicts. All 13 documents
 parse and construct byte-exactly. Producer closure is Incomplete and not converged
 at its 32-round resource limit, with 14 incomplete evaluations and 11 diagnostics.
-This is not evidence of a persistent semantic cycle; focused diagnosis continues.
+The corpus result alone did not establish a persistent cycle. A subsequent faithful
+Interfaces fixture reproduces and fixes an inherited-result closure cycle; the
+medium retry remains unrun.
 The preceding eight-document Actions gate passed with 534/534 Complete references
 and fully closed producer evidence. Full publication has not run; its attempt
 budget is unused.
@@ -88,6 +90,19 @@ reruns the unrestricted scheduler and every acceptance check. On success, report
 keep construction observations separate from accepted closure/reference totals.
 Routing review found no bypass and example Clippy passed; this tooling change has
 not consumed a full-publication attempt.
+
+The faithful full `Interfaces::excludingOnce` fixture exposes a separate persistent
+cycle after removing an artificial local return parameter: the real function
+inherits Evaluation's result. Before correction it converges Incomplete in 12
+rounds with six incomplete evaluations; afterward it reaches full closure in ten
+rounds (27.25 s). The ExpressionResult descriptor now declares only its actual
+End population, preserving possible scalar direction writers and unknown producers.
+It no longer invents input-parameter writes. All result-suppression queries remain
+unchanged; the inherited result keeps its accepted dependency identity. Source
+shape, the old inline control, three-package all-target Clippy and formatting pass.
+See the final section of [closure.md](closure.md) and the consolidated
+`excluding-once-commands.json` range for all attempts and hashes. Medium/full
+acceptance remains separate.
 
 ## Medium candidate preflight
 
