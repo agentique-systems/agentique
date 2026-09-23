@@ -10710,6 +10710,64 @@
       "duration_seconds": 0.53,
       "output": "verification/generated/language-stability-bridge/bridge-medium-checkpoint-standards.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "bridge-compact-read-population-guards",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "cross_subsetting_population",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a5dd721fef60094c7f98290ebaab355aa6374dc9",
+      "working_changes_sha256": "dcd312d97b163e3cc248a87c37cb0a3b216695599be369b719d9d4bd5f52c061",
+      "output_sha256": "e5ae5605f1e517ebb3a725b8f1aff98d1c5d859f85bb061754a760445cf33d96",
+      "duration_seconds": 35.39,
+      "output": "verification/generated/language-stability-bridge/bridge-compact-read-population-guards.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
+    },
+    {
+      "name": "bridge-compact-read-producer-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a5dd721fef60094c7f98290ebaab355aa6374dc9",
+      "working_changes_sha256": "dcd312d97b163e3cc248a87c37cb0a3b216695599be369b719d9d4bd5f52c061",
+      "output_sha256": "fa6869744730c5e7c6c05f94830c1b994d093a9a0e14ccc3dfa3011cb1db0806",
+      "duration_seconds": 114.62,
+      "output": "verification/generated/language-stability-bridge/bridge-compact-read-producer-regressions.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
     }
   ],
   "source_ledgers": [

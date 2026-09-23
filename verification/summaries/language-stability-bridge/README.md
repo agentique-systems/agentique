@@ -150,6 +150,13 @@ range. No additional production correction was needed.
 
 ## Integration verification and retained evidence
 
+Producer read exclusions now use immutable boxed slices instead of vectors. This
+removes unused capacity metadata while retaining the exact sorted exclusion
+contents, equality and provider/effect checks. Two typed population guards and
+149 producer regressions pass (two preexisting scale probes ignored). Registry,
+certificate encoding and accepted KerML identity are unchanged; corpus memory
+savings have not been measured.
+
 The updated KerML semantic package is covered by **418 passing tests**, two
 preexisting explicit scale-probe ignores, and successful doc tests. The first
 three-package sweep stops at an outdated crossing evidence assertion after 271
