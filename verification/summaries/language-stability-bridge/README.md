@@ -21,6 +21,7 @@ limit but stopped at 35 minutes. Both construction audits passed all 1,327
 references with zero kernel obligations. Strict acceptance did not finish.
 No Systems receipt or accepted bindings exist, and both permitted full attempts
 are used. Foundation readiness and production workspace integration remain gated.
+The formal decision is recorded in [readiness.md](readiness.md).
 
 All six genuine layered expression fixtures and the connection-end fixture pass
 with fully closed certificates. The indexed assignment now matches the real
@@ -71,7 +72,7 @@ This comparison does not establish full graph identity or publication acceptance
 Exact result, stage/output hashes and comparison scope are in the publication
 ledger. Memory remains below the fixed limit; strict completion within the time
 budget remains unestablished. No further full attempt is authorized in this
-milestone. Final repository checks are being completed with readiness gated.
+milestone. Final repository checks pass; readiness remains gated.
 
 The first normal full attempt, `systems-full-language-bridge`, ran at clean
 `530b430` using release build `692ed8e` (binary hash in `commands.json`). It
@@ -263,6 +264,25 @@ range. No additional production correction was needed.
 
 ## Integration verification and retained evidence
 
+Final verification passes. The single low-artifact workspace test run at clean
+source `fcb08fb` exits 0 in **1,342.0 seconds**: **880 passed, zero failed, four
+ignored**, across 126 successful suites. The ignores are two preexisting scale
+probes and the actual accepted Systems cache/self-model gates. The prospective
+modeling-workspace suites have no crate manifest and are excluded entirely.
+These results do not establish accepted-library or workspace readiness.
+
+Final workspace/all-target Clippy with warnings denied and formatting pass.
+Both grammar stale gates, metamodel generation check, both language runtime gates,
+and strict Rustdoc for seven language crates pass. Frontend check/build, all ten
+Node tests and standards integrity pass. The dependency guard checks 19 packages
+with zero violations; all eight guard regressions pass. These gates use clean
+source `60b342d`; subsequent changes contain only evidence and documentation.
+Exact commands, exits, source identities and raw-output hashes are consolidated
+in [commands.json](commands.json). Browser-facing code is unchanged, so browser
+tests were not run under the milestone's explicit scope.
+
+Earlier focused verification follows for provenance.
+
 Producer read exclusions now use immutable boxed slices instead of vectors. This
 removes unused capacity metadata while retaining the exact sorted exclusion
 contents, equality and provider/effect checks. Two typed population guards and
@@ -281,7 +301,7 @@ review confirms the replacement. All six crossing tests then pass, followed by
 not repeated. The failed attempt remains recorded. The integrated SysML/text package command at clean `7638346` also passes:
 **191 tests** (89 SysML, 102 text), zero failures, 17 successful suites and doc
 tests. Only the two actual accepted-publication gates remain explicitly ignored.
-It exits 0 in 804.98 seconds. The final workspace run remains reserved for integration.
+It exits 0 in 804.98 seconds. The final workspace run is recorded above.
 
 The integrated KerML semantic package at clean source `3506712` passes: **394
 tests passed, zero failures**, two existing release-only scale probes ignored.
@@ -314,7 +334,7 @@ passed. Both grammar stale gates, the complete metamodel stale gate and both
 language runtime gates passed. An initial `cargo fmt --all -- --check` exited 1;
 `cargo fmt --all` exited 0 and corrected layout. Integrated workspace/all-target Clippy with warnings denied, strict Rustdoc
 for seven language crates, and the dependency-boundary gate now pass. The final
-workspace test run remains a separate integration obligation. No browser-facing code changed,
+workspace test run is recorded above. No browser-facing code changed,
 so browser tests are outside this milestone's requested scope.
 
 [commands.json](commands.json) records ordinary commands, exits, exact tested

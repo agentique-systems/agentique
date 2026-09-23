@@ -12017,6 +12017,289 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "bridge-final-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "fcb08fbcdce013f550436ead63fb57d14d2735e4",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "7abe88281c3aa79bef01b33409ba9d9808b687e68b67d64c5ef131d4b3c33bee",
+      "duration_seconds": 1342.0,
+      "output": "verification/generated/language-stability-bridge/bridge-final-workspace-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      },
+      "results": {
+        "successful_suites": 126,
+        "passed": 880,
+        "failed": 0,
+        "ignored": 4,
+        "ignored_scope": "Two preexisting scale probes plus actual accepted Systems cache and self-model gates. Manifest-less modeling-workspace tests are excluded entirely."
+      }
+    },
+    {
+      "name": "final-generation-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "4b46c49f77531a7a4652e7a79f7004a097d42001186db5c21968bfc8afb2ce13",
+      "duration_seconds": 0.33,
+      "output": "verification/generated/language-stability-bridge/final-generation-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-generation-boundary-tests",
+      "command": [
+        "python",
+        "verification/scripts/test_generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "9f19866c8af7bd0425354480972b9749c259e92bd47393c4d7e76dcf44f46db3",
+      "duration_seconds": 0.44,
+      "output": "verification/generated/language-stability-bridge/final-generation-boundary-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-npm-test",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "77b1b321fdf1f66665eb1875f451fa25b9552d997e16cd5e94fc3bcc2fe41182",
+      "duration_seconds": 0.72,
+      "output": "verification/generated/language-stability-bridge/final-npm-test.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-standards-check",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "6116932086f84dda86433d98178a86fa1a0f1d7e7a34d59eea5c7b19ccc06fc5",
+      "duration_seconds": 0.73,
+      "output": "verification/generated/language-stability-bridge/final-standards-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-npm-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.02,
+      "output": "verification/generated/language-stability-bridge/final-npm-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-npm-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "88474a99e82877d621b7bff5164487a879fab930111a8baac6d4a8f367bc49af",
+      "duration_seconds": 2.38,
+      "output": "verification/generated/language-stability-bridge/final-npm-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-kerml-grammar-stale",
+      "command": [
+        "python",
+        "tools/kerml-grammar/generate.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "f3a599a056523d9072af76571f2157b7cc271a5afa80cad15b482498f51df7c6",
+      "duration_seconds": 0.27,
+      "output": "verification/generated/language-stability-bridge/final-kerml-grammar-stale.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-sysml-grammar-stale",
+      "command": [
+        "python",
+        "tools/sysml-grammar/generate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "29106a270ab4b808a4289843a999b02e9f3950df2ba0954fb1a90611cea9d2b4",
+      "duration_seconds": 0.48,
+      "output": "verification/generated/language-stability-bridge/final-sysml-grammar-stale.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-metamodel-stale",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "0493fd9d9f1f8a07b5ee5151ea09b97d497ac1f788dc9a65e45fc6cbda60cd4a",
+      "duration_seconds": 13.88,
+      "output": "verification/generated/language-stability-bridge/final-metamodel-stale.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "final-kerml-runtime-gate",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "8b364ac05d5205807ecb58c5afa3c4746bc8a0d7b585e538f82d73b0fdc2628b",
+      "duration_seconds": 1.42,
+      "output": "verification/generated/language-stability-bridge/final-kerml-runtime-gate.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "final-sysml-runtime-gate",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "f1d96b1f49777d7c6708933f246c47e9342636059dc64c608e5454a76676ffa0",
+      "duration_seconds": 2.88,
+      "output": "verification/generated/language-stability-bridge/final-sysml-runtime-gate.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "final-seven-language-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-sysml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "60b342d23cd1a11b1b6d04a623a53ebd5610496d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "a7d007fbae72bc6da94bef1e82e66a4bfad50b1f4957ea83ff6aac2f9585a6a0",
+      "duration_seconds": 28.92,
+      "output": "verification/generated/language-stability-bridge/final-seven-language-rustdoc.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure",
+        "RUSTDOCFLAGS": "-D warnings"
+      }
     }
   ],
   "source_ledgers": [
@@ -12476,6 +12759,24 @@
         "expected_red": "Baseline physical-sharing assertion fails; no semantic failure.",
         "compile_corrections": "Two initial builds found old valuation test helpers requiring contiguous slices. Both signatures changed to the read wrapper; assertions unchanged.",
         "measurement": "68096 logical atoms, 260 distinct live atoms; accounted payload 575840 bytes versus 4358144 unshared enum bytes. Tree/allocator overhead excluded; no corpus or private-memory saving claimed."
+      }
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/final-nonrust-commands.json",
+      "source_commit": "c42dedaacaff9d7c1982f1beb4de964661503cb4",
+      "source_blob_sha256": "4236b58fec70f06f79c96d7de5e3b2589b3ff4facd84afe3748b21cc5f59ee96",
+      "first_command": 439,
+      "command_count": 6
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/final-language-gates.json",
+      "source_commit": "37ec67fa4fc74006c009b3f549eb2af4c4d888ed",
+      "source_blob_sha256": "376209ae0be311f6d43811af6f98d173bbedf26e56d74118ae00213f1ea2085e",
+      "first_command": 445,
+      "command_count": 6,
+      "source_metadata": {
+        "scope": "Final static/runtime language gates after the exhausted publication budget; no package sweep, cache load, corpus run, production edit or workspace implementation. Passing these checks does not establish Systems publication acceptance.",
+        "result": "Six commands passed. Strict Rustdoc covers agq-kernel, agq-kerml, agq-kerml-semantics, agq-kerml-syntax, agq-kerml-text, agq-sysml and agq-sysml-semantics with warnings denied. SysML grammar check covers Published SysML 2.0 and Operational v1."
       }
     }
   ]

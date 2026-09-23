@@ -31,7 +31,11 @@ frontend remain production obligations after readiness passes.
 
 Ordinary verification also excludes the two explicitly ignored accepted-cache
 and accepted-self-model gates. Passing parser preflights or ordinary workspace
-tests cannot discharge those gates. Final command outcomes are recorded in
-[commands.json](commands.json). No additional conformance requirement has been
-introduced, and no persistence, network API, execution or Gen1 migration work
-has begun.
+tests cannot discharge those gates. The single final low-artifact workspace run
+passes 880 tests with zero failures and four ignores (the two acceptance gates
+and two existing scale probes). Formatting, workspace Clippy, strict Rustdoc,
+grammar/metamodel stale checks, language runtime gates, frontend check/build/tests,
+standards integrity and dependency-boundary checks all pass. Exact outcomes are
+recorded in [commands.json](commands.json). No additional conformance requirement
+has been introduced, and no persistence, network API, execution or Gen1 migration
+work has begun.
