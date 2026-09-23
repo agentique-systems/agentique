@@ -821,3 +821,26 @@ writer-scope investigation, not a successful closure gate. Raw outputs are
 `compatibility-combined.log`, `compatibility-owned-origin-trace.log`, and
 `compatibility-helper-origins.log` in the same ignored diagnostic directory.
 The nested-chain test remains unrun. Formatting and diff checks passed.
+
+Per-effect scope source `7ff867f` and its actual-footprint regression `e672a90`
+were tested on local `df741c8`; its three modified production files match the
+source commit exactly, including the earlier bounded-reader traversal. The
+same base three-test command exited 101: two simple controls passed and the
+compound case retained `73011/deriveUsageMayTimeVary` (57.97 s tests, 69.37 s
+wall). Output SHA-256:
+`f7d7128d553d73574c4fe8d73d7a73fea2a6e7394849b6838ac267492fb67cc8`.
+Closed producer pairs increased from 105 to 130; this is not full closure.
+
+One subsequent exact compound trace used the same three enabled trace flags,
+with both `AGQ_PRODUCER_CAUSAL_SUBJECTS` and `AGQ_PRODUCER_READ_TARGETS` set to
+`00000000-0000-0000-0000-000000011d33,00000000-0000-0000-0000-000000011d31,00000000-0000-0000-0000-000000011d2f`,
+and `AGQ_PRODUCER_READ_FAMILIES=deriveUsageMayTimeVary,KerML.FeatureReferenceExpression,KerML.FeatureChainExpression`.
+It exited 101 (28.25 s tests, 28.46 s wall), output SHA-256
+`f5137d681b2b60bc9e4900f80c9a7246b09879f405c0dfda5109a3f864baf972`.
+The ancestor TypeFeaturing writer edge is gone. The remaining
+`73011/VariableFeaturing -> 73009/FeatureReferenceExpression` path reads the
+outer Container `73000`'s owned-relationship property, structural population,
+and Membership population. The selected read-origin targets did not include
+`73000`, so this run does not establish that population's import channel.
+The raw files are `effect-scoped-combined.log` and `effect-scoped-trace.log`
+under the same ignored directory. Nested-chain execution remains gated.
