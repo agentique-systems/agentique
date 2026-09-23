@@ -131,6 +131,26 @@ manifests to establish model truth.
 
 ## Initial cost model and remaining incrementality
 
+Standard publication is a rare acceptance computation whose accepted result is
+cached. Its workflow budget is distinct from the cost of frequent authored edits.
+The future authored invalidation path is:
+
+```text
+document edit
+    -> query/provider footprint invalidation
+    -> affected producer populations
+    -> closure certificate revalidation
+    -> new immutable revision
+```
+
+ADR 0027's component planner, exact comparator and boundary tests may evolve into
+this machinery. Current broad provider/search footprints do not prove useful
+independent strata. The initial workspace therefore does not require component
+sealing. Future invalidation must preserve negative searches, future producer
+opportunities, relationship endpoints and accepted dependency identity, and must
+compare resulting semantics with a full authored recomputation. No incremental
+performance claim follows from immutable revision storage alone.
+
 SourceProject currently rebuilds candidate dependencies across its complete
 document input. Phase 1 may rebuild authored construction/overlays where necessary;
 do not claim a fully incremental compiler. Unchanged syntax/source values and

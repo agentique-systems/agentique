@@ -189,8 +189,10 @@ alone. Typed closure search evidence explains which subject and requirement the
 certificate covers. Without that evidence, a negative formal antecedent remains
 Incomplete; a proved positive antecedent need not await unrelated producers.
 
-[ADR 0027](adr/0027-compositional-semantic-publication.md) defines the additional
-proof needed to compose semantic components. A dependency DAG and a projection
+[ADR 0027](adr/0027-compositional-semantic-publication.md) remains proposed research
+defining the additional proof needed to compose semantic components. Current
+Systems acceptance uses the monolithic dependency-driven fixed point; useful
+source partitions are not a prerequisite. A dependency DAG and a projection
 of an existing certificate are inspectable planning evidence, not acceptance.
 Local record immutability does not freeze incoming searches: a later local
 relationship can reference an earlier subject without changing its record.

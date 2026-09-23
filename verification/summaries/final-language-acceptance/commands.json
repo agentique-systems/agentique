@@ -1,0 +1,125 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "watchdog-stall",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_watchdog.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "7528a97762c7d808fcac8e1e7bd772bcba9638ff",
+      "working_changes_sha256": "da2517e615d766d38ba4590256e49626cc473edebc70ef5551ac0ee181902c21",
+      "output_sha256": "62d40769d8ce20dd09b76c3ce72dee04e2179210afff56cc200b1a5920a824e4",
+      "duration_seconds": 4.62,
+      "output": "verification/generated/final-language-acceptance/watchdog-stall.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "dependency-boundary-tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "7528a97762c7d808fcac8e1e7bd772bcba9638ff",
+      "working_changes_sha256": "da2517e615d766d38ba4590256e49626cc473edebc70ef5551ac0ee181902c21",
+      "output_sha256": "9f19866c8af7bd0425354480972b9749c259e92bd47393c4d7e76dcf44f46db3",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/final-language-acceptance/dependency-boundary-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "dependency-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "7528a97762c7d808fcac8e1e7bd772bcba9638ff",
+      "working_changes_sha256": "da2517e615d766d38ba4590256e49626cc473edebc70ef5551ac0ee181902c21",
+      "output_sha256": "4b46c49f77531a7a4652e7a79f7004a097d42001186db5c21968bfc8afb2ce13",
+      "duration_seconds": 0.19,
+      "output": "verification/generated/final-language-acceptance/dependency-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "7528a97762c7d808fcac8e1e7bd772bcba9638ff",
+      "working_changes_sha256": "da2517e615d766d38ba4590256e49626cc473edebc70ef5551ac0ee181902c21",
+      "output_sha256": "d75a8ebeb6db4b1ff2caccea1eefaafacb270e8bcc856859c8af47df5346f651",
+      "duration_seconds": 0.72,
+      "output": "verification/generated/final-language-acceptance/node-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "standards",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "7528a97762c7d808fcac8e1e7bd772bcba9638ff",
+      "working_changes_sha256": "da2517e615d766d38ba4590256e49626cc473edebc70ef5551ac0ee181902c21",
+      "output_sha256": "65ea5f70df1d3a26c9a754817f51d57c831483fa37ebe20c2b35ac83a6aa51be",
+      "duration_seconds": 0.75,
+      "output": "verification/generated/final-language-acceptance/standards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "7528a97762c7d808fcac8e1e7bd772bcba9638ff",
+      "working_changes_sha256": "da2517e615d766d38ba4590256e49626cc473edebc70ef5551ac0ee181902c21",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 1.59,
+      "output": "verification/generated/final-language-acceptance/frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "7528a97762c7d808fcac8e1e7bd772bcba9638ff",
+      "working_changes_sha256": "da2517e615d766d38ba4590256e49626cc473edebc70ef5551ac0ee181902c21",
+      "output_sha256": "f02a52033ecb4329b5c3a65d8d8fafa55c80c053272296a721f00ba16cfec212",
+      "duration_seconds": 1.89,
+      "output": "verification/generated/final-language-acceptance/frontend-build.log",
+      "environment_overrides": {}
+    }
+  ]
+}

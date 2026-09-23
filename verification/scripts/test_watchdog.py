@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from watchdog import ROOT, WindowsJob, PosixGroup, execute
+from watchdog import ROOT, WindowsJob, PosixGroup, ProgressObserver, execute
 
 
 class WatchdogTests(unittest.TestCase):
@@ -42,10 +42,10 @@ class WatchdogTests(unittest.TestCase):
             finally:
                 kernel.CloseHandle(handle)
 
-    def run_argv(self, command, wall=10, memory=512 * 1024**2, progress_pattern=None, min_free_bytes=0):
+    def run_argv(self, command, wall=10, memory=512 * 1024**2, progress_pattern=None, min_free_bytes=0, stall_seconds=0):
         self.sequence += 1
         output = self.directory / f"run-{self.sequence}"
-        result = execute(command, output, wall, memory, 0.025, dict(os.environ), progress_pattern, min_free_bytes)
+        result = execute(command, output, wall, memory, 0.025, dict(os.environ), progress_pattern, min_free_bytes, stall_seconds)
         observations = [json.loads(line) for line in (output / "observations.jsonl").read_text().splitlines()]
         process_ids = [result["command_pid"]] if result["command_pid"] else []
         process_ids.extend(pid for sample in observations for pid in sample["process_ids"])
@@ -79,6 +79,38 @@ class WatchdogTests(unittest.TestCase):
         self.assertEqual(result["safety_stop"], "wall_time")
         self.assertLess(result["duration_seconds"], 5)
         self.assertGreaterEqual(max(s["processes"] for s in samples), 2)
+
+    def test_unchanged_output_does_not_hide_a_stall(self):
+        result, _ = self.run_command(
+            "import time; print('planned=7',flush=True); "
+            "[(print('planned=7 heartbeat',flush=True),time.sleep(.1)) for _ in range(40)]",
+            progress_pattern=r"planned=(?P<planned>\d+)", stall_seconds=.5,
+        )
+        self.assertEqual(result["safety_stop"], "stalled_progress")
+        self.assertEqual(result["last_progress"], {"planned": "7"})
+        self.assertLess(result["duration_seconds"], 3)
+
+    def test_completed_frontier_and_changed_population_reset_stall_clock(self):
+        path = self.directory / "progress.log"
+        observer = ProgressObserver(r"frontier=(?P<frontier>\d+)|planned=(?P<planned>\d+)|closed=(?P<closed>\d+)")
+        path.write_text("frontier=15 planned=7 closed=10\n")
+        observer.observe(path, 1)
+        self.assertEqual(observer.changed_at, 1)
+        observer.observe(path, 2)  # Old transitions must not be replayed.
+        self.assertEqual(observer.changed_at, 1)
+        with path.open("a") as stream:
+            stream.write("planned=7 evaluated=900\n")
+        observer.observe(path, 3)
+        self.assertEqual(observer.changed_at, 1)
+        with path.open("a") as stream:
+            stream.write("closed=11\nfrontier=16\nplanned=")
+        observer.observe(path, 4)
+        self.assertEqual(observer.changed_at, 4)
+        with path.open("a") as stream:
+            stream.write("8\n")
+        observer.observe(path, 5)
+        self.assertEqual(observer.value, {"frontier": "16", "planned": "8", "closed": "11"})
+        self.assertEqual(observer.changed_at, 5)
 
     def test_child_memory_is_counted_after_parent_exits(self):
         result, samples = self.run_command(

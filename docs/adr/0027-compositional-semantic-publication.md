@@ -1,7 +1,20 @@
 # ADR 0027: compositional semantic publication
 
-Status: proposed implementation contract; equivalence and corpus acceptance are
-required before adoption. Written before implementation on `068f7b0`.
+Status: proposed research architecture; not adopted and not current publication
+authority. Written before implementation on `068f7b0`.
+
+The immediate Systems acceptance path is the existing monolithic dependency-driven
+scheduler, including its Structural and ContextualBindings strata. Its complete
+fixed point and fully closed certificate remain mandatory. ADR 0027 does not block
+that acceptance or adoption of ADR 0026.
+
+The corpus experiment established that current read-side provider/search
+footprints are insufficient to prove useful strata. It did not establish that
+Systems is semantically indivisible. Retain the component planner, exact semantic
+comparator, boundary audits and invalid-partition tests as research infrastructure.
+No further Systems partition planning is required by this milestone. Precise
+provider footprints can later support authored ProjectWorkspace recomputation;
+the initial workspace does not depend on unproved component sealing.
 
 ## Decision and authority
 
@@ -129,7 +142,7 @@ its dependent DAG closure explicitly. A sealed component is not periodically
 replayed while later components run. Full authored incremental recomputation is
 outside this decision's initial implementation.
 
-## Acceptance sequence
+## Future compositional acceptance sequence
 
 First test synthetic linear, diamond, cyclic, typing, subsetting, negative-search,
 late-writer, relationship-carrier, variable-feature and feature-chain cases against

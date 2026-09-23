@@ -9,6 +9,93 @@ use agq_sysml_semantics::{
 use std::{collections::BTreeMap, fs::File, path::Path};
 
 const CASES: &str = include_str!("../tests/fixtures/agentique-cases.sysml");
+const VIEW_METADATA: &str = include_str!("../tests/fixtures/agentique-view-metadata.sysml");
+
+#[test]
+fn view_metadata_acceptance_fixture_preserves_real_frontend_classes() {
+    let syntax = production::parse_sysml_with_profile(
+        production::SysmlSyntaxProfile::OperationalV2,
+        DocumentId::from_u128(960_003),
+        SourceRevisionId::from_u128(960_004),
+        VIEW_METADATA,
+        Default::default(),
+    )
+    .unwrap();
+    assert!(syntax.is_complete(), "{:?}", syntax.diagnostics());
+    let draft = lower(&syntax);
+    let model = draft.candidate().model();
+    for (name, class) in [
+        ("ArchitectureView", s::VIEW_DEFINITION),
+        ("ReviewMetadata", s::METADATA_DEFINITION),
+        ("architecture", s::VIEW_USAGE),
+        ("review", s::METADATA_USAGE),
+    ] {
+        assert_eq!(
+            model.element(named(model, name)).unwrap().metaclass(),
+            class
+        );
+    }
+}
+
+fn accepted_view_metadata(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
+    let mut project =
+        SourceProject::with_accepted_sysml_standard_libraries(accepted.clone()).unwrap();
+    let revision = project
+        .apply(
+            project.current().revision(),
+            [ProjectChange::Add {
+                path: "PresentationAcceptance.sysml".into(),
+                language: SourceLanguage::SysMl,
+                source: VIEW_METADATA.into(),
+            }],
+        )
+        .unwrap();
+    let status = revision.producer_status().unwrap();
+    assert!(status.converged, "{status:?}");
+    assert_eq!(status.completeness, Completeness::Complete, "{status:?}");
+    assert!(
+        revision.is_complete_slice(),
+        "{:?}",
+        revision.semantic_diagnostics()
+    );
+    assert!(
+        revision
+            .producer_closure()
+            .unwrap()
+            .is_fully_closed(revision.semantic_model())
+    );
+    for reference in revision.references() {
+        assert_eq!(reference.resolution.completeness, Completeness::Complete);
+        assert!(matches!(
+            reference.resolution.value,
+            Resolution::Resolved(_)
+        ));
+    }
+    let q = revision.sysml_queries().unwrap();
+    let inherited = q.effective_usages(authored_named(q.model(), "SpecializedPresentation"));
+    complete(&inherited);
+    for (definition, usage, role) in [
+        ("ArchitectureView", "architecture", StandardSysmlRole::View),
+        ("ReviewMetadata", "review", StandardSysmlRole::MetadataItem),
+    ] {
+        let definition = authored_named(q.model(), definition);
+        let usage = authored_named(q.model(), usage);
+        let parents = q.effective_supertypes(definition);
+        complete(&parents);
+        assert!(
+            parents
+                .value()
+                .contains(&accepted.bindings().targets()[&role])
+        );
+        let types = q.effective_usage_types(usage);
+        complete(&types);
+        assert!(types.value().contains(&definition));
+        assert!(
+            inherited.value().contains(&usage),
+            "inheritance retains original identities"
+        );
+    }
+}
 
 #[test]
 fn case_acceptance_fixture_uses_real_frontend_and_explicit_standard_redefinitions() {
@@ -958,6 +1045,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     // These independent fixtures do not need the retained authored history.
     // Finish them before allocating r0/r1 and keep only equivalence observations.
     accepted_case_roles(&accepted);
+    accepted_view_metadata(&accepted);
     let programmatic = programmatic_semantics(&accepted);
     let mut project =
         SourceProject::with_accepted_sysml_standard_libraries(accepted.clone()).unwrap();
