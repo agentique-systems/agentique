@@ -356,6 +356,25 @@ fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
     )
     .unwrap();
     assert!(closed.converged);
+    if closed.completeness != Completeness::Complete {
+        let registry = ProducerRegistry::new(
+            ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V9))
+                .chain(sysml_producer_descriptors()),
+        )
+        .unwrap();
+        let certificate = closed.certificate.as_ref().unwrap();
+        for record in closed.overlay.model().elements() {
+            for (index, descriptor) in registry.descriptors().iter().enumerate() {
+                if certificate.evaluation(record.id(), index)
+                    == Some(agq_kerml_semantics::ProducerEvaluationState::EvaluatedIncomplete)
+                {
+                    eprintln!("incomplete {} / {}", record.id(), descriptor.id.name());
+                }
+            }
+        }
+    }
     assert_eq!(
         closed.completeness,
         Completeness::Complete,

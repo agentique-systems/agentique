@@ -612,3 +612,33 @@ It visits the same sorted bounded target set and uses the unchanged matching
 logic; an unbounded creator still uses the complete reader map. Its nine-case
 guard matrix and formatting pass (`future-read-traversal-review.json` range).
 This optimization changes neither canonical semantics nor producer registry identity.
+
+
+With the feature-containment scope correction `a634a96` (local `34930c2`),
+`cargo test --locked --offline -p agq-sysml-semantics --lib expression_usage_tests -- --nocapture --test-threads=1`
+exited 101: both simple controls passed, but the compound test still failed
+(63.73 s tests, 75.02 s including compilation). It now has one incomplete pair,
+`73011/deriveUsageMayTimeVary`; the nested reference expression and its result
+close. The same low-disk environment was used. Captured output SHA-256:
+`8ad63416b1164cf3811c41a121671c62d4c40bbdf1ad82a94d807ae03b6f3b76`.
+
+A repeat of the exact compound command above with `AGQ_PRODUCER_CAUSAL_TRACE=1`
+and `AGQ_PRODUCER_CAUSAL_SUBJECTS` selecting canonical IDs 73005–73015 exited 101
+(32.71 s test, 38.04 s including compilation). A test-only diagnostic prints the
+one EvaluatedIncomplete pair. The remaining chain-result VariableFeaturing
+writer reaches the chain planner through `Structural(73007)` and broad
+`Owned(73007, Membership)` reads, both directly and through potential future
+helpers. EffectiveTyping for result `73011` remains open through its own
+FeatureValuation/PositionalRedefinition and generated chain/source-target helper
+writers. This is a residual dependency finding, not a passing compound gate.
+The ignored `verification/generated/compound-expression/scoped-trace.log` has
+SHA-256 `70d9229702e0cc9a460d28d6eb6dc1149c895f525ddf0f1a410627b7e46e90f8`;
+the instrumented test file has SHA-256
+`c4e490d2099b29c0e3ff226e9adf5949dd9ab48adce23cb9940ceb670f669543`.
+Rustfmt and diff checks exited 0. No further publication or accepted-cache load
+was performed for this diagnosis.
+
+Independent review (`4d9c806`) also passes all five FeatureChain scope controls
+and permits bounded integration. The planner footprint, alias/unknown-state
+handling, pending provider guards, output attribution and reconstruction were
+reviewed against the shared selector. It grants no corpus acceptance.
