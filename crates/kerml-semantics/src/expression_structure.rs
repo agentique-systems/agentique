@@ -85,7 +85,7 @@ impl KerMlQueries<'_> {
     /// First owned input Feature, in semantic membership order.
     pub(crate) fn first_input(&self, expression: ElementId) -> QueryResult<Option<ElementId>> {
         let mut out = self.result(None);
-        let features = self.direct_features(expression);
+        let features = self.owned_directed_features(expression);
         let agq_kernel::metamodel::ValueKind::Enumeration(domain) = self
             .model()
             .registry()

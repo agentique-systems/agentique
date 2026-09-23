@@ -12,6 +12,7 @@ enum Position {
     Parameter,
     Result,
     End,
+    Directed,
 }
 impl KerMlQueries<'_> {
     pub(crate) fn expression_result<T>(
@@ -314,15 +315,22 @@ impl KerMlQueries<'_> {
                 })
                 .map_or(property, |descriptor| descriptor.id),
         };
-        out.search_dependencies
-            .insert(SearchDependency::StructuralFeaturePopulation {
-                owner,
-                kind: match position {
-                    Position::Parameter => FeaturePopulationKind::Parameter,
-                    Position::Result => FeaturePopulationKind::Result,
-                    Position::End => FeaturePopulationKind::End,
-                },
-            });
+        let populations: &[FeaturePopulationKind] = match position {
+            Position::Parameter => &[FeaturePopulationKind::Parameter],
+            Position::Result => &[FeaturePopulationKind::Result],
+            Position::End => &[FeaturePopulationKind::End],
+            // Directed returns remain candidates even if their direction is
+            // not the normative `out`. Together these existing populations
+            // cover every directed owned Feature without a broad member read.
+            Position::Directed => &[
+                FeaturePopulationKind::Parameter,
+                FeaturePopulationKind::Result,
+            ],
+        };
+        for &kind in populations {
+            out.search_dependencies
+                .insert(SearchDependency::StructuralFeaturePopulation { owner, kind });
+        }
         let Some(members) = self.accept(out, owner, view.owned_relationship()) else {
             self.property(out, owner, p::ELEMENT_OWNED_RELATIONSHIP);
             return vec![];
@@ -397,7 +405,7 @@ impl KerMlQueries<'_> {
                         self.read_value(&mut guard, feature, p::FEATURE_IS_END),
                         Some(Value::Boolean(true))
                     ),
-                    Position::Parameter => self
+                    Position::Parameter | Position::Directed => self
                         .read_value(&mut guard, feature, p::FEATURE_DIRECTION)
                         .is_some(),
                 };
@@ -426,7 +434,7 @@ impl KerMlQueries<'_> {
                     }
                     let property = match position {
                         Position::End => p::FEATURE_IS_END,
-                        Position::Parameter => p::FEATURE_DIRECTION,
+                        Position::Parameter | Position::Directed => p::FEATURE_DIRECTION,
                         Position::Result => unreachable!(),
                     };
                     out.search_dependencies
@@ -462,6 +470,21 @@ impl KerMlQueries<'_> {
     pub fn owned_parameter_features(&self, owner: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
         out.value = self.positioned_features(&mut out, owner, Position::Parameter);
+        out
+    }
+    /// All directly owned directed Features, including result memberships, in
+    /// canonical order. Callers still apply their exact direction predicate.
+    pub(crate) fn owned_directed_features(&self, owner: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        out.value = self.positioned_features(&mut out, owner, Position::Directed);
+        if self.context().pending_namespace_scopes.contains(&owner) {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_DIRECTED_POPULATION",
+                owner,
+                "Pending source memberships may introduce additional directed Features",
+            );
+        }
         out
     }
     /// Directly owned end Features in canonical membership order. The retained
