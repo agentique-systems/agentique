@@ -135,3 +135,73 @@ fn selected_append_and_whole_slot_reads_keep_broad_evidence_in_both_merge_orders
         }
     }
 }
+
+#[test]
+fn initial_derived_ordered_entries_retain_selected_proof_without_whole_slot_read() {
+    let mut f = Fixture::new();
+    for subject in 1..=4 {
+        f.create(subject, c::FEATURE);
+    }
+    let snapshot = f.finish();
+    let queries = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let key = |output| DerivationKey {
+        rule: RuleId::from_u128(7200),
+        subject: id(1),
+        output: OutputKey::from_u128(output),
+    };
+    let proof = queries.canonical_fact_evidence(FactKey::Element(id(3)));
+    let mut plan = queries.plan_result_structure([]);
+    plan.add_derived_element(
+        key(1),
+        c::FEATURE,
+        BTreeMap::from([(
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            SlotValue::Ordered(vec![
+                Value::Reference(key(2).element_id()),
+                Value::Reference(key(3).element_id()),
+            ]),
+        )]),
+        None,
+        &proof,
+    )
+    .unwrap();
+    for (offset, target) in [(2, id(2)), (3, id(4))] {
+        plan.add_derived_element(
+            key(offset),
+            c::FEATURE_CHAINING,
+            BTreeMap::from([(
+                p::FEATURE_CHAINING_CHAINING_FEATURE,
+                SlotValue::Scalar(Value::Reference(target)),
+            )]),
+            None,
+            &proof,
+        )
+        .unwrap();
+    }
+    let overlay = plan.materialize(&snapshot).unwrap().overlay;
+    let context =
+        SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap();
+    for queries in [
+        KerMlQueries::new(context.fork()),
+        KerMlQueries::for_production(context),
+    ] {
+        let chain = queries.chaining_features(key(1).element_id());
+        assert_eq!(chain.completeness, Completeness::Complete);
+        assert_eq!(chain.value, [id(2), id(4)]);
+        let reads = crate::producer_closure::producer_reads(&chain, overlay.model());
+        assert!(
+            reads.contains(&crate::producer_closure::ProducerRead::Owned(
+                key(1).element_id(),
+                c::FEATURE_CHAINING
+            ))
+        );
+        assert!(
+            !reads.contains(&crate::producer_closure::ProducerRead::Property(
+                key(1).element_id(),
+                p::ELEMENT_OWNED_RELATIONSHIP
+            ))
+        );
+    }
+}
