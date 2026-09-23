@@ -946,3 +946,31 @@ formatting pass. The old transitive future-writer fixture now explicitly declare
 its custom SubjectAndOwners contract (`b533e52`), preserving its original nine
 adversarial expectations. Its initial failure and all final command results are
 retained in the `variable-immediate-owner-review.json` source-ledger range.
+
+## Corrected Actions audit: remaining end and indexed-assignment boundary
+
+`actions-immediate-owner` uses source `fad6a95` and the successful release build
+from `749f9c9`. It exits 1 normally after 1,327.469 s, peak private 6,160.2 MiB;
+no watchdog stop. All eight pinned documents parse/construct byte-exactly,
+534/534 mandatory references are Complete, kernel obligations and authority
+conflicts are zero, and accepted KerML producers are not replayed.
+
+Producer closure converges in 31 rounds but remains Incomplete and not fully
+closed: 24 explicit incomplete pairs (21 mayTimeVary, two reference expressions,
+one FeatureValue), 23 diagnostics, 10,815/11,439 closed applicable pairs and
+382,442/407,028 closed requirements. It derives 3,341 local elements while
+evaluating 19,917 subjects. Certificate/revalidation sizes are 2,628,939 and
+712,671,848 bytes; two transport operations retain 1,225 and reopen 11,801
+evaluations in aggregate. The report and raw watchdog evidence are ignored under
+`verification/generated/language-stability-bridge/actions-immediate-owner/` and
+`verification/generated/overnight-convergence/actions-immediate-owner/`.
+
+Original KPAR document SHA-256 values were checked before mapping every reported
+source range to `diagnostic-sources.jsonl`. Twenty MayTimeVary subjects are named
+or anonymous end usages in Flows, Connections and Items. Their OwnedCrossing,
+PositionalRedefinition and VariableFeaturing evaluations are Pending. The other
+boundary is Actions line 518, `assign var := seq#(index);`: anonymous usage
+`98c30374-e65a-579b-be50-0d23d18160d8` has incomplete MayTimeVary and FeatureValue;
+its `seq` and `index` reference expressions remain incomplete. This is a final
+scoped failure result, not acceptance. Medium/full publication and production
+workspace integration remain gated pending concrete focused corrections.

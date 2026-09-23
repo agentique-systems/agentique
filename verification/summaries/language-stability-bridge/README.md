@@ -13,7 +13,7 @@ completed corpus result is the eight-document Actions/dependency scope:
 **534/534 mandatory references Complete**, zero unresolved, incomplete,
 ambiguous, invalid or mismatched references, and zero kernel obligations. All eight
 documents parse and construct byte-exactly. The scheduler converges but producer
-closure remains Incomplete: 64 evaluations remain incomplete and the certificate
+closure remains Incomplete: 24 evaluations remain incomplete and the certificate
 is not fully closed. The scoped acceptance guard correctly rejects this result.
 Medium/full publication has not run;
 the full-publication attempt budget is unused.
@@ -23,7 +23,7 @@ certificates: plain and frontend-shaped invocation results, a compound chain,
 and a deeper nested chain. The actual planner and independent adversarial tests
 confirm precise per-effect and immediate owning-Type writer scopes. These are
 synthetic dependencies, not accepted standard publications; the corrected
-Actions corpus audit remains the next gate. See [closure.md](closure.md) for each defect,
+Actions corpus audit still identifies remaining end-usage and indexed-assignment closure gaps. See [closure.md](closure.md) for each defect,
 permanent regression and its exact evidence boundary.
 
 The [Gen1/Gen2 audit](../gen1-gen2-audit/README.md), proposed
@@ -37,24 +37,28 @@ the executable actual-cache gate.
 
 ## Publication observations
 
-All completed scoped runs are failed acceptance gates until the full certificate
-closes. The immediately preceding sealed-proof audit had 534/534 references
-Complete and 103 incomplete producer evaluations; the current run below has 64.
-Earlier failed and deliberately stopped observations, actual exits and resource
+All completed scoped runs remain failed acceptance gates until the full certificate
+closes. The immediately preceding bounded-writer audit had 64 incomplete producer
+pairs; the current run below has 24. Earlier observations, actual exits and resource
 limits remain in [publication-commands.json](publication-commands.json) and the
-[closure record](closure.md). A requested watchdog stop has no final semantic
-result; provisional endpoint selections are never Complete-reference counts.
+[closure record](closure.md). Provisional endpoint selections are never
+Complete-reference counts.
 
-The latest `actions-bounded-writers` audit (source `695e67e`, release build
-`b56a1b5`) finishes normally with exit 1 in 1,180.313 seconds, peaking at
-5,821.1 MiB private memory. All 534 references remain Complete, with zero kernel
-obligations or authority conflicts. Producer closure converges in 26 rounds but
-remains Incomplete: 64 explicit incomplete pairs (42 Usage mayTimeVary,
-19 FeatureReferenceExpression, 3 FeatureValue), 67 diagnostics and
-380,711/405,270 closed requirements. It evaluates 12,011 subjects and derives
-3,048 elements. The 2,617,585-byte compact certificate retains optional
-590,341,256-byte revalidation data; reconstruction retains 1,225 evaluations and
-reopens 10,975 across two rebindings. No medium/full attempt is consumed.
+The latest `actions-immediate-owner` audit (source `fad6a95`, release built from
+`749f9c9`) finishes normally with exit 1 in **1,327.469 seconds**, peaking at
+**6,160.2 MiB private memory**. All 534 references are Complete, with zero kernel
+obligations or authority conflicts; 8/8 documents parse and construct byte-exactly.
+Accepted KerML producers are not replayed. Closure converges in 31 rounds but is
+Incomplete: **24 pairs** (21 Usage mayTimeVary, 2 FeatureReferenceExpression,
+1 FeatureValue), 23 diagnostics, and 382,442/407,028 closed requirements. It
+evaluates 19,917 subjects and derives 3,341 elements. The compact certificate is
+2,628,939 bytes; optional revalidation data is 712,671,848 bytes. Two rebindings
+retain 1,225 evaluations and reopen 11,801 in total. No medium/full attempt is
+consumed, and the full attempt budget remains unused.
+
+Byte-verified diagnostic source spans isolate 20 remaining end usages in
+Flows/Connections/Items and the indexed assignment `assign var := seq#(index)`
+in Actions. Bounded planner/fixture diagnosis precedes any further corpus run.
 
 Full non-audit publication now uses normal preparation; scoped/audit-only paths
 retain the final construction predicate pass. Strict publication independently
