@@ -40,6 +40,13 @@ fn without_membership_names(snapshot: Snapshot) -> Snapshot {
 
 /// Real scheduler closure of synthetic anchors, never a publication receipt.
 fn expression_dependency() -> (Arc<ProducerClosedDependency>, Vec<ElementId>) {
+    expression_dependency_with_signature("isEmpty", &["seq"])
+}
+
+fn expression_dependency_with_signature(
+    function: &str,
+    parameters: &[&str],
+) -> (Arc<ProducerClosedDependency>, Vec<ElementId>) {
     let (dependency, _, mut roots) = closed_kernel_anchor_fixture(true, false, false);
     let occurrence = dependency
         .context()
@@ -81,9 +88,9 @@ fn expression_dependency() -> (Arc<ProducerClosedDependency>, Vec<ElementId>) {
         kc::SUBCLASSIFICATION,
         kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
     );
-    // Closed Function signature corresponding to SequenceFunctions::isEmpty.
+    // Closed Function signatures corresponding to isEmpty/contains.
     // Its evaluation body is irrelevant to structural invocation semantics.
-    f.create(71_000, kc::FUNCTION, "isEmpty");
+    f.create(71_000, kc::FUNCTION, function);
     f.member(1, 71_000, 171_000, kc::OWNING_MEMBERSHIP);
     f.relation(
         71_000,
@@ -92,10 +99,13 @@ fn expression_dependency() -> (Arc<ProducerClosedDependency>, Vec<ElementId>) {
         kc::SUBCLASSIFICATION,
         kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
     );
-    for (feature, name, direction, member) in [
-        (71_001, "seq", "in", kc::PARAMETER_MEMBERSHIP),
-        (71_002, "result", "out", kc::RETURN_PARAMETER_MEMBERSHIP),
-    ] {
+    for (index, (name, direction, member)) in parameters
+        .iter()
+        .map(|&name| (name, "in", kc::PARAMETER_MEMBERSHIP))
+        .chain([("result", "out", kc::RETURN_PARAMETER_MEMBERSHIP)])
+        .enumerate()
+    {
+        let feature = 71_001 + index as u128;
         f.create(feature, kc::FEATURE, name);
         set_enum(&mut f, feature, kp::FEATURE_DIRECTION, direction);
         f.member(71_000, feature, feature + 100_000, member);
@@ -249,4 +259,117 @@ fn invocation_value_with_plain_feature_results_control() {
 #[test]
 fn invocation_value_with_frontend_reference_usage_results_closes() {
     invocation_value(sc::REFERENCE_USAGE);
+}
+
+#[test]
+fn invocation_chain_value_with_frontend_reference_usage_results_closes() {
+    // Items::Item::boundingShapes::faces has contains(inter.intersectionsOf, ...).
+    // Preserve the nested expression/argument/result ownership shape, using a
+    // direct second argument rather than adding the unrelated union invocation.
+    let (dependency, roots) = expression_dependency_with_signature("contains", &["col", "values"]);
+    let occurrence = dependency
+        .context()
+        .standard_bindings
+        .as_ref()
+        .unwrap()
+        .get(StandardRole::Occurrence);
+    let base = dependency.project_snapshot();
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+        origin: origin(),
+    };
+    f.create(73_000, sc::ITEM_DEFINITION, "Container");
+    f.relation(
+        73_000,
+        occurrence.as_u128(),
+        273_000,
+        kc::SUBCLASSIFICATION,
+        kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
+    );
+    for (owner, feature, class, name) in [
+        (73_000, 73_001, sc::ITEM_USAGE, "inter"),
+        (73_001, 73_002, sc::ITEM_USAGE, "intersectionsOf"),
+        (73_000, 73_003, sc::ITEM_USAGE, "face"),
+        (73_000, 73_004, sc::ATTRIBUTE_USAGE, "isContained"),
+    ] {
+        f.create(feature, class, name);
+        f.member(owner, feature, feature + 100_000, kc::FEATURE_MEMBERSHIP);
+    }
+    for (owner, expression, class) in [
+        (73_004, 73_005, kc::INVOCATION_EXPRESSION),
+        (73_006, 73_007, kc::FEATURE_CHAIN_EXPRESSION),
+        (73_008, 73_009, kc::FEATURE_REFERENCE_EXPRESSION),
+        (73_012, 73_013, kc::FEATURE_REFERENCE_EXPRESSION),
+    ] {
+        f.create(expression, class, "");
+        f.member(owner, expression, expression + 100_000, kc::FEATURE_VALUE);
+    }
+    f.value(
+        73_007,
+        kp::FEATURE_CHAIN_EXPRESSION_OPERATOR,
+        Value::String(".".into()),
+    );
+    for (owner, parameter, direction, member) in [
+        (73_005, 73_006, "in", kc::PARAMETER_MEMBERSHIP),
+        (73_007, 73_008, "in", kc::PARAMETER_MEMBERSHIP),
+        (73_009, 73_010, "out", kc::RETURN_PARAMETER_MEMBERSHIP),
+        (73_007, 73_011, "out", kc::RETURN_PARAMETER_MEMBERSHIP),
+        (73_005, 73_012, "in", kc::PARAMETER_MEMBERSHIP),
+        (73_013, 73_014, "out", kc::RETURN_PARAMETER_MEMBERSHIP),
+        (73_005, 73_015, "out", kc::RETURN_PARAMETER_MEMBERSHIP),
+    ] {
+        let class = if direction == "out" {
+            sc::REFERENCE_USAGE
+        } else {
+            kc::FEATURE
+        };
+        f.create(parameter, class, "");
+        set_enum(&mut f, parameter, kp::FEATURE_DIRECTION, direction);
+        f.member(owner, parameter, parameter + 100_000, member);
+    }
+    for (expression, target, membership) in [
+        (73_005, 71_000, 173_020),
+        (73_007, 73_002, 173_021),
+        (73_009, 73_001, 173_022),
+        (73_013, 73_003, 173_023),
+    ] {
+        reference(&mut f, expression, target, membership);
+    }
+    for subject in 73_005..=73_015 {
+        f.changes.clear(id(subject), kp::ELEMENT_DECLARED_NAME);
+    }
+    let snapshot = without_membership_names(f.finish());
+    let extension = SysmlProducerExtension::new(
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+        roots.clone(),
+    );
+    let closed = close_result_structure_with_extension(
+        &snapshot,
+        Default::default(),
+        |overlay| context(overlay, &dependency, &roots),
+        &extension,
+        |_, _, _, _| {},
+        |_| {},
+    )
+    .unwrap();
+    assert!(closed.converged);
+    assert_eq!(
+        closed.completeness,
+        Completeness::Complete,
+        "nested feature-chain expression: {:?}",
+        closed.stages.last()
+    );
+    let certificate = closed.certificate.unwrap();
+    assert!(certificate.is_fully_closed(closed.overlay.model()));
+    for subject in 73_001..=73_015 {
+        for requirement in SemanticClosureRequirement::ALL {
+            assert!(
+                certificate.is_closed(id(subject), requirement),
+                "{subject}: {requirement:?}"
+            );
+        }
+    }
 }
