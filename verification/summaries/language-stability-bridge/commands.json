@@ -3328,6 +3328,34 @@
       "duration_seconds": 0.72,
       "output": "verification/generated/language-stability-bridge/bridge-consolidated-standards.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "bridge-diagnostic-example-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d59400609bccc8efcdab5f7e69626d47af53e136",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "b56d51789a45677463fb7d40100dfe92db5ca190776d7b1cfac03b1bd03ac27f",
+      "duration_seconds": 13.89,
+      "output": "verification/generated/language-stability-bridge/bridge-diagnostic-example-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ],
   "source_ledgers": [
