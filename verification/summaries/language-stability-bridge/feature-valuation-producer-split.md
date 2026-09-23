@@ -24,6 +24,8 @@ Validation (one build job, incremental/debug disabled):
 - `cargo clippy -p agq-kerml-semantics -p agq-sysml-semantics --all-targets -- -D warnings`:
   exit 0, 9.55 s.
 - `cargo fmt --all`: exit 0.
+- Follow-up `cargo test -p agq-kerml-semantics`: exit 0; 327 passed,
+  2 ignored across unit/integration tests. Documentation tests also passed.
 
 The receiver fixture remains Incomplete because a separate transition payload
 proof still imports pending descendant/standard-anchor evidence. This change
