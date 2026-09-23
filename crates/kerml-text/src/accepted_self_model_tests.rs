@@ -477,10 +477,13 @@ fn accepted_trigger_and_message(
     assert!(members.value().contains(&payload.value()[0]));
 }
 
-fn programmatic_equivalence(
-    accepted: &Arc<CanonicalSysmlSystemsLibrary>,
-    textual: &ProjectRevision,
-) {
+struct ProgrammaticSemantics {
+    summary: BTreeMap<String, BTreeSet<String>>,
+    workspace_query: ElementId,
+    dependency: Arc<agq_kernel::derived::DerivedOverlay>,
+}
+
+fn programmatic_semantics(accepted: &Arc<CanonicalSysmlSystemsLibrary>) -> ProgrammaticSemantics {
     let witness = accepted.producer_closed_dependency().unwrap();
     let snapshot =
         super::programmatic_vertical::programmatic_platform_on(witness.project_snapshot());
@@ -535,18 +538,13 @@ fn programmatic_equivalence(
         )
         .unwrap(),
     );
-    assert_eq!(
-        rich_summary(&textual.sysml_queries().unwrap()),
-        rich_summary(&q)
-    );
-    assert_ne!(
-        authored_named(textual.semantic_model(), "workspaceQuery"),
-        authored_named(q.model(), "workspaceQuery")
-    );
-    assert!(Arc::ptr_eq(
-        snapshot.immutable_dependency().unwrap(),
-        textual.snapshot().immutable_dependency().unwrap()
-    ));
+    // Retain comparison observations and the already-shared publication handle,
+    // not the independent model's complete declared/derived maps and indexes.
+    ProgrammaticSemantics {
+        summary: rich_summary(&q),
+        workspace_query: authored_named(q.model(), "workspaceQuery"),
+        dependency: snapshot.immutable_dependency().unwrap().clone(),
+    }
 }
 
 fn accepted_case_roles(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
@@ -722,6 +720,10 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     let accepted = Arc::new(
         CanonicalSysmlSystemsLibrary::restore_cache(systems_cache, &sources, kerml).unwrap(),
     );
+    // These independent fixtures do not need the retained authored history.
+    // Finish them before allocating r0/r1 and keep only equivalence observations.
+    accepted_case_roles(&accepted);
+    let programmatic = programmatic_semantics(&accepted);
     let mut project =
         SourceProject::with_accepted_sysml_standard_libraries(accepted.clone()).unwrap();
     let r1 = project
@@ -740,8 +742,16 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     architecture_invariants(&r1.sysml_queries().unwrap());
     accepted_trigger_and_message(&r1, &accepted);
     let original = rich_summary(&r1.sysml_queries().unwrap());
-    programmatic_equivalence(&accepted, &r1);
-    accepted_case_roles(&accepted);
+    assert_eq!(original, programmatic.summary);
+    assert_ne!(
+        authored_named(r1.semantic_model(), "workspaceQuery"),
+        programmatic.workspace_query
+    );
+    assert!(Arc::ptr_eq(
+        &programmatic.dependency,
+        r1.snapshot().immutable_dependency().unwrap()
+    ));
+    drop(programmatic);
     let document = r1.document_at("ModelingPlatform.sysml").unwrap().id();
     let retained_query = authored_named(r1.semantic_model(), "workspaceQuery");
     let r2 = insert(
@@ -826,11 +836,17 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         project.accepted_sysml_standard_library().unwrap(),
         &accepted
     ));
-    let second = SourceProject::with_accepted_sysml_standard_libraries(accepted.clone()).unwrap();
-    assert!(Arc::ptr_eq(
-        second.current().snapshot().immutable_dependency().unwrap(),
-        r1.snapshot().immutable_dependency().unwrap()
-    ));
+    // r1/r2/r3 remain alive together below. Release the history's otherwise
+    // unused empty r0 before constructing the independent sharing control.
+    drop(project);
+    {
+        let second =
+            SourceProject::with_accepted_sysml_standard_libraries(accepted.clone()).unwrap();
+        assert!(Arc::ptr_eq(
+            second.current().snapshot().immutable_dependency().unwrap(),
+            r1.snapshot().immutable_dependency().unwrap()
+        ));
+    }
     std::thread::scope(|scope| {
         for revision in [&r1, &r2, &r3] {
             scope.spawn(move || {
