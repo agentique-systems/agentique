@@ -3,7 +3,14 @@ use crate as agq_kerml_semantics;
 include!("../common/result_fixture.rs");
 
 fn subjects() -> Snapshot {
-    let mut f = Fixture::new();
+    let base = Snapshot::new(Arc::new(
+        agq_kerml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9).unwrap(),
+    ));
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
     f.create(1, c::FEATURE);
     f.create(2, c::FEATURE);
     f.create(3, c::CLASSIFIER);
