@@ -1163,3 +1163,12 @@ results are retained rather than overwritten. No cache or corpus run occurred.
 Final `cargo fmt --all -- --check` and all-target Clippy for
 `agq-kerml-semantics`, `agq-sysml-semantics`, and `agq-kerml-text` with
 `-D warnings` exit 0 (Clippy 19.25 s tool time). No package sweep was repeated.
+
+Independent review of `6fecbdf` passes five direct/future population guard groups
+and the actual Function/Expression emission audit. Real End writes, unknown
+writers, scalar direction changes, pending namespace providers and independently
+requested broad reads remain blocking. The output audit rejects an undeclared
+directed/return member; changed descriptor identity rejects the old certificate.
+Test-target Clippy and formatting pass. The six actual command records, including
+an initial test-setup compile correction, are consolidated in the
+`expression-result-population-review.json` source-ledger range.

@@ -11301,6 +11301,183 @@
       "duration_seconds": 0.47,
       "output": "verification/generated/language-stability-bridge/bridge-expression-population-standards.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "bridge-medium-ready-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "ada8f1a490c67cedff5ffdea080626f0cec0b0ce",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.44,
+      "output": "verification/generated/language-stability-bridge/bridge-medium-ready-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "expression-result-population-review",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "expression_result_population_review_tests",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "fc5666327d8a14b4ec9671e98b70069d6e0d918b",
+      "working_changes_sha256": "baca69eeafd4ed28c0d8c479ce176672a85d63717249640eb6aa779b88168757",
+      "output_sha256": "5875692ef09216170a94063bcb6f02df78bf24986c10eff37ef16922b0fc6588",
+      "duration_seconds": 4.14,
+      "output": "verification/generated/language-stability-bridge/expression-result-population-review.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "expression-result-population-review-corrected",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "expression_result_population_review_tests",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "fc5666327d8a14b4ec9671e98b70069d6e0d918b",
+      "working_changes_sha256": "ca779d7347db90849a006ab03c12f8daa6524ee9984d2358a31a7b617a31985c",
+      "output_sha256": "4f92ea00b1a8a74ba4ddbc39152645ca7cd396ed09d9fe716744f53ba25b06ce",
+      "duration_seconds": 35.66,
+      "output": "verification/generated/language-stability-bridge/expression-result-population-review-corrected.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "expression-result-actual-emission-audit",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "expression_and_function_result_emissions_fit_exact_relationship_contract",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "fc5666327d8a14b4ec9671e98b70069d6e0d918b",
+      "working_changes_sha256": "ca779d7347db90849a006ab03c12f8daa6524ee9984d2358a31a7b617a31985c",
+      "output_sha256": "7294e343ac6bed9fa457d6397d611a1efa4010413dbc9ceed029d136cb93db14",
+      "duration_seconds": 0.52,
+      "output": "verification/generated/language-stability-bridge/expression-result-actual-emission-audit.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "expression-result-population-final",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "expression_result_population_review_tests",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "75f822f81489d60eae9fa12f8131aad38ec362e1",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e79e8fd15f1283beb4ba476563812574cf4c13c8d5ec57b30abf8c7aa27cf4ed",
+      "duration_seconds": 35.09,
+      "output": "verification/generated/language-stability-bridge/expression-result-population-final.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "expression-result-population-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "agq-kerml-semantics",
+        "--tests",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "75f822f81489d60eae9fa12f8131aad38ec362e1",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "cc0777409392e1fb7544380ae9c0292a2cbc9d1512399d1d04274c9226ddeea1",
+      "duration_seconds": 10.62,
+      "output": "verification/generated/language-stability-bridge/expression-result-population-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "expression-result-population-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "75f822f81489d60eae9fa12f8131aad38ec362e1",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.53,
+      "output": "verification/generated/language-stability-bridge/expression-result-population-fmt.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
     }
   ],
   "source_ledgers": [
@@ -11706,6 +11883,37 @@
       "source_blob_sha256": "2a25f8bc5337d551de273fdf9768be7be389a18c2320f555465439fa25ab16dd",
       "first_command": 400,
       "command_count": 10
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/expression-result-population-review.json",
+      "source_commit": "5734f2c9342cba078756c1fa8e125c418d80068e",
+      "source_blob_sha256": "1619231d99bd0a566f83b00df7cec2919b44922608d89c4b41c8fea6b8ea7c6a",
+      "first_command": 412,
+      "command_count": 6,
+      "review": {
+        "verdict": "GO for the bounded ExpressionResult population descriptor change",
+        "production_commit": "6fecbdf",
+        "local_equivalent_production_commit": "fc5666327d8a14b4ec9671e98b70069d6e0d918b",
+        "guard_commit": "75f822f81489d60eae9fa12f8131aad38ec362e1",
+        "finding": "Actual ExpressionResult contextual/binding emission creates undirected members and end features; it creates no parameter direction or return membership. The End-only feature-population promise removes the false Parameter writer while preserving actual outputs and rule identities.",
+        "controls": [
+          "Direct and future Parameter reads close for the bounded End-only writer; End reads, unclassified producers and real scalar-direction writers remain open.",
+          "An independent broad Membership read remains live in either merge order and both ordinary and producer evaluator modes.",
+          "Actual-emitter audit accepts undirected/end outputs and rejects directed or return-membership outputs outside the promise.",
+          "Changed population contract changes registry identity and rejects attachment of the previous certificate.",
+          "Pending namespace can still supply directed parameters and cannot be certified complete.",
+          "Existing actual Function and Expression output audit passes for Published and Operational v9 profiles."
+        ],
+        "final_results": {
+          "focused_tests_passed": 5,
+          "focused_test_seconds": 0.45,
+          "actual_emission_audit_passed": true,
+          "test_target_clippy_exit_code": 0,
+          "format_exit_code": 0
+        },
+        "setup_failure": "The initial test compile used an owned certificate where Arc was required. Corrected in the test fixture; the failed command is retained. This was not a semantic regression.",
+        "limits": "No ordering-query change, cache load, corpus or publication run. Registry identity authenticates the new descriptor; the accepted historical KerML receipt is unchanged. These focused checks do not establish full Systems publication acceptance."
+      }
     }
   ]
 }
