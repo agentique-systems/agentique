@@ -170,6 +170,46 @@
         "stall_seconds": 600.0
       },
       "output_sha256": "930ec4852d780248f9d25bea4f5ffbbeccb55a7f62a264eb66da2d0392f10e4c"
+    },
+    {
+      "name": "foundation-systems-full",
+      "command": [
+        "verification/generated/final-language-acceptance/publication-release-candidate.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--checkpoint=verification/generated/final-language-acceptance/full-frontiers",
+        "--output=verification/generated/final-language-acceptance/systems-full/report.json"
+      ],
+      "source_commit": "ff2990a0c8be71e5fa00c41371382adb8a571d68",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_CERTIFICATE_TRACE": "1"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "frontier=(?P<frontier>\\d+)|planned=(?P<planned>\\d+)|closed_pairs=(?P<closed_pairs>\\d+)",
+      "output": "verification/generated/overnight-convergence/foundation-systems-full",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 5060,
+      "monitor_error": null,
+      "last_progress": {
+        "planned": "24",
+        "frontier": "27",
+        "closed_pairs": "26532"
+      },
+      "minimum_free_disk_bytes": 2929954816,
+      "safety_stop": "wall_time",
+      "duration_seconds": 3601.109,
+      "peak_rss_bytes": 5453279232,
+      "peak_private_bytes": 6057992192,
+      "samples": 3594,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1.0,
+        "min_free_disk_bytes": 1073741824,
+        "stall_seconds": 600.0
+      },
+      "output_sha256": "ae46992cf2955400314e96e40ac693b4d87b2e03b25dc05742f018ea93db94bd"
     }
   ]
 }

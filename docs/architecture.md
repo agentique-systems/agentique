@@ -131,8 +131,12 @@ subsetting, redefinition and names reuse KerML queries. Attribute/Item/Part
 projections and structural Port/Connector projections retain their evidence.
 Current-graph answers do not certify unfinished SysML producer closure.
 
-No Systems publication is accepted. Mandatory reference and combined producer
-closure remain pending. Operational v2 records the three bounded canonical target
+No Systems publication is accepted. The final monolithic run reached Complete
+producer closure and saved a converged frontier, then exhausted its one-hour
+budget before the final publication report and accepted cache were issued. The
+final mandatory-reference and facade acceptance gates remain unproven; see the
+[readiness decision](../verification/summaries/final-language-acceptance/readiness.md).
+Operational v2 records the three bounded canonical target
 corrections while Published and Operational v1 remain reproducible.
 The immediate acceptance path is the monolithic dependency-driven scheduler and
 its existing Structural, StableProperties and ContextualBindings strata.

@@ -864,6 +864,48 @@
       "duration_seconds": 1.14,
       "output": "verification/generated/final-language-acceptance/full-headroom-clean-rustdoc.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "integrated-publication-artifact-guards",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_*gate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5e902e4c180d0b457e17491605fb5219b1da7517",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "bb3b9fd69aac2e49a4b90a70c417249c09479f8a324bd08fade731251e6d4d73",
+      "duration_seconds": 0.38,
+      "output": "verification/generated/final-language-acceptance/integrated-publication-artifact-guards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "integrated-frontier-artifact-guards",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_frontier_artifact_evidence.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5e902e4c180d0b457e17491605fb5219b1da7517",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "9f56091a005b203aedee5ce753a2eb9125be86bbf35947e4c1f1b5d9edf2a2fa",
+      "duration_seconds": 0.8,
+      "output": "verification/generated/final-language-acceptance/integrated-frontier-artifact-guards.log",
+      "environment_overrides": {}
     }
   ]
 }

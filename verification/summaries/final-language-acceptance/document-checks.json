@@ -1,0 +1,21 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "final-readiness-consistency",
+      "command": [
+        "python",
+        "-c",
+        "import json,pathlib,re,subprocess; root=pathlib.Path('.'); d=json.loads((root/'standards/v2-coverage.json').read_text()); p=d['sysml_systems_library_publication']; assert d['modeling_platform_gate']['result']=='gated'; assert p['systems_publication']=='not accepted' and p['accepted_bindings'] is False; a=p['final_language_acceptance_attempt']; assert a['closed_pairs']==a['applicable_pairs']==26532 and a['closed_requirements']==452052 and a['exit_code']==124 and not a['additional_attempt_or_resume_performed']; assert p['latest_completed_scope']['producer_closure']=='Complete'; files=['docs/architecture.md','docs/semantic-kernel.md','verification/summaries/final-language-acceptance/readiness.md','verification/summaries/final-language-acceptance/README.md']; links=[(pathlib.Path(f).parent / v.split('#')[0]).resolve() for f in files for v in re.findall(r'\\]\\(([^)]+)\\)',pathlib.Path(f).read_text(encoding='utf-8')) if v and not v.startswith(('http:','https:','#'))]; assert all(v.exists() for v in links),[str(v) for v in links if not v.exists()]; assert not subprocess.check_output(['git','diff','7528a97762c7d808fcac8e1e7bd772bcba9638ff','--','standards/coverage.json','verification/traceability.json']); print('readiness and coverage consistent; local links:',len(links),'; Gen1 records unchanged')"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "db3a18c15c6ce514ee006cf0bac6b884cdc235a8",
+      "working_changes_sha256": "1119267b9cf383d8c3e35a073c646579f069abc7003f840f2cadd4f002a2b1d3",
+      "output_sha256": "dec85e53cd7800ef9bb48cbaee73f229be9e396d2f543495f33f012603f9ff07",
+      "duration_seconds": 0.12,
+      "output": "verification/generated/final-language-acceptance/final-readiness-consistency.log",
+      "environment_overrides": {}
+    }
+  ]
+}

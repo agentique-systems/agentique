@@ -62,7 +62,17 @@ cleaned, and after the run the verified executable was retained separately befor
 cleaning disposable Cargo release/Rustdoc artifacts. The original sources,
 libraries, accepted caches, checkpoints and verification evidence were preserved.
 
-That equivalence result authorized the single full candidate, now running. Its limits
+That equivalence result authorized the single full candidate. Its limits
 are 3,600 seconds, 6,656 MiB private memory, 1,024 MiB free disk, and a 600-second
 stall timeout observing changed frontier, planned population or closed-pair
 count. Resource limits are workflow stops and cannot relax semantic acceptance.
+
+The single full attempt stopped on wall time after 3,601.109 seconds (exit 124),
+with peak private memory 6,057,992,192 bytes and minimum free disk 2,929,954,816
+bytes. There was no memory, disk or stall stop. Strict frontier 27 reached
+Complete at 3,449.325 seconds; all 26,532 applicable producer pairs and 452,052
+requirements were closed. Invocation 3's converged round 28 checkpoint was
+durably committed before the stop. The final report, receipt, bindings and
+accepted cache were not issued. The remaining final facade checks cannot be
+inferred from the converged frontier or the earlier construction reference audit.
+No further full run or resume was performed after the one-hour budget expired.

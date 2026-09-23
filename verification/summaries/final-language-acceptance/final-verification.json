@@ -1,0 +1,138 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "final-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5e902e4c180d0b457e17491605fb5219b1da7517",
+      "working_changes_sha256": "3f8a7bc394d8291ef7ab3f0513a9ee98f3239313677560a2c00f06fb2980e84e",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 4.66,
+      "output": "verification/generated/final-language-acceptance/final-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5e902e4c180d0b457e17491605fb5219b1da7517",
+      "working_changes_sha256": "3f8a7bc394d8291ef7ab3f0513a9ee98f3239313677560a2c00f06fb2980e84e",
+      "output_sha256": "6f2da22b75e1ed59a25064437a4c9e679e9978f1f7c4d150112a6c30393de97a",
+      "duration_seconds": 151.3,
+      "output": "verification/generated/final-language-acceptance/final-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "final-generation-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5e902e4c180d0b457e17491605fb5219b1da7517",
+      "working_changes_sha256": "4f7707cebac90edbacbb997059497599aec45a665e13ce065dd51854e7cab2ca",
+      "output_sha256": "4b46c49f77531a7a4652e7a79f7004a097d42001186db5c21968bfc8afb2ce13",
+      "duration_seconds": 0.2,
+      "output": "verification/generated/final-language-acceptance/final-generation-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-sysml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "db3a18c15c6ce514ee006cf0bac6b884cdc235a8",
+      "working_changes_sha256": "7831471fd0ee0c443394b41ef8b92ad4bd3267f88f47eea9bb34b62bf3479134",
+      "output_sha256": "ccf1473188e16404a619b1ab92b69fea22f9ba7df1196064eabca643fc48c59f",
+      "duration_seconds": 30.28,
+      "output": "verification/generated/final-language-acceptance/final-rustdoc.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "name": "final-language-packages",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5e902e4c180d0b457e17491605fb5219b1da7517",
+      "working_changes_sha256": "0d0a7aa8a8a2d0cfdb4a79a30324e5d2e92a561fd1010842fe83dac0a3d77f50",
+      "output_sha256": "ae0a1efe719190a5b1c8fbb065e829ee3c9da0314215295c42aad85afb58ecff",
+      "duration_seconds": 1321.22,
+      "output": "verification/generated/final-language-acceptance/final-language-packages.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    }
+  ]
+}

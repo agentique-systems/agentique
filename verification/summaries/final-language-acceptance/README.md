@@ -29,9 +29,13 @@ population. Repeated messages, timestamps and evaluated-subject counters do not
 reset this clock. No competing heavy Rust build runs during full publication.
 External interruption may resume an authenticated checkpoint; a semantic defect
 invalidates it. The [medium prerequisite](phase-f.md) passed, including exact
-uninterrupted/resumed artifact equivalence. The single full attempt is now
-running with the same pinned executable; `publication-commands.json` will retain
-its completed watchdog record. This is an execution status, not acceptance.
+uninterrupted/resumed artifact equivalence. The single full attempt stopped on
+wall time after 3,601.109 seconds. Strict frontier 27 reached Complete at
+3,449.325 seconds and a converged checkpoint was durably committed, but no final
+publication report, accepted receipt, bindings or cache were issued.
+`publication-commands.json` retains the actual exit 124 and resource evidence.
+The attempt's budget is exhausted; no further run or resume was performed.
+The [readiness decision](readiness.md) retains the unmet acceptance gates.
 
 Strict Systems acceptance still requires 21/21 exact parses and constructions,
 zero kernel obligations, converged Complete producers, a fully closed certificate,

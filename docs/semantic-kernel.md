@@ -100,11 +100,14 @@ lowering constructs 7,591 declared elements with 1,327 reference assertions whil
 retaining StandardLibrary source provenance. Published grammar behavior remains
 13 complete parses and eight retained failures. The public Systems facade gates
 identity, provenance, bindings, mandatory references, capabilities and producer
-closure before acceptance. Closure remains pending; the three bounded authority
+closure before acceptance. The final monolithic scheduler reached Complete with
+26,532 closed producer pairs and 452,052 closed requirements, but its one-hour
+workflow stopped after saving the converged frontier and before issuing accepted
+publication artifacts. Final facade acceptance remains unproven; the three bounded authority
 decisions are recorded in the immutable Operational v2 correction manifest.
 Neither declared construction nor context attachment
 certifies a Systems publication. See the
-[language stability bridge evidence](../verification/summaries/language-stability-bridge/README.md).
+[final readiness evidence](../verification/summaries/final-language-acceptance/readiness.md).
 
 The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
 under Operational v9 by default, with explicit historical profile selection.
