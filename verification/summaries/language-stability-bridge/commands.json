@@ -11478,6 +11478,24 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
       }
+    },
+    {
+      "name": "bridge-acceptance-review-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4f5a0525cafd8fcd7cdec1b246e39347ca7712c5",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.61,
+      "output": "verification/generated/language-stability-bridge/bridge-acceptance-review-format.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [

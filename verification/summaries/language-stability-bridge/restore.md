@@ -105,6 +105,22 @@ Systems archive of scratch disk is required. Actual positive roundtrip, adversar
 cache results and accepted authored integration remain prerequisites for C2; private
 fixture checks or completed commands cannot substitute for them.
 
+## Full-run memory review
+
+At `6350177`, cache writing releases the already-serialized facade and closure
+JSON before writing the kernel graph. Independent review confirms unchanged ZIP
+entry order, serialization, digest and receipt paths. This removes an allocation
+overlap; its corpus memory saving is unmeasured. The cache test already drops each
+restored Systems graph before loading the next and streams archive mutations.
+Run its exact ignored gate alone after receipt activation.
+
+At `4a8c9d1`, the self-model gate completes independent Case/programmatic fixtures
+before retaining its authored edit history, and drops unused empty projects
+before parallel reads. All prior assertions remain, including simultaneous
+retention of r1/r2/r3. Independent review approved these lifetime changes.
+Formatting passes at `4f5a052` (`bridge-acceptance-review-format` in
+`commands.json`); compilation and actual accepted-cache execution remain pending.
+
 <details>
 <summary>Retained command observations from the consolidated Markdown</summary>
 
