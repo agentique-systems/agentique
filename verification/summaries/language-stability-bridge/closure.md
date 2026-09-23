@@ -844,3 +844,49 @@ and Membership population. The selected read-origin targets did not include
 `73000`, so this run does not establish that population's import channel.
 The raw files are `effect-scoped-combined.log` and `effect-scoped-trace.log`
 under the same ignored directory. Nested-chain execution remains gated.
+
+## Per-effect producer scopes and independent review
+
+The actual VariableFeaturing planner emits TypeFeaturing only on its variable
+subject and snapshot membership on its owning Type. A focused causal regression
+exposed the former shared scope treating owner featuring as writable. Descriptors
+now permit exact per-effect scope overrides; VariableFeaturing uses Subject for
+Featuring while retaining the separately checked membership/creation envelope.
+The map changes registry identity under schema `/6`. The actual planner and
+causal controls pass; 135 producer tests pass with two existing scale ignores,
+two-package all-target Clippy and strict KerML Rustdoc pass. Exact command
+records are consolidated from `variable-effect-scope-review.json`.
+
+Reviewed production `7ff867f` independently. Scoped result: GO, no production
+finding. Five adversarial tests passed (0.77 s); package library/test Clippy
+with warnings denied and workspace formatting also passed. Controls cover:
+
+- Narrowing/widening scopes, including an effective `Model` override on a
+  default `Subject` descriptor and retained conservative non-typing masks.
+- Future subject activation with `Subject`, `SubjectAndOwners`, and `Model`
+  effects; absent current instances cannot erase future effects.
+- Registry identity changes, rejection of stale direct/certificate transport,
+  and rejection of overrides for effects the descriptor never declared.
+- Exact semantic relationship, scalar, and existing-child ownership auditing.
+- A local incoming relationship reader of a protected dependency: a mixed
+  reference-scalar capability still invalidates it despite a narrow Featuring
+  override. Protected ownership collections remain immutable.
+
+Source review confirms effect-specific routing in direct/future causal readers,
+closure masks and semantic/scalar/ownership audits. Primitive/reference scalar
+guards, unknown selected populations, provider ownership and immutable boundary
+handling remain conservative. Fresh attachment auditing deliberately retains the
+default creation envelope. The new map is included in registry schema `/6`;
+canonical output keys and historical accepted KerML bytes are unchanged.
+
+The first boundary fixture expected an evaluated producer on a protected subject;
+such producers are correctly inapplicable. The next fixture read the protected
+owned collection, which is correctly immutable even with external references.
+The final control queries incoming FeatureTyping sources from a local reader,
+exercising the intended open external-carrier boundary. These setup corrections
+and all actual command results are retained in
+the `per-effect-scope-independent-commands.json` source-ledger range in `commands.json`.
+
+No package sweep, accepted cache load, or corpus run was performed for this
+review. The separately reported compound fixture still has an incomplete pair;
+this scoped GO does not establish publication or readiness acceptance.
