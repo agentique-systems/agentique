@@ -93,7 +93,7 @@ fn sealed_dependency_proof_searches_do_not_become_project_producer_reads() {
         };
         let mut builder = DerivationBuilder::new(declared);
         builder.element(
-            key.clone(),
+            key,
             c::PARAMETER_MEMBERSHIP,
             slots,
             BTreeSet::from([Dependency::Declared(FactKey::Element(id(1)))]),
