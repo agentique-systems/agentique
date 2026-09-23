@@ -125,6 +125,40 @@ fn repeated_population_reads_share_atom_allocations_across_subjects_and_families
         raw.semantic_closure_digest()
     );
     assert!(compact.revalidation_storage_bytes() < raw.revalidation_storage_bytes() / 4);
+    let expected = &table.reads[&id(2000)][0].1;
+    let mut restored = compact.evaluation_table();
+    let before = &restored.reads[&id(2000)][0].1;
+    assert!(
+        expected
+            .iter()
+            .zip(before.iter())
+            .all(|(a, b)| std::ptr::eq(a, b))
+    );
+    if let (ProducerReads::Shared(a), ProducerReads::Shared(b)) = (expected, before) {
+        assert!(
+            Arc::ptr_eq(a, b),
+            "unchanged transport rows retain their allocation"
+        );
+    } else {
+        panic!("retained rows must be interned");
+    }
+    restored.record_reads(
+        &[(
+            id(2000),
+            registry.descriptors()[0].id,
+            expected.iter().cloned().collect::<Vec<_>>().into(),
+        )],
+        &registry,
+    );
+    let admitted = &restored.reads[&id(2000)][0].1;
+    assert!(
+        expected
+            .iter()
+            .zip(admitted.iter())
+            .all(|(a, b)| std::ptr::eq(a, b)),
+        "new admissions deduplicate against the transported atoms"
+    );
+    assert_eq!(issue(&restored).receipt_value(), compact.receipt_value());
 }
 
 #[test]
