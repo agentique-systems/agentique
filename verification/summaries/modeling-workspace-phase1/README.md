@@ -2,6 +2,17 @@
 
 MODELING WORKSPACE PHASE 1 REMAINS GATED
 
+The current [language readiness decision](../language-foundation-accepted/README.md)
+records the authenticated Systems finalizer's effective-audit rejection. The
+prepared production implementation was found locally at full commit
+`e5a65f8b3f6413b3d2094dc88c172cbba6435c3d`; recovery and review commits
+`427d29b2633d5ac1183e0338df96d4ef4300552e` and
+`1ee7be295f43266c7f480b78865f3fd60a0874e9` remain on isolated branch
+`platform/workspace-integration`. All ten acceptance tests compile there,
+and focused kernel/frontend and dependency checks pass. Accepted-dependency
+execution, dogfooding, the 100-document fixture and production integration remain
+unrun and unaccepted. The historical preparation below remains applicable.
+
 The [design and acceptance matrix](../../../docs/modeling-workspace-phase1-design.md)
 and [ADR 0024](../../../docs/adr/0024-gen2-modeling-workspace.md) select an additive
 `agq-modeling-workspace`. No production crate is added by this preparatory work.

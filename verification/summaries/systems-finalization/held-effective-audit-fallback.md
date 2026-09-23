@@ -1,8 +1,9 @@
-# Held effective audit fallback
+# Bounded effective audit diagnostics
 
-This isolated fallback is based on integrated finalizer `047807a`. It is not part
-of the active publication run and does not establish any acceptance result.
-No compiler or test process was started while the lead's finalizer was running.
+This change was prepared in isolation from finalizer `047807a`, then integrated
+after the first finalization attempt rejected acceptance. It was not part of
+that measured attempt and does not establish an acceptance result. No compiler
+or test process was started while the lead's finalizer was running.
 
 The effective SysML audit retains every existing query and proof requirement.
 Its audit body is unchanged. Query contexts are bounded to eight subjects each.
@@ -20,7 +21,7 @@ begin/end observations include subject bounds, worker count, elapsed time and
 finding count. These observations confer no publication authority. A two-worker
 window emits its end records after both workers join, in subject order.
 
-Prepared, not yet executed, regressions cover out-of-order worker completion,
+Regressions cover out-of-order worker completion,
 exact serial/parallel report equality, the two-worker/eight-subject bounds, panic
 propagation and CLI option rejection. Full acceptance audits must still pass.
 
@@ -30,8 +31,8 @@ propagation and CLI option rejection. Full acceptance audits must still pass.
 | `cargo fmt --all` | 0 | Formatting corrected. |
 | `cargo fmt --all -- --check` | 0 | Formatting passed. |
 
-Before integration, run the focused publication library tests and example option
-tests, then focused Clippy. Two workers can increase scratch memory despite
+Actual integrated verification is recorded in [commands.json](commands.json).
+Two workers can increase scratch memory despite
 sharing the graph; the retained finalization watchdog and reserve remain required.
 The fallback does not touch producers, closure certificates, checkpoint identity,
 the public query evidence contract, or transactional artifact issuance.
