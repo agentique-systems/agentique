@@ -276,6 +276,15 @@ fn variable_featuring_pending_child_cannot_change_ancestor_type_featuring() {
 }
 #[test]
 fn variable_end_snapshot_cannot_reopen_its_own_crossing_or_positional_rule() {
+    variable_end_crossing_proof(false);
+}
+
+#[test]
+fn variable_end_with_owned_cross_keeps_snapshot_out_of_cross_subsetting_proof() {
+    variable_end_crossing_proof(true);
+}
+
+fn variable_end_crossing_proof(with_cross: bool) {
     use crate::producer_closure::ProducerEvaluationTable;
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
     let (snapshot, bindings) = nested_variable_fixture();
@@ -287,6 +296,19 @@ fn variable_end_snapshot_cannot_reopen_its_own_crossing_or_positional_rule() {
         origin(),
     );
     let snapshot = snapshot.apply(&changes).unwrap();
+    let snapshot = if with_cross {
+        let mut f = Fixture {
+            changes: snapshot.change_set(),
+            base: snapshot,
+            owned: BTreeMap::new(),
+        };
+        f.create(12, c::FEATURE);
+        member(&mut f, 10, 12, 601, c::OWNING_MEMBERSHIP);
+        f.value(11, p::FEATURE_IS_END, Value::Boolean(true));
+        f.finish()
+    } else {
+        snapshot
+    };
     let registry = ProducerRegistry::new(
         ProducerFamily::ALL
             .into_iter()
