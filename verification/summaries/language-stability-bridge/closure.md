@@ -974,3 +974,24 @@ boundary is Actions line 518, `assign var := seq#(index);`: anonymous usage
 its `seq` and `index` reference expressions remain incomplete. This is a final
 scoped failure result, not acceptance. Medium/full publication and production
 workspace integration remain gated pending concrete focused corrections.
+
+## Eligible crossing membership population
+
+The actual-planner regression `009428c` reproduces a false dependency from a
+pending VariableFeaturing snapshot to OwnedCrossing and PositionalRedefinition.
+Correction `e5e190a` queries the eligible OwningMembership population directly:
+FeatureMembership is always excluded, and FeatureValue remains excluded only
+in the corrected profiles. Selection, ordering and endpoint checks are unchanged.
+No producer descriptor, registry identity or canonical output key changes.
+
+The real combined SysML scheduler now closes two ConnectionDefinitions with
+four ReferenceUsage/OccurrenceUsage ends, inherited positional and explicit
+redefinition, variable snapshots and an immutable dependency. The entire
+certificate and all per-end requirements close; alias-aware isVariable values
+are true and inherited IDs remain original. This focused test passes in 14.45 s.
+Direct/future eligible writers, unknown future classes and ownership mutation
+remain open; excluded future FeatureMembership does not reopen crossing.
+Fifteen crossing/profile integration tests, two-package all-target Clippy and
+formatting pass. The ten actual attempts, including corrected test assertions,
+are retained in the `variable-end-causality.json` range of `commands.json`.
+These focused results do not supersede the latest failed Actions audit.
