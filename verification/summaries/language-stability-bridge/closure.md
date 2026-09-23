@@ -60,6 +60,12 @@ fallback and reopens transported selected-support reads. Exact supplied immutabl
 dependency entries remain available. Population searches and recursively retained
 positive/negative premises are still required; the cache is not closure authority.
 
+The chain correction preserves the EffectiveTyping contract, registry and archive/
+certificate formats; corrected closure bits change the normal certificate digest.
+Specialization and conjugation propagation remain unchanged. Its exact command
+records are consolidated from `c38b203` into `commands.json`, including fixture
+compilation corrections and the superseded zero-test restoration filter.
+
 The bounded residual review of the 532/534 audit (`fc04dfa`) found 105 incomplete
 mayTimeVary, 11 value-binding and two positional evaluations among diagnostic
 subjects. Both positional subjects are TriggerAction's payload
