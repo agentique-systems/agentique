@@ -1346,6 +1346,7 @@ fn compare(
     actual: &PublicationClosure,
     bindings: Option<&Arc<StandardKermlBindings>>,
 ) {
+    crate::closure_equivalence_tests::assert_exact_closure(expected, actual);
     assert!(actual.converged, "{:?}", actual.stages);
     assert_eq!(expected.completeness, actual.completeness);
     assert!(
@@ -1383,6 +1384,7 @@ fn compare(
     };
     let expected_q = query(&expected.overlay);
     let actual_q = query(&actual.overlay);
+    crate::closure_equivalence_tests::assert_exact_queries(&expected_q, &actual_q);
     assert_eq!(
         expected_q.context(),
         actual_q.context(),

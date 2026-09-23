@@ -111,5 +111,8 @@ pub use trusted_publication::{TrustedPublicationError, TrustedPublicationReceipt
 pub use validation::RedefinitionEndConformance;
 
 #[cfg(test)]
+#[path = "../tests/unit/closure_equivalence.rs"]
+mod closure_equivalence_tests;
+#[cfg(test)]
 #[path = "../tests/unit/producer_worklist.rs"]
 mod producer_worklist_tests;
