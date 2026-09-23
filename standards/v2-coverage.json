@@ -549,7 +549,7 @@
     "systems_publication": "not accepted"
   },
   "sysml_systems_library_publication": {
-    "status": "medium-scoped-references-complete-producer-budget-exhausted",
+    "status": "medium-scoped-closure-complete-full-publication-pending",
     "profile": "agentique-sysml-2.0-operational/2",
     "evidence": "verification/summaries/language-stability-bridge/README.md",
     "kerML_dependency": "exact accepted immutable Operational v9 /26; no producer replay",
@@ -561,7 +561,7 @@
     "semantic_authority": "standards/sysml-2.0-operational-semantic-v2.json",
     "authority_decisions_pending": 0,
     "latest_completed_scope": {
-      "run": "systems-medium-thirteen",
+      "run": "systems-medium-result-populations",
       "documents": [
         "Actions",
         "Attributes",
@@ -587,17 +587,18 @@
         "endpoint_mismatch": 0
       },
       "kernel_construction_obligations": 0,
-      "producer_closure": "Incomplete",
-      "producer_converged": false,
-      "certificate_fully_closed": false,
-      "incomplete_producer_pairs": 14,
+      "producer_closure": "Complete",
+      "producer_converged": true,
+      "certificate_fully_closed": true,
+      "incomplete_producer_pairs": 0,
       "authority_conflicts": 0,
       "evidence": "verification/summaries/language-stability-bridge/publication-commands.json",
-      "producer_diagnostics": 11,
-      "producer_rounds": 32,
-      "boundary": "The 32-round resource limit was exhausted before convergence; final diagnostics do not establish a persistent semantic cycle."
+      "producer_diagnostics": 0,
+      "producer_rounds": 33,
+      "boundary": "Medium scoped acceptance passes with exact fully closed certificate; full 21-document publication remains a separate gate.",
+      "producer_round_limit": 64
     },
-    "focused_corrections": "Actions scoped gate passes. The first medium audit completes all references but exhausts 32 rounds. A faithful inherited-result Interfaces fixture separately reproduces and fixes an ExpressionResult positional-population overclaim; full closure, source shape and Clippy pass. Systems preparation now allows 64 rounds without weakening acceptance. Medium retry and full publication remain unrun.",
+    "focused_corrections": "Actions 534/534 and medium 695/695 scoped gates pass with zero obligations, diagnostics or authority conflicts and fully closed certificates. The inherited-result ExpressionResult population correction and Systems-only 64-round budget are verified by focused guards and the medium corpus. Full publication has not yet run.",
     "full_publication_this_bridge": "not yet run; scoped counts are not full-corpus acceptance",
     "systems_publication": "not accepted",
     "accepted_bindings": false,
