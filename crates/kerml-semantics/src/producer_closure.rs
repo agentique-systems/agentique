@@ -19,6 +19,11 @@ pub use component_audit::{ComponentClosureAudit, ComponentClosureFinding};
 #[path = "producer_closure_trace.rs"]
 mod trace;
 
+#[path = "producer_closure_incremental.rs"]
+mod incremental;
+pub(crate) use incremental::ClosureCertificateBuilder;
+use incremental::{CertificateScopeContext, CertificateTopologyRow, CertificateUpdateCache};
+
 #[path = "publication_dependencies.rs"]
 mod publication_dependencies;
 pub use publication_dependencies::*;
@@ -1366,6 +1371,9 @@ impl ProducerEvaluationTable {
                 let mut consume_future =
                     |read_subject: &ElementId, reads: &[(&ProducerRead, usize)]| {
                         for (read, reader) in reads {
+                            if blocked.contains(reader) {
+                                continue;
+                            }
                             if future_families.iter().any(|future| {
                                 future.effects.iter().any(|&effect| {
                                     let scope = future.effect_scope(effect);
@@ -1437,6 +1445,9 @@ impl ProducerEvaluationTable {
                 let scope_kind = descriptor.effect_scope(effect);
                 let mut consume = |reads: &[(&ProducerRead, usize)]| {
                     for (read, reader) in reads {
+                        if blocked.contains(reader) {
+                            continue;
+                        }
                         if descriptor_changes_read(
                             descriptor,
                             effect,
@@ -1875,8 +1886,18 @@ impl ProducerClosureCertificate {
         table: &ProducerEvaluationTable,
         immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
     ) -> Self {
+        Self::issue_with_cache(model, context, registry, table, immutable_source, None)
+    }
+
+    fn issue_with_cache(
+        model: &ModelView,
+        context: &SemanticContextId,
+        registry: &ProducerRegistry,
+        table: &ProducerEvaluationTable,
+        immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
+        mut cache: Option<&mut CertificateUpdateCache>,
+    ) -> Self {
         let immutable = |id| immutable_source(id).is_some();
-        use agq_kerml::{classes as c, properties as p};
         let subjects: Vec<_> = model.elements().map(|r| r.id()).collect();
         let positions: BTreeMap<_, _> = subjects
             .iter()
@@ -1932,8 +1953,9 @@ impl ProducerClosureCertificate {
             table.dependency_blocked(model, registry, &subjects, &positions, &immutable, &blocked);
         for (i, &subject) in subjects.iter().enumerate() {
             let record = model.element(subject).expect("indexed subject");
+            let subject_immutable = immutable(subject);
             for (j, descriptor) in registry.descriptors.iter().enumerate() {
-                let mut state = if immutable(subject) {
+                let mut state = if subject_immutable {
                     ProducerEvaluationState::Inapplicable
                 } else {
                     table
@@ -1959,155 +1981,58 @@ impl ProducerClosureCertificate {
                 closed_pairs += usize::from(state == ProducerEvaluationState::EvaluatedComplete);
                 incomplete_pairs +=
                     usize::from(state == ProducerEvaluationState::EvaluatedIncomplete);
-                if matches!(
-                    state,
-                    ProducerEvaluationState::Pending | ProducerEvaluationState::EvaluatedIncomplete
-                ) {
-                    if descriptor.can_create_subjects() {
-                        let future_targets = future_owner_targets(
-                            model,
-                            registry,
-                            subject,
-                            descriptor,
-                            provider_ownership_open,
-                            true,
-                        );
-                        let future_direct_targets = future_owner_targets(
-                            model,
-                            registry,
-                            subject,
-                            descriptor,
-                            provider_ownership_open,
-                            false,
-                        );
-                        for requirement in SemanticClosureRequirement::ALL {
-                            if future_effects
-                                .iter()
-                                .any(|&effect| requirement.requires_in_model(effect, model))
-                            {
-                                let targets =
-                                    if future_transitive_requirements & requirement.bit() != 0 {
-                                        &future_targets
-                                    } else {
-                                        &future_direct_targets
-                                    };
-                                if let Some(targets) = targets {
-                                    for target in targets {
-                                        if !immutable(*target)
-                                            && let Some(&target) = positions.get(target)
-                                        {
-                                            blocked[target] |= requirement.bit();
-                                        }
-                                    }
-                                } else {
-                                    global_block |= requirement.bit();
-                                }
-                                if future_cross_subject_families(registry, model).any(|family| {
-                                    family.effects.iter().any(|&effect| {
-                                        let scope = family.effect_scope(effect);
-                                        (scope == ProducerEffectScope::Model
-                                            || reference_scalar(effect, model)
-                                            || ownership_mutable && scope.depends_on_ownership())
-                                            && requirement.requires_in_model(effect, model)
-                                    })
-                                }) {
-                                    dependency_global_block |= requirement.bit();
-                                }
-                            }
-                        }
-                    }
-                    for &effect in &descriptor.effects {
-                        let scope = descriptor.effect_scope(effect);
-                        let mask = SemanticClosureRequirement::ALL
-                            .into_iter()
-                            .filter(|r| r.requires_in_model(effect, model))
-                            .fold(0, |mask, r| mask | r.bit());
-                        // Other query families have additional domain/member dependencies.
-                        // Until their precise footprint traversal is implemented,
-                        // a relevant unfinished producer conservatively blocks them
-                        // throughout the graph instead of claiming local absence.
-                        global_block |= mask & !SemanticClosureRequirement::EffectiveTyping.bit();
-                        if scope == ProducerEffectScope::Model
-                            || reference_scalar(effect, model)
-                            || ownership_mutable && scope.depends_on_ownership()
-                        {
-                            dependency_global_block |= mask;
-                        }
-                        match scope {
-                            _ if reference_scalar(effect, model) => global_block |= mask,
-                            scope if ownership_mutable && scope.depends_on_ownership() => {
-                                global_block |= mask
-                            }
-                            ProducerEffectScope::Model => global_block |= mask,
-                            ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
-                            ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
-                            ProducerEffectScope::OwnedParameterFeatures
-                            | ProducerEffectScope::SubjectAndOwnedResults
-                            | ProducerEffectScope::SubjectAndOwnedFeatures
-                            | ProducerEffectScope::SubjectAndOwningType => {
-                                match scope
-                                    .selected_targets(model, subject, direction_mutable)
-                                    .expect("selected scope")
-                                {
-                                    Ok(targets) => {
-                                        for target in targets {
-                                            if let Some(&target) = positions.get(&target) {
-                                                blocked[target] |= mask;
-                                            }
-                                        }
-                                    }
-                                    Err(()) => {
-                                        global_block |= mask;
-                                    }
-                                }
-                            }
-                            ProducerEffectScope::SubjectAndOwners => owner_blocks[i] |= mask,
-                            ProducerEffectScope::Subject => blocked[i] |= mask,
-                        }
-                    }
+            }
+            let row_states: Vec<_> = (0..families)
+                .map(|family| {
+                    let index = i * families + family;
+                    (states[index / 4] >> ((index % 4) * 2)) & 3
+                })
+                .collect();
+            let scope_context = CertificateScopeContext {
+                model,
+                registry,
+                future_effects: &future_effects,
+                future_transitive_requirements,
+                ownership_mutable,
+                provider_ownership_open,
+                direction_mutable,
+            };
+            let row = if let Some(cache) = cache.as_deref_mut() {
+                cache.scope_row(subject, row_states, &scope_context, &immutable)
+            } else {
+                scope_context.build(subject, &row_states, &immutable)
+            };
+            global_block |= row.global;
+            dependency_global_block |= row.dependency_global;
+            inherited_blocks[i] |= row.inherited;
+            descendant_blocks[i] |= row.descendants;
+            owner_blocks[i] |= row.owners;
+            for (target, mask) in row.targets {
+                if let Some(&target) = positions.get(&target) {
+                    blocked[target] |= mask;
                 }
             }
         }
-        let refs = |subject, property| -> Vec<ElementId> {
-            let property = model
-                .element(subject)
-                .and_then(|record| {
-                    model
-                        .registry()
-                        .resolve_property(record.metaclass(), property)
-                        .ok()
-                        .flatten()
-                })
-                .map_or(property, |descriptor| descriptor.id);
-            model
-                .navigation_slot(subject, property)
-                .map(|slot| {
-                    slot.value()
-                        .values()
-                        .filter_map(|v| {
-                            if let agq_kernel::value::Value::Reference(id) = v {
-                                Some(*id)
-                            } else {
-                                None
-                            }
-                        })
-                        .collect()
-                })
-                .unwrap_or_default()
-        };
+        // Read graph-dependent rows only for the affected population. All masks
+        // are propagated afresh below, so disappearing blockers can reopen rows.
+        let topology: Vec<_> = subjects
+            .iter()
+            .map(|&subject| {
+                if let Some(cache) = cache.as_deref_mut() {
+                    cache.topology_row(model, context, subject)
+                } else {
+                    Arc::new(CertificateTopologyRow::build(model, context, subject))
+                }
+            })
+            .collect();
         // Propagate a producer's declared write scope down canonical ownership.
         let mut owned_by = vec![Vec::new(); subjects.len()];
         let mut owners_of = vec![Vec::new(); subjects.len()];
-        for (i, &subject) in subjects.iter().enumerate() {
-            for property in [
-                p::ELEMENT_OWNED_RELATIONSHIP,
-                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
-            ] {
-                for child in refs(subject, property) {
-                    if let Some(&j) = positions.get(&child) {
-                        owned_by[i].push(j);
-                        owners_of[j].push(i);
-                    }
+        for (i, row) in topology.iter().enumerate() {
+            for child in &row.owned {
+                if let Some(&j) = positions.get(child) {
+                    owned_by[i].push(j);
+                    owners_of[j].push(i);
                 }
             }
         }
@@ -2143,84 +2068,21 @@ impl ProducerClosureCertificate {
         // nonowned relationships. This catches a delayed producer on a target.
         let mut dependents = vec![Vec::new(); subjects.len()];
         let mut typing_dependents = vec![Vec::new(); subjects.len()];
-        for record in model.elements() {
-            let class = record.metaclass();
-            let is = |base| model.registry().is_subtype(class, base).unwrap_or(false);
-            let endpoints = if is(c::SPECIALIZATION) {
-                Some((p::SPECIALIZATION_SPECIFIC, p::SPECIALIZATION_GENERAL))
-            } else if is(c::FEATURE_CHAINING) {
-                Some((
-                    p::FEATURE_CHAINING_FEATURE_CHAINED,
-                    p::FEATURE_CHAINING_CHAINING_FEATURE,
-                ))
-            } else if is(c::CONJUGATION) {
-                Some((p::CONJUGATION_CONJUGATED_TYPE, p::CONJUGATION_ORIGINAL_TYPE))
-            } else {
-                None
-            };
-            if let Some((source, target)) = endpoints {
-                let mut sources = refs(record.id(), source);
-                if sources.is_empty() && (is(c::REFERENCE_SUBSETTING) || is(c::FEATURE_CHAINING)) {
-                    sources.extend(
-                        model
-                            .incoming_for_property(record.id(), p::ELEMENT_OWNED_RELATIONSHIP)
-                            .map(|reference| reference.source),
-                    );
-                }
-                for source in sources {
-                    for target in refs(record.id(), target) {
-                        if let (Some(&i), Some(&j)) =
-                            (positions.get(&source), positions.get(&target))
-                        {
-                            dependents[j].push(i);
-                            if !is(c::FEATURE_CHAINING) {
-                                typing_dependents[j].push(i);
-                            }
-                        }
+        for (i, row) in topology.iter().enumerate() {
+            for &(target, source, edge) in &row.dependencies {
+                if let (Some(&j), Some(&dependent)) =
+                    (positions.get(&target), positions.get(&source))
+                {
+                    if edge & 1 != 0 {
+                        dependents[j].push(dependent);
+                    }
+                    if edge & 2 != 0 {
+                        typing_dependents[j].push(dependent);
                     }
                 }
             }
-            for property in [p::FEATURE_TYPE, p::FEATURE_CHAINING_FEATURE] {
-                for target in refs(record.id(), property) {
-                    if let Some(&j) = positions.get(&target) {
-                        dependents[j].push(positions[&record.id()]);
-                        if property != p::FEATURE_CHAINING_FEATURE {
-                            typing_dependents[j].push(positions[&record.id()]);
-                        }
-                    }
-                }
-            }
-            if is(c::FEATURE) {
-                let i = positions[&record.id()];
-                match canonical_chain_terminal(model, record.id()) {
-                    Ok(Some(terminal)) => {
-                        if let Some(&j) = positions.get(&terminal) {
-                            typing_dependents[j].push(i);
-                        }
-                    }
-                    Ok(None) => {}
-                    Err(()) => blocked[i] |= SemanticClosureRequirement::EffectiveTyping.bit(),
-                }
-            }
-        }
-        // Implied metaclass bases participate even before a canonical edge is
-        // materialized. Reuse the exact query role map rather than assuming
-        // mutable binding targets are accepted immutable dependencies.
-        if let Some(bindings) = &context.standard_bindings {
-            for record in model.elements() {
-                for (class, role) in crate::implicit::metaclass_library_role_specs() {
-                    if model
-                        .registry()
-                        .is_subtype(record.metaclass(), class)
-                        .unwrap_or(false)
-                    {
-                        let target = bindings.get(role);
-                        if let Some(&j) = positions.get(&target) {
-                            dependents[j].push(positions[&record.id()]);
-                            typing_dependents[j].push(positions[&record.id()]);
-                        }
-                    }
-                }
+            if row.invalid_chain {
+                blocked[i] |= SemanticClosureRequirement::EffectiveTyping.bit();
             }
         }
         let typing = SemanticClosureRequirement::EffectiveTyping.bit();

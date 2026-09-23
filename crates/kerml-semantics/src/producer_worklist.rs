@@ -667,6 +667,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     let mut registry: Option<ProducerRegistry> = None;
     let mut evaluations = crate::producer_closure::ProducerEvaluationTable::default();
     let mut certificate: Option<std::sync::Arc<ProducerClosureCertificate>> = None;
+    let mut certificate_builder = crate::producer_closure::ClosureCertificateBuilder::default();
     let extension_descriptors = extension.descriptors();
     let mut unregistered_extension = extension_descriptors.is_empty()
         && population.iter().any(|&subject| {
@@ -981,13 +982,26 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 let next_context = context_factory(&next)?
                     .with_producer_registry_digest(registry.digest())
                     .map_err(PublicationOverlayError::Context)?;
-                let issued = std::sync::Arc::new(ProducerClosureCertificate::issue(
-                    next.model(),
-                    next_context.id(),
-                    registry,
-                    &evaluations,
-                    |id| next_context.dependency_closure_source(id),
-                ));
+                let issued = std::sync::Arc::new(
+                    if options.strategy == PublicationClosureStrategy::ReferenceFullScan {
+                        ProducerClosureCertificate::issue(
+                            next.model(),
+                            next_context.id(),
+                            registry,
+                            &evaluations,
+                            |id| next_context.dependency_closure_source(id),
+                        )
+                    } else {
+                        certificate_builder.issue(
+                            next.model(),
+                            next_context.id(),
+                            registry,
+                            &evaluations,
+                            &changed,
+                            |id| next_context.dependency_closure_source(id),
+                        )
+                    },
+                );
                 counters.applicable_subject_family_pairs = issued.applicable_pairs();
                 counters.closed_producer_pairs = issued.closed_pairs();
                 counters.closed_producer_effects = issued.closed_effects();
@@ -1055,13 +1069,26 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             let next_context = context_factory(&next)?
                 .with_producer_registry_digest(registry.digest())
                 .map_err(PublicationOverlayError::Context)?;
-            let issued = std::sync::Arc::new(ProducerClosureCertificate::issue(
-                next.model(),
-                next_context.id(),
-                registry,
-                &evaluations,
-                |id| next_context.dependency_closure_source(id),
-            ));
+            let issued = std::sync::Arc::new(
+                if options.strategy == PublicationClosureStrategy::ReferenceFullScan {
+                    ProducerClosureCertificate::issue(
+                        next.model(),
+                        next_context.id(),
+                        registry,
+                        &evaluations,
+                        |id| next_context.dependency_closure_source(id),
+                    )
+                } else {
+                    certificate_builder.issue(
+                        next.model(),
+                        next_context.id(),
+                        registry,
+                        &evaluations,
+                        &changed,
+                        |id| next_context.dependency_closure_source(id),
+                    )
+                },
+            );
             counters.certificate_build_micros += started.elapsed().as_micros();
             counters.certificate_bytes = issued.storage_bytes();
             Some(issued)
