@@ -547,11 +547,47 @@ impl KerMlQueries<'_> {
     /// The exact first non-parameter owned membership, with its unresolved evidence retained.
     pub fn reference_referent(&self, expression: ElementId) -> QueryResult<Option<ElementId>> {
         let mut out = self.result(None);
-        let members = self.memberships(expression);
+        if self
+            .checked::<agq_kerml::views::Namespace, _>(&mut out, expression)
+            .is_none()
+        {
+            return out;
+        }
+        let declared = self.declared_owned_relationships(expression);
+        let declared_first = declared.value.iter().position(|&member| {
+            self.is(member, c::MEMBERSHIP) && !self.is(member, c::PARAMETER_MEMBERSHIP)
+        });
+        // A positive original-prefix witness survives additive ownership
+        // appends. It is not an absence proof and never selects a derived-only
+        // first candidate. Current order and provider availability still matter.
+        let fixed_prefix = declared.completeness == Completeness::Complete
+            && declared_first.is_some_and(|end| {
+                let Ok(agq_kernel::derived::PropertyState::Computed(slot)) = self
+                    .model()
+                    .property_state(expression, p::ELEMENT_OWNED_RELATIONSHIP)
+                else {
+                    return false;
+                };
+                let mut current = slot.value().values();
+                declared.value[..=end]
+                    .iter()
+                    .all(|&member| current.next() == Some(&Value::Reference(member)))
+            });
+        let members = if fixed_prefix {
+            declared
+        } else {
+            let mut current = self.memberships(expression);
+            // A pending submitted population may introduce an earlier member.
+            // Preserve that uncertainty even if the present prefix is usable.
+            if declared.completeness != Completeness::Complete {
+                current.merge(declared);
+            }
+            current
+        };
         if let Some(&membership) = members
             .value
             .iter()
-            .find(|m| !self.is(**m, c::PARAMETER_MEMBERSHIP))
+            .find(|m| self.is(**m, c::MEMBERSHIP) && !self.is(**m, c::PARAMETER_MEMBERSHIP))
         {
             let member = self.member(membership);
             out.value = member.value;
