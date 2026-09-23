@@ -564,3 +564,51 @@ diff checks passed. This is a bounded fixture result; actual Systems publication
 and accepted-source gates remain separate.
 Test output SHA-256:
 `22564b963b3f5c6d4a57740a7b4a3f3867506c9561057757c7e743c36f739f79`.
+
+
+A compound expression variant (`c840670`, based on `7613d06`) is **red**:
+`contains(inter.intersectionsOf, face)` uses genuinely closed anchor layers, a
+two-input Function signature, a FeatureChainExpression beneath the first
+invocation argument, and frontend-equivalent ReferenceUsage results. It omits
+the pinned Items expression's unrelated `union(...)` second argument to isolate
+the nested chain. All dependencies close; the authored graph converges Incomplete
+with three incomplete producer pairs. EffectiveTyping remains open for the
+nested reference expression `73009` and chain result `73011`; result `73010`
+cannot establish its variable-feature snapshot domain.
+
+`cargo test --locked --offline -p agq-sysml-semantics --lib invocation_chain_value_with_frontend_reference_usage_results_closes -- --nocapture`
+failed one test in 28.48 s (observed shell exit 1). Repeating with
+`AGQ_PRODUCER_CAUSAL_TRACE=1` exited 101, one failure in 28.68 s (28.89 s wall).
+Both used no incremental compilation, dev/test debug 0, two build jobs and the
+isolated `target/bridge-self-model` target. The trace records direct propagation
+from `73007/FeatureChainExpression` into the nested expression's owned/result
+population and its result's positional redefinition; nested reference production
+then contributes future owned/structural reads back to the chain. This matches
+the independently reproduced overly broad chain descriptor scope; a correction
+and green full-certificate run are still required. No accepted cache or corpus
+publication was run. Rustfmt and diff checks exited 0. An earlier `--exact`
+invocation used an unqualified filter and selected zero tests; its exit 0 is not
+verification evidence.
+
+The ignored local trace is `verification/generated/compound-expression/trace.log`,
+SHA-256 `7e598cd5469c4e700f4fd1f6fbcad90d9a1a377072b825aea831e6b5b94affd6`.
+The first failing console output was not retained as a file; its hash is unavailable.
+
+The reviewed FeatureChainExpression scope now follows only transitive canonical
+FeatureMembership containment. It includes the direct result and the first
+input's source-target feature, but not expressions owned through FeatureValue.
+The same selector bounds initial masks, causal reads, fresh-owner ancestry and
+all effect-audit paths. Unknown endpoints and ownership/reference/provider
+writers retain conservative bounds; reconstruction recomputes membership.
+Actual planner controls cover present and newly created source-target features.
+Five scope tests, 124 producer tests (two existing ignores), two-package
+all-target Clippy, strict KerML Rustdoc and formatting pass. The faithful compound
+fixture improves from three incomplete pairs to one; its direct chain result
+still lacks EffectiveTyping closure, so another corpus run remains gated.
+Exact red/green commands are consolidated from `feature-chain-footprint-review.json`.
+
+The bounded future-reader traversal also avoids scanning unrelated reader keys.
+It visits the same sorted bounded target set and uses the unchanged matching
+logic; an unbounded creator still uses the complete reader map. Its nine-case
+guard matrix and formatting pass (`future-read-traversal-review.json` range).
+This optimization changes neither canonical semantics nor producer registry identity.
