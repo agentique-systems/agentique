@@ -43,6 +43,10 @@ function fixture(t) {
     write(`crates/${crate}/Cargo.toml`, "fixture manifest");
     write(`crates/${crate}/src/lib.rs`, "// fixture interpretation\n");
   }
+  write(
+    "crates/kerml-semantics/src/trusted_publication.rs",
+    "const CATALOGUE: &[CatalogueEntry<'static>] = &[];\n",
+  );
   write("Cargo.lock", "fixture lock");
   const pin = Array(32).fill(1),
     sourcePin = Array(32).fill(2);
@@ -174,4 +178,57 @@ test("partial authority installation fails closed", (t) => {
   fs.unlinkSync(path.join(root, receiptPath));
   fs.unlinkSync(path.join(root, bindingsPath));
   assert.equal(verifySystemsPublicationFreshness(root).status, "not-accepted");
+});
+
+test("deleting all authority artifacts after compiled Systems activation fails closed", (t) => {
+  const { root, write } = fixture(t);
+  write(
+    "crates/kerml-semantics/src/trusted_publication.rs",
+    `
+    const CATALOGUE: &[CatalogueEntry<'static>] = &[CatalogueEntry {
+      id: "sysml-systems-operational-v2",
+      receipt_format: "agq-sysml-accepted-publication/1",
+      receipt: include_str!("../../../standards/sysml-accepted-publication.json"),
+      bindings: include_str!("../../../standards/sysml-standard-bindings.json"),
+    }];`,
+  );
+  for (const file of [receiptPath, bindingsPath, inputsPath])
+    fs.unlinkSync(path.join(root, file));
+  assert.throws(
+    () => verifySystemsPublicationFreshness(root),
+    /compiled Systems authority requires/,
+  );
+});
+
+test("comments, strings and test module entries do not activate compiled authority", (t) => {
+  const { root, write } = fixture(t);
+  write(
+    "crates/kerml-semantics/src/trusted_publication.rs",
+    `
+    // const CATALOGUE: &[CatalogueEntry<'static>] = &[CatalogueEntry { id: "sysml-systems-operational-v2" }];
+    /* nested /* catalogue */ comment { id: "sysml-systems-operational-v2" } */
+    const TEXT: &str = r#"const CATALOGUE: &[CatalogueEntry<'static>] = &[CatalogueEntry { id: "sysml-systems-operational-v2" }];"#;
+    const CATALOGUE: &[CatalogueEntry<'static>] = &[];
+    #[cfg(test)] mod tests {
+      const CATALOGUE: &[CatalogueEntry<'static>] = &[CatalogueEntry { id: "sysml-systems-operational-v2" }];
+    }`,
+  );
+  for (const file of [receiptPath, bindingsPath, inputsPath])
+    fs.unlinkSync(path.join(root, file));
+  assert.equal(verifySystemsPublicationFreshness(root).status, "not-accepted");
+});
+
+test("unrecognized compiled authority cannot imply a preaccept state", (t) => {
+  const { root, write } = fixture(t);
+  for (const file of [receiptPath, bindingsPath, inputsPath])
+    fs.unlinkSync(path.join(root, file));
+  for (const source of [
+    "const CATALOGUE: &[CatalogueEntry<'static>] = generated_catalogue!();",
+    "#[cfg(test)] mod tests { const CATALOGUE: &[CatalogueEntry<'static>] = &[]; }",
+    "const CATALOGUE: &[CatalogueEntry<'static>] = &[SYSTEMS_ENTRY];",
+    'const CATALOGUE: &[CatalogueEntry<\'static>] = &[SYSTEMS_ENTRY, CatalogueEntry { id: "other" }];',
+  ]) {
+    write("crates/kerml-semantics/src/trusted_publication.rs", source);
+    assert.throws(() => verifySystemsPublicationFreshness(root));
+  }
 });

@@ -180,11 +180,143 @@ export function capturePublicationInputs(root) {
   };
 }
 
+// This is a fail-closed recognizer of the finite compiled authority table,
+// not a general Rust evaluator. Comments, strings and nested test modules
+// cannot impersonate a top-level catalogue declaration or an entry field.
+function compiledSystemsAuthority(root) {
+  const source = fs.readFileSync(
+    safePath(root, "crates/kerml-semantics/src/trusted_publication.rs"),
+    "utf8",
+  );
+  const tokens = [];
+  for (let at = 0; at < source.length; ) {
+    if (/\s/.test(source[at])) {
+      at++;
+      continue;
+    }
+    if (source.startsWith("//", at)) {
+      const end = source.indexOf("\n", at);
+      at = end < 0 ? source.length : end + 1;
+      continue;
+    }
+    if (source.startsWith("/*", at)) {
+      let depth = 1;
+      at += 2;
+      while (depth && at < source.length) {
+        if (source.startsWith("/*", at)) {
+          depth++;
+          at += 2;
+        } else if (source.startsWith("*/", at)) {
+          depth--;
+          at += 2;
+        } else at++;
+      }
+      assert.equal(depth, 0, "unclosed catalogue source comment");
+      continue;
+    }
+    const raw = /^r(#{0,255})"/.exec(source.slice(at));
+    if (raw) {
+      const start = at + raw[0].length;
+      const end = source.indexOf(`"${raw[1]}`, start);
+      assert(end >= 0, "unclosed catalogue source raw string");
+      tokens.push({ string: source.slice(start, end) });
+      at = end + raw[1].length + 1;
+      continue;
+    }
+    if (source[at] === '"') {
+      const start = at++;
+      while (at < source.length && source[at] !== '"') {
+        at += source[at] === "\\" ? 2 : 1;
+      }
+      assert(at < source.length, "unclosed catalogue source string");
+      const text = source.slice(start, ++at);
+      // The catalogue identity must be an ordinary literal. Unsupported Rust
+      // escape syntax cannot silently produce an absent-authority decision.
+      let value;
+      try {
+        value = JSON.parse(text);
+      } catch {
+        value = undefined;
+      }
+      tokens.push({ string: value });
+      continue;
+    }
+    const identifier = /^[A-Za-z_][A-Za-z_0-9]*/.exec(source.slice(at));
+    tokens.push(identifier ? identifier[0] : source[at]);
+    at += identifier ? identifier[0].length : 1;
+  }
+  let depth = 0;
+  for (let index = 0; index < tokens.length; index++) {
+    const token = tokens[index];
+    if (token === "{") depth++;
+    else if (token === "}") depth--;
+    if (depth !== 0 || token !== "const" || tokens[index + 1] !== "CATALOGUE")
+      continue;
+    const equals = tokens.indexOf("=", index + 2);
+    const end = tokens.indexOf(";", equals + 1);
+    assert(
+      equals > index &&
+        end > equals &&
+        tokens[equals + 1] === "&" &&
+        tokens[equals + 2] === "[" &&
+        tokens[end - 1] === "]",
+      "unsupported compiled publication catalogue; authority presence must be reviewed",
+    );
+    const entries = tokens.slice(equals + 3, end - 1);
+    const ids = [];
+    for (let entry = 0; entry < entries.length; ) {
+      assert(
+        entries[entry++] === "CatalogueEntry" && entries[entry++] === "{",
+        "unrecognized compiled publication catalogue entry",
+      );
+      let braces = 1,
+        id;
+      while (entry < entries.length && braces > 0) {
+        const field = entries[entry++];
+        if (field === "{") braces++;
+        else if (field === "}") braces--;
+        if (braces === 1 && field === "id" && entries[entry] === ":") {
+          assert.equal(
+            id,
+            undefined,
+            "duplicate compiled publication identity",
+          );
+          id = entries[entry + 1]?.string;
+          assert.equal(
+            typeof id,
+            "string",
+            "unsupported compiled publication identity",
+          );
+        }
+      }
+      assert(
+        braces === 0 && typeof id === "string",
+        "incomplete compiled publication catalogue entry",
+      );
+      ids.push(id);
+      if (entry < entries.length)
+        assert.equal(
+          entries[entry++],
+          ",",
+          "compiled catalogue entry separator",
+        );
+    }
+    return ids.includes("sysml-systems-operational-v2");
+  }
+  throw new Error("compiled publication catalogue declaration is missing");
+}
+
 export function verifySystemsPublicationFreshness(root) {
   const exists = [receiptPath, bindingsPath, inputsPath].map((file) =>
     fs.existsSync(safePath(root, file)),
   );
-  if (exists.every((value) => !value)) return { status: "not-accepted" };
+  if (exists.every((value) => !value)) {
+    assert(
+      !compiledSystemsAuthority(root),
+      "compiled Systems authority requires its accepted receipt, bindings and interpretation inputs",
+    );
+    return { status: "not-accepted" };
+  }
   assert(
     exists.every(Boolean),
     "accepted Systems receipt, bindings and interpretation inputs must exist together",

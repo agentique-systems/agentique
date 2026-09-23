@@ -32,7 +32,12 @@ ordinary cache-restoration API still requires compiled independent authority.
 
 `npm run standards:check` now includes a fail-closed Systems publication stale
 guard after acceptance. Receipt, bindings and `standards/sysml-publication-inputs.json`
-must exist together. It cross-checks source/library/profile, semantic, descriptor,
+must exist together. Once the compiled Systems catalogue entry exists, removing
+all three files also fails. The preaccept state is permitted only when the actual
+top-level catalogue contains no Systems entry; comments, string payloads and
+nested test fixtures cannot activate it. Unsupported catalogue representations
+fail closed and require updating this maintenance recognizer.
+It cross-checks source/library/profile, semantic, descriptor,
 registry, certificate and binding identities, plus a conservative inventory of
 Gen2 interpretation sources and manifests. Dedicated test files and workspace
 implementation/docs are excluded. Line endings are normalized for source pins;
@@ -48,7 +53,7 @@ Focused checks (Rust `1.92.0`, Node `v22.11.0`, Python `3.12.10`):
 
 | Command | Exit | Result |
 | --- | --- | --- |
-| `node --test tools/sysml-publication-stale.test.mjs tools/sysml-artifacts.test.mjs` | 0 | 8 passed; includes changed source/descriptor/registry/semantic/binding and partial-installation rejection |
+| `node --test tools/sysml-publication-stale.test.mjs tools/sysml-artifacts.test.mjs` | 0 | 11 passed; includes changed interpretation inputs, partial/all authority deletion after activation, and misleading comments/test strings |
 | `python -m unittest discover -s verification/scripts -p test_systems_publication_gate.py` | 0 | 4 passed; strict artifact gate now requires candidate restoration and atomic promotion evidence |
 | `cargo fmt --all -- --check` | 0 | Passed |
 | `cargo check --locked --offline -p agq-kerml-text --example sysml_systems_publication` | 0 | Combined finalizer/issuance compile passed (3.72 s) |
@@ -65,3 +70,10 @@ Rust checks used the shared ignored `target/platform-finalization` directory wit
 and `CARGO_BUILD_JOBS=2`. No publication finalizer or producer scheduler ran in
 this workstream. The full original-cache restoration gate remains for the lead
 after real acceptance and compiled catalogue activation.
+
+The follow-up authority-deletion regression ran with Node `v22.11.0` only;
+no Rust files changed and no compiler or publication process ran. Exact command:
+`node --test tools/sysml-publication-stale.test.mjs tools/sysml-artifacts.test.mjs`,
+exit 0, 11 passed. Ignored output: `stale-authority-tests.log` in the focused
+output directory above. The initial combined implementation evidence remains in
+separate commit `ec81fe3`.
