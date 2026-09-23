@@ -28,6 +28,23 @@ also requires effective typing closure. The optional context/certificate contrac
 is `/2`, the producer registry is `/4`, SysML queries are `/5`, and historical
 accepted KerML `/26` interpretation and receipt identities remain unchanged.
 
+Full-publication preflight found that scheduler `Complete` did not independently
+require all certificate masks closed. The reusable `is_fully_closed` check now
+guards live publication, trusted Systems restoration, scoped audit success and
+closed-dependency mounting. A focused regression has all three applicable
+evaluations Complete while an unresolved FeatureTyping provider leaves typing
+open; acceptance rejects that certificate, accepts the linked control and rejects
+missing subject coverage. The report includes required/closed requirement counts.
+Two coverage tests, four dependency tests, example Clippy and formatting pass;
+exact commands and hashes are in
+[closure-coverage-commands.json](closure-coverage-commands.json). This changes no
+producer semantics, accepted identity or cache bytes and performs no replay.
+Read-only preflight also verified normal preparation reaches strict publication,
+accepted reference counts come from its independent audit, all 69 role bindings
+are source-checked, and cache/receipt/binding outputs are flushed with the local
+Systems graph retaining the shared KerML dependency. No publication was run by
+this preflight.
+
 ## Defect and regression matrix
 
 Implementation/review commits below identify the corrections. Exact command

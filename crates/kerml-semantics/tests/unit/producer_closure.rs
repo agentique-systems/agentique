@@ -4094,6 +4094,83 @@ fn reconstruction_reopens_producer_when_detached_output_disappears() {
 }
 
 #[test]
+fn full_certificate_coverage_requires_closed_provider_masks_not_only_complete_evaluations() {
+    let mut descriptor =
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);
+    descriptor.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    for linked in [false, true] {
+        let mut fixture = Fixture::new();
+        fixture.create(1, c::FEATURE);
+        fixture.create(2, c::CLASSIFIER);
+        fixture.create(3, c::FEATURE_TYPING);
+        fixture.value(3, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+        if linked {
+            fixture.value(3, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(1)));
+        }
+        let construction = fixture.construction();
+        let context =
+            SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(registry.digest())
+                .unwrap();
+        let mut table = ProducerEvaluationTable::default();
+        for record in construction.model().elements() {
+            table.pending(record.id(), construction.model(), &registry);
+            table
+                .record(&[(record.id(), TYPE, Completeness::Complete)], &registry)
+                .unwrap();
+            table.record_reads(&[(record.id(), TYPE, Vec::new().into())], &registry);
+        }
+        let certificate = Arc::new(ProducerClosureCertificate::issue(
+            construction.model(),
+            context.id(),
+            &registry,
+            &table,
+            |_| None,
+        ));
+        assert_eq!(certificate.applicable_pairs(), 3);
+        assert_eq!(certificate.closed_pairs(), certificate.applicable_pairs());
+        for record in construction.model().elements() {
+            assert_eq!(
+                certificate.evaluation(record.id(), 0),
+                Some(ProducerEvaluationState::EvaluatedComplete),
+            );
+        }
+        // Exact context attachment and Complete evaluation rows do not certify
+        // a source-linking provider that still has an unidentified endpoint.
+        let context = context.with_producer_closure(certificate.clone()).unwrap();
+        assert_eq!(
+            certificate.is_fully_closed(context.model),
+            linked,
+            "publication acceptance must reject an open provider mask",
+        );
+        assert_eq!(
+            certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping),
+            linked,
+        );
+    }
+}
+
+#[test]
+fn full_certificate_coverage_rejects_missing_model_subjects() {
+    let registry = ProducerRegistry::new([]).unwrap();
+    let mut fixture = Fixture::new();
+    fixture.create(1, c::PACKAGE);
+    let snapshot = fixture.finish();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(certificate.is_fully_closed(snapshot.model()));
+    let mut fixture = Fixture::new();
+    fixture.create(1, c::PACKAGE);
+    fixture.create(2, c::PACKAGE);
+    assert!(!certificate.is_fully_closed(fixture.finish().model()));
+}
+
+#[test]
 fn initial_closure_must_not_close_an_unidentified_pending_typing_provider() {
     let mut f = Fixture::new();
     f.create(1, c::FEATURE);

@@ -1,8 +1,8 @@
 //! Authenticated mounting of a producer-closed graph. This is not publication
 //! acceptance: language-specific facades retain their additional acceptance gates.
 use crate::{
-    ClosureSource, ContextError, ProducerClosureCertificate, ProducerRegistry,
-    SemanticClosureRequirement, SemanticContext, SemanticContextId, SemanticNamingExtension,
+    ClosureSource, ContextError, ProducerClosureCertificate, ProducerRegistry, SemanticContext,
+    SemanticContextId, SemanticNamingExtension,
 };
 use agq_kernel::{
     ConstructionView, ElementId, Snapshot,
@@ -47,11 +47,7 @@ impl ProducerClosedDependency {
             || certificate.registry_digest() != expected.digest()
             || !certificate.compatible_context(context.id())
             || !context.id().construction_obligations.is_empty()
-            || !overlay.model().elements().all(|record| {
-                SemanticClosureRequirement::ALL
-                    .into_iter()
-                    .all(|requirement| certificate.is_closed(record.id(), requirement))
-            })
+            || !certificate.is_fully_closed(overlay.model())
         {
             return Err(ContextError::ProducerClosureMismatch);
         }

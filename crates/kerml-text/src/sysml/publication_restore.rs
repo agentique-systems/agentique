@@ -139,6 +139,11 @@ impl CanonicalSysmlSystemsLibrary {
                 "restored producer certificate",
             ))?
             .clone();
+        if !producer_closure.is_fully_closed(overlay.model()) {
+            return Err(SystemsPublicationCacheError::Mismatch(
+                "restored producer requirement coverage",
+            ));
+        }
         let context_id = context.id().clone();
         let publication_identity = publication_identity(contract, &context_id.kerml);
         if receipt.identity()["publication_digest"]

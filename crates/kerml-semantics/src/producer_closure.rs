@@ -1330,6 +1330,20 @@ impl ProducerClosureCertificate {
             .binary_search(&subject)
             .is_ok_and(|index| self.closed[index] & requirement.bit() != 0)
     }
+    /// Whether every subject in the model has every semantic requirement closed.
+    ///
+    /// This is stronger than all scheduled producer evaluations being Complete:
+    /// unresolved providers and causal dependencies can still leave requirements
+    /// open. Missing subjects also fail coverage. Callers must separately attach
+    /// the certificate to the exact semantic context and independently required
+    /// producer registry before treating this coverage as an acceptance gate.
+    pub fn is_fully_closed(&self, model: &ModelView) -> bool {
+        model.elements().all(|record| {
+            SemanticClosureRequirement::ALL
+                .into_iter()
+                .all(|requirement| self.is_closed(record.id(), requirement))
+        })
+    }
     pub fn evaluation(
         &self,
         subject: ElementId,

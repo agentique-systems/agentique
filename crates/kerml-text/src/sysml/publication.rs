@@ -90,6 +90,9 @@ pub enum SystemsPublicationFinding {
         completeness: Completeness,
         converged: bool,
     },
+    /// At least one exact certificate subject/requirement remains open, even if
+    /// the scheduler reports that all of its evaluations completed.
+    ProducerClosureRequirements,
     /// Outstanding final-frontier evidence retained when authority rejects the
     /// input before repeating strict producer work.
     ProducerDiagnostic(Diagnostic),
@@ -327,6 +330,11 @@ impl CanonicalSysmlSystemsLibrary {
                 .and_then(|context| context.with_producer_closure(certificate.clone()))
                 .map_err(PublicationOverlayError::Context)?,
         );
+        if !certificate.is_fully_closed(q.model()) {
+            audit
+                .findings
+                .push(SystemsPublicationFinding::ProducerClosureRequirements);
+        }
         if q.context().descriptor_digest != contract.combined_descriptor_digest {
             audit.findings.push(SystemsPublicationFinding::Identity(
                 "combined descriptor graph",

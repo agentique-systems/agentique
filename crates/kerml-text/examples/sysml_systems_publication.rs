@@ -361,7 +361,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "systems_documents_constructed":constructed,
         "systems_documents_byte_exact":candidate.documents().iter().filter(|d|d.byte_exact).count(),
         "construction_complete":candidate.construction_complete(),
-        "producer_closure":draft.producer_closure().map(|certificate|closure_report(certificate)),
+        "producer_closure":draft.producer_closure().map(|certificate|closure_report(certificate, model)),
         "kernel_obligations":draft.candidate().obligations().len(),
         "kernel_obligation_details":draft.candidate().obligations().iter().map(|obligation|
             json!({"element":obligation.element,"property":obligation.property,"actual":obligation.actual})
@@ -391,6 +391,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     drop(queries);
     if audit_only {
         let passed = candidate.construction_complete()
+            && draft
+                .producer_closure()
+                .is_some_and(|certificate| certificate.is_fully_closed(model))
             && candidate.production().is_some_and(|production| {
                 production.final_predicates
                     && production.converged
@@ -451,7 +454,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             });
             report["reference_audit_scope"] = json!("accepted_publication");
             report["construction_producer_closure"] = report["producer_closure"].take();
-            report["producer_closure"] = closure_report(publication.producer_closure());
+            report["producer_closure"] = closure_report(
+                publication.producer_closure(),
+                publication.overlay().model(),
+            );
             report["publication_producers"] = json!({
                 "converged":true,"completeness":"Complete",
             });
@@ -503,6 +509,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn closure_report(
     certificate: &agq_kerml_semantics::ProducerClosureCertificate,
+    model: &agq_kernel::ModelView,
 ) -> serde_json::Value {
     json!({
         "digest":certificate.digest(),
@@ -516,6 +523,9 @@ fn closure_report(
         "closed_pairs":certificate.closed_pairs(),
         "incomplete_pairs":certificate.incomplete_pairs(),
         "closed_requirements":certificate.closed_effects(),
+        "required_requirements":model.elements().count()
+            * agq_kerml_semantics::SemanticClosureRequirement::ALL.len(),
+        "fully_closed":certificate.is_fully_closed(model),
     })
 }
 
