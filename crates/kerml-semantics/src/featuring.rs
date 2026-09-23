@@ -16,6 +16,10 @@ mod reference_prefix_tests;
 #[path = "../tests/unit/compatible_witness.rs"]
 mod compatible_witness_tests;
 
+#[cfg(test)]
+#[path = "../tests/unit/compatible_witness_guards.rs"]
+mod compatible_witness_guard_tests;
+
 /// A connector check retains ordinary and operational endpoint decisions separately.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConnectorFeaturing {

@@ -58,6 +58,140 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "compatible-witness-basic-guards",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "compatible_witness_tests",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "cda94f4da28f273c5ab1062d1ab24a8be4e08b17",
+      "working_changes_sha256": "489cf658095b84e7a9dafe37d71d5ec23b396825c6249bdb6327b8eee927e4de",
+      "output_sha256": "69a3115ad0f58e49ad2ab7a2f8e1ac3f85e94c3b2d249569865335a8dfdadf45",
+      "duration_seconds": 29.62,
+      "output": "verification/generated/language-stability-bridge/compatible-witness-basic-guards.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "compatible-witness-proof-guards",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "compatible_witness",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "92e2a392ca6c6db5cb583c92b658926898cee57e",
+      "working_changes_sha256": "3105bd34919e3e81af8443d8fa88400d3b42de5ee66f9beefed211bb7ac5117f",
+      "output_sha256": "5aff8c5bf2b23376888a3814523261efa08eaecc0b6eaffa26c3bf5bd93539d9",
+      "duration_seconds": 31.2,
+      "output": "verification/generated/language-stability-bridge/compatible-witness-proof-guards.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "compatible-witness-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "92e2a392ca6c6db5cb583c92b658926898cee57e",
+      "working_changes_sha256": "3105bd34919e3e81af8443d8fa88400d3b42de5ee66f9beefed211bb7ac5117f",
+      "output_sha256": "7f9ff45fc2a11bc52bba0fc41f6c6204649bafa279a9b75a489e943b609d4ddb",
+      "duration_seconds": 9.59,
+      "output": "verification/generated/language-stability-bridge/compatible-witness-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "compatible-witness-complete-slot-guards",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "compatible_witness",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b11f0b832d0c20b60d66f11868f06e7e679259d3",
+      "working_changes_sha256": "3105bd34919e3e81af8443d8fa88400d3b42de5ee66f9beefed211bb7ac5117f",
+      "output_sha256": "b8ccedecc372f82494e21ae6c52810080dd7a9e0d4420c268014b53589495de7",
+      "duration_seconds": 30.91,
+      "output": "verification/generated/language-stability-bridge/compatible-witness-complete-slot-guards.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "compatible-witness-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b11f0b832d0c20b60d66f11868f06e7e679259d3",
+      "working_changes_sha256": "62d3504bc0f3c2d0defeb77f66404c698757c708ccef54b11afa10799e7c7849",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.31,
+      "output": "verification/generated/language-stability-bridge/compatible-witness-fmt.log",
+      "environment_overrides": {}
     }
   ]
 }
