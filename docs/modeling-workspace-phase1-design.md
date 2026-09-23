@@ -138,6 +138,15 @@ accepted standards must remain shareable. Tiny edits must not copy whole standar
 graphs or rerun their producers. Observe local producer evaluation counts and
 standard record sharing in the scaling test, not timing alone.
 
+The [storage review](modeling-workspace-frontend-boundary.md#shared-dependency-storage-review)
+finds shared record/proof payloads but full standard map/index replication in the
+current snapshot mount and revision builders. Phase I8 remains unverified; Arc
+pointer checks do not prove its no-copy requirement. Plan an additive shared-base
+view with local storage before claiming that requirement, while leaving authored
+index rebuilding as an explicit initial limitation. The review also identifies
+construction-draft lifetime reductions for the accepted authored fixture; it does
+not claim measured savings or authorize production workspace integration early.
+
 Future work may refine document dependency invalidation, persistent authored
 indexes, incremental derivation and revision retention policies. It must preserve
 the immutable revision and evidence contracts. SQLite persistence, network APIs,

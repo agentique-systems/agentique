@@ -25,10 +25,9 @@ The existing strict source history cannot directly represent all Working states:
 | `ReferenceAssertion` already retains resolution evidence and source origin | Reuse it on construction queries; retain Invalid/Incomplete and endpoint mismatch without converting them to success. |
 | Document removal already exists in `ProjectChange` | Reconstruct from the current document set. A missing required target becomes a Working obligation, so removal must no longer fail solely at strict promotion. |
 
-The authored-integration owner is independently changing the internal document
-map to `Arc<ProjectDocument>` while preserving borrowed accessors. That fixes
-the identified full syntax-arena clone on each map clone; it is not an additional
-outstanding workspace prerequisite.
+The internal document map now uses `Arc<ProjectDocument>` while preserving
+borrowed accessors. Cloning it shares unchanged source and syntax arenas; that
+previously identified fix is implemented.
 
 ## Recommended additive carrier
 
@@ -159,6 +158,79 @@ make a `ValidatedProjectRevision`.
 diagnostic envelopes while retaining their native evidence/source identities;
 it must not become a second semantic graph. Existing source-origin and query
 evidence structures remain authoritative.
+
+## Shared dependency storage review
+
+Read-only inspection at `b49afe5`; no accepted cache was loaded and no scaling
+result is claimed. The existing code shares canonical record/proof payloads,
+but **does not yet provide a borrowed standard graph with local-only storage**.
+Consequently publication/record `Arc` equality alone cannot establish phase I8's
+no-standard-graph-copy requirement.
+
+| Call path / retained value | Shared allocations | Copied or rebuilt storage |
+| --- | --- | --- |
+| `SourceProject::with_accepted_sysml_standard_libraries` -> `AcceptedSourceDependency::new` -> `producer_closed_dependency` | Systems overlay, exact nested KerML publication, closure certificate and naming extension | A new checked mount/context per project; no graph copy in the witness itself. |
+| `lower_accepted_source` -> `ProducerClosedDependency::project_snapshot` -> `Snapshot::with_immutable_dependency` | Registry and each `Arc<ElementRecord>`; record slots and their values therefore remain shared. Explanation, structural-search-set and ordered-contribution payloads remain shared. | `ModelView::clone` copies all record-map nodes, full navigation/class/reference indexes, association occurrence values, derived navigation/status maps and proof/search lookup-map nodes. Used-ID/occurrence sets are copied. This includes the standard population. |
+| `Snapshot::preview` / `apply` -> `stage` -> `ModelView::build` | Unchanged record Arcs and immutable dependency handle | Full record/occurrence maps and used-ID sets; complete indexes are rebuilt. Mutated records use copy-on-write. `lowering::publish` rewrites every local declared record, even unchanged local records. |
+| First `DerivationBuilder::build_inner` for a revision | Declared snapshot handle, standard records, explanations and search sets | Another full merged model map/index population; explanation/search intern tables are cloned. `ExplanationPool` also clones cached derived-dependency vectors. |
+| Later additive producer materialization | Existing payloads; unshared previous overlay storage is moved with `Arc::try_unwrap` | Indexes are rebuilt; outstanding readers force map/interner clones. Normal worklist execution drops its context and consumes the prior frontier before building; the reference full-scan strategy deliberately retains it. |
+| `ProjectRevision` / `SourceProject::history` | Unchanged `Arc<ProjectDocument>` values and accepted publication handles | One document path map, source map, diagnostics/references, declared model and derived model per revision. The overlay's declared handle aliases the revision snapshot; it is not a third declared allocation. History also retains the initial empty revision. |
+| Borrowed query facade / checkpoint | Queries borrow `ModelView`; certificates and mounts use Arcs. A checkpoint shares the certificate's read metadata. | New query contexts validate/hash the entire merged graph and own fresh evaluator caches. Checkpoints copy compact certificate arrays and add subject fingerprints, but retain no graph/indexes. |
+
+The relevant implementation is in [project.rs](../crates/kerml-text/src/project.rs),
+[authored source lowering](../crates/kerml-text/src/sysml/source.rs),
+[dependency mounting](../crates/kerml-semantics/src/producer_closed_dependency.rs),
+[kernel snapshots](../crates/kernel/src/model.rs) and
+[derived storage](../crates/kernel/src/derived.rs). Slots are owned by records,
+not individually Arc-backed: modifying one shared record clones its slot map and
+values, while its derived explanation Arcs remain shared. Association occurrences
+and computed inverse/navigation slots are separate owned values, so sharing the
+record pointer does not cover them.
+
+For phase I8, retain one authenticated mount and immutable standard storage, then
+use an additive kernel view with shared dependency lookup plus local records and
+local navigation/index deltas (or an equivalent persistent representation).
+Deterministic iteration and incoming/source relationship queries must merge both
+populations, including local relationships whose endpoints are standard IDs.
+Those incoming facts can keep a query population open even though the standard
+record is immutable. Preserve the existing write/ownership protections, exact
+context digests, original declared-slot lookup and closure invalidation; a simple
+fallback to the dependency's closed answer is unsound. Wrapping today's full
+`ModelView` in an Arc only postpones its copy to the first edit.
+
+This is a storage implementation task after readiness, not another language
+conformance gate. Rebuilding **authored** indexes and producers can remain an
+explicit phase-1 limitation. Rebuilding full standard indexes/maps per retained
+revision must be measured and reported as current replication, not described as
+completed no-copy sharing or hidden under future incrementality. The 100-document,
+five-revision test needs allocation/storage observations in addition to pointer
+identity: distinguish shared standard payloads, copied standard maps/indexes,
+local data and temporary compilation storage. Do not infer a 16 GiB fit from the
+eight-document publication peak.
+
+There is also a concrete authored peak-lifetime issue relevant to the self-model
+gate. `lower_accepted_source` retains its base mount, construction draft (and any
+construction overlay), desired strict snapshot and final strict/derived result
+until its final reference audit. On edits the desired snapshot differs from the
+published snapshot. `source_references` only needs the draft's reference list and
+source map, so a metadata carrier can release the construction graph after strict
+conversion/checkpoint capture and before final closure, as the Systems
+`PublicationInputs::consume` path already does. Release an intermediate desired
+snapshot after publishing it, and use one frontend compilation owner rather than
+nesting a full `SourceProject` history under workspace history. These changes need
+measurement and focused validation; none is implemented or claimed here.
+
+Publication refinement already drops each prior draft before reconstruction;
+its checkpoint retains hashes and shared producer reads, not old graph maps.
+The last eight-document audit reported 5,284.5 MiB peak private memory, a
+2,594,064-byte compact certificate and 406,184,536 bytes of optional revalidation
+accounting. The latter is logical read-storage accounting, not an independent
+measurement of unique heap allocations; it omits container overhead and can
+count shared read arrays more than once. Trusted restoration omits these optional
+reads, and the scheduler excludes immutable dependency subjects. Do not multiply
+the publication's read figure by revision count or claim restored standards are
+replayed. Measure authored revision certificates separately. Medium/full
+publication and accepted workspace scaling remain unverified.
 
 ## Concrete fixtures and 100-document plan
 
