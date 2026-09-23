@@ -125,3 +125,35 @@ The tested acceptance file SHA-256 was
 Formatting and diff checks exited 0. The ignored accepted-library test was
 compiled only; no cache was loaded and none of its new assertions has passed
 against an accepted Systems publication yet.
+
+The later harness review on `7782e3c` found one actual fixture discrepancy:
+the independent builder created two distinct Subclassification carriers from
+`ValidatedSemanticState` to `SemanticState`, while the frontend created one.
+Source `6cf15a2` removes the duplicate and strengthens the existing equivalence
+test to compare carrier cardinality/metaclass and the exact original parent ID
+for both modeled inheritance edges. Independent authored identities remain
+different. The same change checks both cache files and compiled Systems receipt
+before heavy restoration, retaining the opened handles for consumption.
+
+With the new carrier assertion and original builder, the exact command
+`cargo test --locked --offline -p agq-kerml-text --lib agentique_rich_platform_matches_independent_programmatic_semantics`
+exited 101 on the two-versus-one carrier count (1.56 s test, 12.38 s wall),
+output SHA-256 `1e686af5091dd6c65b76c2786d37951d3edabd37b2998b784a7ff5900dd11262`.
+The assertion file had SHA-256
+`b74760277231e3142b1e05f3ffbcae8e6ac5b0f08a42f5ff3e2a335d46bf548a`.
+An earlier attempt at the same command used endpoint IDs as carrier IDs and
+failed its erroneous metaclass assertion; it is excluded as defect evidence
+(exit 101, 21.25 s wall, output SHA-256
+`72bf71ddfa0c9c507c1cd13ad429b336bc99265e01d325187a371472a96993c0`).
+
+After correction, `cargo test --locked --offline -p agq-kerml-text --lib agentique_ -- --test-threads=1`
+exited 0: four current-graph/frontend tests passed and the one actual accepted
+gate remained ignored (6.96 s tests, 17.72 s wall), output SHA-256
+`580f5b7dd4ef96e45654f3f0b813b61dd4609c38a8fbeca2c00c1cae8e8b37df`.
+These include semantic architecture invariants separately from implementation-map
+checks, rich identity/redefinition checks, and independent programmatic equivalence.
+Build jobs were one with incremental/debug artifacts disabled. Diff check and
+`rustfmt --edition 2024 --check` on the three changed test files exited 0;
+workspace formatting on the base reported only the subsequently fixed
+flow/index test-module order in `sysml.rs` (root `33f2984`). No cache or producer
+publication was run, and accepted E/G/H readiness remains unestablished.
