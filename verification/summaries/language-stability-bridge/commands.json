@@ -10238,6 +10238,37 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "target/foundation-integration"
       }
+    },
+    {
+      "name": "bridge-borrowed-reads-release-libraries",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d5eef2799552a0dbf5f9a92f7eb69f4f5f91de64",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "25741d3a2f6cf92fd71e6c722fc9f4c67cbddd58e57534d43019a1d3a74488b0",
+      "duration_seconds": 176.48,
+      "output": "verification/generated/language-stability-bridge/bridge-borrowed-reads-release-libraries.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
     }
   ],
   "source_ledgers": [
