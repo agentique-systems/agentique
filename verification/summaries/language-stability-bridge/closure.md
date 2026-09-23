@@ -209,3 +209,43 @@ Final selected-population verification at `522b17c`:
 
 Raw package output is ignored at
 `verification/generated/language-stability-bridge/selected-inverse-package-tests-final.log`.
+
+### Loop-body positive witnesses and positioned populations
+
+The generic WhileLoop fixture closes when its Systems anchors are already an
+immutable dependency, but converges Incomplete when the same anchor declarations
+and input action body close together over genuinely closed KerML. Its unnamed
+non-composite input body owns assignment/perform/assignment usages and positionally
+redefines inherited WhileLoop parameters. The causal trace isolated two reads:
+whole supertype evidence used only to suppress redundant rule outputs, and whole
+ownership/creation proofs for derived snapshots excluded from parameter populations.
+
+The additive `canonical_specialization_witness` API returns only a selected
+canonical positive path, or no witness (never an absence conclusion). It retains
+selected endpoints and provenance, excludes virtual edges, and guards conjugation,
+pending providers and implied-edge filtering. Both SysML redundancy sites use it.
+Proposal suppression selects the smallest reachable target and keeps that proposal's
+antecedent proof, including off-subject owner facts. Some ordinary redundant
+rule-derived edges can now remain; effective answers and standard target IDs are
+unchanged, and no inherited elements are copied. KerML `/26` remains unchanged.
+
+Positioned populations retain selected membership proofs and typed population
+searches. Excluded candidates contribute scalar guards and existing-identity reads,
+not creation proofs. Unknown/failed scalar states retain incompleteness. Existing
+identity reads are inert for additive producer effects but remain checkpoint inputs
+for source reconstruction, including carrier metaclass changes. Explicit broad
+reads and real parameter/end writers still invalidate the answer.
+
+| Command | Actual output | Exit |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib input_action_body_closes_under_while_loop_with_nested_actions -- --nocapture` | Local Systems version reproduced Incomplete; both corrections produce Complete, 1 passed in 31.67 seconds | 101, then 0 |
+| `cargo test --locked --offline -p agq-sysml-semantics --lib` | 66 passed in 50.70 seconds, including the loop and both suppressed-proposal antecedent regressions | 0 |
+| `cargo test --locked --offline -p agq-kerml-semantics positioned_features_keep_exclusion_guards_without_nonmember_creation_proofs -- --nocapture` | 1 passed; selected/derived proofs, excluded removal, scalar activation, carrier retarget, checkpoint reopening and mixed broad reads covered | 0 |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib` | 155 passed; the sole failure used an abstract Relationship in the new review fixture, corrected to concrete FeatureTyping | 101 |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib positioned_guard -- --nocapture` | Corrected fixture: 3 passed, including carrier reconstruction and failed/uncomputed aliased scalar states | 0 |
+| `cargo fmt --all` | No output | 0 |
+
+Five independent positive-path regressions are included. The wider unit run also
+caught native/persistent identity-read parity and an overbroad excluded-carrier
+endpoint guard; both production issues were corrected before the 155-pass run.
+Package/clippy/rustdoc validation follows in a separate concise result below.

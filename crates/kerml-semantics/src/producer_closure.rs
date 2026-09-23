@@ -26,6 +26,9 @@ pub(crate) enum ProducerRead {
     Any(ElementId),
     Global,
     Requirement(ElementId, SemanticClosureRequirement),
+    /// Existing metaclass/existence facts cannot be changed by additive
+    /// producers, but source reconstruction may change or remove the record.
+    Identity(ElementId),
 }
 pub(crate) type ProducerReads = Arc<[ProducerRead]>;
 pub(crate) fn producer_reads<T>(
@@ -51,6 +54,8 @@ pub(crate) fn producer_reads<T>(
         K::ElementIdentity(id) => {
             if model.element(*id).is_none() {
                 result.insert(ProducerRead::Global);
+            } else {
+                result.insert(ProducerRead::Identity(*id));
             }
         }
         K::Incoming(_) | K::Association { .. } => {
@@ -158,8 +163,12 @@ pub(crate) fn producer_reads<T>(
             S::Instances { .. } => {
                 result.insert(ProducerRead::Global);
             }
-            S::Element(id) if model.element(*id).is_none() => {
-                result.insert(ProducerRead::Global);
+            S::Element(id) => {
+                result.insert(if model.element(*id).is_none() {
+                    ProducerRead::Global
+                } else {
+                    ProducerRead::Identity(*id)
+                });
             }
             S::ProducerClosure {
                 subject,
@@ -746,7 +755,9 @@ impl ProducerEvaluationTable {
                         // relationship searches remain open: local carriers
                         // may refer to a dependency without writing its record.
                         let fixed = match read {
-                            ProducerRead::DeclaredProperty(_, _) => true,
+                            ProducerRead::DeclaredProperty(_, _) | ProducerRead::Identity(_) => {
+                                true
+                            }
                             ProducerRead::Any(id)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Owned(id, _)
@@ -805,6 +816,7 @@ impl ProducerEvaluationTable {
                             | ProducerRead::FeaturePopulation(id, _)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Any(id)
+                            | ProducerRead::Identity(id)
                             | ProducerRead::Requirement(id, _) => {
                                 readers.entry(*id).or_default().push((read.clone(), pair))
                             }
@@ -1623,6 +1635,7 @@ pub(crate) fn descriptor_changes_read(
         | ProducerRead::OwnedExcluding(subject, _, _)
         | ProducerRead::FeaturePopulation(subject, _)
         | ProducerRead::Any(subject)
+        | ProducerRead::Identity(subject)
         | ProducerRead::Requirement(subject, _) => Some(*subject),
         ProducerRead::Global | ProducerRead::Inverse => None,
     };
@@ -1715,7 +1728,7 @@ pub(crate) fn effect_changes_read(
     model: &ModelView,
 ) -> bool {
     match read {
-        ProducerRead::DeclaredProperty(_, _) => false,
+        ProducerRead::DeclaredProperty(_, _) | ProducerRead::Identity(_) => false,
         ProducerRead::Global | ProducerRead::Any(_) => true,
         ProducerRead::Requirement(_, requirement) => requirement.requires_in_model(effect, model),
         ProducerRead::FeaturePopulation(_, kind) => {
@@ -2092,6 +2105,7 @@ fn provider_changes_read(
     let mask = |id| positions.get(&id).map_or(0, |&index| masks[index]);
     match read {
         ProducerRead::DeclaredProperty(id, _) => mask(*id) != 0,
+        ProducerRead::Identity(_) => false,
         ProducerRead::Global | ProducerRead::Inverse => masks.iter().any(|mask| *mask != 0),
         ProducerRead::Requirement(id, requirement) => mask(*id) & requirement.bit() != 0,
         ProducerRead::Property(id, property) => {

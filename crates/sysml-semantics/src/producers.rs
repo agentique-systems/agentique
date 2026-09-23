@@ -615,39 +615,41 @@ pub fn plan_sysml_producers(
     // A more specific proposed standard edge can already establish a broader
     // requirement through the target's existing ancestry. Retain that proof and
     // its reads instead of materializing a redundant second relationship.
-    let proposals: Vec<_> = plan
+    let mut proposals: Vec<_> = plan
         .results
         .iter()
-        .filter_map(|result| result.relationships.first().map(|p| p.general))
+        .filter_map(|result| {
+            result
+                .relationships
+                .first()
+                .map(|p| (p.general, result.evidence.clone()))
+        })
         .collect();
+    // The smallest reachable candidate is retained: any candidate capable of
+    // suppressing it would be smaller and reachable by the same canonical path.
+    proposals.sort_by_key(|(general, _)| *general);
     for result in &mut plan.results {
         let Some(general) = result.relationships.first().map(|p| p.general) else {
             continue;
         };
-        for &other in &proposals {
-            if general == other {
+        for (other, antecedents) in &proposals {
+            let other = *other;
+            // A strictly decreasing target identity keeps even equivalent
+            // bases acyclic without claiming that a reverse path is absent.
+            if other >= general {
                 continue;
             }
-            let ancestors = queries.all_supertypes(other);
-            if ancestors.completeness == Completeness::Complete
-                && ancestors.value.contains(&general)
-            {
-                let reverse = queries.all_supertypes(general);
-                // Equivalent bases use the lowest stable canonical ID so a
-                // cycle never suppresses both obligations.
-                let preferred = !reverse.value.contains(&other) || other < general;
-                if preferred && reverse.completeness == Completeness::Complete {
-                    result
-                        .evidence
-                        .merge_evidence(ancestors)
-                        .expect("same producer context");
-                    result
-                        .evidence
-                        .merge_evidence(reverse)
-                        .expect("same producer context");
-                    result.relationships.clear();
-                    break;
-                }
+            if let Some(witness) = queries.canonical_specialization_witness(other, general) {
+                result
+                    .evidence
+                    .merge_evidence(witness)
+                    .expect("same producer context");
+                result
+                    .evidence
+                    .merge_evidence(antecedents.clone())
+                    .expect("same producer context");
+                result.relationships.clear();
+                break;
             }
         }
     }
@@ -1244,15 +1246,16 @@ impl Evaluator<'_, '_> {
             .evidence
             .merge_evidence(target)
             .expect("same producer context");
-        let ancestors = self.queries.all_supertypes(subject);
         let reflexive = general == Some(subject);
-        let already_satisfied = reflexive
-            || (ancestors.completeness == Completeness::Complete
-                && general.is_some_and(|id| ancestors.value.contains(&id)));
-        if already_satisfied && !reflexive {
+        let witness = general.and_then(|general| {
+            self.queries
+                .canonical_specialization_witness(subject, general)
+        });
+        let already_satisfied = reflexive || witness.is_some();
+        if let Some(witness) = witness {
             result
                 .evidence
-                .merge_evidence(ancestors)
+                .merge_evidence(witness)
                 .expect("same producer context");
         }
         // Exhaustive ancestor absence is only a redundancy optimization. The

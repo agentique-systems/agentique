@@ -146,11 +146,11 @@ fn positive_bases_use_subclassification_and_subsetting_with_stable_identity() {
     assert_eq!(part.relationships.len(), 1);
     assert_eq!(part.relationships[0].metaclass, kc::SUBCLASSIFICATION);
     assert_eq!(part.relationships[0].general, id(8));
-    assert!(
-        result(&plan, "checkItemDefinitionSpecialization")
-            .relationships
-            .is_empty(),
-        "Part ancestry establishes Item"
+    // This positive obligation may retain its ordinary edge when removing it
+    // would require an unproved reverse-path absence to choose between bases.
+    assert_eq!(
+        result(&plan, "checkItemDefinitionSpecialization").relationships[0].general,
+        id(3)
     );
     let repeated = plan_sysml_producers(
         &queries,
@@ -190,6 +190,130 @@ fn transitive_existing_base_suppresses_every_redundant_generalization() {
     let plan = queries.producer_plan(&[id(1)], id(13));
     assert_eq!(plan.completeness(), Completeness::Complete);
     assert!(plan.results.iter().all(|r| r.relationships.is_empty()));
+}
+
+#[test]
+fn suppressed_base_retains_the_more_specific_proposals_owner_antecedent() {
+    use agq_kernel::provenance::FactKey;
+    let mut f = item_fixture(true, false);
+    f.relation(6, 9, 206, kc::SUBSETTING, kp::SUBSETTING_SUBSETTED_FEATURE);
+    f.create(14, kc::CLASSIFIER, "nonItemOwner");
+    let snapshot = f.finish();
+    let queries = SysmlQueries::new(crate::context::fixture_context(&snapshot, BTreeSet::new()));
+    let plan = queries.producer_plan(&[id(1)], id(12));
+    let broad = result(&plan, "checkPartUsageSpecialization");
+    let narrow = result(&plan, "checkPartUsageSubpartSpecialization");
+    assert!(broad.relationships.is_empty());
+    assert_eq!(narrow.relationships[0].general, id(6));
+    assert!(
+        broad
+            .evidence
+            .positive_dependencies
+            .contains(&FactKey::Element(id(11)))
+    );
+    assert!(broad.evidence.canonical_dependencies.contains(
+        &agq_kernel::provenance::Dependency::Declared(FactKey::Element(id(11)))
+    ));
+
+    let mut changes = snapshot.change_set();
+    changes.set(
+        id(11),
+        kp::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![]),
+        origin(),
+    );
+    changes.set(
+        id(14),
+        kp::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![Value::Reference(id(112))]),
+        origin(),
+    );
+    let edited = snapshot.apply(&changes).unwrap();
+    let queries = SysmlQueries::new(crate::context::fixture_context(&edited, BTreeSet::new()));
+    let plan = queries.producer_plan(&[id(1)], id(12));
+    assert!(
+        result(&plan, "checkPartUsageSubpartSpecialization")
+            .relationships
+            .is_empty()
+    );
+    assert_eq!(
+        result(&plan, "checkPartUsageSpecialization").relationships[0].general,
+        id(9)
+    );
+}
+
+#[test]
+fn proposal_suppression_uses_the_retained_smallest_witness_across_a_chain() {
+    use agq_kernel::provenance::{Dependency, FactKey};
+    let mut f = item_fixture(true, false);
+    f.relation(5, 4, 205, kc::SUBSETTING, kp::SUBSETTING_SUBSETTED_FEATURE);
+    f.relation(4, 9, 204, kc::SUBSETTING, kp::SUBSETTING_SUBSETTED_FEATURE);
+    let source = f.finish();
+    // Planning order is B, C, A while canonical target order is A < B < C.
+    // C must use retained A's antecedents, not the already suppressed B proposal.
+    let rename = |element| {
+        if element == id(4) {
+            id(20)
+        } else if element == id(9) {
+            id(30)
+        } else {
+            element
+        }
+    };
+    let base = Fixture::new().base;
+    let mut changes = base.change_set();
+    for record in source.model().elements() {
+        let agq_kernel::provenance::Origin::Declared(origin) = record.origin() else {
+            unreachable!()
+        };
+        changes.create(rename(record.id()), record.metaclass(), origin.clone());
+        for (property, slot) in record.slots() {
+            let value = |value: &Value| match value {
+                Value::Reference(element) => Value::Reference(rename(*element)),
+                other => other.clone(),
+            };
+            let slot = match slot.value() {
+                SlotValue::Scalar(v) => SlotValue::Scalar(value(v)),
+                SlotValue::Ordered(v) => SlotValue::Ordered(v.iter().map(value).collect()),
+                SlotValue::Set(v) => SlotValue::Set(v.iter().map(value).collect()),
+                SlotValue::Bag(v) => SlotValue::Bag(v.iter().map(value).collect()),
+            };
+            changes.set(rename(record.id()), property, slot, origin.clone());
+        }
+    }
+    let snapshot = base.apply(&changes).unwrap();
+    let context = crate::context::fixture_context(&snapshot, BTreeSet::new());
+    let queries = KerMlQueries::new(context.kerml);
+    let plan = plan_sysml_producers(
+        &queries,
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        &context.bindings,
+        &[id(1)],
+        id(12),
+    );
+    assert_eq!(
+        result(&plan, "checkItemUsageSubitemSpecialization").relationships[0].general,
+        id(5)
+    );
+    for rule in [
+        "checkItemUsageSpecialization",
+        "checkPartUsageSpecialization",
+    ] {
+        let broad = result(&plan, rule);
+        assert!(broad.relationships.is_empty());
+        assert!(
+            broad
+                .evidence
+                .canonical_dependencies
+                .contains(&Dependency::Declared(FactKey::Element(id(11))))
+        );
+        assert!(
+            broad
+                .evidence
+                .positive_dependencies
+                .contains(&FactKey::Element(id(205)))
+        );
+    }
 }
 
 #[test]
@@ -999,6 +1123,11 @@ fn unnamed_constraint_and_connection_usages_close_under_occurrence_owner() {
     actions_micro(ActionsMicro::UnnamedOccurrenceUsages);
 }
 
+#[test]
+fn input_action_body_closes_under_while_loop_with_nested_actions() {
+    actions_micro(ActionsMicro::WhileLoopBody);
+}
+
 #[derive(Clone, Copy)]
 enum ActionsMicro {
     Basic,
@@ -1008,6 +1137,7 @@ enum ActionsMicro {
     NestedState,
     DirectedValue,
     UnnamedOccurrenceUsages,
+    WhileLoopBody,
 }
 
 fn actions_micro(variant: ActionsMicro) {
@@ -1018,14 +1148,17 @@ fn actions_micro(variant: ActionsMicro) {
     let with_root_usage = matches!(variant, ActionsMicro::RootUsage);
     let nested_state = matches!(variant, ActionsMicro::NestedState);
     let unnamed_occurrence_usages = matches!(variant, ActionsMicro::UnnamedOccurrenceUsages);
+    let while_loop_body = matches!(variant, ActionsMicro::WhileLoopBody);
     use agq_kerml_semantics::{
         FormalConstraintId, MemberAccess, PublicationOverlayError, SemanticClosureRequirement,
         close_result_structure_with_extension,
     };
     // Synthetic anchors isolate the scheduler/query contract from the corpus.
     // They are immutable dependencies in this fixture, never a production receipt.
-    let (kernel_dependency, libraries, mut roots) =
-        closed_kernel_anchor_fixture(with_variable_value || unnamed_occurrence_usages);
+    let (kernel_dependency, libraries, mut roots) = closed_kernel_anchor_fixture(
+        with_variable_value || unnamed_occurrence_usages || while_loop_body,
+        while_loop_body,
+    );
     let occurrence = kernel_dependency
         .context()
         .standard_bindings
@@ -1075,7 +1208,7 @@ fn actions_micro(variant: ActionsMicro) {
             kp::FEATURE_TYPING_TYPE,
         );
     }
-    if with_variable_value {
+    if with_variable_value || while_loop_body {
         anchors.relation(
             roles[&StandardSysmlRole::Action],
             occurrence.as_u128(),
@@ -1083,6 +1216,37 @@ fn actions_micro(variant: ActionsMicro) {
             kc::SUBCLASSIFICATION,
             kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
         );
+    }
+    if while_loop_body {
+        anchors.create(45_010, sc::ACTION_DEFINITION, "WhileLoopActionDefinition");
+        anchors.relation(
+            45_010,
+            roles[&StandardSysmlRole::Action],
+            245_010,
+            kc::SUBCLASSIFICATION,
+            kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
+        );
+        anchors.relation(
+            roles[&StandardSysmlRole::WhileLoopActions],
+            45_010,
+            245_011,
+            kc::FEATURE_TYPING,
+            kp::FEATURE_TYPING_TYPE,
+        );
+        for (parameter, class, name) in [
+            (45_011, sc::REFERENCE_USAGE, "whileTest"),
+            (45_012, sc::ACTION_USAGE, "body"),
+            (45_013, sc::REFERENCE_USAGE, "untilTest"),
+        ] {
+            anchors.create(parameter, class, name);
+            set_enum(&mut anchors, parameter, kp::FEATURE_DIRECTION, "in");
+            anchors.member(
+                45_010,
+                parameter,
+                parameter + 100_000,
+                kc::PARAMETER_MEMBERSHIP,
+            );
+        }
     }
     let anchors = anchors.finish();
     let mut names = anchors.change_set();
@@ -1153,6 +1317,11 @@ fn actions_micro(variant: ActionsMicro) {
     )
     .unwrap();
     drop(anchor_context);
+    let dependency = if while_loop_body {
+        kernel_dependency
+    } else {
+        dependency
+    };
     let base = dependency.project_snapshot();
     let mut f = Fixture {
         changes: base.change_set(),
@@ -1160,6 +1329,29 @@ fn actions_micro(variant: ActionsMicro) {
         owned: BTreeMap::new(),
         origin: origin(),
     };
+    if while_loop_body {
+        for record in anchor_snapshot
+            .model()
+            .elements()
+            .filter(|record| f.base.model().element(record.id()).is_none())
+        {
+            let agq_kernel::provenance::Origin::Declared(origin) = record.origin() else {
+                unreachable!()
+            };
+            f.changes
+                .create(record.id(), record.metaclass(), origin.clone());
+            for (property, slot) in record.slots() {
+                f.changes
+                    .set(record.id(), property, slot.value().clone(), origin.clone());
+                if property == kp::ELEMENT_OWNED_RELATIONSHIP {
+                    let SlotValue::Ordered(relationships) = slot.value() else {
+                        unreachable!()
+                    };
+                    f.owned.insert(record.id(), relationships.clone());
+                }
+            }
+        }
+    }
     f.create(50_000, sc::TRANSITION_USAGE, "transition");
     if nested_state {
         // Actions::AcceptAction owns aState, whose transition owns an accepter.
@@ -1243,6 +1435,37 @@ fn actions_micro(variant: ActionsMicro) {
             f.member(50_020, subject, subject + 100_000, kc::FEATURE_MEMBERSHIP);
             f.changes
                 .clear(id(subject + 100_000), kp::ELEMENT_DECLARED_NAME);
+        }
+    }
+    if while_loop_body {
+        f.create(50_030, sc::ACTION_DEFINITION, "LoopOwner");
+        f.create(50_031, sc::WHILE_LOOP_ACTION_USAGE, "whileLoop");
+        f.value(50_031, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+        f.member(50_030, 50_031, 150_031, kc::FEATURE_MEMBERSHIP);
+        f.create(50_036, sc::REFERENCE_USAGE, "whileTest");
+        set_enum(&mut f, 50_036, kp::FEATURE_DIRECTION, "in");
+        f.member(50_031, 50_036, 150_036, kc::PARAMETER_MEMBERSHIP);
+        f.create(50_032, sc::ACTION_USAGE, "");
+        f.changes.clear(id(50_032), kp::ELEMENT_DECLARED_NAME);
+        set_enum(&mut f, 50_032, kp::FEATURE_DIRECTION, "in");
+        f.member(50_031, 50_032, 150_032, kc::PARAMETER_MEMBERSHIP);
+        f.create(50_037, sc::REFERENCE_USAGE, "untilTest");
+        set_enum(&mut f, 50_037, kp::FEATURE_DIRECTION, "in");
+        f.member(50_031, 50_037, 150_037, kc::PARAMETER_MEMBERSHIP);
+        for (subject, class) in [
+            (50_033, sc::ASSIGNMENT_ACTION_USAGE),
+            (50_034, sc::PERFORM_ACTION_USAGE),
+            (50_035, sc::ASSIGNMENT_ACTION_USAGE),
+        ] {
+            f.create(subject, class, "");
+            f.changes.clear(id(subject), kp::ELEMENT_DECLARED_NAME);
+            f.value(subject, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+            f.member(50_032, subject, subject + 100_000, kc::FEATURE_MEMBERSHIP);
+        }
+        for membership in [
+            150_031, 150_032, 150_033, 150_034, 150_035, 150_036, 150_037,
+        ] {
+            f.changes.clear(id(membership), kp::ELEMENT_DECLARED_NAME);
         }
     }
     if with_variable_value {
@@ -1779,6 +2002,7 @@ fn standard_anchor_path_requires_original_declared_ownership() {
 
 fn closed_kernel_anchor_fixture(
     with_snapshot_typing: bool,
+    with_time_enclosed_occurrences: bool,
 ) -> (
     Arc<agq_kerml_semantics::ProducerClosedDependency>,
     LibrarySetIdentity,
@@ -1877,6 +2101,19 @@ fn closed_kernel_anchor_fixture(
             kc::FEATURE_TYPING,
             kp::FEATURE_TYPING_TYPE,
         );
+        if with_time_enclosed_occurrences {
+            kernel.origin = DeclaredOrigin::StandardLibrary {
+                library: libraries.artifacts[&StandardLibraryArtifact::Semantic],
+            };
+            kernel.create(245_005, kc::FEATURE, "timeEnclosedOccurrences");
+            kernel.member(
+                bindings.get(StandardRole::Occurrence).as_u128(),
+                245_005,
+                245_006,
+                kc::FEATURE_MEMBERSHIP,
+            );
+            kernel.changes.clear(id(245_006), kp::ELEMENT_DECLARED_NAME);
+        }
     }
     let kernel = kernel.finish();
     let extension = SysmlProducerExtension::new(
@@ -1915,7 +2152,7 @@ fn closed_kernel_anchor_fixture(
 #[test]
 fn untyped_sysml_anchor_population_closes_over_a_genuinely_closed_kernel_layer() {
     use agq_kerml_semantics::{PublicationOverlayError, close_result_structure_with_extension};
-    let (dependency, _, kernel_roots) = closed_kernel_anchor_fixture(false);
+    let (dependency, _, kernel_roots) = closed_kernel_anchor_fixture(false, false);
     let source = corpus_anchor_fixture_complete(true).0.finish();
     let base = dependency.project_snapshot();
     let mut changes = base.change_set();

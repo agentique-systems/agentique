@@ -106,6 +106,7 @@ pub(super) fn read_changed(read: &ProducerRead, affected: &BTreeSet<ElementId>) 
         | ProducerRead::OwnedExcluding(id, _, _)
         | ProducerRead::FeaturePopulation(id, _)
         | ProducerRead::Any(id)
+        | ProducerRead::Identity(id)
         | ProducerRead::Requirement(id, _) => affected.contains(id),
     }
 }

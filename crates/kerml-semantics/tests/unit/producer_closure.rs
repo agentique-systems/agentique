@@ -5,6 +5,206 @@ const ACTIVATE: ProducerFamilyId = ProducerFamilyId::new("Fixture.Activate");
 const TYPE: ProducerFamilyId = ProducerFamilyId::new("Fixture.Type");
 
 #[test]
+fn positioned_features_keep_exclusion_guards_without_nonmember_creation_proofs() {
+    use crate::producer_closure::{
+        ProducerEvaluationTable, ProducerRead, effect_changes_read, producer_reads,
+    };
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    let mut f = Fixture::new();
+    f.create(1, c::BEHAVIOR);
+    f.create(2, c::FEATURE);
+    f.enumeration(2, p::FEATURE_DIRECTION, "in");
+    f.value(2, p::FEATURE_IS_END, Value::Boolean(true));
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    f.create(4, c::FEATURE);
+    f.create(5, c::FEATURE_MEMBERSHIP);
+    f.create(6, c::FEATURE);
+    f.enumeration(6, p::FEATURE_DIRECTION, "in");
+    f.value(6, p::FEATURE_IS_END, Value::Boolean(true));
+    f.create(8, c::CLASSIFIER);
+    let snapshot = f.finish();
+    let feature = DerivationKey {
+        rule: RuleId::from_u128(99401),
+        subject: id(1),
+        output: OutputKey::from_u128(1),
+    };
+    let membership = DerivationKey {
+        output: OutputKey::from_u128(2),
+        ..feature
+    };
+    let requirement = SemanticClosureRequirement::EffectiveTyping;
+    let overlay = |selected: bool, retarget: bool, present: bool| {
+        let mut builder = DerivationBuilder::new(snapshot.clone());
+        if present {
+            let mut slots: BTreeMap<_, _> = snapshot
+                .model()
+                .element(id(4))
+                .unwrap()
+                .slots()
+                .map(|(p, s)| (p, s.value().clone()))
+                .collect();
+            if selected {
+                slots.insert(
+                    p::FEATURE_DIRECTION,
+                    snapshot
+                        .model()
+                        .navigation_slot(id(2), p::FEATURE_DIRECTION)
+                        .unwrap()
+                        .value()
+                        .clone(),
+                );
+                slots.insert(p::FEATURE_IS_END, SlotValue::Scalar(Value::Boolean(true)));
+            }
+            builder.element(feature, c::FEATURE, slots, BTreeSet::new());
+            let mut slots: BTreeMap<_, _> = snapshot
+                .model()
+                .element(id(5))
+                .unwrap()
+                .slots()
+                .map(|(p, s)| (p, s.value().clone()))
+                .collect();
+            slots.insert(
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                SlotValue::Ordered(vec![Value::Reference(if retarget {
+                    id(6)
+                } else {
+                    feature.element_id()
+                })]),
+            );
+            builder.element(membership, c::FEATURE_MEMBERSHIP, slots, BTreeSet::new());
+            builder.extend_ordered_references(
+                id(1),
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                vec![membership.element_id()],
+                agq_kernel::provenance::Explanation {
+                    rule: feature.rule,
+                    dependencies: BTreeSet::new(),
+                },
+            );
+            for fact in [
+                FactKey::Element(feature.element_id()),
+                FactKey::Element(membership.element_id()),
+                FactKey::Property {
+                    element: id(1),
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                },
+            ] {
+                builder.searches(
+                    fact,
+                    BTreeSet::from([StructuralSearch::ProducerClosure {
+                        subject: id(8),
+                        requirement: requirement.contract_id().into(),
+                    }]),
+                );
+            }
+        }
+        builder.build().unwrap()
+    };
+    let original = overlay(false, false, true);
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::BEHAVIOR]),
+    )])
+    .unwrap();
+    for production in [false, true] {
+        let context = SemanticContext::for_overlay(&original, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let q = if production {
+            KerMlQueries::for_production(context.fork())
+        } else {
+            KerMlQueries::new(context.fork())
+        };
+        for (projection, scalar) in [
+            (q.owned_parameter_features(id(1)), p::FEATURE_DIRECTION),
+            (q.owned_end_features(id(1)), p::FEATURE_IS_END),
+        ] {
+            assert_eq!(projection.value, [id(2)]);
+            assert_eq!(projection.completeness, Completeness::Complete);
+            let reads = producer_reads(&projection, original.model());
+            assert!(!reads.contains(&ProducerRead::Requirement(id(8), requirement)));
+            let guard = ProducerRead::Property(feature.element_id(), scalar);
+            assert!(reads.contains(&guard));
+            assert!(effect_changes_read(
+                ProducerEffect::Scalar(scalar),
+                &guard,
+                original.model()
+            ));
+            assert!(reads.contains(&ProducerRead::Identity(membership.element_id())));
+            let mut table = ProducerEvaluationTable::default();
+            for record in original.model().elements() {
+                table.pending(record.id(), original.model(), &registry);
+            }
+            table
+                .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+                .unwrap();
+            table.record_reads(&[(id(1), TYPE, reads)], &registry);
+            let certificate = ProducerClosureCertificate::issue(
+                original.model(),
+                context.id(),
+                &registry,
+                &table,
+                |_| None,
+            );
+            assert!(certificate.is_closed(id(1), requirement));
+            let checkpoint = certificate.checkpoint(&context).unwrap();
+            for (selected, retarget, present) in [
+                (true, false, true),
+                (false, true, true),
+                (false, false, false),
+            ] {
+                let edited = overlay(selected, retarget, present);
+                let context =
+                    SemanticContext::for_overlay(&edited, Default::default(), BTreeSet::new())
+                        .unwrap()
+                        .with_producer_registry_digest(registry.digest())
+                        .unwrap();
+                let next = KerMlQueries::new(context.fork());
+                let answer = if scalar == p::FEATURE_DIRECTION {
+                    next.owned_parameter_features(id(1))
+                } else {
+                    next.owned_end_features(id(1))
+                };
+                assert_eq!(answer.value.len(), if present { 2 } else { 1 });
+                if present {
+                    assert!(
+                        producer_reads(&answer, edited.model())
+                            .contains(&ProducerRead::Requirement(id(8), requirement))
+                    );
+                    assert!(
+                        !checkpoint
+                            .rebind(&context, &registry)
+                            .unwrap()
+                            .certificate
+                            .is_closed(id(1), requirement)
+                    );
+                }
+            }
+            for broad_first in [false, true] {
+                let fact = FactKey::Property {
+                    element: id(1),
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                };
+                let mut combined = q.result(());
+                if broad_first {
+                    combined.merge(q.canonical_fact_evidence(fact));
+                }
+                combined.merge(projection.clone());
+                if !broad_first {
+                    combined.merge(q.canonical_fact_evidence(fact));
+                }
+                assert!(
+                    producer_reads(&combined, original.model())
+                        .contains(&ProducerRead::Requirement(id(8), requirement))
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn owned_end_population_ignores_only_proven_non_end_writers() {
     use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
     let mut f = Fixture::new();

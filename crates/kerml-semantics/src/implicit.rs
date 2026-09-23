@@ -1,5 +1,9 @@
 //! Structural consequences of KerML 1.0 checks, without executable evaluation.
 use crate::*;
+
+#[cfg(test)]
+#[path = "../tests/unit/positioned_guards.rs"]
+mod positioned_guard_tests;
 use agq_kerml::{classes as c, properties as p};
 use agq_kernel::{ElementId, provenance::FactKey, value::Value};
 
@@ -326,12 +330,15 @@ impl KerMlQueries<'_> {
         let members: Vec<_> = members
             .into_iter()
             .flat_map(|members| members.iter())
+            .inspect(|&member| {
+                out.search_dependencies.insert(SearchDependency::Kernel(
+                    agq_kernel::derived::StructuralSearch::ElementIdentity(member),
+                ));
+            })
             .filter(|&member| self.is(member, c::FEATURE_MEMBERSHIP))
             .collect();
-        if !members.is_empty() {
-            self.fact(out, stored_fact(owner, p::ELEMENT_OWNED_RELATIONSHIP));
-        }
         let mut features = vec![];
+        let mut selected_memberships = vec![];
         for membership in members {
             let result = self.is(membership, c::RETURN_PARAMETER_MEMBERSHIP);
             if matches!(position, Position::Result) && !result
@@ -339,11 +346,19 @@ impl KerMlQueries<'_> {
             {
                 continue;
             }
-            self.fact(out, FactKey::Element(membership));
+            let mut carrier = self.result(());
+            self.fact(&mut carrier, FactKey::Element(membership));
             let view = agq_kerml::views::Membership::try_new(membership, self.model())
                 .expect("checked FeatureMembership");
-            let Some(endpoints) = self.accept(out, membership, view.owned_related_element()) else {
-                self.property(out, membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT);
+            let Some(endpoints) =
+                self.accept(&mut carrier, membership, view.owned_related_element())
+            else {
+                self.property(
+                    &mut carrier,
+                    membership,
+                    p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                );
+                out.merge(carrier);
                 continue;
             };
             let endpoints: Vec<_> = endpoints
@@ -351,13 +366,14 @@ impl KerMlQueries<'_> {
                 .flat_map(|members| members.iter())
                 .collect();
             self.fact(
-                out,
+                &mut carrier,
                 stored_fact(membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT),
             );
             if let [feature] = endpoints.as_slice() {
                 let feature = *feature;
-                self.fact(out, FactKey::Element(feature));
+                self.fact(&mut carrier, FactKey::Element(feature));
                 if !self.is(feature, c::FEATURE) {
+                    out.merge(carrier);
                     out.problem(
                         Completeness::Invalid,
                         "KQ_MEMBER_TYPE",
@@ -366,20 +382,64 @@ impl KerMlQueries<'_> {
                     );
                     continue;
                 }
+                let mut guard = self.result(());
+                if !matches!(position, Position::Result) {
+                    let property = if matches!(position, Position::End) {
+                        p::FEATURE_IS_END
+                    } else {
+                        p::FEATURE_DIRECTION
+                    };
+                    guard.merge(self.canonical_fact_evidence(stored_fact(feature, property)));
+                }
                 let selected = match position {
                     Position::Result => true,
                     Position::End => matches!(
-                        self.read_value(out, feature, p::FEATURE_IS_END),
+                        self.read_value(&mut guard, feature, p::FEATURE_IS_END),
                         Some(Value::Boolean(true))
                     ),
                     Position::Parameter => self
-                        .read_value(out, feature, p::FEATURE_DIRECTION)
+                        .read_value(&mut guard, feature, p::FEATURE_DIRECTION)
                         .is_some(),
                 };
                 if selected {
+                    out.merge(carrier);
+                    out.merge(guard);
+                    selected_memberships.push(membership);
                     features.push(feature);
+                } else if carrier.completeness != Completeness::Complete
+                    || guard.completeness != Completeness::Complete
+                {
+                    out.merge(carrier);
+                    out.merge(guard);
+                } else {
+                    // Excluded candidates need guards against becoming members
+                    // of this projection, not their creation proofs. Removing a
+                    // non-parameter snapshot cannot change the parameter vector.
+                    // Retargeting its carrier is covered by the typed population
+                    // search; its scalar guard additionally tracks reclassification.
+                    // Existing identities remain reconstruction dependencies
+                    // without importing a discarded candidate's creation proof.
+                    for element in [membership, feature] {
+                        out.search_dependencies.insert(SearchDependency::Kernel(
+                            agq_kernel::derived::StructuralSearch::ElementIdentity(element),
+                        ));
+                    }
+                    let property = match position {
+                        Position::End => p::FEATURE_IS_END,
+                        Position::Parameter => p::FEATURE_DIRECTION,
+                        Position::Result => unreachable!(),
+                    };
+                    out.search_dependencies
+                        .insert(SearchDependency::PropertySet {
+                            element: feature,
+                            property: match stored_fact(feature, property) {
+                                FactKey::Property { property, .. } => property,
+                                _ => unreachable!(),
+                            },
+                        });
                 }
             } else {
+                out.merge(carrier);
                 out.problem(
                     Completeness::Invalid,
                     "KQ_MEMBERSHIP_ARITY",
@@ -388,6 +448,12 @@ impl KerMlQueries<'_> {
                 );
             }
         }
+        self.selected_reference_fact(
+            out,
+            owner,
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            &selected_memberships,
+        );
         features
     }
 
