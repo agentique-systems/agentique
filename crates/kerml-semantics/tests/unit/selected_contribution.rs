@@ -31,7 +31,11 @@ fn fixture(dependency: Option<Arc<DerivedOverlay>>, changed_guard: bool) -> Snap
         f.create(n, c::FEATURE);
     }
     for n in [21, 22] {
-        f.value(n, p::ELEMENT_DECLARED_NAME, Value::String(format!("guard{n}")));
+        f.value(
+            n,
+            p::ELEMENT_DECLARED_NAME,
+            Value::String(format!("guard{n}")),
+        );
     }
     f.value(
         20,
@@ -191,9 +195,22 @@ fn selected_derived_and_declared_adopted_relationships_keep_only_their_append_su
             );
             if !adopt_declared {
                 assert!(
-                    answer.positive_dependencies.contains(&property(22)),
+                    answer
+                        .canonical_dependencies
+                        .contains(&Dependency::Derived(FactKey::Element(selected))),
+                    "compact production evidence retains the selected derived element"
+                );
+                assert!(
+                    overlay
+                        .explain(FactKey::Element(selected))
+                        .unwrap()
+                        .dependencies
+                        .contains(&Dependency::Declared(property(22))),
                     "selected derived element still needs its creation proof"
                 );
+                if !production {
+                    assert!(answer.positive_dependencies.contains(&property(22)));
+                }
             }
             assert!(
                 !answer.positive_dependencies.contains(&property(21)),
