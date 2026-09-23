@@ -29,6 +29,26 @@ fn requested(subject: ElementId, family: ProducerFamilyId) -> bool {
             })
 }
 
+fn owned_requested() -> bool {
+    static ENABLED: OnceLock<bool> = OnceLock::new();
+    *ENABLED.get_or_init(|| std::env::var_os("AGQ_PRODUCER_READ_TRACE_OWNED").is_some())
+}
+
+fn requested_target(target: ElementId) -> bool {
+    std::env::var("AGQ_PRODUCER_READ_TARGETS")
+        .ok()
+        .is_none_or(|targets| {
+            targets
+                .split(',')
+                .take(32)
+                .any(|id| id.trim().eq_ignore_ascii_case(&target.to_string()))
+        })
+}
+
+fn owned_bucket(target: ElementId, bucket: &'static str) -> Option<&'static str> {
+    (owned_requested() && requested_target(target)).then_some(bucket)
+}
+
 fn kernel_bucket(search: &StructuralSearch, model: &ModelView) -> Option<&'static str> {
     match search {
         StructuralSearch::Incoming(_) | StructuralSearch::Association { .. } => Some("Inverse"),
@@ -46,6 +66,11 @@ fn kernel_bucket(search: &StructuralSearch, model: &ModelView) -> Option<&'stati
         {
             Some("Global")
         }
+        StructuralSearch::RelationshipStructure { element } => owned_bucket(*element, "Structural"),
+        StructuralSearch::OwnedRelationships { owner, .. } => owned_bucket(*owner, "Owned"),
+        StructuralSearch::OwnedRelationshipsExcluding { owner, .. } => {
+            owned_bucket(*owner, "OwnedExcluding")
+        }
         _ => None,
     }
 }
@@ -54,6 +79,8 @@ fn kernel_bucket(search: &StructuralSearch, model: &ModelView) -> Option<&'stati
 /// most 4096 retained facts per search. Shared metadata is definitely imported;
 /// expanded kernel metadata may also be a direct caller search. Matching facts
 /// identify its retained provenance without claiming a unique import route.
+/// `AGQ_PRODUCER_READ_TRACE_OWNED` additionally selects owned/structural reads;
+/// `AGQ_PRODUCER_READ_TARGETS` optionally restricts their target IDs (at most 32).
 pub(crate) fn trace<T>(
     subject: ElementId,
     family: ProducerFamilyId,
@@ -61,11 +88,18 @@ pub(crate) fn trace<T>(
     model: &ModelView,
     reads: &ProducerReads,
 ) {
-    if !requested(subject, family)
-        || !reads
-            .iter()
-            .any(|read| matches!(read, ProducerRead::Global | ProducerRead::Inverse))
-    {
+    if !requested(subject, family) {
+        return;
+    }
+    if !reads.iter().any(|read| match read {
+        ProducerRead::Global | ProducerRead::Inverse => true,
+        ProducerRead::Structural(target)
+        | ProducerRead::Owned(target, _)
+        | ProducerRead::OwnedExcluding(target, _, _) => {
+            owned_requested() && requested_target(*target)
+        }
+        _ => false,
+    }) {
         return;
     }
     let remaining = Cell::new(16);
@@ -134,7 +168,11 @@ pub(crate) fn trace<T>(
         if !attributed {
             emit(
                 bucket,
-                channel,
+                if channel == "imported-shared" {
+                    "imported-shared-fallback"
+                } else {
+                    "expanded-kernel-or-direct-fallback"
+                },
                 search,
                 &"unattributed-within-retained-fact-bound",
             );
@@ -150,6 +188,19 @@ pub(crate) fn trace<T>(
             SearchDependency::Element(element) if model.element(*element).is_none() => {
                 Some("Global")
             }
+            SearchDependency::OwnedRelationships { owner, .. } => owned_bucket(*owner, "Owned"),
+            SearchDependency::OwnedRelationshipsExcluding { owner, .. } => {
+                owned_bucket(*owner, "OwnedExcluding")
+            }
+            SearchDependency::NamespaceMembers { namespace }
+            | SearchDependency::ImportSet { namespace } => owned_bucket(*namespace, "Structural"),
+            SearchDependency::ImportedNamespace { import, namespace }
+            | SearchDependency::RedefinitionScope {
+                relationship: import,
+                namespace,
+                ..
+            } => owned_bucket(*import, "Structural")
+                .or_else(|| owned_bucket(*namespace, "Structural")),
             _ => None,
         };
         if let Some(bucket) = bucket {
