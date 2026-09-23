@@ -60,6 +60,31 @@ against unrelated read targets. This is now covered by a focused regression;
 no medium/full attempt was consumed. The latest completed corpus counts above
 remain authoritative until a corrected scoped run completes.
 
+An actual `KerML.Invocation` descriptor left a nested argument expression's
+result typing open solely because the enclosing invocation was pending. Its
+planner instead writes the invocation and, for non-Function targets, its own
+direct result. The test-first reproduction fails on `83ca429`; Function and
+non-Function planner controls pass.
+
+`SubjectAndOwnedResults` is an appended generic scope selecting the subject and
+direct ReturnParameterMembership-owned Features. Masks, causal readers and effect
+audits share the selector. Unknown endpoints and potential ownership/reference
+writes remain conservative; reconstruction recomputes the selection. Existing
+scope discriminants and accepted KerML publication bytes remain unchanged.
+
+The narrowed scope also exposed an existing missing FeatureChainExpression
+Membership effect: creation of its source-target member under an existing input
+had accidentally borrowed Invocation's former broad permission. The descriptor
+now declares that actual effect. The corresponding audit control rejects its
+removal; producer output is unchanged.
+
+Five scope tests, the actual feature-chain effect audit, and package library/test
+Clippy pass. The producer/context regression sweep passes 119 tests, with two
+explicit publication-scale probes ignored (103.60 seconds test runtime).
+Exact commands, earlier failing controls and output hashes are in
+the `invocation-scope-commands.json` source-ledger range of `commands.json`. The combined language expression gate and corpus
+acceptance remain separate checks.
+
 These synthetic fixtures use genuinely closed
 layered dependencies, not fabricated accepted standard publications.
 
