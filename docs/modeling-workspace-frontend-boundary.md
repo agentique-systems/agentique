@@ -159,6 +159,90 @@ diagnostic envelopes while retaining their native evidence/source identities;
 it must not become a second semantic graph. Existing source-origin and query
 evidence structures remain authoritative.
 
+## Implementation handoff after readiness
+
+Read-only inspection at `9152fb9`; this section adds no implemented API or test
+result. The following extraction can be owned independently of the kernel's
+shared-table refactor, after agreeing the identity-history seam below.
+
+| Slice / concrete files | Minimum change and existing code to reuse |
+| --- | --- |
+| Immutable inputs: `project.rs`, additive `source.rs`, `lib.rs` | Move the existing `ProjectDocument::{parse,edit}` and `SourceProject::apply` document-map preparation into `SourceInputs`. Retain the project/root, limits, explicit dialect/profile, accepted dependency and `Arc<ProjectDocument>` map. `Edit` uses production syntax reconciliation; `Replace` currently reparses without reconciliation, `RenameDocument` retains the document, and remove/add allocates a new DocumentId. Keep those distinct contracts. The workspace owns expected-head checks and history; these functions publish neither. |
+| Typed construction outcomes: `library/{mod,construction,sysml_construction}.rs` | Separate source-supportedness failures from dependency/invariant failures at their emission sites. Today `LibraryLoadError::Interpretation(String)` mixes unsupported productions/string literals with duplicate canonical locators, illegal/derived property writes and context errors. Introduce a typed internal unsupported-source case carrying production/source origin; adapt the strict API back to its existing error contract. Do not classify by message text or catch all `Interpretation`/kernel errors as language diagnostics. `check_supported_sysml` is a useful first pass, but does not cover every later construction failure. |
+| Retained compilation: `sysml/source.rs`, `sysml.rs`, `library/{mod,refinement}.rs` | Factor `lower_accepted_source` before `draft.strict_snapshot()?` into the proposed `SourceCompilation`. Reuse `construct_on`, reference refinement, `LibraryDraft`'s declared/semantic candidate and both existing scheduler entry points. Assemble `source_references` against the final current construction context before strict promotion, preserving mandatory missing endpoints and their current origins. Keep producer incompleteness/convergence separate from syntax, reference and capability diagnostics. |
+| Exact query context: `sysml/source.rs` | Store one pending-specialization/pending-namespace carrier with the compilation, and thread it through candidate queries, reconstruction closures, checkpoint capture/rebind and final query factories. Reuse `AcceptedSourceDependency` and the mounted dependency's construction factories. `project_overlay_context` currently accepts no pending scopes: keep `Construction`/`ConstructionOverlay` while omitted input leaves any pending scope, even when kernel obligations are zero. Promote only when those scopes are empty; do not lose them by taking the strict branch. |
+| Strict adapter: `project.rs`, `lowering.rs` | Let existing strict `SourceProject` consume the shared preparation/compilation path and require a strict outcome before changing its head. Preserve its existing `ProjectRevision::snapshot`, kernel revision identity and unconditional query guarantees. The new workspace consumes the additive carrier directly, without nesting another history. |
+
+Use `SourceEditError` for invalid paths, missing documents, invalid edit spans and
+parse resource limits; use `SourceBuildError` for invalid accepted identity,
+registry/context mismatch and internal construction/proof invariants. Recovered
+syntax, explicitly unsupported input and unresolved/ambiguous/wrong-kind
+references belong to successful Working results. A scheduler that safely returns
+a partial frontier or exhausts its iteration budget supplies Working status;
+an internal scheduler error is not automatically such a result. Any kernel
+rejection classified as source-caused must have an explicit typed mapping and a
+source-origin test. Preserve unmapped failures as operational errors.
+
+Whole-document omission is the first recovery policy. Keep all document bytes,
+syntax and diagnostics, lower only complete supported documents, and mark the
+existing project root namespace pending whenever any input was omitted. Carry
+explicit specialization obligations as well. A root created over the remaining
+documents is current construction, not a substitute for omitted declarations.
+Explicit document removal instead rebuilds the genuinely smaller input; unresolved
+consumers retain their failed assertions and ordinary construction obligations.
+Never turn a permanently removed document into an indefinite pending provider.
+
+The missing kernel capability is **declared construction identity history**, not
+another semantic model. `Snapshot::preview` retains reservations only in its
+unpublished `ConstructionView`; that type currently has no advance/promotion API.
+`lowering::publish` advances strict snapshots only, while `construct_on` starts
+from the dependency mount each time. Neither preserves retirement through an
+unavailable or omitted Working input by itself. Agree these operations with the
+kernel owner before implementing the frontend carrier (names remain proposed):
+
+```rust,ignore
+// Opaque kernel-owned local reservations; dependency reservations stay borrowed.
+DeclaredConstructionHistory::from_snapshot(&Snapshot) -> Self;
+history.retire(&DeclaredIdentitySet) -> Result<Self, ModelError>;
+history.reconcile(ConstructionView)
+    -> Result<(Self, ConstructionView), ModelError>;
+ConstructionView::revalidate_declared(self) -> Result<Snapshot, ModelError>;
+```
+
+`retire` must work without a current safe graph, so an explicit deletion while
+already Working still advances history. `reconcile` binds the exact registry,
+dependency and prior history; it accepts a reserved, temporarily unmaterialized
+identity only as continuation of that same declaration/record kind, rejects
+retired or protected identity reuse, and reserves newly admitted local element
+and occurrence IDs. Declared revalidation reruns strict kernel validation and
+carries this same history rather than rebuilding from an empty mount. Reuse the
+existing `ConstructionOverlay::revalidate` only after its exact declared-input
+and reservation check succeeds; closure reuse still requires checkpoint rebind.
+All operations return
+immutable results; a failed input/build operation commits none of them. The
+kernel implementation may combine these operations, but cannot expose unchecked
+reservation import or a generic retired-ID resurrection switch.
+
+The frontend's private `SourceIdentityLedger` maps retained syntax/owned-role
+identities to these declarations and occurrences; it contains no record values
+or semantic answers. Reconcile it after **each** accepted input edit, including
+Working-to-Working transitions, rather than against the last strict compilation.
+Omitting a document from lowering does not retire a declaration whose syntax
+identity survived. Actual syntax deletion/replacement or document removal does;
+re-adding bytes follows the parser's fresh identity contract. Keep derived-output
+identity governed by the existing derivation machinery, not this authored ledger.
+The kernel owns checked reservations; the frontend owns the evidence that an
+input identity continued or was removed. Both must pass recovery/delete/re-add
+controls before workspace identity continuity is claimed.
+
+Implement and verify these slices using the existing
+`workspace_working_inputs.rs` parser controls and held `working_states.rs`
+observations, plus focused frontend tests for typed error classification and
+pending-scope preservation at zero kernel obligations. Require a construction
+history test that deletes and re-adds a declaration while no strict graph exists.
+The storage observer and scheduler observer are separate verification hooks;
+neither supplies this identity history or establishes language acceptance.
+
 ## Working-state acceptance discriminators
 
 The held [`working_states.rs`](../crates/modeling-workspace/tests/working_states.rs)
