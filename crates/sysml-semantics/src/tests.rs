@@ -8,6 +8,42 @@ mod structural_query_tests;
 mod transition_tests;
 
 #[test]
+fn scalar_inverse_inventory_is_ownership_bounded() {
+    // These are the scalar inverse populations used by the pinned combined
+    // graph. Both have precise ownership reads in KerMLQueries::property;
+    // the generic Incoming fallback is not reached by current library queries.
+    for profile in [
+        agq_kerml::BaselineProfile::PublishedKerMl10,
+        agq_kerml::BaselineProfile::OPERATIONAL_V9,
+    ] {
+        let registry = agq_sysml::registry_for_profile(profile).unwrap();
+        let inverses: BTreeSet<_> = registry
+            .properties()
+            .filter_map(|property| {
+                registry
+                    .inverse_storage(property.id)
+                    .unwrap()
+                    .map(|storage| (property.id, storage))
+            })
+            .collect();
+        assert_eq!(
+            inverses,
+            BTreeSet::from([
+                (
+                    kp::ELEMENT_OWNING_RELATIONSHIP,
+                    kp::RELATIONSHIP_OWNED_RELATED_ELEMENT
+                ),
+                (
+                    kp::RELATIONSHIP_OWNING_RELATED_ELEMENT,
+                    kp::ELEMENT_OWNED_RELATIONSHIP
+                ),
+            ]),
+            "{profile:?}"
+        );
+    }
+}
+
+#[test]
 fn mounted_dependency_cannot_substitute_a_weaker_producer_registry() {
     use agq_kerml_semantics::{
         ProducerClosedDependency, ProducerClosureCertificate, ProducerRegistry,
