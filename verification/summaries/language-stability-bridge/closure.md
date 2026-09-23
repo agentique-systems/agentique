@@ -890,3 +890,25 @@ the `per-effect-scope-independent-commands.json` source-ledger range in `command
 No package sweep, accepted cache load, or corpus run was performed for this
 review. The separately reported compound fixture still has an incomplete pair;
 this scoped GO does not establish publication or readiness acceptance.
+
+The immediate owning-Type scope correction `56fde0d` (actual-footprint
+regression `1eca5d6`, local source `363f7e7`) closes the compound fixture.
+The same base three-test command exited 0: all three passed in 55.16 s
+(67.59 s including compilation), output SHA-256
+`6276a4c44ae38bdca3b682a83175f8b3cb92d121a07491771a55a61378c0efd8`.
+Both frontend ReferenceUsage result shapes and the plain Feature control assert
+the whole certificate is fully closed and retain their per-subject checks.
+The relevant production source matches `56fde0d` exactly. This is a bounded
+genuine-layered fixture result, not standard-library publication acceptance.
+
+With that base gate green, the separately prepared nested fixture `b7d3d99`
+was run for the first time using
+`cargo test --locked --offline -p agq-sysml-semantics --lib invocation_nested_chain_with_frontend_reference_usage_results_closes -- --nocapture --test-threads=1`
+on the same source. It exited 0: one passed in 23.64 s (23.86 s wall), output
+SHA-256 `861d1fadf5df66b26a1b54d66f44d34b1a85d7f195bcc367ca08e8c33a1b6b4b`.
+The `contains(inter.intersectionsOf.otherFeature, face)` shape closes the whole
+certificate, including both chain results and every local requirement; each
+expression uses the frontend's ReferenceUsage return shape. Raw outputs are
+`immediate-owner-combined.log` and `immediate-owner-nested.log` in the same
+ignored directory. Formatting and diff checks exited 0. No publication or
+accepted-cache operation was performed.
