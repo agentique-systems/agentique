@@ -114,7 +114,12 @@ fn assert_revision(revision: &ProjectRevision, accepted: &CanonicalSysmlSystemsL
         revision.semantic_diagnostics()
     );
     assert!(revision.semantic_diagnostics().is_empty());
-    assert!(revision.producer_closure().is_some());
+    assert!(
+        revision
+            .producer_closure()
+            .expect("accepted authored closure certificate")
+            .is_fully_closed(revision.semantic_model())
+    );
     assert!(std::ptr::eq(
         revision.snapshot().immutable_dependency().unwrap().as_ref(),
         accepted.overlay()
@@ -318,20 +323,34 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
         ),
     ] {
         complete(&answer);
+        let expected: &[&str] = match label {
+            "ports" => &["workspaceQuery"],
+            "nested" => &["semanticAnswer"],
+            "subparts" | "subitems" => &["workspace"],
+            "attribute" => &["RevisionNumber"],
+            "part" | "usage-types" => &["ProjectWorkspace"],
+            "item" => &["ValidatedSemanticState"],
+            "port-definition" => &["SemanticQuery"],
+            "subsetting" | "redefinition" => &["revisionNumber"],
+            "interface" => &["requester", "responder"],
+            "parameters" => &["workingState", "checkedState"],
+            "subactions" => &["validate"],
+            "constraints" => &["preservesPriorState"],
+            "entry" => &["startServing"],
+            "do" => &["checkRevision"],
+            "exit" => &["stopServing"],
+            "subject" => &["subjectWorkspace"],
+            _ => &[],
+        };
+        for &declaration in expected {
+            assert!(
+                answer
+                    .value()
+                    .contains(&authored_named(q.model(), declaration)),
+                "{label} must retain the canonical {declaration}: {answer:?}"
+            );
+        }
         summary.insert(label.into(), names(q, answer.value().iter().copied()));
-    }
-    for (label, expected) in [
-        ("usage-types", "ProjectWorkspace"),
-        ("port-definition", "SemanticQuery"),
-        ("subsetting", "revisionNumber"),
-        ("subactions", "validate"),
-        ("constraints", "preservesPriorState"),
-    ] {
-        assert!(
-            summary[label].contains(expected),
-            "{label}: {:?}",
-            summary[label]
-        );
     }
     let inherited = q.effective_usages(authored_named(q.model(), "IncrementalWorkspace"));
     assert_eq!(
@@ -496,6 +515,13 @@ fn programmatic_equivalence(
         "{:?}",
         closed.stages
     );
+    assert!(
+        closed
+            .certificate
+            .as_ref()
+            .expect("programmatic closure certificate")
+            .is_fully_closed(closed.overlay.model())
+    );
     let context = witness
         .project_overlay_context(&closed.overlay, &[root])
         .unwrap()
@@ -543,6 +569,12 @@ fn accepted_case_roles(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
         revision.is_complete_slice(),
         "{:?}",
         revision.semantic_diagnostics()
+    );
+    assert!(
+        revision
+            .producer_closure()
+            .expect("case-role closure certificate")
+            .is_fully_closed(revision.semantic_model())
     );
     for reference in revision.references() {
         assert_eq!(

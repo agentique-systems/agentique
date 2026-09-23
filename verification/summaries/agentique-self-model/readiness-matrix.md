@@ -107,3 +107,21 @@ review does not establish language readiness. Graph-sharing observations also
 remain subject to the separate
 [storage review](../../../docs/modeling-workspace-frontend-boundary.md#shared-dependency-storage-review):
 record/Arc identity checks alone do not establish I8's no-standard-graph-copy gate.
+
+The follow-up assertion review, based on `baae387`, now requires
+`certificate.is_fully_closed(model)` for authored self-model revisions, the
+independent programmatic graph, and the case-role project. Effective nested
+usages, definition projections, composite children, interface ends, parameters,
+entry/do/exit actions and requirement subjects must contain the existing
+canonical authored IDs; two equally empty text/programmatic answers cannot pass
+those checks. Each graph resolves its own IDs, preserving independent identity.
+No additional semantic API or unsupported language behavior was introduced.
+
+`cargo test --locked --offline -p agq-kerml-text --lib case_acceptance_fixture_uses_real_frontend_and_explicit_standard_redefinitions`
+exited 0: one frontend test passed in 0.45 s (13.60 s including compilation),
+output SHA-256 `fb3b5d32c1df5244595d969f4099746c2a77a53593c48ccf3513f15d01942bc3`.
+The tested acceptance file SHA-256 was
+`a7d11ee13604d8bdc1aefcf2fa3ecfd071c2b571df29a0eb4b0941c6e774e8af`.
+Formatting and diff checks exited 0. The ignored accepted-library test was
+compiled only; no cache was loaded and none of its new assertions has passed
+against an accepted Systems publication yet.
