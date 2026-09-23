@@ -74,10 +74,22 @@ fn variable_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
     (snapshot, bindings)
 }
 
+fn nested_variable_fixture() -> (Snapshot, Arc<StandardKermlBindings>) {
+    let (base, bindings) = variable_fixture();
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(9, c::CLASS);
+    member(&mut f, 9, 1, 90, c::OWNING_MEMBERSHIP);
+    (f.finish(), bindings)
+}
+
 #[test]
 fn variable_featuring_actual_plan_writes_featuring_only_on_the_variable() {
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
-    let (snapshot, bindings) = variable_fixture();
+    let (snapshot, bindings) = nested_variable_fixture();
     let mut context = SemanticContext::for_snapshot(
         &snapshot,
         SemanticOptions {
@@ -173,7 +185,7 @@ fn variable_featuring_pending_child_cannot_change_ancestor_type_featuring() {
     use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
     const READER: ProducerFamilyId = ProducerFamilyId::new("Fixture.VariableFeaturingReader");
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V8;
-    let (snapshot, _) = variable_fixture();
+    let (snapshot, _) = nested_variable_fixture();
     let registry = ProducerRegistry::new([
         ProducerFamily::VariableFeaturing.descriptor(profile),
         ProducerDescriptor::new(READER, [], ProducerApplicability::Subtypes(vec![c::CLASS])),
@@ -204,6 +216,7 @@ fn variable_featuring_pending_child_cannot_change_ancestor_type_featuring() {
             c::FEATURE_TYPING,
             ProducerEvaluationState::EvaluatedComplete,
         ),
+        (9, c::MEMBERSHIP, ProducerEvaluationState::EvaluatedComplete),
     ] {
         let answer = q.owned_relationships_of_type(id(target), class);
         assert_eq!(answer.completeness, Completeness::Complete);
