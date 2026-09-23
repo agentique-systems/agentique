@@ -1078,3 +1078,39 @@ Two transports retain 1,235 and reopen 11,919 evaluations in aggregate. Final
 report, stage stream and source-map hashes are retained with the command record.
 This remains scoped failure evidence. A matching explicit-multiplicity fixture
 must diagnose the remaining boundary before another corpus attempt.
+
+The subsequent medium13 report at source `7638346` exhausts the generic
+32-round limit: contextual stages 23–30 add 1,854, 338, 0, 9, 54, 10, 9 and 2
+elements; stage 31 adds none but issues a changed certificate, increasing
+closed pairs from the pre-issue observation 9,147 to 14,404. Incomplete subjects
+are queued for another evaluation, which the resource limit prevents.
+`converged=false` and Incomplete remain the correct result; this is not evidence
+that the 14 remaining incomplete pairs will all resolve with more budget.
+
+Source `fccc70f` sets one documented Systems publication resource budget of 64
+rounds for preparation and the example's strict acceptance call. The generic
+KerML default and explicit publication caller options are unchanged. The
+example reports `round_limit` and `round_limit_reached` independently of semantic
+acceptance. A small Function/FeatureReferenceExpression fixture proves that
+stopping at the structural-to-contextual handoff stays Incomplete, whereas
+sufficient ceilings yield a fully closed certificate with identical canonical
+records, occurrence identities, proof facts, semantic context and certificate
+digest. It uses no publication cache or synthetic acceptance marker.
+
+| Command | Actual result | Output SHA-256 |
+| --- | --- | --- |
+| `cargo test --locked --offline -p agq-kerml-semantics --lib stratum_handoff_needs_budget_and_sufficient_limits_preserve_complete_outputs -- --nocapture --test-threads=1` | 0; one passed, 1.90 s test / 36.24 s wall | `37835cb76bf982147ee0ce1e29e2deeae0b81936f4aa5a1781872c155ad19581` |
+| `cargo clippy --locked --offline -p agq-kerml-text --example sysml_systems_publication -- -D warnings` | 0; 4.83 s wall | `a331e3437259cc949a8fba037d6402e2cb2cc52a6b714b6ff77b4613142d58f5` |
+| `cargo doc --locked --offline --no-deps -p agq-kerml-text` with `RUSTDOCFLAGS=-D warnings` | 0; 10.77 s wall | `713dfbcd40aa8f0db628faf0c0e9e50c9c0e2d0adb38c5537512b98820c1d8d6` |
+
+All used one build job, one test thread, disabled incremental/debug artifacts,
+and the isolated `target/bridge-self-model` target. The test executed before a
+final formatting-only change; `cargo fmt --all -- --check` and `git diff --check`
+then exited 0. The initial candidate test fixture used a plain chain with no
+deferred binding handoff and therefore failed its fixture precondition (same
+test command, exit 101, 47.84 s wall, output SHA-256
+`59d24b159a9ded43e092ef03366574d8fc2b8a131aa6f5fccf5abbb3768822c7`);
+that outcome is excluded as evidence of a scheduler defect. Raw logs are
+`systems-round-budget-{binding-regression,clippy,rustdoc,regression}.log` under
+the existing ignored bridge directory. No medium/full publication was rerun by
+this change's author; acceptance remains unestablished.
