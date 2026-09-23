@@ -10313,6 +10313,358 @@
       "duration_seconds": 0.55,
       "output": "verification/generated/language-stability-bridge/bridge-actions-complete-coverage-integrity.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "bridge-three-language-packages",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "262fd5c3dbf71073bb509b698d7654bd7b0b755d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "a015ad69800837b4eabcc5551e7cd51a905cd52ef2fdc78c9436af9f9844fe78",
+      "duration_seconds": 286.19,
+      "output": "verification/generated/language-stability-bridge/bridge-three-language-packages.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
+    },
+    {
+      "name": "bridge-precise-crossing-evidence",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "derived_crossings",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b965564b87e985bec850de030bae5d40a50c652d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "dea7dc186eda2604dbb1c5e589a8bacffb0df8bfdf8545616e3a3f8527236f52",
+      "duration_seconds": 10.97,
+      "output": "verification/generated/language-stability-bridge/bridge-precise-crossing-evidence.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
+    },
+    {
+      "name": "bridge-kerml-remaining-integration",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--test",
+        "expression_publication",
+        "--test",
+        "feature_reference_authority_v8",
+        "--test",
+        "formal_targets_v5",
+        "--test",
+        "foundation",
+        "--test",
+        "imports",
+        "--test",
+        "initial_values_v10",
+        "--test",
+        "library_authority_conflict",
+        "--test",
+        "multiplicity_context_v9",
+        "--test",
+        "ordered_results",
+        "--test",
+        "ordinary_validation_v6",
+        "--test",
+        "participant_contract",
+        "--test",
+        "positional_publication",
+        "--test",
+        "producer_closure_evidence",
+        "--test",
+        "profiles",
+        "--test",
+        "publication_contract",
+        "--test",
+        "publication_v8_bounds",
+        "--test",
+        "publication_v8_cross_domains",
+        "--test",
+        "publication_v8_imports",
+        "--test",
+        "publication_v8_members",
+        "--test",
+        "redefinition_end_v4",
+        "--test",
+        "redefinition_v2",
+        "--test",
+        "reference_binding_v9",
+        "--test",
+        "relationship_population",
+        "--test",
+        "result_binding_authority_v7",
+        "--test",
+        "result_domains_v9",
+        "--test",
+        "structural_validation",
+        "--test",
+        "subobject_authority",
+        "--test",
+        "typing_v10",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b965564b87e985bec850de030bae5d40a50c652d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "786cdd55442857456e371f3ee042dea3a5db664ba465c41a034cf7c4c963b339",
+      "duration_seconds": 117.34,
+      "output": "verification/generated/language-stability-bridge/bridge-kerml-remaining-integration.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
+    },
+    {
+      "name": "bridge-kerml-package-docs",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--doc"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "d3915454661c4d0acf49df5edb7a7504ee26e87a",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "a75909025968fc0b28753d110fa6e3f398f63475ac15d8ec39cf5197bf2824ca",
+      "duration_seconds": 0.5,
+      "output": "verification/generated/language-stability-bridge/bridge-kerml-package-docs.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "target/foundation-integration"
+      }
+    },
+    {
+      "name": "full-case-source-shape-inventory",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "verification_case_objective_and_requirement_value_shape",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "262fd5c3dbf71073bb509b698d7654bd7b0b755d",
+      "working_changes_sha256": "82fd4857672c924b8a52619516377f4227735275bebb96cee6758462a8ddfdf4",
+      "output_sha256": "0e452945ea45d40a29a41bf76b90a78fd566e9b97a6c066b2777dde4a0b6873f",
+      "duration_seconds": 22.88,
+      "output": "verification/generated/language-stability-bridge/full-case-source-shape-inventory.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "full-case-whole-fixture",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "verification_case_objective_subject_and_requirement_chain_close",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "262fd5c3dbf71073bb509b698d7654bd7b0b755d",
+      "working_changes_sha256": "42e3374d1d3fc526723ed7586d3df5546155cbe59df8b5c0a88041fa9f6530ab",
+      "output_sha256": "8fb6ddf03ce6165894e9b76661eaab762108f14c4227ff5e920e63e4169cb8f0",
+      "duration_seconds": 69.09,
+      "output": "verification/generated/language-stability-bridge/full-case-whole-fixture.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "full-case-source-shape",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "verification_case_objective_and_requirement_value_shape",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "262fd5c3dbf71073bb509b698d7654bd7b0b755d",
+      "working_changes_sha256": "ce726a8760d1c51fcda9673f900dceb03d9d3a7c39aad03388ab5df0258032a8",
+      "output_sha256": "0ce073f3ea308705065116e3f18428f24915608c20972ba9a43c1df2c3ce7d37",
+      "duration_seconds": 11.36,
+      "output": "verification/generated/language-stability-bridge/full-case-source-shape.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "full-case-whole-final",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "verification_case_objective_subject_and_requirement_chain_close",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a6b8cbbea652dc0b34a971d69530c762649d1ce8",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "ed5ece4211367886cbfee244f548c0d9ecc1959bff32c7d8b776d10b59d22e41",
+      "duration_seconds": 68.42,
+      "output": "verification/generated/language-stability-bridge/full-case-whole-final.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "full-case-test-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--tests",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a6b8cbbea652dc0b34a971d69530c762649d1ce8",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "1cff560b00980a861fc610341adcac6b5226b936359caf2deb75482b48cc55a3",
+      "duration_seconds": 8.94,
+      "output": "verification/generated/language-stability-bridge/full-case-test-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "full-case-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a6b8cbbea652dc0b34a971d69530c762649d1ce8",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.59,
+      "output": "verification/generated/language-stability-bridge/full-case-format.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "full-case-original-kpar",
+      "command": [
+        "python",
+        "-c",
+        "from pathlib import Path\nimport hashlib, zipfile\nroot=Path('.')\nwith zipfile.ZipFile(root/'standards/artifacts/Systems-Library.kpar') as archive:\n    for name in ['Allocations','AnalysisCases','Cases','UseCases','VerificationCases']:\n        path=f'Systems Library/{name}.sysml'\n        data=archive.read(path)\n        assert data==(root/'standards/libraries/Systems-Library'/path).read_bytes()\n        print(path,len(data),hashlib.sha256(data).hexdigest())"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "a6b8cbbea652dc0b34a971d69530c762649d1ce8",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "22ef47ffe32869a7ee1c9bb03fc37bc9dd90b3ea919002a90d20a8218728db15",
+      "duration_seconds": 0.08,
+      "output": "verification/generated/language-stability-bridge/full-case-original-kpar.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
     }
   ],
   "source_ledgers": [
@@ -10672,6 +11024,28 @@
       "source_blob_sha256": "6c2e87977ce512345f30f34cbaa7ccaa65036581f1cd29f1abf250a12e72faf1",
       "first_command": 363,
       "command_count": 8
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/full-case-preflight.json",
+      "source_commit": "23f16c5afeadab1714aa380f9274fd2c8b03f3e8",
+      "source_blob_sha256": "76a26411fb91fedfb665e9e99ff00e632bc159124ae4b65f71adf34b3acc03fa",
+      "first_command": 380,
+      "command_count": 7,
+      "scope": {
+        "base": "262fd5c",
+        "test_source": "a6b8cbb",
+        "documents": [
+          "Allocations",
+          "AnalysisCases",
+          "Cases",
+          "UseCases",
+          "VerificationCases"
+        ],
+        "result": "Bounded preflight passed; no full-corpus publication claim",
+        "new_composition": "Case objective subject default inherited into VerificationCase; explicit objective subject value and noncomposite requirement chain over composite nested requirements.",
+        "boundaries": "Faithful producer-relevant classes, directions, membership kinds, default flags, return shape and declared redefinitions. Unrelated enumeration declarations, documentation, scalar multiplicities and other members omitted from the synthetic fixture; original source shape checked independently.",
+        "other_paths": "Allocations uses the passed connection/end structure. AnalysisCases and UseCases add base/role/self specializations. VerificationCases conditional operator composition also appears in passed Flows lines71-72. Metadata/SysML/StandardViewDefinitions reviewed independently by closure agent."
+      }
     }
   ]
 }

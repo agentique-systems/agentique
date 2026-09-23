@@ -117,7 +117,31 @@ and formatting pass. Setup/compile corrections remain in the consolidated
 `inline-function-commands.json` and `views-satisfaction.json` source-ledger ranges
 of `commands.json`; no cache or corpus was loaded by these fixtures.
 
+The full-only source preflight covers the remaining eight documents. Allocations,
+AnalysisCases and UseCases reuse the already exercised end/base/role paths.
+Metadata, SysML and StandardViewDefinitions add reflective declarations and
+ordinary specializations; their full graph still requires publication acceptance.
+A new Cases/VerificationCases fixture covers an inherited objective-subject
+default, an explicit subject value and a requirement reference chain. Exact
+frontend classes, directions, default flags and result memberships are retained;
+unrelated enums, multiplicities and members are outside this bounded fixture.
+It passes full closure and Complete result/referent/redefinition queries in 52.86 s;
+source-shape checks, focused Clippy and formatting pass. Original-byte checks and
+all seven commands are retained in the `full-case-preflight.json` source-ledger
+range. No additional production correction was needed.
+
 ## Integration verification and retained evidence
+
+The updated KerML semantic package is covered by **418 passing tests**, two
+preexisting explicit scale-probe ignores, and successful doc tests. The first
+three-package sweep stops at an outdated crossing evidence assertion after 271
+tests in successful suites. That assertion expected a broad ownership search;
+`b965564` instead requires both exact transitive typed populations and preserves
+the original positive ownership, occurrence and provenance assertions. Independent
+review confirms the replacement. All six crossing tests then pass, followed by
+141 tests across the 28 unrun integration targets; already successful targets were
+not repeated. The failed attempt remains recorded. SysML/text package completion
+continues separately; the final workspace run remains reserved for integration.
 
 The integrated KerML semantic package at clean source `3506712` passes: **394
 tests passed, zero failures**, two existing release-only scale probes ignored.
