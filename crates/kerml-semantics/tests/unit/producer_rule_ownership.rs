@@ -65,6 +65,10 @@ fn audit_subsetting_for_subjects(
         &evidence,
     )
     .unwrap();
+    if let Some(owner) = registry.rule_owner(rule) {
+        let outputs = plan.planned_elements().collect::<Vec<_>>();
+        plan.attribute_producer_outputs(id(1), owner.id, outputs);
+    }
     plan.validate_declared_effects(scheduled, registry)
 }
 

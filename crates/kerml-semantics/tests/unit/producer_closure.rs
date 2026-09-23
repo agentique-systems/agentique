@@ -1561,6 +1561,8 @@ fn expression_result_effects_preserve_subject_typing_and_restrict_value_carriers
             &evidence,
         )
         .unwrap();
+        let outputs = plan.planned_elements().collect::<Vec<_>>();
+        plan.attribute_producer_outputs(id(1), ProducerFamily::ExpressionResult.id(), outputs);
         let audited = plan.validate_declared_effects(&[id(1)], &registry);
         assert_eq!(audited.is_ok(), fresh_source, "{audited:?}");
     }

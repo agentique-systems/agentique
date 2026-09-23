@@ -152,6 +152,8 @@ fn invocation_scope_applies_to_causal_readers_and_effect_audits() {
             &q.canonical_fact_evidence(FactKey::Element(id(target))),
         )
         .unwrap();
+        let outputs = plan.planned_elements().collect::<Vec<_>>();
+        plan.attribute_producer_outputs(id(1), ProducerFamily::Invocation.id(), outputs);
         assert_eq!(
             plan.validate_declared_effects(&[id(1)], &registry).is_ok(),
             [1, 3].contains(&target)
