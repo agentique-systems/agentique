@@ -1,20 +1,34 @@
 # Producer closure integration and regressions
 
-Current status: focused corrections are integrated; Systems publication and
-language readiness remain unaccepted. The latest completed corpus gate
-(`actions-bounded-writers`, source `695e67e`, release build `b56a1b5`) has
-**534/534 Actions references Complete**, zero kernel obligations and zero
-unresolved, incomplete, ambiguous, invalid or mismatched references. All eight
-documents parse and construct byte-exactly. Closure converges but remains
-Incomplete: 64 evaluations and 380,711/405,270 closed requirements. The
-full-certificate guard correctly rejects this scoped gate. No medium/full
-publication has run. Exact command, source and resource observations are in
-`publication-commands.json`.
+Current status: Systems publication and language readiness remain unaccepted.
+The latest completed corpus gate, `actions-end-and-index`, has **534/534 Actions
+references Complete**, zero reference failures and zero kernel obligations.
+Its four remaining incomplete evaluations are multiplicity-bearing Flows/Items
+ends; details and exact counts are in the [current summary](README.md) and
+`publication-commands.json`. No medium/full publication has run.
 
-Remaining incomplete evaluations are 42 Usage mayTimeVary predicates,
-19 FeatureReferenceExpression producers and 3 FeatureValue producers. The
-nested feature-chain result has a small faithful red reproduction; its scope
-correction remains under focused review. No next corpus result is inferred.
+The matching Flows and Items regressions now pass after `efff33c` scopes
+`owned_cross_subsetting` to its typed relationship population. Candidate order,
+subtype eligibility and the pending-specialization guard are unchanged. The
+actual-planner red demonstrates that a VariableFeaturing snapshot previously
+reopened this query through an irrelevant whole-owned-relationship read.
+Eligible direct/future CrossSubsetting writers, unknown classes, pending
+providers and independent broad reads still prevent closure; excluded
+Redefinition/FeatureMembership writers do not.
+
+Real pinned-source frontend checks distinguish Flows' plain cross Feature with
+`[1]` from Items' named ReferenceUsage cross with `[0..*]` and two redefinitions.
+Both genuine closed-dependency fixtures now have fully closed graph certificates,
+Complete mayTimeVary and true isVariable. Flows' two-test module passes in 33.54 s;
+Items' fixture passes in 33.37 s. The actual-planner controls, typed-population
+guards, 15 existing cross-profile tests, three-package all-target Clippy and
+formatting pass. Initial compile/fixture/format failures and the actual semantic
+red remain recorded. Exact commands and verified raw hashes are consolidated
+from `flows-end-commands.json` (11 records) and `items-end-causality.json`
+(10 records) in `commands.json`. These are focused gates, not corpus acceptance.
+
+The following observations retain earlier integration history; current corpus
+status is the summary above.
 
 The reproduced defect was historical proof-search contamination across an
 authenticated dependency boundary. A closed dependency's derived parameter proof

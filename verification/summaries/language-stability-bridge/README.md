@@ -26,6 +26,11 @@ eligible argument populations and the earlier per-effect/immediate owning-Type
 writer scopes. These synthetic dependency results are not publication acceptance.
 The rebuilt `actions-end-and-index` audit reduces the remaining incomplete
 evaluations from 24 to four; it remains an unsuccessful acceptance gate.
+The four remaining Flows/Items shapes now have passing complete-closure fixtures
+after narrowing cross-subsetting evidence to its eligible relationship population.
+Direct/future writer and provider guards, cross-profile tests, Clippy and formatting
+pass. The corrected release executable builds successfully; a new scoped audit is
+required before advancing to medium.
 See [closure.md](closure.md) for each correction and exact evidence boundary.
 
 The [Gen1/Gen2 audit](../gen1-gen2-audit/README.md), proposed
@@ -112,7 +117,9 @@ At clean source `749f9c9`, the SysML semantic and KerML text package command
 passes **176 tests** (81 SysML, 95 text), zero failures, with only the two explicit
 accepted-cache/self-model gates ignored. All 17 suites succeed with native Cargo
 exit 0. Exact output/hash, the exit observation and per-suite runtimes are retained;
-runner wall duration was unavailable. Frontend check, build, Node tests and
+the original runner subsequently reported 578.468 seconds when its retained
+session handle was closed. The recovered raw output/hash is unchanged; no rerun
+was performed. Frontend check, build, Node tests and
 standards integrity also pass at source `c83d7f0`.
 
 Early integration passed 134 KerML semantic library tests (two existing profiling
