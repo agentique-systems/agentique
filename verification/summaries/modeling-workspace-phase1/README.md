@@ -56,3 +56,26 @@ held integration command exits 101 because its crate manifest does not exist;
 the three semantic tests remain uncompiled and unexecuted. No manifest, Cargo
 member, production code, accepted cache load or publication run was added.
 The `working-states-commands.json` source-ledger range of [commands.json](commands.json) records commands, exits, hashes and source identity.
+
+## Additional identity and shared-graph preparation
+
+The held unresolved-reference sequence now removes its provider while already
+Working, repairs the name while the provider remains absent, then re-adds the
+provider. It requires current reference provenance, no stale canonical or queried
+typing endpoint, a fresh provider identity and unchanged prior revisions. The
+real parser preflight now has three passing tests (0.08 s), including declaration
+deletion/reinsertion while recovery persists: identical restored bytes retain a
+new syntax identity through repair. Focused Clippy and formatting pass. The
+semantic workspace tests remain uncompiled because the manifest is absent;
+this expected failed invocation is retained without claiming acceptance.
+
+Two kernel tests compile and pass using current APIs (0.01 s). They compare a
+mounted dependency with an independently constructed flat oracle for local
+association additions, reference positions, duplicate carriers, inverse slots,
+provenance/proofs, removal, archive roundtrip and atomic scalar inverse rejection.
+These protect observable semantics for the future storage change. They do not
+prove physical map/index/proof-pool sharing: those assertions remain held until
+a real storage observer exists. Targeted Clippy and formatting pass. Both new
+source-ledger ranges and original raw hashes are retained in `commands.json`.
+No production workspace, shared-storage implementation or accepted cache run was
+introduced by this preparation.

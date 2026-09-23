@@ -199,6 +199,236 @@
       "duration_seconds": 2.38,
       "output": "verification/generated/modeling-workspace-phase1/working-states-workspace-fmt.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "shared-storage-semantic-oracle",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "derived_associations",
+        "shared_storage_oracle",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a229e53105dbfb11adb0c508debf9f6feeb3dea7",
+      "working_changes_sha256": "b25aa8626455e9a3e7b9d0fd3f71998cf54a7e638b624f87e2263d6cc2d9a108",
+      "output_sha256": "e01f47fa0ec3b89b82804a266dd1e91a72bb0ab89cf55092b6b845cdb58e2256",
+      "duration_seconds": 2.01,
+      "output": "verification/generated/modeling-workspace-phase1/shared-storage-semantic-oracle.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "shared-storage-oracle-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "agq-kernel",
+        "--test",
+        "derived_associations",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7f09a8264fa633dc3dc654c3c2bb7cc88748cb8b",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "aadb90a9dfe1b16b0e40a81d176b4997a9d3a348f72dffaaea1981381dbb3f8a",
+      "duration_seconds": 0.5,
+      "output": "verification/generated/modeling-workspace-phase1/shared-storage-oracle-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "shared-storage-oracle-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7f09a8264fa633dc3dc654c3c2bb7cc88748cb8b",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.55,
+      "output": "verification/generated/modeling-workspace-phase1/shared-storage-oracle-fmt.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "working-retirement-parser",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_working_inputs",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "9e69c2801960d77605365edb75e6f2e4794d4b8f2b8505789770bbe7255b8a19",
+      "output_sha256": "298b4577033b4721ad7d9317a1d423cafc3105f191027d41708a9c64cf6695f9",
+      "duration_seconds": 15.89,
+      "output": "verification/generated/language-stability-bridge/working-retirement-parser.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "working-retirement-parser",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_working_inputs",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "53fbc8e1bae633d795390dabf2d042be70aa5de4e3fe0ac9cdc082271b57443f",
+      "duration_seconds": 0.7,
+      "output": "verification/generated/language-stability-bridge/working-retirement-parser-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "working-retirement-held-boundary",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "crates/modeling-workspace/Cargo.toml",
+        "--test",
+        "working_states",
+        "--features",
+        "verification",
+        "--",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "aeb0c77f79ae26b25589666f82a9427ff98486d326951bf4ed33fc238a8f4b60",
+      "duration_seconds": 0.08,
+      "output": "verification/generated/language-stability-bridge/working-retirement-held-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "working-retirement-held-format",
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/modeling-workspace/tests/working_states.rs"
+      ],
+      "exit_code": 0,
+      "tool_version": "rustfmt 1.8.0-stable (ded5c06cf2 2025-12-08)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/language-stability-bridge/working-retirement-held-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "working-retirement-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.69,
+      "output": "verification/generated/language-stability-bridge/working-retirement-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "working-retirement-parser-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_working_inputs",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "7a8a0c057f0f0a97a425b971a32d4a608dc503b00f90c8a457e8531bffee67c2",
+      "output_sha256": "43984ba512f93fbec07d11fbb76cddb81842583d59e0fe1a675d4025b79afc70",
+      "duration_seconds": 4.2,
+      "output": "verification/generated/language-stability-bridge/working-retirement-parser-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ],
   "source_ledgers": [
@@ -215,6 +445,20 @@
       "source_blob_sha256": "6a040d8929c26a217605df3da44393b763252ce5a98c2d6b65078456f425bcd4",
       "first_command": 3,
       "command_count": 5
+    },
+    {
+      "path": "verification/summaries/modeling-workspace-phase1/shared-storage-oracle.json",
+      "source_commit": "30024abb0c2d8efbd207ca1ac9f4f86cd7761e0f",
+      "source_blob_sha256": "f83abf7141aed9780274aa2076ce888352826b8a778ded370761a2f5ebfdb9e3",
+      "first_command": 8,
+      "command_count": 3
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/working-retirement-commands.json",
+      "source_commit": "a2dd16c0f573e75396e6f91d5c5483f75a42e6bb",
+      "source_blob_sha256": "882f594753496b72e8a0b04c8e6dc62f0af9d0781e551152542ed8b4c1a073ad",
+      "first_command": 11,
+      "command_count": 6
     }
   ]
 }

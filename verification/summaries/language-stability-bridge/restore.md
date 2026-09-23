@@ -77,8 +77,13 @@ Local graph reconstruction must retain its conservative proof fallback wherever
 optional contribution metadata is unavailable; this preparation claims no actual
 accepted-cache result.
 
-Only after a genuine full publication and independently checked-in receipt/bindings
-activate the catalogue, run this gate alone, then the authored acceptance harness:
+Only after a genuine full publication, check in the generated receipt and binding
+manifest and activate the finite catalogue entry (`agq-sysml-accepted-publication/1`).
+At that point the unit test rejecting the currently unavailable Systems identifier
+must become a positive checked-in-authority assertion plus rejection of an unknown
+identifier; retain its caller-supplied JSON rejection. Do not leave an assertion
+that the newly accepted identifier is unavailable. Then run this gate alone,
+followed by the authored acceptance harness:
 
 ```powershell
 $env:AGENTIQUE_KERML_CACHE = '<exact accepted KerML cache>'
