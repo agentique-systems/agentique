@@ -2,6 +2,8 @@
 use super::*;
 #[path = "producer_index_usage_tests.rs"]
 mod index_usage_tests;
+#[path = "producer_inline_function_tests.rs"]
+mod inline_function_tests;
 #[path = "producer_views_satisfaction_tests.rs"]
 mod views_satisfaction_tests;
 use agq_kerml_semantics::{

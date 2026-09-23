@@ -34,6 +34,9 @@ mod flow_end_shape_tests;
 #[path = "sysml_index_shape_tests.rs"]
 mod index_shape_tests;
 #[cfg(test)]
+#[path = "sysml_inline_function_shape_tests.rs"]
+mod inline_function_shape_tests;
+#[cfg(test)]
 #[path = "sysml_tests.rs"]
 mod tests;
 #[cfg(test)]
