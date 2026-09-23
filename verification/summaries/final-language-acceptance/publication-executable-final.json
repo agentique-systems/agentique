@@ -1,0 +1,9 @@
+﻿{
+    "format":  "agq-publication-executable-evidence/1",
+    "executable":  "verification/generated/final-language-acceptance/publication-release-candidate.exe",
+    "sha256":  "237d2508dfa46f82390d317827deb4be22775e07d7bfab8e49f4a641d0b7d6c6",
+    "bytes":  18599424,
+    "source_commit":  "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+    "build_record":  "verification/summaries/final-language-acceptance/commands.json#exact-handoff-publication-release",
+    "purpose":  "Byte-identical medium-verified executable retained before disposable Cargo release artifacts are cleaned. Full attempt remains gated on medium-equivalence.json."
+}

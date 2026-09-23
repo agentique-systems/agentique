@@ -36,6 +36,32 @@ an acceptable fix. Further use of retained checkpoints requires authenticating
 their original semantics and proving the repaired handoff against focused and
 medium uninterrupted/resumed equivalence tests.
 
+The repaired reader authenticates the entire declared input, then adopts the
+caller's original transaction handle before ordinary overlay validation. See
+`resume-handoff.md` for the exact kernel and scheduler regressions, including
+the unchanged exact query comparator. This changes no checkpoint encoding,
+source pin, language rule or scheduler computation.
+
+The repaired real medium resume exited 0 after 1,180.25 seconds, with peak
+private memory 5,380,255,744 bytes and no watchdog stop. It restored four
+invocations (three completed), skipped 60 completed rounds, continued the
+unfinished ContextualBindings round 23, and durably committed the converged
+round 33 state. All 695 references are Complete, kernel obligations are zero,
+and all 14,791 producer pairs and 417,786 requirements are closed. The separate
+`medium-resumed-reference.json` check records exact equality with the pinned
+historical report's identity fields and certificate digests. A fresh independent
+uninterrupted run and authenticated selected-evidence comparison are still
+required; this successful resume alone does not authorize the full attempt.
+
+Subsequently the fresh uninterrupted run exited 0 in 2,389.688 seconds, with peak
+private memory 5,365,264,384 bytes and no watchdog stop. The exact medium gate
+passed, including authenticated selected proof/search evidence; see `phase-f.md`
+and `medium-equivalence.json`. Windows page-file expansion continued during this
+run despite no competing Rust builds. Completed handoff-test artifacts were
+cleaned, and after the run the verified executable was retained separately before
+cleaning disposable Cargo release/Rustdoc artifacts. The original sources,
+libraries, accepted caches, checkpoints and verification evidence were preserved.
+
 The single full candidate remains gated on that equivalence result. Its limits
 are 3,600 seconds, 6,656 MiB private memory, 1,024 MiB free disk, and a 600-second
 stall timeout observing changed frontier, planned population or closed-pair

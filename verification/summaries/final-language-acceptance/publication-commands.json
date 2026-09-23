@@ -83,6 +83,93 @@
         "stall_seconds": 600.0
       },
       "output_sha256": "1b6fd8451cd73e4dd185e80af8cc1b94034971dc4d4130afc8c154d234a1362b"
+    },
+    {
+      "name": "foundation-medium-resumed-handoff",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--audit-only",
+        "--documents=Actions,Attributes,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,Requirements,States,Views",
+        "--resume=C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\medium-frontiers\\journal-b435e707caed866fa0a89d0cd27562beeaeaaa635378e9cb105c58c386be4cd2.json",
+        "--resume-sha256=b435e707caed866fa0a89d0cd27562beeaeaaa635378e9cb105c58c386be4cd2",
+        "--output=verification/generated/final-language-acceptance/medium-resumed-handoff/report.json"
+      ],
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+      "working_changes_sha256": "98228203ae06dbb2ae214c2cc5820b3ae7a5aeb4aa856ec710da2ed2cc99ca1d",
+      "environment_overrides": {
+        "AGQ_CERTIFICATE_VERIFY_FULL_REBUILD": "1",
+        "AGQ_CERTIFICATE_TRACE": "1"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "frontier=(?P<frontier>\\d+)|planned=(?P<planned>\\d+)|closed_pairs=(?P<closed_pairs>\\d+)",
+      "output": "verification/generated/overnight-convergence/foundation-medium-resumed-handoff",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 31152,
+      "monitor_error": null,
+      "last_progress": {
+        "planned": "24",
+        "frontier": "32",
+        "closed_pairs": "14791"
+      },
+      "minimum_free_disk_bytes": 11341504512,
+      "safety_stop": null,
+      "duration_seconds": 1180.25,
+      "peak_rss_bytes": 5276925952,
+      "peak_private_bytes": 5380255744,
+      "samples": 1179,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1.0,
+        "min_free_disk_bytes": 1073741824,
+        "stall_seconds": 600.0
+      },
+      "output_sha256": "28f1661b312afb596e56555779ee7f653fea51e3a3fd3407a0aee2ad29bfde87"
+    },
+    {
+      "name": "foundation-medium-fresh",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--audit-only",
+        "--documents=Actions,Attributes,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,Requirements,States,Views",
+        "--checkpoint=verification/generated/final-language-acceptance/medium-fresh-frontiers",
+        "--output=verification/generated/final-language-acceptance/medium-fresh/report.json"
+      ],
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+      "working_changes_sha256": "594015caa86e3eab460d8476b6d010edc27d934e5fc3bec703dac6fd5f0317ad",
+      "environment_overrides": {
+        "AGQ_CERTIFICATE_VERIFY_FULL_REBUILD": "1",
+        "AGQ_CERTIFICATE_TRACE": "1"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "frontier=(?P<frontier>\\d+)|planned=(?P<planned>\\d+)|closed_pairs=(?P<closed_pairs>\\d+)",
+      "output": "verification/generated/overnight-convergence/foundation-medium-fresh",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 1612,
+      "monitor_error": null,
+      "last_progress": {
+        "planned": "24",
+        "frontier": "32",
+        "closed_pairs": "14791"
+      },
+      "minimum_free_disk_bytes": 2813116416,
+      "safety_stop": null,
+      "duration_seconds": 2389.688,
+      "peak_rss_bytes": 4939603968,
+      "peak_private_bytes": 5365264384,
+      "samples": 2385,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1.0,
+        "min_free_disk_bytes": 1073741824,
+        "stall_seconds": 600.0
+      },
+      "output_sha256": "930ec4852d780248f9d25bea4f5ffbbeccb55a7f62a264eb66da2d0392f10e4c"
     }
   ]
 }

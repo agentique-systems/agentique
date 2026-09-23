@@ -726,6 +726,144 @@
       "duration_seconds": 1.38,
       "output": "verification/generated/final-language-acceptance/release-headroom-clean-dev.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "exact-handoff-integrated-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+      "working_changes_sha256": "5784f1024b10496990cc564e5b63474446ffe32b7fc52038a6da4f2f3ac2e0a9",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 3.69,
+      "output": "verification/generated/final-language-acceptance/exact-handoff-integrated-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "exact-handoff-publication-release",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "1fab8b3fe0236d5c5d827129303c137d55b108113a54e43efe48cdfe81704a9b",
+      "duration_seconds": 473.69,
+      "output": "verification/generated/final-language-acceptance/exact-handoff-publication-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/foundation-integration"
+      }
+    },
+    {
+      "name": "medium-resumed-reference",
+      "command": [
+        "python",
+        "-c",
+        "import hashlib,json,pathlib,sys\nsys.path.insert(0,'verification/scripts')\nimport medium_frontier_gate as gate\nbp=pathlib.Path('verification/generated/language-stability-bridge/systems-medium-result-populations/report.json')\nrp=pathlib.Path('verification/generated/final-language-acceptance/medium-resumed-handoff/report.json')\nassert hashlib.sha256(bp.read_bytes()).hexdigest()==gate.BASELINE_SHA256\nbaseline=json.loads(bp.read_bytes()); resumed=json.loads(rp.read_bytes())\ngate.accept(baseline,'baseline'); gate.accept(resumed,'resumed')\nfor key in gate.IDENTITY_FIELDS:\n    assert baseline[key]==resumed[key], key\nfor key in gate.CERTIFICATE_DIGESTS:\n    assert baseline['producer_closure'][key]==resumed['producer_closure'][key], key\nresult={'format':'agq-resumed-medium-reference-check/1','passed':True,'uninterrupted_comparison_still_required':True,'references':resumed['mandatory_references'],'kernel_obligations':resumed['kernel_obligations'],'certificate_digests':{k:bytes(resumed['producer_closure'][k]).hex() for k in gate.CERTIFICATE_DIGESTS},'checkpoint_statistics':resumed['checkpoint_session']['statistics'],'baseline_sha256':hashlib.sha256(bp.read_bytes()).hexdigest(),'resumed_report_sha256':hashlib.sha256(rp.read_bytes()).hexdigest()}\npathlib.Path('verification/summaries/final-language-acceptance/medium-resumed-reference.json').write_text(json.dumps(result,indent=2)+'\\n',encoding='utf-8')\nprint(json.dumps(result,indent=2))"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+      "working_changes_sha256": "11a5ccd1ae158b5bd78289caa26aa6c3ecb842fbe78c320e604465241b0ff68f",
+      "output_sha256": "c573f9a6e91f4afd9c58496ff1a89fac3027aebab8272f511c21ff1e7c86917b",
+      "duration_seconds": 0.19,
+      "output": "verification/generated/final-language-acceptance/medium-resumed-reference.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "clean-completed-handoff-target",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "C:/Users/phili/github/agentique-systems/agentique-frontier-checkpoint/target/resume-handoff"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8c9d064cdf6ba2c9d7405ffaab19013bb8e506d1",
+      "working_changes_sha256": "35130449a109141b4f6064dc09d1dd69518de949878da3a8a79086210039bc94",
+      "output_sha256": "b3db360e067df1948bad1cb71420e5a7f041bbcd87755a7d8fa1065f3e386198",
+      "duration_seconds": 2.42,
+      "output": "verification/generated/final-language-acceptance/clean-completed-handoff-target.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "medium-exact-equivalence",
+      "command": [
+        "python",
+        "verification/scripts/medium_frontier_gate.py",
+        "--baseline",
+        "verification/generated/language-stability-bridge/systems-medium-result-populations/report.json",
+        "--uninterrupted",
+        "verification/generated/final-language-acceptance/medium-fresh/report.json",
+        "--resumed",
+        "verification/generated/final-language-acceptance/medium-resumed-handoff/report.json",
+        "--output",
+        "verification/summaries/final-language-acceptance/medium-equivalence.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "8c9d064cdf6ba2c9d7405ffaab19013bb8e506d1",
+      "working_changes_sha256": "c883ec30d4dcc64e817fe683014d564710981c76de9601d54685c814b152d684",
+      "output_sha256": "62602dfac12b73e088b9a102c4e37e21f3d7f63b8753ef120e80c3fe088c7f08",
+      "duration_seconds": 40.58,
+      "output": "verification/generated/final-language-acceptance/medium-exact-equivalence.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "full-headroom-clean-release",
+      "command": [
+        "cargo",
+        "clean",
+        "--release",
+        "--target-dir",
+        "C:/Users/phili/github/agentique-systems/agentique/target/foundation-integration"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8c9d064cdf6ba2c9d7405ffaab19013bb8e506d1",
+      "working_changes_sha256": "32026edb862ce1fe17297f2a85faebd7ca8955dff81e22528c203edbd8ec6810",
+      "output_sha256": "97542a19454c64f95f9d152e76999d055dc9b9e32dfb40adee6104ee6f5b66ff",
+      "duration_seconds": 0.73,
+      "output": "verification/generated/final-language-acceptance/full-headroom-clean-release.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "full-headroom-clean-rustdoc",
+      "command": [
+        "cargo",
+        "clean",
+        "--doc",
+        "--target-dir",
+        "C:/Users/phili/github/agentique-systems/agentique/target/foundation-integration"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8c9d064cdf6ba2c9d7405ffaab19013bb8e506d1",
+      "working_changes_sha256": "32026edb862ce1fe17297f2a85faebd7ca8955dff81e22528c203edbd8ec6810",
+      "output_sha256": "a1dd38b29e19a2d281fc8f9526c07c648d05384efc142244fb9c83b30d566087",
+      "duration_seconds": 1.14,
+      "output": "verification/generated/final-language-acceptance/full-headroom-clean-rustdoc.log",
+      "environment_overrides": {}
     }
   ]
 }

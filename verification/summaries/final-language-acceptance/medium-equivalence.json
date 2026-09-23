@@ -1,0 +1,52 @@
+{
+  "format": "agq-medium-frontier-equivalence/1",
+  "passed": true,
+  "references": 695,
+  "kernel_obligations": 0,
+  "certificate_digests": {
+    "model_digest": "88f2692c6a800877922abb29da274471457a269b6cefb2f132963729bd514c2f",
+    "semantic_closure_digest": "cf5e0de1ee46a4e9420da9687a0357bf1ee18b8024f63c52b72805a45aa02871",
+    "digest": "56b663e538b7a522b582d9993ea66628a1b31eef20378e395f837bf7551b73eb",
+    "context_contract_digest": "cd352cd6c690b58a54f3816233a824acd76706808a4f3901762f12babe3ad742",
+    "producer_registry_digest": "f543800a5d3b0645d099c7608aa9ea29100307323357b087c2cb8adb68969b70",
+    "revalidation_digest": "5c9cd8c9a295e157804e8aec85bf5fe884b9d0303a189cd5c3a76da31aa67941"
+  },
+  "reference_results_digest": "43b85a21eea20b87d7620568859dd391eb40b22f7197051ae92246d937cbeeeb",
+  "resumed_scheduler_statistics": {
+    "committed_checkpoints": 1,
+    "restored_completed_invocations": 3,
+    "restored_invocations": 4,
+    "skipped_rounds": 60
+  },
+  "checkpoint_artifact_evidence": [
+    {
+      "journal_sha256": "2ea072ebdcc86db47e8050f06f147755be03e2511481fb7498f1ba27656bf163",
+      "archive_sha256": "c0257760957c3c58857ef0f5ae72b52f1b6652a36d195bd4cd77858c74e1d2fa",
+      "source_identity": "f3c70dc4ea579e1d66b10ab17a3056b3ce7e651e5cea52fe83cabd89be55f7c4",
+      "contributions": 4252,
+      "selected_reference_digest": "cacc79b48c4dd4c27041accb9db39bdac1c34ddcb403f3326b28776be022adfd"
+    },
+    {
+      "journal_sha256": "e52b6ac5a104bbbc6f5d6773d754f5c70426e73621fd94d88448768a25292183",
+      "archive_sha256": "b6e4d1d6b81a66882205dfc9e4584eafd08e0f039af292ae2b279a82f12931a3",
+      "source_identity": "f3c70dc4ea579e1d66b10ab17a3056b3ce7e651e5cea52fe83cabd89be55f7c4",
+      "contributions": 4252,
+      "selected_reference_digest": "cacc79b48c4dd4c27041accb9db39bdac1c34ddcb403f3326b28776be022adfd"
+    }
+  ],
+  "historical_comparison_scope": "Pinned prior report graph/aggregate proof/search and certificate digests; prior report has no selected-contribution archive. Authenticated selected contribution proofs/searches additionally match uninterrupted and resumed runs.",
+  "evidence": [
+    {
+      "path": "verification\\generated\\language-stability-bridge\\systems-medium-result-populations\\report.json",
+      "sha256": "9aa5332692a443a1bc8cb1a761a7207714f83116e816a1e7a6d0201dfaad3288"
+    },
+    {
+      "path": "verification\\generated\\final-language-acceptance\\medium-fresh\\report.json",
+      "sha256": "f507ae3e05f0321d9fe7b4f8b45965dc5ac7fa64b55fc1305a0db1653e523321"
+    },
+    {
+      "path": "verification\\generated\\final-language-acceptance\\medium-resumed-handoff\\report.json",
+      "sha256": "82acc25a1431d1594e7eeff0120e0b284c92043a32e1ebc225c92aa018a9222a"
+    }
+  ]
+}

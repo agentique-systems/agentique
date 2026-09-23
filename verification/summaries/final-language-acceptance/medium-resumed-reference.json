@@ -1,0 +1,33 @@
+{
+  "format": "agq-resumed-medium-reference-check/1",
+  "passed": true,
+  "uninterrupted_comparison_still_required": true,
+  "references": {
+    "counts": {
+      "ambiguous": 0,
+      "complete": 695,
+      "endpoint_mismatch": 0,
+      "incomplete": 0,
+      "invalid": 0,
+      "unresolved": 0
+    },
+    "failures": [],
+    "total": 695
+  },
+  "kernel_obligations": 0,
+  "certificate_digests": {
+    "model_digest": "88f2692c6a800877922abb29da274471457a269b6cefb2f132963729bd514c2f",
+    "semantic_closure_digest": "cf5e0de1ee46a4e9420da9687a0357bf1ee18b8024f63c52b72805a45aa02871",
+    "digest": "56b663e538b7a522b582d9993ea66628a1b31eef20378e395f837bf7551b73eb",
+    "context_contract_digest": "cd352cd6c690b58a54f3816233a824acd76706808a4f3901762f12babe3ad742",
+    "producer_registry_digest": "f543800a5d3b0645d099c7608aa9ea29100307323357b087c2cb8adb68969b70"
+  },
+  "checkpoint_statistics": {
+    "committed_checkpoints": 1,
+    "restored_completed_invocations": 3,
+    "restored_invocations": 4,
+    "skipped_rounds": 60
+  },
+  "baseline_sha256": "9aa5332692a443a1bc8cb1a761a7207714f83116e816a1e7a6d0201dfaad3288",
+  "resumed_report_sha256": "82acc25a1431d1594e7eeff0120e0b284c92043a32e1ebc225c92aa018a9222a"
+}
