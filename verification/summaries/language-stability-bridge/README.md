@@ -62,6 +62,12 @@ output/stage hashes, memory/time measurements and the frontier are in the
 publication ledger. The normal full attempt is used. One retry remains, only
 after a concrete allocation fix and its focused checks; limits stay unchanged.
 
+The publication example now records elapsed seconds for reference and producer
+progress and every retained frontier. These observations do not enter graph,
+certificate or publication identities. Its offline example check passes; the
+first formatting check identified one layout correction, applied with
+`cargo fmt --all` (exit 0).
+
 The passed `systems-medium-result-populations` audit uses clean source `9152fb9`
 and release build `b018b18`. It exits 0 in **1,726.844 seconds**, peak **6,435.4 MiB
 private memory**, without a watchdog stop. All **14,791/14,791 applicable pairs**

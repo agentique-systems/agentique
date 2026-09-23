@@ -76,17 +76,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut last_producer_stage = None;
     let reference_progress = |round: &agq_kerml_text::library::ReferenceRefinementRound| {
         last_reference_round = Some(json!({
+            "elapsed_seconds":started.elapsed().as_secs_f64(),
             "round":round.round,"selected":round.selected_endpoints,
             "kernel_obligations":round.structural_obligations,
             "evaluated":round.references_evaluated,"reused":round.references_reused
         }));
         println!(
-            "Systems: references round={} selected={} obligations={} evaluated={} reused={}",
+            "Systems: references round={} selected={} obligations={} evaluated={} reused={} elapsed={:.3}s",
             round.round,
             round.selected_endpoints,
             round.structural_obligations,
             round.references_evaluated,
-            round.references_reused
+            round.references_reused,
+            started.elapsed().as_secs_f64()
         );
         for (reference, candidates) in &round.withdrawn_endpoints {
             println!("Systems: withdrawn reference={reference:?} candidates={candidates:?}");
@@ -99,7 +101,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let batch_progress = |round: usize, done: usize, total: usize, planned: usize| {
         if done.is_multiple_of(256) || done == total {
-            println!("Systems: producers round={round} evaluated={done}/{total} planned={planned}");
+            println!(
+                "Systems: producers round={round} evaluated={done}/{total} planned={planned} elapsed={:.3}s",
+                started.elapsed().as_secs_f64()
+            );
         }
     };
     let producer_progress = |stage: &agq_kerml_semantics::PublicationStage| {
@@ -109,6 +114,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         last_producer_stage = Some(json!({
             "phase":"construction",
+            "elapsed_seconds":started.elapsed().as_secs_f64(),
             "stage":stage.stage,"stratum":format!("{:?}",stage.stratum),
             "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
             "closure_counters":closure_counters(&stage.counters),
@@ -121,12 +127,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             stages.flush().expect("flush producer stage evidence");
         }
         println!(
-            "Systems: producer frontier={} stratum={:?} added={} completeness={:?} diagnostics={}",
+            "Systems: producer frontier={} stratum={:?} added={} completeness={:?} diagnostics={} elapsed={:.3}s",
             stage.stage,
             stage.stratum,
             stage.added_elements,
             stage.completeness,
-            stage.diagnostics.len()
+            stage.diagnostics.len(),
+            started.elapsed().as_secs_f64()
         );
         if !diagnostic_counts.is_empty() {
             println!("Systems: producer diagnostics={diagnostic_counts:?}");
@@ -433,13 +440,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         |round, done, total, planned| {
             if done.is_multiple_of(256) || done == total {
                 println!(
-                    "Systems publication: round={round} evaluated={done}/{total} planned={planned}"
+                    "Systems publication: round={round} evaluated={done}/{total} planned={planned} elapsed={:.3}s",
+                    started.elapsed().as_secs_f64()
                 );
             }
         },
         |stage| {
             let evidence = json!({
                 "phase":"publication","stage":stage.stage,
+                "elapsed_seconds":started.elapsed().as_secs_f64(),
                 "stratum":format!("{:?}",stage.stratum),
                 "added":stage.added_elements,"completeness":format!("{:?}",stage.completeness),
                 "closure_counters":closure_counters(&stage.counters),
@@ -448,8 +457,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             writeln!(stages, "{evidence}").expect("write publication stage evidence");
             stages.flush().expect("flush publication stage evidence");
             println!(
-                "Systems publication: frontier={} stratum={:?} added={} completeness={:?}",
-                stage.stage, stage.stratum, stage.added_elements, stage.completeness
+                "Systems publication: frontier={} stratum={:?} added={} completeness={:?} elapsed={:.3}s",
+                stage.stage,
+                stage.stratum,
+                stage.added_elements,
+                stage.completeness,
+                started.elapsed().as_secs_f64()
             )
         },
     ) {
