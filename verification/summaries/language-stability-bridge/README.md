@@ -104,6 +104,13 @@ All 36 suites reported success; the one-thread, one-build-job, low-artifact comm
 exited 0 in 295.03 seconds. Its exact command and source/output hashes are retained
 in `commands.json`. Later descriptor changes require their own focused gates.
 
+At clean source `749f9c9`, the SysML semantic and KerML text package command
+passes **176 tests** (81 SysML, 95 text), zero failures, with only the two explicit
+accepted-cache/self-model gates ignored. All 17 suites succeed with native Cargo
+exit 0. Exact output/hash, the exit observation and per-suite runtimes are retained;
+runner wall duration was unavailable. Frontend check, build, Node tests and
+standards integrity also pass at source `c83d7f0`.
+
 Early integration passed 134 KerML semantic library tests (two existing profiling
 ignores) and 36 text tests, including exact 21-document construction and all 1,327
 source assertions, rejection gates, shared KerML and four self-model tests. Those

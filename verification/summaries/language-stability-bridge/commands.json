@@ -7809,6 +7809,107 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "target/foundation-integration"
       }
+    },
+    {
+      "name": "bridge-node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "c83d7f023519b9562b6847d2e3fde4c0a6b4d408",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "bf115e4c8d042182716064a4981ac28e464d4f85d9f6f633d41ae8c18700a921",
+      "duration_seconds": 0.97,
+      "output": "verification/generated/language-stability-bridge/bridge-node-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "bridge-standards-integrity",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "c83d7f023519b9562b6847d2e3fde4c0a6b4d408",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "ad24c2caeca719270227ace7d1cb7b79bc49ee658b50a4b22be99d010d25d0a1",
+      "duration_seconds": 1.02,
+      "output": "verification/generated/language-stability-bridge/bridge-standards-integrity.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "bridge-frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "c83d7f023519b9562b6847d2e3fde4c0a6b4d408",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.31,
+      "output": "verification/generated/language-stability-bridge/bridge-frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "bridge-frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "c83d7f023519b9562b6847d2e3fde4c0a6b4d408",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "81dc09cc980099f72db4fe821cb87fbd97ec074e4838a85fc0dcee8556e3e4a3",
+      "duration_seconds": 2.66,
+      "output": "verification/generated/language-stability-bridge/bridge-frontend-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "bridge-final-sysml-text-packages",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-kerml-text",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "749f9c98b99c1efade4fbd99d34b55dc6b0926a5",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "9bd91aa51a391758118f5182ebe8ce23d93c5da7e41c88d1f01384ca88fb67b5",
+      "output": "verification/generated/language-stability-bridge/final-sysml-text-packages.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
+      },
+      "result": {
+        "suites": 17,
+        "passed": 176,
+        "failed": 0,
+        "ignored": 2,
+        "kerml_text_passed": 95,
+        "sysml_semantics_passed": 81
+      },
+      "exit_observation": "Original agent session unavailable. Native Cargo exit observed using a retained Windows process handle; no test rerun.",
+      "duration_note": "Original runner wall duration was not recovered. Per-suite runtimes are retained in the exact raw output."
     }
   ],
   "source_ledgers": [
