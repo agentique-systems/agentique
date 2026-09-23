@@ -19,6 +19,8 @@ now declares that actual effect. The corresponding audit control rejects its
 removal; producer output is unchanged.
 
 Five scope tests, the actual feature-chain effect audit, and package library/test
-Clippy pass. Exact commands, earlier failing controls and output hashes are in
+Clippy pass. The producer/context regression sweep passes 119 tests, with two
+explicit publication-scale probes ignored (103.60 seconds test runtime).
+Exact commands, earlier failing controls and output hashes are in
 `invocation-scope-commands.json`. The combined language expression gate and corpus
 acceptance remain separate checks.

@@ -237,6 +237,35 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "invocation-scope-final-producer-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "021e4fe1f28b3ae5a041b31008986e7f4c9dba68",
+      "working_changes_sha256": "ddbc9d5970d72b882587337c1c4ea5905dbe8d9b55414ffb878e63a56b476e06",
+      "output_sha256": "d2d5efdb398c65a7dadc62f1fa6ed6b97dcd0a5061578e2bc38f6a3acb925365",
+      "duration_seconds": 131.75,
+      "output": "verification/generated/language-stability-bridge/invocation-scope-final-producer-regressions.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ]
 }
