@@ -4828,6 +4828,36 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
       }
+    },
+    {
+      "name": "bridge-broad-read-trace-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "1e66191a6cc570800ef23916805631386c1183e3",
+      "working_changes_sha256": "84f01f8d3ba6ecd853316b7b58832c29a38709bac9435cda16d5f2080859474a",
+      "output_sha256": "77f24e617791e728b94efa2b7c55a43ad15c129f0527d463477df6ca74ed4705",
+      "duration_seconds": 220.16,
+      "output": "verification/generated/language-stability-bridge/bridge-broad-read-trace-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
     }
   ],
   "source_ledgers": [
