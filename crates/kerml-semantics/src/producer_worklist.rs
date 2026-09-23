@@ -244,6 +244,10 @@ impl ProducerFamily {
             // memberships. Chaining, featuring and subsetting concern newly
             // created helper features, never the existing producer subject.
             // In particular no FeatureValue carrier is introduced by this rule.
+            // Its contextual Feature and binding Connector are undirected;
+            // only the fresh binding ends enter a positional population.
+            descriptor.feature_populations =
+                Some(BTreeSet::from([crate::FeaturePopulationKind::End]));
             descriptor.relationship_classes = Some(
                 [
                     c::OWNING_MEMBERSHIP,
