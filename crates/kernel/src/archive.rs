@@ -68,6 +68,15 @@ enum Entry {
         fact: FactKey,
         table: usize,
     },
+    /// Present only in the separate, unaccepted producer-frontier format.
+    ReferenceContribution {
+        element: ElementId,
+        property: PropertyId,
+        target: ElementId,
+        position: usize,
+        proof: usize,
+        searches: usize,
+    },
     End,
 }
 #[derive(Serialize, Deserialize)]
@@ -338,6 +347,45 @@ pub fn write_dependent_overlay(
     write(overlay.declared(), Some(overlay), true, writer)
 }
 
+/// Stream an unaccepted strict producer frontier, preserving selected ordered
+/// contribution evidence. This separate format is never a publication cache.
+pub fn write_publication_frontier(
+    overlay: &DerivedOverlay,
+    writer: impl Write,
+) -> Result<(), ArchiveError> {
+    write_input(
+        &DerivationInput::Strict(overlay.declared().clone()),
+        Some(overlay.model()),
+        overlay.declared().immutable_dependency().is_some(),
+        true,
+        writer,
+    )
+}
+
+/// Stream an unpublished construction frontier, including missing lower bounds.
+/// Every declaration, inferred proof/search and ordered contribution is retained.
+pub fn write_construction_frontier(
+    overlay: &crate::derived::ConstructionOverlay,
+    writer: impl Write,
+) -> Result<(), ArchiveError> {
+    write_input(
+        &DerivationInput::Construction(overlay.declared_shared().clone()),
+        Some(overlay.model()),
+        overlay.declared().immutable_dependency().is_some(),
+        true,
+        writer,
+    )
+}
+
+fn frontier_format(construction: bool, dependent: bool) -> &'static str {
+    match (construction, dependent) {
+        (false, false) => "agq-kernel-publication-frontier/1",
+        (false, true) => "agq-kernel-dependent-publication-frontier/1",
+        (true, false) => "agq-kernel-construction-frontier/1",
+        (true, true) => "agq-kernel-dependent-construction-frontier/1",
+    }
+}
+
 struct ArchiveDigest(Sha256);
 impl Write for ArchiveDigest {
     fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
@@ -357,6 +405,22 @@ fn write(
     snapshot: &Snapshot,
     overlay: Option<&DerivedOverlay>,
     dependent: bool,
+    writer: impl Write,
+) -> Result<(), ArchiveError> {
+    write_input(
+        &DerivationInput::Strict(snapshot.clone()),
+        overlay.map(DerivedOverlay::model),
+        dependent,
+        false,
+        writer,
+    )
+}
+
+fn write_input(
+    snapshot: &DerivationInput,
+    overlay: Option<&ModelView>,
+    dependent: bool,
+    frontier: bool,
     mut writer: impl Write,
 ) -> Result<(), ArchiveError> {
     let dependency = snapshot.immutable_dependency();
@@ -365,7 +429,12 @@ fn write(
         emit(
             &mut writer,
             &Entry::DependentHeader {
-                format: DEPENDENT_FORMAT.into(),
+                format: if frontier {
+                    frontier_format(matches!(snapshot, DerivationInput::Construction(_)), true)
+                } else {
+                    DEPENDENT_FORMAT
+                }
+                .into(),
                 registry: registry_digest(snapshot.model().registry()),
                 dependency: dependency_digest(dependency)?,
             },
@@ -378,7 +447,12 @@ fn write(
         emit(
             &mut writer,
             &Entry::Header {
-                format: FORMAT.into(),
+                format: if frontier {
+                    frontier_format(matches!(snapshot, DerivationInput::Construction(_)), false)
+                } else {
+                    FORMAT
+                }
+                .into(),
                 registry: registry_digest(snapshot.model().registry()),
                 overlay: overlay.is_some(),
             },
@@ -388,8 +462,16 @@ fn write(
         &mut writer,
         &Entry::Snapshot {
             revision: snapshot.revision(),
-            used_ids: snapshot.inner.used_ids.clone(),
-            used_links: snapshot.inner.used_links.clone(),
+            used_ids: match snapshot {
+                DerivationInput::Strict(v) => &v.inner.used_ids,
+                DerivationInput::Construction(v) => &v.used_ids,
+            }
+            .clone(),
+            used_links: match snapshot {
+                DerivationInput::Strict(v) => &v.inner.used_links,
+                DerivationInput::Construction(v) => &v.used_links,
+            }
+            .clone(),
         },
     )?;
     let mut tables = Tables::new();
@@ -405,17 +487,17 @@ fn write(
     }
     if let Some(overlay) = overlay {
         emit(&mut writer, &Entry::Overlay)?;
-        for record in overlay.model().elements() {
+        for record in overlay.elements() {
             if snapshot.model().element(record.id()) != Some(record) {
                 tables.record(record, &mut writer)?;
             }
         }
-        for occurrence in overlay.model().association_occurrences() {
+        for occurrence in overlay.association_occurrences() {
             if snapshot.model().association_occurrence(occurrence.id()) != Some(occurrence) {
                 tables.occurrence(occurrence, &mut writer)?;
             }
         }
-        for ((element, property), slot) in overlay.model().derived_navigation_results() {
+        for ((element, property), slot) in overlay.derived_navigation_results() {
             if dependency
                 .is_some_and(|d| d.model().navigation_slot(*element, *property) == Some(slot))
             {
@@ -431,7 +513,7 @@ fn write(
                 },
             )?;
         }
-        for (&(element, property), failure) in &overlay.model().statuses {
+        for (&(element, property), failure) in &overlay.statuses {
             if dependency
                 .is_some_and(|d| d.model().statuses.get(&(element, property)) == Some(failure))
             {
@@ -466,7 +548,7 @@ fn write(
                 },
             )?;
         }
-        for (fact, searches) in overlay.model().computation_searches() {
+        for (fact, searches) in overlay.computation_searches() {
             if dependency.is_some_and(|d| {
                 d.model()
                     .computation_searches_shared(*fact)
@@ -476,6 +558,26 @@ fn write(
             }
             let table = tables.search(searches, &mut writer)?;
             emit(&mut writer, &Entry::Searches { fact: *fact, table })?;
+        }
+        if frontier {
+            for (&(element, property, target), contribution) in &overlay.reference_contributions {
+                if dependency.is_some_and(|d| d.model().element(element).is_some()) {
+                    continue;
+                }
+                let proof = tables.proof(contribution.explanation(), &mut writer)?;
+                let searches = tables.search(contribution.searches(), &mut writer)?;
+                emit(
+                    &mut writer,
+                    &Entry::ReferenceContribution {
+                        element,
+                        property,
+                        target,
+                        position: contribution.position(),
+                        proof,
+                        searches,
+                    },
+                )?;
+            }
         }
     }
     emit(&mut writer, &Entry::End)
@@ -605,7 +707,39 @@ pub fn read_dependent_overlay(
     let (_, overlay) = read(&mut reader, registry, Some(dependency))?;
     overlay.ok_or(ArchiveError::Invalid("expected dependent overlay archive"))
 }
-fn declared_snapshot(
+
+/// Restore an unaccepted strict frontier under the exact supplied dependency.
+pub fn read_publication_frontier(
+    mut reader: impl BufRead,
+    registry: Arc<MetamodelRegistry>,
+    dependency: Option<Arc<DerivedOverlay>>,
+) -> Result<DerivedOverlay, ArchiveError> {
+    match read_input(&mut reader, registry, dependency, false, true)?.1 {
+        Some(Frontier::Strict(overlay)) => Ok(overlay),
+        _ => Err(ArchiveError::Invalid("expected strict frontier")),
+    }
+}
+
+/// Restore construction without promotion, rechecking present values, ownership,
+/// proof dependencies and cycles while retaining lower-bound obligations.
+pub fn read_construction_frontier(
+    mut reader: impl BufRead,
+    registry: Arc<MetamodelRegistry>,
+    dependency: Option<Arc<DerivedOverlay>>,
+) -> Result<crate::derived::ConstructionOverlay, ArchiveError> {
+    match read_input(&mut reader, registry, dependency, true, true)?.1 {
+        Some(Frontier::Construction(overlay)) => Ok(overlay),
+        _ => Err(ArchiveError::Invalid("expected construction frontier")),
+    }
+}
+
+enum Frontier {
+    Strict(DerivedOverlay),
+    Construction(crate::derived::ConstructionOverlay),
+}
+
+#[allow(clippy::too_many_arguments)]
+fn declared_input(
     registry: Arc<MetamodelRegistry>,
     revision: RevisionId,
     mut records: BTreeMap<ElementId, Arc<ElementRecord>>,
@@ -613,7 +747,8 @@ fn declared_snapshot(
     used_ids: BTreeSet<ElementId>,
     used_links: BTreeSet<AssociationOccurrenceId>,
     dependency: Option<Arc<DerivedOverlay>>,
-) -> Result<Snapshot, ArchiveError> {
+    construction: bool,
+) -> Result<DerivationInput, ArchiveError> {
     if records.values().any(|r| {
         !matches!(r.origin, Origin::Declared(_))
             || r.slots
@@ -680,7 +815,16 @@ fn declared_snapshot(
     } else {
         BTreeMap::new()
     };
-    let mut model = ModelView::build(registry, records, links, navigation)?;
+    let mut validation = Validation {
+        deficits: construction.then(BTreeMap::new),
+    };
+    let mut model = ModelView::build_with_validation(
+        registry.clone(),
+        records,
+        links,
+        navigation,
+        &mut validation,
+    )?;
     if let Some(dependency) = &dependency {
         model.declared_source = dependency.model().declared_source.clone();
         model.statuses = dependency.model().statuses.clone();
@@ -689,6 +833,26 @@ fn declared_snapshot(
         // the separately supplied immutable dependency remains authenticated by
         // that exact object and can be retained without reconstructing it.
         model.reference_contributions = dependency.model().reference_contributions.clone();
+    }
+    if construction {
+        let base = dependency.as_ref().map_or_else(
+            || Snapshot::new(registry),
+            |dependency| Snapshot::with_immutable_dependency(dependency.clone()),
+        );
+        base.check_dependency_ownership(&model)?;
+        return Ok(DerivationInput::Construction(Arc::new(ConstructionView {
+            base,
+            used_ids,
+            used_links,
+            revision,
+            model,
+            dependency,
+            obligations: validation
+                .deficits
+                .expect("construction validation")
+                .into_values()
+                .collect(),
+        })));
     }
     let snapshot = Snapshot {
         inner: Arc::new(SnapshotData {
@@ -700,13 +864,31 @@ fn declared_snapshot(
         }),
     };
     snapshot.check_dependency_ownership(snapshot.model())?;
-    Ok(snapshot)
+    Ok(DerivationInput::Strict(snapshot))
 }
 fn read(
     reader: &mut impl BufRead,
     registry: Arc<MetamodelRegistry>,
     dependency: Option<Arc<DerivedOverlay>>,
 ) -> Result<(Snapshot, Option<DerivedOverlay>), ArchiveError> {
+    let (input, overlay) = read_input(reader, registry, dependency, false, false)?;
+    let DerivationInput::Strict(snapshot) = input else {
+        unreachable!("strict read")
+    };
+    let overlay = overlay.map(|overlay| match overlay {
+        Frontier::Strict(overlay) => overlay,
+        Frontier::Construction(_) => unreachable!("strict read"),
+    });
+    Ok((snapshot, overlay))
+}
+
+fn read_input(
+    reader: &mut impl BufRead,
+    registry: Arc<MetamodelRegistry>,
+    dependency: Option<Arc<DerivedOverlay>>,
+    construction: bool,
+    frontier: bool,
+) -> Result<(DerivationInput, Option<Frontier>), ArchiveError> {
     let mut line = Vec::new();
     let has_overlay = match (next(reader, &mut line)?, &dependency) {
         (
@@ -716,7 +898,16 @@ fn read(
                 overlay,
             },
             None,
-        ) if format == FORMAT && expected == registry_digest(&registry) => overlay,
+        ) if format
+            == if frontier {
+                frontier_format(construction, false)
+            } else {
+                FORMAT
+            }
+            && expected == registry_digest(&registry) =>
+        {
+            overlay
+        }
         (
             Entry::DependentHeader {
                 format,
@@ -724,7 +915,12 @@ fn read(
                 dependency: digest,
             },
             Some(dependency),
-        ) if format == DEPENDENT_FORMAT
+        ) if format
+            == if frontier {
+                frontier_format(construction, true)
+            } else {
+                DEPENDENT_FORMAT
+            }
             && expected == registry_digest(&registry)
             && digest == dependency_digest(dependency)? =>
         {
@@ -755,6 +951,7 @@ fn read(
     let mut navigation = BTreeMap::new();
     let mut failures = BTreeMap::new();
     let mut searches = BTreeMap::new();
+    let mut contributions = BTreeMap::new();
     let mut snapshot = None;
     let mut changed_records = BTreeSet::new();
     let mut changed_links = BTreeSet::new();
@@ -790,7 +987,7 @@ fn read(
                 links.insert(occurrence.id, occurrence);
             }
             Entry::Overlay if has_overlay && snapshot.is_none() => {
-                let declared = declared_snapshot(
+                let declared = declared_input(
                     registry.clone(),
                     revision,
                     std::mem::take(&mut records),
@@ -798,6 +995,7 @@ fn read(
                     used_ids.clone(),
                     used_links.clone(),
                     dependency.clone(),
+                    construction,
                 )?;
                 records = declared.model().records.clone();
                 links = declared.model().links.clone();
@@ -856,6 +1054,32 @@ fn read(
                     return Err(ArchiveError::Invalid("duplicate computation search"));
                 }
             }
+            Entry::ReferenceContribution {
+                element,
+                property,
+                target,
+                position,
+                proof,
+                searches,
+            } if frontier && snapshot.is_some() => {
+                if dependency
+                    .as_ref()
+                    .is_some_and(|d| d.model().element(element).is_some())
+                {
+                    return Err(ArchiveError::Invalid("protected dependency contribution"));
+                }
+                let contribution = Arc::new(crate::derived::OrderedReferenceContribution {
+                    position,
+                    explanation: restorer.proof(proof)?,
+                    searches: restorer.search(searches)?,
+                });
+                if contributions
+                    .insert((element, property, target), contribution)
+                    .is_some()
+                {
+                    return Err(ArchiveError::Invalid("duplicate ordered contribution"));
+                }
+            }
             Entry::End => break,
             _ => return Err(ArchiveError::Invalid("unexpected entry")),
         }
@@ -874,20 +1098,47 @@ fn read(
             failures.extend(dependency.model().statuses.clone());
             searches.extend(dependency.model().searches.clone());
         }
-        let mut model = ModelView::build(registry, records, links, navigation)?;
+        let (mut model, obligations) =
+            snapshot.build_model(registry, records, links, navigation)?;
         model.statuses = failures;
         model.searches = searches;
-        if let Some(dependency) = &dependency {
-            model.reference_contributions = dependency.model().reference_contributions.clone();
+        for (&(element, property, target), contribution) in &contributions {
+            if !model.navigation_slot(element, property).is_some_and(|slot| matches!(slot.value(), SlotValue::Ordered(values) if values.get(contribution.position()) == Some(&Value::Reference(target)))) {
+                return Err(ArchiveError::Invalid("ordered contribution target/position"));
+            }
         }
-        let overlay = DerivedOverlay::restore_archive(snapshot.clone(), model)?;
+        model.reference_contributions = contributions;
+        if let Some(dependency) = &dependency {
+            model
+                .reference_contributions
+                .extend(dependency.model().reference_contributions.clone());
+        }
+        let overlay = match &snapshot {
+            DerivationInput::Strict(declared) => {
+                Frontier::Strict(DerivedOverlay::restore_archive(declared.clone(), model)?)
+            }
+            DerivationInput::Construction(declared) => {
+                Frontier::Construction(crate::derived::ConstructionOverlay::restore_archive(
+                    declared.clone(),
+                    model,
+                    obligations,
+                )?)
+            }
+        };
         Ok((snapshot, Some(overlay)))
     } else if has_overlay {
         Err(ArchiveError::Invalid("missing overlay"))
     } else {
         Ok((
-            declared_snapshot(
-                registry, revision, records, links, used_ids, used_links, dependency,
+            declared_input(
+                registry,
+                revision,
+                records,
+                links,
+                used_ids,
+                used_links,
+                dependency,
+                construction,
             )?,
             None,
         ))

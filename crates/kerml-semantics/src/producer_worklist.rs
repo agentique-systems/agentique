@@ -17,6 +17,10 @@ use metrics::ReopenReasons;
 pub use metrics::{PublicationFamilyMetrics, PublicationReopenReason, PublicationRoundMetrics};
 use std::time::Instant;
 
+#[path = "publication_frontier.rs"]
+mod checkpoint;
+pub use checkpoint::{PublicationFrontierSession, PublicationFrontierStatistics};
+
 /// Additional language producers participating in the same immutable frontiers
 /// and positive/negative read index as KerML. Contributions must carry their
 /// actual query evidence and stable rule/output identities.
@@ -384,6 +388,9 @@ pub enum PublicationWorklistOrder {
 }
 #[derive(Clone, Debug)]
 pub struct PublicationClosureOptions {
+    /// Optional durable, unaccepted scheduler frontiers. A restored session is
+    /// authenticated by an independently retained journal digest and input pins.
+    pub frontier_checkpoints: Option<std::sync::Arc<PublicationFrontierSession>>,
     /// Restricts a scoped audit to these subjects plus their generated outputs.
     /// The caller supplies any required dependency closure; reading a dependency
     /// does not automatically schedule producers outside this population.
@@ -397,6 +404,7 @@ pub struct PublicationClosureOptions {
 impl Default for PublicationClosureOptions {
     fn default() -> Self {
         Self {
+            frontier_checkpoints: None,
             initial_subjects: None,
             max_rounds: 32,
             batch_size: 32,
@@ -407,9 +415,10 @@ impl Default for PublicationClosureOptions {
 }
 /// Work accounting and bounded diagnostic observations. Neither counts nor
 /// elapsed times participate in acceptance or semantic identity.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct PublicationCounters {
     /// Latest completed frontier, including its own certificate work.
+    #[serde(skip)]
     pub round: PublicationRoundMetrics,
     pub negative_queries_certified: usize,
     pub families_registered: usize,
@@ -772,7 +781,79 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     let mut stratum = ResultStructureStratum::Structural;
     let mut deferred_bindings = BTreeSet::new();
     let mut pending_reasons = BTreeMap::<ElementId, ReopenReasons>::new();
-    for round in 0..options.max_rounds {
+    let mut first_round = 0;
+    let invocation = if let Some(session) = &options.frontier_checkpoints {
+        let initial = context_factory(&overlay)?;
+        let combined = ProducerRegistry::new(
+            ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(initial.id().options.baseline_profile))
+                .chain(extension_descriptors.iter().cloned()),
+        )
+        .expect("producer family identities must be unique");
+        let initial = initial
+            .with_producer_registry_digest(combined.digest())
+            .map_err(PublicationOverlayError::Context)?;
+        if let Some(witness) = initial.producer_closure() {
+            evaluations = witness.evaluation_table();
+            certificate = Some(witness.clone());
+        }
+        let invocation =
+            session.begin(initial.id(), &options, extension.has_stable_properties())?;
+        drop(initial);
+        if let Some((restored, state)) = invocation.restore::<Overlay>(input)? {
+            overlay = restored;
+            let restored_context = context_factory(&overlay)?
+                .with_producer_registry_digest(combined.digest())
+                .map_err(PublicationOverlayError::Context)?;
+            if restored_context.id().model_digest != state.model_digest
+                || restored_context.id().closure_contract_digest() != state.context_contract
+                || state.round > options.max_rounds
+            {
+                return Err(PublicationOverlayError::FrontierCheckpoint(
+                    "restored graph/context/round mismatch".into(),
+                ));
+            }
+            let witness = checkpoint::restore_certificate(
+                state.certificate,
+                restored_context.id(),
+                &combined,
+                overlay.model(),
+            )?;
+            evaluations = witness.evaluation_table();
+            evaluations
+                .restore_frontier_rows(state.evaluation_rows, &combined, overlay.model())
+                .ok_or_else(|| {
+                    PublicationOverlayError::FrontierCheckpoint(
+                        "restored evaluation state mismatch".into(),
+                    )
+                })?;
+            certificate = Some(witness);
+            identity = Some(restored_context.id().clone());
+            first_round = state.round;
+            converged = state.converged;
+            stratum = state.stratum;
+            stages = state.stages;
+            status = state.status;
+            population = state.population;
+            worklist = state.worklist;
+            seen = state.seen;
+            deferred_bindings = state.deferred_bindings;
+            for (subject, keys) in state.dependencies {
+                index.replace_keys(subject, keys.into_iter().collect(), &mut counters);
+            }
+            counters = state.counters;
+        }
+        registry = Some(combined);
+        Some(invocation)
+    } else {
+        None
+    };
+    for round in first_round..if converged {
+        first_round
+    } else {
+        options.max_rounds
+    } {
         let round_started = Instant::now();
         let evaluated_before = counters.subjects_evaluated;
         let skipped_before = counters.subjects_skipped_by_applicability;
@@ -815,6 +896,34 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             }
         }
         let context = current_context;
+        if let Some(invocation) = &invocation
+            && round != first_round
+            && invocation.should_capture(
+                round,
+                stratum,
+                stages.last().map(|stage| stage.stratum),
+                false,
+            )
+        {
+            capture_frontier(
+                invocation,
+                &overlay,
+                &context,
+                round,
+                false,
+                stratum,
+                &stages,
+                &counters,
+                &status,
+                &population,
+                &worklist,
+                &seen,
+                &deferred_bindings,
+                &index,
+                &evaluations,
+                certificate.as_deref(),
+            )?;
+        }
         if let Some(previous) = &identity {
             // Compare all immutable inputs; only graph digest and derivation
             // phase naturally change as the additive overlay grows.
@@ -1329,6 +1438,37 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         );
         overlay = next;
     }
+    if let Some(invocation) = &invocation
+        && converged
+        && counters.fixed_point_rounds > first_round
+    {
+        let final_context = context_factory(&overlay)?
+            .with_producer_registry_digest(
+                registry
+                    .as_ref()
+                    .expect("registered checkpoint invocation")
+                    .digest(),
+            )
+            .map_err(PublicationOverlayError::Context)?;
+        capture_frontier(
+            invocation,
+            &overlay,
+            &final_context,
+            counters.fixed_point_rounds,
+            true,
+            stratum,
+            &stages,
+            &counters,
+            &status,
+            &population,
+            &BTreeSet::new(),
+            &seen,
+            &deferred_bindings,
+            &index,
+            &evaluations,
+            certificate.as_deref(),
+        )?;
+    }
     Ok(PublicationClosure {
         overlay,
         stages,
@@ -1348,6 +1488,57 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             Completeness::Incomplete
         },
     })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn capture_frontier<Overlay: ProducerFrontier>(
+    invocation: &checkpoint::Invocation<'_>,
+    overlay: &Overlay,
+    context: &SemanticContext<'_>,
+    round: usize,
+    converged: bool,
+    stratum: ResultStructureStratum,
+    stages: &[PublicationStage],
+    counters: &PublicationCounters,
+    status: &BTreeMap<ElementId, (Completeness, BTreeSet<Diagnostic>)>,
+    population: &BTreeSet<ElementId>,
+    worklist: &BTreeSet<ElementId>,
+    seen: &BTreeSet<ElementId>,
+    deferred_bindings: &BTreeSet<ElementId>,
+    index: &DependencyIndex,
+    evaluations: &crate::producer_closure::ProducerEvaluationTable,
+    certificate: Option<&ProducerClosureCertificate>,
+) -> Result<(), PublicationOverlayError> {
+    let certificate = certificate.ok_or_else(|| {
+        PublicationOverlayError::FrontierCheckpoint(
+            "unregistered producers cannot be checkpointed".into(),
+        )
+    })?;
+    if !certificate.compatible_context(context.id()) {
+        return Err(PublicationOverlayError::FrontierCheckpoint(
+            "checkpoint certificate context mismatch".into(),
+        ));
+    }
+    invocation.capture(
+        overlay,
+        &checkpoint::State {
+            round,
+            converged,
+            stratum,
+            model_digest: context.id().model_digest,
+            context_contract: context.id().closure_contract_digest(),
+            stages: stages.to_vec(),
+            counters: counters.clone(),
+            status: status.clone(),
+            population: population.clone(),
+            worklist: worklist.clone(),
+            seen: seen.clone(),
+            deferred_bindings: deferred_bindings.clone(),
+            dependencies: index.subjects.clone(),
+            certificate: certificate.frontier_state(),
+            evaluation_rows: evaluations.frontier_rows(),
+        },
+    )
 }
 
 #[cfg(test)]

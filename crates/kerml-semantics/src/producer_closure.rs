@@ -33,6 +33,10 @@ mod read_storage;
 use read_storage::ProducerReadPool;
 pub(crate) use read_storage::ProducerReads;
 
+#[path = "producer_closure_frontier.rs"]
+mod frontier;
+pub(crate) use frontier::FrontierCertificate;
+
 #[cfg(test)]
 #[path = "../tests/unit/producer_read_interning.rs"]
 mod read_interning_tests;
@@ -42,7 +46,7 @@ mod read_interning_tests;
 mod read_sharing_tests;
 
 /// Precise scalar reads coexist with conservative structural population reads.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub(crate) enum ProducerRead {
     Property(ElementId, PropertyId),
     DeclaredProperty(ElementId, PropertyId),
@@ -878,7 +882,9 @@ fn future_owner_targets(
 
 /// Explicit effect requirements of exhaustive queries. Positive witnesses do
 /// not require this boundary merely because further positive facts may appear.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum SemanticClosureRequirement {
     EffectiveTyping,
     EffectiveFeaturing,

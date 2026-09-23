@@ -27,7 +27,9 @@ mod fresh_ownership_tests;
 /// Publication closes positive structural implications before choosing nearest
 /// featuring contexts. The second stratum still runs all ordinary producers on
 /// newly generated subjects and rejects any conflicting context reassignment.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum ResultStructureStratum {
     Structural,
     /// Extension predicates whose negative antecedents require structural

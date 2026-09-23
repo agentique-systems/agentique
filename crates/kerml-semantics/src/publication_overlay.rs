@@ -51,7 +51,7 @@ impl PublicationFamily {
 }
 
 /// Resource accounting for one additive producer stage; elapsed time is not a gate.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct PublicationStage {
     pub stratum: ResultStructureStratum,
     /// Cumulative deterministic work, retained even when a later gate fails.
@@ -252,6 +252,7 @@ pub struct ProducerEffectAuditFailure {
 
 #[derive(Debug)]
 pub enum PublicationOverlayError {
+    FrontierCheckpoint(String),
     UnsupportedProfile(BaselineProfile),
     Context(ContextError),
     Bindings(BindingError),

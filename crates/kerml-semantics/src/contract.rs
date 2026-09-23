@@ -7,7 +7,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Complete means complete for the named bounded query, not language validation success.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum Completeness {
     Complete,
     Incomplete,
@@ -16,7 +18,9 @@ pub enum Completeness {
 
 /// A bounded structural Feature population with language-defined membership
 /// semantics. The stable contract identifies a query projection, not a model fact.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum FeaturePopulationKind {
     Parameter,
     End,
@@ -138,11 +142,51 @@ pub enum RedefinitionRulePath {
     LexicalContaining,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
 pub struct Diagnostic {
     pub code: &'static str,
     pub subject: ElementId,
     pub message: String,
+}
+
+impl<'de> serde::Deserialize<'de> for Diagnostic {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        struct Stored {
+            code: String,
+            subject: ElementId,
+            message: String,
+        }
+        let stored = Stored::deserialize(deserializer)?;
+        Ok(Self {
+            code: checkpoint_diagnostic_code::<D::Error>(stored.code)?,
+            subject: stored.subject,
+            message: stored.message,
+        })
+    }
+}
+
+// Codes are static in the query API. Authenticated checkpoint restoration interns
+// their bounded vocabulary once; messages and graph populations are never leaked.
+fn checkpoint_diagnostic_code<E: serde::de::Error>(code: String) -> Result<&'static str, E> {
+    static CODES: std::sync::OnceLock<std::sync::Mutex<BTreeMap<String, &'static str>>> =
+        std::sync::OnceLock::new();
+    if code.len() > 256 {
+        return Err(serde::de::Error::custom("diagnostic code length"));
+    }
+    let mut codes = CODES
+        .get_or_init(Default::default)
+        .lock()
+        .map_err(|_| serde::de::Error::custom("diagnostic code interner poisoned"))?;
+    if let Some(code) = codes.get(&code) {
+        return Ok(code);
+    }
+    if codes.len() >= 4096 {
+        return Err(serde::de::Error::custom("diagnostic code vocabulary"));
+    }
+    let interned = Box::leak(code.clone().into_boxed_str());
+    codes.insert(code, interned);
+    Ok(interned)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]

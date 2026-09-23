@@ -70,13 +70,14 @@ pub struct DerivationBuildMetrics {
 /// the entry in the current ordered slot; it is not proof that an arbitrary
 /// filtered population is complete. Callers must retain their population search.
 ///
-/// Graph archives omit this optimization. Missing metadata requires aggregate
-/// slot evidence, and invalidates any transported proof which relied on it.
+/// Ordinary graph archives omit this optimization; publication-frontier archives
+/// preserve it exactly. Missing metadata requires aggregate slot evidence and
+/// invalidates any transported proof which relied on it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OrderedReferenceContribution {
-    position: usize,
-    explanation: Arc<Explanation>,
-    searches: Arc<BTreeSet<StructuralSearch>>,
+    pub(crate) position: usize,
+    pub(crate) explanation: Arc<Explanation>,
+    pub(crate) searches: Arc<BTreeSet<StructuralSearch>>,
 }
 impl OrderedReferenceContribution {
     pub fn position(&self) -> usize {

@@ -9,7 +9,9 @@ use agq_kernel::{
 };
 use std::collections::BTreeSet;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub(crate) enum InvalidationKey {
     Element(ElementId),
     Incoming(ElementId),

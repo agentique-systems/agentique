@@ -223,6 +223,7 @@ pub fn prepare_systems_library_with_semantic_progress(
         progress,
         batch_progress,
         producer_progress,
+        None,
     )
 }
 
@@ -257,9 +258,11 @@ pub fn prepare_systems_library_slice_with_semantic_progress(
         progress,
         batch_progress,
         producer_progress,
+        None,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn prepare_systems_library_scope(
     sources: &VerifiedLibrarySet,
     publication: Arc<CanonicalKermlStandardLibraries>,
@@ -268,7 +271,18 @@ fn prepare_systems_library_scope(
     mut progress: impl FnMut(&library::ReferenceRefinementRound),
     mut batch_progress: impl FnMut(usize, usize, usize, usize),
     mut producer_progress: impl FnMut(&agq_kerml_semantics::PublicationStage),
+    frontier_checkpoints: Option<Arc<agq_kerml_semantics::PublicationFrontierSession>>,
 ) -> Result<SystemsLibraryCandidate, LibraryLoadError> {
+    if let Some(session) = &frontier_checkpoints {
+        session
+            .validate_source_identity(systems_frontier_source_identity(
+                sources,
+                &publication,
+                profile,
+                paths,
+            ))
+            .map_err(LibraryLoadError::ProducerClosure)?;
+    }
     if sources.content_set_id() != publication.source_content_set() {
         return Err(LibraryLoadError::Interpretation(
             "Systems sources and accepted KerML source set differ".into(),
@@ -481,6 +495,7 @@ fn prepare_systems_library_scope(
                         current.candidate_shared(),
                         agq_kerml_semantics::PublicationClosureOptions {
                             max_rounds: SYSTEMS_PUBLICATION_MAX_ROUNDS,
+                            frontier_checkpoints: frontier_checkpoints.clone(),
                             ..Default::default()
                         },
                         |overlay| {
@@ -572,6 +587,75 @@ fn prepare_systems_library_scope(
         production,
         dependency_contract,
     })
+}
+
+/// Prepare the same exact monolithic Systems computation with durable,
+/// unaccepted scheduler continuation. `paths` retains the scoped-audit boundary;
+/// a supplied session must bind `systems_frontier_source_identity` for these
+/// sources, profile, accepted dependency and exact selected paths.
+#[allow(clippy::too_many_arguments)]
+pub fn prepare_systems_library_with_frontier_checkpoints(
+    sources: &VerifiedLibrarySet,
+    publication: Arc<CanonicalKermlStandardLibraries>,
+    profile: production::SysmlSyntaxProfile,
+    paths: Option<&BTreeSet<String>>,
+    session: Arc<agq_kerml_semantics::PublicationFrontierSession>,
+    progress: impl FnMut(&library::ReferenceRefinementRound),
+    batch_progress: impl FnMut(usize, usize, usize, usize),
+    producer_progress: impl FnMut(&agq_kerml_semantics::PublicationStage),
+) -> Result<SystemsLibraryCandidate, LibraryLoadError> {
+    if paths.is_some_and(|paths| {
+        paths.is_empty()
+            || paths.iter().any(|path| {
+                !sources.documents().any(|source| {
+                    source.language() == LibraryLanguage::SysMl && source.path() == path
+                })
+            })
+    }) {
+        return Err(LibraryLoadError::Interpretation(
+            "Systems checkpoint slice requires exact nonempty pinned paths".into(),
+        ));
+    }
+    prepare_systems_library_scope(
+        sources,
+        publication,
+        profile,
+        paths,
+        progress,
+        batch_progress,
+        producer_progress,
+        Some(session),
+    )
+}
+
+/// Independent source/publication pin for a workflow checkpoint session. Full
+/// source bytes participate; scheduler-owned graph/context and certificate pins
+/// are authenticated separately on every restored invocation.
+pub fn systems_frontier_source_identity(
+    sources: &VerifiedLibrarySet,
+    publication: &CanonicalKermlStandardLibraries,
+    profile: production::SysmlSyntaxProfile,
+    paths: Option<&BTreeSet<String>>,
+) -> [u8; 32] {
+    use sha2::{Digest, Sha256};
+    let mut digest = Sha256::new();
+    digest.update(b"agq-systems-frontier-source/1\0");
+    digest.update(publication.semantic_digest());
+    digest.update([u8::from(paths.is_some())]);
+    for value in [sources.content_set_id(), profile.id()] {
+        digest.update((value.len() as u64).to_le_bytes());
+        digest.update(value.as_bytes());
+    }
+    for source in sources.documents().filter(|source| {
+        source.language() == LibraryLanguage::SysMl
+            && paths.is_none_or(|paths| paths.contains(source.path()))
+    }) {
+        for value in [source.path(), source.source()] {
+            digest.update((value.len() as u64).to_le_bytes());
+            digest.update(value.as_bytes());
+        }
+    }
+    digest.finalize().into()
 }
 
 fn systems_overlay_context<'m>(

@@ -20,6 +20,14 @@ pub(super) trait ProducerFrontier: Clone {
     ) -> std::collections::BTreeSet<(ElementId, agq_kernel::PropertyId, usize)>;
     fn build_metrics(&self) -> &DerivationBuildMetrics;
     fn facts_equal(&self, other: &Self) -> bool;
+    fn write_frontier(
+        &self,
+        writer: &mut dyn std::io::Write,
+    ) -> Result<(), agq_kernel::archive::ArchiveError>;
+    fn read_frontier(
+        reader: &mut dyn std::io::BufRead,
+        input: &Self::Input,
+    ) -> Result<Self, agq_kernel::archive::ArchiveError>;
     fn prepare(
         plan: ResultStructurePlan<'_>,
         input: &Self,
@@ -51,6 +59,22 @@ impl ProducerFrontier for DerivedOverlay {
     }
     fn facts_equal(&self, other: &Self) -> bool {
         self.facts().eq(other.facts())
+    }
+    fn write_frontier(
+        &self,
+        writer: &mut dyn std::io::Write,
+    ) -> Result<(), agq_kernel::archive::ArchiveError> {
+        agq_kernel::archive::write_publication_frontier(self, writer)
+    }
+    fn read_frontier(
+        reader: &mut dyn std::io::BufRead,
+        input: &Self::Input,
+    ) -> Result<Self, agq_kernel::archive::ArchiveError> {
+        agq_kernel::archive::read_publication_frontier(
+            reader,
+            Arc::new(input.model().registry().clone()),
+            input.immutable_dependency().cloned(),
+        )
     }
     fn prepare(
         plan: ResultStructurePlan<'_>,
@@ -91,6 +115,22 @@ impl ProducerFrontier for ConstructionOverlay {
     }
     fn facts_equal(&self, other: &Self) -> bool {
         self.facts().eq(other.facts())
+    }
+    fn write_frontier(
+        &self,
+        writer: &mut dyn std::io::Write,
+    ) -> Result<(), agq_kernel::archive::ArchiveError> {
+        agq_kernel::archive::write_construction_frontier(self, writer)
+    }
+    fn read_frontier(
+        reader: &mut dyn std::io::BufRead,
+        input: &Self::Input,
+    ) -> Result<Self, agq_kernel::archive::ArchiveError> {
+        agq_kernel::archive::read_construction_frontier(
+            reader,
+            Arc::new(input.model().registry().clone()),
+            input.immutable_dependency().cloned(),
+        )
     }
     fn prepare(
         plan: ResultStructurePlan<'_>,

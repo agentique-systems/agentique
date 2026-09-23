@@ -12,7 +12,7 @@ use crate::{ConstructionObligation, ConstructionView};
 /// ```
 #[derive(Clone, Debug)]
 pub struct ConstructionOverlay {
-    inner: Arc<OverlayData>,
+    pub(super) inner: Arc<OverlayData>,
 }
 impl ConstructionOverlay {
     /// Exact original declared construction, without any inferred facts.

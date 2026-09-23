@@ -68,8 +68,10 @@ dependencies = [
  "agq-kerml",
  "agq-kernel",
  "agq-sysml",
+ "serde",
  "serde_json",
  "sha2",
+ "zip",
 ]
 
 [[package]]
