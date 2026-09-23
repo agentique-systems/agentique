@@ -3221,18 +3221,27 @@ impl<'m> KerMlQueries<'m> {
                 let (undirected, all_implied) = if owned.value.is_empty() {
                     (false, false)
                 } else {
+                    proof.merge(self.canonical_fact_evidence(FactKey::Property {
+                        element: subject,
+                        property: p::FEATURE_DIRECTION,
+                    }));
                     let undirected = self
                         .read_value(&mut proof, subject, p::FEATURE_DIRECTION)
                         .is_none();
-                    let specializations =
-                        self.owned_relationships_of_type(subject, c::SPECIALIZATION);
-                    let all_implied = specializations.value.iter().all(|r| {
-                        matches!(
-                            self.read_value(&mut proof, *r, p::RELATIONSHIP_IS_IMPLIED),
-                            Some(Value::Boolean(true))
-                        )
-                    });
-                    proof.merge(specializations);
+                    let all_implied = if undirected {
+                        let specializations =
+                            self.owned_relationships_of_type(subject, c::SPECIALIZATION);
+                        let all_implied = specializations.value.iter().all(|r| {
+                            matches!(
+                                self.read_value(&mut proof, *r, p::RELATIONSHIP_IS_IMPLIED),
+                                Some(Value::Boolean(true))
+                            )
+                        });
+                        proof.merge(specializations);
+                        all_implied
+                    } else {
+                        false
+                    };
                     (undirected, all_implied)
                 };
                 proof.merge(owned.clone());
@@ -3299,7 +3308,14 @@ impl<'m> KerMlQueries<'m> {
                     // before observing variable featuring or contextual reads.
                     graph.attribute_touched(subject, ProducerFamily::FeatureValuation.id());
                     graph.retain_producer_searches(&mut proof);
-                    structural_proof.merge(proof.clone());
+                    // A known direction already falsifies valuation typing.
+                    // Its no-output proof must not acquire the value result or
+                    // binding context that only the binding producer needs.
+                    // Failed/uncomputed direction evidence remains in both
+                    // common proofs and cannot certify this negative premise.
+                    if undirected {
+                        structural_proof.merge(proof.clone());
+                    }
                     if let Some((expression, raw, rule, contextual)) = prepared {
                         // A non-valuation chain has no structural consumer.
                         // Create it atomically with its binding once the context
