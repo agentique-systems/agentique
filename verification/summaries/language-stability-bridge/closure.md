@@ -1,11 +1,12 @@
 # Producer closure integration and regressions
 
 Current status: Systems publication and language readiness remain unaccepted.
-The latest completed corpus gate, `actions-end-and-index`, has **534/534 Actions
+The latest completed corpus gate, `actions-owned-cross-subsetting`, has **534/534 Actions
 references Complete**, zero reference failures and zero kernel obligations.
-Its four remaining incomplete evaluations are multiplicity-bearing Flows/Items
-ends; details and exact counts are in the [current summary](README.md) and
-`publication-commands.json`. No medium/full publication has run.
+Producer closure converges Complete with zero diagnostics; the certificate closes
+all 11,553 applicable pairs and every required closure. The scoped gate passes.
+Details and exact counts are in the [current summary](README.md) and
+`publication-commands.json`. Medium/full publication has not yet run.
 
 The matching Flows and Items regressions now pass after `efff33c` scopes
 `owned_cross_subsetting` to its typed relationship population. Candidate order,
@@ -37,7 +38,7 @@ independent review confirmed the references remain valid for the whole call.
 Existing producer regressions pass **149 tests**, with two preexisting explicit
 scale probes ignored, including scheduler/full-scan equivalence. Both additional
 typed cross-subsetting population guards pass. Memory savings are unmeasured;
-the running `actions-owned-cross-subsetting` executable predates this optimization.
+the successful `actions-owned-cross-subsetting` executable predates this optimization.
 
 The reproduced defect was historical proof-search contamination across an
 authenticated dependency boundary. A closed dependency's derived parameter proof

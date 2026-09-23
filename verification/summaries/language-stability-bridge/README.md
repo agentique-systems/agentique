@@ -12,9 +12,8 @@ is unchanged. Generation-1 release evidence remains independent.
 completed corpus result is the eight-document Actions/dependency scope:
 **534/534 mandatory references Complete**, zero unresolved, incomplete,
 ambiguous, invalid or mismatched references, and zero kernel obligations. All eight
-documents parse and construct byte-exactly. The scheduler converges but producer
-closure remains Incomplete: four evaluations remain incomplete and the certificate
-is not fully closed. The scoped acceptance guard correctly rejects this result.
+documents parse and construct byte-exactly. The scheduler converges Complete with
+zero producer diagnostics and a fully closed certificate. The scoped gate passes.
 Medium/full publication has not run;
 the full-publication attempt budget is unused.
 
@@ -24,13 +23,13 @@ frontend and authentic Action/Occurrence ancestry. Actual-planner and independen
 guards verify the end-membership filter, directed valuation proof separation,
 eligible argument populations and the earlier per-effect/immediate owning-Type
 writer scopes. These synthetic dependency results are not publication acceptance.
-The rebuilt `actions-end-and-index` audit reduces the remaining incomplete
-evaluations from 24 to four; it remains an unsuccessful acceptance gate.
-The four remaining Flows/Items shapes now have passing complete-closure fixtures
+The prior `actions-end-and-index` audit reduced incomplete evaluations from 24
+to four. Those Flows/Items shapes now have passing complete-closure fixtures
 after narrowing cross-subsetting evidence to its eligible relationship population.
 Direct/future writer and provider guards, cross-profile tests, Clippy and formatting
-pass. The corrected release executable builds successfully; a new scoped audit is
-required before advancing to medium.
+pass. The corrected `actions-owned-cross-subsetting` audit passes, authorizing
+the medium candidate. Full Systems publication and accepted authored readiness
+remain separate gates.
 See [closure.md](closure.md) for each correction and exact evidence boundary.
 
 The [Gen1/Gen2 audit](../gen1-gen2-audit/README.md), proposed
@@ -44,23 +43,23 @@ the executable actual-cache gate.
 
 ## Publication observations
 
-The latest `actions-end-and-index` audit uses clean source `0e3d7f5` and the
-successful release build from `905e4ee`. It exits 1 normally in **1,409.547 seconds**,
-peaking at **6,124.8 MiB private memory**, with no watchdog stop. All eight documents
+The latest `actions-owned-cross-subsetting` audit uses clean source `c7d65cf` and
+the successful release build from `7782e3c`. It exits 0 in **1,491.656 seconds**,
+peaking at **6,140.1 MiB private memory**, with no watchdog stop. All eight documents
 parse/construct byte-exactly; selected endpoints and Complete mandatory references
 are both 534, with zero reference failures, kernel obligations or authority
 conflicts. Accepted KerML producers are not replayed.
 
-Closure converges in 31 rounds but remains Incomplete and not fully closed:
-**four MayTimeVary pairs**, four diagnostics, 11,044/11,547 closed applicable pairs
-and 382,623/407,490 closed requirements. It evaluates 20,030 subjects and derives
-3,418 elements. Certificate/revalidation sizes are 2,631,923 and 682,310,664 bytes;
-two rebindings retain 1,235 and reopen 11,919 evaluations in aggregate.
+Closure converges **Complete** in 31 rounds with zero incomplete pairs or producer
+diagnostics. All **11,553/11,553 applicable pairs** and **407,532/407,532 required
+closures** are closed. It evaluates 20,801 subjects and derives 3,425 elements;
+the final local graph has 6,204 elements. Certificate/revalidation sizes are
+2,632,194 and 685,683,928 bytes; two rebindings retain 1,235 and reopen 11,963
+evaluations in aggregate. `scoped_preflight_passed` and `fully_closed` are true.
 
-The indexed assignment and sixteen previously blocked ends now close. The four
-remaining subjects are Flows lines 68/69 (`[1] source` and `[1] target`) and Items
-lines 138/139 (the two `[0..*]` item ends). Original KPAR hashes were checked before
-mapping their source spans. Exact command, exit, resource observations, final
+The last four Flows/Items multiplicity-bearing ends now close. Earlier failures
+remain historical, including their verified original source spans. Exact command,
+exit, resource observations, final
 counts and report hashes are in [publication-commands.json](publication-commands.json).
 Earlier failed audits remain historical in that ledger and [closure.md](closure.md).
 Medium/full publication has not run; the full-attempt budget is unused.
