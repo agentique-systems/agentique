@@ -41,6 +41,10 @@ fn binding_helpers_do_not_activate_future_owner_writers_at_unrelated_types() {
         let snapshot = f.finish();
         let mut creator = ProducerFamily::FeatureReferenceExpression.descriptor(profile);
         let mut future = ProducerFamily::VariableFeaturing.descriptor(profile);
+        // This fixture deliberately models a transitive extension contract.
+        // VariableFeaturing itself now writes only its immediate owning Type.
+        future.id = ProducerFamilyId::new("Fixture.TransitiveFutureOwner");
+        future.scope = ProducerEffectScope::SubjectAndOwners;
         match case {
             "unknown_creation" => creator.scoped_fresh_ownership = false,
             "model_writer" => future.scope = ProducerEffectScope::Model,
