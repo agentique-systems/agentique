@@ -3409,6 +3409,32 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "trigger-partial-override",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-sysml-semantics",
+        "trigger_receiver_node_parameter_closes",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5df270374554aecc472a45fad8eb5312bb9597b2",
+      "working_changes_sha256": "176dec1880469ebb4f2b8b36c29978f6dbeeab8b6cd3a150473b7e009958222e",
+      "output_sha256": "6263ee602e85b9200054bd289bf0e6e503f07b38620646c5ff736b01128710f4",
+      "duration_seconds": 34.67,
+      "output": "verification/generated/language-stability-bridge/trigger-partial-override.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ],
   "source_ledgers": [

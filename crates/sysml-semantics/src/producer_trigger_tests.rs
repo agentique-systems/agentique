@@ -64,12 +64,32 @@ fn trigger_receiver_node_parameter_closes_with_nested_feature_value() {
         kc::SUBCLASSIFICATION,
         kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
     );
+    f.create(60_030, kc::BEHAVIOR, "AcceptPerformance");
+    f.member(1, 60_030, 160_030, kc::OWNING_MEMBERSHIP);
+    f.relation(
+        60_000,
+        60_030,
+        260_030,
+        kc::SUBCLASSIFICATION,
+        kp::SUBCLASSIFICATION_SUPERCLASSIFIER,
+    );
     f.create(60_001, kc::FEATURE, "payload");
     set_enum(&mut f, 60_001, kp::FEATURE_DIRECTION, "inout");
-    f.member(60_000, 60_001, 160_001, kc::PARAMETER_MEMBERSHIP);
+    f.member(60_030, 60_001, 160_001, kc::PARAMETER_MEMBERSHIP);
     f.create(60_002, kc::FEATURE, "receiver");
     set_enum(&mut f, 60_002, kp::FEATURE_DIRECTION, "in");
-    f.member(60_000, 60_002, 160_002, kc::PARAMETER_MEMBERSHIP);
+    f.member(60_030, 60_002, 160_002, kc::PARAMETER_MEMBERSHIP);
+    f.create(60_003, sc::REFERENCE_USAGE, "");
+    f.changes.clear(id(60_003), kp::ELEMENT_DECLARED_NAME);
+    set_enum(&mut f, 60_003, kp::FEATURE_DIRECTION, "inout");
+    f.member(60_000, 60_003, 160_003, kc::FEATURE_MEMBERSHIP);
+    f.relation(
+        60_003,
+        60_001,
+        260_031,
+        kc::REDEFINITION,
+        kp::REDEFINITION_REDEFINED_FEATURE,
+    );
     f.relation(
         60_002,
         occurrence.as_u128(),
@@ -224,7 +244,7 @@ fn trigger_receiver_node_parameter_closes_with_nested_feature_value() {
             .unwrap(),
     );
     assert_eq!(queries.owning_type(id(60_015)).value, Some(id(60_013)));
-    for (parameter, inherited) in [(60_014, 60_001), (60_015, 60_002)] {
+    for (parameter, inherited) in [(60_014, 60_003), (60_015, 60_002)] {
         let redefined = queries.redefined_features(id(parameter));
         assert_eq!(redefined.completeness, Completeness::Complete);
         assert!(redefined.value.contains(&id(inherited)), "{redefined:?}");

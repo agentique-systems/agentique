@@ -101,7 +101,10 @@ the corpus or substitute for the exact focused-run records in `commands.json`.
   that generic ParameterMembership lowering assigns input direction to both the
   local payload and receiver even though their syntax has no direction keyword.
   The fixture now preserves those defaults and verifies both positional
-  redefinitions; it remains Complete. A pinned Actions lowering regression checks
+  redefinitions. Its action definition overrides only the payload with an unnamed
+  ReferenceUsage and inherits the receiver from a two-parameter Behavior, matching
+  the partial parameter override of AcceptMessageAction; it remains Complete.
+  A pinned Actions lowering regression checks
   the exact trigger/child classes, composite and portion flags, input directions,
   membership owners and source bytes without restoring or replaying standards.
   This correction does not reproduce the actual corpus's two pending positional
