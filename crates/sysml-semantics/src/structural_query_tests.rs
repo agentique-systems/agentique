@@ -201,6 +201,41 @@ fn membership_roles_are_semantic_and_no_body_executes() {
 }
 
 #[test]
+fn accept_payload_parameter_is_distinct_from_the_accepted_message_feature() {
+    let mut f = Fixture::new();
+    f.create(1, sc::ACTION_DEFINITION, "AcceptMessageAction");
+    f.create(2, sc::ACCEPT_ACTION_USAGE, "accepter");
+    f.relation(2, 1, 102, kc::FEATURE_TYPING, kp::FEATURE_TYPING_TYPE);
+    f.create(10, sc::REFERENCE_USAGE, "payload");
+    enumeration(&mut f, 10, kp::FEATURE_DIRECTION, "inout");
+    f.member(1, 10, 110, kc::PARAMETER_MEMBERSHIP);
+    f.create(11, sc::REFERENCE_USAGE, "acceptedMessage");
+    f.member(1, 11, 111, kc::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    let query = q(&snapshot);
+
+    let payload = query.accept_action_payload_parameter(id(2));
+    assert_eq!(payload.value(), &[id(10)]);
+    assert_eq!(payload.completeness(), Completeness::Incomplete);
+    let members = query.effective_usages(id(2));
+    assert!(members.value().contains(&id(11)));
+    assert_eq!(members.completeness(), Completeness::Incomplete);
+    let message = query.kerml().lookup_path(
+        id(2),
+        &agq_kerml_semantics::QualifiedName {
+            absolute: false,
+            segments: vec!["acceptedMessage".into()],
+        },
+    );
+    assert_eq!(message.completeness, Completeness::Complete);
+    assert_eq!(message.value.len(), 1);
+    assert_eq!(message.value[0].element, id(11));
+    assert!(!payload.value().contains(&message.value[0].element));
+    assert!(has_closure_read(&payload, id(2)));
+    assert!(has_closure_read(&members, id(2)));
+}
+
+#[test]
 fn composite_and_naming_queries_keep_old_revision_answers_and_searches() {
     let mut f = vertical();
     f.value(3, kp::FEATURE_IS_COMPOSITE, Value::Boolean(true));

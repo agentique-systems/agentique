@@ -17,6 +17,20 @@ are the original declarations or derived elements; inheritance never copies them
 | Requirement/case roles | `requirement_case_features` with Subject, Actor or Objective |
 | Names | `effective_names`, `effective_qualified_name` |
 
+The accepter, payload and accepted message are distinct structural identities.
+`transition_features(Trigger)` returns the AcceptActionUsage serving as a
+transition's accepter; `accept_action_payload_parameter` projects its first
+effective parameter, matching `AcceptActionUsage::payloadParameter`. The pinned
+[Actions library](<../standards/libraries/Systems-Library/Systems Library/Actions.sysml>)
+separately declares the undirected `AcceptMessageAction::acceptedMessage` feature
+and binds `TransitionAction::acceptedMessage` to `accepter.acceptedMessage`.
+Find that feature through the closed `effective_usages` population and the shared
+KerML member lookup (`queries.kerml().lookup_path`). It is not the payload parameter
+or a new AcceptActionUsage metamodel property. The permanent regression keeps
+these IDs separate; the accepted-library harness must prove the actual library
+path after publication. Payload/receiver argument expression derivations and
+runtime message values are not claimed by these structural projections.
+
 Effective answers require scheduler-issued closure evidence for the exact
 semantic context and relevant subjects, including ancestors and returned usages.
 An empty result also retains its closure search. The attached certificate must

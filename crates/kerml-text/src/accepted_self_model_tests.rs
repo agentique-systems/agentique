@@ -4,7 +4,7 @@ use super::*;
 use crate::{ProjectChange, ProjectRevision, SourceLanguage, SourceProject};
 use agq_sysml_semantics::{
     RequirementCaseRole, StandardSysmlRole, StateSubactionKind, SysmlQueries, SysmlQueryResult,
-    SysmlSemanticContext,
+    SysmlSemanticContext, TransitionFeatureKind, UsageKind,
 };
 use std::{collections::BTreeMap, fs::File, path::Path};
 
@@ -115,9 +115,9 @@ fn assert_revision(revision: &ProjectRevision, accepted: &CanonicalSysmlSystemsL
     );
     assert!(revision.semantic_diagnostics().is_empty());
     assert!(revision.producer_closure().is_some());
-    assert!(Arc::ptr_eq(
-        revision.snapshot().immutable_dependency().unwrap(),
-        accepted.project_snapshot().immutable_dependency().unwrap()
+    assert!(std::ptr::eq(
+        revision.snapshot().immutable_dependency().unwrap().as_ref(),
+        accepted.overlay()
     ));
     assert_eq!(
         status.counters.declared_subjects,
@@ -253,6 +253,18 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
             q.effective_item_definitions(authored_named(q.model(), "checkedState")),
         ),
         (
+            "usage-types",
+            q.effective_usage_types(authored_named(q.model(), "workspace")),
+        ),
+        (
+            "port-definition",
+            q.effective_port_definitions(authored_named(q.model(), "workspaceQuery")),
+        ),
+        (
+            "subsetting",
+            q.effective_subsetted_features(authored_named(q.model(), "acceptedRevision")),
+        ),
+        (
             "redefinition",
             q.effective_redefined_features(authored_named(q.model(), "acceptedRevision")),
         ),
@@ -267,6 +279,17 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
         (
             "parameters",
             q.effective_parameters(authored_named(q.model(), "ValidateRevision")),
+        ),
+        (
+            "subactions",
+            q.effective_subactions(authored_named(q.model(), "ModelingPlatform")),
+        ),
+        (
+            "constraints",
+            q.effective_usages_of_kind(
+                authored_named(q.model(), "ImmutableRevisions"),
+                UsageKind::Constraint,
+            ),
         ),
         (
             "entry",
@@ -296,6 +319,19 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
     ] {
         complete(&answer);
         summary.insert(label.into(), names(q, answer.value().iter().copied()));
+    }
+    for (label, expected) in [
+        ("usage-types", "ProjectWorkspace"),
+        ("port-definition", "SemanticQuery"),
+        ("subsetting", "revisionNumber"),
+        ("subactions", "validate"),
+        ("constraints", "preservesPriorState"),
+    ] {
+        assert!(
+            summary[label].contains(expected),
+            "{label}: {:?}",
+            summary[label]
+        );
     }
     let inherited = q.effective_usages(authored_named(q.model(), "IncrementalWorkspace"));
     assert_eq!(
@@ -333,6 +369,32 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
         ],
         "authored endpoint order"
     );
+    let connection = authored_named(q.model(), "queryConnection");
+    let ends = q.effective_connection_ends(connection);
+    let interface_ends = q.effective_interface_ends(connection);
+    complete(&ends);
+    complete(&interface_ends);
+    assert_eq!(ends.value(), interface_ends.value());
+    assert_eq!(ends.value().len(), 2);
+    for (&end, &endpoint) in ends.value().iter().zip(related.value()) {
+        assert_eq!(q.model().element(end).unwrap().metaclass(), s::PORT_USAGE);
+        let references = q
+            .kerml()
+            .owned_relationships_of_type(end, c::REFERENCE_SUBSETTING);
+        assert_eq!(references.completeness, Completeness::Complete);
+        assert_eq!(references.value.len(), 1);
+        assert_eq!(
+            q.model()
+                .navigation_slot(
+                    references.value[0],
+                    p::REFERENCE_SUBSETTING_REFERENCED_FEATURE
+                )
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Reference(endpoint)),
+            "each anonymous end retains its own canonical endpoint in order"
+        );
+    }
     let path = q.effective_qualified_name(authored_named(q.model(), "acceptedRevision"));
     complete(&path);
     let segments = &path.value().as_ref().unwrap().segments;
@@ -345,6 +407,55 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
         ]
     );
     summary
+}
+
+fn accepted_trigger_and_message(
+    revision: &ProjectRevision,
+    accepted: &CanonicalSysmlSystemsLibrary,
+) {
+    let q = revision.sysml_queries().unwrap();
+    let lookup = |scope, segments: &[&str]| {
+        let answer = q.kerml().lookup_path(
+            scope,
+            &agq_kerml_semantics::QualifiedName {
+                absolute: false,
+                segments: segments.iter().map(|segment| (*segment).into()).collect(),
+            },
+        );
+        assert_eq!(answer.completeness, Completeness::Complete, "{answer:?}");
+        assert_eq!(answer.value.len(), 1, "{answer:?}");
+        answer.value[0].element
+    };
+    // Pinned Actions::AcceptAction owns the transition's unnamed accepter.
+    // The library's acceptedMessage feature is separate from payloadParameter.
+    let transition = lookup(
+        revision.root(),
+        &["Actions", "AcceptAction", "aState", "aTransition"],
+    );
+    let triggers = q.transition_features(transition, TransitionFeatureKind::Trigger);
+    complete(&triggers);
+    assert_eq!(triggers.value().len(), 1);
+    let accepter = triggers.value()[0];
+    assert_eq!(
+        q.model().element(accepter).unwrap().metaclass(),
+        s::ACCEPT_ACTION_USAGE
+    );
+    let ancestors = q.kerml().all_supertypes(accepter);
+    assert_eq!(ancestors.completeness, Completeness::Complete);
+    assert!(
+        ancestors
+            .value
+            .contains(&accepted.bindings().targets()[&StandardSysmlRole::TransitionAccepter])
+    );
+    let payload = q.accept_action_payload_parameter(accepter);
+    complete(&payload);
+    assert_eq!(payload.value().len(), 1);
+    let message = lookup(accepter, &["acceptedMessage"]);
+    assert_ne!(payload.value()[0], message);
+    let members = q.effective_usages(accepter);
+    complete(&members);
+    assert!(members.value().contains(&message));
+    assert!(members.value().contains(&payload.value()[0]));
 }
 
 fn programmatic_equivalence(
@@ -494,6 +605,14 @@ fn accepted_case_roles(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
                 &[authored_named(q.model(), result)],
                 "{owner} return"
             );
+            let requirements = q
+                .effective_usages_of_kind(authored_named(q.model(), owner), UsageKind::Requirement);
+            complete(&requirements);
+            assert!(
+                requirements
+                    .value()
+                    .contains(&authored_named(q.model(), objective))
+            );
         }
     }
     let cases = q.effective_usages_of_kind(
@@ -581,6 +700,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         .unwrap();
     assert_revision(&r1, &accepted);
     architecture_invariants(&r1.sysml_queries().unwrap());
+    accepted_trigger_and_message(&r1, &accepted);
     let original = rich_summary(&r1.sysml_queries().unwrap());
     programmatic_equivalence(&accepted, &r1);
     accepted_case_roles(&accepted);
@@ -598,6 +718,13 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         retained_query
     );
     let audit_port = authored_named(r2.semantic_model(), "auditPort");
+    let r2_ports: BTreeSet<_> = {
+        let q = r2.sysml_queries().unwrap();
+        let ports = q.effective_ports(authored_named(q.model(), "IncrementalWorkspace"));
+        complete(&ports);
+        ports.value().iter().copied().collect()
+    };
+    assert!(r2_ports.contains(&audit_port));
     let r3 = insert(
         &mut project,
         document,
@@ -626,7 +753,25 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         let ports = q.effective_ports(authored_named(q.model(), "IncrementalWorkspace"));
         complete(&ports);
         assert!(ports.value().contains(&expected_port));
+        if revision.revision() == r3.revision() {
+            assert!(
+                !ports.value().contains(&audit_port),
+                "redefinition suppresses the inherited port"
+            );
+        }
     }
+    let q2 = r2.sysml_queries().unwrap();
+    let retained_ports = q2.effective_ports(authored_named(q2.model(), "IncrementalWorkspace"));
+    complete(&retained_ports);
+    assert_eq!(
+        retained_ports
+            .value()
+            .iter()
+            .copied()
+            .collect::<BTreeSet<_>>(),
+        r2_ports
+    );
+    drop(q2);
     assert_eq!(
         rich_summary(&r1.sysml_queries().unwrap()),
         original,

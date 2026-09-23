@@ -440,8 +440,10 @@ impl SysmlQueries<'_> {
         self.check(&mut out, transition, &[sc::TRANSITION_USAGE]);
         out
     }
-    /// First effective AcceptAction parameter is the payload/message parameter.
-    /// The query returns its canonical identity, not a simulated message value.
+    /// First effective AcceptAction parameter is its payloadParameter.
+    /// This differs from the Systems Library's undirected acceptedMessage
+    /// feature, accessible through effective usages and KerML member lookup.
+    /// Neither query returns a simulated message value.
     pub fn accept_action_payload_parameter(
         &self,
         action: ElementId,

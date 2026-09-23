@@ -1,6 +1,7 @@
 # Effective structural query stage
 
-The SysML query contract is now `agq-sysml-query/4`. Effective APIs preserve
+This historical stage introduced `agq-sysml-query/4`; the current contract is
+`agq-sysml-query/5` (see the readiness matrix). Effective APIs preserve
 scheduler closure searches and current canonical identities. Current naming has
 explicit `current_names`/`current_qualified_name` APIs; effective naming requires
 closure. Generic family selectors cover all 13 platform Usage families, alongside
