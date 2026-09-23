@@ -9,13 +9,14 @@ is unchanged. Generation-1 release evidence remains independent.
 ## Current gate status
 
 **Systems publication and foundation readiness remain unaccepted.** The latest
-completed corpus result is the eight-document Actions/dependency scope:
-**534/534 mandatory references Complete**, zero unresolved, incomplete,
-ambiguous, invalid or mismatched references, and zero kernel obligations. All eight
-documents parse and construct byte-exactly. The scheduler converges Complete with
-zero producer diagnostics and a fully closed certificate. The scoped gate passes.
-Medium/full publication has not run;
-the full-publication attempt budget is unused.
+13-document medium audit has **695/695 mandatory references Complete**, zero
+reference failures, kernel obligations or authority conflicts. All 13 documents
+parse and construct byte-exactly. Producer closure is Incomplete and not converged
+at its 32-round resource limit, with 14 incomplete evaluations and 11 diagnostics.
+This is not evidence of a persistent semantic cycle; focused diagnosis continues.
+The preceding eight-document Actions gate passed with 534/534 Complete references
+and fully closed producer evidence. Full publication has not run; its attempt
+budget is unused.
 
 All six genuine layered expression fixtures and the connection-end fixture pass
 with fully closed certificates. The indexed assignment now matches the real
@@ -43,7 +44,7 @@ the executable actual-cache gate.
 
 ## Publication observations
 
-The latest `actions-owned-cross-subsetting` audit uses clean source `c7d65cf` and
+The passed `actions-owned-cross-subsetting` audit uses clean source `c7d65cf` and
 the successful release build from `7782e3c`. It exits 0 in **1,491.656 seconds**,
 peaking at **6,140.1 MiB private memory**, with no watchdog stop. All eight documents
 parse/construct byte-exactly; selected endpoints and Complete mandatory references
@@ -62,7 +63,24 @@ remain historical, including their verified original source spans. Exact command
 exit, resource observations, final
 counts and report hashes are in [publication-commands.json](publication-commands.json).
 Earlier failed audits remain historical in that ledger and [closure.md](closure.md).
-Medium/full publication has not run; the full-attempt budget is unused.
+Full publication has not run; the full-attempt budget is unused.
+
+The `systems-medium-thirteen` audit uses clean source `262fd5c` and release
+build `4fdaf2b`. It exits 1 in **1,749.844 seconds**, peak **6,351.0 MiB private**,
+within both watchdog limits. Its final report has 695 selected/Complete references,
+zero kernel obligations and no authority conflicts. Producer closure reaches
+32 rounds without convergence: 14 incomplete pairs, 14,404/14,677 closed applicable
+pairs and 385,941/417,348 closed requirements. Eight EffectiveTyping diagnostics
+and three variable-feature snapshot diagnostics remain. The final report is
+authoritative; the last frontier's provisional counters are different.
+
+It evaluates 27,296 subjects and derives 4,179 elements (7,840 local elements).
+Certificate/revalidation sizes are 2,695,589 and 839,569,912 bytes. Two transports
+retain 1,679 and reopen 15,562 evaluations in aggregate; accepted KerML producers
+are not replayed. Final frontier 31 still changes the closure witness and schedules
+incomplete subjects for another round. The scheduler budget and faithful Interfaces
+fixtures must be assessed before any retry. Exact report/stage hashes and final
+counts are retained in the publication ledger.
 
 Full non-audit publication now uses normal preparation; scoped/audit-only paths
 retain the final construction predicate pass. Strict publication independently
@@ -140,8 +158,10 @@ tests in successful suites. That assertion expected a broad ownership search;
 the original positive ownership, occurrence and provenance assertions. Independent
 review confirms the replacement. All six crossing tests then pass, followed by
 141 tests across the 28 unrun integration targets; already successful targets were
-not repeated. The failed attempt remains recorded. SysML/text package completion
-continues separately; the final workspace run remains reserved for integration.
+not repeated. The failed attempt remains recorded. The integrated SysML/text package command at clean `7638346` also passes:
+**191 tests** (89 SysML, 102 text), zero failures, 17 successful suites and doc
+tests. Only the two actual accepted-publication gates remain explicitly ignored.
+It exits 0 in 804.98 seconds. The final workspace run remains reserved for integration.
 
 The integrated KerML semantic package at clean source `3506712` passes: **394
 tests passed, zero failures**, two existing release-only scale probes ignored.

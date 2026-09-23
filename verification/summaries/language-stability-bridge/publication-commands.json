@@ -832,6 +832,343 @@
         "scoped_preflight_passed": true,
         "publication_attempted": false
       }
+    },
+    {
+      "name": "systems-medium-thirteen",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/systems-medium-thirteen/report.json",
+        "--documents=Actions,Attributes,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,Requirements,States,Views",
+        "--audit-only"
+      ],
+      "source_commit": "262fd5c3dbf71073bb509b698d7654bd7b0b755d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/systems-medium-thirteen",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 27276,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 23065890816,
+      "safety_stop": null,
+      "duration_seconds": 1749.844,
+      "peak_rss_bytes": 6566592512,
+      "peak_private_bytes": 6659510272,
+      "samples": 1749,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "2a9e548145ca52b5db33280934796a2300669f3e621d9a095a4d7bae9e24c5fb",
+      "release_build_source_commit": "4fdaf2b",
+      "report_artifacts": [
+        {
+          "path": "verification/generated/language-stability-bridge/systems-medium-thirteen/report.json",
+          "sha256": "9ae2f8440aa694b51abbc1f0da20ae0efcaa55cb646e17cd369c1ff9496a0947"
+        },
+        {
+          "path": "verification/generated/language-stability-bridge/systems-medium-thirteen/report.stages.jsonl",
+          "sha256": "6d6651bf1bcbd441167947d4954a5ad54f57ae9dfa26b5b233ca091c2deea0b1"
+        }
+      ],
+      "result_summary": {
+        "systems_documents_parsed": 13,
+        "systems_documents_constructed": 13,
+        "systems_documents_byte_exact": 13,
+        "last_reference_round": {
+          "evaluated": 695,
+          "kernel_obligations": 0,
+          "reused": 0,
+          "round": 0,
+          "selected": 695
+        },
+        "mandatory_references": {
+          "counts": {
+            "ambiguous": 0,
+            "complete": 695,
+            "endpoint_mismatch": 0,
+            "incomplete": 0,
+            "invalid": 0,
+            "unresolved": 0
+          },
+          "failures": [],
+          "total": 695
+        },
+        "kernel_obligations": 0,
+        "construction_producers": {
+          "closure_counters": {
+            "applicable_subject_family_pairs": 14677,
+            "certificate_build_micros": 114718098,
+            "certificate_bytes": 2695589,
+            "closed_pairs": 14404,
+            "closed_requirements": 385941,
+            "families_registered": 87,
+            "incomplete_pairs": 14,
+            "negative_queries_certified": 153647
+          },
+          "completeness": "Incomplete",
+          "converged": false,
+          "derived_elements": 4179,
+          "diagnostics": [
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "420b87f6-0adf-5721-87ac-d0a91c0ffbab"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "4f1c7548-fa6f-5ec4-b275-754941bd1cd6"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "56b5e106-4706-5b98-8389-578a9452a712"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "92d17f67-7cf8-5e29-bb3d-f38dcc3f65f4"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "973eea9d-90ad-51d0-b5f8-cff0f870c158"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "98c30374-e65a-579b-be50-0d23d18160d8"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "f23bff63-ed3c-5d65-9ca7-21455344397b"
+            },
+            {
+              "code": "KQ_VARIABLE_FEATURING",
+              "message": "Variable featuring requires its snapshot domain",
+              "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+            },
+            {
+              "code": "KQ_VARIABLE_FEATURING",
+              "message": "Variable featuring requires its snapshot domain",
+              "subject": "56b5e106-4706-5b98-8389-578a9452a712"
+            },
+            {
+              "code": "KQ_VARIABLE_FEATURING",
+              "message": "Variable featuring requires its snapshot domain",
+              "subject": "973eea9d-90ad-51d0-b5f8-cff0f870c158"
+            }
+          ],
+          "final_predicates": true,
+          "rounds": 32,
+          "subjects_evaluated": 27296
+        },
+        "producer_closure": {
+          "applicable_pairs": 14677,
+          "certificate_bytes": 2695589,
+          "closed_pairs": 14404,
+          "closed_requirements": 385941,
+          "context_contract_digest": [
+            173,
+            108,
+            232,
+            171,
+            36,
+            191,
+            86,
+            121,
+            33,
+            96,
+            22,
+            167,
+            37,
+            167,
+            201,
+            65,
+            162,
+            93,
+            235,
+            142,
+            239,
+            29,
+            148,
+            120,
+            192,
+            234,
+            226,
+            24,
+            202,
+            236,
+            133,
+            11
+          ],
+          "digest": [
+            218,
+            25,
+            204,
+            84,
+            78,
+            84,
+            182,
+            194,
+            121,
+            171,
+            232,
+            84,
+            224,
+            199,
+            43,
+            105,
+            18,
+            38,
+            12,
+            52,
+            21,
+            35,
+            88,
+            129,
+            113,
+            155,
+            196,
+            66,
+            231,
+            11,
+            29,
+            249
+          ],
+          "fully_closed": false,
+          "incomplete_pairs": 14,
+          "model_digest": [
+            254,
+            53,
+            73,
+            162,
+            152,
+            152,
+            38,
+            58,
+            128,
+            222,
+            115,
+            65,
+            156,
+            194,
+            200,
+            226,
+            168,
+            144,
+            12,
+            20,
+            48,
+            15,
+            56,
+            157,
+            185,
+            4,
+            59,
+            135,
+            19,
+            1,
+            107,
+            112
+          ],
+          "producer_registry_digest": [
+            231,
+            71,
+            2,
+            117,
+            227,
+            248,
+            227,
+            239,
+            157,
+            160,
+            101,
+            244,
+            234,
+            175,
+            38,
+            27,
+            22,
+            132,
+            205,
+            158,
+            192,
+            217,
+            9,
+            121,
+            39,
+            37,
+            152,
+            66,
+            125,
+            231,
+            21,
+            164
+          ],
+          "required_requirements": 417348,
+          "revalidation_bytes": 839569912,
+          "semantic_closure_digest": [
+            123,
+            74,
+            83,
+            139,
+            123,
+            65,
+            16,
+            105,
+            94,
+            123,
+            231,
+            57,
+            97,
+            56,
+            120,
+            126,
+            23,
+            112,
+            64,
+            214,
+            12,
+            135,
+            36,
+            9,
+            124,
+            5,
+            136,
+            30,
+            168,
+            19,
+            12,
+            179
+          ]
+        },
+        "closure_transport": {
+          "rebindings": 2,
+          "reopened_evaluations": 0,
+          "retained_evaluations": 0,
+          "total_reopened_evaluations": 15562,
+          "total_retained_evaluations": 1679
+        },
+        "authority_conflicts": [],
+        "kerml_producers_replayed": false,
+        "scoped_preflight_passed": false,
+        "publication_attempted": false
+      },
+      "interpretation": "Scoped gate incomplete at the 32-round resource limit; convergence was not reached. Final diagnostics do not establish a persistent semantic cycle. Full publication not attempted."
     }
   ]
 }
