@@ -26,7 +26,7 @@ binary-connection predicates use the direct end population. The whole fixture
 now reaches Complete. Independent review reproduced that result in 20.51 seconds
 and passed 61 closure regressions, including real end writers, mixed broad reads,
 derived ownership edges and pending providers. See the
-[review and command evidence](../language-stability-bridge/selected-ownership-review.md).
+[review and command evidence](../language-stability-bridge/closure.md).
 This synthetic result does not establish accepted-library publication.
 
 Original reproduction (low-disk debug/test profile, two build jobs):

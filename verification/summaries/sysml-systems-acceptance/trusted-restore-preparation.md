@@ -7,7 +7,7 @@ an accepted facade yet. Add catalogue authority only after the complete publicat
 gate passes. Existing Systems export bytes alone remain insufficient authority.
 The accepted KerML Operational v9 `/26` receipt encoding and restoration API are
 unchanged. See
-[`systems-restore-scaffold.md`](../language-stability-bridge/systems-restore-scaffold.md)
+[`restore.md`](../language-stability-bridge/restore.md)
 for implementation checks and the remaining accepted-artifact gate.
 
 ## Authority and concrete API
