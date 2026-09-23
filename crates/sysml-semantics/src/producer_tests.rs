@@ -785,6 +785,118 @@ fn may_time_vary_positive_owner_uses_only_selected_occurrence_path() {
 }
 
 #[test]
+fn may_time_vary_positive_exclusion_uses_only_selected_type_path() {
+    use agq_kernel::{
+        derived::{DerivationBuilder, StructuralSearch},
+        provenance::{Dependency, FactKey},
+    };
+    for excluded in ["Action", "SelfLink", "HappensLink"] {
+        let (snapshot, libraries, roots) =
+            may_time_fixture(true, excluded == "Action", false, Some(excluded));
+        let mut f = Fixture {
+            changes: snapshot.change_set(),
+            base: snapshot,
+            owned: BTreeMap::new(),
+            origin: origin(),
+        };
+        f.create(40_002, kc::CLASSIFIER, "UnrelatedSubjectAncestor");
+        let snapshot = f.finish();
+        let slots = snapshot
+            .model()
+            .element(id(240_001))
+            .unwrap()
+            .slots()
+            .map(|(property, slot)| {
+                (
+                    property,
+                    if property == kp::FEATURE_TYPING_TYPE {
+                        SlotValue::Scalar(Value::Reference(id(40_002)))
+                    } else {
+                        slot.value().clone()
+                    },
+                )
+            })
+            .collect::<Vec<_>>();
+        let key = DerivationKey {
+            rule: RuleId::from_u128(98_224),
+            subject: id(40_001),
+            output: OutputKey::from_u128(1),
+        };
+        let self_read = StructuralSearch::Property {
+            element: id(40_001),
+            property: agq_sysml::properties::USAGE_MAY_TIME_VARY,
+        };
+        let mut builder = DerivationBuilder::new(snapshot);
+        builder.element(key, kc::FEATURE_TYPING, slots, BTreeSet::new());
+        builder.searches(
+            FactKey::Element(key.element_id()),
+            BTreeSet::from([self_read.clone()]),
+        );
+        let overlay = builder.build().unwrap();
+        {
+            let context = SemanticContext::for_overlay(
+                &overlay,
+                SemanticOptions {
+                    baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .unwrap()
+            .with_standard_bindings(&roots, &libraries)
+            .unwrap();
+            let queries = KerMlQueries::new(context);
+            let all = queries.all_supertypes(id(40_001));
+            assert!(
+                all.search_dependencies
+                    .contains(&SearchDependency::Kernel(self_read.clone()))
+            );
+            let plan = plan_sysml_may_time_vary(
+                &queries,
+                SysmlBaselineProfile::OPERATIONAL_V2,
+                &StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32])),
+                &roots,
+                id(40_001),
+            );
+            assert_eq!(
+                plan.evidence.completeness,
+                Completeness::Complete,
+                "{excluded}: {:?}",
+                plan.evidence
+            );
+            assert_eq!(plan.properties.len(), 1);
+            assert_eq!(
+                plan.properties[0].value,
+                SlotValue::Scalar(Value::Boolean(false))
+            );
+            assert!(
+                plan.evidence
+                    .canonical_dependencies
+                    .contains(&Dependency::Declared(FactKey::Property {
+                        element: id(240_001),
+                        property: kp::FEATURE_TYPING_TYPE
+                    })),
+                "the actual positive exclusion edge remains required"
+            );
+            assert!(
+                !plan
+                    .evidence
+                    .canonical_dependencies
+                    .contains(&Dependency::Derived(FactKey::Element(key.element_id()))),
+                "{excluded}: an unrelated ancestor is not a premise of a positive exclusion"
+            );
+            assert!(
+                !plan
+                    .evidence
+                    .search_dependencies
+                    .contains(&SearchDependency::Kernel(self_read.clone())),
+                "{excluded}: positive exclusion must not acquire its own mayTimeVary prerequisite"
+            );
+        }
+    }
+}
+
+#[test]
 fn may_time_vary_exact_antecedents_and_exclusions_use_canonical_identities() {
     for (occurrence, composite, portion, excluded, expected) in [
         (true, false, false, None, true),
