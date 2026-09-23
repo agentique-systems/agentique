@@ -102,6 +102,227 @@ fn names(queries: &SysmlQueries<'_>, ids: impl IntoIterator<Item = ElementId>) -
         .collect()
 }
 
+/// Compare local semantic roles across independent ID allocation, while standard
+/// targets retain their exact shared identity. Names alone are not identities:
+/// unnamed children and repeated names remain visible through ownership/order.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum ComparisonElement {
+    Dependency(ElementId),
+    Local {
+        class: agq_kernel::MetaclassId,
+        name: Option<String>,
+        owner: Option<Box<ComparisonElement>>,
+        carrier: Option<agq_kernel::MetaclassId>,
+        ordinal: usize,
+    },
+}
+
+#[derive(Clone, Copy)]
+enum ComparisonOrder {
+    Unordered,
+    Ordered,
+}
+
+type RichSummary = BTreeMap<String, Vec<ComparisonElement>>;
+
+fn declared_name(model: &ModelView, id: ElementId) -> Option<String> {
+    model
+        .navigation_slot(id, p::ELEMENT_DECLARED_NAME)
+        .and_then(|slot| match slot.value() {
+            SlotValue::Scalar(Value::String(name)) => Some(name.clone()),
+            _ => None,
+        })
+}
+
+fn comparison_element(
+    q: &KerMlQueries<'_>,
+    dependency: &ModelView,
+    id: ElementId,
+    visiting: &mut BTreeSet<ElementId>,
+) -> ComparisonElement {
+    if dependency.element(id).is_some() {
+        return ComparisonElement::Dependency(id);
+    }
+    assert!(visiting.insert(id), "acyclic local ownership for {id}");
+    let model = q.model();
+    let class = model.element(id).unwrap().metaclass();
+    let name = declared_name(model, id);
+    let owning = q.owning_relationship(id);
+    assert_eq!(owning.completeness, Completeness::Complete, "{owning:?}");
+    let (owner, carrier, ordinal) = if let Some(membership) = owning.value {
+        let carrier = model.element(membership).unwrap().metaclass();
+        let owner = q.owning_related_element(membership);
+        assert_eq!(owner.completeness, Completeness::Complete, "{owner:?}");
+        let owner = owner.value.expect("owned member has a canonical owner");
+        let relationships = q.owned_relationships(owner);
+        assert_eq!(
+            relationships.completeness,
+            Completeness::Complete,
+            "{relationships:?}"
+        );
+        let siblings: Vec<_> = relationships
+            .value
+            .into_iter()
+            .filter(|&relationship| model.element(relationship).unwrap().metaclass() == carrier)
+            .flat_map(|relationship| {
+                model
+                    .navigation_slot(relationship, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
+                    .into_iter()
+                    .flat_map(|slot| slot.value().values())
+                    .filter_map(|value| match value {
+                        Value::Reference(element) => Some(*element),
+                        _ => None,
+                    })
+            })
+            .filter(|&sibling| {
+                model.element(sibling).unwrap().metaclass() == class
+                    && declared_name(model, sibling) == name
+            })
+            .collect();
+        assert_eq!(siblings.iter().filter(|&&sibling| sibling == id).count(), 1);
+        let ordinal = siblings.iter().position(|&sibling| sibling == id).unwrap();
+        (
+            Some(Box::new(comparison_element(q, dependency, owner, visiting))),
+            Some(carrier),
+            ordinal,
+        )
+    } else {
+        // The fixture has one unnamed authored namespace root. Reject an
+        // ambiguous root role instead of normalizing two distinct roots together.
+        let peers = model
+            .elements()
+            .filter(|record| {
+                dependency.element(record.id()).is_none()
+                    && record.metaclass() == class
+                    && declared_name(model, record.id()) == name
+            })
+            .filter(|record| {
+                let owner = q.owning_relationship(record.id());
+                assert_eq!(owner.completeness, Completeness::Complete, "{owner:?}");
+                owner.value.is_none()
+            })
+            .count();
+        assert_eq!(peers, 1, "unique local root role for {id}");
+        (None, None, 0)
+    };
+    visiting.remove(&id);
+    ComparisonElement::Local {
+        class,
+        name,
+        owner,
+        carrier,
+        ordinal,
+    }
+}
+
+fn comparison_population(
+    q: &KerMlQueries<'_>,
+    dependency: &ModelView,
+    ids: &[ElementId],
+    order: ComparisonOrder,
+) -> Vec<ComparisonElement> {
+    let mut population: Vec<_> = ids
+        .iter()
+        .map(|&id| comparison_element(q, dependency, id, &mut BTreeSet::new()))
+        .collect();
+    if matches!(order, ComparisonOrder::Unordered) {
+        population.sort(); // Preserve multiplicity; never filter or deduplicate.
+    }
+    population
+}
+
+#[test]
+fn comparison_preserves_unnamed_members_multiplicity_dependency_ids_and_order() {
+    let snapshot = |source: &str| lower(&parse(source)).strict_snapshot().unwrap();
+    let original = snapshot("package Comparison { part def Owner { part same; part; } }");
+    let independent = snapshot("package Comparison { part def Owner { part same; part; } }");
+    let extra_unnamed =
+        snapshot("package Comparison { part def Owner { part same; part; part; } }");
+    let repeated_name =
+        snapshot("package Comparison { part def Owner { part same; part same; part; } }");
+    let empty = Snapshot::new(Arc::new(
+        agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
+    ));
+    let population = |snapshot: &Snapshot| {
+        let queries = q(snapshot);
+        let children = queries.direct_features(named(snapshot.model(), "Owner"));
+        assert_eq!(children.completeness, Completeness::Complete);
+        comparison_population(
+            &queries,
+            empty.model(),
+            &children.value,
+            ComparisonOrder::Unordered,
+        )
+    };
+    assert_ne!(
+        named(original.model(), "Owner"),
+        named(independent.model(), "Owner"),
+        "independent frontend allocations"
+    );
+    assert_eq!(population(&original), population(&independent));
+    assert_eq!(population(&original).len(), 2);
+    assert_ne!(population(&original), population(&extra_unnamed));
+    assert_ne!(population(&original), population(&repeated_name));
+
+    let queries = q(&original);
+    let children = queries.direct_features(named(original.model(), "Owner"));
+    assert_eq!(children.completeness, Completeness::Complete);
+    let ordered = comparison_population(
+        &queries,
+        empty.model(),
+        &children.value,
+        ComparisonOrder::Ordered,
+    );
+    let reversed: Vec<_> = children.value.iter().copied().rev().collect();
+    assert_ne!(
+        ordered,
+        comparison_population(&queries, empty.model(), &reversed, ComparisonOrder::Ordered)
+    );
+    assert_eq!(
+        population(&original),
+        comparison_population(
+            &queries,
+            empty.model(),
+            &reversed,
+            ComparisonOrder::Unordered
+        )
+    );
+    let duplicated = comparison_population(
+        &queries,
+        empty.model(),
+        &[children.value[0], children.value[0]],
+        ComparisonOrder::Unordered,
+    );
+    assert_eq!(duplicated.len(), 2);
+    assert_eq!(duplicated[0], duplicated[1]);
+
+    let queries = q(&repeated_name);
+    let children = queries.direct_features(named(repeated_name.model(), "Owner"));
+    assert_eq!(children.completeness, Completeness::Complete);
+    let same: Vec<_> = children
+        .value
+        .into_iter()
+        .filter(|&id| declared_name(repeated_name.model(), id).as_deref() == Some("same"))
+        .collect();
+    assert_eq!(same.len(), 2);
+    let locals = comparison_population(&queries, empty.model(), &same, ComparisonOrder::Unordered);
+    assert_ne!(locals[0], locals[1], "same-name canonical siblings differ");
+    // This neutral graph checks key selection only; it is not an accepted
+    // publication. The real gate supplies its authenticated Systems dependency.
+    let dependencies = comparison_population(
+        &queries,
+        repeated_name.model(),
+        &same,
+        ComparisonOrder::Unordered,
+    );
+    assert_ne!(dependencies[0], dependencies[1]);
+    assert!(
+        dependencies
+            .iter()
+            .all(|key| matches!(key, ComparisonElement::Dependency(_)))
+    );
+}
+
 fn assert_revision(revision: &ProjectRevision, accepted: &CanonicalSysmlSystemsLibrary) {
     let status = revision
         .producer_status()
@@ -211,7 +432,7 @@ fn architecture_invariants(q: &SysmlQueries<'_>) {
     );
 }
 
-fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
+fn rich_summary(q: &SysmlQueries<'_>, dependency: &ModelView) -> RichSummary {
     let mut summary = BTreeMap::new();
     for owner in [
         "ProjectWorkspace",
@@ -225,7 +446,12 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
         complete(&usages);
         summary.insert(
             format!("usages/{owner}"),
-            names(q, usages.value().iter().copied()),
+            comparison_population(
+                q.kerml(),
+                dependency,
+                usages.value(),
+                ComparisonOrder::Unordered,
+            ),
         );
     }
     for (label, answer) in [
@@ -350,7 +576,16 @@ fn rich_summary(q: &SysmlQueries<'_>) -> BTreeMap<String, BTreeSet<String>> {
                 "{label} must retain the canonical {declaration}: {answer:?}"
             );
         }
-        summary.insert(label.into(), names(q, answer.value().iter().copied()));
+        let order = match label {
+            "parameters" | "ends" | "interface" | "entry" | "do" | "exit" => {
+                ComparisonOrder::Ordered
+            }
+            _ => ComparisonOrder::Unordered,
+        };
+        summary.insert(
+            label.into(),
+            comparison_population(q.kerml(), dependency, answer.value(), order),
+        );
     }
     let inherited = q.effective_usages(authored_named(q.model(), "IncrementalWorkspace"));
     assert_eq!(
@@ -478,7 +713,7 @@ fn accepted_trigger_and_message(
 }
 
 struct ProgrammaticSemantics {
-    summary: BTreeMap<String, BTreeSet<String>>,
+    summary: RichSummary,
     workspace_query: ElementId,
     dependency: Arc<agq_kernel::derived::DerivedOverlay>,
 }
@@ -541,7 +776,7 @@ fn programmatic_semantics(accepted: &Arc<CanonicalSysmlSystemsLibrary>) -> Progr
     // Retain comparison observations and the already-shared publication handle,
     // not the independent model's complete declared/derived maps and indexes.
     ProgrammaticSemantics {
-        summary: rich_summary(&q),
+        summary: rich_summary(&q, accepted.overlay().model()),
         workspace_query: authored_named(q.model(), "workspaceQuery"),
         dependency: snapshot.immutable_dependency().unwrap().clone(),
     }
@@ -741,7 +976,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     assert_revision(&r1, &accepted);
     architecture_invariants(&r1.sysml_queries().unwrap());
     accepted_trigger_and_message(&r1, &accepted);
-    let original = rich_summary(&r1.sysml_queries().unwrap());
+    let original = rich_summary(&r1.sysml_queries().unwrap(), accepted.overlay().model());
     assert_eq!(original, programmatic.summary);
     assert_ne!(
         authored_named(r1.semantic_model(), "workspaceQuery"),
@@ -821,7 +1056,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     );
     drop(q2);
     assert_eq!(
-        rich_summary(&r1.sysml_queries().unwrap()),
+        rich_summary(&r1.sysml_queries().unwrap(), accepted.overlay().model()),
         original,
         "old revision retained"
     );
