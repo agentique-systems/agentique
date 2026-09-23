@@ -29,6 +29,35 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "compatible-nonempty-witness-green",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "compatibility_nonempty_owner_does_not_wait_for_child_snapshot_membership",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "eace5c814167a40ddb12f545a560054430607826",
+      "working_changes_sha256": "6dce6ec99af82552bff8c5f01f2950c356fbcf35895b87483f0a08e634dc7dd3",
+      "output_sha256": "310faa846a79c1ce7f1cccbe3888b84d9b5160b55d2312986ce9f51f5ce9bc14",
+      "duration_seconds": 28.91,
+      "output": "verification/generated/language-stability-bridge/compatible-nonempty-witness-green.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ]
 }

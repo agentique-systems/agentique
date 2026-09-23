@@ -410,6 +410,64 @@ impl KerMlQueries<'_> {
         out
     }
 
+    /// A selected canonical FeatureMembership proves this Type's owned Feature
+    /// population is nonempty. No witness means no conclusion about emptiness.
+    fn owned_feature_witness(&self, ty: ElementId) -> Option<QueryResult<()>> {
+        let Ok(agq_kernel::derived::PropertyState::Computed(slot)) = self
+            .model()
+            .property_state(ty, p::ELEMENT_OWNED_RELATIONSHIP)
+        else {
+            return None;
+        };
+        for value in slot.value().values() {
+            let Value::Reference(membership) = *value else {
+                continue;
+            };
+            if !self.is(membership, c::FEATURE_MEMBERSHIP) {
+                continue;
+            }
+            let mut witness = self.result(());
+            self.checked::<agq_kerml::views::Type, _>(&mut witness, ty)?;
+            self.checked::<agq_kerml::views::FeatureMembership, _>(&mut witness, membership)?;
+            let member = self.member(membership);
+            let Some(feature) = member.value else {
+                continue;
+            };
+            witness.merge(member);
+            if self
+                .checked::<agq_kerml::views::Feature, _>(&mut witness, feature)
+                .is_none()
+                || witness.completeness != Completeness::Complete
+            {
+                continue;
+            }
+            if let Some(FactKey::Property { element, property }) = self.selected_reference_fact(
+                &mut witness,
+                ty,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                &[membership],
+            ) && self
+                .model()
+                .declared_slot(element, property)
+                .is_some_and(|slot| {
+                    slot.value()
+                        .values()
+                        .any(|value| *value == Value::Reference(membership))
+                })
+            {
+                // The original positive edge is immutable during additive
+                // production; reconstruction still tracks its original slot.
+                witness.search_dependencies.insert(SearchDependency::Kernel(
+                    agq_kernel::derived::StructuralSearch::DeclaredProperty { element, property },
+                ));
+            }
+            if witness.completeness == Completeness::Complete {
+                return Some(witness);
+            }
+        }
+        None
+    }
+
     fn compatible<T>(
         &self,
         out: &mut QueryResult<T>,
@@ -428,6 +486,13 @@ impl KerMlQueries<'_> {
             return true;
         }
         if !self.is(ty, c::FEATURE) || !self.is(other, c::FEATURE) {
+            return false;
+        }
+        if let Some(nonempty) = self
+            .owned_feature_witness(ty)
+            .or_else(|| self.owned_feature_witness(other))
+        {
+            out.merge(nonempty);
             return false;
         }
         let own = self.direct_features(ty);
