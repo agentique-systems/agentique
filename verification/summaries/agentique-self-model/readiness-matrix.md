@@ -157,3 +157,7 @@ Build jobs were one with incremental/debug artifacts disabled. Diff check and
 workspace formatting on the base reported only the subsequently fixed
 flow/index test-module order in `sysml.rs` (root `33f2984`). No cache or producer
 publication was run, and accepted E/G/H readiness remains unestablished.
+The three hashed test logs are retained under ignored
+`verification/generated/agentique-self-model/effective-api-review/` as
+`duplicate-specialization-red.log`, `duplicate-carrier-red.log` and
+`harness-fixture-green.log`; integration verified their hashes before copying.

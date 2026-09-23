@@ -30,6 +30,15 @@ from `flows-end-commands.json` (11 records) and `items-end-causality.json`
 The following observations retain earlier integration history; current corpus
 status is the summary above.
 
+`c8fb238` makes the temporary causal reverse index borrow its immutable
+`ProducerRead` rows instead of cloning each enum and exclusion vector. Persistent
+evidence, traversal/order, effects and blocked-set semantics are unchanged;
+independent review confirmed the references remain valid for the whole call.
+Existing producer regressions pass **149 tests**, with two preexisting explicit
+scale probes ignored, including scheduler/full-scan equivalence. Both additional
+typed cross-subsetting population guards pass. Memory savings are unmeasured;
+the running `actions-owned-cross-subsetting` executable predates this optimization.
+
 The reproduced defect was historical proof-search contamination across an
 authenticated dependency boundary. A closed dependency's derived parameter proof
 retained an incoming/model search; importing it into the project made an unrelated

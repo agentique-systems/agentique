@@ -105,6 +105,19 @@ Operational v2 Viewpoint rules introduce no additional Systems package. KerML
 roles use the separate immutable publication. This is a static preflight, not
 reference completeness or closure evidence; run medium only after Actions passes.
 
+Two additional medium-scope combinations now have real frontend shape checks and
+genuine closed-dependency scheduler fixtures. The Interfaces inline function body
+captures outer `seq`/`value`, indexes by its input and composes `selectOne`; it
+closes completely and retains true variable flags (21.88 s). Its first
+`1..size(seq)` argument is reduced to `seq`, so this is a bounded composition
+fixture, not the entire library expression. The Views satisfaction fixture keeps
+the input subject, its value expression and nested required constraint; it closes
+completely and all four asserted structural queries are Complete (22.95 s).
+Neither required a new semantic correction. Source-shape tests, focused Clippy
+and formatting pass. Setup/compile corrections remain in the consolidated
+`inline-function-commands.json` and `views-satisfaction.json` source-ledger ranges
+of `commands.json`; no cache or corpus was loaded by these fixtures.
+
 ## Integration verification and retained evidence
 
 The integrated KerML semantic package at clean source `3506712` passes: **394
