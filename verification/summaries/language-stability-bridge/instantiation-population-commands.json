@@ -1,0 +1,35 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "instantiation-population-reproduction",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "expression_structure::population_tests",
+        "--",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2e1e3462ba9a197b128bc7a74e842a3554bdeee9",
+      "working_changes_sha256": "72f1548080e2ff4bac0a08c5f6dca12d5d035097ff5ce7c2f23ed4d35d9589d3",
+      "output_sha256": "ad8230eff9f3f2795f83b1f513c706bf26865778a3455c5833bafc09ccd102cf",
+      "duration_seconds": 28.19,
+      "output": "verification/generated/language-stability-bridge/instantiation-population-reproduction.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    }
+  ]
+}

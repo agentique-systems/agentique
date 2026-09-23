@@ -3,6 +3,10 @@ use crate::*;
 use agq_kerml::{classes as c, properties as p, views};
 use agq_kernel::{ElementId, value::Value};
 
+#[cfg(test)]
+#[path = "../tests/unit/instantiation_population.rs"]
+mod population_tests;
+
 impl KerMlQueries<'_> {
     /// The declared target or standard operator Function of an instantiation.
     /// Standard package identities are bound once; operator symbols remain
