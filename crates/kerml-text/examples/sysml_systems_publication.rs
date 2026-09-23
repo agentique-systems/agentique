@@ -304,6 +304,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let closure_explanations: Vec<_> = draft.producer_closure().into_iter().flat_map(|certificate| {
         diagnostic_subjects.iter().map(|subject| json!({
             "subject":subject,
+            "metaclass":model.element(*subject).map(|record|record.metaclass()),
+            "source":draft.source_map().get(&agq_kernel::provenance::FactKey::Element(*subject)),
+            "declared_name":model.navigation_slot(*subject,agq_kerml::properties::ELEMENT_DECLARED_NAME)
+                .and_then(|slot|slot.value().values().find_map(|value|match value {
+                    Value::String(name)=>Some(name),
+                    _=>None,
+                })),
             "requirements":agq_kerml_semantics::SemanticClosureRequirement::ALL.into_iter().map(|requirement|json!({
                 "requirement":format!("{requirement:?}"),
                 "closed":certificate.is_closed(*subject,requirement),
