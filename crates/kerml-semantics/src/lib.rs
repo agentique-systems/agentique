@@ -41,6 +41,9 @@ mod result_structure;
 #[cfg(test)]
 #[path = "../tests/unit/selected_contribution_merge.rs"]
 mod selected_contribution_merge_tests;
+#[cfg(test)]
+#[path = "../tests/unit/selected_contribution.rs"]
+mod selected_contribution_tests;
 mod specialization_witness;
 mod status_queries;
 mod structural;

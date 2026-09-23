@@ -17,6 +17,7 @@ pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
 pub(crate) enum ProducerRead {
     Property(ElementId, PropertyId),
     DeclaredProperty(ElementId, PropertyId),
+    OrderedReferenceContribution(ElementId, PropertyId, ElementId),
     Structural(ElementId),
     Source(ElementId, MetaclassId, PropertyId),
     Owned(ElementId, MetaclassId),
@@ -41,6 +42,29 @@ pub(crate) fn producer_reads<T>(
     let mut kernel = |search: &K| match search {
         K::DeclaredProperty { element, property } => {
             result.insert(ProducerRead::DeclaredProperty(*element, *property));
+        }
+        K::OrderedReferenceContribution {
+            element,
+            property,
+            target,
+        } => {
+            // The selected append is immutable during an additive producer
+            // session. Its retained proof/searches are separate reads. Missing
+            // canonical support never establishes a closed negative result.
+            result.insert(
+                if model
+                    .navigation_slot(*element, *property)
+                    .is_some_and(|slot| {
+                        slot.value()
+                            .values()
+                            .any(|value| *value == agq_kernel::value::Value::Reference(*target))
+                    })
+                {
+                    ProducerRead::OrderedReferenceContribution(*element, *property, *target)
+                } else {
+                    ProducerRead::Property(*element, *property)
+                },
+            );
         }
         K::Property { element, property } => {
             result.insert(ProducerRead::Property(*element, *property));
@@ -229,6 +253,7 @@ pub(crate) fn producer_reads<T>(
             // canonical carrier fact remains in proof; the search defines the
             // observed projection. Explicit broad reads still take precedence.
             if !result.contains(&ProducerRead::Property(*element, *property))
+                && !answer.producer_expanded_facts.contains(fact)
                 && result.iter().any(|read| match read {
                     ProducerRead::Source(child, _, backing)
                         if backing == property
@@ -254,6 +279,7 @@ pub(crate) fn producer_reads<T>(
             if *property == agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP
                 && filtered_owners.contains(element)
                 && !result.contains(&ProducerRead::Property(*element, *property))
+                && !answer.producer_expanded_facts.contains(fact)
             {
                 continue;
             }
@@ -776,9 +802,9 @@ impl ProducerEvaluationTable {
                         // relationship searches remain open: local carriers
                         // may refer to a dependency without writing its record.
                         let fixed = match read {
-                            ProducerRead::DeclaredProperty(_, _) | ProducerRead::Identity(_) => {
-                                true
-                            }
+                            ProducerRead::DeclaredProperty(_, _)
+                            | ProducerRead::OrderedReferenceContribution(_, _, _)
+                            | ProducerRead::Identity(_) => true,
                             ProducerRead::Any(id)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Owned(id, _)
@@ -831,6 +857,7 @@ impl ProducerEvaluationTable {
                             ProducerRead::Inverse => inverse.push(pair),
                             ProducerRead::Property(id, _)
                             | ProducerRead::DeclaredProperty(id, _)
+                            | ProducerRead::OrderedReferenceContribution(id, _, _)
                             | ProducerRead::Source(id, _, _)
                             | ProducerRead::Owned(id, _)
                             | ProducerRead::OwnedExcluding(id, _, _)
@@ -1671,6 +1698,7 @@ pub(crate) fn descriptor_changes_read(
     let target = match read {
         ProducerRead::Property(subject, _)
         | ProducerRead::DeclaredProperty(subject, _)
+        | ProducerRead::OrderedReferenceContribution(subject, _, _)
         | ProducerRead::Structural(subject)
         | ProducerRead::Source(subject, _, _)
         | ProducerRead::Owned(subject, _)
@@ -1770,7 +1798,9 @@ pub(crate) fn effect_changes_read(
     model: &ModelView,
 ) -> bool {
     match read {
-        ProducerRead::DeclaredProperty(_, _) | ProducerRead::Identity(_) => false,
+        ProducerRead::DeclaredProperty(_, _)
+        | ProducerRead::OrderedReferenceContribution(_, _, _)
+        | ProducerRead::Identity(_) => false,
         ProducerRead::Global | ProducerRead::Any(_) => true,
         ProducerRead::Requirement(_, requirement) => requirement.requires_in_model(effect, model),
         ProducerRead::FeaturePopulation(_, kind) => {
@@ -2147,6 +2177,7 @@ fn provider_changes_read(
     let mask = |id| positions.get(&id).map_or(0, |&index| masks[index]);
     match read {
         ProducerRead::DeclaredProperty(id, _) => mask(*id) != 0,
+        ProducerRead::OrderedReferenceContribution(_, _, _) => false,
         ProducerRead::Identity(_) => false,
         ProducerRead::Global | ProducerRead::Inverse => masks.iter().any(|mask| *mask != 0),
         ProducerRead::Requirement(id, requirement) => mask(*id) & requirement.bit() != 0,

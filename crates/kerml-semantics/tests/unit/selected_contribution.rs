@@ -3,6 +3,7 @@ use crate as agq_kerml_semantics;
 include!("../common/result_fixture.rs");
 use crate::producer_closure::{ProducerEvaluationTable, ProducerRead, producer_reads};
 use agq_kernel::derived::{DerivationBuilder, DerivedOverlay, StructuralSearch};
+use agq_kernel::provenance::Explanation;
 
 const READER: ProducerFamilyId = ProducerFamilyId::new("Fixture.SelectedContributionReader");
 

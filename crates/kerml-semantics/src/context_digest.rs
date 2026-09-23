@@ -200,6 +200,16 @@ impl Encoder {
                     self.id(element.as_u128());
                     self.id(property.as_u128());
                 }
+                StructuralSearch::OrderedReferenceContribution {
+                    element,
+                    property,
+                    target,
+                } => {
+                    self.tag(14);
+                    self.id(element.as_u128());
+                    self.id(property.as_u128());
+                    self.id(target.as_u128());
+                }
             }
         }
     }

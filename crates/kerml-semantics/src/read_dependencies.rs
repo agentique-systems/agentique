@@ -26,6 +26,7 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
         | StructuralSearch::OwnedRelationshipsExcluding { owner: id, .. }
         | StructuralSearch::Property { element: id, .. }
         | StructuralSearch::DeclaredProperty { element: id, .. }
+        | StructuralSearch::OrderedReferenceContribution { element: id, .. }
         | StructuralSearch::Association { element: id, .. } => Some(K::Element(*id)),
         StructuralSearch::Incoming(id)
         | StructuralSearch::SourceRelationships { source: id, .. } => Some(K::Incoming(*id)),
@@ -114,6 +115,17 @@ fn publication_search_keys(
         SearchDependency::ProducerClosure { .. }
         | SearchDependency::Kernel(StructuralSearch::ProducerClosure { .. })
         | SearchDependency::Kernel(StructuralSearch::DeclaredProperty { .. }) => true,
+        SearchDependency::Kernel(StructuralSearch::OrderedReferenceContribution {
+            element,
+            property,
+            target,
+        }) => model
+            .navigation_slot(*element, *property)
+            .is_some_and(|slot| {
+                slot.value()
+                    .values()
+                    .any(|value| *value == agq_kernel::value::Value::Reference(*target))
+            }),
         SearchDependency::Element(element) => declared_identity(model, *element),
         SearchDependency::Kernel(StructuralSearch::ElementIdentity(element)) => {
             model.element(*element).is_some()
@@ -295,10 +307,12 @@ pub(crate) fn structural_searches<T>(answer: &QueryResult<T>) -> BTreeSet<Struct
         .iter()
         .filter_map(|search| match search {
             StructuralSearch::DeclaredProperty { element, property }
-                if answer.producer_expanded_facts.contains(&FactKey::Property {
-                    element: *element,
-                    property: *property,
-                }) =>
+            | StructuralSearch::OrderedReferenceContribution {
+                element, property, ..
+            } if answer.producer_expanded_facts.contains(&FactKey::Property {
+                element: *element,
+                property: *property,
+            }) =>
             {
                 Some(StructuralSearch::Property {
                     element: *element,

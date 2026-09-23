@@ -100,6 +100,7 @@ pub(super) fn read_changed(read: &ProducerRead, affected: &BTreeSet<ElementId>) 
         ProducerRead::Global | ProducerRead::Inverse => !affected.is_empty(),
         ProducerRead::Property(id, _)
         | ProducerRead::DeclaredProperty(id, _)
+        | ProducerRead::OrderedReferenceContribution(id, _, _)
         | ProducerRead::Structural(id)
         | ProducerRead::Source(id, _, _)
         | ProducerRead::Owned(id, _)
@@ -272,6 +273,18 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
             if let Some(hash) = hashes.get_mut(target) {
                 hash.update(digest);
             }
+        }
+    }
+    // This optional exact-append evidence may be absent after legacy archive
+    // restoration. Losing it or changing its proof reopens affected readers;
+    // equal aggregate values do not authenticate a different contribution.
+    for ((element, property, target), contribution) in model.ordered_reference_contributions() {
+        let digest = hash_debug(&(element, property, target, contribution));
+        if let Some(hash) = hashes.get_mut(&element) {
+            hash.update(digest);
+        }
+        if let Some(hash) = hashes.get_mut(&target) {
+            hash.update(digest);
         }
     }
     for (fact, searches) in model.computation_searches() {

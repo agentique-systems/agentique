@@ -530,8 +530,9 @@ impl<'m> KerMlQueries<'m> {
 
     /// Positive support for a selected reference population. The caller retains
     /// its precise current-population search separately. An original declared
-    /// slot can prove selected entries without importing unrelated append proofs;
-    /// any later entry requires the full current aggregate evidence instead.
+    /// slot or a kernel-recorded append contribution can prove selected entries
+    /// without importing unrelated append proofs. If exact contribution metadata
+    /// is unavailable, retain the full current aggregate evidence instead.
     pub(crate) fn selected_reference_fact<T>(
         &self,
         out: &mut QueryResult<T>,
@@ -574,10 +575,92 @@ impl<'m> KerMlQueries<'m> {
                         .expect("selected original stored fact has declared provenance")
                 });
             }
+        } else if selected.iter().all(|target| {
+            self.model()
+                .declared_slot(element, property)
+                .is_some_and(|slot| {
+                    slot.value()
+                        .values()
+                        .any(|value| *value == Value::Reference(*target))
+                })
+                || self
+                    .model()
+                    .ordered_reference_contribution(element, property, *target)
+                    .is_some()
+        }) {
+            let mut declared = false;
+            for &target in selected {
+                if self
+                    .model()
+                    .declared_slot(element, property)
+                    .is_some_and(|slot| {
+                        slot.value()
+                            .values()
+                            .any(|value| *value == Value::Reference(target))
+                    })
+                {
+                    declared = true;
+                    continue;
+                }
+                let contribution = self
+                    .model()
+                    .ordered_reference_contribution(element, property, target)
+                    .expect("checked exact contribution");
+                out.search_dependencies.insert(SearchDependency::Kernel(
+                    agq_kernel::derived::StructuralSearch::OrderedReferenceContribution {
+                        element,
+                        property,
+                        target,
+                    },
+                ));
+                out.search_dependencies.extend(
+                    contribution
+                        .searches()
+                        .iter()
+                        .cloned()
+                        .map(SearchDependency::Kernel),
+                );
+                for &dependency in &contribution.explanation().dependencies {
+                    match dependency {
+                        Dependency::Declared(fact) => self.original_fact(out, fact),
+                        Dependency::Derived(fact) => self.fact(out, fact),
+                    }
+                }
+            }
+            if declared {
+                self.original_fact(out, fact);
+            }
+            // The exact append witnesses above replace the aggregate fact, not
+            // its complete-population search retained by the caller. A separate
+            // whole-slot query continues to carry its complete derived proof.
+            return None;
         } else {
             self.fact(out, fact);
         }
         Some(fact)
+    }
+
+    fn original_fact<T>(&self, out: &mut QueryResult<T>, fact: FactKey) {
+        out.canonical_dependencies
+            .insert(Dependency::Declared(fact));
+        out.positive_dependencies.insert(fact);
+        if let FactKey::Property { element, property } = fact {
+            out.search_dependencies.insert(SearchDependency::Kernel(
+                agq_kernel::derived::StructuralSearch::DeclaredProperty { element, property },
+            ));
+        }
+        if !self.producer_evidence {
+            let origin = self
+                .declared_fact_origin(fact)
+                .expect("kernel-validated declared contribution dependency");
+            let Origin::Declared(source) = origin.as_ref() else {
+                unreachable!("original dependency has declared provenance")
+            };
+            out.declared_fact_origins
+                .entry(fact)
+                .or_insert_with(|| Arc::new(source.clone()));
+            out.fact_origins.entry(fact).or_insert(origin);
+        }
     }
 
     /// Ordered directly owned relationship identities, preserving canonical order.
