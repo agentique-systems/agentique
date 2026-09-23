@@ -871,6 +871,172 @@
         "CARGO_PROFILE_RELEASE_DEBUG": "0",
         "CARGO_PROFILE_RELEASE_LTO": "false"
       }
+    },
+    {
+      "name": "selected-contribution-micro",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "trigger_receiver_node_parameter_closes_with_nested_feature_value",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7817ecad837bf6e4e5db4086417e3d74ced6b319",
+      "working_changes_sha256": "e21f80f8a170c39c95c40f4b15297415239b9b1abb0b21a2dfc8ea48eaeb3ed9",
+      "output_sha256": "9f59e05d9d9b14015250b7952365c62b0065578d2f03037262de466ccac5f7b3",
+      "duration_seconds": 45.22,
+      "output": "verification/generated/language-stability-bridge/selected-contribution-micro.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "selected-contribution-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "selected_contribution",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "42dfd848177026965d4cb0c23be2d965940b113d",
+      "working_changes_sha256": "fd56274571d41d4b3dd69e573295768ee8c4c70d2a852e018f8709ba842a1e2b",
+      "output_sha256": "540159f0e344aa50910cd8b3197d911c4de2da5b963d8151848def312ff6e0b8",
+      "duration_seconds": 18.73,
+      "output": "verification/generated/language-stability-bridge/selected-contribution-regressions.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "selected-contribution-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "selected_contribution",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "42dfd848177026965d4cb0c23be2d965940b113d",
+      "working_changes_sha256": "22b2e151393bcf2386ac9e180ae5f66b1d6e89356cdfff39303e982cbb8bb361",
+      "output_sha256": "68eb15bc73271e84d58389a4633eadf00c48cae111c7710a06f1b0035bd5ea35",
+      "duration_seconds": 24.27,
+      "output": "verification/generated/language-stability-bridge/selected-contribution-regressions-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "selected-contribution-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "selected_contribution",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a7ce0dd9f10c388e716f106c35e3755dc887baff",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "73097cac5c7c9077cf91642f91345c2993a26a1a011e2f75228085e0c73d167b",
+      "duration_seconds": 24.02,
+      "output": "verification/generated/language-stability-bridge/selected-contribution-regressions-3.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "selected-contribution-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-sysml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "85486f6baa4e28a2a55ccf2a9cd8d761b6b88038",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "7b41544afa1f5e69f8497fd0e820da1beab1db1a40bd527db412a57b396ac854",
+      "duration_seconds": 21.86,
+      "output": "verification/generated/language-stability-bridge/selected-contribution-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
+    },
+    {
+      "name": "selected-contribution-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "selected_contribution",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c28caa2716e8260d624bd4d589d7f2def5b863f9",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "da2fb258cda8abc7b9ed806089533c4cd6722fbadf3ae126ae6a02837cc976f4",
+      "duration_seconds": 30.97,
+      "output": "verification/generated/language-stability-bridge/selected-contribution-regressions-4.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }

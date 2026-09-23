@@ -69,6 +69,19 @@ remaining difference from the real library is still under diagnosis. The live
 publication binding context fix is separately covered by rejection and attachment
 tests and does not establish publication acceptance.
 
+Subsequent bounded regressions separate structural valuation from contextual
+value binding and assign exclusive derivation-rule ownership to producer families.
+The loop-owner and assertion-body fixtures now close. Transition suppression
+retains one proven canonical payload chain instead of unrelated ancestor proofs.
+Exact kernel append-contribution evidence removes unrelated ownership append
+proofs while preserving adoption guards, broad reads and conservative archive
+fallback. Four independent semantic regressions and three-package Clippy pass;
+the first test drafts required explicit guard slots and compact-proof assertions,
+and their failed runs remain recorded. The receiver fixture still has seven
+Incomplete producer pairs because its newly created helper's initial ordered
+slot requires the same precise support. These fixes have not yet been measured
+in another corpus audit.
+
 The existing `AGQ_PRODUCER_CAUSAL_TRACE=1` diagnostic can be bounded with
 `AGQ_PRODUCER_CAUSAL_SUBJECTS=<comma-separated element UUIDs>`. It records causal
 edges involving those subjects; propagation and certification are unchanged.
