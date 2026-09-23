@@ -1243,6 +1243,11 @@ fn unnamed_constraint_and_connection_usages_close_under_occurrence_owner() {
 }
 
 #[test]
+fn unnamed_assertion_body_closes_with_inherited_result_and_expression_binding() {
+    actions_micro(ActionsMicro::AssertionBody);
+}
+
+#[test]
 fn input_action_body_closes_under_while_loop_with_nested_actions() {
     actions_micro(ActionsMicro::WhileLoopBody);
 }
@@ -1256,6 +1261,7 @@ enum ActionsMicro {
     NestedState,
     DirectedValue,
     UnnamedOccurrenceUsages,
+    AssertionBody,
     WhileLoopBody,
 }
 
@@ -1266,7 +1272,11 @@ fn actions_micro(variant: ActionsMicro) {
     );
     let with_root_usage = matches!(variant, ActionsMicro::RootUsage);
     let nested_state = matches!(variant, ActionsMicro::NestedState);
-    let unnamed_occurrence_usages = matches!(variant, ActionsMicro::UnnamedOccurrenceUsages);
+    let unnamed_occurrence_usages = matches!(
+        variant,
+        ActionsMicro::UnnamedOccurrenceUsages | ActionsMicro::AssertionBody
+    );
+    let assertion_body = matches!(variant, ActionsMicro::AssertionBody);
     let while_loop_body = matches!(variant, ActionsMicro::WhileLoopBody);
     use agq_kerml_semantics::{
         FormalConstraintId, MemberAccess, PublicationOverlayError, SemanticClosureRequirement,
@@ -1277,6 +1287,7 @@ fn actions_micro(variant: ActionsMicro) {
     let (kernel_dependency, libraries, mut roots) = closed_kernel_anchor_fixture(
         with_variable_value || unnamed_occurrence_usages || while_loop_body,
         while_loop_body,
+        assertion_body,
     );
     let occurrence = kernel_dependency
         .context()
@@ -1556,6 +1567,19 @@ fn actions_micro(variant: ActionsMicro) {
                 .clear(id(subject + 100_000), kp::ELEMENT_DECLARED_NAME);
         }
     }
+    if assertion_body {
+        f.create(50_024, kc::LITERAL_BOOLEAN, "");
+        f.changes.clear(id(50_024), kp::ELEMENT_DECLARED_NAME);
+        f.value(50_024, kp::LITERAL_BOOLEAN_VALUE, Value::Boolean(true));
+        f.member(50_022, 50_024, 150_024, kc::RESULT_EXPRESSION_MEMBERSHIP);
+        f.create(50_025, kc::FEATURE, "");
+        f.changes.clear(id(50_025), kp::ELEMENT_DECLARED_NAME);
+        set_enum(&mut f, 50_025, kp::FEATURE_DIRECTION, "out");
+        f.member(50_024, 50_025, 150_025, kc::RETURN_PARAMETER_MEMBERSHIP);
+        for membership in [150_024, 150_025] {
+            f.changes.clear(id(membership), kp::ELEMENT_DECLARED_NAME);
+        }
+    }
     if while_loop_body {
         f.create(50_030, sc::ACTION_DEFINITION, "LoopOwner");
         f.create(50_031, sc::WHILE_LOOP_ACTION_USAGE, "whileLoop");
@@ -1701,6 +1725,22 @@ fn actions_micro(variant: ActionsMicro) {
     .with_producer_closure(certificate.clone())
     .unwrap();
     let composed = SysmlQueries::new(composed_context);
+    if assertion_body {
+        let result = queries.result_parameters(id(50_022));
+        assert_eq!(result.completeness, Completeness::Complete, "{result:?}");
+        assert_eq!(result.value.len(), 1);
+        assert!(
+            dependency
+                .overlay()
+                .model()
+                .element(result.value[0])
+                .is_some()
+        );
+        assert!(closure.overlay.model().elements().any(|record| {
+            queries.implied_binding_role(record.id())
+                == Some(agq_kerml_semantics::ImpliedBindingRole::ExpressionResult)
+        }));
+    }
     if unnamed_occurrence_usages {
         for subject in [50_021, 50_022, 50_023] {
             assert!(
@@ -2142,6 +2182,7 @@ fn standard_anchor_path_requires_original_declared_ownership() {
 fn closed_kernel_anchor_fixture(
     with_snapshot_typing: bool,
     with_time_enclosed_occurrences: bool,
+    with_boolean_inheritance: bool,
 ) -> (
     Arc<agq_kerml_semantics::ProducerClosedDependency>,
     LibrarySetIdentity,
@@ -2233,6 +2274,35 @@ fn closed_kernel_anchor_fixture(
         .with_standard_bindings(&kernel_roots, &libraries)
         .unwrap();
         let bindings = context.id().standard_bindings.as_ref().unwrap();
+        if with_boolean_inheritance {
+            // The real Performances anchors form this chain. Independent
+            // placeholder results otherwise make assertion arity ambiguous.
+            for (index, specific, general) in [
+                (
+                    0,
+                    StandardRole::BooleanEvaluations,
+                    StandardRole::Evaluations,
+                ),
+                (
+                    1,
+                    StandardRole::TrueEvaluations,
+                    StandardRole::BooleanEvaluations,
+                ),
+                (
+                    2,
+                    StandardRole::FalseEvaluations,
+                    StandardRole::BooleanEvaluations,
+                ),
+            ] {
+                kernel.relation(
+                    bindings.get(specific).as_u128(),
+                    bindings.get(general).as_u128(),
+                    245_020 + index,
+                    kc::SUBSETTING,
+                    kp::SUBSETTING_SUBSETTED_FEATURE,
+                );
+            }
+        }
         kernel.relation(
             bindings.get(StandardRole::OccurrenceSnapshots).as_u128(),
             bindings.get(StandardRole::Occurrence).as_u128(),
@@ -2291,7 +2361,7 @@ fn closed_kernel_anchor_fixture(
 #[test]
 fn untyped_sysml_anchor_population_closes_over_a_genuinely_closed_kernel_layer() {
     use agq_kerml_semantics::{PublicationOverlayError, close_result_structure_with_extension};
-    let (dependency, _, kernel_roots) = closed_kernel_anchor_fixture(false, false);
+    let (dependency, _, kernel_roots) = closed_kernel_anchor_fixture(false, false, false);
     let source = corpus_anchor_fixture_complete(true).0.finish();
     let base = dependency.project_snapshot();
     let mut changes = base.change_set();
