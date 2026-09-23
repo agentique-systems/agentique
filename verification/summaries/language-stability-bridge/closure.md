@@ -263,3 +263,15 @@ Raw package output is ignored at
 `verification/generated/language-stability-bridge/positive-witness-package-tests.log`.
 These results establish the bounded semantic fix and regressions, not Systems
 publication acceptance; the lead owns the next measured Actions candidate.
+# While-loop fixture variable-body check
+
+After the fourth bounded Actions scope remained incomplete, the existing local
+Systems while-loop fixture was checked for a false-scalar shortcut. Its input,
+noncomposite ActionUsage body has `mayTimeVary=true`, Complete featuring with a
+single shared snapshot domain distinct from the while-loop owner, and closed
+effective typing. These are now explicit regression assertions.
+
+`cargo test -p agq-sysml-semantics
+input_action_body_closes_under_while_loop_with_nested_actions -- --nocapture`
+passed (exit 0; 1 test, 34.00 s; one build job, low-disk profile). This rules out
+that fixture shortcut; it does not close the remaining actual Systems references.

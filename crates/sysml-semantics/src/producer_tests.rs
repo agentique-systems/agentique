@@ -1794,6 +1794,26 @@ fn actions_micro(variant: ActionsMicro) {
         );
         assert_eq!(binding_domains.value, domains.value);
     }
+    if while_loop_body {
+        assert_eq!(
+            queries
+                .model()
+                .navigation_slot(id(50_032), agq_sysml::properties::USAGE_MAY_TIME_VARY)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Boolean(true)),
+            "the noncomposite input body varies in its occurrence-typed owner",
+        );
+        let domains = queries.featuring_types(id(50_032));
+        assert_eq!(domains.completeness, Completeness::Complete, "{domains:?}");
+        assert_eq!(domains.value.len(), 1, "{domains:?}");
+        assert_ne!(
+            domains.value[0],
+            id(50_031),
+            "the body uses a snapshot domain"
+        );
+        assert!(certificate.is_closed(id(50_032), SemanticClosureRequirement::EffectiveTyping));
+    }
     assert!(Arc::ptr_eq(
         closure.overlay.declared().immutable_dependency().unwrap(),
         dependency.overlay()
