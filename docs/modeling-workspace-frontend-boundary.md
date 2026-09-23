@@ -159,6 +159,45 @@ diagnostic envelopes while retaining their native evidence/source identities;
 it must not become a second semantic graph. Existing source-origin and query
 evidence structures remain authoritative.
 
+## Working-state acceptance discriminators
+
+The held [`working_states.rs`](../crates/modeling-workspace/tests/working_states.rs)
+target supplements the main phase-1 suite. It has no production crate or Cargo
+membership and has not been compiled or run against a workspace. Its inputs have
+an independent real-parser preflight in
+[`workspace_working_inputs.rs`](../crates/kerml-text/tests/workspace_working_inputs.rs).
+Parser success establishes source suitability and syntax reconciliation only.
+
+These cases distinguish input publication, query completeness and validation:
+
+| Case | Required Working result | Required discriminating observation |
+| --- | --- | --- |
+| A disjoint declaration survives temporary recovery | A targeted edit makes a later package in the same document malformed. Record a new Working head with exact source and syntax; the initial safe-lowering policy omits that document's semantic contribution. | The earlier complete PartDefinition retains its syntax-node identity across malformed and repaired inputs. Repair retains its semantic ID because that reconciled declaration was never explicitly deleted. During recovery, the omitted declaration cannot appear as a stale current answer and its absence cannot produce a Complete negative. |
+| The same document is explicitly removed and re-added | Remove the repaired document, then add identical bytes at the same path. | The fresh DocumentId, syntax-node ID and authored ElementId differ. The prior retained validated handle still reports its original source, context and answers. Recovery omission and deletion cannot share an indiscriminate retirement path. |
+| A mandatory type target becomes unresolved | Replace only `Storage::Repository` with `Storage::MissingRepository`; syntax remains Parsed and the current input becomes Working. | Keep the failed reference assertion even if the required relationship cannot be materialized. Its origin names the current DocumentId, SourceRevisionId and source range; available reference/query contexts belong to the current frontier. No answer retains the old provider as its type, and effective type queries cannot claim Complete from a missing provider population. |
+| Parsed variation remains unsupported | Add `variation part selected` under a PartDefinition, preserving its canonical flag and queryable authored value. | The real scheduler converges and the certificate covers the entire graph, while `effective_usages` remains Incomplete with `PendingSysmlRule::Variation`. Validation rejects with a capability diagnostic. Removing the modifier can validate; the old Working answer remains Incomplete. |
+
+The last case is an explicit Operational v2 capability boundary already exercised
+by `producer_closure_does_not_erase_unsupported_variation_semantics`. It is not a
+new requirement to implement variation in this milestone. A future profile that
+implements that capability must deliberately replace this negative fixture with
+another documented unsupported case or its positive acceptance test. Do not
+silently make the assertion disappear because producer completion now succeeds.
+
+The private Validated constructor must evaluate the supported platform contract
+in addition to `is_fully_closed(model)`, zero kernel obligations and mandatory
+reference results. `ProjectRevision::is_complete_slice()` currently reports the
+existing strict frontend's narrower usability checks; it is not a substitute for
+this validation boundary. A capability diagnostic must retain its subject/source
+and pending semantic evidence without inventing a second semantic model.
+
+For held tests, adapt prospective method spelling during implementation without
+weakening these observations. Run `--test working_states --features verification
+-- --ignored --test-threads=1` only after the language readiness gate, the additive
+Working carrier and the actual workspace crate exist. Accepted publications are
+then restored through the existing shared test support; there is no fallback to
+building standards or substituting `SourceProject` for the missing workspace.
+
 ## Shared dependency storage review
 
 Read-only inspection at `b49afe5`; no accepted cache was loaded and no scaling

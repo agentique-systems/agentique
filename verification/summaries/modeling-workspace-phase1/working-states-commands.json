@@ -1,0 +1,127 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "working-states-parser-preflight",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_working_inputs",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "695e67ef44c40dd5d7191b9ce1f856989fe934ca",
+      "working_changes_sha256": "0d6f8a20e88dbc1d09bed919d76232f960449a213bcb5f9202f32fabbc15021e",
+      "output_sha256": "5a332494317725e07035c11e29efe5914794ff7aeff93c9896fb394d45db9c2c",
+      "duration_seconds": 15.94,
+      "output": "verification/generated/modeling-workspace-phase1/working-states-parser-preflight.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "working-states-held-manifest",
+      "command": [
+        "cargo",
+        "test",
+        "--manifest-path",
+        "crates/modeling-workspace/Cargo.toml",
+        "--test",
+        "working_states",
+        "--features",
+        "verification",
+        "--",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "695e67ef44c40dd5d7191b9ce1f856989fe934ca",
+      "working_changes_sha256": "51063dc8c97e2c1c404d7b1acb39b623699331781495441dd3fcbcfad361672b",
+      "output_sha256": "aeb0c77f79ae26b25589666f82a9427ff98486d326951bf4ed33fc238a8f4b60",
+      "duration_seconds": 0.08,
+      "output": "verification/generated/modeling-workspace-phase1/working-states-held-manifest.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "working-states-held-rustfmt",
+      "command": [
+        "rustfmt",
+        "--check",
+        "--edition",
+        "2024",
+        "--config",
+        "skip_children=true",
+        "crates/modeling-workspace/tests/working_states.rs",
+        "verification/fixtures/modeling-workspace-phase1/working_state_inputs.rs"
+      ],
+      "exit_code": 0,
+      "tool_version": "rustfmt 1.8.0-stable (ded5c06cf2 2025-12-08)",
+      "source_commit": "695e67ef44c40dd5d7191b9ce1f856989fe934ca",
+      "working_changes_sha256": "51063dc8c97e2c1c404d7b1acb39b623699331781495441dd3fcbcfad361672b",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.06,
+      "output": "verification/generated/modeling-workspace-phase1/working-states-held-rustfmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "working-states-parser-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--test",
+        "workspace_working_inputs",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "695e67ef44c40dd5d7191b9ce1f856989fe934ca",
+      "working_changes_sha256": "51063dc8c97e2c1c404d7b1acb39b623699331781495441dd3fcbcfad361672b",
+      "output_sha256": "92a03e8d9de212336fc66fe6ba5d8d51e78f5bfc2e340adc96aa457c1478c46c",
+      "duration_seconds": 4.11,
+      "output": "verification/generated/modeling-workspace-phase1/working-states-parser-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "working-states-workspace-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "695e67ef44c40dd5d7191b9ce1f856989fe934ca",
+      "working_changes_sha256": "51063dc8c97e2c1c404d7b1acb39b623699331781495441dd3fcbcfad361672b",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.38,
+      "output": "verification/generated/modeling-workspace-phase1/working-states-workspace-fmt.log",
+      "environment_overrides": {}
+    }
+  ]
+}
