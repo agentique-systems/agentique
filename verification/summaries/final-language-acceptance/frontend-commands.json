@@ -1,0 +1,27 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "browser-e2e",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "bf02cf8fa6b0dedf87c9af747d9855ecfdc70eb2",
+      "working_changes_sha256": "cf43cc1d379f9f05723235feb76b42458912e0a789fb6fe4722bec3d89baa360",
+      "output_sha256": "67be3fc6849252bf06571073ab1fe83914ac29194a03e4be145ffa13240ae171",
+      "duration_seconds": 58.86,
+      "output": "verification/generated/final-language-acceptance/browser-e2e.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/foundation-integration"
+      }
+    }
+  ]
+}

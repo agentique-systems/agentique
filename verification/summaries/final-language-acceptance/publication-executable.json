@@ -1,0 +1,9 @@
+{
+  "format": "agq-publication-executable-evidence/1",
+  "executable": "verification/generated/final-language-acceptance/publication-medium-original.exe",
+  "sha256": "0f8675a0128b5cb4c6be6fbcd649a6c09c970f1afaa07dde6471bafde0c86b10",
+  "bytes": 18605568,
+  "source_commit": "bf02cf8fa6b0dedf87c9af747d9855ecfdc70eb2",
+  "build_record": "verification/summaries/final-language-acceptance/commands.json#integrated-publication-release",
+  "purpose": "Original medium executable, retained after external disk-reserve interruption. This run did not complete the uninterrupted gate. Later resume/full executables have separately recorded identities."
+}

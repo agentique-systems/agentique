@@ -1,0 +1,88 @@
+{
+  "format": "agentique-watchdog-summary/1",
+  "commands": [
+    {
+      "name": "foundation-medium-uninterrupted",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--audit-only",
+        "--documents=Actions,Attributes,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,Requirements,States,Views",
+        "--checkpoint=verification/generated/final-language-acceptance/medium-frontiers",
+        "--output=verification/generated/final-language-acceptance/medium-uninterrupted/report.json"
+      ],
+      "source_commit": "bf02cf8fa6b0dedf87c9af747d9855ecfdc70eb2",
+      "working_changes_sha256": "cf43cc1d379f9f05723235feb76b42458912e0a789fb6fe4722bec3d89baa360",
+      "environment_overrides": {
+        "AGQ_CERTIFICATE_VERIFY_FULL_REBUILD": "1",
+        "AGQ_CERTIFICATE_TRACE": "1"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "frontier=(?P<frontier>\\d+)|planned=(?P<planned>\\d+)|closed_pairs=(?P<closed_pairs>\\d+)",
+      "output": "verification/generated/overnight-convergence/foundation-medium-uninterrupted",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 21660,
+      "monitor_error": null,
+      "last_progress": {
+        "planned": "779",
+        "frontier": "26",
+        "closed_pairs": "9745"
+      },
+      "minimum_free_disk_bytes": 1043197952,
+      "safety_stop": "disk_space",
+      "duration_seconds": 1615.64,
+      "peak_rss_bytes": 5153861632,
+      "peak_private_bytes": 5235523584,
+      "samples": 1612,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1.0,
+        "min_free_disk_bytes": 1073741824,
+        "stall_seconds": 600.0
+      },
+      "output_sha256": "b4ba6a350f791b0a9e3ff763f1b8552cc87e6601e10d36183f5dec5d8bc4f5c1"
+    },
+    {
+      "name": "foundation-medium-resumed",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--audit-only",
+        "--documents=Actions,Attributes,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,Requirements,States,Views",
+        "--resume=C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\medium-frontiers\\journal-b435e707caed866fa0a89d0cd27562beeaeaaa635378e9cb105c58c386be4cd2.json",
+        "--resume-sha256=b435e707caed866fa0a89d0cd27562beeaeaaa635378e9cb105c58c386be4cd2",
+        "--output=verification/generated/final-language-acceptance/medium-resumed/report.json"
+      ],
+      "source_commit": "694722d1569664dc0206cbb1ba4b5590cb9725f6",
+      "working_changes_sha256": "308c445386a9f7914632064fb842503bd1afbd5e89cf6534d099a5f5a3c5e9a9",
+      "environment_overrides": {
+        "AGQ_CERTIFICATE_VERIFY_FULL_REBUILD": "1",
+        "AGQ_CERTIFICATE_TRACE": "1"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": "frontier=(?P<frontier>\\d+)|planned=(?P<planned>\\d+)|closed_pairs=(?P<closed_pairs>\\d+)",
+      "output": "verification/generated/overnight-convergence/foundation-medium-resumed",
+      "exit_code": 101,
+      "command_exit_code": 101,
+      "command_pid": 28892,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 10099097600,
+      "safety_stop": null,
+      "duration_seconds": 162.547,
+      "peak_rss_bytes": 4764405760,
+      "peak_private_bytes": 5125451776,
+      "samples": 163,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1.0,
+        "min_free_disk_bytes": 1073741824,
+        "stall_seconds": 600.0
+      },
+      "output_sha256": "1b6fd8451cd73e4dd185e80af8cc1b94034971dc4d4130afc8c154d234a1362b"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "format": "agq-independent-medium-resume-pin/1",
+  "journal": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\final-language-acceptance\\medium-frontiers\\journal-b435e707caed866fa0a89d0cd27562beeaeaaa635378e9cb105c58c386be4cd2.json",
+  "sha256": "b435e707caed866fa0a89d0cd27562beeaeaaa635378e9cb105c58c386be4cd2",
+  "invocation": 3,
+  "state": {
+    "round": 23,
+    "converged": false,
+    "stratum": "ContextualBindings"
+  },
+  "interrupted_output": "verification\\generated\\overnight-convergence\\foundation-medium-uninterrupted\\output.log",
+  "interrupted_output_sha256": "b4ba6a350f791b0a9e3ff763f1b8552cc87e6601e10d36183f5dec5d8bc4f5c1",
+  "archive_sha256": "08e6f08067c861c4d594a9d920bad89632a27bdbc0cfb17bf1cd049b8b343c04",
+  "reason": "External disk-reserve stop; resume unfinished ContextualBindings frontier. A separate fresh uninterrupted run remains required."
+}

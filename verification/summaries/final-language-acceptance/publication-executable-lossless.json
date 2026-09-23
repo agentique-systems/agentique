@@ -1,0 +1,9 @@
+﻿{
+    "format":  "agq-publication-executable-evidence/1",
+    "executable":  "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+    "sha256":  "c1d65345ae2fce7587b2121364e937b91f72139725440ed1f7557ea931c8070c",
+    "bytes":  18626048,
+    "source_commit":  "694722d1569664dc0206cbb1ba4b5590cb9725f6",
+    "build_record":  "verification/summaries/final-language-acceptance/commands.json#lossless-publication-release",
+    "purpose":  "Resumed medium, fresh uninterrupted medium and gated full publication. Includes lossless Systems cache transport."
+}
