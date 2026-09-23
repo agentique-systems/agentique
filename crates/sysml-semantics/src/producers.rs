@@ -1731,7 +1731,7 @@ fn usage_may_time_vary(
         None,
         library,
     );
-    let excluded: Vec<_> = self_link
+    let mut excluded: Vec<_> = self_link
         .value
         .into_iter()
         .chain(happens_link.value)
@@ -1742,15 +1742,29 @@ fn usage_may_time_vary(
     evidence
         .merge_evidence(happens_link)
         .expect("same producer context");
-    let types = queries.all_supertypes(subject);
-    let mut excludes = excluded.iter().any(|id| types.value.contains(id));
     if composite == Some(true) {
         let action = evaluator.target(subject, Target::Sysml(R::Action));
-        excludes |= action.value.is_some_and(|id| types.value.contains(&id));
+        excluded.extend(action.value);
         evidence
             .merge_evidence(action)
             .expect("same producer context");
     }
+    if let Some(witness) = excluded
+        .iter()
+        .find_map(|&excluded| queries.canonical_specialization_witness(subject, excluded))
+    {
+        // Any positive exclusion proves false independently of other ancestors.
+        // Their derived proofs may themselves read this Usage's mayTimeVary.
+        evidence
+            .merge_evidence(witness)
+            .expect("same producer context");
+        let complete = evidence.completeness == Completeness::Complete;
+        return evidence.map(|()| complete.then_some(false));
+    }
+    // No bounded witness is not absence: virtual/chained paths and negative
+    // excluded-type conclusions retain the ordinary complete query contract.
+    let types = queries.all_supertypes(subject);
+    let excludes = excluded.iter().any(|id| types.value.contains(id));
     evidence
         .merge_evidence(types)
         .expect("same producer context");
