@@ -1,4 +1,6 @@
 use super::*;
+#[path = "producer_expression_usage_tests.rs"]
+mod expression_usage_tests;
 #[path = "producer_trigger_tests.rs"]
 mod trigger_tests;
 use agq_kerml_semantics::{
