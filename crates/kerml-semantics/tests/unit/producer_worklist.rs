@@ -530,8 +530,10 @@ fn feature_chain_scope_audits_targets_and_rebinds_changed_containment() {
     assert_eq!(ProducerEffectScope::SubjectAndOwnedFeatures as u8, 7);
 }
 
-#[test]
-fn first_input_population_does_not_wait_for_result_snapshot_membership() {
+fn assert_chain_query_ignores_result_snapshot_membership(
+    query: impl FnOnce(&KerMlQueries<'_>) -> QueryResult<Option<ElementId>>,
+    expected: ElementId,
+) {
     use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
     let profile = agq_kerml::BaselineProfile::OPERATIONAL_V9;
     let (snapshot, _) = expression_nested_result_fixture(true);
@@ -552,9 +554,9 @@ fn first_input_population_does_not_wait_for_result_snapshot_membership() {
     .with_producer_registry_digest(registry.digest())
     .unwrap();
     let q = KerMlQueries::for_production(context.fork());
-    let input = q.first_input(id(1));
+    let input = query(&q);
     assert_eq!(input.completeness, Completeness::Complete);
-    assert_eq!(input.value, Some(id(2)));
+    assert_eq!(input.value, Some(expected));
     let mut table = ProducerEvaluationTable::default();
     for record in snapshot.model().elements() {
         table.pending(record.id(), snapshot.model(), &registry);
@@ -612,8 +614,18 @@ fn first_input_population_does_not_wait_for_result_snapshot_membership() {
                 .unwrap()
         ),
         Some(ProducerEvaluationState::EvaluatedComplete),
-        "a result snapshot adds no input parameter to the chain expression"
+        "a result snapshot cannot displace the established chain query answer"
     );
+}
+
+#[test]
+fn first_input_population_does_not_wait_for_result_snapshot_membership() {
+    assert_chain_query_ignores_result_snapshot_membership(|q| q.first_input(id(1)), id(2));
+}
+
+#[test]
+fn reference_referent_does_not_wait_for_later_result_snapshot_membership() {
+    assert_chain_query_ignores_result_snapshot_membership(|q| q.reference_referent(id(1)), id(900));
 }
 
 #[test]
