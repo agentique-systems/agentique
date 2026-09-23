@@ -672,12 +672,18 @@ fn future_owner_targets(
         return None;
     }
     let mut roots = BTreeSet::from([subject]);
-    if descriptor.scope == ProducerEffectScope::SubjectAndOwnedFeatures {
-        // Fresh outputs attach only below selected Feature containment roots.
+    if matches!(
+        descriptor.scope,
+        ProducerEffectScope::SubjectAndOwnedFeatures | ProducerEffectScope::SubjectAndOwnedResults
+    ) {
+        // Fresh outputs attach only below selected Feature/result roots.
         // Other owned populations (for example nested value expressions) do
         // not become possible owners of those helpers without an ownership
         // writer, which already selects the model-wide fallback above.
-        roots = owned_feature_tree_scope(model, subject).ok()?;
+        roots = descriptor
+            .scope
+            .selected_targets(model, subject, false)?
+            .ok()?;
     } else if !matches!(
         descriptor.scope,
         ProducerEffectScope::Subject | ProducerEffectScope::SubjectAndOwners

@@ -300,6 +300,11 @@ impl ProducerFamily {
             Self::VariableFeaturing => ProducerEffectScope::SubjectAndOwners,
             Self::Invocation => ProducerEffectScope::SubjectAndOwnedResults,
             Self::FeatureChainExpression => ProducerEffectScope::SubjectAndOwnedFeatures,
+            Self::IndexSelectResult if profile.supports_publication_producers() => {
+                // These profiles stage an owned instantiation result and require
+                // its exact ownership before emitting Index/Select subsetting.
+                ProducerEffectScope::SubjectAndOwnedResults
+            }
             Self::IndexSelectResult => ProducerEffectScope::SubjectAndOwned,
             _ => ProducerEffectScope::Subject,
         };

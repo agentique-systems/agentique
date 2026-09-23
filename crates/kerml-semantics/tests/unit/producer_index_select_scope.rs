@@ -369,3 +369,79 @@ fn index_select_future_owner_writers_respect_results_and_keep_unknown_guards() {
         }
     }
 }
+
+#[test]
+fn index_select_scope_audit_and_rebind_follow_current_result_ownership() {
+    for class in [c::INDEX_EXPRESSION, c::SELECT_EXPRESSION] {
+        let snapshot = fixture(class, false, false);
+        let before = context(&snapshot);
+        let registry = registry();
+        let q = KerMlQueries::new(before.fork());
+        for target in [1, 2, 3, 4, 5] {
+            let mut plan = q.plan_result_structure([]);
+            let output = plan
+                .add_derived_element(
+                    DerivationKey {
+                        subject: id(1),
+                        rule: RuleId::from_u128(90101),
+                        output: OutputKey::from_u128(target),
+                    },
+                    c::SUBSETTING,
+                    BTreeMap::from([
+                        (
+                            p::SUBSETTING_SUBSETTING_FEATURE,
+                            SlotValue::Scalar(Value::Reference(id(target))),
+                        ),
+                        (
+                            p::SUBSETTING_SUBSETTED_FEATURE,
+                            SlotValue::Scalar(Value::Reference(id(2))),
+                        ),
+                    ]),
+                    Some(id(target)),
+                    &q.canonical_fact_evidence(FactKey::Element(id(target))),
+                )
+                .unwrap()
+                .unwrap();
+            plan.attribute_producer_outputs(
+                id(1),
+                ProducerFamily::IndexSelectResult.id(),
+                [output],
+            );
+            assert_eq!(
+                plan.validate_declared_effects(&[id(1)], &registry).is_ok(),
+                [1, 3].contains(&target),
+                "{class:?} audit target {target}"
+            );
+        }
+        let certificate = ProducerClosureCertificate::initial(&before, &registry).unwrap();
+        assert!(certificate.is_closed(id(5), SemanticClosureRequirement::EffectiveTyping));
+        let mut changes = snapshot.change_set();
+        changes.set(
+            id(12),
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            SlotValue::Ordered(vec![Value::Reference(id(5))]),
+            origin(),
+        );
+        changes.clear(id(14), p::RELATIONSHIP_OWNED_RELATED_ELEMENT);
+        let changed = snapshot.apply(&changes).unwrap();
+        let next = context(&changed);
+        let rebound = certificate.rebind(&before, &next, &registry).unwrap();
+        assert!(
+            !rebound
+                .certificate
+                .is_closed(id(5), SemanticClosureRequirement::EffectiveTyping)
+        );
+        assert!(
+            rebound
+                .certificate
+                .is_closed(id(3), SemanticClosureRequirement::EffectiveTyping)
+        );
+    }
+    // Earlier profiles do not perform the owned-result staging prerequisite.
+    assert_eq!(
+        ProducerFamily::IndexSelectResult
+            .descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V7)
+            .scope,
+        ProducerEffectScope::SubjectAndOwned
+    );
+}

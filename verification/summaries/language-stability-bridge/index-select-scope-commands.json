@@ -90,6 +90,66 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
       }
+    },
+    {
+      "name": "index-select-scope-direct-only",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_index_select_scope_tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "ac566d1cc4032c041014f231db277e111a690433",
+      "working_changes_sha256": "b4bd149cb2fff43c4fa261b16ff6f6a60ba34b23d1ac645c0e9c6d5cf77fe953",
+      "output_sha256": "0b39a5c1597d8c35fd423f3aa5eb2c1044a9a2894bb82be1ced59a3ab891af8e",
+      "duration_seconds": 30.33,
+      "output": "verification/generated/language-stability-bridge/index-select-scope-direct-only.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "index-select-scope-green",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "producer_index_select_scope_tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "ac566d1cc4032c041014f231db277e111a690433",
+      "working_changes_sha256": "377b486c938aa345eec6d35f4de5941dd8acc97606304600cc86762bb41e69d4",
+      "output_sha256": "e6fe8cd6569b72d718a331ab09afdd718390115e8fe8c96932383c7cf727c148",
+      "duration_seconds": 31.2,
+      "output": "verification/generated/language-stability-bridge/index-select-scope-green.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ]
 }
