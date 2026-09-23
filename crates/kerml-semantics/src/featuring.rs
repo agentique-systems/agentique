@@ -12,6 +12,10 @@ use std::collections::BTreeSet;
 #[path = "../tests/unit/reference_prefix.rs"]
 mod reference_prefix_tests;
 
+#[cfg(test)]
+#[path = "../tests/unit/compatible_witness.rs"]
+mod compatible_witness_tests;
+
 /// A connector check retains ordinary and operational endpoint decisions separately.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConnectorFeaturing {
