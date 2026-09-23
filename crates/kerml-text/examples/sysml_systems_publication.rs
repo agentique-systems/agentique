@@ -301,6 +301,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|diagnostic| diagnostic.subject)
         })
         .collect();
+    let requested_subjects: BTreeSet<_> = std::env::var("AGQ_PRODUCER_CAUSAL_SUBJECTS")
+        .unwrap_or_default()
+        .split(',')
+        .map(|id| id.trim().to_ascii_lowercase())
+        .filter(|id| !id.is_empty())
+        .take(32)
+        .collect();
+    diagnostic_subjects.extend(model.elements().filter_map(|record| {
+        requested_subjects
+            .contains(&record.id().to_string())
+            .then_some(record.id())
+    }));
     if let Some(certificate) = draft.producer_closure() {
         diagnostic_subjects.extend(model.elements().filter_map(|record| {
             registry
