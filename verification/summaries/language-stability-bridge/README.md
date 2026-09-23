@@ -124,3 +124,10 @@ On success, the report retains construction observations separately and exposes
 the accepted certificate and mandatory-reference totals as the final result.
 Example Clippy with warnings denied passes. This tooling preparation has not
 consumed a full-publication attempt.
+
+An independent C1 source audit found all 69 Systems bindings serve implemented
+algorithmic roles: 66 direct targets and three Operational v2 correction targets.
+The manifest covers canonical/path/class/library/visibility/source identities,
+both publications, profiles and closure identity. No concrete schema gap was
+found. Actual accepted bindings and adversarial restoration still require the
+real full publication; the source audit is not a positive acceptance result.
