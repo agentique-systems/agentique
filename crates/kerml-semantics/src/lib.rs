@@ -16,6 +16,9 @@ mod inheritance;
 mod namespaces;
 mod naming;
 mod ordering;
+#[cfg(test)]
+#[path = "../tests/unit/producer_chain_closure.rs"]
+mod producer_chain_closure_tests;
 mod producer_closed_dependency;
 #[cfg(test)]
 #[path = "../tests/unit/producer_closed_dependency.rs"]
