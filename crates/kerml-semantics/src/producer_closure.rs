@@ -1167,7 +1167,10 @@ impl ProducerEvaluationTable {
         if pending.is_empty() {
             return blocked;
         }
-        let mut readers: BTreeMap<ElementId, Vec<(ProducerRead, usize)>> = BTreeMap::new();
+        // The evaluation table is immutable throughout this propagation. Borrow
+        // its read rows instead of duplicating every read and exclusion vector
+        // in the temporary reverse index.
+        let mut readers: BTreeMap<ElementId, Vec<(&ProducerRead, usize)>> = BTreeMap::new();
         let mut global = Vec::new();
         let mut inverse = Vec::new();
         for (&subject, row) in &self.rows {
@@ -1253,7 +1256,7 @@ impl ProducerEvaluationTable {
                             | ProducerRead::Any(id)
                             | ProducerRead::Identity(id)
                             | ProducerRead::Requirement(id, _) => {
-                                readers.entry(*id).or_default().push((read.clone(), pair))
+                                readers.entry(*id).or_default().push((read, pair))
                             }
                         }
                     }
@@ -1338,7 +1341,7 @@ impl ProducerEvaluationTable {
                 // creators still need their distinct attachment frontier.
                 future_effects_applied = future_targets.is_none();
                 let mut consume_future =
-                    |read_subject: &ElementId, reads: &[(ProducerRead, usize)]| {
+                    |read_subject: &ElementId, reads: &[(&ProducerRead, usize)]| {
                         for (read, reader) in reads {
                             if future_families.iter().any(|future| {
                                 future.effects.iter().any(|&effect| {
@@ -1409,7 +1412,7 @@ impl ProducerEvaluationTable {
             }
             for &effect in &descriptor.effects {
                 let scope_kind = descriptor.effect_scope(effect);
-                let mut consume = |reads: &[(ProducerRead, usize)]| {
+                let mut consume = |reads: &[(&ProducerRead, usize)]| {
                     for (read, reader) in reads {
                         if descriptor_changes_read(
                             descriptor,
