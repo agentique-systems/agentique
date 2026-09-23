@@ -43,6 +43,9 @@ mod producer_index_select_scope_tests;
 #[path = "../tests/unit/producer_invocation_scope.rs"]
 mod producer_invocation_scope_tests;
 #[cfg(test)]
+#[path = "../tests/unit/producer_owning_type_scope_review.rs"]
+mod producer_owning_type_scope_review_tests;
+#[cfg(test)]
 #[path = "../tests/unit/producer_parameter_scope.rs"]
 mod producer_parameter_scope_tests;
 mod producer_read_trace;
