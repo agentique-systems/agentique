@@ -1,5 +1,12 @@
 //! Structural consequences of KerML 1.0 checks, without executable evaluation.
 use crate::*;
+
+#[cfg(test)]
+#[path = "../tests/unit/argument_population.rs"]
+mod argument_population_tests;
+#[cfg(test)]
+#[path = "../tests/unit/positioned_guards.rs"]
+mod positioned_guard_tests;
 use agq_kerml::{classes as c, properties as p};
 use agq_kernel::{ElementId, provenance::FactKey, value::Value};
 
@@ -8,6 +15,7 @@ enum Position {
     Parameter,
     Result,
     End,
+    Directed,
 }
 impl KerMlQueries<'_> {
     pub(crate) fn expression_result<T>(
@@ -37,21 +45,19 @@ impl KerMlQueries<'_> {
         out: &mut QueryResult<T>,
         expression: ElementId,
     ) -> Option<ElementId> {
-        let members = self.memberships(expression);
-        let parameter = members.value.iter().copied().find(|m| {
-            self.is(*m, c::PARAMETER_MEMBERSHIP) && !self.is(*m, c::RETURN_PARAMETER_MEMBERSHIP)
-        });
+        let members = self.owned_relationships_excluding(
+            expression,
+            c::PARAMETER_MEMBERSHIP,
+            [c::RETURN_PARAMETER_MEMBERSHIP],
+        );
+        let parameter = members.value.first().copied();
         out.merge(members);
         let parameter = parameter?;
         let member = self.member(parameter);
         let feature = member.value;
         out.merge(member);
-        let owned = self.owned_relationships(feature?);
-        let value = owned
-            .value
-            .iter()
-            .copied()
-            .find(|r| self.is(*r, c::FEATURE_VALUE));
+        let owned = self.owned_relationships_of_type(feature?, c::FEATURE_VALUE);
+        let value = owned.value.first().copied();
         out.merge(owned);
         self.read_reference(out, value?, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
     }
@@ -310,15 +316,22 @@ impl KerMlQueries<'_> {
                 })
                 .map_or(property, |descriptor| descriptor.id),
         };
-        out.search_dependencies
-            .insert(SearchDependency::StructuralFeaturePopulation {
-                owner,
-                kind: match position {
-                    Position::Parameter => FeaturePopulationKind::Parameter,
-                    Position::Result => FeaturePopulationKind::Result,
-                    Position::End => FeaturePopulationKind::End,
-                },
-            });
+        let populations: &[FeaturePopulationKind] = match position {
+            Position::Parameter => &[FeaturePopulationKind::Parameter],
+            Position::Result => &[FeaturePopulationKind::Result],
+            Position::End => &[FeaturePopulationKind::End],
+            // Directed returns remain candidates even if their direction is
+            // not the normative `out`. Together these existing populations
+            // cover every directed owned Feature without a broad member read.
+            Position::Directed => &[
+                FeaturePopulationKind::Parameter,
+                FeaturePopulationKind::Result,
+            ],
+        };
+        for &kind in populations {
+            out.search_dependencies
+                .insert(SearchDependency::StructuralFeaturePopulation { owner, kind });
+        }
         let Some(members) = self.accept(out, owner, view.owned_relationship()) else {
             self.property(out, owner, p::ELEMENT_OWNED_RELATIONSHIP);
             return vec![];
@@ -326,12 +339,15 @@ impl KerMlQueries<'_> {
         let members: Vec<_> = members
             .into_iter()
             .flat_map(|members| members.iter())
+            .inspect(|&member| {
+                out.search_dependencies.insert(SearchDependency::Kernel(
+                    agq_kernel::derived::StructuralSearch::ElementIdentity(member),
+                ));
+            })
             .filter(|&member| self.is(member, c::FEATURE_MEMBERSHIP))
             .collect();
-        if !members.is_empty() {
-            self.fact(out, stored_fact(owner, p::ELEMENT_OWNED_RELATIONSHIP));
-        }
         let mut features = vec![];
+        let mut selected_memberships = vec![];
         for membership in members {
             let result = self.is(membership, c::RETURN_PARAMETER_MEMBERSHIP);
             if matches!(position, Position::Result) && !result
@@ -339,11 +355,19 @@ impl KerMlQueries<'_> {
             {
                 continue;
             }
-            self.fact(out, FactKey::Element(membership));
+            let mut carrier = self.result(());
+            self.fact(&mut carrier, FactKey::Element(membership));
             let view = agq_kerml::views::Membership::try_new(membership, self.model())
                 .expect("checked FeatureMembership");
-            let Some(endpoints) = self.accept(out, membership, view.owned_related_element()) else {
-                self.property(out, membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT);
+            let Some(endpoints) =
+                self.accept(&mut carrier, membership, view.owned_related_element())
+            else {
+                self.property(
+                    &mut carrier,
+                    membership,
+                    p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                );
+                out.merge(carrier);
                 continue;
             };
             let endpoints: Vec<_> = endpoints
@@ -351,13 +375,14 @@ impl KerMlQueries<'_> {
                 .flat_map(|members| members.iter())
                 .collect();
             self.fact(
-                out,
+                &mut carrier,
                 stored_fact(membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT),
             );
             if let [feature] = endpoints.as_slice() {
                 let feature = *feature;
-                self.fact(out, FactKey::Element(feature));
+                self.fact(&mut carrier, FactKey::Element(feature));
                 if !self.is(feature, c::FEATURE) {
+                    out.merge(carrier);
                     out.problem(
                         Completeness::Invalid,
                         "KQ_MEMBER_TYPE",
@@ -366,20 +391,64 @@ impl KerMlQueries<'_> {
                     );
                     continue;
                 }
+                let mut guard = self.result(());
+                if !matches!(position, Position::Result) {
+                    let property = if matches!(position, Position::End) {
+                        p::FEATURE_IS_END
+                    } else {
+                        p::FEATURE_DIRECTION
+                    };
+                    guard.merge(self.canonical_fact_evidence(stored_fact(feature, property)));
+                }
                 let selected = match position {
                     Position::Result => true,
                     Position::End => matches!(
-                        self.read_value(out, feature, p::FEATURE_IS_END),
+                        self.read_value(&mut guard, feature, p::FEATURE_IS_END),
                         Some(Value::Boolean(true))
                     ),
-                    Position::Parameter => self
-                        .read_value(out, feature, p::FEATURE_DIRECTION)
+                    Position::Parameter | Position::Directed => self
+                        .read_value(&mut guard, feature, p::FEATURE_DIRECTION)
                         .is_some(),
                 };
                 if selected {
+                    out.merge(carrier);
+                    out.merge(guard);
+                    selected_memberships.push(membership);
                     features.push(feature);
+                } else if carrier.completeness != Completeness::Complete
+                    || guard.completeness != Completeness::Complete
+                {
+                    out.merge(carrier);
+                    out.merge(guard);
+                } else {
+                    // Excluded candidates need guards against becoming members
+                    // of this projection, not their creation proofs. Removing a
+                    // non-parameter snapshot cannot change the parameter vector.
+                    // Retargeting its carrier is covered by the typed population
+                    // search; its scalar guard additionally tracks reclassification.
+                    // Existing identities remain reconstruction dependencies
+                    // without importing a discarded candidate's creation proof.
+                    for element in [membership, feature] {
+                        out.search_dependencies.insert(SearchDependency::Kernel(
+                            agq_kernel::derived::StructuralSearch::ElementIdentity(element),
+                        ));
+                    }
+                    let property = match position {
+                        Position::End => p::FEATURE_IS_END,
+                        Position::Parameter | Position::Directed => p::FEATURE_DIRECTION,
+                        Position::Result => unreachable!(),
+                    };
+                    out.search_dependencies
+                        .insert(SearchDependency::PropertySet {
+                            element: feature,
+                            property: match stored_fact(feature, property) {
+                                FactKey::Property { property, .. } => property,
+                                _ => unreachable!(),
+                            },
+                        });
                 }
             } else {
+                out.merge(carrier);
                 out.problem(
                     Completeness::Invalid,
                     "KQ_MEMBERSHIP_ARITY",
@@ -388,6 +457,12 @@ impl KerMlQueries<'_> {
                 );
             }
         }
+        self.selected_reference_fact(
+            out,
+            owner,
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            &selected_memberships,
+        );
         features
     }
 
@@ -396,6 +471,37 @@ impl KerMlQueries<'_> {
     pub fn owned_parameter_features(&self, owner: ElementId) -> QueryResult<Vec<ElementId>> {
         let mut out = self.result(vec![]);
         out.value = self.positioned_features(&mut out, owner, Position::Parameter);
+        out
+    }
+    /// All directly owned directed Features, including result memberships, in
+    /// canonical order. Callers still apply their exact direction predicate.
+    pub(crate) fn owned_directed_features(&self, owner: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        out.value = self.positioned_features(&mut out, owner, Position::Directed);
+        if self.context().pending_namespace_scopes.contains(&owner) {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_DIRECTED_POPULATION",
+                owner,
+                "Pending source memberships may introduce additional directed Features",
+            );
+        }
+        out
+    }
+    /// Directly owned end Features in canonical membership order. The retained
+    /// population search includes pending endpoints and end-flag writers while
+    /// excluding producers proven to create only non-end members.
+    pub fn owned_end_features(&self, owner: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        out.value = self.positioned_features(&mut out, owner, Position::End);
+        if self.context().pending_namespace_scopes.contains(&owner) {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_END_POPULATION",
+                owner,
+                "Pending source memberships may introduce additional owned end Features",
+            );
+        }
         out
     }
     pub(crate) fn implied_redefinitions(&self, feature: ElementId) -> QueryResult<Vec<ElementId>> {

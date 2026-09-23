@@ -61,6 +61,34 @@ pub struct DerivationBuildMetrics {
     /// The earlier overlay had no remaining readers, so its maps were moved.
     pub reused_owned_storage: bool,
 }
+
+/// Optional precise support for one reference introduced into an ordered stored slot.
+///
+/// This kernel-created cache records the creation/append rule, explicit evidence,
+/// owner/target existence and batch searches. It excludes earlier append proofs
+/// and other targets' automatic existence dependencies. The position identifies
+/// the entry in the current ordered slot; it is not proof that an arbitrary
+/// filtered population is complete. Callers must retain their population search.
+///
+/// Graph archives omit this optimization. Missing metadata requires aggregate
+/// slot evidence, and invalidates any transported proof which relied on it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrderedReferenceContribution {
+    position: usize,
+    explanation: Arc<Explanation>,
+    searches: Arc<BTreeSet<StructuralSearch>>,
+}
+impl OrderedReferenceContribution {
+    pub fn position(&self) -> usize {
+        self.position
+    }
+    pub fn explanation(&self) -> &Explanation {
+        &self.explanation
+    }
+    pub fn searches(&self) -> &BTreeSet<StructuralSearch> {
+        &self.searches
+    }
+}
 impl DerivedOverlay {
     /// Original declared revision, without any inferred slots or elements.
     pub fn declared(&self) -> &Snapshot {
@@ -382,6 +410,7 @@ impl<Input> DerivationBuilder<Input> {
         let mut records = parts.records;
         let mut links = parts.links;
         let mut derived_navigation = parts.derived_navigation;
+        let mut reference_contributions = parts.reference_contributions;
         let mut metrics = DerivationBuildMetrics {
             new_elements: self.elements.len(),
             new_association_occurrences: self.occurrences.len(),
@@ -393,6 +422,7 @@ impl<Input> DerivationBuilder<Input> {
         let initial_pool = evidence_pool.statistics();
         let initial_search_pool = search_pool.statistics();
         let mut changed_facts = BTreeSet::new();
+        let mut contributed = BTreeSet::new();
         let mut changed_existing_explanation = false;
         for input in self.occurrences {
             let id = input
@@ -484,6 +514,49 @@ impl<Input> DerivationBuilder<Input> {
                     rule: input.key.rule,
                     dependencies: BTreeSet::from([Dependency::Derived(FactKey::Element(id))]),
                 };
+                if let SlotValue::Ordered(values) = &value {
+                    let targets: Vec<_> = values
+                        .iter()
+                        .filter_map(|value| match value {
+                            crate::value::Value::Reference(target) => Some(*target),
+                            _ => None,
+                        })
+                        .collect();
+                    // A target key cannot identify repeated positions in a
+                    // nonunique ordered slot. Such populations stay aggregate.
+                    if !targets.is_empty()
+                        && targets.len() == values.len()
+                        && targets.iter().copied().collect::<BTreeSet<_>>().len() == targets.len()
+                    {
+                        let record_searches = self
+                            .searches
+                            .get(&FactKey::Element(id))
+                            .cloned()
+                            .unwrap_or_default();
+                        let slot_searches = self.searches.get(&key).cloned().unwrap_or_default();
+                        let searches = search_pool.union_shared(&record_searches, slot_searches);
+                        for (position, target) in targets.into_iter().enumerate() {
+                            let mut proof = evidence.clone();
+                            let target_fact = FactKey::Element(target);
+                            proof.dependencies.insert(
+                                if self.declared.has_declared_fact(target_fact) {
+                                    Dependency::Declared(target_fact)
+                                } else {
+                                    Dependency::Derived(target_fact)
+                                },
+                            );
+                            reference_contributions.insert(
+                                (id, property, target),
+                                Arc::new(OrderedReferenceContribution {
+                                    position,
+                                    explanation: evidence_pool.intern(proof),
+                                    searches: searches.clone(),
+                                }),
+                            );
+                        }
+                        contributed.insert(key);
+                    }
+                }
                 add_reference_dependencies(&self.declared, &value, &mut evidence.dependencies);
                 let evidence = evidence_pool.intern(evidence);
                 if record
@@ -527,6 +600,13 @@ impl<Input> DerivationBuilder<Input> {
             if !extended.insert(key) || changed_facts.contains(&key) {
                 return Err(DerivationError::DuplicateFact(key));
             }
+            // Preserve the exact append event before whole-slot evidence is
+            // unioned with previous events and automatic sibling dependencies.
+            let contribution_proof = explanation.clone();
+            let contribution_searches = self.searches.get(&key).cloned().unwrap_or_default();
+            if !additions.is_empty() {
+                contributed.insert(key);
+            }
             if let Some(previous) = explanations.get(&key) {
                 changed_existing_explanation = true;
                 // Keep the evidence for every previous entry. No dependency on
@@ -553,6 +633,25 @@ impl<Input> DerivationBuilder<Input> {
                 if values.contains(&value) {
                     return Err(DerivationError::InvalidCollectionExtension { element, property });
                 }
+                let mut proof = contribution_proof.clone();
+                for subject in [element, addition] {
+                    let fact = FactKey::Element(subject);
+                    proof
+                        .dependencies
+                        .insert(if self.declared.has_declared_fact(fact) {
+                            Dependency::Declared(fact)
+                        } else {
+                            Dependency::Derived(fact)
+                        });
+                }
+                reference_contributions.insert(
+                    (element, property, addition),
+                    Arc::new(OrderedReferenceContribution {
+                        position: values.len(),
+                        explanation: evidence_pool.intern(proof),
+                        searches: search_pool.intern_shared(contribution_searches.clone()),
+                    }),
+                );
                 values.push(value);
                 explanation.dependencies.insert(
                     if self.declared.has_declared_fact(FactKey::Element(addition)) {
@@ -627,6 +726,7 @@ impl<Input> DerivationBuilder<Input> {
         model.declared_source = Some(self.declared.clone());
         model.statuses = parts.statuses;
         model.searches = parts.searches;
+        model.reference_contributions = reference_contributions;
         for ((element, property), mut failure) in self.failures {
             self.declared
                 .check_dependency_write(FactKey::Property { element, property })?;
@@ -723,6 +823,15 @@ impl<Input> DerivationBuilder<Input> {
         for (fact, searches) in self.searches {
             if !explanations.contains_key(&fact) {
                 return Err(DerivationError::MissingSearchSubject(fact));
+            }
+            // A later whole-slot search submission cannot be attributed to an
+            // earlier append event. Discard precision rather than miss new reads.
+            if !contributed.contains(&fact)
+                && let FactKey::Property { element, property } = fact
+            {
+                model
+                    .reference_contributions
+                    .retain(|&(owner, slot, _), _| (owner, slot) != (element, property));
             }
             merge_searches(&mut model.searches, &mut search_pool, fact, searches);
         }
@@ -917,6 +1026,22 @@ pub enum StructuralSearch {
     /// contribution does not change this structural projection.
     RelationshipStructure {
         element: ElementId,
+    },
+    /// Original submitted stored slot before additive derived contributions,
+    /// including its absence. Source reconstruction may change this population;
+    /// a producer append or derived adoption cannot change the original slot.
+    DeclaredProperty {
+        element: ElementId,
+        property: PropertyId,
+    },
+    /// Exact optional append-event support for one ordered reference. Readers
+    /// compare the contribution and its position across reconstruction, including
+    /// Some/None availability. Missing metadata is not an empty proof. This is
+    /// separate from the current population search and its provider obligations.
+    OrderedReferenceContribution {
+        element: ElementId,
+        property: PropertyId,
+        target: ElementId,
     },
 }
 /// Explicit unsuccessful computation; never an empty value.

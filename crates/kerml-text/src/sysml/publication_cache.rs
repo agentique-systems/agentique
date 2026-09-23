@@ -1,10 +1,13 @@
-//! Export of already accepted Systems publications. Cache bytes confer no trust.
+//! Exact persistence of accepted Systems publications. Cache bytes confer no trust.
 use super::*;
 use serde_json::{Value, json};
 use std::io::{self, Seek, Write};
 use zip::{ZipWriter, write::SimpleFileOptions};
 
-/// I/O or identity failure while exporting an accepted Systems publication.
+#[path = "publication_restore.rs"]
+mod restoration;
+
+/// I/O or identity failure while persisting an accepted Systems publication.
 #[derive(Debug, thiserror::Error)]
 pub enum SystemsPublicationCacheError {
     #[error(transparent)]
@@ -15,8 +18,24 @@ pub enum SystemsPublicationCacheError {
     Zip(#[from] zip::result::ZipError),
     #[error(transparent)]
     Graph(#[from] agq_kernel::archive::ArchiveError),
-    #[error("accepted Systems publication export mismatch: {0}")]
+    #[error(transparent)]
+    Trusted(#[from] agq_kerml_semantics::TrustedPublicationError),
+    #[error(transparent)]
+    Context(Box<SysmlContextError>),
+    #[error(transparent)]
+    Binding(Box<SysmlBindingError>),
+    #[error("accepted Systems publication cache mismatch: {0}")]
     Mismatch(&'static str),
+}
+impl From<SysmlContextError> for SystemsPublicationCacheError {
+    fn from(error: SysmlContextError) -> Self {
+        Self::Context(Box::new(error))
+    }
+}
+impl From<SysmlBindingError> for SystemsPublicationCacheError {
+    fn from(error: SysmlBindingError) -> Self {
+        Self::Binding(Box::new(error))
+    }
 }
 
 impl CanonicalSysmlSystemsLibrary {
@@ -46,6 +65,12 @@ impl CanonicalSysmlSystemsLibrary {
             .iter()
             .map(|(role, element)| {
                 let (path, expected) = role.specification();
+                let metaclass = self
+                    .overlay
+                    .model()
+                    .element(*element)
+                    .ok_or(SystemsPublicationCacheError::Mismatch("binding element"))?
+                    .metaclass();
                 let source = self
                     .bindings
                     .declaration_sources()
@@ -60,7 +85,9 @@ impl CanonicalSysmlSystemsLibrary {
                     "element":element,
                     "library":self.bindings.identity().library,
                     "qualified_path":path,
+                    "metaclass":metaclass,
                     "expected_metaclass":expected,
+                    "visibility":"public",
                     "source":source,
                     "source_path":document.path(),
                     "source_sha256":document.sha256(),
@@ -124,6 +151,10 @@ impl CanonicalSysmlSystemsLibrary {
             serde_json::to_writer(&mut digest, value)?;
             entries.insert(name, digest.identity());
         }
+        // These entries are complete. Release their expanded JSON before the
+        // kernel archive allocates its proof and search serialization tables.
+        drop(metadata);
+        drop(closure);
         archive.start_file("kernel.jsonl", options)?;
         let mut digest = DigestWriter::new(&mut archive);
         agq_kernel::archive::write_dependent_overlay(&self.overlay, &mut digest)?;

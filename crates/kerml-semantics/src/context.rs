@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 /// Accepted KerML query contract. Optional producer closure is independently
-/// versioned by `agq-producer-closure-context/1` and its registry identity.
+/// versioned by `agq-producer-closure-context/2` and its registry identity.
 pub const RULE_SET_VERSION: &str = "agq-kerml-query/26";
 pub const METAMODEL_VERSION: &str =
     "KerML/1.0;XMI:45b18775afe2b2fcdc70e24f37c6d2f344defcc3f38a02075a193354e2d7b466";
@@ -31,6 +31,8 @@ pub struct SemanticOptions {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SemanticContextId {
     pub revision: RevisionId,
+    /// Canonical aggregate identity. Opting into producers additionally binds
+    /// the original stored-slot population under a distinct digest domain.
     pub model_digest: [u8; 32],
     pub baseline_profile_id: &'static str,
     pub metamodel_version: &'static str,
@@ -90,6 +92,10 @@ pub struct SemanticContext<'m> {
     pub(crate) id: SemanticContextId,
     pub(crate) naming_extension: Option<(&'static str, Arc<dyn SemanticNamingExtension>)>,
     pub(crate) producer_closure: Option<Arc<crate::ProducerClosureCertificate>>,
+    pub(crate) immutable_dependency: Option<&'m ModelView>,
+    /// Exact accepted ancestor, separate from a merely immutable outer layer.
+    pub(crate) accepted_dependency: Option<Arc<DerivedOverlay>>,
+    pub(crate) closed_dependency: Option<Arc<crate::ProducerClosedDependency>>,
 }
 
 impl SemanticContextId {
@@ -151,7 +157,7 @@ impl SemanticContextId {
         contract.producer_closure_digest = None;
         contract.derivation_phase = crate::DerivationPhase::Declared;
         let mut hash = Sha256::new();
-        hash.update(b"agq-producer-closure-context/1\0");
+        hash.update(b"agq-producer-closure-context/2\0");
         hash.update(format!("{contract:?}").as_bytes());
         hash.finalize().into()
     }
@@ -184,6 +190,10 @@ pub enum ContextError {
 }
 
 impl<'m> SemanticContext<'m> {
+    /// Borrow the exact immutable canonical view bound to this context.
+    pub fn model(&self) -> &'m ModelView {
+        self.model
+    }
     /// Share the same immutable input and complete identity with a fresh query
     /// evaluator. This does not rebind, revalidate or change any evidence scope.
     pub fn fork(&self) -> Self {
@@ -192,9 +202,14 @@ impl<'m> SemanticContext<'m> {
             id: self.id.clone(),
             naming_extension: self.naming_extension.clone(),
             producer_closure: self.producer_closure.clone(),
+            immutable_dependency: self.immutable_dependency,
+            accepted_dependency: self.accepted_dependency.clone(),
+            closed_dependency: self.closed_dependency.clone(),
         }
     }
     /// Freeze the complete producer registry before attaching closure evidence.
+    /// The optional producer graph identity also binds original declared slots;
+    /// reattaching the same registry preserves that identity exactly.
     pub fn with_producer_registry_digest(mut self, digest: [u8; 32]) -> Result<Self, ContextError> {
         match self.id.producer_registry_digest {
             Some(existing) if existing != digest => {
@@ -203,6 +218,8 @@ impl<'m> SemanticContext<'m> {
             Some(_) => {}
             None => {
                 self.discard_producer_closure();
+                self.id.model_digest =
+                    crate::context_digest::producer_model_digest(self.model, self.id.model_digest);
                 self.id.producer_registry_digest = Some(digest);
             }
         }
@@ -224,6 +241,11 @@ impl<'m> SemanticContext<'m> {
     /// Shared evidence for this exact immutable graph and interpretation.
     pub fn producer_closure(&self) -> Option<&Arc<crate::ProducerClosureCertificate>> {
         self.producer_closure.as_ref()
+    }
+    /// Authenticated producer-closed immediate dependency, if one was mounted.
+    /// This witness does not confer standard-publication acceptance.
+    pub fn producer_closed_dependency(&self) -> Option<&Arc<crate::ProducerClosedDependency>> {
+        self.closed_dependency.as_ref()
     }
     pub(crate) fn discard_producer_closure(&mut self) {
         self.id.producer_closure_digest = None;
@@ -293,6 +315,9 @@ impl<'m> SemanticContext<'m> {
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
         let mut context = Self::bind(candidate.model(), candidate.revision(), options, libraries)?;
+        context.immutable_dependency = candidate
+            .immutable_dependency()
+            .map(|dependency| dependency.model());
         context.id.construction_obligations = candidate
             .obligations()
             .iter()
@@ -435,7 +460,11 @@ impl<'m> SemanticContext<'m> {
         options: SemanticOptions,
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
-        Self::bind(snapshot.model(), snapshot.revision(), options, libraries)
+        let mut context = Self::bind(snapshot.model(), snapshot.revision(), options, libraries)?;
+        context.immutable_dependency = snapshot
+            .immutable_dependency()
+            .map(|dependency| dependency.model());
+        Ok(context)
     }
     pub fn for_overlay(
         overlay: &'m DerivedOverlay,
@@ -443,6 +472,10 @@ impl<'m> SemanticContext<'m> {
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
         let mut context = Self::bind(overlay.model(), overlay.base_revision(), options, libraries)?;
+        context.immutable_dependency = overlay
+            .declared()
+            .immutable_dependency()
+            .map(|dependency| dependency.model());
         context.id.derivation_phase = crate::DerivationPhase::PartialDerivationOverlay;
         Ok(context)
     }
@@ -455,6 +488,10 @@ impl<'m> SemanticContext<'m> {
         libraries: BTreeSet<LibraryPin>,
     ) -> Result<Self, ContextError> {
         let mut context = Self::bind(overlay.model(), overlay.base_revision(), options, libraries)?;
+        context.immutable_dependency = overlay
+            .declared()
+            .immutable_dependency()
+            .map(|dependency| dependency.model());
         context.id.derivation_phase = crate::DerivationPhase::PartialDerivationOverlay;
         context.id.construction_obligations = overlay
             .obligations()
@@ -568,6 +605,9 @@ impl<'m> SemanticContext<'m> {
             model,
             naming_extension: None,
             producer_closure: None,
+            immutable_dependency: None,
+            accepted_dependency: None,
+            closed_dependency: None,
             id: SemanticContextId {
                 revision,
                 model_digest,

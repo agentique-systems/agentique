@@ -685,6 +685,10 @@ fn declared_snapshot(
         model.declared_source = dependency.model().declared_source.clone();
         model.statuses = dependency.model().statuses.clone();
         model.searches = dependency.model().searches.clone();
+        // Local archive bytes carry no append-contribution cache. Evidence on
+        // the separately supplied immutable dependency remains authenticated by
+        // that exact object and can be retained without reconstructing it.
+        model.reference_contributions = dependency.model().reference_contributions.clone();
     }
     let snapshot = Snapshot {
         inner: Arc::new(SnapshotData {
@@ -873,6 +877,9 @@ fn read(
         let mut model = ModelView::build(registry, records, links, navigation)?;
         model.statuses = failures;
         model.searches = searches;
+        if let Some(dependency) = &dependency {
+            model.reference_contributions = dependency.model().reference_contributions.clone();
+        }
         let overlay = DerivedOverlay::restore_archive(snapshot.clone(), model)?;
         Ok((snapshot, Some(overlay)))
     } else if has_overlay {

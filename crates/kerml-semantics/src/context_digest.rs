@@ -23,6 +23,23 @@ pub(super) fn model_digest(model: &ModelView) -> [u8; 32] {
     graph.finish()
 }
 
+/// Optional producer contexts distinguish original storage from an equal
+/// aggregate. Historical KerML publication graph/receipt encoding is unchanged.
+pub(super) fn producer_model_digest(model: &ModelView, aggregate: [u8; 32]) -> [u8; 32] {
+    let mut graph = GraphEncoder::new(b"agq-producer-model-graph/1");
+    graph.encoder.bytes(&aggregate);
+    for record in model.elements() {
+        for (property, _) in record.slots() {
+            if let Some(slot) = model.declared_slot(record.id(), property) {
+                graph.encoder.id(record.id().as_u128());
+                graph.encoder.id(property.as_u128());
+                graph.slot(slot);
+            }
+        }
+    }
+    graph.finish()
+}
+
 pub(super) fn library_graph_digest(model: &ModelView) -> [u8; 32] {
     let mut graph = GraphEncoder::new(LIBRARY_SCHEMA);
     for record in model.elements().filter(|r| is_library(r.origin())) {
@@ -177,6 +194,21 @@ impl Encoder {
                 StructuralSearch::RelationshipStructure { element } => {
                     self.tag(12);
                     self.id(element.as_u128());
+                }
+                StructuralSearch::DeclaredProperty { element, property } => {
+                    self.tag(13);
+                    self.id(element.as_u128());
+                    self.id(property.as_u128());
+                }
+                StructuralSearch::OrderedReferenceContribution {
+                    element,
+                    property,
+                    target,
+                } => {
+                    self.tag(14);
+                    self.id(element.as_u128());
+                    self.id(property.as_u128());
+                    self.id(target.as_u128());
                 }
             }
         }

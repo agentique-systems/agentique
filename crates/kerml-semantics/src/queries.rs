@@ -87,6 +87,8 @@ impl<'m> KerMlQueries<'m> {
             subject,
             requirement,
             certificate_digest: certificate.map(|certificate| certificate.digest()),
+            source: certificate
+                .and_then(|certificate| certificate.closure_source(subject, requirement)),
         };
         answer.search_dependencies.insert(search.clone());
         answer.value =
@@ -316,7 +318,17 @@ impl<'m> KerMlQueries<'m> {
                     element: incoming.source,
                     property: storage,
                 };
-                self.fact(out, fact);
+                if matches!(
+                    storage,
+                    p::ELEMENT_OWNED_RELATIONSHIP | p::RELATIONSHIP_OWNED_RELATED_ELEMENT
+                ) {
+                    // This inverse projects one edge. Original support for that
+                    // edge must not import proofs from unrelated later siblings.
+                    // A newly derived edge still needs its current derived proof.
+                    self.selected_reference_fact(out, incoming.source, storage, &[element]);
+                } else {
+                    self.fact(out, fact);
+                }
                 evidence.push(Evidence::Fact(fact));
             }
         } else if self.model().navigation_slot(element, property).is_some()
@@ -418,6 +430,12 @@ impl<'m> KerMlQueries<'m> {
             let mut queue = vec![key];
             while let Some(fact) = queue.pop() {
                 out.positive_dependencies.insert(fact);
+                if self.context.sealed_dependency_fact(fact) {
+                    // This proof was discharged in the authenticated dependency
+                    // interpretation. Keep its canonical DAG edge; its historical
+                    // searches are not queries of this project's populations.
+                    continue;
+                }
                 let origin = self.fact_origin(fact);
                 if matches!(origin.as_deref(), None | Some(Origin::Declared(_)))
                     || !out.producer_expanded_facts.insert(fact)
@@ -443,8 +461,12 @@ impl<'m> KerMlQueries<'m> {
                     _ => {}
                 }
             }
+            // A current whole-slot read remains current even before its first
+            // derived append. Original selected support bypasses this method.
+            out.producer_expanded_facts.insert(key);
             return;
         }
+        out.producer_expanded_facts.insert(key);
         let mut queue = vec![(key, false)];
         while let Some((key, declared)) = queue.pop() {
             if declared {
@@ -472,6 +494,21 @@ impl<'m> KerMlQueries<'m> {
             let Some(origin) = self.fact_origin(key) else {
                 continue;
             };
+            if self.context.sealed_dependency_fact(key) {
+                // Explain retains the sealed root and its exact dependency
+                // identity. Deeper historical proof remains on that immutable
+                // overlay, where identical FactKeys may have different inverse
+                // projections from this project. Current queries add their own
+                // live population searches independently.
+                out.positive_dependencies.insert(key);
+                if let Origin::Declared(source) = origin.as_ref() {
+                    out.declared_fact_origins
+                        .entry(key)
+                        .or_insert_with(|| Arc::new(source.clone()));
+                }
+                out.fact_origins.insert(key, origin);
+                continue;
+            }
             out.search_dependencies.extend(
                 self.model()
                     .computation_searches_for(key)
@@ -514,8 +551,9 @@ impl<'m> KerMlQueries<'m> {
 
     /// Positive support for a selected reference population. The caller retains
     /// its precise current-population search separately. An original declared
-    /// slot can prove selected entries without importing unrelated append proofs;
-    /// any later entry requires the full current aggregate evidence instead.
+    /// slot or a kernel-recorded append contribution can prove selected entries
+    /// without importing unrelated append proofs. If exact contribution metadata
+    /// is unavailable, retain the full current aggregate evidence instead.
     pub(crate) fn selected_reference_fact<T>(
         &self,
         out: &mut QueryResult<T>,
@@ -553,14 +591,103 @@ impl<'m> KerMlQueries<'m> {
                 out.declared_fact_origins
                     .entry(fact)
                     .or_insert_with(|| Arc::new(origin.clone()));
-                out.fact_origins
-                    .entry(fact)
-                    .or_insert_with(|| Arc::new(Origin::Declared(origin.clone())));
+                out.fact_origins.entry(fact).or_insert_with(|| {
+                    self.declared_fact_origin(fact)
+                        .expect("selected original stored fact has declared provenance")
+                });
             }
+        } else if self.context.sealed_dependency_fact(fact) {
+            // A selected contribution can carry historical searches directly,
+            // before recursive fact expansion. Seal the exact unchanged slot,
+            // while preserving the caller's current population search.
+            self.fact(out, fact);
+            return Some(fact);
+        } else if selected.iter().all(|target| {
+            self.model()
+                .declared_slot(element, property)
+                .is_some_and(|slot| {
+                    slot.value()
+                        .values()
+                        .any(|value| *value == Value::Reference(*target))
+                })
+                || self
+                    .model()
+                    .ordered_reference_contribution(element, property, *target)
+                    .is_some()
+        }) {
+            let mut declared = false;
+            for &target in selected {
+                if self
+                    .model()
+                    .declared_slot(element, property)
+                    .is_some_and(|slot| {
+                        slot.value()
+                            .values()
+                            .any(|value| *value == Value::Reference(target))
+                    })
+                {
+                    declared = true;
+                    continue;
+                }
+                let contribution = self
+                    .model()
+                    .ordered_reference_contribution(element, property, target)
+                    .expect("checked exact contribution");
+                out.search_dependencies.insert(SearchDependency::Kernel(
+                    agq_kernel::derived::StructuralSearch::OrderedReferenceContribution {
+                        element,
+                        property,
+                        target,
+                    },
+                ));
+                out.search_dependencies.extend(
+                    contribution
+                        .searches()
+                        .iter()
+                        .cloned()
+                        .map(SearchDependency::Kernel),
+                );
+                for &dependency in &contribution.explanation().dependencies {
+                    match dependency {
+                        Dependency::Declared(fact) => self.original_fact(out, fact),
+                        Dependency::Derived(fact) => self.fact(out, fact),
+                    }
+                }
+            }
+            if declared {
+                self.original_fact(out, fact);
+            }
+            // The exact append witnesses above replace the aggregate fact, not
+            // its complete-population search retained by the caller. A separate
+            // whole-slot query continues to carry its complete derived proof.
+            return None;
         } else {
             self.fact(out, fact);
         }
         Some(fact)
+    }
+
+    fn original_fact<T>(&self, out: &mut QueryResult<T>, fact: FactKey) {
+        out.canonical_dependencies
+            .insert(Dependency::Declared(fact));
+        out.positive_dependencies.insert(fact);
+        if let FactKey::Property { element, property } = fact {
+            out.search_dependencies.insert(SearchDependency::Kernel(
+                agq_kernel::derived::StructuralSearch::DeclaredProperty { element, property },
+            ));
+        }
+        if !self.producer_evidence {
+            let origin = self
+                .declared_fact_origin(fact)
+                .expect("kernel-validated declared contribution dependency");
+            let Origin::Declared(source) = origin.as_ref() else {
+                unreachable!("original dependency has declared provenance")
+            };
+            out.declared_fact_origins
+                .entry(fact)
+                .or_insert_with(|| Arc::new(source.clone()));
+            out.fact_origins.entry(fact).or_insert(origin);
+        }
     }
 
     /// Ordered directly owned relationship identities, preserving canonical order.
@@ -582,6 +709,73 @@ impl<'m> KerMlQueries<'m> {
                     evidence.clone(),
                 );
             }
+        }
+        out
+    }
+    /// Original submitted ownership entries, excluding every additive derived
+    /// append or adoption. This is a source declaration projection, not effective
+    /// ownership. Empty populations retain a source reconstruction dependency;
+    /// pending source namespace populations cannot establish a closed absence.
+    pub fn declared_owned_relationships(&self, element: ElementId) -> QueryResult<Vec<ElementId>> {
+        let mut out = self.result(vec![]);
+        if self
+            .checked::<views::Element, _>(&mut out, element)
+            .is_none()
+        {
+            return out;
+        }
+        let property = self
+            .model()
+            .element(element)
+            .and_then(|record| {
+                self.model()
+                    .registry()
+                    .resolve_property(record.metaclass(), p::ELEMENT_OWNED_RELATIONSHIP)
+                    .ok()
+                    .flatten()
+            })
+            .map_or(p::ELEMENT_OWNED_RELATIONSHIP, |descriptor| descriptor.id);
+        let search =
+            SearchDependency::Kernel(agq_kernel::derived::StructuralSearch::DeclaredProperty {
+                element,
+                property,
+            });
+        out.search_dependencies.insert(search.clone());
+        if self.context().pending_namespace_scopes.contains(&element) {
+            out.problem(
+                Completeness::Incomplete,
+                "KQ_DECLARED_NAMESPACE_PENDING",
+                element,
+                "The original source namespace population is pending construction",
+            );
+        }
+        let selected: Vec<_> = self
+            .model()
+            .declared_slot(element, property)
+            .into_iter()
+            .flat_map(|slot| slot.value().values())
+            .filter_map(|value| {
+                if let Value::Reference(id) = value {
+                    Some(*id)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let mut evidence = vec![Evidence::Search(search)];
+        if let Some(fact) = self.selected_reference_fact(&mut out, element, property, &selected) {
+            evidence.push(Evidence::Fact(fact));
+        }
+        for target in selected {
+            self.fact(&mut out, FactKey::Element(target));
+            out.value.push(target);
+            out.prove(
+                QueryKind::OwnedRelationships,
+                element,
+                target,
+                Rule::StoredRelationship,
+                evidence.clone(),
+            );
         }
         out
     }

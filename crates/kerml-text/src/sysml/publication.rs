@@ -90,6 +90,9 @@ pub enum SystemsPublicationFinding {
         completeness: Completeness,
         converged: bool,
     },
+    /// At least one exact certificate subject/requirement remains open, even if
+    /// the scheduler reports that all of its evaluations completed.
+    ProducerClosureRequirements,
     /// Outstanding final-frontier evidence retained when authority rejects the
     /// input before repeating strict producer work.
     ProducerDiagnostic(Diagnostic),
@@ -302,6 +305,15 @@ impl CanonicalSysmlSystemsLibrary {
             ));
             return Err(SystemsPublicationError::Rejected(Box::new(audit)));
         };
+        // Validate final bindings under the independently required registry;
+        // the certificate cannot choose which producers the publication owes.
+        let registry = agq_kerml_semantics::ProducerRegistry::new(
+            agq_kerml_semantics::ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(inputs.accepted_kerml.profile()))
+                .chain(agq_sysml_semantics::sysml_producer_descriptors()),
+        )
+        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
         let q = KerMlQueries::new(
             inputs
                 .accepted_kerml
@@ -314,12 +326,15 @@ impl CanonicalSysmlSystemsLibrary {
                         Arc::new(agq_sysml_semantics::SysmlNamingExtension),
                     )
                 })
-                .and_then(|context| {
-                    context.with_producer_registry_digest(certificate.registry_digest())
-                })
+                .and_then(|context| context.with_producer_registry_digest(registry.digest()))
                 .and_then(|context| context.with_producer_closure(certificate.clone()))
                 .map_err(PublicationOverlayError::Context)?,
         );
+        if !certificate.is_fully_closed(q.model()) {
+            audit
+                .findings
+                .push(SystemsPublicationFinding::ProducerClosureRequirements);
+        }
         if q.context().descriptor_digest != contract.combined_descriptor_digest {
             audit.findings.push(SystemsPublicationFinding::Identity(
                 "combined descriptor graph",
@@ -385,7 +400,7 @@ impl CanonicalSysmlSystemsLibrary {
         if let Some(bindings) = &bindings {
             // Typed current-graph queries validate narrowed SysML domains. The
             // separate producer gate is responsible for the closure claim.
-            let context = SysmlSemanticContext::for_overlay(
+            let context = SysmlSemanticContext::for_producer_overlay(
                 &closure.overlay,
                 inputs.accepted_kerml.complete_overlay(),
                 &inputs.roots,
@@ -470,23 +485,44 @@ impl CanonicalSysmlSystemsLibrary {
     pub fn project_snapshot(&self) -> Snapshot {
         Snapshot::with_immutable_dependency(self.overlay.clone())
     }
-    pub fn queries(&self) -> KerMlQueries<'_> {
-        KerMlQueries::new(
-            self.accepted_kerml
-                .complete_overlay()
-                .project_overlay_context(&self.overlay, &self.roots)
-                .expect("accepted immutable Systems dependency")
-                .with_naming_extension(
-                    SYSML_SEMANTIC_CONTEXT_DOMAIN,
-                    self.identity.dependencies.context_identity_digest(),
-                    Arc::new(agq_sysml_semantics::SysmlNamingExtension),
-                )
-                .and_then(|context| {
-                    context.with_producer_registry_digest(self.producer_closure.registry_digest())
-                })
-                .and_then(|context| context.with_producer_closure(self.producer_closure.clone()))
-                .expect("accepted SysML context identity and producer closure"),
+    /// Mountable producer proof for this exact accepted Systems/KerML graph.
+    /// Consumers share the overlay; no library producer is replayed or graph copied.
+    pub fn producer_closed_dependency(
+        &self,
+    ) -> Result<Arc<agq_kerml_semantics::ProducerClosedDependency>, SysmlContextError> {
+        let context = SysmlSemanticContext::for_producer_overlay(
+            &self.overlay,
+            self.accepted_kerml.complete_overlay(),
+            &self.roots,
+            &self.identity.dependencies,
+            self.bindings.clone(),
+        )?
+        .with_producer_closure(self.producer_closure.clone())?;
+        let registry = agq_kerml_semantics::ProducerRegistry::new(
+            agq_kerml_semantics::ProducerFamily::ALL
+                .into_iter()
+                .map(|family| family.descriptor(self.accepted_kerml.profile()))
+                .chain(agq_sysml_semantics::sysml_producer_descriptors()),
         )
+        .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
+        agq_kerml_semantics::ProducerClosedDependency::new(
+            self.overlay.clone(),
+            context.kerml_context(),
+            &registry,
+        )
+        .map_err(SysmlContextError::KerMl)
+    }
+    pub fn queries(&self) -> KerMlQueries<'_> {
+        let context = SysmlSemanticContext::for_producer_overlay(
+            &self.overlay,
+            self.accepted_kerml.complete_overlay(),
+            &self.roots,
+            &self.identity.dependencies,
+            self.bindings.clone(),
+        )
+        .and_then(|context| context.with_producer_closure(self.producer_closure.clone()))
+        .expect("accepted SysML context identity, bindings and producer closure");
+        KerMlQueries::new(context.kerml_context().fork())
     }
 }
 impl std::fmt::Debug for CanonicalSysmlSystemsLibrary {
@@ -1271,6 +1307,11 @@ mod tests {
             completeness: Completeness::Incomplete,
             converged: true,
             counters: Default::default(),
+            retained_closure_evaluations: 0,
+            reopened_closure_evaluations: 0,
+            closure_rebindings: 0,
+            total_retained_closure_evaluations: 0,
+            total_reopened_closure_evaluations: 0,
             stages: vec![PublicationStage {
                 stratum: agq_kerml_semantics::ResultStructureStratum::Structural,
                 counters: Default::default(),

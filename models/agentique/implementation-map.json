@@ -1,0 +1,19 @@
+{
+  "schema": "agentique-architecture-implementation-map/1",
+  "semantics": "Traceability only; paths do not define model semantics or generate Rust.",
+  "elements": {
+    "LanguageArchitecture::SemanticKernel": { "status": "implemented", "paths": ["crates/kernel"] },
+    "LanguageArchitecture::KerMLEngine": { "status": "implemented", "paths": ["crates/kerml", "crates/kerml-semantics", "crates/kerml-syntax", "crates/kerml-text"] },
+    "LanguageArchitecture::SysMLEngine": { "status": "implemented-foundation", "paths": ["crates/sysml", "crates/sysml-semantics", "crates/kerml-text"] },
+    "LanguageArchitecture::StandardLibraryManager": { "status": "implemented-foundation", "paths": ["crates/standard-libraries", "crates/kerml-text/src/library", "crates/kerml-text/src/sysml"] },
+    "PlatformArchitecture::ProjectWorkspace": { "status": "planned-gen2", "paths": [] },
+    "PlatformArchitecture::QueryService": { "status": "language-contract", "paths": ["crates/kerml-semantics", "crates/sysml-semantics"] },
+    "PlatformArchitecture::ValidationService": { "status": "language-contract", "paths": ["crates/kerml-semantics", "crates/sysml-semantics"] },
+    "PlatformArchitecture::ViewService": { "status": "planned-gen2", "paths": [] },
+    "PlatformArchitecture::Repository": { "status": "planned-gen2", "paths": [] },
+    "PlatformArchitecture::Client": { "status": "planned-gen2", "paths": [] },
+    "ExecutionArchitecture::ExecutionCompiler": { "status": "planned-gen2", "paths": [] },
+    "ExecutionArchitecture::ExecutionIR": { "status": "planned-gen2", "paths": [] },
+    "ExecutionArchitecture::SimulationRuntime": { "status": "planned-gen2", "paths": [] }
+  }
+}

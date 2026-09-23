@@ -72,8 +72,27 @@ Historical certificate identities stay outside canonical records and their graph
 digest, so equivalent semantic graphs do not acquire worklist-history identities.
 
 Certificate attachment checks the exact graph, registry and context contract.
-Forks share valid evidence; changing interpretation inputs or the graph discards
-it. New frontiers issue new evidence after dependency invalidation. Certificates
+Forks share valid evidence. The version-2 optional closure contract separates
+exact graph binding from semantic closure identity. Changed frontiers invalidate
+producer evaluations whose subject, canonical inputs, negative searches or output
+support changed, then reissue masks after causal dependency closure. An initial
+partial certificate immediately closes requirements without any possible writer.
+
+Reconstruction uses a compact `ProducerClosureCheckpoint`: semantic fingerprints,
+context identity and shared producer reads survive; old model records and indexes
+do not. It computes the actual old/new delta from fingerprints, including both
+relationship endpoints, pending inputs, computation evidence and derived output
+support. Missing detached outputs reopen their producers. New subjects and newly
+applicable writer opportunities remain pending. A caller cannot provide a trusted
+delta or promote an old closed mask into a new graph. Trusted receipt restoration
+need not retain this optional optimization metadata; a later rebind conservatively
+reopens evaluations without retained reads.
+
+Explain identifies `AcceptedDependency` separately from local producer closure.
+The accepted publication context authenticates that boundary; mounting an arbitrary
+immutable overlay does not establish producer closure. Local subject-scoped writers
+cannot reopen protected populations, while genuinely cross-subject writers and
+external inverse/source carriers remain explicit obligations. Certificates
 do not make unresolved source references or unsupported producer semantics valid.
 
 ## Compatibility and publication

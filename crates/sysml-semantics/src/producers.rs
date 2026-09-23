@@ -210,11 +210,12 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
                 effects,
                 ProducerApplicability::Subtypes(classes),
             );
+            descriptor.scoped_fresh_ownership = true;
             if rule == "checkTransitionUsagePayloadSpecialization" {
                 // Only the second input parameter receives a new Subsetting.
                 // FeatureChaining belongs to the newly created payload chain,
                 // and cannot change the transition's own effective typing.
-                descriptor.scope = agq_kerml_semantics::ProducerEffectScope::OwnedDescendants;
+                descriptor.scope = agq_kerml_semantics::ProducerEffectScope::OwnedParameterFeatures;
                 descriptor.fresh_effects = BTreeSet::from([
                     ProducerEffect::FeatureChain,
                     ProducerEffect::ResultStructure,
@@ -574,13 +575,8 @@ pub fn plan_sysml_producers(
                 usage_rule
             },
         );
-        let features = queries.direct_features(subject);
-        let mut ends = 0;
-        for &feature in &features.value {
-            if evaluator.boolean(&mut result.evidence, feature, kp::FEATURE_IS_END) == Some(true) {
-                ends += 1;
-            }
-        }
+        let features = queries.owned_end_features(subject);
+        let ends = features.value.len();
         result
             .evidence
             .merge_evidence(features)
@@ -600,12 +596,8 @@ pub fn plan_sysml_producers(
     }
     if evaluator.is(subject, sc::FLOW_USAGE) {
         let mut result = evaluator.result(subject, "checkFlowUsageFlowSpecialization");
-        let features = queries.direct_features(subject);
-        let mut has_end = false;
-        for &feature in &features.value {
-            has_end |=
-                evaluator.boolean(&mut result.evidence, feature, kp::FEATURE_IS_END) == Some(true);
-        }
+        let features = queries.owned_end_features(subject);
+        let has_end = !features.value.is_empty();
         result
             .evidence
             .merge_evidence(features)
@@ -624,39 +616,41 @@ pub fn plan_sysml_producers(
     // A more specific proposed standard edge can already establish a broader
     // requirement through the target's existing ancestry. Retain that proof and
     // its reads instead of materializing a redundant second relationship.
-    let proposals: Vec<_> = plan
+    let mut proposals: Vec<_> = plan
         .results
         .iter()
-        .filter_map(|result| result.relationships.first().map(|p| p.general))
+        .filter_map(|result| {
+            result
+                .relationships
+                .first()
+                .map(|p| (p.general, result.evidence.clone()))
+        })
         .collect();
+    // The smallest reachable candidate is retained: any candidate capable of
+    // suppressing it would be smaller and reachable by the same canonical path.
+    proposals.sort_by_key(|(general, _)| *general);
     for result in &mut plan.results {
         let Some(general) = result.relationships.first().map(|p| p.general) else {
             continue;
         };
-        for &other in &proposals {
-            if general == other {
+        for (other, antecedents) in &proposals {
+            let other = *other;
+            // A strictly decreasing target identity keeps even equivalent
+            // bases acyclic without claiming that a reverse path is absent.
+            if other >= general {
                 continue;
             }
-            let ancestors = queries.all_supertypes(other);
-            if ancestors.completeness == Completeness::Complete
-                && ancestors.value.contains(&general)
-            {
-                let reverse = queries.all_supertypes(general);
-                // Equivalent bases use the lowest stable canonical ID so a
-                // cycle never suppresses both obligations.
-                let preferred = !reverse.value.contains(&other) || other < general;
-                if preferred && reverse.completeness == Completeness::Complete {
-                    result
-                        .evidence
-                        .merge_evidence(ancestors)
-                        .expect("same producer context");
-                    result
-                        .evidence
-                        .merge_evidence(reverse)
-                        .expect("same producer context");
-                    result.relationships.clear();
-                    break;
-                }
+            if let Some(witness) = queries.canonical_specialization_witness(other, general) {
+                result
+                    .evidence
+                    .merge_evidence(witness)
+                    .expect("same producer context");
+                result
+                    .evidence
+                    .merge_evidence(antecedents.clone())
+                    .expect("same producer context");
+                result.relationships.clear();
+                break;
             }
         }
     }
@@ -1253,15 +1247,16 @@ impl Evaluator<'_, '_> {
             .evidence
             .merge_evidence(target)
             .expect("same producer context");
-        let ancestors = self.queries.all_supertypes(subject);
         let reflexive = general == Some(subject);
-        let already_satisfied = reflexive
-            || (ancestors.completeness == Completeness::Complete
-                && general.is_some_and(|id| ancestors.value.contains(&id)));
-        if already_satisfied && !reflexive {
+        let witness = general.and_then(|general| {
+            self.queries
+                .canonical_specialization_witness(subject, general)
+        });
+        let already_satisfied = reflexive || witness.is_some();
+        if let Some(witness) = witness {
             result
                 .evidence
-                .merge_evidence(ancestors)
+                .merge_evidence(witness)
                 .expect("same producer context");
         }
         // Exhaustive ancestor absence is only a redundancy optimization. The
@@ -1416,9 +1411,6 @@ impl Evaluator<'_, '_> {
         for (index, segment) in path.iter().enumerate() {
             let mut candidates = BTreeSet::new();
             for &scope in &scopes {
-                answer
-                    .search_dependencies
-                    .insert(SearchDependency::NamespaceMembers { namespace: scope });
                 if q.context().pending_namespace_scopes.contains(&scope) {
                     problem(
                         &mut answer,
@@ -1428,7 +1420,7 @@ impl Evaluator<'_, '_> {
                         "Canonical target namespace population is pending",
                     );
                 }
-                let owned = q.owned_relationships(scope);
+                let owned = q.declared_owned_relationships(scope);
                 for &membership in &owned.value {
                     answer
                         .merge_evidence(q.canonical_fact_evidence(FactKey::Element(membership)))
@@ -1666,11 +1658,25 @@ fn usage_may_time_vary(
     evidence
         .merge_evidence(occurrence)
         .expect("same producer context");
-    let ancestors = queries.all_supertypes(owner);
-    let owner_is_occurrence = occurrence_id.is_some_and(|id| ancestors.value.contains(&id));
-    evidence
-        .merge_evidence(ancestors)
-        .expect("same producer context");
+    let owner_witness = occurrence_id
+        .and_then(|occurrence| queries.canonical_specialization_witness(owner, occurrence));
+    let owner_is_occurrence = if let Some(witness) = owner_witness {
+        // This is a positive existential premise. A selected canonical path
+        // proves it without importing unrelated owner ancestors' pending reads.
+        evidence
+            .merge_evidence(witness)
+            .expect("same producer context");
+        true
+    } else {
+        // No bounded witness is not absence: virtual/chained semantic paths and
+        // the negative case still use the ordinary complete ancestor query.
+        let ancestors = queries.all_supertypes(owner);
+        let matches = occurrence_id.is_some_and(|id| ancestors.value.contains(&id));
+        evidence
+            .merge_evidence(ancestors)
+            .expect("same producer context");
+        matches
+    };
     if evidence.completeness != Completeness::Complete {
         return evidence.map(|()| None);
     }
@@ -1726,7 +1732,7 @@ fn usage_may_time_vary(
         None,
         library,
     );
-    let excluded: Vec<_> = self_link
+    let mut excluded: Vec<_> = self_link
         .value
         .into_iter()
         .chain(happens_link.value)
@@ -1737,15 +1743,29 @@ fn usage_may_time_vary(
     evidence
         .merge_evidence(happens_link)
         .expect("same producer context");
-    let types = queries.all_supertypes(subject);
-    let mut excludes = excluded.iter().any(|id| types.value.contains(id));
     if composite == Some(true) {
         let action = evaluator.target(subject, Target::Sysml(R::Action));
-        excludes |= action.value.is_some_and(|id| types.value.contains(&id));
+        excluded.extend(action.value);
         evidence
             .merge_evidence(action)
             .expect("same producer context");
     }
+    if let Some(witness) = excluded
+        .iter()
+        .find_map(|&excluded| queries.canonical_specialization_witness(subject, excluded))
+    {
+        // Any positive exclusion proves false independently of other ancestors.
+        // Their derived proofs may themselves read this Usage's mayTimeVary.
+        evidence
+            .merge_evidence(witness)
+            .expect("same producer context");
+        let complete = evidence.completeness == Completeness::Complete;
+        return evidence.map(|()| complete.then_some(false));
+    }
+    // No bounded witness is not absence: virtual/chained paths and negative
+    // excluded-type conclusions retain the ordinary complete query contract.
+    let types = queries.all_supertypes(subject);
+    let excludes = excluded.iter().any(|id| types.value.contains(id));
     evidence
         .merge_evidence(types)
         .expect("same producer context");

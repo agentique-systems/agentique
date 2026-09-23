@@ -2,8 +2,90 @@
 //! through a private cfg(test) constructor. Real-cache integration is separate.
 #[path = "producer_tests.rs"]
 mod producer_tests;
+#[path = "structural_query_tests.rs"]
+mod structural_query_tests;
 #[path = "transition_tests.rs"]
 mod transition_tests;
+
+#[test]
+fn scalar_inverse_inventory_is_ownership_bounded() {
+    // These are the scalar inverse populations used by the pinned combined
+    // graph. Both have precise ownership reads in KerMLQueries::property;
+    // the generic Incoming fallback is not reached by current library queries.
+    for profile in [
+        agq_kerml::BaselineProfile::PublishedKerMl10,
+        agq_kerml::BaselineProfile::OPERATIONAL_V9,
+    ] {
+        let registry = agq_sysml::registry_for_profile(profile).unwrap();
+        let inverses: BTreeSet<_> = registry
+            .properties()
+            .filter_map(|property| {
+                registry
+                    .inverse_storage(property.id)
+                    .unwrap()
+                    .map(|storage| (property.id, storage))
+            })
+            .collect();
+        assert_eq!(
+            inverses,
+            BTreeSet::from([
+                (
+                    kp::ELEMENT_OWNING_RELATIONSHIP,
+                    kp::RELATIONSHIP_OWNED_RELATED_ELEMENT
+                ),
+                (
+                    kp::RELATIONSHIP_OWNING_RELATED_ELEMENT,
+                    kp::ELEMENT_OWNED_RELATIONSHIP
+                ),
+            ]),
+            "{profile:?}"
+        );
+    }
+}
+
+#[test]
+fn mounted_dependency_cannot_substitute_a_weaker_producer_registry() {
+    use agq_kerml_semantics::{
+        ProducerClosedDependency, ProducerClosureCertificate, ProducerRegistry,
+    };
+    let snapshot = Fixture::new().base;
+    let overlay = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(snapshot)
+            .build()
+            .unwrap(),
+    );
+    let registry = ProducerRegistry::new([]).unwrap();
+    let context = SemanticContext::for_overlay(
+        &overlay,
+        SemanticOptions {
+            baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+            ..Default::default()
+        },
+        BTreeSet::new(),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let context = context.with_producer_closure(certificate).unwrap();
+    let dependency = ProducerClosedDependency::new(overlay.clone(), &context, &registry).unwrap();
+    let snapshot = dependency.project_snapshot();
+    let context = dependency
+        .project_context(&snapshot, &[], BTreeSet::new(), BTreeSet::new())
+        .unwrap();
+    let bindings = StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32]));
+    let expected = SysmlDependencyContract::checked_in_for_profile(
+        &bindings,
+        SysmlBaselineProfile::OperationalV2,
+    )
+    .unwrap();
+    assert!(matches!(
+        SysmlSemanticContext::for_closed_dependency(context, &expected, bindings),
+        Err(SysmlContextError::KerMl(
+            agq_kerml_semantics::ContextError::ProducerRegistryIdentityMismatch
+        ))
+    ));
+}
 use super::*;
 use agq_kerml::{classes as kc, properties as kp};
 use agq_kerml_semantics::{Completeness, KerMlQueries, SemanticContext, SemanticOptions};
@@ -238,7 +320,7 @@ fn programmatic_vertical_reuses_original_inherited_usage_without_allocating_reco
     );
     assert!(!inherited.kerml.positive_dependencies.is_empty());
     assert_eq!(
-        queries.effective_qualified_name(id(3)).value(),
+        queries.current_qualified_name(id(3)).value(),
         &Some(QualifiedNamePath {
             segments: vec![
                 BTreeSet::from(["Vehicle".to_owned()]),
@@ -377,7 +459,7 @@ fn effective_answers_expose_missing_base_rules_and_derived_may_time_vary() {
     );
 }
 
-fn library_fixture(class: MetaclassId, duplicated: bool) -> Snapshot {
+pub(crate) fn library_fixture(class: MetaclassId, duplicated: bool) -> Snapshot {
     let mut f = Fixture::new();
     f.origin = DeclaredOrigin::StandardLibrary {
         library: SystemsLibraryIdentity::LIBRARY,

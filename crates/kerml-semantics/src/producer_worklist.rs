@@ -66,6 +66,7 @@ pub enum ProducerFamily {
     ExpressionResult,
     FeatureValue,
     IndexSelectResult,
+    FeatureValuation,
 }
 impl ProducerFamily {
     pub const fn id(self) -> ProducerFamilyId {
@@ -81,6 +82,7 @@ impl ProducerFamily {
             Self::ExpressionResult => "KerML.ExpressionResult",
             Self::FeatureValue => "KerML.FeatureValue",
             Self::IndexSelectResult => "KerML.IndexSelectResult",
+            Self::FeatureValuation => "KerML.FeatureValuation",
         })
     }
     pub fn descriptor(self, profile: BaselineProfile) -> ProducerDescriptor {
@@ -139,7 +141,6 @@ impl ProducerFamily {
                 vec![c::EXPRESSION, c::FUNCTION],
                 vec![
                     E::Membership,
-                    E::FeatureChain,
                     E::ValueBinding,
                     E::ResultStructure,
                     E::ConnectorStructure,
@@ -148,14 +149,15 @@ impl ProducerFamily {
             Self::FeatureValue => (
                 vec![c::FEATURE],
                 vec![
-                    E::Subsetting,
-                    E::FeatureChain,
-                    E::Featuring,
                     E::Membership,
                     E::ValueBinding,
                     E::ResultStructure,
                     E::ConnectorStructure,
                 ],
+            ),
+            Self::FeatureValuation => (
+                vec![c::FEATURE],
+                vec![E::Subsetting, E::Membership, E::ResultStructure],
             ),
             Self::IndexSelectResult => (
                 vec![c::INDEX_EXPRESSION, c::SELECT_EXPRESSION],
@@ -206,6 +208,7 @@ impl ProducerFamily {
                 E::Membership,
             ],
             Self::FeatureChainExpression => vec![E::FeatureChain, E::Redefinition, E::Membership],
+            Self::FeatureValuation => vec![E::FeatureChain, E::Membership],
             Self::Invocation
             | Self::FeatureReferenceExpression
             | Self::ExpressionResult
@@ -221,6 +224,11 @@ impl ProducerFamily {
         .into_iter()
         .collect();
         if self == Self::VariableFeaturing {
+            // TypeFeaturing is emitted only on the variable Feature. Snapshot
+            // creation changes its owner's membership, not the owner's featuring.
+            descriptor
+                .effect_scopes
+                .insert(E::Featuring, ProducerEffectScope::Subject);
             // Existing effects concern the variable Feature and its owning
             // Type, never intermediate membership carrier records.
             descriptor.effect_targets = Some(BTreeSet::from([c::TYPE]));
@@ -231,8 +239,65 @@ impl ProducerFamily {
                     .collect(),
             );
         }
+        if self == Self::ExpressionResult {
+            // The expression/function gains only contextual-result and binding
+            // memberships. Chaining, featuring and subsetting concern newly
+            // created helper features, never the existing producer subject.
+            // In particular no FeatureValue carrier is introduced by this rule.
+            // Its contextual Feature and binding Connector are undirected;
+            // only the fresh binding ends enter a positional population.
+            descriptor.feature_populations =
+                Some(BTreeSet::from([crate::FeaturePopulationKind::End]));
+            descriptor.relationship_classes = Some(
+                [
+                    c::OWNING_MEMBERSHIP,
+                    c::FEATURE_MEMBERSHIP,
+                    c::END_FEATURE_MEMBERSHIP,
+                    c::FEATURE_CHAINING,
+                    c::REFERENCE_SUBSETTING,
+                    c::TYPE_FEATURING,
+                    c::BINDING_CONNECTOR,
+                ]
+                .into_iter()
+                .collect(),
+            );
+        }
+        if matches!(self, Self::FeatureReferenceExpression | Self::FeatureValue) {
+            let mut classes = BTreeSet::from([
+                c::OWNING_MEMBERSHIP,
+                c::END_FEATURE_MEMBERSHIP,
+                c::REFERENCE_SUBSETTING,
+                c::TYPE_FEATURING,
+                c::BINDING_CONNECTOR,
+            ]);
+            if self == Self::FeatureValue {
+                classes.insert(c::FEATURE_CHAINING);
+            }
+            descriptor.relationship_classes = Some(classes);
+            descriptor.minimum_stratum = ResultStructureStratum::ContextualBindings;
+        }
+        if self == Self::FeatureValuation {
+            descriptor.derivation_rules = Some(BTreeSet::from([crate::result_structure::rule_id(
+                profile,
+                "checkFeatureValuationSpecialization",
+            )]));
+            descriptor.relationship_classes = Some(BTreeSet::from([
+                c::SUBSETTING,
+                c::OWNING_MEMBERSHIP,
+                c::FEATURE_CHAINING,
+            ]));
+        }
+        if self == Self::FeatureValue {
+            descriptor.derivation_rules = Some(BTreeSet::from([
+                crate::ImpliedBindingRole::FeatureValue.rule_id(profile),
+                crate::result_structure::rule_id(profile, "initial-feature-value-context/1"),
+            ]));
+        }
         if self == Self::FeatureChainExpression {
             descriptor.effects.insert(E::Subsetting);
+            // A missing source-target Feature is created below the existing
+            // first input Feature, so its membership is an existing-subject write.
+            descriptor.effects.insert(E::Membership);
         }
         if self == Self::FeatureReferenceExpression {
             descriptor.effects.insert(E::Membership);
@@ -241,15 +306,21 @@ impl ProducerFamily {
             descriptor.minimum_stratum = ResultStructureStratum::ContextualBindings;
         }
         descriptor.scope = match self {
-            Self::VariableFeaturing => ProducerEffectScope::SubjectAndOwners,
-            Self::Invocation | Self::FeatureChainExpression | Self::IndexSelectResult => {
-                ProducerEffectScope::SubjectAndOwned
+            Self::VariableFeaturing => ProducerEffectScope::SubjectAndOwningType,
+            Self::Invocation => ProducerEffectScope::SubjectAndOwnedResults,
+            Self::FeatureChainExpression => ProducerEffectScope::SubjectAndOwnedFeatures,
+            Self::IndexSelectResult if profile.supports_publication_producers() => {
+                // These profiles stage an owned instantiation result and require
+                // its exact ownership before emitting Index/Select subsetting.
+                ProducerEffectScope::SubjectAndOwnedResults
             }
+            Self::IndexSelectResult => ProducerEffectScope::SubjectAndOwned,
             _ => ProducerEffectScope::Subject,
         };
+        descriptor.scoped_fresh_ownership = true;
         descriptor
     }
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 12] = [
         Self::OwnedInstantiationResult,
         Self::PositionalRedefinition,
         Self::VariableFeaturing,
@@ -261,6 +332,7 @@ impl ProducerFamily {
         Self::ExpressionResult,
         Self::FeatureValue,
         Self::IndexSelectResult,
+        Self::FeatureValuation,
     ];
     fn applies(self, model: &ModelView, class: MetaclassId, profile: BaselineProfile) -> bool {
         let is = |parent| model.registry().is_subtype(class, parent).unwrap_or(false);
@@ -282,7 +354,7 @@ impl ProducerFamily {
             }
             Self::FeatureReferenceExpression => is(c::FEATURE_REFERENCE_EXPRESSION),
             Self::ExpressionResult => is(c::EXPRESSION) || is(c::FUNCTION),
-            Self::FeatureValue => is(c::FEATURE),
+            Self::FeatureValue | Self::FeatureValuation => is(c::FEATURE),
             Self::IndexSelectResult => is(c::INDEX_EXPRESSION) || is(c::SELECT_EXPRESSION),
         }
     }
@@ -596,7 +668,13 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     let mut evaluations = crate::producer_closure::ProducerEvaluationTable::default();
     let mut certificate: Option<std::sync::Arc<ProducerClosureCertificate>> = None;
     let extension_descriptors = extension.descriptors();
-    let mut unregistered_extension = false;
+    let mut unregistered_extension = extension_descriptors.is_empty()
+        && population.iter().any(|&subject| {
+            overlay
+                .model()
+                .element(subject)
+                .is_some_and(|record| extension.applies(overlay.model(), record.metaclass()))
+        });
     let mut stratum = ResultStructureStratum::Structural;
     let mut deferred_bindings = BTreeSet::new();
     for round in 0..options.max_rounds {
@@ -612,6 +690,18 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         current_context = current_context
             .with_producer_registry_digest(registry.digest())
             .map_err(PublicationOverlayError::Context)?;
+        if round == 0
+            && let Some(witness) = current_context.producer_closure()
+        {
+            evaluations = witness.evaluation_table();
+            certificate = Some(witness.clone());
+        }
+        if certificate.is_none() && !unregistered_extension {
+            certificate = Some(std::sync::Arc::new(
+                ProducerClosureCertificate::initial(&current_context, registry)
+                    .map_err(PublicationOverlayError::Context)?,
+            ));
+        }
         if let Some(witness) = &certificate {
             if witness.compatible_context(current_context.id()) {
                 current_context = current_context
@@ -896,7 +986,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                     next_context.id(),
                     registry,
                     &evaluations,
-                    |id| Overlay::is_dependency_element(input, id),
+                    |id| next_context.dependency_closure_source(id),
                 ));
                 counters.applicable_subject_family_pairs = issued.applicable_pairs();
                 counters.closed_producer_pairs = issued.closed_pairs();
@@ -908,6 +998,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                     .as_ref()
                     .is_none_or(|old| old.digest() != issued.digest());
                 certificate = Some(issued);
+                evaluations.prune_unused_reads();
                 if changed_witness
                     && status
                         .values()
@@ -953,7 +1044,29 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             overlay = next;
             break;
         }
-        certificate = None;
+        // Revalidate evaluations before rebinding evidence to the changed graph.
+        // Unaffected read sets survive; new families/subjects and changed reads
+        // reopen, and issue recomputes upstream causal blockers and closed masks.
+        evaluations.invalidate(&changed);
+        certificate = if unregistered_extension {
+            None
+        } else {
+            let started = std::time::Instant::now();
+            let next_context = context_factory(&next)?
+                .with_producer_registry_digest(registry.digest())
+                .map_err(PublicationOverlayError::Context)?;
+            let issued = std::sync::Arc::new(ProducerClosureCertificate::issue(
+                next.model(),
+                next_context.id(),
+                registry,
+                &evaluations,
+                |id| next_context.dependency_closure_source(id),
+            ));
+            counters.certificate_build_micros += started.elapsed().as_micros();
+            counters.certificate_bytes = issued.storage_bytes();
+            Some(issued)
+        };
+        evaluations.prune_unused_reads();
         population.extend(new_subjects);
         worklist = match options.strategy {
             PublicationClosureStrategy::Worklist => index

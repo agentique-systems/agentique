@@ -129,7 +129,7 @@ fn qualified_name_excludes_named_and_unnamed_root_namespace() {
     for root_name in [None, Some("NeverAPrefix")] {
         let snapshot = fixture(root_name, false, false);
         let q = queries(&snapshot, BTreeSet::new());
-        let answer = q.effective_qualified_name(id(3));
+        let answer = q.current_qualified_name(id(3));
         assert_eq!(answer.completeness(), Completeness::Complete, "{answer:?}");
         assert_eq!(
             answer.value(),
@@ -140,11 +140,11 @@ fn qualified_name_excludes_named_and_unnamed_root_namespace() {
                 ]
             })
         );
-        let root = q.effective_qualified_name(id(1));
+        let root = q.current_qualified_name(id(1));
         assert_eq!(root.completeness(), Completeness::Complete);
         assert_eq!(root.value(), &None);
         assert_eq!(
-            q.effective_qualified_name(id(2)).value(),
+            q.current_qualified_name(id(2)).value(),
             &Some(QualifiedNamePath {
                 segments: vec![BTreeSet::from(["Vehicle".into()])]
             })
@@ -157,7 +157,7 @@ fn qualified_name_does_not_choose_duplicate_siblings_or_incomplete_population() 
     let duplicate = fixture(None, true, false);
     let q = queries(&duplicate, BTreeSet::new());
     for id in [id(3), id(4)] {
-        let answer = q.effective_qualified_name(id);
+        let answer = q.current_qualified_name(id);
         assert_eq!(answer.completeness(), Completeness::Incomplete);
         assert_eq!(answer.value(), &None);
         assert!(
@@ -170,7 +170,7 @@ fn qualified_name_does_not_choose_duplicate_siblings_or_incomplete_population() 
     let ordinary = fixture(None, false, false);
     for scope in [id(1), id(2)] {
         let q = queries(&ordinary, BTreeSet::from([scope]));
-        let answer = q.effective_qualified_name(id(3));
+        let answer = q.current_qualified_name(id(3));
         assert_eq!(answer.completeness(), Completeness::Incomplete);
         assert_eq!(answer.value(), &None);
         assert!(
@@ -186,7 +186,7 @@ fn qualified_name_does_not_choose_duplicate_siblings_or_incomplete_population() 
 fn qualified_name_uses_full_name_without_promoting_short_name() {
     let snapshot = fixture(None, false, true);
     let q = queries(&snapshot, BTreeSet::new());
-    let answer = q.effective_qualified_name(id(3));
+    let answer = q.current_qualified_name(id(3));
     assert_eq!(answer.completeness(), Completeness::Complete);
     assert_eq!(
         answer.value().as_ref().unwrap().segments[1],
@@ -195,7 +195,7 @@ fn qualified_name_uses_full_name_without_promoting_short_name() {
     let mut changes = snapshot.change_set();
     changes.clear(id(3), kp::ELEMENT_DECLARED_NAME);
     let short_only = snapshot.apply(&changes).unwrap();
-    let answer = queries(&short_only, BTreeSet::new()).effective_qualified_name(id(3));
+    let answer = queries(&short_only, BTreeSet::new()).current_qualified_name(id(3));
     assert_eq!(answer.completeness(), Completeness::Incomplete);
     assert_eq!(answer.value(), &None);
 }

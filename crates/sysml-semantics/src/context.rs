@@ -15,7 +15,7 @@ use std::{
 };
 
 /// Identity of the implemented SysML query contract, independently of KerML rules.
-pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/3";
+pub const SYSML_RULE_SET_VERSION: &str = "agq-sysml-query/5";
 /// Final SysML 2.0 formal descriptor authority, not a preliminary revision.
 pub const SYSML_METAMODEL_VERSION: &str =
     "SysML/2.0;XMI:caa65d54f56798bf7582d173f7567e1eea37a49c45984f8bd7df145011cf8c6f";
@@ -192,14 +192,44 @@ pub struct SysmlSemanticContext<'m> {
 }
 
 impl<'m> SysmlSemanticContext<'m> {
-    /// Attach scheduler evidence to the exact composed graph and dependency
-    /// contract. This does not accept a library publication or waive pending
-    /// SysML query capabilities. The complete expected KerML/SysML producer
-    /// registry is established independently of the supplied certificate.
-    pub fn with_producer_closure(
-        mut self,
-        certificate: Arc<agq_kerml_semantics::ProducerClosureCertificate>,
+    /// The composed KerML evaluator contract, including its runtime language
+    /// extension and authenticated dependency boundary.
+    pub fn kerml_context(&self) -> &SemanticContext<'m> {
+        &self.kerml
+    }
+
+    /// Compose a mounted producer-closed dependency. The supplied witness proves
+    /// closure, not standard-publication acceptance; public authored frontends
+    /// obtain it only from their accepted Systems publication facade.
+    pub fn for_closed_dependency(
+        kerml: SemanticContext<'m>,
+        expected: &SysmlDependencyContract,
+        bindings: StandardSysmlBindings,
     ) -> Result<Self, SysmlContextError> {
+        let trusted =
+            SysmlDependencyContract::checked_in_for_profile(&bindings, expected.sysml_profile)?;
+        validate_contract(expected, &trusted)?;
+        if kerml.producer_closed_dependency().is_none() {
+            return Err(SysmlContextError::IdentityMismatch(
+                "producer-closed dependency witness",
+            ));
+        }
+        let kerml = producer_context(kerml)?;
+        Self::attach(kerml.model(), kerml, trusted, bindings)
+    }
+    /// Restore authenticated evidence for an already accepted Systems graph.
+    /// The complete expected registry is rebuilt here; a weaker caller registry
+    /// cannot authorize effective SysML query completeness.
+    pub fn with_trusted_producer_closure(
+        mut self,
+        receipt: &agq_kerml_semantics::TrustedPublicationReceipt,
+        reader: impl std::io::Read,
+    ) -> Result<Self, SysmlContextError> {
+        if receipt.id() != "sysml-systems-operational-v2" {
+            return Err(SysmlContextError::IdentityMismatch(
+                "Systems receipt authority",
+            ));
+        }
         let registry = agq_kerml_semantics::ProducerRegistry::new(
             agq_kerml_semantics::ProducerFamily::ALL
                 .into_iter()
@@ -209,8 +239,31 @@ impl<'m> SysmlSemanticContext<'m> {
         .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
         self.kerml = self
             .kerml
-            .with_producer_registry_digest(registry.digest())?
-            .with_producer_closure(certificate)?;
+            .with_producer_registry_digest(registry.digest())?;
+        let certificate = receipt
+            .restore_producer_closure(reader, &self.kerml, &registry)
+            .map_err(|_| SysmlContextError::IdentityMismatch("trusted Systems producer closure"))?;
+        self.with_producer_closure(certificate)
+    }
+
+    /// Attach scheduler evidence to the exact composed graph and dependency
+    /// contract. This does not accept a library publication or waive pending
+    /// SysML query capabilities. The complete expected KerML/SysML producer
+    /// registry is established independently of the supplied certificate.
+    pub fn with_producer_closure(
+        mut self,
+        certificate: Arc<agq_kerml_semantics::ProducerClosureCertificate>,
+    ) -> Result<Self, SysmlContextError> {
+        let kerml = producer_context(self.kerml)?;
+        // Opting in authenticates the original declared populations as well as
+        // the aggregate graph. Bindings made against a current-graph context
+        // cannot silently retain the old, narrower graph identity.
+        if !self.bindings.valid_for_context(&kerml) {
+            return Err(SysmlContextError::IdentityMismatch(
+                "standard SysML bindings graph",
+            ));
+        }
+        self.kerml = kerml.with_producer_closure(certificate)?;
         self.id.kerml = self.kerml.id().clone();
         Ok(self)
     }
@@ -290,6 +343,25 @@ impl<'m> SysmlSemanticContext<'m> {
         let kerml = accepted.project_overlay_context(overlay, local_roots)?;
         Self::attach(overlay.model(), kerml, trusted, bindings)
     }
+    /// Bind producer-aware queries to an overlay with the exact accepted KerML
+    /// dependency. The full KerML/SysML producer registry is independently
+    /// established before validating bindings against the source-sensitive
+    /// graph identity. This does not assert producer closure; attach the exact
+    /// scheduler certificate with [`Self::with_producer_closure`].
+    pub fn for_producer_overlay(
+        overlay: &'m DerivedOverlay,
+        accepted: &CompletePublicationOverlay,
+        local_roots: &[ElementId],
+        expected: &SysmlDependencyContract,
+        bindings: StandardSysmlBindings,
+    ) -> Result<Self, SysmlContextError> {
+        let trusted =
+            SysmlDependencyContract::checked_in_for_profile(&bindings, expected.sysml_profile)?;
+        validate_contract(expected, &trusted)?;
+        validate_accepted(accepted.context(), &trusted)?;
+        let kerml = producer_context(accepted.project_overlay_context(overlay, local_roots)?)?;
+        Self::attach(overlay.model(), kerml, trusted, bindings)
+    }
     fn attach(
         model: &'m ModelView,
         kerml: SemanticContext<'m>,
@@ -301,7 +373,7 @@ impl<'m> SysmlSemanticContext<'m> {
                 "combined descriptor graph",
             ));
         }
-        if !bindings.valid_for(kerml.id()) {
+        if !bindings.valid_for_context(&kerml) {
             return Err(SysmlContextError::IdentityMismatch(
                 "standard SysML bindings graph",
             ));
@@ -309,7 +381,7 @@ impl<'m> SysmlSemanticContext<'m> {
         let kerml = kerml.with_naming_extension(
             crate::SYSML_SEMANTIC_CONTEXT_DOMAIN,
             trusted.context_identity_digest(),
-            Arc::new(crate::SysmlNamingExtension),
+            sysml_naming_extension(),
         )?;
         let id = SysmlSemanticContextId {
             kerml: kerml.id().clone(),
@@ -330,6 +402,24 @@ impl<'m> SysmlSemanticContext<'m> {
     pub fn model(&self) -> &'m ModelView {
         self.model
     }
+}
+
+fn producer_context(kerml: SemanticContext<'_>) -> Result<SemanticContext<'_>, SysmlContextError> {
+    let registry = agq_kerml_semantics::ProducerRegistry::new(
+        agq_kerml_semantics::ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(kerml.id().options.baseline_profile))
+            .chain(crate::sysml_producer_descriptors()),
+    )
+    .map_err(|_| SysmlContextError::IdentityMismatch("combined SysML producer registry"))?;
+    Ok(kerml.with_producer_registry_digest(registry.digest())?)
+}
+
+fn sysml_naming_extension() -> Arc<dyn agq_kerml_semantics::SemanticNamingExtension> {
+    static EXTENSION: OnceLock<Arc<crate::SysmlNamingExtension>> = OnceLock::new();
+    EXTENSION
+        .get_or_init(|| Arc::new(crate::SysmlNamingExtension))
+        .clone()
 }
 
 fn validate_contract(
@@ -472,6 +562,19 @@ pub(crate) fn fixture_context<'m>(
         id,
         bindings,
     }
+}
+
+/// Synthetic tests exercise normal attachment and certificate validation while
+/// deliberately omitting the public accepted-standard-library boundary.
+#[cfg(test)]
+pub(crate) fn fixture_overlay_context<'m>(
+    overlay: &'m DerivedOverlay,
+    kerml: SemanticContext<'m>,
+    profile: SysmlBaselineProfile,
+) -> Result<SysmlSemanticContext<'m>, SysmlContextError> {
+    let bindings = StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned([0; 32]));
+    let contract = SysmlDependencyContract::checked_in_for_profile(&bindings, profile)?;
+    SysmlSemanticContext::attach(overlay.model(), kerml, contract, bindings)
 }
 
 #[cfg(test)]

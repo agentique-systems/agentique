@@ -1,4 +1,6 @@
 mod common;
+#[path = "common/shared_dependency_projection.rs"]
+mod shared_dependency_projection;
 use agq_kernel::{derived::*, metamodel::*, provenance::*, value::*, *};
 use common::*;
 use std::{

@@ -21,6 +21,138 @@ fn current_context(overlay: &DerivedOverlay) -> SemanticContext<'_> {
 }
 
 #[test]
+fn producer_overlay_bindings_attach_only_to_the_exact_producer_graph() {
+    use agq_kerml_semantics::{KerMlQueries, ProducerClosureCertificate, ProducerRegistry};
+    use agq_kernel::{
+        provenance::DeclaredOrigin,
+        value::{SlotValue, Value},
+    };
+
+    let declared = crate::tests::library_fixture(agq_sysml::classes::PART_DEFINITION, false);
+    let overlay = DerivationBuilder::new(declared.clone()).build().unwrap();
+    let raw = current_context(&overlay);
+    let producer = producer_context(raw.fork()).unwrap();
+    assert_ne!(raw.id().model_digest, producer.id().model_digest);
+    let validate = |context| {
+        StandardSysmlBindings::validate(
+            overlay.model(),
+            &KerMlQueries::new(context),
+            SystemsLibraryIdentity::pinned([7; 32]),
+            &[ElementId::from_u128(1)],
+            [StandardSysmlRole::Part],
+        )
+        .unwrap()
+    };
+    let bindings = validate(producer.fork());
+    assert_eq!(
+        bindings.get(StandardSysmlRole::Part),
+        Some(ElementId::from_u128(3))
+    );
+    let trusted = SysmlDependencyContract::checked_in_for_profile(
+        &bindings,
+        SysmlBaselineProfile::OPERATIONAL_V2,
+    )
+    .unwrap();
+    // The exact private composition used by for_producer_overlay, without
+    // forging an accepted library or loading its large graph in a unit test.
+    let context =
+        SysmlSemanticContext::attach(overlay.model(), producer, trusted.clone(), bindings.clone())
+            .unwrap();
+    assert!(matches!(
+        SysmlSemanticContext::attach(
+            overlay.model(),
+            raw.fork(),
+            trusted.clone(),
+            bindings.clone()
+        ),
+        Err(SysmlContextError::IdentityMismatch(
+            "standard SysML bindings graph"
+        ))
+    ));
+    let registry = ProducerRegistry::new(
+        agq_kerml_semantics::ProducerFamily::ALL
+            .into_iter()
+            .map(|family| family.descriptor(BaselineProfile::OPERATIONAL_V9))
+            .chain(crate::sysml_producer_descriptors()),
+    )
+    .unwrap();
+    let certificate =
+        Arc::new(ProducerClosureCertificate::initial(context.kerml_context(), &registry).unwrap());
+    let attached = context
+        .fork()
+        .with_producer_closure(certificate.clone())
+        .unwrap();
+    assert!(
+        attached
+            .bindings
+            .valid_for_context(attached.kerml_context())
+    );
+    assert_eq!(
+        attached.id().kerml.model_digest,
+        context.id().kerml.model_digest
+    );
+    assert_eq!(
+        attached.id().kerml.producer_registry_digest,
+        Some(registry.digest())
+    );
+
+    let raw_bindings = validate(raw.fork());
+    let raw_context =
+        SysmlSemanticContext::attach(overlay.model(), raw.fork(), trusted.clone(), raw_bindings)
+            .unwrap();
+    assert!(matches!(
+        raw_context.with_producer_closure(certificate.clone()),
+        Err(SysmlContextError::IdentityMismatch(
+            "standard SysML bindings graph"
+        ))
+    ));
+
+    let weaker_registry = ProducerRegistry::new([]).unwrap();
+    let weaker_context = SysmlSemanticContext::attach(
+        overlay.model(),
+        raw,
+        trusted.clone(),
+        validate(current_context(&overlay)),
+    )
+    .unwrap()
+    .kerml
+    .with_producer_registry_digest(weaker_registry.digest())
+    .unwrap();
+    let weaker_certificate =
+        Arc::new(ProducerClosureCertificate::initial(&weaker_context, &weaker_registry).unwrap());
+    assert!(matches!(
+        context.with_producer_closure(weaker_certificate),
+        Err(SysmlContextError::KerMl(
+            ContextError::ProducerClosureMismatch
+        ))
+    ));
+
+    let mut changes = declared.change_set();
+    changes.set(
+        ElementId::from_u128(1),
+        agq_kerml::properties::ELEMENT_DECLARED_NAME,
+        SlotValue::Scalar(Value::String("changed root".into())),
+        DeclaredOrigin::StandardLibrary {
+            library: SystemsLibraryIdentity::LIBRARY,
+        },
+    );
+    let changed = DerivationBuilder::new(declared.apply(&changes).unwrap())
+        .build()
+        .unwrap();
+    assert!(matches!(
+        SysmlSemanticContext::attach(
+            changed.model(),
+            producer_context(current_context(&changed)).unwrap(),
+            trusted,
+            bindings
+        ),
+        Err(SysmlContextError::IdentityMismatch(
+            "standard SysML bindings graph"
+        ))
+    ));
+}
+
+#[test]
 fn sysml_facade_rejects_weaker_registry_on_the_same_graph_and_interpretation() {
     use agq_kerml_semantics::{
         Completeness, PublicationOverlayError, close_result_structure_with_extension,

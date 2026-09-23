@@ -564,4 +564,24 @@ impl StandardSysmlBindings {
                     .path_scopes
                     .is_disjoint(&context.pending_namespace_scopes)
     }
+    pub(crate) fn valid_for_context(
+        &self,
+        context: &agq_kerml_semantics::SemanticContext<'_>,
+    ) -> bool {
+        self.valid_for(context.id())
+            || context
+                .producer_closed_dependency()
+                .is_some_and(|dependency| {
+                    self.sources_verified()
+                        && self.model_digest == Some(dependency.context().model_digest)
+                        && self.descriptor_digest == Some(context.id().descriptor_digest)
+                        && self
+                            .path_scopes
+                            .is_disjoint(&context.id().pending_namespace_scopes)
+                        && self
+                            .targets
+                            .values()
+                            .all(|id| dependency.overlay().model().element(*id).is_some())
+                })
+    }
 }

@@ -8,6 +8,9 @@ mod context;
 mod context_digest;
 mod contract;
 mod cross_features;
+#[cfg(test)]
+#[path = "../tests/unit/expression_result_population_review.rs"]
+mod expression_result_population_review_tests;
 mod expression_structure;
 mod featuring;
 mod formal_targets;
@@ -16,10 +19,45 @@ mod inheritance;
 mod namespaces;
 mod naming;
 mod ordering;
+#[cfg(test)]
+#[path = "../tests/unit/producer_broad_reads.rs"]
+mod producer_broad_reads_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_chain_closure.rs"]
+mod producer_chain_closure_tests;
+mod producer_closed_dependency;
+#[cfg(test)]
+#[path = "../tests/unit/producer_closed_dependency.rs"]
+mod producer_closed_dependency_tests;
 mod producer_closure;
 #[cfg(test)]
 #[path = "../tests/unit/producer_closure.rs"]
 mod producer_closure_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_effect_scope_review.rs"]
+mod producer_effect_scope_review_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_future_scope.rs"]
+mod producer_future_scope_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_index_select_scope.rs"]
+mod producer_index_select_scope_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_invocation_scope.rs"]
+mod producer_invocation_scope_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_owning_type_scope_review.rs"]
+mod producer_owning_type_scope_review_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_parameter_scope.rs"]
+mod producer_parameter_scope_tests;
+mod producer_read_trace;
+#[cfg(test)]
+#[path = "../tests/unit/producer_rule_ownership.rs"]
+mod producer_rule_ownership_tests;
+#[cfg(test)]
+#[path = "../tests/unit/producer_value_strata.rs"]
+mod producer_value_strata_tests;
 mod producer_worklist;
 mod publication;
 mod publication_overlay;
@@ -28,8 +66,16 @@ mod read_dependencies;
 mod relationship_sources;
 mod resolution;
 mod result_structure;
+#[cfg(test)]
+#[path = "../tests/unit/selected_contribution_merge.rs"]
+mod selected_contribution_merge_tests;
+#[cfg(test)]
+#[path = "../tests/unit/selected_contribution.rs"]
+mod selected_contribution_tests;
+mod specialization_witness;
 mod status_queries;
 mod structural;
+mod trusted_publication;
 mod typing;
 mod validation;
 
@@ -50,6 +96,7 @@ pub use featuring::ConnectorFeaturing;
 pub use formal_targets::*;
 pub use namespaces::{MemberAccess, MemberMatch};
 pub use naming::EffectiveNames;
+pub use producer_closed_dependency::*;
 pub use producer_closure::*;
 pub use producer_worklist::*;
 pub use publication::*;
@@ -60,6 +107,7 @@ pub use resolution::*;
 pub use result_structure::*;
 pub use status_queries::*;
 pub use structural::MultiplicityBounds;
+pub use trusted_publication::{TrustedPublicationError, TrustedPublicationReceipt};
 pub use validation::RedefinitionEndConformance;
 
 #[cfg(test)]

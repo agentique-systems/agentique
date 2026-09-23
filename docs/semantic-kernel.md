@@ -104,7 +104,7 @@ closure before acceptance. Closure remains pending; the three bounded authority
 decisions are recorded in the immutable Operational v2 correction manifest.
 Neither declared construction nor context attachment
 certifies a Systems publication. See the
-[Systems publication evidence](../verification/summaries/sysml-systems-publication/README.md).
+[language stability bridge evidence](../verification/summaries/language-stability-bridge/README.md).
 
 The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
 under Operational v9 by default, with explicit historical profile selection.
@@ -450,7 +450,7 @@ library ingestion open. Later structural and canonical-publication milestones
 supersede those limits. The current SysML foundation composes the accepted KerML
 publication and shared textual frontend; its remaining reference, producer and
 authority gates are recorded in the
-[Systems publication evidence](../verification/summaries/sysml-systems-publication/README.md).
+[language stability bridge evidence](../verification/summaries/language-stability-bridge/README.md).
 Application migration, persistence, API and execution remain separate future work.
 
 

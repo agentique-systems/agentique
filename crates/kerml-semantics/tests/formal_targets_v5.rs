@@ -267,6 +267,7 @@ fn six_rules_six_profiles_exact_targets_and_arbitrary_names() {
                         search,
                         SearchDependency::ProducerClosure {
                             certificate_digest: None,
+                            source: None,
                             ..
                         }
                     )));
@@ -427,6 +428,7 @@ fn incomplete_owner_typing_cannot_make_an_antecedent_vacuously_complete() {
                 subject: id(3),
                 requirement: SemanticClosureRequirement::EffectiveTyping,
                 certificate_digest: None,
+                source: None,
             })
     );
     let changes = untyped.change_set();

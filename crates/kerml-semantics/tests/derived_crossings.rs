@@ -129,6 +129,28 @@ fn binary_crossing_is_a_canonical_occurrence_with_transitive_derived_query_evide
         answer
             .search_dependencies
             .contains(&SearchDependency::Kernel(
+                agq_kernel::derived::StructuralSearch::OwnedRelationships {
+                    owner: id(10),
+                    class: c::CROSS_SUBSETTING,
+                }
+            ))
+    );
+    assert!(
+        answer
+            .search_dependencies
+            .contains(&SearchDependency::Kernel(
+                agq_kernel::derived::StructuralSearch::OwnedRelationshipsExcluding {
+                    owner: id(10),
+                    class: c::OWNING_MEMBERSHIP,
+                    excluded: BTreeSet::from([c::FEATURE_MEMBERSHIP, c::FEATURE_VALUE]),
+                }
+            )),
+        "the materialized crossing retains its original eligible-member search"
+    );
+    assert!(
+        !answer
+            .search_dependencies
+            .contains(&SearchDependency::Kernel(
                 agq_kernel::derived::StructuralSearch::Property {
                     element: id(10),
                     property: p::ELEMENT_OWNED_RELATIONSHIP,

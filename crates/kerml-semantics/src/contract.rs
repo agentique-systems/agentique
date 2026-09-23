@@ -53,6 +53,7 @@ pub enum SearchDependency {
         subject: ElementId,
         requirement: crate::SemanticClosureRequirement,
         certificate_digest: Option<[u8; 32]>,
+        source: Option<crate::ClosureSource>,
     },
     /// The semantic producer role, including the absence of such provenance.
     ImpliedBindingRole(Option<crate::ImpliedBindingRole>),
@@ -279,7 +280,8 @@ pub struct QueryResult<T> {
     pub(crate) producer_evidence: bool,
     // A positive fact may cite only its original declared contribution. Keep
     // current derived-origin expansion separate so a later broad read is never
-    // suppressed by that narrower proof. This is a private traversal cache.
+    // suppressed by that narrower proof. Includes direct current roots even
+    // before a derived append; original selected support is not a current root.
     pub(crate) producer_expanded_facts: BTreeSet<FactKey>,
     // Only private producer/status evaluators defer kernel search expansion.
     // Public evidence fields are populated eagerly by ordinary query evaluators.
@@ -289,12 +291,16 @@ pub struct QueryResult<T> {
     pub completeness: Completeness,
     pub diagnostics: BTreeSet<Diagnostic>,
     pub positive_dependencies: BTreeSet<FactKey>,
+    /// Searches of the current semantic context. Historical searches supporting
+    /// sealed dependency facts remain on their authenticated dependency overlay.
     pub search_dependencies: BTreeSet<SearchDependency>,
     /// Alternative proofs share conclusion keys; no feature or semantic ID is allocated.
     pub explanations: BTreeMap<Conclusion, BTreeSet<Explanation>>,
     /// Leaf evidence retains kernel declared origins and recursively expanded overlay proofs.
     /// Immutable origins are shared when answers are cloned; their content, not
     /// allocation identity, participates in answer equality and debugging output.
+    /// Sealed dependency roots retain their origin and link to the dependency's
+    /// proof DAG; historical facts are not flattened into current-context keys.
     pub fact_origins: BTreeMap<FactKey, Arc<Origin>>,
     /// Submitted source evidence beneath any extended collection with the same key.
     pub declared_fact_origins: BTreeMap<FactKey, Arc<DeclaredOrigin>>,
@@ -362,9 +368,9 @@ impl<T> QueryResult<T> {
         self.positive_dependencies
             .extend(other.positive_dependencies);
         self.search_dependencies.extend(other.search_dependencies);
+        self.producer_expanded_facts
+            .extend(other.producer_expanded_facts);
         if self.producer_evidence {
-            self.producer_expanded_facts
-                .extend(other.producer_expanded_facts);
             self.shared_search_dependencies
                 .merge(other.shared_search_dependencies);
         } else {

@@ -62,13 +62,18 @@ fn contribute(
     );
     plan.observe_evidence(result.evidence.clone())?;
     for relationship in result.relationships {
-        plan.add_derived_element(
+        let output = plan.add_derived_element(
             relationship.key,
             relationship.metaclass,
             relationship.slots(),
             Some(relationship.specific),
             &result.evidence,
         )?;
+        plan.attribute_producer_outputs(
+            subject,
+            agq_kerml_semantics::ProducerFamilyId::new(result.rule),
+            output,
+        );
     }
     for property in result.properties {
         plan.add_derived_property(
@@ -80,13 +85,18 @@ fn contribute(
         )?;
     }
     for element in result.elements {
-        plan.add_derived_element(
+        let output = plan.add_derived_element(
             element.key,
             element.metaclass,
             element.slots,
             element.owner,
             &result.evidence,
         )?;
+        plan.attribute_producer_outputs(
+            subject,
+            agq_kerml_semantics::ProducerFamilyId::new(result.rule),
+            output,
+        );
     }
     Ok(())
 }

@@ -112,7 +112,7 @@ fn assert_vertical(queries: &SysmlQueries<'_>, ids: [ElementId; 4]) {
     let owned = queries.owned_usages(sports_car);
     assert_eq!(owned.completeness(), Completeness::Complete);
     assert!(owned.value().is_empty());
-    let name = queries.effective_qualified_name(engine);
+    let name = queries.current_qualified_name(engine);
     assert_eq!(name.completeness(), Completeness::Complete);
     assert_eq!(
         name.value().as_ref().unwrap().segments,

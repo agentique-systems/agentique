@@ -222,6 +222,10 @@ fn edit_preserves_other_document_and_old_revision_and_rebuilds_dependents() {
         next.document_at("b.kerml").unwrap().revision(),
         b_doc.revision()
     );
+    assert!(
+        std::ptr::eq(next.document_at("b.kerml").unwrap(), b_doc),
+        "unchanged document and its syntax arena are shared across revisions"
+    );
     // The dependent typing disappears; the unchanged declaration and membership survive.
     assert!(next.queries().direct_feature_types(b).value.is_empty());
     assert_eq!(

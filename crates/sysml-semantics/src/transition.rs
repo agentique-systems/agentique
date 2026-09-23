@@ -342,22 +342,25 @@ pub(crate) fn plan_transition_payload(
         );
         return result;
     };
-    let mut ancestors = q.all_supertypes(parameter);
-    let mut satisfied = false;
-    for ancestor in ancestors.value.clone() {
+    // Discover candidates without importing an exhaustive ancestry proof. Only
+    // a selected canonical path and that ancestor's exact chain can discharge
+    // the positive redundancy premise; unrelated descendants may remain open.
+    for ancestor in q.all_supertypes(parameter).value {
         if !is(q, ancestor, kc::FEATURE) {
             continue;
         }
         let chain = q.chaining_features(ancestor);
-        satisfied |= chain.value.ends_with(&[trigger, payload]);
-        merge(&mut ancestors, chain);
+        if chain.completeness == Completeness::Complete
+            && chain.value.ends_with(&[trigger, payload])
+            && let Some(witness) = q.canonical_specialization_witness(parameter, ancestor)
+        {
+            merge(&mut result.evidence, witness);
+            merge(&mut result.evidence, chain);
+            return result;
+        }
     }
-    if satisfied && ancestors.completeness == Completeness::Complete {
-        merge(&mut result.evidence, ancestors);
-        return result;
-    }
-    // Exhaustive ancestor absence is only a redundancy optimization. Known
-    // trigger and input parameters independently imply this payload chain.
+    // No selected witness is not certified absence. Complete trigger and input
+    // antecedents independently imply the stable ordinary payload derivation.
     if result.evidence.completeness != Completeness::Complete {
         return result;
     }

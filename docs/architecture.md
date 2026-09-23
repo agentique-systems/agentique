@@ -138,7 +138,7 @@ corrections while Published and Operational v1 remain reproducible.
 reference, producer, capability, binding, provenance or authority gate. Canonical
 identities retain their source provenance through lowering and refinement;
 authored edits do not change the immutable library dependency. See the current
-[Systems publication evidence](../verification/summaries/sysml-systems-publication/README.md)
+[language stability bridge evidence](../verification/summaries/language-stability-bridge/README.md)
 and the historical
 [Phase 1 foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md).
 

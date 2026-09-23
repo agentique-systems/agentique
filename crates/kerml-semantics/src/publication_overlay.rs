@@ -193,6 +193,7 @@ impl CompletePublicationOverlay {
         context.id.formal_constraint_targets = self.context.formal_constraint_targets.clone();
         context.id.library_graph_digest = self.context.library_graph_digest;
         context.id.publication_dependency_digest = Some(self.context.model_digest);
+        context.accepted_dependency = Some(std::sync::Arc::new(self.overlay.clone()));
         Ok(context)
     }
     pub fn overlay(&self) -> &DerivedOverlay {
@@ -224,6 +225,13 @@ impl CompletePublicationOverlay {
             id: self.context.clone(),
             naming_extension: None,
             producer_closure: self.certificate.clone(),
+            immutable_dependency: self
+                .overlay
+                .declared()
+                .immutable_dependency()
+                .map(|dependency| dependency.model()),
+            accepted_dependency: None,
+            closed_dependency: None,
         })
     }
 }

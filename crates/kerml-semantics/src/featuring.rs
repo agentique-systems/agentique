@@ -8,6 +8,18 @@ use agq_kernel::{
 };
 use std::collections::BTreeSet;
 
+#[cfg(test)]
+#[path = "../tests/unit/reference_prefix.rs"]
+mod reference_prefix_tests;
+
+#[cfg(test)]
+#[path = "../tests/unit/compatible_witness.rs"]
+mod compatible_witness_tests;
+
+#[cfg(test)]
+#[path = "../tests/unit/compatible_witness_guards.rs"]
+mod compatible_witness_guard_tests;
+
 /// A connector check retains ordinary and operational endpoint decisions separately.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConnectorFeaturing {
@@ -402,6 +414,64 @@ impl KerMlQueries<'_> {
         out
     }
 
+    /// A selected canonical FeatureMembership proves this Type's owned Feature
+    /// population is nonempty. No witness means no conclusion about emptiness.
+    fn owned_feature_witness(&self, ty: ElementId) -> Option<QueryResult<()>> {
+        let Ok(agq_kernel::derived::PropertyState::Computed(slot)) = self
+            .model()
+            .property_state(ty, p::ELEMENT_OWNED_RELATIONSHIP)
+        else {
+            return None;
+        };
+        for value in slot.value().values() {
+            let Value::Reference(membership) = *value else {
+                continue;
+            };
+            if !self.is(membership, c::FEATURE_MEMBERSHIP) {
+                continue;
+            }
+            let mut witness = self.result(());
+            self.checked::<agq_kerml::views::Type, _>(&mut witness, ty)?;
+            self.checked::<agq_kerml::views::FeatureMembership, _>(&mut witness, membership)?;
+            let member = self.member(membership);
+            let Some(feature) = member.value else {
+                continue;
+            };
+            witness.merge(member);
+            if self
+                .checked::<agq_kerml::views::Feature, _>(&mut witness, feature)
+                .is_none()
+                || witness.completeness != Completeness::Complete
+            {
+                continue;
+            }
+            if let Some(FactKey::Property { element, property }) = self.selected_reference_fact(
+                &mut witness,
+                ty,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                &[membership],
+            ) && self
+                .model()
+                .declared_slot(element, property)
+                .is_some_and(|slot| {
+                    slot.value()
+                        .values()
+                        .any(|value| *value == Value::Reference(membership))
+                })
+            {
+                // The original positive edge is immutable during additive
+                // production; reconstruction still tracks its original slot.
+                witness.search_dependencies.insert(SearchDependency::Kernel(
+                    agq_kernel::derived::StructuralSearch::DeclaredProperty { element, property },
+                ));
+            }
+            if witness.completeness == Completeness::Complete {
+                return Some(witness);
+            }
+        }
+        None
+    }
+
     fn compatible<T>(
         &self,
         out: &mut QueryResult<T>,
@@ -420,6 +490,13 @@ impl KerMlQueries<'_> {
             return true;
         }
         if !self.is(ty, c::FEATURE) || !self.is(other, c::FEATURE) {
+            return false;
+        }
+        if let Some(nonempty) = self
+            .owned_feature_witness(ty)
+            .or_else(|| self.owned_feature_witness(other))
+        {
+            out.merge(nonempty);
             return false;
         }
         let own = self.direct_features(ty);
@@ -547,11 +624,47 @@ impl KerMlQueries<'_> {
     /// The exact first non-parameter owned membership, with its unresolved evidence retained.
     pub fn reference_referent(&self, expression: ElementId) -> QueryResult<Option<ElementId>> {
         let mut out = self.result(None);
-        let members = self.memberships(expression);
+        if self
+            .checked::<agq_kerml::views::Namespace, _>(&mut out, expression)
+            .is_none()
+        {
+            return out;
+        }
+        let declared = self.declared_owned_relationships(expression);
+        let declared_first = declared.value.iter().position(|&member| {
+            self.is(member, c::MEMBERSHIP) && !self.is(member, c::PARAMETER_MEMBERSHIP)
+        });
+        // A positive original-prefix witness survives additive ownership
+        // appends. It is not an absence proof and never selects a derived-only
+        // first candidate. Current order and provider availability still matter.
+        let fixed_prefix = declared.completeness == Completeness::Complete
+            && declared_first.is_some_and(|end| {
+                let Ok(agq_kernel::derived::PropertyState::Computed(slot)) = self
+                    .model()
+                    .property_state(expression, p::ELEMENT_OWNED_RELATIONSHIP)
+                else {
+                    return false;
+                };
+                let mut current = slot.value().values();
+                declared.value[..=end]
+                    .iter()
+                    .all(|&member| current.next() == Some(&Value::Reference(member)))
+            });
+        let members = if fixed_prefix {
+            declared
+        } else {
+            let mut current = self.memberships(expression);
+            // A pending submitted population may introduce an earlier member.
+            // Preserve that uncertainty even if the present prefix is usable.
+            if declared.completeness != Completeness::Complete {
+                current.merge(declared);
+            }
+            current
+        };
         if let Some(&membership) = members
             .value
             .iter()
-            .find(|m| !self.is(**m, c::PARAMETER_MEMBERSHIP))
+            .find(|m| self.is(**m, c::MEMBERSHIP) && !self.is(**m, c::PARAMETER_MEMBERSHIP))
         {
             let member = self.member(membership);
             out.value = member.value;

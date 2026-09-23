@@ -4,6 +4,448 @@ include!("../common/result_fixture.rs");
 const ACTIVATE: ProducerFamilyId = ProducerFamilyId::new("Fixture.Activate");
 const TYPE: ProducerFamilyId = ProducerFamilyId::new("Fixture.Type");
 
+#[test]
+fn positioned_features_keep_exclusion_guards_without_nonmember_creation_proofs() {
+    use crate::producer_closure::{
+        ProducerEvaluationTable, ProducerRead, effect_changes_read, producer_reads,
+    };
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    let mut f = Fixture::new();
+    f.create(1, c::BEHAVIOR);
+    f.create(2, c::FEATURE);
+    f.enumeration(2, p::FEATURE_DIRECTION, "in");
+    f.value(2, p::FEATURE_IS_END, Value::Boolean(true));
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    f.create(4, c::FEATURE);
+    f.create(5, c::FEATURE_MEMBERSHIP);
+    f.create(6, c::FEATURE);
+    f.enumeration(6, p::FEATURE_DIRECTION, "in");
+    f.value(6, p::FEATURE_IS_END, Value::Boolean(true));
+    f.create(8, c::CLASSIFIER);
+    let snapshot = f.finish();
+    let feature = DerivationKey {
+        rule: RuleId::from_u128(99401),
+        subject: id(1),
+        output: OutputKey::from_u128(1),
+    };
+    let membership = DerivationKey {
+        output: OutputKey::from_u128(2),
+        ..feature
+    };
+    let requirement = SemanticClosureRequirement::EffectiveTyping;
+    let overlay = |selected: bool, retarget: bool, present: bool| {
+        let mut builder = DerivationBuilder::new(snapshot.clone());
+        if present {
+            let mut slots: BTreeMap<_, _> = snapshot
+                .model()
+                .element(id(4))
+                .unwrap()
+                .slots()
+                .map(|(p, s)| (p, s.value().clone()))
+                .collect();
+            if selected {
+                slots.insert(
+                    p::FEATURE_DIRECTION,
+                    snapshot
+                        .model()
+                        .navigation_slot(id(2), p::FEATURE_DIRECTION)
+                        .unwrap()
+                        .value()
+                        .clone(),
+                );
+                slots.insert(p::FEATURE_IS_END, SlotValue::Scalar(Value::Boolean(true)));
+            }
+            builder.element(feature, c::FEATURE, slots, BTreeSet::new());
+            let mut slots: BTreeMap<_, _> = snapshot
+                .model()
+                .element(id(5))
+                .unwrap()
+                .slots()
+                .map(|(p, s)| (p, s.value().clone()))
+                .collect();
+            slots.insert(
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                SlotValue::Ordered(vec![Value::Reference(if retarget {
+                    id(6)
+                } else {
+                    feature.element_id()
+                })]),
+            );
+            builder.element(membership, c::FEATURE_MEMBERSHIP, slots, BTreeSet::new());
+            builder.extend_ordered_references(
+                id(1),
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                vec![membership.element_id()],
+                agq_kernel::provenance::Explanation {
+                    rule: feature.rule,
+                    dependencies: BTreeSet::new(),
+                },
+            );
+            for fact in [
+                FactKey::Element(feature.element_id()),
+                FactKey::Element(membership.element_id()),
+                FactKey::Property {
+                    element: id(1),
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                },
+            ] {
+                builder.searches(
+                    fact,
+                    BTreeSet::from([StructuralSearch::ProducerClosure {
+                        subject: id(8),
+                        requirement: requirement.contract_id().into(),
+                    }]),
+                );
+            }
+        }
+        builder.build().unwrap()
+    };
+    let original = overlay(false, false, true);
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::BEHAVIOR]),
+    )])
+    .unwrap();
+    for production in [false, true] {
+        let context = SemanticContext::for_overlay(&original, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let q = if production {
+            KerMlQueries::for_production(context.fork())
+        } else {
+            KerMlQueries::new(context.fork())
+        };
+        for (projection, scalar) in [
+            (q.owned_parameter_features(id(1)), p::FEATURE_DIRECTION),
+            (q.owned_end_features(id(1)), p::FEATURE_IS_END),
+        ] {
+            assert_eq!(projection.value, [id(2)]);
+            assert_eq!(projection.completeness, Completeness::Complete);
+            let reads = producer_reads(&projection, original.model());
+            assert!(!reads.contains(&ProducerRead::Requirement(id(8), requirement)));
+            let guard = ProducerRead::Property(feature.element_id(), scalar);
+            assert!(reads.contains(&guard));
+            assert!(effect_changes_read(
+                ProducerEffect::Scalar(scalar),
+                &guard,
+                original.model()
+            ));
+            assert!(reads.contains(&ProducerRead::Identity(membership.element_id())));
+            let mut table = ProducerEvaluationTable::default();
+            for record in original.model().elements() {
+                table.pending(record.id(), original.model(), &registry);
+            }
+            table
+                .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+                .unwrap();
+            table.record_reads(&[(id(1), TYPE, reads)], &registry);
+            let certificate = ProducerClosureCertificate::issue(
+                original.model(),
+                context.id(),
+                &registry,
+                &table,
+                |_| None,
+            );
+            assert!(certificate.is_closed(id(1), requirement));
+            let checkpoint = certificate.checkpoint(&context).unwrap();
+            for (selected, retarget, present) in [
+                (true, false, true),
+                (false, true, true),
+                (false, false, false),
+            ] {
+                let edited = overlay(selected, retarget, present);
+                let context =
+                    SemanticContext::for_overlay(&edited, Default::default(), BTreeSet::new())
+                        .unwrap()
+                        .with_producer_registry_digest(registry.digest())
+                        .unwrap();
+                let next = KerMlQueries::new(context.fork());
+                let answer = if scalar == p::FEATURE_DIRECTION {
+                    next.owned_parameter_features(id(1))
+                } else {
+                    next.owned_end_features(id(1))
+                };
+                assert_eq!(answer.value.len(), if present { 2 } else { 1 });
+                if present {
+                    assert!(
+                        producer_reads(&answer, edited.model())
+                            .contains(&ProducerRead::Requirement(id(8), requirement))
+                    );
+                    assert!(
+                        !checkpoint
+                            .rebind(&context, &registry)
+                            .unwrap()
+                            .certificate
+                            .is_closed(id(1), requirement)
+                    );
+                }
+            }
+            for broad_first in [false, true] {
+                let fact = FactKey::Property {
+                    element: id(1),
+                    property: p::ELEMENT_OWNED_RELATIONSHIP,
+                };
+                let mut combined = q.result(());
+                if broad_first {
+                    combined.merge(q.canonical_fact_evidence(fact));
+                }
+                combined.merge(projection.clone());
+                if !broad_first {
+                    combined.merge(q.canonical_fact_evidence(fact));
+                }
+                assert!(
+                    producer_reads(&combined, original.model())
+                        .contains(&ProducerRead::Requirement(id(8), requirement))
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn owned_end_population_ignores_only_proven_non_end_writers() {
+    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    f.create(3, c::FEATURE);
+    f.value(3, p::FEATURE_IS_END, Value::Boolean(true));
+    member(&mut f, 1, 2, 4, c::FEATURE_MEMBERSHIP);
+    member(&mut f, 1, 3, 5, c::FEATURE_MEMBERSHIP);
+    f.create(6, c::CLASSIFIER);
+    f.create(7, c::FEATURE);
+    f.value(7, p::FEATURE_IS_END, Value::Boolean(true));
+    member(&mut f, 6, 7, 8, c::FEATURE_MEMBERSHIP);
+    f.create(9, c::SUBCLASSIFICATION);
+    f.value(
+        9,
+        p::SUBCLASSIFICATION_SUBCLASSIFIER,
+        Value::Reference(id(1)),
+    );
+    f.value(
+        9,
+        p::SUBCLASSIFICATION_SUPERCLASSIFIER,
+        Value::Reference(id(6)),
+    );
+    f.own(1, 9);
+    let snapshot = f.finish();
+    let pending = SemanticContext::for_project_snapshot(
+        &snapshot,
+        Default::default(),
+        BTreeSet::new(),
+        BTreeSet::new(),
+        BTreeSet::from([id(1)]),
+    )
+    .unwrap();
+    assert_eq!(
+        KerMlQueries::new(pending)
+            .owned_end_features(id(1))
+            .completeness,
+        Completeness::Incomplete
+    );
+    for (effect, populations, expected_closed) in [
+        (ProducerEffect::Membership, Some(BTreeSet::new()), true),
+        (
+            ProducerEffect::Membership,
+            Some(BTreeSet::from([crate::FeaturePopulationKind::End])),
+            false,
+        ),
+        (ProducerEffect::Scalar(p::FEATURE_IS_END), None, false),
+    ] {
+        let mut writer = ProducerDescriptor::new(
+            ACTIVATE,
+            [effect],
+            ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+        );
+        writer.feature_populations = populations;
+        writer.relationship_classes = Some(BTreeSet::from([c::FEATURE_MEMBERSHIP]));
+        let reader = ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::Typing],
+            ProducerApplicability::Subtypes(vec![c::CLASSIFIER]),
+        );
+        let registry = ProducerRegistry::new([writer, reader]).unwrap();
+        let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+        let q = KerMlQueries::for_production(context.fork());
+        let ends = q.owned_end_features(id(1));
+        assert_eq!(ends.value, vec![id(3)]);
+        assert_eq!(ends.completeness, Completeness::Complete);
+        let mut table = ProducerEvaluationTable::default();
+        for record in snapshot.model().elements() {
+            table.pending(record.id(), snapshot.model(), &registry);
+        }
+        table
+            .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+            .unwrap();
+        table
+            .record(&[(id(6), TYPE, Completeness::Complete)], &registry)
+            .unwrap();
+        table.record_reads(&[(id(6), TYPE, Vec::new().into())], &registry);
+        table.record_reads(
+            &[(id(1), TYPE, producer_reads(&ends, snapshot.model()))],
+            &registry,
+        );
+        let certificate = ProducerClosureCertificate::issue(
+            snapshot.model(),
+            context.id(),
+            &registry,
+            &table,
+            |_| None,
+        );
+        assert_eq!(
+            certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping),
+            expected_closed,
+            "{effect:?}"
+        );
+    }
+}
+
+#[test]
+fn inverse_ownership_uses_selected_edge_proof_and_keeps_derived_and_broad_reads() {
+    use crate::producer_closure::{ProducerRead, effect_changes_read, producer_reads};
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    for subject in [2, 5, 7, 8] {
+        f.create(subject, c::FEATURE);
+    }
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    member(&mut f, 1, 5, 4, c::FEATURE_MEMBERSHIP);
+    f.owned
+        .get_mut(&id(1))
+        .unwrap()
+        .retain(|v| *v != Value::Reference(id(4)));
+    f.create(9, c::FEATURE_TYPING);
+    f.value(9, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(2)));
+    f.value(9, p::FEATURE_TYPING_TYPE, Value::Reference(id(1)));
+    f.changes.set(
+        id(9),
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        SlotValue::Ordered(vec![Value::Reference(id(7))]),
+        origin(),
+    );
+    let snapshot = f.finish();
+    let requirement = SemanticClosureRequirement::EffectiveTyping;
+    let mut builder = DerivationBuilder::new(snapshot);
+    for (owner, property, target) in [
+        (1, p::ELEMENT_OWNED_RELATIONSHIP, 4),
+        (9, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, 8),
+    ] {
+        builder.extend_ordered_references(
+            id(owner),
+            property,
+            vec![id(target)],
+            agq_kernel::provenance::Explanation {
+                rule: RuleId::from_u128(99201),
+                dependencies: BTreeSet::new(),
+            },
+        );
+        builder.searches(
+            FactKey::Property {
+                element: id(owner),
+                property,
+            },
+            BTreeSet::from([StructuralSearch::ProducerClosure {
+                subject: id(5),
+                requirement: requirement.contract_id().into(),
+            }]),
+        );
+    }
+    let overlay = builder.build().unwrap();
+    for production in [false, true] {
+        let context =
+            SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap();
+        let q = if production {
+            KerMlQueries::for_production(context)
+        } else {
+            KerMlQueries::new(context)
+        };
+        for (selected, appended, owner, property, class, child, appended_child) in [
+            (
+                q.owning_related_element(id(3)),
+                q.owning_related_element(id(4)),
+                1,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                c::ELEMENT,
+                3,
+                4,
+            ),
+            (
+                q.owning_relationship(id(7)),
+                q.owning_relationship(id(8)),
+                9,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                c::RELATIONSHIP,
+                7,
+                8,
+            ),
+        ] {
+            let fact = FactKey::Property {
+                element: id(owner),
+                property,
+            };
+            assert_eq!(selected.value, Some(id(owner)));
+            assert_eq!(selected.completeness, Completeness::Complete);
+            assert!(
+                selected
+                    .canonical_dependencies
+                    .contains(&Dependency::Declared(fact))
+            );
+            let reads = producer_reads(&selected, overlay.model());
+            assert!(!reads.contains(&ProducerRead::Requirement(id(5), requirement)));
+            let inverse = ProducerRead::Source(id(child), class, property);
+            assert!(reads.contains(&inverse));
+            assert!(effect_changes_read(
+                ProducerEffect::Ownership,
+                &inverse,
+                overlay.model()
+            ));
+            assert_eq!(appended.value, Some(id(owner)));
+            assert!(
+                appended
+                    .search_dependencies
+                    .contains(&SearchDependency::Kernel(
+                        StructuralSearch::OrderedReferenceContribution {
+                            element: id(owner),
+                            property,
+                            target: id(appended_child),
+                        }
+                    ))
+            );
+            assert!(
+                producer_reads(&appended, overlay.model())
+                    .contains(&ProducerRead::Requirement(id(5), requirement))
+            );
+            for broad_first in [false, true] {
+                let mut combined = q.result(());
+                if broad_first {
+                    combined.merge(q.canonical_fact_evidence(fact));
+                }
+                combined.merge(selected.clone());
+                if !broad_first {
+                    combined.merge(q.canonical_fact_evidence(fact));
+                }
+                let reads = producer_reads(&combined, overlay.model());
+                assert!(reads.contains(&ProducerRead::Property(id(owner), property)));
+                assert!(reads.contains(&ProducerRead::Requirement(id(5), requirement)));
+                assert!(
+                    crate::read_dependencies::structural_searches(&combined).contains(
+                        &StructuralSearch::ProducerClosure {
+                            subject: id(5),
+                            requirement: requirement.contract_id().into(),
+                        }
+                    )
+                );
+            }
+        }
+    }
+}
+
 struct PendingScalar;
 impl PublicationProducerExtension for PendingScalar {
     fn descriptors(&self) -> Vec<ProducerDescriptor> {
@@ -185,7 +627,13 @@ fn delayed_producer_requires_witness_and_closes_after_dependency_activation() {
         },
     );
     assert!(!partial.converged);
-    assert!(partial.certificate.is_none());
+    assert!(
+        !partial
+            .certificate
+            .as_ref()
+            .unwrap()
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
     let result = run(&snapshot, false, Default::default());
     assert!(result.converged);
     assert_eq!(
@@ -515,7 +963,7 @@ fn primitive_scalar_writers_keep_naming_and_membership_requirements_open() {
                 context.id(),
                 &registry,
                 &table,
-                |_| false,
+                |_| None,
             );
             assert_eq!(
                 certificate.is_closed(id(2), requirement),
@@ -659,7 +1107,7 @@ fn ownership_attachment_changes_queries_and_keeps_all_requirements_open() {
             context.id(),
             &registry,
             &table,
-            |_| false,
+            |_| None,
         );
         for requirement in SemanticClosureRequirement::ALL {
             assert!(requirement.requires(ProducerEffect::Ownership));
@@ -710,6 +1158,7 @@ fn formal_owner_absence_requires_a_witness_until_delayed_attachment() {
                 subject: id(1),
                 requirement: SemanticClosureRequirement::EffectiveOwnership,
                 certificate_digest: None,
+                source: None,
             })
     );
 
@@ -723,7 +1172,7 @@ fn formal_owner_absence_requires_a_witness_until_delayed_attachment() {
             context.id(),
             &registry,
             table,
-            |_| false,
+            |_| None,
         ))
     };
     let pending = issue(&table);
@@ -743,6 +1192,7 @@ fn formal_owner_absence_requires_a_witness_until_delayed_attachment() {
                 subject: id(1),
                 requirement: SemanticClosureRequirement::EffectiveOwnership,
                 certificate_digest: Some(pending.digest()),
+                source: None,
             })
     );
 
@@ -915,29 +1365,19 @@ fn typed_population_retains_broad_reads_only_when_actually_observed() {
     let q = KerMlQueries::new(
         SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
     );
-    let mut evidence = q.canonical_fact_evidence(FactKey::Property {
-        element: id(1),
-        property: p::ELEMENT_OWNED_RELATIONSHIP,
-    });
-    evidence.search_dependencies.clear();
-    evidence
-        .search_dependencies
-        .insert(SearchDependency::OwnedRelationships {
-            owner: id(1),
-            class: c::FEATURE_TYPING,
-        });
+    let mut evidence = q
+        .owned_relationships_of_type(id(1), c::FEATURE_TYPING)
+        .map(|_| ());
     let reads = producer_reads(&evidence, q.model());
     assert!(reads.contains(&ProducerRead::Owned(id(1), c::FEATURE_TYPING)));
     assert!(!reads.contains(&ProducerRead::Property(
         id(1),
         p::ELEMENT_OWNED_RELATIONSHIP
     )));
-    evidence
-        .search_dependencies
-        .insert(SearchDependency::PropertySet {
-            element: id(1),
-            property: p::ELEMENT_OWNED_RELATIONSHIP,
-        });
+    evidence.merge(q.canonical_fact_evidence(FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    }));
     assert!(
         producer_reads(&evidence, q.model()).contains(&ProducerRead::Property(
             id(1),
@@ -997,7 +1437,7 @@ fn owner_scoped_effects_reach_parent_reads_without_tainting_unrelated_subjects()
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert_eq!(
         certificate.evaluation(id(1), registry.index(TYPE).unwrap()),
@@ -1053,6 +1493,148 @@ fn generic_effects_cover_subtype_populations_but_membership_does_not_reown() {
 }
 
 #[test]
+fn expression_result_effects_preserve_subject_typing_and_restrict_value_carriers() {
+    use crate::producer_closure::{ProducerRead, descriptor_changes_read};
+    let mut f = Fixture::new();
+    f.create(1, c::EXPRESSION);
+    f.create(2, c::FEATURE);
+    let snapshot = f.finish();
+    let descriptor =
+        ProducerFamily::ExpressionResult.descriptor(agq_kerml::BaselineProfile::OPERATIONAL_V9);
+    let registry = ProducerRegistry::new([descriptor.clone()]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveMembership));
+    for (class, changes) in [
+        (c::FEATURE_VALUE, false),
+        (c::FEATURE_MEMBERSHIP, true),
+        (c::OWNING_MEMBERSHIP, true),
+    ] {
+        assert_eq!(
+            descriptor
+                .effects
+                .iter()
+                .any(|&effect| descriptor_changes_read(
+                    &descriptor,
+                    effect,
+                    &ProducerRead::Owned(id(1), class),
+                    snapshot.model(),
+                    &BTreeSet::new(),
+                )),
+            changes
+        );
+    }
+    // Actual effect validation must still reject a chaining on an existing
+    // subject while allowing exactly the same write on a generated helper.
+    let q = KerMlQueries::new(context);
+    for fresh_source in [false, true] {
+        let mut plan = q.plan_result_structure([]);
+        let evidence = q.canonical_fact_evidence(FactKey::Element(id(1)));
+        let helper = DerivationKey {
+            rule: RuleId::from_u128(98224),
+            subject: id(1),
+            output: OutputKey::from_u128(1),
+        };
+        if fresh_source {
+            plan.add_derived_element(helper, c::FEATURE, BTreeMap::new(), None, &evidence)
+                .unwrap();
+        }
+        plan.add_derived_element(
+            DerivationKey {
+                output: OutputKey::from_u128(2),
+                ..helper
+            },
+            c::FEATURE_CHAINING,
+            BTreeMap::from([(
+                p::FEATURE_CHAINING_CHAINING_FEATURE,
+                SlotValue::Scalar(Value::Reference(id(2))),
+            )]),
+            Some(if fresh_source {
+                helper.element_id()
+            } else {
+                id(1)
+            }),
+            &evidence,
+        )
+        .unwrap();
+        let outputs = plan.planned_elements().collect::<Vec<_>>();
+        plan.attribute_producer_outputs(id(1), ProducerFamily::ExpressionResult.id(), outputs);
+        let audited = plan.validate_declared_effects(&[id(1)], &registry);
+        assert_eq!(audited.is_ok(), fresh_source, "{audited:?}");
+    }
+}
+
+#[test]
+fn expression_and_function_result_emissions_fit_exact_relationship_contract() {
+    use agq_kerml::BaselineProfile;
+    for profile in [
+        BaselineProfile::PublishedKerMl10,
+        BaselineProfile::OPERATIONAL_V9,
+    ] {
+        for (class, role) in [
+            (c::EXPRESSION, ImpliedBindingRole::ExpressionResult),
+            (c::FUNCTION, ImpliedBindingRole::FunctionResult),
+        ] {
+            let base = Snapshot::new(Arc::new(agq_kerml::registry_for_profile(profile).unwrap()));
+            let mut f = Fixture {
+                changes: base.change_set(),
+                base,
+                owned: BTreeMap::new(),
+            };
+            f.create(1, class);
+            f.create(2, c::FEATURE);
+            f.create(3, c::EXPRESSION);
+            f.create(4, c::FEATURE);
+            member(&mut f, 1, 2, 10, c::RETURN_PARAMETER_MEMBERSHIP);
+            member(&mut f, 1, 3, 11, c::RESULT_EXPRESSION_MEMBERSHIP);
+            member(&mut f, 3, 4, 12, c::RETURN_PARAMETER_MEMBERSHIP);
+            let snapshot = f.finish();
+            let q = KerMlQueries::new(
+                SemanticContext::for_snapshot(
+                    &snapshot,
+                    SemanticOptions {
+                        baseline_profile: profile,
+                        ..Default::default()
+                    },
+                    BTreeSet::new(),
+                )
+                .unwrap(),
+            );
+            let descriptor = ProducerFamily::ExpressionResult.descriptor(profile);
+            let registry = ProducerRegistry::new([descriptor.clone()]).unwrap();
+            q.plan_result_structure([id(1)])
+                .validate_declared_effects(&[id(1)], &registry)
+                .unwrap();
+            let expanded = q.derive_result_structure(&snapshot).unwrap();
+            let model = expanded.overlay.model();
+            let emitted: BTreeSet<_> = model
+                .elements()
+                .filter_map(|record| {
+                    let Origin::Derived(proof) = record.origin() else {
+                        return None;
+                    };
+                    (proof.rule == role.rule_id(profile)
+                        && model
+                            .registry()
+                            .is_subtype(record.metaclass(), c::RELATIONSHIP)
+                            .unwrap())
+                    .then_some(record.metaclass())
+                })
+                .collect();
+            assert!(emitted.contains(&c::BINDING_CONNECTOR));
+            assert!(
+                emitted.is_subset(descriptor.relationship_classes.as_ref().unwrap()),
+                "{profile:?} {role:?}: {emitted:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn pending_creator_cannot_hide_a_future_cross_subject_typing_family() {
     let snapshot = fixture();
     let mut creator = ProducerDescriptor::new(
@@ -1086,7 +1668,7 @@ fn pending_creator_cannot_hide_a_future_cross_subject_typing_family() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert!(
         !certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping),
@@ -1150,7 +1732,7 @@ fn immutable_record_reads_are_fixed_but_external_source_relationships_stay_open(
             context.id(),
             &registry,
             &table,
-            |subject| subject == id(2),
+            |subject| (subject == id(2)).then_some(ClosureSource::LocalProducerClosure),
         );
         assert_eq!(
             certificate.evaluation(id(3), registry.index(TYPE).unwrap()),
@@ -1264,7 +1846,11 @@ fn immutable_noncomposite_inverse_remains_open_to_local_carriers() {
             context.id(),
             &registry,
             &table,
-            |id| snapshot.is_dependency_element(id),
+            |id| {
+                snapshot
+                    .is_dependency_element(id)
+                    .then_some(ClosureSource::LocalProducerClosure)
+            },
         );
         assert_eq!(
             certificate.evaluation(id(5), registry.index(TYPE).unwrap()),
@@ -1343,7 +1929,7 @@ fn additive_scalar_facts_are_fixed_while_absence_and_collection_reads_remain_ope
             context.id(),
             &registry,
             &table,
-            |_| false,
+            |_| None,
         );
         assert_eq!(
             certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
@@ -1418,7 +2004,7 @@ fn declared_relationship_classes_bound_current_and_future_population_writes() {
                 context.id(),
                 &registry,
                 &table,
-                |_| false,
+                |_| None,
             );
             assert_eq!(
                 certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
@@ -1526,7 +2112,7 @@ fn owned_descendant_effects_do_not_retype_or_invalidate_the_producer_subject() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
     assert!(!certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
@@ -1620,7 +2206,7 @@ fn pending_ownership_can_activate_typing_on_a_currently_unowned_subject() {
             context.id(),
             &registry,
             &table,
-            |_| false,
+            |_| None,
         );
         assert!(
             !certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping),
@@ -1755,7 +2341,7 @@ fn positional_bounds_remain_open_to_future_scalar_producers() {
                     context.id(),
                     &registry,
                     &table,
-                    |_| false,
+                    |_| None,
                 );
                 let remains_open = !bounded
                     || future_property == Some(unknown_property)
@@ -1981,7 +2567,7 @@ fn incomplete_target_and_owning_producer_block_dependent_subject_typing() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     for subject in [1, 2, 3] {
         assert!(
@@ -2049,7 +2635,7 @@ fn ownership_derived_chain_and_reference_sources_propagate_target_incompleteness
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     for subject in [1, 2, 3] {
         assert!(
@@ -2106,7 +2692,7 @@ fn arbitrary_inverse_read_depends_on_producers_at_other_sources() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
 }
@@ -2161,7 +2747,7 @@ fn reference_scalar_writes_reopen_cross_subject_queries_and_requirement_masks() 
                 context.id(),
                 &registry,
                 &table,
-                |_| false,
+                |_| None,
             );
             let pending = property == p::FEATURE_FEATURE_TARGET;
             assert_eq!(
@@ -2240,7 +2826,7 @@ fn semantic_target_bounds_exclude_carriers_from_current_and_future_effects() {
                 context.id(),
                 &registry,
                 &table,
-                |_| false,
+                |_| None,
             );
             assert_eq!(
                 certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
@@ -2444,7 +3030,7 @@ fn scalar_producer_base_property_matches_effective_read_alias() {
             q.context(),
             &registry,
             &table,
-            |_| false,
+            |_| None,
         );
         assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
 
@@ -2545,7 +3131,7 @@ fn certificate_scale_sixty_thousand_subjects_has_compact_pair_storage() {
         context.id(),
         &registry,
         &table,
-        |_| false,
+        |_| None,
     );
     eprintln!(
         "closure certificate: subjects=60000 families=80 applicable={} closed={} incomplete={} bytes={} build_ms={}",
@@ -2775,7 +3361,7 @@ fn excluded_relationship_populations_keep_unknown_writers_and_broad_reads_open()
                     q.context(),
                     &registry,
                     &table,
-                    |_| false,
+                    |_| None,
                 );
                 assert_eq!(
                     certificate.evaluation(id(1), registry.index(TYPE).unwrap()),
@@ -2947,17 +3533,34 @@ fn filtered_declared_ownership_keeps_original_proof_after_unrelated_append() {
                 Origin::Declared(_)
             ));
         }
-        for later in [
-            q.owned_relationships_of_type(id(1), c::FEATURE_MEMBERSHIP),
-            q.owned_relationships_of_type(id(1), c::RELATIONSHIP),
-            q.owned_relationships(id(1)),
+        for (later, broad) in [
+            (
+                q.owned_relationships_of_type(id(1), c::FEATURE_MEMBERSHIP),
+                false,
+            ),
+            (q.owned_relationships_of_type(id(1), c::RELATIONSHIP), false),
+            (q.owned_relationships(id(1)), true),
         ] {
             assert!(later.value.contains(&id(4)));
-            assert!(
-                later
-                    .canonical_dependencies
-                    .contains(&Dependency::Derived(fact))
-            );
+            if broad {
+                assert!(
+                    later
+                        .canonical_dependencies
+                        .contains(&Dependency::Derived(fact))
+                );
+            } else {
+                assert!(
+                    later
+                        .search_dependencies
+                        .contains(&SearchDependency::Kernel(
+                            StructuralSearch::OrderedReferenceContribution {
+                                element: id(1),
+                                property: p::ELEMENT_OWNED_RELATIONSHIP,
+                                target: id(4),
+                            }
+                        ))
+                );
+            }
             assert!(
                 producer_reads(&later, overlay.model())
                     .contains(&ProducerRead::Requirement(id(2), requirement))
@@ -3073,7 +3676,7 @@ fn initial_pending_table_can_certify_only_producer_independent_requirements() {
     }
     let issue = |table: &ProducerEvaluationTable| {
         ProducerClosureCertificate::issue(snapshot.model(), context.id(), &registry, table, |_| {
-            false
+            None
         })
     };
     let certificate = issue(&empty);
@@ -3119,7 +3722,7 @@ fn initial_pending_table_can_certify_only_producer_independent_requirements() {
             context.id(),
             &registry,
             &empty,
-            |_| false,
+            |_| None,
         );
         assert!(
             !certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveOwnership),
@@ -3139,4 +3742,1153 @@ fn initial_pending_table_can_certify_only_producer_independent_requirements() {
             Completeness::Incomplete
         );
     }
+}
+
+#[test]
+fn initial_zero_writer_proof_closes_absent_owner_without_a_scheduler_round() {
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.value(1, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    let snapshot = f.finish();
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveOwnership));
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    let absent = queries.formal_constraint_applies(
+        FormalConstraintId::StepOwnedPerformanceSpecialization,
+        id(1),
+    );
+    assert_eq!(absent.completeness, Completeness::Complete, "{absent:?}");
+    assert!(!absent.value);
+    assert!(absent.search_dependencies.iter().any(|search| matches!(
+        search,
+        SearchDependency::ProducerClosure {
+            source: Some(ClosureSource::LocalProducerClosure),
+            requirement: SemanticClosureRequirement::EffectiveOwnership,
+            ..
+        }
+    )));
+
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Ownership],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    let open = queries.formal_constraint_applies(
+        FormalConstraintId::StepOwnedPerformanceSpecialization,
+        id(1),
+    );
+    assert_eq!(open.completeness, Completeness::Incomplete);
+    assert!(!open.value);
+}
+
+#[test]
+fn unaccepted_immutable_dependency_cannot_mint_accepted_closure() {
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(fixture())
+            .build()
+            .unwrap(),
+    );
+    let snapshot = Snapshot::with_immutable_dependency(dependency);
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(!certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    assert_ne!(
+        certificate.closure_source(id(1), SemanticClosureRequirement::EffectiveOwnership),
+        Some(ClosureSource::AcceptedDependency)
+    );
+}
+
+#[test]
+fn accepted_dependency_population_is_closed_without_replaying_local_subject_writers() {
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(fixture())
+            .build()
+            .unwrap(),
+    );
+    let base = Snapshot::with_immutable_dependency(dependency);
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::FEATURE);
+    let snapshot = f.finish();
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing, ProducerEffect::Membership],
+        ProducerApplicability::Any,
+    );
+    writer.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let mut context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    // Exercise the private accepted-boundary marker independently of corpus restoration.
+    // Production code only installs this marker after the accepted overlay pointer check.
+    context.id.publication_dependency_digest = Some([7; 32]);
+    context.accepted_dependency = snapshot.immutable_dependency().cloned();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    for requirement in [
+        SemanticClosureRequirement::EffectiveTyping,
+        SemanticClosureRequirement::EffectiveMembership,
+    ] {
+        assert_eq!(
+            certificate.closure_source(id(1), requirement),
+            Some(ClosureSource::AcceptedDependency)
+        );
+        assert!(!certificate.is_closed(id(4), requirement));
+    }
+}
+
+#[test]
+fn closure_checkpoint_retains_unrelated_evaluations_and_reopens_changed_negative_searches() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(1), snapshot.model(), &registry);
+    table
+        .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(
+            id(1),
+            TYPE,
+            vec![ProducerRead::Source(
+                id(1),
+                c::FEATURE_TYPING,
+                p::FEATURE_TYPING_TYPED_FEATURE,
+            )]
+            .into(),
+        )],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    assert!(checkpoint.fingerprint_storage_bytes() <= snapshot.model().len() * 48);
+    drop(context);
+    let mut f = Fixture {
+        changes: snapshot.change_set(),
+        base: snapshot.clone(),
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::CLASSIFIER);
+    let unrelated = f.finish();
+    let next = SemanticContext::for_snapshot(&unrelated, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&next, &registry).unwrap();
+    assert_eq!(rebound.retained_evaluations, 1);
+    assert_eq!(rebound.reopened_evaluations, 0);
+    assert_ne!(
+        certificate.model_digest(),
+        rebound.certificate.model_digest()
+    );
+    assert!(
+        rebound
+            .certificate
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
+    assert!(next.with_producer_closure(rebound.certificate).is_ok());
+
+    // A fresh source relationship invalidates an earlier empty source search,
+    // although the Feature record itself is byte-for-byte unchanged.
+    let mut f = Fixture {
+        changes: unrelated.change_set(),
+        base: unrelated,
+        owned: BTreeMap::new(),
+    };
+    f.create(5, c::FEATURE_TYPING);
+    f.value(5, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(1)));
+    f.value(5, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+    let changed = f.finish();
+    assert_eq!(
+        snapshot.model().element(id(1)),
+        changed.model().element(id(1))
+    );
+    let next = SemanticContext::for_snapshot(&changed, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&next, &registry).unwrap();
+    assert_eq!(rebound.reopened_evaluations, 1);
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
+    let changed_registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Ownership],
+        ProducerApplicability::Any,
+    )])
+    .unwrap();
+    assert_eq!(
+        checkpoint.rebind(&next, &changed_registry).unwrap_err(),
+        ContextError::ProducerClosureMismatch
+    );
+}
+
+#[test]
+fn new_writer_opportunities_reopen_equal_looking_conclusions() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(1), snapshot.model(), &registry);
+    table
+        .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(1), TYPE, vec![ProducerRead::Structural(id(1))].into())],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    assert!(certificate.is_closed(id(2), SemanticClosureRequirement::EffectiveTyping));
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    let mut f = Fixture {
+        changes: snapshot.change_set(),
+        base: snapshot,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::FEATURE);
+    let changed = f.finish();
+    let next = SemanticContext::for_snapshot(&changed, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&next, &registry).unwrap();
+    assert_eq!(rebound.retained_evaluations, 1);
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(2), SemanticClosureRequirement::EffectiveTyping)
+    );
+}
+
+#[test]
+fn reconstruction_reopens_producer_when_detached_output_disappears() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let output = DerivationKey {
+        rule: RuleId::from_u128(99191),
+        subject: id(1),
+        output: OutputKey::from_u128(99192),
+    };
+    let mut builder = agq_kernel::derived::DerivationBuilder::new(snapshot.clone());
+    builder.element(
+        output,
+        c::CLASSIFIER,
+        snapshot
+            .model()
+            .element(id(2))
+            .unwrap()
+            .slots()
+            .map(|(property, slot)| (property, slot.value().clone())),
+        BTreeSet::new(),
+    );
+    let overlay = builder.build().unwrap();
+    assert_eq!(
+        snapshot.model().element(id(1)),
+        overlay.model().element(id(1))
+    );
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let context = SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(1), overlay.model(), &registry);
+    table
+        .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(1), TYPE, vec![ProducerRead::Structural(id(1))].into())],
+        &registry,
+    );
+    let certificate =
+        ProducerClosureCertificate::issue(overlay.model(), context.id(), &registry, &table, |_| {
+            None
+        });
+    assert!(certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    drop(context);
+    drop(overlay);
+    let new = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&new, &registry).unwrap();
+    assert_eq!(rebound.reopened_evaluations, 1);
+    assert!(rebound.affected_subjects.contains(&id(1)));
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
+}
+
+#[test]
+fn full_certificate_coverage_requires_closed_provider_masks_not_only_complete_evaluations() {
+    let mut descriptor =
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);
+    descriptor.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    for linked in [false, true] {
+        let mut fixture = Fixture::new();
+        fixture.create(1, c::FEATURE);
+        fixture.create(2, c::CLASSIFIER);
+        fixture.create(3, c::FEATURE_TYPING);
+        fixture.value(3, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+        if linked {
+            fixture.value(3, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(1)));
+        }
+        let construction = fixture.construction();
+        let context =
+            SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(registry.digest())
+                .unwrap();
+        let mut table = ProducerEvaluationTable::default();
+        for record in construction.model().elements() {
+            table.pending(record.id(), construction.model(), &registry);
+            table
+                .record(&[(record.id(), TYPE, Completeness::Complete)], &registry)
+                .unwrap();
+            table.record_reads(&[(record.id(), TYPE, Vec::new().into())], &registry);
+        }
+        let certificate = Arc::new(ProducerClosureCertificate::issue(
+            construction.model(),
+            context.id(),
+            &registry,
+            &table,
+            |_| None,
+        ));
+        assert_eq!(certificate.applicable_pairs(), 3);
+        assert_eq!(certificate.closed_pairs(), certificate.applicable_pairs());
+        for record in construction.model().elements() {
+            assert_eq!(
+                certificate.evaluation(record.id(), 0),
+                Some(ProducerEvaluationState::EvaluatedComplete),
+            );
+        }
+        // Exact context attachment and Complete evaluation rows do not certify
+        // a source-linking provider that still has an unidentified endpoint.
+        let context = context.with_producer_closure(certificate.clone()).unwrap();
+        assert_eq!(
+            certificate.is_fully_closed(context.model),
+            linked,
+            "publication acceptance must reject an open provider mask",
+        );
+        assert_eq!(
+            certificate.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping),
+            linked,
+        );
+    }
+}
+
+#[test]
+fn full_certificate_coverage_rejects_missing_model_subjects() {
+    let registry = ProducerRegistry::new([]).unwrap();
+    let mut fixture = Fixture::new();
+    fixture.create(1, c::PACKAGE);
+    let snapshot = fixture.finish();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(certificate.is_fully_closed(snapshot.model()));
+    let mut fixture = Fixture::new();
+    fixture.create(1, c::PACKAGE);
+    fixture.create(2, c::PACKAGE);
+    assert!(!certificate.is_fully_closed(fixture.finish().model()));
+}
+
+#[test]
+fn initial_closure_must_not_close_an_unidentified_pending_typing_provider() {
+    let mut f = Fixture::new();
+    f.create(1, c::FEATURE);
+    f.create(2, c::CLASSIFIER);
+    f.create(3, c::FEATURE_TYPING);
+    f.value(3, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+    // The relationship exists but its required source has not yet linked.
+    // Reconstruction can fill this endpoint with the existing Feature 1.
+    let construction = f.construction();
+    assert!(!construction.obligations().is_empty());
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Never,
+    )])
+    .unwrap();
+    let context =
+        SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+            .unwrap()
+            .with_producer_registry_digest(registry.digest())
+            .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    let types = queries.feature_types(id(1));
+    assert!(types.value.is_empty());
+    let absent = queries.producer_closure(id(1), SemanticClosureRequirement::EffectiveTyping);
+    assert_eq!(
+        absent.completeness,
+        Completeness::Incomplete,
+        "unidentified provider obligations {:?} must keep typing absence open; types={types:?}; closure={absent:?}",
+        construction.obligations(),
+    );
+}
+
+#[test]
+fn initial_closure_keeps_pending_relationship_provider_populations_open() {
+    for (label, class, target_property, requirement) in [
+        (
+            "redefinition",
+            c::REDEFINITION,
+            Some(p::REDEFINITION_REDEFINED_FEATURE),
+            SemanticClosureRequirement::EffectiveTyping,
+        ),
+        (
+            "subsetting",
+            c::SUBSETTING,
+            Some(p::SUBSETTING_SUBSETTED_FEATURE),
+            SemanticClosureRequirement::EffectiveTyping,
+        ),
+        (
+            "chaining",
+            c::FEATURE_CHAINING,
+            None,
+            SemanticClosureRequirement::EffectiveTyping,
+        ),
+        (
+            "membership",
+            c::MEMBERSHIP,
+            None,
+            SemanticClosureRequirement::EffectiveMembership,
+        ),
+    ] {
+        let mut f = Fixture::new();
+        f.create(1, c::FEATURE);
+        f.create(2, c::FEATURE);
+        f.create(3, class);
+        if let Some(property) = target_property {
+            f.value(3, property, Value::Reference(id(2)));
+        } else {
+            f.own(1, 3);
+        }
+        let construction = f.construction();
+        assert!(!construction.obligations().is_empty(), "{label}");
+        let registry = ProducerRegistry::new([ProducerDescriptor::new(
+            TYPE,
+            [ProducerEffect::Typing],
+            ProducerApplicability::Never,
+        )])
+        .unwrap();
+        let context =
+            SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(registry.digest())
+                .unwrap();
+        let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+        assert!(
+            !certificate.is_closed(id(1), requirement),
+            "{label} pending provider {:?} cannot close {requirement:?}",
+            construction.obligations()
+        );
+    }
+}
+
+#[test]
+fn initial_closure_requires_a_closed_pending_namespace_owner_provider() {
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.value(1, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    f.create(2, c::BEHAVIOR);
+    f.create(3, c::FEATURE_MEMBERSHIP);
+    f.own(2, 3);
+    // OwningMembership endpoints are derived from their owned-related collection.
+    // This missing source population is marked by the pending namespace contract,
+    // even though it is not a required stored-slot construction obligation.
+    let construction = f.construction();
+    assert!(construction.obligations().is_empty());
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Never,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_project_construction(
+        &construction,
+        Default::default(),
+        BTreeSet::new(),
+        BTreeSet::new(),
+        BTreeSet::from([id(2)]),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    let absent = queries
+        .formal_constraint_applies(FormalConstraintId::StepSubperformanceSpecialization, id(1));
+    assert_eq!(
+        absent.completeness,
+        Completeness::Incomplete,
+        "source provider 2 may still attach FeatureMembership 3 to Step 1: {absent:?}"
+    );
+}
+
+#[test]
+fn rebound_pending_provider_reopens_transitive_requirement_readers() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let snapshot = fixture();
+    let mut descriptor = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Specialization],
+        ProducerApplicability::Any,
+    );
+    descriptor.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([descriptor]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    for subject in [id(1), id(2), id(3)] {
+        table.pending(subject, snapshot.model(), &registry);
+        table
+            .record(&[(subject, TYPE, Completeness::Complete)], &registry)
+            .unwrap();
+        let reads = if subject == id(3) {
+            vec![ProducerRead::Requirement(
+                id(1),
+                SemanticClosureRequirement::EffectiveTyping,
+            )]
+        } else {
+            vec![ProducerRead::Structural(subject)]
+        };
+        table.record_reads(&[(subject, TYPE, reads.into())], &registry);
+    }
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    assert!(certificate.is_closed(id(3), SemanticClosureRequirement::EffectiveTyping));
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    let mut f = Fixture {
+        changes: snapshot.change_set(),
+        base: snapshot,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::FEATURE_TYPING);
+    f.value(4, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+    let construction = f.construction();
+    let new = SemanticContext::for_construction(&construction, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&new, &registry).unwrap();
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(1), SemanticClosureRequirement::EffectiveTyping)
+    );
+    assert!(
+        !rebound
+            .certificate
+            .is_closed(id(3), SemanticClosureRequirement::EffectiveTyping),
+        "a retained producer depends on newly open provider requirement 1: {rebound:?}"
+    );
+}
+
+#[test]
+fn initial_pending_namespace_keeps_unattached_owning_membership_open() {
+    let mut f = Fixture::new();
+    f.create(1, c::STEP);
+    f.value(1, p::FEATURE_IS_COMPOSITE, Value::Boolean(true));
+    f.create(2, c::BEHAVIOR);
+    f.create(3, c::FEATURE_MEMBERSHIP);
+    f.changes.set(
+        id(3),
+        p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        SlotValue::Ordered(vec![Value::Reference(id(1))]),
+        origin(),
+    );
+    let construction = f.construction();
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Never,
+    )])
+    .unwrap();
+    let context = SemanticContext::for_project_construction(
+        &construction,
+        Default::default(),
+        BTreeSet::new(),
+        BTreeSet::new(),
+        BTreeSet::from([id(2)]),
+    )
+    .unwrap()
+    .with_producer_registry_digest(registry.digest())
+    .unwrap();
+    let certificate = Arc::new(ProducerClosureCertificate::initial(&context, &registry).unwrap());
+    let queries = KerMlQueries::new(context.with_producer_closure(certificate).unwrap());
+    assert_eq!(queries.owning_relationship(id(1)).value, Some(id(3)));
+    let absent = queries
+        .formal_constraint_applies(FormalConstraintId::StepSubperformanceSpecialization, id(1));
+    assert_eq!(
+        absent.completeness,
+        Completeness::Incomplete,
+        "pending namespace 2 can attach existing membership 3 and give Step 1 an owning Type: {absent:?}"
+    );
+}
+
+#[test]
+fn declared_source_population_ignores_derived_adoptions_and_preserves_transport() {
+    use crate::producer_closure::{ProducerRead, producer_reads};
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    f.create(4, c::MEMBERSHIP);
+    f.value(4, p::MEMBERSHIP_MEMBER_ELEMENT, Value::Reference(id(2)));
+    let snapshot = f.finish();
+    let fresh_slots: Vec<_> = snapshot
+        .model()
+        .element(id(4))
+        .unwrap()
+        .slots()
+        .map(|(property, slot)| (property, slot.value().clone()))
+        .collect();
+    let mut builder = DerivationBuilder::new(snapshot);
+    let fresh = DerivationKey {
+        subject: id(1),
+        rule: RuleId::from_u128(99881),
+        output: OutputKey::from_u128(1),
+    };
+    builder.element(fresh, c::MEMBERSHIP, fresh_slots, BTreeSet::new());
+    builder.extend_ordered_references(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        vec![id(4), fresh.element_id()],
+        agq_kernel::provenance::Explanation {
+            rule: fresh.rule,
+            dependencies: BTreeSet::new(),
+        },
+    );
+    let overlay = builder.build().unwrap();
+    let q = KerMlQueries::new(
+        SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    let selected = q.declared_owned_relationships(id(1));
+    assert_eq!(selected.value, vec![id(3)]);
+    assert_eq!(selected.completeness, Completeness::Complete);
+    assert_eq!(
+        q.owned_relationships(id(1)).value,
+        vec![id(3), id(4), fresh.element_id()]
+    );
+    let original = ProducerRead::DeclaredProperty(id(1), p::ELEMENT_OWNED_RELATIONSHIP);
+    let reads = producer_reads(&selected, overlay.model());
+    assert!(reads.contains(&original));
+    assert!(!reads.contains(&ProducerRead::Property(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP
+    )));
+    for effect in [
+        ProducerEffect::Membership,
+        ProducerEffect::Ownership,
+        ProducerEffect::Naming,
+        ProducerEffect::Scalar(p::ELEMENT_OWNED_RELATIONSHIP),
+    ] {
+        assert!(!crate::producer_closure::effect_changes_read(
+            effect,
+            &original,
+            overlay.model()
+        ));
+    }
+    let persisted = crate::read_dependencies::structural_searches(&selected);
+    assert!(persisted.contains(&StructuralSearch::DeclaredProperty {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP
+    }));
+    let roundtrip: BTreeSet<StructuralSearch> =
+        serde_json::from_str(&serde_json::to_string(&persisted).unwrap()).unwrap();
+    let mut reread = q.result(());
+    reread
+        .search_dependencies
+        .extend(roundtrip.into_iter().map(SearchDependency::Kernel));
+    assert!(producer_reads(&reread, overlay.model()).contains(&original));
+    // Broad observation remains broad in either evaluation order, even a
+    // persisted canonical fact without an explicit current Property search.
+    let fact = FactKey::Property {
+        element: id(1),
+        property: p::ELEMENT_OWNED_RELATIONSHIP,
+    };
+    let mut current_fact = q.result(());
+    q.fact(&mut current_fact, fact);
+    for broad_first in [false, true] {
+        let mut combined = q.result(());
+        if broad_first {
+            combined.merge(q.owned_relationships(id(1)));
+        }
+        combined.merge(selected.clone());
+        if !broad_first {
+            combined.merge(q.owned_relationships(id(1)));
+        }
+        assert!(
+            producer_reads(&combined, overlay.model()).contains(&ProducerRead::Property(
+                id(1),
+                p::ELEMENT_OWNED_RELATIONSHIP
+            ))
+        );
+        for broad in [q.canonical_fact_evidence(fact), current_fact.clone()] {
+            let mut combined = q.result(());
+            if broad_first {
+                combined.merge(broad.clone());
+            }
+            combined.merge(selected.clone());
+            if !broad_first {
+                combined.merge(broad);
+            }
+            assert!(
+                producer_reads(&combined, overlay.model()).contains(&ProducerRead::Property(
+                    id(1),
+                    p::ELEMENT_OWNED_RELATIONSHIP
+                ))
+            );
+        }
+    }
+}
+
+#[test]
+fn declared_source_population_closes_against_producers_but_reopens_on_source_edit() {
+    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    f.create(3, c::MEMBERSHIP);
+    f.value(3, p::MEMBERSHIP_MEMBER_ELEMENT, Value::Reference(id(2)));
+    let snapshot = f.finish();
+    let mut creator = ProducerDescriptor::new(
+        ACTIVATE,
+        [ProducerEffect::Membership],
+        ProducerApplicability::Any,
+    );
+    creator.scope = ProducerEffectScope::Model;
+    let mut typing = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    typing.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([creator, typing]).unwrap();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let q = KerMlQueries::new(context.fork());
+    let empty = q.declared_owned_relationships(id(1));
+    assert!(empty.value.is_empty());
+    assert!(!empty.search_dependencies.is_empty());
+    let mut table = ProducerEvaluationTable::default();
+    for record in snapshot.model().elements() {
+        table.pending(record.id(), snapshot.model(), &registry);
+        table
+            .record(
+                &[(
+                    record.id(),
+                    ACTIVATE,
+                    if record.id() == id(1) {
+                        Completeness::Incomplete
+                    } else {
+                        Completeness::Complete
+                    },
+                )],
+                &registry,
+            )
+            .unwrap();
+        table.record_reads(&[(record.id(), ACTIVATE, Vec::new().into())], &registry);
+    }
+    table
+        .record(&[(id(2), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(2), TYPE, producer_reads(&empty, snapshot.model()))],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    assert_eq!(
+        certificate.evaluation(id(2), registry.index(TYPE).unwrap()),
+        Some(ProducerEvaluationState::EvaluatedComplete)
+    );
+    let checkpoint = certificate.checkpoint(&context).unwrap();
+    let mut changes = snapshot.change_set();
+    changes.set(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![Value::Reference(id(3))]),
+        origin(),
+    );
+    let changed = snapshot.apply(&changes).unwrap();
+    let next = SemanticContext::for_snapshot(&changed, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let rebound = checkpoint.rebind(&next, &registry).unwrap();
+    assert!(rebound.reopened_evaluations > 0);
+    assert_eq!(
+        rebound
+            .certificate
+            .evaluation(id(2), registry.index(TYPE).unwrap()),
+        Some(ProducerEvaluationState::Pending)
+    );
+    assert_eq!(
+        KerMlQueries::new(next)
+            .declared_owned_relationships(id(1))
+            .value,
+        vec![id(3)]
+    );
+}
+
+#[test]
+fn declared_source_population_does_not_close_pending_namespace_or_member() {
+    let mut f = Fixture::new();
+    f.create(1, c::NAMESPACE);
+    f.create(2, c::FEATURE);
+    f.create(3, c::MEMBERSHIP);
+    f.own(1, 3);
+    let candidate = f.construction();
+    assert!(!candidate.obligations().is_empty());
+    let context = SemanticContext::for_project_construction(
+        &candidate,
+        Default::default(),
+        BTreeSet::new(),
+        BTreeSet::new(),
+        BTreeSet::from([id(1)]),
+    )
+    .unwrap();
+    let q = KerMlQueries::new(context);
+    let mut result = q.declared_owned_relationships(id(1));
+    assert_eq!(result.value, vec![id(3)]);
+    assert_eq!(result.completeness, Completeness::Incomplete);
+    let member = q.member(id(3));
+    assert_eq!(member.completeness, Completeness::Incomplete);
+    result.merge(member);
+    assert_eq!(result.completeness, Completeness::Incomplete);
+}
+
+fn declared_population_alias_pair(
+    mut f: Fixture,
+) -> (
+    agq_kernel::derived::DerivedOverlay,
+    agq_kernel::derived::DerivedOverlay,
+) {
+    use agq_kernel::derived::DerivationBuilder;
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    for member in [3, 4, 5] {
+        f.create(member, c::MEMBERSHIP);
+        f.value(
+            member,
+            p::MEMBERSHIP_MEMBER_ELEMENT,
+            Value::Reference(id(2)),
+        );
+    }
+    f.own(1, 3);
+    let before = f.finish();
+    let mut changes = before.change_set();
+    changes.set(
+        id(1),
+        p::ELEMENT_OWNED_RELATIONSHIP,
+        SlotValue::Ordered(vec![Value::Reference(id(3)), Value::Reference(id(4))]),
+        origin(),
+    );
+    let after = before.apply(&changes).unwrap();
+    let overlay = |snapshot: Snapshot, additions: Vec<ElementId>| {
+        let mut builder = DerivationBuilder::new(snapshot);
+        builder.extend_ordered_references(
+            id(1),
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            additions,
+            agq_kernel::provenance::Explanation {
+                rule: RuleId::from_u128(8829),
+                dependencies: BTreeSet::from([
+                    Dependency::Declared(FactKey::Element(id(4))),
+                    Dependency::Declared(FactKey::Element(id(5))),
+                ]),
+            },
+        );
+        builder.build().unwrap()
+    };
+    let before = overlay(before, vec![id(4), id(5)]);
+    let after = overlay(after, vec![id(5)]);
+    assert_eq!(before.model().element(id(1)), after.model().element(id(1)));
+    (before, after)
+}
+
+#[test]
+fn declared_population_reconstruction_reopens_equal_aggregate_frontier() {
+    use crate::producer_closure::{ProducerEvaluationTable, producer_reads};
+    let (before, after) = declared_population_alias_pair(Fixture::new());
+    let registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    )])
+    .unwrap();
+    let before_context = SemanticContext::for_overlay(&before, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let after_context = SemanticContext::for_overlay(&after, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let before_query = KerMlQueries::new(before_context.fork()).declared_owned_relationships(id(1));
+    let after_query = KerMlQueries::new(after_context.fork()).declared_owned_relationships(id(1));
+    assert_eq!(before_query.value, vec![id(3)]);
+    assert_eq!(after_query.value, vec![id(3), id(4)]);
+    let mut table = ProducerEvaluationTable::default();
+    for record in before.model().elements() {
+        table.pending(record.id(), before.model(), &registry);
+    }
+    table
+        .record(&[(id(2), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(2), TYPE, producer_reads(&before_query, before.model()))],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        before.model(),
+        before_context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    let direct_attachment_rejected = after_context
+        .fork()
+        .with_producer_closure(Arc::new(certificate.clone()))
+        .is_err();
+    let rebound = certificate
+        .checkpoint(&before_context)
+        .unwrap()
+        .rebind(&after_context, &registry)
+        .unwrap();
+    assert_eq!(
+        (
+            direct_attachment_rejected,
+            rebound
+                .certificate
+                .evaluation(id(2), registry.index(TYPE).unwrap())
+        ),
+        (true, Some(ProducerEvaluationState::Pending)),
+        "original declaration population changed beneath an identical aggregate; digest_equal={}, affected={:?}, retained={}",
+        before_context.id().model_digest == after_context.id().model_digest,
+        rebound.affected_subjects,
+        rebound.retained_evaluations
+    );
+}
+
+#[test]
+fn mixed_declared_and_current_fact_reads_remain_current_before_first_append() {
+    use crate::producer_closure::{ProducerRead, producer_reads};
+    let mut f = Fixture::new();
+    f.create(1, c::CLASSIFIER);
+    f.create(2, c::FEATURE);
+    member(&mut f, 1, 2, 3, c::FEATURE_MEMBERSHIP);
+    let snapshot = f.finish();
+    let context =
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap();
+    for q in [
+        KerMlQueries::new(context.fork()),
+        KerMlQueries::for_production(context),
+    ] {
+        let source = q.declared_owned_relationships(id(1));
+        let mut current = q.result(());
+        q.fact(
+            &mut current,
+            FactKey::Property {
+                element: id(1),
+                property: p::ELEMENT_OWNED_RELATIONSHIP,
+            },
+        );
+        for source_first in [false, true] {
+            let mut combined = q.result(());
+            if source_first {
+                combined.merge(source.clone());
+            }
+            combined.merge(current.clone());
+            if !source_first {
+                combined.merge(source.clone());
+            }
+            assert!(
+                producer_reads(&combined, snapshot.model()).contains(&ProducerRead::Property(
+                    id(1),
+                    p::ELEMENT_OWNED_RELATIONSHIP
+                )),
+                "a broad current fact read must still reopen on the first derived append; source_first={source_first}"
+            );
+            assert!(
+                crate::read_dependencies::structural_searches(&combined).contains(
+                    &agq_kernel::derived::StructuralSearch::Property {
+                        element: id(1),
+                        property: p::ELEMENT_OWNED_RELATIONSHIP,
+                    }
+                )
+            );
+        }
+    }
+}
+
+#[test]
+fn dependent_archive_preserves_original_population_and_producer_identity() {
+    use agq_kernel::{
+        archive::{read_dependent_overlay, write_dependent_overlay},
+        derived::DerivationBuilder,
+    };
+    use std::io::Cursor;
+
+    let mut dependency = Fixture::new();
+    dependency.create(99, c::PACKAGE);
+    let dependency = Arc::new(DerivationBuilder::new(dependency.finish()).build().unwrap());
+    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let changes = base.change_set();
+    let (before, after) = declared_population_alias_pair(Fixture {
+        base,
+        changes,
+        owned: BTreeMap::new(),
+    });
+    let producer_registry = ProducerRegistry::new([ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    )])
+    .unwrap();
+    let mut restored_identities = vec![];
+    for (original, expected) in [(&before, vec![id(3)]), (&after, vec![id(3), id(4)])] {
+        let mut bytes = vec![];
+        write_dependent_overlay(original, &mut bytes).unwrap();
+        let restored = read_dependent_overlay(
+            Cursor::new(&bytes),
+            Arc::new(agq_kerml::registry().unwrap()),
+            dependency.clone(),
+        )
+        .unwrap();
+        assert!(Arc::ptr_eq(
+            restored.declared().immutable_dependency().unwrap(),
+            &dependency
+        ));
+        assert!(restored.model().elements().eq(original.model().elements()));
+        assert_eq!(
+            restored
+                .model()
+                .declared_slot(id(1), p::ELEMENT_OWNED_RELATIONSHIP),
+            original
+                .model()
+                .declared_slot(id(1), p::ELEMENT_OWNED_RELATIONSHIP)
+        );
+        let original_context =
+            SemanticContext::for_overlay(original, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(producer_registry.digest())
+                .unwrap();
+        let restored_context =
+            SemanticContext::for_overlay(&restored, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(producer_registry.digest())
+                .unwrap();
+        assert_eq!(original_context.id(), restored_context.id());
+        let restored_query = KerMlQueries::new(restored_context.fork());
+        assert_eq!(
+            restored_query.declared_owned_relationships(id(1)).value,
+            expected
+        );
+        restored_identities.push(restored_context.id().clone());
+        let mut rewrite = vec![];
+        write_dependent_overlay(&restored, &mut rewrite).unwrap();
+        assert_eq!(bytes, rewrite);
+    }
+    assert_ne!(
+        restored_identities[0].model_digest, restored_identities[1].model_digest,
+        "producer graph identity must authenticate distinct original populations after restoration"
+    );
 }

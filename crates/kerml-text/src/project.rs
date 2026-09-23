@@ -41,27 +41,40 @@ impl ProjectDocument {
         source: Arc<str>,
         limits: ParseLimits,
         production_frontend: bool,
+        sysml_profile: Option<syntax::production::SysmlSyntaxProfile>,
     ) -> Result<Self, SourceError> {
         if source.len() > limits.max_bytes {
             return Err(SourceError::Limit("byte"));
         }
-        let production = if production_frontend {
-            Some(syntax::production::parse_with_dialect(
-                match language {
-                    SourceLanguage::KerMl => syntax::production::Dialect::KerMl,
-                    SourceLanguage::SysMl => syntax::production::Dialect::SysMl,
-                },
-                id,
-                SourceRevisionId::new(),
-                source.clone(),
-                syntax::production::Limits {
-                    source: limits,
-                    ..Default::default()
-                },
-            )?)
-        } else {
-            None
-        };
+        let production =
+            if let Some(profile) = sysml_profile.filter(|_| language == SourceLanguage::SysMl) {
+                Some(syntax::production::parse_sysml_with_profile(
+                    profile,
+                    id,
+                    SourceRevisionId::new(),
+                    source.clone(),
+                    syntax::production::Limits {
+                        source: limits,
+                        ..Default::default()
+                    },
+                )?)
+            } else if production_frontend {
+                Some(syntax::production::parse_with_dialect(
+                    match language {
+                        SourceLanguage::KerMl => syntax::production::Dialect::KerMl,
+                        SourceLanguage::SysMl => syntax::production::Dialect::SysMl,
+                    },
+                    id,
+                    SourceRevisionId::new(),
+                    source.clone(),
+                    syntax::production::Limits {
+                        source: limits,
+                        ..Default::default()
+                    },
+                )?)
+            } else {
+                None
+            };
         let syntax = match language {
             _ if production_frontend => None,
             SourceLanguage::KerMl => Some(syntax::parse(id, source.clone(), limits)?),
@@ -122,7 +135,7 @@ impl ProjectDocument {
         }
         let mut source = self.source.to_string();
         source.replace_range(range, &edit.replacement);
-        Self::parse(self.id, self.language, source.into(), limits, false)
+        Self::parse(self.id, self.language, source.into(), limits, false, None)
     }
     pub fn id(&self) -> DocumentId {
         self.id
@@ -172,7 +185,7 @@ pub enum ProjectDiagnostic {
 #[derive(Debug)]
 pub struct ProjectRevision {
     project: ProjectId,
-    documents: BTreeMap<String, ProjectDocument>,
+    documents: BTreeMap<String, Arc<ProjectDocument>>,
     model: ProjectModel,
     diagnostics: Vec<ProjectDiagnostic>,
 }
@@ -182,6 +195,12 @@ enum ProjectModel {
     SysMl(crate::sysml::SourceModel),
 }
 impl ProjectModel {
+    fn semantic_model(&self) -> &agq_kernel::ModelView {
+        match self {
+            Self::KerMl(model) => model.snapshot().model(),
+            Self::SysMl(model) => model.semantic_model(),
+        }
+    }
     fn snapshot(&self) -> &Snapshot {
         match self {
             Self::KerMl(model) => model.snapshot(),
@@ -228,13 +247,16 @@ impl ProjectRevision {
     }
     /// Documents are ordered by exact project-local path, independent of insertion order.
     pub fn documents(&self) -> impl Iterator<Item = (&str, &ProjectDocument)> {
-        self.documents.iter().map(|(p, d)| (p.as_str(), d))
+        self.documents.iter().map(|(p, d)| (p.as_str(), d.as_ref()))
     }
     pub fn document(&self, id: DocumentId) -> Option<&ProjectDocument> {
-        self.documents.values().find(|d| d.id == id)
+        self.documents
+            .values()
+            .find(|d| d.id == id)
+            .map(Arc::as_ref)
     }
     pub fn document_at(&self, path: &str) -> Option<&ProjectDocument> {
-        self.documents.get(path)
+        self.documents.get(path).map(Arc::as_ref)
     }
     pub fn diagnostics(&self) -> &[ProjectDiagnostic] {
         &self.diagnostics
@@ -248,6 +270,33 @@ impl ProjectRevision {
     pub fn queries(&self) -> KerMlQueries<'_> {
         self.model.queries()
     }
+    /// Effective SysML queries are available only for the accepted two-publication
+    /// constructor. Every answer retains closure evidence and completeness.
+    pub fn sysml_queries(&self) -> Option<agq_sysml_semantics::SysmlQueries<'_>> {
+        match &self.model {
+            ProjectModel::SysMl(model) => model.sysml_queries(),
+            _ => None,
+        }
+    }
+    /// Shared canonical semantic model, including the derived overlay when the
+    /// accepted authored producer path is enabled. `snapshot` remains declared.
+    pub fn semantic_model(&self) -> &agq_kernel::ModelView {
+        self.model.semantic_model()
+    }
+    pub fn producer_status(&self) -> Option<&crate::sysml::AuthoredProducerStatus> {
+        match &self.model {
+            ProjectModel::SysMl(model) => model.producer_status(),
+            _ => None,
+        }
+    }
+    pub fn producer_closure(
+        &self,
+    ) -> Option<&Arc<agq_kerml_semantics::ProducerClosureCertificate>> {
+        match &self.model {
+            ProjectModel::SysMl(model) => model.producer_closure(),
+            _ => None,
+        }
+    }
     /// Canonical element/slot/occurrence origins for the production frontend.
     pub fn production_source_map(&self) -> Option<&crate::library::LibrarySourceMap> {
         match &self.model {
@@ -259,6 +308,10 @@ impl ProjectRevision {
     pub fn is_complete_slice(&self) -> bool {
         self.diagnostics.is_empty()
             && self.model.diagnostics().is_empty()
+            && self.producer_status().is_none_or(|status| {
+                status.converged
+                    && status.completeness == agq_kerml_semantics::Completeness::Complete
+            })
             && self
                 .documents
                 .values()
@@ -318,6 +371,7 @@ pub struct SourceProject {
     history: BTreeMap<RevisionId, Arc<ProjectRevision>>,
     publication: Option<Arc<crate::library::CanonicalKermlStandardLibraries>>,
     production_frontend: bool,
+    accepted_sysml: Option<Arc<crate::sysml::AcceptedSourceDependency>>,
 }
 impl SourceProject {
     pub fn new() -> Result<Self, ProjectError> {
@@ -334,7 +388,7 @@ impl SourceProject {
         limits: ParseLimits,
         profile: agq_kerml::BaselineProfile,
     ) -> Result<Self, ProjectError> {
-        Self::create(limits, profile, None, false)
+        Self::create(limits, profile, None, false, None)
     }
     /// Share an accepted immutable publication across independent authored histories.
     /// Its authority profile and canonical library identities cannot be overridden.
@@ -346,6 +400,7 @@ impl SourceProject {
             publication.profile(),
             Some(publication),
             false,
+            None,
         )
     }
     /// Enable shared lossless SysML/KerML production construction over an accepted
@@ -358,7 +413,30 @@ impl SourceProject {
             publication.profile(),
             Some(publication),
             true,
+            None,
         )
+    }
+    /// Enable Operational v2 authored semantics over exact accepted KerML and
+    /// Systems publications. Each revision closes its local combined producers;
+    /// immutable standard graphs and their accepted bindings are shared.
+    pub fn with_accepted_sysml_standard_libraries(
+        publication: Arc<crate::sysml::CanonicalSysmlSystemsLibrary>,
+    ) -> Result<Self, ProjectError> {
+        let dependency = crate::sysml::AcceptedSourceDependency::new(publication)?;
+        Self::create(
+            ParseLimits::default(),
+            dependency.publication.accepted_kerml().profile(),
+            Some(dependency.publication.accepted_kerml().clone()),
+            true,
+            Some(dependency),
+        )
+    }
+    pub fn accepted_sysml_standard_library(
+        &self,
+    ) -> Option<&Arc<crate::sysml::CanonicalSysmlSystemsLibrary>> {
+        self.accepted_sysml
+            .as_ref()
+            .map(|dependency| &dependency.publication)
     }
     pub fn standard_libraries(
         &self,
@@ -370,10 +448,19 @@ impl SourceProject {
         profile: agq_kerml::BaselineProfile,
         publication: Option<Arc<crate::library::CanonicalKermlStandardLibraries>>,
         production_frontend: bool,
+        accepted_sysml: Option<Arc<crate::sysml::AcceptedSourceDependency>>,
     ) -> Result<Self, ProjectError> {
         let id = ProjectId(GeneratorId::new());
         let root = ElementId::new();
-        let model = if production_frontend {
+        let model = if let Some(dependency) = &accepted_sysml {
+            ProjectModel::SysMl(crate::sysml::lower_accepted_source(
+                &[],
+                None,
+                root,
+                agq_kernel::provenance::DeclaredOrigin::Generated { generator: id.0 },
+                dependency.clone(),
+            )?)
+        } else if production_frontend {
             ProjectModel::SysMl(crate::sysml::lower_source(
                 &[],
                 None,
@@ -407,6 +494,7 @@ impl SourceProject {
             current,
             publication,
             production_frontend,
+            accepted_sysml,
         })
     }
     pub fn baseline_profile(&self) -> agq_kerml::BaselineProfile {
@@ -439,13 +527,16 @@ impl SourceProject {
                 check_path(&documents, &path)?;
                 documents.insert(
                     path,
-                    ProjectDocument::parse(
+                    Arc::new(ProjectDocument::parse(
                         DocumentId::new(),
                         language,
                         source.into(),
                         self.limits,
                         self.production_frontend,
-                    )?,
+                        self.accepted_sysml
+                            .as_ref()
+                            .map(|_| syntax::production::SysmlSyntaxProfile::OperationalV2),
+                    )?),
                 );
                 continue;
             }
@@ -464,7 +555,7 @@ impl SourceProject {
             match change {
                 ProjectChange::Edit { edit, .. } => {
                     let next = documents[&path].edit(&edit, self.limits)?;
-                    documents.insert(path, next);
+                    documents.insert(path, Arc::new(next));
                 }
                 ProjectChange::Replace { source, .. } => {
                     let next = ProjectDocument::parse(
@@ -473,8 +564,11 @@ impl SourceProject {
                         source.into(),
                         self.limits,
                         self.production_frontend,
+                        self.accepted_sysml
+                            .as_ref()
+                            .map(|_| syntax::production::SysmlSyntaxProfile::OperationalV2),
                     )?;
-                    documents.insert(path, next);
+                    documents.insert(path, Arc::new(next));
                 }
                 ProjectChange::Remove { .. } => {
                     documents.remove(&path);
@@ -509,20 +603,31 @@ impl SourceProject {
             let ProjectModel::SysMl(previous) = &self.current.model else {
                 unreachable!("immutable frontend")
             };
-            ProjectModel::SysMl(crate::sysml::lower_source(
-                &inputs,
-                Some(previous),
-                self.root,
-                agq_kernel::provenance::DeclaredOrigin::Generated {
-                    generator: self.id.0,
-                },
-                self.publication
-                    .clone()
-                    .expect("required accepted dependency"),
-            )?)
+            let origin = agq_kernel::provenance::DeclaredOrigin::Generated {
+                generator: self.id.0,
+            };
+            ProjectModel::SysMl(if let Some(dependency) = &self.accepted_sysml {
+                crate::sysml::lower_accepted_source(
+                    &inputs,
+                    Some(previous),
+                    self.root,
+                    origin,
+                    dependency.clone(),
+                )?
+            } else {
+                crate::sysml::lower_source(
+                    &inputs,
+                    Some(previous),
+                    self.root,
+                    origin,
+                    self.publication
+                        .clone()
+                        .expect("required accepted dependency"),
+                )?
+            })
         } else {
             ProjectModel::KerMl(lowering::lower_project(
-                documents.values().filter_map(ProjectDocument::syntax),
+                documents.values().filter_map(|document| document.syntax()),
                 Some(match &self.current.model {
                     ProjectModel::KerMl(model) => model,
                     _ => unreachable!("immutable frontend"),
@@ -558,7 +663,7 @@ impl SourceProject {
     }
 }
 fn check_path(
-    documents: &BTreeMap<String, ProjectDocument>,
+    documents: &BTreeMap<String, Arc<ProjectDocument>>,
     path: &str,
 ) -> Result<(), ProjectError> {
     if path.is_empty() || documents.contains_key(path) {

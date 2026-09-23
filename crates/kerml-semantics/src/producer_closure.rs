@@ -3,26 +3,52 @@
 //! Descriptors declare potential writes, independently of observed outputs.
 //! Certificates are immutable, exact-frontier sidecars, never model facts.
 use crate::{Completeness, ResultStructureStratum, SemanticContextId};
-use agq_kernel::{ElementId, MetaclassId, ModelView, PropertyId};
+use agq_kernel::{ElementId, MetaclassId, ModelView, PropertyId, RuleId};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
+
+#[path = "producer_closure_rebind.rs"]
+mod rebind;
+pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
+
+#[path = "producer_closure_trace.rs"]
+mod trace;
+
+#[path = "producer_read_storage.rs"]
+mod read_storage;
+use read_storage::ProducerReadPool;
+pub(crate) use read_storage::ProducerReads;
+
+#[cfg(test)]
+#[path = "../tests/unit/producer_read_interning.rs"]
+mod read_interning_tests;
+
+#[cfg(test)]
+#[path = "../tests/unit/producer_read_sharing.rs"]
+mod read_sharing_tests;
 
 /// Precise scalar reads coexist with conservative structural population reads.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum ProducerRead {
     Property(ElementId, PropertyId),
+    DeclaredProperty(ElementId, PropertyId),
+    OrderedReferenceContribution(ElementId, PropertyId, ElementId),
     Structural(ElementId),
     Source(ElementId, MetaclassId, PropertyId),
     Owned(ElementId, MetaclassId),
-    OwnedExcluding(ElementId, MetaclassId, Vec<MetaclassId>),
+    // Exclusions never grow after capture. A boxed slice avoids reserving Vec
+    // capacity metadata in every read variant in the retained evaluation table.
+    OwnedExcluding(ElementId, MetaclassId, Box<[MetaclassId]>),
     FeaturePopulation(ElementId, crate::FeaturePopulationKind),
     Inverse,
     Any(ElementId),
     Global,
     Requirement(ElementId, SemanticClosureRequirement),
+    /// Existing metaclass/existence facts cannot be changed by additive
+    /// producers, but source reconstruction may change or remove the record.
+    Identity(ElementId),
 }
-pub(crate) type ProducerReads = Arc<[ProducerRead]>;
 pub(crate) fn producer_reads<T>(
     answer: &crate::QueryResult<T>,
     model: &ModelView,
@@ -31,6 +57,32 @@ pub(crate) fn producer_reads<T>(
     use agq_kernel::{derived::StructuralSearch as K, provenance::FactKey};
     let mut result = BTreeSet::new();
     let mut kernel = |search: &K| match search {
+        K::DeclaredProperty { element, property } => {
+            result.insert(ProducerRead::DeclaredProperty(*element, *property));
+        }
+        K::OrderedReferenceContribution {
+            element,
+            property,
+            target,
+        } => {
+            // The selected append is immutable during an additive producer
+            // session. Its retained proof/searches are separate reads. Missing
+            // canonical support never establishes a closed negative result.
+            result.insert(
+                if model
+                    .navigation_slot(*element, *property)
+                    .is_some_and(|slot| {
+                        slot.value()
+                            .values()
+                            .any(|value| *value == agq_kernel::value::Value::Reference(*target))
+                    })
+                {
+                    ProducerRead::OrderedReferenceContribution(*element, *property, *target)
+                } else {
+                    ProducerRead::Property(*element, *property)
+                },
+            );
+        }
         K::Property { element, property } => {
             result.insert(ProducerRead::Property(*element, *property));
         }
@@ -43,6 +95,8 @@ pub(crate) fn producer_reads<T>(
         K::ElementIdentity(id) => {
             if model.element(*id).is_none() {
                 result.insert(ProducerRead::Global);
+            } else {
+                result.insert(ProducerRead::Identity(*id));
             }
         }
         K::Incoming(_) | K::Association { .. } => {
@@ -150,8 +204,12 @@ pub(crate) fn producer_reads<T>(
             S::Instances { .. } => {
                 result.insert(ProducerRead::Global);
             }
-            S::Element(id) if model.element(*id).is_none() => {
-                result.insert(ProducerRead::Global);
+            S::Element(id) => {
+                result.insert(if model.element(*id).is_none() {
+                    ProducerRead::Global
+                } else {
+                    ProducerRead::Identity(*id)
+                });
             }
             S::ProducerClosure {
                 subject,
@@ -181,6 +239,15 @@ pub(crate) fn producer_reads<T>(
         .collect();
     for fact in &answer.positive_dependencies {
         if let FactKey::Property { element, property } = fact {
+            if result.contains(&ProducerRead::DeclaredProperty(*element, *property))
+                && !result.contains(&ProducerRead::Property(*element, *property))
+                && !answer
+                    .canonical_dependencies
+                    .contains(&agq_kernel::provenance::Dependency::Derived(*fact))
+                && !answer.producer_expanded_facts.contains(fact)
+            {
+                continue;
+            }
             if *property == agq_kerml::properties::RELATIONSHIP_OWNED_RELATED_ELEMENT
                 && !result.contains(&ProducerRead::Property(*element, *property))
                 && model.element(*element).is_some_and(|record| {
@@ -203,6 +270,7 @@ pub(crate) fn producer_reads<T>(
             // canonical carrier fact remains in proof; the search defines the
             // observed projection. Explicit broad reads still take precedence.
             if !result.contains(&ProducerRead::Property(*element, *property))
+                && !answer.producer_expanded_facts.contains(fact)
                 && result.iter().any(|read| match read {
                     ProducerRead::Source(child, _, backing)
                         if backing == property
@@ -228,6 +296,7 @@ pub(crate) fn producer_reads<T>(
             if *property == agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP
                 && filtered_owners.contains(element)
                 && !result.contains(&ProducerRead::Property(*element, *property))
+                && !answer.producer_expanded_facts.contains(fact)
             {
                 continue;
             }
@@ -303,14 +372,240 @@ pub enum ProducerEffectScope {
     /// change an existing subject's ownership, this expands to `Model`.
     SubjectAndOwners,
     Model,
+    /// Directly owned, directed, non-result Features in the same canonical
+    /// population as `KerMlQueries::owned_parameter_features`. Neither the
+    /// producer subject nor nested/inherited parameters are write targets.
+    OwnedParameterFeatures,
+    /// The subject and Features directly owned through ReturnParameterMembership.
+    /// Nested and inherited result parameters are outside this write boundary.
+    SubjectAndOwnedResults,
+    /// The subject and Features transitively contained through FeatureMembership.
+    /// Other ownership carriers, including FeatureValue, do not extend this scope.
+    SubjectAndOwnedFeatures,
+    /// The Feature subject and the Type owning its direct FeatureMembership.
+    /// Lexical containers and other ownership carriers are outside this scope.
+    SubjectAndOwningType,
 }
 impl ProducerEffectScope {
     fn depends_on_ownership(self) -> bool {
         matches!(
             self,
-            Self::SubjectAndOwned | Self::OwnedDescendants | Self::SubjectAndOwners
+            Self::SubjectAndOwned
+                | Self::OwnedDescendants
+                | Self::OwnedParameterFeatures
+                | Self::SubjectAndOwnedResults
+                | Self::SubjectAndOwnedFeatures
+                | Self::SubjectAndOwners
+                | Self::SubjectAndOwningType
         )
     }
+
+    pub(crate) fn includes_subject(self) -> bool {
+        !matches!(self, Self::OwnedDescendants | Self::OwnedParameterFeatures)
+    }
+
+    pub(crate) fn selected_targets(
+        self,
+        model: &ModelView,
+        subject: ElementId,
+        direction_may_change: bool,
+    ) -> Option<Result<BTreeSet<ElementId>, ()>> {
+        match self {
+            Self::OwnedParameterFeatures => {
+                Some(owned_parameter_scope(model, subject, direction_may_change))
+            }
+            Self::SubjectAndOwnedResults => Some(
+                owned_feature_scope(model, subject, true, false).map(|mut targets| {
+                    targets.insert(subject);
+                    targets
+                }),
+            ),
+            Self::SubjectAndOwnedFeatures => Some(owned_feature_tree_scope(model, subject)),
+            Self::SubjectAndOwningType => Some(owning_type_scope(model, subject)),
+            _ => None,
+        }
+    }
+}
+
+fn owning_type_scope(model: &ModelView, subject: ElementId) -> Result<BTreeSet<ElementId>, ()> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{derived::PropertyState, value::Value};
+    let is = |element, class| {
+        model.element(element).ok_or(()).and_then(|record| {
+            model
+                .registry()
+                .is_subtype(record.metaclass(), class)
+                .map_err(|_| ())
+        })
+    };
+    if !is(subject, c::FEATURE)? {
+        return Err(());
+    }
+    let reference = |element, property| -> Result<Option<ElementId>, ()> {
+        let slot = match model.property_state(element, property) {
+            Ok(PropertyState::Computed(slot)) => slot,
+            Ok(PropertyState::Absent) => return Ok(None),
+            _ => return Err(()),
+        };
+        let mut values = slot.value().values();
+        match (values.next(), values.next()) {
+            (None, None) => Ok(None),
+            (Some(Value::Reference(target)), None) => Ok(Some(*target)),
+            _ => Err(()),
+        }
+    };
+    let has_backing = |element, property, target| {
+        matches!(model.property_state(element, property), Ok(PropertyState::Computed(slot))
+            if slot.value().values().any(|value| *value == Value::Reference(target)))
+    };
+    let mut targets = BTreeSet::from([subject]);
+    let Some(membership) = reference(subject, p::ELEMENT_OWNING_RELATIONSHIP)? else {
+        return Ok(targets);
+    };
+    if !is(membership, c::FEATURE_MEMBERSHIP)? {
+        return Ok(targets);
+    }
+    // Authenticate the two inverse hops against their canonical owning carriers.
+    if reference(membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)? != Some(subject) {
+        return Err(());
+    }
+    let Some(owner) = reference(membership, p::RELATIONSHIP_OWNING_RELATED_ELEMENT)? else {
+        return Ok(targets);
+    };
+    if !is(owner, c::TYPE)? || !has_backing(owner, p::ELEMENT_OWNED_RELATIONSHIP, membership) {
+        return Err(());
+    }
+    targets.insert(owner);
+    Ok(targets)
+}
+
+fn owned_feature_tree_scope(
+    model: &ModelView,
+    subject: ElementId,
+) -> Result<BTreeSet<ElementId>, ()> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{derived::PropertyState, value::Value};
+    let mut targets = BTreeSet::from([subject]);
+    let mut pending = vec![subject];
+    while let Some(owner) = pending.pop() {
+        let owned = match model.property_state(owner, p::ELEMENT_OWNED_RELATIONSHIP) {
+            Ok(PropertyState::Computed(slot)) => slot,
+            Ok(PropertyState::Absent) => continue,
+            _ => return Err(()),
+        };
+        for value in owned.value().values() {
+            let Value::Reference(membership) = value else {
+                return Err(());
+            };
+            let class = model.element(*membership).ok_or(())?.metaclass();
+            if !model
+                .registry()
+                .is_subtype(class, c::FEATURE_MEMBERSHIP)
+                .map_err(|_| ())?
+            {
+                continue;
+            }
+            let endpoint =
+                match model.property_state(*membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT) {
+                    Ok(PropertyState::Computed(slot)) => slot,
+                    _ => return Err(()),
+                };
+            let mut values = endpoint.value().values();
+            let Some(Value::Reference(target)) = values.next() else {
+                return Err(());
+            };
+            if values.next().is_some()
+                || !model.element(*target).is_some_and(|record| {
+                    model
+                        .registry()
+                        .is_subtype(record.metaclass(), c::FEATURE)
+                        .unwrap_or(false)
+                })
+            {
+                return Err(());
+            }
+            if targets.insert(*target) {
+                pending.push(*target);
+            }
+        }
+    }
+    Ok(targets)
+}
+
+/// A write-scope bound, not a semantic absence proof. Unknown canonical inputs
+/// prevent narrowing. Future ownership/reference writers are handled by the
+/// existing model-wide guard; primitive direction writers widen this population
+/// to all otherwise eligible direct members. Effect audits use actual direction.
+pub(crate) fn owned_parameter_scope(
+    model: &ModelView,
+    subject: ElementId,
+    direction_may_change: bool,
+) -> Result<BTreeSet<ElementId>, ()> {
+    owned_feature_scope(model, subject, false, direction_may_change)
+}
+
+fn owned_feature_scope(
+    model: &ModelView,
+    subject: ElementId,
+    results: bool,
+    direction_may_change: bool,
+) -> Result<BTreeSet<ElementId>, ()> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{derived::PropertyState, value::Value};
+    let owned = match model.property_state(subject, p::ELEMENT_OWNED_RELATIONSHIP) {
+        Ok(PropertyState::Computed(slot)) => slot,
+        Ok(PropertyState::Absent) => return Ok(BTreeSet::new()),
+        _ => return Err(()),
+    };
+    let mut targets = BTreeSet::new();
+    for value in owned.value().values() {
+        let Value::Reference(membership) = value else {
+            return Err(());
+        };
+        let class = model.element(*membership).ok_or(())?.metaclass();
+        let is = |base| model.registry().is_subtype(class, base).map_err(|_| ());
+        if if results {
+            !is(c::RETURN_PARAMETER_MEMBERSHIP)?
+        } else {
+            !is(c::FEATURE_MEMBERSHIP)? || is(c::RETURN_PARAMETER_MEMBERSHIP)?
+        } {
+            continue;
+        }
+        let endpoint =
+            match model.property_state(*membership, p::RELATIONSHIP_OWNED_RELATED_ELEMENT) {
+                Ok(PropertyState::Computed(slot)) => slot,
+                _ => return Err(()),
+            };
+        let mut values = endpoint.value().values();
+        let Some(Value::Reference(target)) = values.next() else {
+            return Err(());
+        };
+        if values.next().is_some()
+            || !model.element(*target).is_some_and(|record| {
+                model
+                    .registry()
+                    .is_subtype(record.metaclass(), c::FEATURE)
+                    .unwrap_or(false)
+            })
+        {
+            return Err(());
+        }
+        if results {
+            targets.insert(*target);
+            continue;
+        }
+        match model.property_state(*target, p::FEATURE_DIRECTION) {
+            Ok(PropertyState::Computed(_)) => {
+                targets.insert(*target);
+            }
+            Ok(PropertyState::Absent) if direction_may_change => {
+                targets.insert(*target);
+            }
+            Ok(PropertyState::Absent) => {}
+            _ => return Err(()),
+        }
+    }
+    Ok(targets)
 }
 
 /// Immutable declaration under one semantic rule-set identity.
@@ -328,10 +623,19 @@ pub struct ProducerDescriptor {
     /// records. A fresh FeatureTyping targeting an existing Feature belongs in
     /// `effects`, even though its relationship identity is new.
     pub fresh_effects: BTreeSet<ProducerEffect>,
+    /// Every new subject is detached or canonically owned below a target in
+    /// this family's existing effect scope. The promise is transitive across
+    /// fresh helper records and is checked when a production plan is audited.
+    /// False preserves unrestricted future-subject activation.
+    pub scoped_fresh_ownership: bool,
     /// Optional exact metaclasses of relationship records this family may
     /// create. This bounds potential output, not the records observed so far.
     /// `None` permits every relationship class covered by its effects.
     pub relationship_classes: Option<BTreeSet<MetaclassId>>,
+    /// Exclusive provenance rules emitted by this family. A claimed rule may
+    /// not borrow another family's effect permissions, including when its
+    /// owner is inapplicable. `None` retains the unclaimed effect contract.
+    pub derivation_rules: Option<BTreeSet<RuleId>>,
     /// Positional populations this family's membership effects may change.
     /// `None` is unconstrained. Existing scalar producer capabilities can reopen
     /// Parameter/End exclusions on newly created members.
@@ -342,7 +646,12 @@ pub struct ProducerDescriptor {
     /// Fresh-subject effects have their separate contract above.
     pub effect_targets: Option<BTreeSet<MetaclassId>>,
     pub applicability: ProducerApplicability,
+    /// Default existing-subject effect scope and fresh attachment envelope.
     pub scope: ProducerEffectScope,
+    /// Exact overrides for individual existing-subject effects. Keys must be
+    /// present in `effects`; fresh-subject effects retain their separate contract.
+    /// Changing an override changes the registry and closure identity.
+    pub effect_scopes: BTreeMap<ProducerEffect, ProducerEffectScope>,
     pub minimum_stratum: ResultStructureStratum,
 }
 impl ProducerDescriptor {
@@ -355,15 +664,25 @@ impl ProducerDescriptor {
             id,
             effects: effects.into_iter().collect(),
             fresh_effects: BTreeSet::new(),
+            scoped_fresh_ownership: false,
             relationship_classes: None,
+            derivation_rules: None,
             feature_populations: None,
             effect_targets: None,
             applicability,
             scope: ProducerEffectScope::SubjectAndOwned,
+            effect_scopes: BTreeMap::new(),
             minimum_stratum: ResultStructureStratum::Structural,
         }
     }
-    fn can_create_subjects(&self) -> bool {
+    /// Scope of one existing-subject effect, falling back to the default scope.
+    pub fn effect_scope(&self, effect: ProducerEffect) -> ProducerEffectScope {
+        self.effect_scopes
+            .get(&effect)
+            .copied()
+            .unwrap_or(self.scope)
+    }
+    pub(crate) fn can_create_subjects(&self) -> bool {
         !self.fresh_effects.is_empty()
             || self
                 .effects
@@ -390,8 +709,21 @@ fn future_cross_subject_effects(
     registry: &ProducerRegistry,
     model: &ModelView,
 ) -> BTreeSet<ProducerEffect> {
+    let ownership_mutable = registry.descriptors.iter().any(|descriptor| {
+        descriptor.effects.contains(&ProducerEffect::Ownership)
+            || has_reference_scalar(descriptor, model)
+    });
     future_cross_subject_families(registry, model)
-        .flat_map(|descriptor| descriptor.effects.iter().copied())
+        .flat_map(|descriptor| {
+            descriptor.effects.iter().copied().filter(move |&effect| {
+                effect_reaches_future_existing_subjects(
+                    descriptor,
+                    effect,
+                    ownership_mutable,
+                    model,
+                )
+            })
+        })
         .collect()
 }
 fn future_cross_subject_families<'a>(
@@ -404,12 +736,131 @@ fn future_cross_subject_families<'a>(
     });
     registry.descriptors.iter().filter(move |descriptor| {
         descriptor.applicability != ProducerApplicability::Never
-            && (matches!(
-                descriptor.scope,
-                ProducerEffectScope::Model | ProducerEffectScope::SubjectAndOwners
-            ) || has_reference_scalar(descriptor, model)
-                || (ownership_mutable && descriptor.scope.depends_on_ownership()))
+            && descriptor.effects.iter().any(|&effect| {
+                effect_reaches_future_existing_subjects(
+                    descriptor,
+                    effect,
+                    ownership_mutable,
+                    model,
+                )
+            })
     })
+}
+
+fn effect_reaches_future_existing_subjects(
+    descriptor: &ProducerDescriptor,
+    effect: ProducerEffect,
+    ownership_mutable: bool,
+    model: &ModelView,
+) -> bool {
+    let scope = descriptor.effect_scope(effect);
+    matches!(
+        scope,
+        ProducerEffectScope::Model
+            | ProducerEffectScope::SubjectAndOwners
+            | ProducerEffectScope::SubjectAndOwningType
+    ) || reference_scalar(effect, model)
+        || scope.depends_on_ownership() && ownership_mutable
+}
+
+/// Existing subjects reachable by future owner-scoped writers. A fresh subject
+/// cannot acquire an unrelated existing owner if every possible creator obeys
+/// its attachment scope and no producer/provider can relocate existing records.
+/// Unknown creation contracts deliberately retain the model-wide fallback.
+fn future_owner_targets(
+    model: &ModelView,
+    registry: &ProducerRegistry,
+    subject: ElementId,
+    descriptor: &ProducerDescriptor,
+    provider_ownership_open: bool,
+    transitive: bool,
+) -> Option<BTreeSet<ElementId>> {
+    use agq_kerml::properties as p;
+    if provider_ownership_open
+        || descriptor.scope == ProducerEffectScope::Model
+        || registry.descriptors.iter().any(|family| {
+            family.applicability != ProducerApplicability::Never
+                && (family.effects.contains(&ProducerEffect::Ownership)
+                    || has_reference_scalar(family, model)
+                    || family.can_create_subjects() && !family.scoped_fresh_ownership
+                    || family.scope == ProducerEffectScope::Model
+                    || family
+                        .effects
+                        .iter()
+                        .any(|&effect| family.effect_scope(effect) == ProducerEffectScope::Model))
+        })
+    {
+        return None;
+    }
+    let mut roots = BTreeSet::from([subject]);
+    if matches!(
+        descriptor.scope,
+        ProducerEffectScope::SubjectAndOwnedFeatures
+            | ProducerEffectScope::SubjectAndOwnedResults
+            | ProducerEffectScope::SubjectAndOwningType
+    ) {
+        // Fresh outputs attach only below selected Feature/result roots.
+        // Other owned populations (for example nested value expressions) do
+        // not become possible owners of those helpers without an ownership
+        // writer, which already selects the model-wide fallback above.
+        roots = descriptor
+            .scope
+            .selected_targets(model, subject, false)?
+            .ok()?;
+    } else if !matches!(
+        descriptor.scope,
+        ProducerEffectScope::Subject | ProducerEffectScope::SubjectAndOwners
+    ) {
+        // Selector scopes are safely bounded by their containing owned tree.
+        // The exact target selector still governs present-subject effect audit.
+        let mut pending = vec![subject];
+        while let Some(owner) = pending.pop() {
+            for property in [
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            ] {
+                match model.property_state(owner, property) {
+                    Ok(agq_kernel::derived::PropertyState::Computed(slot)) => {
+                        for value in slot.value().values() {
+                            let agq_kernel::value::Value::Reference(child) = value else {
+                                return None;
+                            };
+                            if roots.insert(*child) {
+                                pending.push(*child);
+                            }
+                        }
+                    }
+                    Ok(agq_kernel::derived::PropertyState::Absent) => {}
+                    // The property may not be applicable to this metaclass.
+                    Err(_)
+                        if model.element(owner).is_some_and(|record| {
+                            model
+                                .registry()
+                                .resolve_property(record.metaclass(), property)
+                                .is_ok_and(|value| value.is_none())
+                        }) => {}
+                    _ => return None,
+                }
+            }
+        }
+    }
+    if !transitive && descriptor.scope != ProducerEffectScope::SubjectAndOwners {
+        return Some(roots);
+    }
+    let mut pending: Vec<_> = roots.iter().copied().collect();
+    while let Some(child) = pending.pop() {
+        for property in [
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        ] {
+            for incoming in model.incoming_for_property(child, property) {
+                if roots.insert(incoming.source) {
+                    pending.push(incoming.source);
+                }
+            }
+        }
+    }
+    Some(roots)
 }
 
 /// Explicit effect requirements of exhaustive queries. Positive witnesses do
@@ -540,6 +991,13 @@ impl ProducerRegistry {
     ) -> Result<Self, ProducerFamilyId> {
         let mut descriptors: Vec<_> = descriptors.into_iter().collect();
         for descriptor in &mut descriptors {
+            if descriptor
+                .effect_scopes
+                .keys()
+                .any(|effect| !descriptor.effects.contains(effect))
+            {
+                return Err(descriptor.id);
+            }
             if let ProducerApplicability::Subtypes(classes) = &mut descriptor.applicability {
                 classes.sort();
                 classes.dedup();
@@ -551,8 +1009,16 @@ impl ProducerRegistry {
                 return Err(pair[0].id);
             }
         }
+        let mut claimed_rules = BTreeSet::new();
+        for descriptor in &descriptors {
+            for rule in descriptor.derivation_rules.iter().flatten() {
+                if !claimed_rules.insert(*rule) {
+                    return Err(descriptor.id);
+                }
+            }
+        }
         let mut hash = Sha256::new();
-        hash.update(b"agq-producer-registry/3");
+        hash.update(b"agq-producer-registry/6");
         // Debug is deterministic for these ordered value-only declarations;
         // its encoding is versioned by the registry schema above.
         hash.update(format!("{descriptors:?}").as_bytes());
@@ -582,6 +1048,14 @@ impl ProducerRegistry {
     pub fn descriptors(&self) -> &[ProducerDescriptor] {
         &self.descriptors
     }
+    pub(crate) fn rule_owner(&self, rule: RuleId) -> Option<&ProducerDescriptor> {
+        self.descriptors.iter().find(|descriptor| {
+            descriptor
+                .derivation_rules
+                .as_ref()
+                .is_some_and(|rules| rules.contains(&rule))
+        })
+    }
     pub(crate) fn index(&self, id: ProducerFamilyId) -> Option<usize> {
         self.descriptors.binary_search_by_key(&id, |d| d.id).ok()
     }
@@ -589,12 +1063,34 @@ impl ProducerRegistry {
 
 /// Compressed evaluation table retained only by the scheduler. The outer index
 /// is one entry per subject; there is no tree node per subject/family pair.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub(crate) struct ProducerEvaluationTable {
     rows: BTreeMap<ElementId, Vec<ProducerEvaluationState>>,
     reads: BTreeMap<ElementId, Vec<(usize, ProducerReads)>>,
+    read_pool: ProducerReadPool,
 }
 impl ProducerEvaluationTable {
+    pub(crate) fn invalidate(&mut self, changed: &BTreeSet<ElementId>) {
+        for (&subject, row) in &mut self.rows {
+            for (family, state) in row.iter_mut().enumerate() {
+                if *state == ProducerEvaluationState::Inapplicable {
+                    continue;
+                }
+                let reads = self
+                    .reads
+                    .get(&subject)
+                    .and_then(|row| row.iter().find(|(index, _)| *index == family));
+                if changed.contains(&subject)
+                    || reads.is_none_or(|(_, reads)| {
+                        reads.iter().any(|read| rebind::read_changed(read, changed))
+                    })
+                {
+                    *state = ProducerEvaluationState::Pending;
+                }
+            }
+        }
+    }
+
     /// Least fixed point: an evaluated producer is not quiescent while an
     /// unfinished producer can change one of its actual query reads.
     fn dependency_blocked(
@@ -604,6 +1100,7 @@ impl ProducerEvaluationTable {
         subjects: &[ElementId],
         positions: &BTreeMap<ElementId, usize>,
         immutable: &impl Fn(ElementId) -> bool,
+        provider_masks: &[u8],
     ) -> BTreeSet<usize> {
         let families = registry.descriptors.len();
         let future_effects = future_cross_subject_effects(registry, model);
@@ -656,10 +1153,39 @@ impl ProducerEvaluationTable {
                 }
             }
         }
+        // A completed producer may depend on a source provider that has no
+        // producer-family row. Seed those causal blockers before propagating
+        // potential writer effects, including transitive requirement reads.
+        let has_pending_providers = provider_masks.iter().any(|mask| *mask != 0);
+        for (&subject, row) in &self.rows {
+            for (family, state) in row.iter().enumerate() {
+                if !has_pending_providers || *state != ProducerEvaluationState::EvaluatedComplete {
+                    continue;
+                }
+                let reads = self
+                    .reads
+                    .get(&subject)
+                    .and_then(|reads| reads.iter().find(|(index, _)| *index == family));
+                let affected = reads.is_none_or(|(_, reads)| {
+                    reads
+                        .iter()
+                        .any(|read| provider_changes_read(read, model, positions, provider_masks))
+                });
+                if affected {
+                    let pair = positions[&subject] * families + family;
+                    if blocked.insert(pair) {
+                        pending.push_back(pair);
+                    }
+                }
+            }
+        }
         if pending.is_empty() {
             return blocked;
         }
-        let mut readers: BTreeMap<ElementId, Vec<(ProducerRead, usize)>> = BTreeMap::new();
+        // The evaluation table is immutable throughout this propagation. Borrow
+        // its read rows instead of duplicating every read and exclusion vector
+        // in the temporary reverse index.
+        let mut readers: BTreeMap<ElementId, Vec<(&ProducerRead, usize)>> = BTreeMap::new();
         let mut global = Vec::new();
         let mut inverse = Vec::new();
         for (&subject, row) in &self.rows {
@@ -673,14 +1199,17 @@ impl ProducerEvaluationTable {
                     .reads
                     .get(&subject)
                     .and_then(|reads| reads.iter().find(|(family, _)| *family == j))
-                    .map(|(_, reads)| reads.as_ref());
+                    .map(|(_, reads)| reads);
                 if let Some(reads) = reads {
-                    for read in reads {
+                    for read in reads.iter() {
                         // Protected dependency records and their ownership
                         // collections cannot change. Arbitrary inverse/source
                         // relationship searches remain open: local carriers
                         // may refer to a dependency without writing its record.
                         let fixed = match read {
+                            ProducerRead::DeclaredProperty(_, _)
+                            | ProducerRead::OrderedReferenceContribution(_, _, _)
+                            | ProducerRead::Identity(_) => true,
                             ProducerRead::Any(id)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Owned(id, _)
@@ -732,18 +1261,22 @@ impl ProducerEvaluationTable {
                             ProducerRead::Global => global.push(pair),
                             ProducerRead::Inverse => inverse.push(pair),
                             ProducerRead::Property(id, _)
+                            | ProducerRead::DeclaredProperty(id, _)
+                            | ProducerRead::OrderedReferenceContribution(id, _, _)
                             | ProducerRead::Source(id, _, _)
                             | ProducerRead::Owned(id, _)
                             | ProducerRead::OwnedExcluding(id, _, _)
                             | ProducerRead::FeaturePopulation(id, _)
                             | ProducerRead::Structural(id)
                             | ProducerRead::Any(id)
+                            | ProducerRead::Identity(id)
                             | ProducerRead::Requirement(id, _) => {
-                                readers.entry(*id).or_default().push((read.clone(), pair))
+                                readers.entry(*id).or_default().push((read, pair))
                             }
                         }
                     }
                 } else {
+                    crate::producer_read_trace::missing_reads(subject, registry.descriptors[j].id);
                     global.push(pair);
                 }
             }
@@ -771,7 +1304,27 @@ impl ProducerEvaluationTable {
             }
         }
         let trace = std::env::var_os("AGQ_PRODUCER_CAUSAL_TRACE").is_some();
+        // Optional diagnostic filtering keeps a corpus trace bounded to the
+        // subjects under investigation. It never filters closure propagation.
+        let trace_subjects = std::env::var("AGQ_PRODUCER_CAUSAL_SUBJECTS")
+            .ok()
+            .map(|value| {
+                value
+                    .split(',')
+                    .map(|id| id.trim().to_ascii_lowercase())
+                    .filter(|id| !id.is_empty())
+                    .collect::<BTreeSet<_>>()
+            });
+        let trace_pair = |writer: ElementId, reader: ElementId| {
+            trace
+                && trace_subjects.as_ref().is_none_or(|subjects| {
+                    subjects.contains(&writer.to_string()) || subjects.contains(&reader.to_string())
+                })
+        };
         let mut future_effects_applied = false;
+        let provider_ownership_open = provider_masks
+            .iter()
+            .any(|mask| mask & SemanticClosureRequirement::EffectiveOwnership.bit() != 0);
         while let Some(pair) = pending.pop_front() {
             let subject = subjects[pair / families];
             let descriptor = &registry.descriptors[pair % families];
@@ -783,30 +1336,82 @@ impl ProducerEvaluationTable {
                 && !future_effects_applied
                 && !future_effects.is_empty()
             {
-                future_effects_applied = true;
-                for reads in readers.values() {
-                    for (read, reader) in reads {
-                        if future_families.iter().any(|future| {
-                            future.effects.iter().any(|&effect| {
-                                descriptor_changes_read(
-                                    future,
-                                    effect,
-                                    read,
-                                    model,
-                                    &mutable_feature_populations,
-                                )
-                            })
-                        }) {
-                            if trace && !blocked.contains(reader) {
-                                eprintln!(
-                                    "closure future cause {subject:?}/{} -> {:?}/{} read={read:?}",
-                                    descriptor.id.name(),
-                                    subjects[*reader / families],
-                                    registry.descriptors[*reader % families].id.name()
-                                );
+                let future_targets = future_owner_targets(
+                    model,
+                    registry,
+                    subject,
+                    descriptor,
+                    provider_ownership_open,
+                    true,
+                );
+                let future_direct_targets = future_owner_targets(
+                    model,
+                    registry,
+                    subject,
+                    descriptor,
+                    provider_ownership_open,
+                    false,
+                );
+                // A bounded creator affects only its own roots. Other pending
+                // creators still need their distinct attachment frontier.
+                future_effects_applied = future_targets.is_none();
+                let mut consume_future =
+                    |read_subject: &ElementId, reads: &[(&ProducerRead, usize)]| {
+                        for (read, reader) in reads {
+                            if future_families.iter().any(|future| {
+                                future.effects.iter().any(|&effect| {
+                                    let scope = future.effect_scope(effect);
+                                    if scope == ProducerEffectScope::SubjectAndOwningType
+                                        && future_direct_targets
+                                            .as_ref()
+                                            .is_some_and(|targets| !targets.contains(read_subject))
+                                    {
+                                        return false;
+                                    }
+                                    if !effect_reaches_future_existing_subjects(
+                                        future,
+                                        effect,
+                                        ownership_mutable,
+                                        model,
+                                    ) || immutable(*read_subject)
+                                        && scope != ProducerEffectScope::Model
+                                        && !reference_scalar(effect, model)
+                                        && !(ownership_mutable && scope.depends_on_ownership())
+                                    {
+                                        return false;
+                                    }
+                                    descriptor_changes_read(
+                                        future,
+                                        effect,
+                                        read,
+                                        model,
+                                        &mutable_feature_populations,
+                                    )
+                                })
+                            }) {
+                                if !blocked.contains(reader)
+                                    && trace_pair(subject, subjects[*reader / families])
+                                {
+                                    eprintln!(
+                                        "closure future cause {subject}/{} -> {}/{} read={read:?}",
+                                        descriptor.id.name(),
+                                        subjects[*reader / families],
+                                        registry.descriptors[*reader % families].id.name()
+                                    );
+                                }
+                                affected.push(*reader);
                             }
-                            affected.push(*reader);
                         }
+                    };
+                if let Some(targets) = &future_targets {
+                    for target in targets {
+                        if let Some((read_subject, reads)) = readers.get_key_value(target) {
+                            consume_future(read_subject, reads);
+                        }
+                    }
+                } else {
+                    for (read_subject, reads) in &readers {
+                        consume_future(read_subject, reads);
                     }
                 }
             }
@@ -820,69 +1425,93 @@ impl ProducerEvaluationTable {
             {
                 affected.append(&mut inverse);
             }
-            let mut consume = |reads: &[(ProducerRead, usize)]| {
-                for (read, reader) in reads {
-                    if descriptor.effects.iter().any(|&effect| {
-                        descriptor_changes_read(
+            for &effect in &descriptor.effects {
+                let scope_kind = descriptor.effect_scope(effect);
+                let mut consume = |reads: &[(&ProducerRead, usize)]| {
+                    for (read, reader) in reads {
+                        if descriptor_changes_read(
                             descriptor,
                             effect,
                             read,
                             model,
                             &mutable_feature_populations,
-                        )
-                    }) {
-                        if trace && !blocked.contains(reader) {
-                            eprintln!(
-                                "closure direct cause {subject:?}/{} -> {:?}/{} read={read:?}",
-                                descriptor.id.name(),
-                                subjects[*reader / families],
-                                registry.descriptors[*reader % families].id.name()
-                            );
+                        ) {
+                            if !blocked.contains(reader)
+                                && trace_pair(subject, subjects[*reader / families])
+                            {
+                                eprintln!(
+                                    "closure direct cause {subject}/{} -> {}/{} read={read:?}",
+                                    descriptor.id.name(),
+                                    subjects[*reader / families],
+                                    registry.descriptors[*reader % families].id.name()
+                                );
+                            }
+                            affected.push(*reader);
                         }
-                        affected.push(*reader);
                     }
-                }
-            };
-            if descriptor.scope == ProducerEffectScope::Model
-                || has_reference_scalar(descriptor, model)
-                || (ownership_mutable && descriptor.scope.depends_on_ownership())
-            {
-                for reads in readers.values() {
-                    consume(reads);
-                }
-            } else {
-                let mut scope = vec![subject];
-                let mut seen = BTreeSet::new();
-                while let Some(source) = scope.pop() {
-                    if !seen.insert(source) {
-                        continue;
-                    }
-                    if (descriptor.scope != ProducerEffectScope::OwnedDescendants
-                        || source != subject)
-                        && let Some(reads) = readers.get(&source)
-                    {
+                };
+                if scope_kind == ProducerEffectScope::Model
+                    || reference_scalar(effect, model)
+                    || (ownership_mutable && scope_kind.depends_on_ownership())
+                {
+                    for reads in readers.values() {
                         consume(reads);
                     }
-                    if matches!(
-                        descriptor.scope,
-                        ProducerEffectScope::SubjectAndOwned
-                            | ProducerEffectScope::OwnedDescendants
-                    ) && let Some(children) = owned.get(&source)
-                    {
-                        scope.extend(children);
+                } else if let Some(targets) = scope_kind.selected_targets(
+                    model,
+                    subject,
+                    mutable_feature_populations.contains(&crate::FeaturePopulationKind::Parameter),
+                ) {
+                    match targets {
+                        Ok(targets) => {
+                            for target in targets {
+                                if let Some(reads) = readers.get(&target) {
+                                    consume(reads);
+                                }
+                            }
+                        }
+                        Err(()) => {
+                            for (target, reads) in &readers {
+                                if !immutable(*target) {
+                                    consume(reads);
+                                }
+                            }
+                        }
                     }
-                    if descriptor.scope == ProducerEffectScope::SubjectAndOwners
-                        && let Some(parents) = owners.get(&source)
-                    {
-                        scope.extend(parents);
+                } else {
+                    let mut scope = vec![subject];
+                    let mut seen = BTreeSet::new();
+                    while let Some(source) = scope.pop() {
+                        if !seen.insert(source) {
+                            continue;
+                        }
+                        if (scope_kind != ProducerEffectScope::OwnedDescendants
+                            || source != subject)
+                            && let Some(reads) = readers.get(&source)
+                        {
+                            consume(reads);
+                        }
+                        if matches!(
+                            scope_kind,
+                            ProducerEffectScope::SubjectAndOwned
+                                | ProducerEffectScope::OwnedDescendants
+                        ) && let Some(children) = owned.get(&source)
+                        {
+                            scope.extend(children);
+                        }
+                        if scope_kind == ProducerEffectScope::SubjectAndOwners
+                            && let Some(parents) = owners.get(&source)
+                        {
+                            scope.extend(parents);
+                        }
                     }
                 }
             }
             for reader in affected {
                 if blocked.insert(reader) {
-                    if trace {
+                    if trace_pair(subject, subjects[reader / families]) {
                         eprintln!(
-                            "closure dependency {:?}/{} -> {:?}/{}",
+                            "closure dependency {}/{} -> {}/{}",
                             subject,
                             descriptor.id.name(),
                             subjects[reader / families],
@@ -929,19 +1558,18 @@ impl ProducerEvaluationTable {
             if let Some(index) = registry.index(*family) {
                 let entries = self.reads.entry(*subject).or_default();
                 if let Some((_, prior)) = entries.iter_mut().find(|(family, _)| *family == index) {
-                    *prior = prior
-                        .iter()
-                        .chain(reads.iter())
-                        .cloned()
-                        .collect::<BTreeSet<_>>()
-                        .into_iter()
-                        .collect::<Vec<_>>()
-                        .into();
+                    let union = prior.iter().chain(reads.iter()).collect::<BTreeSet<_>>();
+                    *prior = self.read_pool.intern_values(union.into_iter());
                 } else {
-                    entries.push((index, reads.clone()));
+                    entries.push((index, self.read_pool.intern(reads)));
                 }
             }
         }
+    }
+    /// Run after replacing the previous certificate: externally retained rows
+    /// remain live, while the interner alone must not keep obsolete atoms alive.
+    pub(crate) fn prune_unused_reads(&mut self) {
+        self.read_pool.prune();
     }
     pub(crate) fn record(
         &mut self,
@@ -995,6 +1623,10 @@ impl ProducerEvaluationTable {
 /// ordinary query callers can only inspect scheduler-issued certificates.
 #[derive(Clone, Debug)]
 pub struct ProducerClosureCertificate {
+    // Optional scheduler read metadata, separate from the compact receipt proof.
+    // Restoration remains exact without this optimization; rebinding then reopens
+    // every evaluated family whose reads are unavailable.
+    transport_reads: Arc<BTreeMap<ElementId, Vec<(usize, ProducerReads)>>>,
     model_digest: [u8; 32],
     registry_digest: [u8; 32],
     context_contract_digest: [u8; 32],
@@ -1007,11 +1639,62 @@ pub struct ProducerClosureCertificate {
     closed_pairs: usize,
     incomplete_pairs: usize,
 }
+/// Why an exhaustive conclusion is closed in this interpretation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ClosureSource {
+    /// The accepted dependency is immutable and no local producer can alter this population.
+    AcceptedDependency,
+    /// Applicable local writers and their upstream reads are closed.
+    LocalProducerClosure,
+}
+
 impl ProducerClosureCertificate {
+    pub(crate) fn evaluation_table(&self) -> ProducerEvaluationTable {
+        let mut table = ProducerEvaluationTable {
+            rows: self
+                .subjects
+                .iter()
+                .copied()
+                .map(|subject| {
+                    (
+                        subject,
+                        (0..self.families)
+                            .map(|family| {
+                                self.evaluation(subject, family).expect("certificate pair")
+                            })
+                            .collect(),
+                    )
+                })
+                .collect(),
+            reads: self.transport_reads.as_ref().clone(),
+            read_pool: ProducerReadPool::default(),
+        };
+        for row in table.reads.values_mut() {
+            for (_, reads) in row {
+                *reads = table.read_pool.intern(reads);
+            }
+        }
+        table
+    }
+
+    /// Identify the proof boundary for Explain without fabricating a model fact.
+    pub fn closure_source(
+        &self,
+        subject: ElementId,
+        requirement: SemanticClosureRequirement,
+    ) -> Option<ClosureSource> {
+        let index = self.subjects.binary_search(&subject).ok()?;
+        (self.closed[index] & requirement.bit() != 0).then_some(if self.closed[index] & 128 != 0 {
+            ClosureSource::AcceptedDependency
+        } else {
+            ClosureSource::LocalProducerClosure
+        })
+    }
+
     /// Export immutable proof bytes; acceptance and restoration require separately trusted authority.
     pub fn receipt_value(&self) -> serde_json::Value {
         serde_json::json!({
-            "format": "agq-producer-closure-certificate/1",
+            "format": "agq-producer-closure-certificate/2",
             "model_digest": self.model_digest, "registry_digest": self.registry_digest,
             "context_contract_digest": self.context_contract_digest, "digest": self.digest,
             "subjects": self.subjects.iter().map(|id| id.as_u128().to_string()).collect::<Vec<_>>(),
@@ -1028,7 +1711,7 @@ impl ProducerClosureCertificate {
         model: &ModelView,
     ) -> Option<Self> {
         use serde_json::from_value;
-        if value["format"] != "agq-producer-closure-certificate/1" {
+        if value["format"] != "agq-producer-closure-certificate/2" {
             return None;
         }
         let model_digest: [u8; 32] = from_value(value["model_digest"].clone()).ok()?;
@@ -1059,7 +1742,7 @@ impl ProducerClosureCertificate {
                 .iter()
                 .copied()
                 .eq(model.elements().map(|r| r.id()))
-            || closed.iter().any(|mask| *mask & !63 != 0)
+            || closed.iter().any(|mask| *mask & !191 != 0)
         {
             return None;
         }
@@ -1076,6 +1759,7 @@ impl ProducerClosureCertificate {
             return None;
         }
         let mut result = Self {
+            transport_reads: Arc::default(),
             model_digest,
             registry_digest,
             context_contract_digest,
@@ -1123,6 +1807,20 @@ impl ProducerClosureCertificate {
             .binary_search(&subject)
             .is_ok_and(|index| self.closed[index] & requirement.bit() != 0)
     }
+    /// Whether every subject in the model has every semantic requirement closed.
+    ///
+    /// This is stronger than all scheduled producer evaluations being Complete:
+    /// unresolved providers and causal dependencies can still leave requirements
+    /// open. Missing subjects also fail coverage. Callers must separately attach
+    /// the certificate to the exact semantic context and independently required
+    /// producer registry before treating this coverage as an acceptance gate.
+    pub fn is_fully_closed(&self, model: &ModelView) -> bool {
+        model.elements().all(|record| {
+            SemanticClosureRequirement::ALL
+                .into_iter()
+                .all(|requirement| self.is_closed(record.id(), requirement))
+        })
+    }
     pub fn evaluation(
         &self,
         subject: ElementId,
@@ -1139,6 +1837,7 @@ impl ProducerClosureCertificate {
             _ => ProducerEvaluationState::EvaluatedIncomplete,
         })
     }
+    /// Compact certificate proof size, excluding optional scheduler revalidation metadata.
     pub fn storage_bytes(&self) -> usize {
         std::mem::size_of::<Self>()
             + std::mem::size_of_val(self.subjects.as_ref())
@@ -1157,7 +1856,7 @@ impl ProducerClosureCertificate {
     pub fn closed_effects(&self) -> usize {
         self.closed
             .iter()
-            .map(|mask| mask.count_ones() as usize)
+            .map(|mask| (mask & 63).count_ones() as usize)
             .sum()
     }
 
@@ -1166,8 +1865,9 @@ impl ProducerClosureCertificate {
         context: &SemanticContextId,
         registry: &ProducerRegistry,
         table: &ProducerEvaluationTable,
-        immutable: impl Fn(ElementId) -> bool,
+        immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
     ) -> Self {
+        let immutable = |id| immutable_source(id).is_some();
         use agq_kerml::{classes as c, properties as p};
         let subjects: Vec<_> = model.elements().map(|r| r.id()).collect();
         let positions: BTreeMap<_, _> = subjects
@@ -1179,7 +1879,10 @@ impl ProducerClosureCertificate {
         let families = registry.descriptors.len();
         let future_effects = future_cross_subject_effects(registry, model);
         let mut states = vec![0; (subjects.len() * families).div_ceil(4)];
-        let mut blocked = vec![0_u8; subjects.len()];
+        let mut blocked = pending_provider_masks(model, context, &subjects, &positions, &immutable);
+        let provider_ownership_open = blocked
+            .iter()
+            .any(|mask| mask & SemanticClosureRequirement::EffectiveOwnership.bit() != 0);
         let mut inherited_blocks = vec![0_u8; subjects.len()];
         let mut descendant_blocks = vec![0_u8; subjects.len()];
         let mut owner_blocks = vec![0_u8; subjects.len()];
@@ -1187,12 +1890,38 @@ impl ProducerClosureCertificate {
             descriptor.effects.contains(&ProducerEffect::Ownership)
                 || has_reference_scalar(descriptor, model)
         });
+        // Registry/model classification is constant across unfinished creators.
+        let future_transitive_requirements = SemanticClosureRequirement::ALL
+            .into_iter()
+            .filter(|requirement| {
+                future_cross_subject_families(registry, model).any(|family| {
+                    family.effects.iter().any(|&effect| {
+                        effect_reaches_future_existing_subjects(
+                            family,
+                            effect,
+                            ownership_mutable,
+                            model,
+                        ) && requirement.requires_in_model(effect, model)
+                            && family.effect_scope(effect)
+                                != ProducerEffectScope::SubjectAndOwningType
+                    })
+                })
+            })
+            .fold(0_u8, |mask, requirement| mask | requirement.bit());
+        let direction_mutable = registry.descriptors.iter().any(|descriptor| {
+            descriptor.applicability != ProducerApplicability::Never
+                && descriptor.effects.iter().any(|effect| {
+                    matches!(effect, ProducerEffect::Scalar(property)
+                        if scalar_changes_feature_population(*property, crate::FeaturePopulationKind::Parameter, model))
+                })
+        });
         let mut global_block = 0;
+        let mut dependency_global_block = 0;
         let mut applicable_pairs = 0;
         let mut closed_pairs = 0;
         let mut incomplete_pairs = 0;
         let dependency_blocked =
-            table.dependency_blocked(model, registry, &subjects, &positions, &immutable);
+            table.dependency_blocked(model, registry, &subjects, &positions, &immutable, &blocked);
         for (i, &subject) in subjects.iter().enumerate() {
             let record = model.element(subject).expect("indexed subject");
             for (j, descriptor) in registry.descriptors.iter().enumerate() {
@@ -1227,39 +1956,106 @@ impl ProducerClosureCertificate {
                     ProducerEvaluationState::Pending | ProducerEvaluationState::EvaluatedIncomplete
                 ) {
                     if descriptor.can_create_subjects() {
+                        let future_targets = future_owner_targets(
+                            model,
+                            registry,
+                            subject,
+                            descriptor,
+                            provider_ownership_open,
+                            true,
+                        );
+                        let future_direct_targets = future_owner_targets(
+                            model,
+                            registry,
+                            subject,
+                            descriptor,
+                            provider_ownership_open,
+                            false,
+                        );
                         for requirement in SemanticClosureRequirement::ALL {
                             if future_effects
                                 .iter()
                                 .any(|&effect| requirement.requires_in_model(effect, model))
                             {
-                                global_block |= requirement.bit();
+                                let targets =
+                                    if future_transitive_requirements & requirement.bit() != 0 {
+                                        &future_targets
+                                    } else {
+                                        &future_direct_targets
+                                    };
+                                if let Some(targets) = targets {
+                                    for target in targets {
+                                        if !immutable(*target)
+                                            && let Some(&target) = positions.get(target)
+                                        {
+                                            blocked[target] |= requirement.bit();
+                                        }
+                                    }
+                                } else {
+                                    global_block |= requirement.bit();
+                                }
+                                if future_cross_subject_families(registry, model).any(|family| {
+                                    family.effects.iter().any(|&effect| {
+                                        let scope = family.effect_scope(effect);
+                                        (scope == ProducerEffectScope::Model
+                                            || reference_scalar(effect, model)
+                                            || ownership_mutable && scope.depends_on_ownership())
+                                            && requirement.requires_in_model(effect, model)
+                                    })
+                                }) {
+                                    dependency_global_block |= requirement.bit();
+                                }
                             }
                         }
                     }
-                    let mask = SemanticClosureRequirement::ALL
-                        .into_iter()
-                        .filter(|r| {
-                            descriptor
-                                .effects
-                                .iter()
-                                .any(|&e| r.requires_in_model(e, model))
-                        })
-                        .fold(0, |mask, r| mask | r.bit());
-                    // Other query families have additional domain/member dependencies.
-                    // Until their precise footprint traversal is implemented,
-                    // a relevant unfinished producer conservatively blocks them
-                    // throughout the graph instead of claiming local absence.
-                    global_block |= mask & !SemanticClosureRequirement::EffectiveTyping.bit();
-                    match descriptor.scope {
-                        _ if has_reference_scalar(descriptor, model) => global_block |= mask,
-                        scope if ownership_mutable && scope.depends_on_ownership() => {
-                            global_block |= mask
+                    for &effect in &descriptor.effects {
+                        let scope = descriptor.effect_scope(effect);
+                        let mask = SemanticClosureRequirement::ALL
+                            .into_iter()
+                            .filter(|r| r.requires_in_model(effect, model))
+                            .fold(0, |mask, r| mask | r.bit());
+                        // Other query families have additional domain/member dependencies.
+                        // Until their precise footprint traversal is implemented,
+                        // a relevant unfinished producer conservatively blocks them
+                        // throughout the graph instead of claiming local absence.
+                        global_block |= mask & !SemanticClosureRequirement::EffectiveTyping.bit();
+                        if scope == ProducerEffectScope::Model
+                            || reference_scalar(effect, model)
+                            || ownership_mutable && scope.depends_on_ownership()
+                        {
+                            dependency_global_block |= mask;
                         }
-                        ProducerEffectScope::Model => global_block |= mask,
-                        ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
-                        ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
-                        ProducerEffectScope::SubjectAndOwners => owner_blocks[i] |= mask,
-                        ProducerEffectScope::Subject => blocked[i] |= mask,
+                        match scope {
+                            _ if reference_scalar(effect, model) => global_block |= mask,
+                            scope if ownership_mutable && scope.depends_on_ownership() => {
+                                global_block |= mask
+                            }
+                            ProducerEffectScope::Model => global_block |= mask,
+                            ProducerEffectScope::SubjectAndOwned => inherited_blocks[i] |= mask,
+                            ProducerEffectScope::OwnedDescendants => descendant_blocks[i] |= mask,
+                            ProducerEffectScope::OwnedParameterFeatures
+                            | ProducerEffectScope::SubjectAndOwnedResults
+                            | ProducerEffectScope::SubjectAndOwnedFeatures
+                            | ProducerEffectScope::SubjectAndOwningType => {
+                                match scope
+                                    .selected_targets(model, subject, direction_mutable)
+                                    .expect("selected scope")
+                                {
+                                    Ok(targets) => {
+                                        for target in targets {
+                                            if let Some(&target) = positions.get(&target) {
+                                                blocked[target] |= mask;
+                                            }
+                                        }
+                                    }
+                                    Err(()) => {
+                                        global_block |= mask;
+                                    }
+                                }
+                            }
+                            ProducerEffectScope::SubjectAndOwners => owner_blocks[i] |= mask,
+                            ProducerEffectScope::Subject => blocked[i] |= mask,
+                        }
                     }
                 }
             }
@@ -1314,13 +2110,31 @@ impl ProducerClosureCertificate {
         }
         propagate(&mut inherited_blocks, &owned_by);
         propagate(&mut owner_blocks, &owners_of);
+        trace::scope_masks(
+            &subjects,
+            &blocked,
+            &inherited_blocks,
+            &owner_blocks,
+            global_block,
+            dependency_global_block,
+        );
         for (i, mask) in inherited_blocks.into_iter().enumerate() {
-            blocked[i] |= mask | owner_blocks[i] | global_block;
+            blocked[i] |= mask
+                | owner_blocks[i]
+                | if immutable(subjects[i]) {
+                    dependency_global_block
+                } else {
+                    global_block
+                };
         }
-        // Exhaustive typing follows canonical specialization/conjugation/chains.
+        // Exhaustive typing follows canonical specialization/conjugation and
+        // only the terminal of a canonical feature chain. Other requirements
+        // retain the conservative all-component footprint (featuring uses the
+        // first component). A head's own typing cannot change the terminal.
         // Include all specialization subtypes conservatively, including incoming
         // nonowned relationships. This catches a delayed producer on a target.
         let mut dependents = vec![Vec::new(); subjects.len()];
+        let mut typing_dependents = vec![Vec::new(); subjects.len()];
         for record in model.elements() {
             let class = record.metaclass();
             let is = |base| model.registry().is_subtype(class, base).unwrap_or(false);
@@ -1351,6 +2165,9 @@ impl ProducerClosureCertificate {
                             (positions.get(&source), positions.get(&target))
                         {
                             dependents[j].push(i);
+                            if !is(c::FEATURE_CHAINING) {
+                                typing_dependents[j].push(i);
+                            }
                         }
                     }
                 }
@@ -1359,7 +2176,22 @@ impl ProducerClosureCertificate {
                 for target in refs(record.id(), property) {
                     if let Some(&j) = positions.get(&target) {
                         dependents[j].push(positions[&record.id()]);
+                        if property != p::FEATURE_CHAINING_FEATURE {
+                            typing_dependents[j].push(positions[&record.id()]);
+                        }
                     }
+                }
+            }
+            if is(c::FEATURE) {
+                let i = positions[&record.id()];
+                match canonical_chain_terminal(model, record.id()) {
+                    Ok(Some(terminal)) => {
+                        if let Some(&j) = positions.get(&terminal) {
+                            typing_dependents[j].push(i);
+                        }
+                    }
+                    Ok(None) => {}
+                    Err(()) => blocked[i] |= SemanticClosureRequirement::EffectiveTyping.bit(),
                 }
             }
         }
@@ -1377,13 +2209,42 @@ impl ProducerClosureCertificate {
                         let target = bindings.get(role);
                         if let Some(&j) = positions.get(&target) {
                             dependents[j].push(positions[&record.id()]);
+                            typing_dependents[j].push(positions[&record.id()]);
                         }
                     }
                 }
             }
         }
+        let typing = SemanticClosureRequirement::EffectiveTyping.bit();
+        let mut typing_blocked: Vec<_> = blocked.iter().map(|mask| mask & typing).collect();
+        for mask in &mut blocked {
+            *mask &= !typing;
+        }
+        trace::typing_blockers(
+            model,
+            &subjects,
+            &typing_blocked,
+            &typing_dependents,
+            registry,
+            &states,
+        );
         propagate(&mut blocked, &dependents);
-        let closed: Vec<_> = blocked.into_iter().map(|mask| !mask & 63).collect();
+        propagate(&mut typing_blocked, &typing_dependents);
+        for (mask, typing) in blocked.iter_mut().zip(typing_blocked) {
+            *mask |= typing;
+        }
+        let closed: Vec<_> = blocked
+            .into_iter()
+            .enumerate()
+            .map(|(i, mask)| {
+                (!mask & 63)
+                    | if immutable_source(subjects[i]) == Some(ClosureSource::AcceptedDependency) {
+                        128
+                    } else {
+                        0
+                    }
+            })
+            .collect();
         let context_contract_digest = context.closure_contract_digest();
         let digest = certificate_digest(
             context.model_digest,
@@ -1394,6 +2255,7 @@ impl ProducerClosureCertificate {
             &states,
         );
         Self {
+            transport_reads: Arc::new(table.reads.clone()),
             model_digest: context.model_digest,
             registry_digest: registry.digest,
             context_contract_digest,
@@ -1409,6 +2271,60 @@ impl ProducerClosureCertificate {
     }
 }
 
+/// The structural footprint shared by chaining_features, feature_target and
+/// supertypes: canonical owned order and every established endpoint, with only
+/// the last component supplying inherited typing. This does not certify the
+/// population against future writers: issue's ordinary producer/provider masks
+/// still cover FeatureChain, ownership and reference-valued scalar changes.
+fn canonical_chain_terminal(
+    model: &ModelView,
+    subject: ElementId,
+) -> Result<Option<ElementId>, ()> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{derived::PropertyState, value::Value};
+
+    let owned = match model.property_state(subject, p::ELEMENT_OWNED_RELATIONSHIP) {
+        Ok(PropertyState::Computed(slot)) => slot,
+        Ok(PropertyState::Absent) => return Ok(None),
+        _ => return Err(()),
+    };
+    let mut terminal = None;
+    for value in owned.value().values() {
+        let Value::Reference(relationship) = value else {
+            return Err(());
+        };
+        let record = model.element(*relationship).ok_or(())?;
+        if !model
+            .registry()
+            .is_subtype(record.metaclass(), c::FEATURE_CHAINING)
+            .map_err(|_| ())?
+        {
+            continue;
+        }
+        let endpoint =
+            match model.property_state(*relationship, p::FEATURE_CHAINING_CHAINING_FEATURE) {
+                Ok(PropertyState::Computed(slot)) => slot,
+                _ => return Err(()),
+            };
+        let mut values = endpoint.value().values();
+        let Some(Value::Reference(target)) = values.next() else {
+            return Err(());
+        };
+        if values.next().is_some()
+            || !model.element(*target).is_some_and(|record| {
+                model
+                    .registry()
+                    .is_subtype(record.metaclass(), c::FEATURE)
+                    .unwrap_or(false)
+            })
+        {
+            return Err(());
+        }
+        terminal = Some(*target);
+    }
+    Ok(terminal)
+}
+
 fn certificate_digest(
     model: [u8; 32],
     registry: [u8; 32],
@@ -1418,7 +2334,7 @@ fn certificate_digest(
     states: &[u8],
 ) -> [u8; 32] {
     let mut hash = Sha256::new();
-    hash.update(b"agq-producer-closure-certificate/1");
+    hash.update(b"agq-producer-closure-certificate/2");
     hash.update(model);
     hash.update(registry);
     hash.update(contract);
@@ -1456,12 +2372,15 @@ pub(crate) fn descriptor_changes_read(
 ) -> bool {
     let target = match read {
         ProducerRead::Property(subject, _)
+        | ProducerRead::DeclaredProperty(subject, _)
+        | ProducerRead::OrderedReferenceContribution(subject, _, _)
         | ProducerRead::Structural(subject)
         | ProducerRead::Source(subject, _, _)
         | ProducerRead::Owned(subject, _)
         | ProducerRead::OwnedExcluding(subject, _, _)
         | ProducerRead::FeaturePopulation(subject, _)
         | ProducerRead::Any(subject)
+        | ProducerRead::Identity(subject)
         | ProducerRead::Requirement(subject, _) => Some(*subject),
         ProducerRead::Global | ProducerRead::Inverse => None,
     };
@@ -1554,6 +2473,9 @@ pub(crate) fn effect_changes_read(
     model: &ModelView,
 ) -> bool {
     match read {
+        ProducerRead::DeclaredProperty(_, _)
+        | ProducerRead::OrderedReferenceContribution(_, _, _)
+        | ProducerRead::Identity(_) => false,
         ProducerRead::Global | ProducerRead::Any(_) => true,
         ProducerRead::Requirement(_, requirement) => requirement.requires_in_model(effect, model),
         ProducerRead::FeaturePopulation(_, kind) => {
@@ -1703,5 +2625,277 @@ fn scalar_changes_feature_population(
         Ok(property) => property.is_some_and(|property| property.id == written),
         // An unclassified extension effect cannot support an exclusion proof.
         Err(_) => true,
+    }
+}
+
+/// Source/linking obligations can expose a previously invisible relationship
+/// source. They are providers outside the producer registry, so even a zero-writer
+/// certificate must retain their possible semantic effects.
+fn pending_provider_masks(
+    model: &ModelView,
+    context: &SemanticContextId,
+    subjects: &[ElementId],
+    positions: &BTreeMap<ElementId, usize>,
+    immutable: &impl Fn(ElementId) -> bool,
+) -> Vec<u8> {
+    use agq_kerml::{classes as c, properties as p};
+    use agq_kernel::{metamodel::ValueKind, value::Value};
+    let mut blocked = vec![0; subjects.len()];
+    for &subject in &context.pending_specialization_scopes {
+        if let Some(&index) = positions.get(&subject) {
+            blocked[index] |= SemanticClosureRequirement::ALL
+                .into_iter()
+                .filter(|requirement| requirement.requires(ProducerEffect::Specialization))
+                .fold(0, |mask, requirement| mask | requirement.bit());
+        }
+    }
+    for &subject in &context.pending_namespace_scopes {
+        if let Some(&index) = positions.get(&subject) {
+            blocked[index] |= SemanticClosureRequirement::EffectiveMembership.bit()
+                | SemanticClosureRequirement::EffectiveNaming.bit();
+        }
+    }
+    if !context.pending_namespace_scopes.is_empty() {
+        // An unavailable source declaration population may introduce an owning
+        // carrier for an existing, currently unowned local subject. Existing
+        // composite ownership cannot be replaced additively, and protected
+        // dependency subjects cannot be adopted by a local composite carrier.
+        for (index, &subject) in subjects.iter().enumerate() {
+            if !immutable(subject)
+                && model
+                    .incoming_for_property(subject, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
+                    .next()
+                    .is_none()
+            {
+                blocked[index] |= 63;
+            }
+        }
+    }
+    for &(carrier, pending_property) in context.construction_obligations.iter() {
+        let Some(record) = model.element(carrier) else {
+            continue;
+        };
+        let is = |class| {
+            model
+                .registry()
+                .is_subtype(record.metaclass(), class)
+                .unwrap_or(false)
+        };
+        let effective = |property| {
+            model
+                .registry()
+                .resolve_property(record.metaclass(), property)
+                .ok()
+                .flatten()
+                .map(|descriptor| descriptor.id)
+        };
+        let ownership = [
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        ]
+        .into_iter()
+        .any(|property| effective(property) == Some(pending_property));
+        let (effect, source_property) = if ownership {
+            (ProducerEffect::Ownership, pending_property)
+        } else if is(c::FEATURE_TYPING) {
+            (ProducerEffect::Typing, p::FEATURE_TYPING_TYPED_FEATURE)
+        } else if is(c::REDEFINITION) {
+            (
+                ProducerEffect::Redefinition,
+                p::REDEFINITION_REDEFINING_FEATURE,
+            )
+        } else if is(c::SUBSETTING) {
+            (ProducerEffect::Subsetting, p::SUBSETTING_SUBSETTING_FEATURE)
+        } else if is(c::SPECIALIZATION) {
+            (ProducerEffect::Specialization, p::SPECIALIZATION_SPECIFIC)
+        } else if is(c::CONJUGATION) {
+            (ProducerEffect::Conjugation, p::CONJUGATION_CONJUGATED_TYPE)
+        } else if is(c::TYPE_FEATURING) {
+            (ProducerEffect::Featuring, p::TYPE_FEATURING_FEATURE_OF_TYPE)
+        } else if is(c::MEMBERSHIP) {
+            (
+                ProducerEffect::Membership,
+                p::MEMBERSHIP_MEMBERSHIP_OWNING_NAMESPACE,
+            )
+        } else if is(c::FEATURE_CHAINING) {
+            (
+                ProducerEffect::FeatureChain,
+                p::FEATURE_CHAINING_FEATURE_CHAINED,
+            )
+        } else {
+            // Unclassified required reference carriers cannot prove a negative
+            // result. Primitive missing values stay local to their subject.
+            (ProducerEffect::Scalar(pending_property), pending_property)
+        };
+        let source_property = effective(source_property).unwrap_or(source_property);
+        let mask = SemanticClosureRequirement::ALL
+            .into_iter()
+            .filter(|requirement| requirement.requires_in_model(effect, model))
+            .fold(0, |mask, requirement| mask | requirement.bit());
+        let source_domain = model
+            .registry()
+            .property(source_property)
+            .ok()
+            .and_then(|property| model.registry().storage_kind(property.value_kind).ok());
+        let mut sources: Vec<_> = if ownership {
+            vec![]
+        } else {
+            model
+                .navigation_slot(carrier, source_property)
+                .into_iter()
+                .flat_map(|slot| slot.value().values())
+                .filter_map(|value| {
+                    if let Value::Reference(id) = value {
+                        Some(*id)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        };
+        if sources.is_empty()
+            && (is(c::FEATURE_CHAINING) || is(c::REFERENCE_SUBSETTING) || is(c::MEMBERSHIP))
+        {
+            sources.extend(
+                model
+                    .incoming_for_property(carrier, p::ELEMENT_OWNED_RELATIONSHIP)
+                    .map(|reference| reference.source),
+            );
+        }
+        if !sources.is_empty() {
+            for source in sources {
+                if let Some(&index) = positions.get(&source) {
+                    blocked[index] |= mask;
+                }
+            }
+        } else if let Some(ValueKind::Reference(domain)) = source_domain {
+            for (index, &subject) in subjects.iter().enumerate() {
+                // New composite owners cannot acquire protected dependency
+                // elements; ordinary source endpoints have no such exemption.
+                let protected = ownership
+                    && immutable(subject)
+                    && model
+                        .registry()
+                        .property(pending_property)
+                        .is_ok_and(|property| property.composite);
+                if !protected
+                    && model.element(subject).is_some_and(|record| {
+                        model
+                            .registry()
+                            .is_subtype(record.metaclass(), domain)
+                            .unwrap_or(true)
+                    })
+                {
+                    blocked[index] |= mask;
+                }
+            }
+        } else if let Some(&index) = positions.get(&carrier) {
+            blocked[index] |= mask;
+        }
+    }
+    // A provider can attach an already existing ownership carrier. Its child
+    // then acquires an owning Type without changing the child's own membership.
+    let mut ownership_masks: Vec<_> = blocked
+        .iter()
+        .map(|mask| {
+            if mask & SemanticClosureRequirement::EffectiveOwnership.bit() != 0 {
+                *mask
+            } else {
+                0
+            }
+        })
+        .collect();
+    if ownership_masks.iter().all(|mask| *mask == 0) {
+        return blocked;
+    }
+    let mut owned = vec![Vec::new(); subjects.len()];
+    for (index, &subject) in subjects.iter().enumerate() {
+        for property in [
+            p::ELEMENT_OWNED_RELATIONSHIP,
+            p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+        ] {
+            let property = model
+                .element(subject)
+                .and_then(|record| {
+                    model
+                        .registry()
+                        .resolve_property(record.metaclass(), property)
+                        .ok()
+                        .flatten()
+                })
+                .map_or(property, |descriptor| descriptor.id);
+            if let Some(slot) = model.navigation_slot(subject, property) {
+                for value in slot.value().values() {
+                    if let Value::Reference(child) = value
+                        && let Some(&child) = positions.get(child)
+                    {
+                        owned[index].push(child);
+                    }
+                }
+            }
+        }
+    }
+    propagate(&mut ownership_masks, &owned);
+    for (mask, ownership) in blocked.iter_mut().zip(ownership_masks) {
+        *mask |= ownership;
+    }
+    blocked
+}
+
+fn provider_changes_read(
+    read: &ProducerRead,
+    model: &ModelView,
+    positions: &BTreeMap<ElementId, usize>,
+    masks: &[u8],
+) -> bool {
+    use agq_kerml::{classes as c, properties as p};
+    let mask = |id| positions.get(&id).map_or(0, |&index| masks[index]);
+    match read {
+        ProducerRead::DeclaredProperty(id, _) => mask(*id) != 0,
+        ProducerRead::OrderedReferenceContribution(_, _, _) => false,
+        ProducerRead::Identity(_) => false,
+        ProducerRead::Global | ProducerRead::Inverse => masks.iter().any(|mask| *mask != 0),
+        ProducerRead::Requirement(id, requirement) => mask(*id) & requirement.bit() != 0,
+        ProducerRead::Property(id, property) => {
+            let fixed = model
+                .element(*id)
+                .and_then(|record| record.slot(*property))
+                .is_some_and(|slot| {
+                    matches!(slot.value(), agq_kernel::value::SlotValue::Scalar(_))
+                });
+            !fixed && mask(*id) != 0
+        }
+        ProducerRead::Source(id, class, property) => {
+            if [
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+            ]
+            .contains(property)
+            {
+                mask(*id) & SemanticClosureRequirement::EffectiveOwnership.bit() != 0
+            } else {
+                provider_changes_read(&ProducerRead::Owned(*id, *class), model, positions, masks)
+            }
+        }
+        ProducerRead::Owned(id, class) | ProducerRead::OwnedExcluding(id, class, _) => {
+            let is = |base| model.registry().is_subtype(*class, base).unwrap_or(true);
+            let requirement =
+                if is(c::SPECIALIZATION) || is(c::FEATURE_CHAINING) || is(c::CONJUGATION) {
+                    Some(SemanticClosureRequirement::EffectiveTyping)
+                } else if is(c::MEMBERSHIP) {
+                    Some(SemanticClosureRequirement::EffectiveMembership)
+                } else if is(c::TYPE_FEATURING) {
+                    Some(SemanticClosureRequirement::EffectiveFeaturing)
+                } else {
+                    None
+                };
+            requirement.map_or(mask(*id) != 0, |requirement| {
+                mask(*id) & requirement.bit() != 0
+            })
+        }
+        ProducerRead::FeaturePopulation(id, _) => {
+            mask(*id) & SemanticClosureRequirement::EffectiveMembership.bit() != 0
+        }
+        ProducerRead::Structural(id) | ProducerRead::Any(id) => mask(*id) != 0,
     }
 }

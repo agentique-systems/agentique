@@ -1,0 +1,3 @@
+package PlatformContracts {
+    datatype RevisionValue;
+}

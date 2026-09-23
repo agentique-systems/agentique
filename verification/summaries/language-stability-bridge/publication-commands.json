@@ -1,0 +1,1829 @@
+{
+  "format": "agentique-watchdog-summary/1",
+  "commands": [
+    {
+      "name": "actions-baseline",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-baseline/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "0fbdf3ee19788a260b99d89e71dbd28f432d8243",
+      "working_changes_sha256": "b64499b11bff2ee72bd686ebd4ebccefc857f5f42faedb1d516277771bd6a685",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-baseline",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 26124,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 31485882368,
+      "safety_stop": "requested",
+      "duration_seconds": 490.266,
+      "peak_rss_bytes": 4668534784,
+      "peak_private_bytes": 4734349312,
+      "samples": 490,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "302d7734a7e32d9662323713719c13ae0ebfec8a7f27350156399f4309c687c2"
+    },
+    {
+      "name": "actions-provider-closure",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-provider-closure/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "2366baed6a84eedc9f0941126a58006b47f7811b",
+      "working_changes_sha256": "268842714040aecb459872004898743b0c700b3df9d1b0eef55a89621e07a675",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-provider-closure",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 21972,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 30153228288,
+      "safety_stop": null,
+      "duration_seconds": 795.172,
+      "peak_rss_bytes": 5150863360,
+      "peak_private_bytes": 5226491904,
+      "samples": 795,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "89d693c610ea4f2bcbc6adcc7a8765c1d9a5af8fb3113e2d37cfd376923c11fb"
+    },
+    {
+      "name": "actions-declared-source",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-declared-source/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "3942e68614862a65300c8e15f8b2626176ddbf0a",
+      "working_changes_sha256": "4d77e084c76c37051a0fd98f15b613380bbc24026f2d5d59e274f1d226435c9c",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-declared-source",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 20612,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 29826732032,
+      "safety_stop": null,
+      "duration_seconds": 1013.563,
+      "peak_rss_bytes": 5383643136,
+      "peak_private_bytes": 5464662016,
+      "samples": 1013,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "b98ad92f95710beaa927ad8e722d05688e081ec17a09d712875759d023edd9c3"
+    },
+    {
+      "name": "actions-selected-populations",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-selected-populations/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "f6eaac7a515685f1d6457f585be57fd59a569ec4",
+      "working_changes_sha256": "2b462615c103d110863bb759f5b405e59e498a7954aa4ed6f3608ca06654570e",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-selected-populations",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 15116,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 29520863232,
+      "safety_stop": null,
+      "duration_seconds": 1066.39,
+      "peak_rss_bytes": 5188866048,
+      "peak_private_bytes": 5281718272,
+      "samples": 1066,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "566b0213183862d6af30d3c5ff1a1f1c0e42835bc206e1e5b30602f902924a5a"
+    },
+    {
+      "name": "actions-positive-witness",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-positive-witness/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "991d3562fd5a586cbcdc6bd638b6fa357e7d9bf2",
+      "working_changes_sha256": "2c146265a9a106e0e4621880066bf9ff8fb2a2d32371dc4557e24cd908689a68",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-positive-witness",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 18900,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 28984868864,
+      "safety_stop": null,
+      "duration_seconds": 788.969,
+      "peak_rss_bytes": 5104795648,
+      "peak_private_bytes": 5195653120,
+      "samples": 789,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "01b0a0ed8b65bc2cd7eb73b398c597aa24f12fb4e7ebc0fc9db797f64c6b4f44"
+    },
+    {
+      "name": "actions-exact-contributions",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-exact-contributions/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "08e4a83d402526fdf298a692f8e4df399285347c",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "4b2fa25a-70b3-5cd3-8f2e-d63fc2fa3160,b5c5b6b4-4413-5a08-92bb-5d9a85244d6d,9a58b06c-845d-5a9c-9632-ce3ff269c842,b7597899-b3ac-5da6-a5be-46141714bb05,864cabf4-8d1c-522b-bf8e-58da22285d7b,b7b86df4-8805-553a-bc23-6100f616573c,35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-exact-contributions",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 6248,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 27509678080,
+      "safety_stop": null,
+      "duration_seconds": 894.063,
+      "peak_rss_bytes": 5458296832,
+      "peak_private_bytes": 5541195776,
+      "samples": 894,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "70736a8eb75d2199028ae01125d86be762ae376d727002fd216e41915400736c"
+    },
+    {
+      "name": "actions-positive-exclusion",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-positive-exclusion/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "d59400609bccc8efcdab5f7e69626d47af53e136",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6,70506936-f8f9-5057-9e36-37230a4e02df,a1ff5677-154c-54fa-b0b4-78c9a54a3c73,042923d6-97a3-5b93-9d20-b4c1217ad9d9,b7597899-b3ac-5da6-a5be-46141714bb05"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-positive-exclusion",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 27612,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 27002191872,
+      "safety_stop": null,
+      "duration_seconds": 875.047,
+      "peak_rss_bytes": 5381640192,
+      "peak_private_bytes": 5462642688,
+      "samples": 875,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "6913e5e0ad06b5947ac40ab60fa77497535a0ee4f4a24c0bb9966bdc583c8d56"
+    },
+    {
+      "name": "actions-chain-terminal",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-chain-terminal/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "b4ce4e2c1d8d56242b4c30f3c1f1a423dbfb0371",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6,70506936-f8f9-5057-9e36-37230a4e02df,a1ff5677-154c-54fa-b0b4-78c9a54a3c73,042923d6-97a3-5b93-9d20-b4c1217ad9d9,b7597899-b3ac-5da6-a5be-46141714bb05"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-chain-terminal",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 12252,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 26922188800,
+      "safety_stop": null,
+      "duration_seconds": 871.047,
+      "peak_rss_bytes": 5381337088,
+      "peak_private_bytes": 5462347776,
+      "samples": 871,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "8fbaf31536b86e4d458a4b4f3084c907ceef0f90634d7c8588868a9298e9ab1c"
+    },
+    {
+      "name": "actions-owned-parameters",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-owned-parameters/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "42fad18949f3375ae6978da6ad120a8b903879ff",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6,70506936-f8f9-5057-9e36-37230a4e02df,a1ff5677-154c-54fa-b0b4-78c9a54a3c73,8cf3c953-ad02-5312-bf90-b8ab9dca34ee,042923d6-97a3-5b93-9d20-b4c1217ad9d9,b7597899-b3ac-5da6-a5be-46141714bb05"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-owned-parameters",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 26120,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 26919837696,
+      "safety_stop": null,
+      "duration_seconds": 842.016,
+      "peak_rss_bytes": 5387681792,
+      "peak_private_bytes": 5468024832,
+      "samples": 842,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "9574c3e6f3fa5b980ed082660b7d9a27e84e06c266c2939b36b89b8d07836fc0"
+    },
+    {
+      "name": "actions-sealed-proof",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-sealed-proof/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "bca8702e7145dff8164d826994de235b90201ea2",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "35c0b23f-b73e-5c7e-9079-b8c8bc9c39e6,70506936-f8f9-5057-9e36-37230a4e02df,a1ff5677-154c-54fa-b0b4-78c9a54a3c73,8cf3c953-ad02-5312-bf90-b8ab9dca34ee,042923d6-97a3-5b93-9d20-b4c1217ad9d9,b7597899-b3ac-5da6-a5be-46141714bb05"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-sealed-proof",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 21692,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 26759888896,
+      "safety_stop": null,
+      "duration_seconds": 981.234,
+      "peak_rss_bytes": 5668151296,
+      "peak_private_bytes": 5756022784,
+      "samples": 981,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "ae117bb9f7ddad81e35368f5b17f37d01d289d71c0f33387884451c23072b121"
+    },
+    {
+      "name": "actions-read-origins",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-read-origins/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "83ca429c41bf46bb5faa8eaff273d220b5e22359",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGQ_PRODUCER_READ_TRACE": "1",
+        "AGQ_PRODUCER_CAUSAL_TRACE": "1",
+        "AGQ_PRODUCER_READ_FAMILIES": "KerML.PositionalRedefinition,KerML.FeatureValuation,KerML.FeatureValue,KerML.VariableFeaturing,deriveUsageMayTimeVary",
+        "AGQ_PRODUCER_CAUSAL_SUBJECTS": "00719337-c7e6-51f4-afa4-7d6328592096,017049d9-963d-5134-ba5b-28eb4045690c,042923d6-97a3-5b93-9d20-b4c1217ad9d9,70506936-f8f9-5057-9e36-37230a4e02df,a1ff5677-154c-54fa-b0b4-78c9a54a3c73,3af5418b-509c-5284-a0ee-019494766fa1,80ea68eb-545d-53d2-81a4-33a860f22b60,c1b4b0c5-c0bb-5c16-bead-506e035c3c25,d32765d8-ddf2-5f1f-9662-a200aefd1b2e"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-read-origins",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 20084,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 26223669248,
+      "safety_stop": "requested",
+      "duration_seconds": 195.766,
+      "peak_rss_bytes": 4711034880,
+      "peak_private_bytes": 4775813120,
+      "samples": 196,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "e189741767a5dd71f694b0862abd21471e94984209954e7816b57a65f93693b1"
+    },
+    {
+      "name": "actions-bounded-writers",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-bounded-writers/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "695e67ef44c40dd5d7191b9ce1f856989fe934ca",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-bounded-writers",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 18348,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 26149167104,
+      "safety_stop": null,
+      "duration_seconds": 1180.313,
+      "peak_rss_bytes": 6000259072,
+      "peak_private_bytes": 6103830528,
+      "samples": 1180,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "30a963045a027243b38ab9e8dc17e45a5f438e888231d935b7f625eee8b810ee"
+    },
+    {
+      "name": "actions-immediate-owner",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-immediate-owner/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "fad6a95887fc7e02b651ad43043f92cf1f7c5919",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-immediate-owner",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 7788,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 25486204928,
+      "safety_stop": null,
+      "duration_seconds": 1327.469,
+      "peak_rss_bytes": 6347952128,
+      "peak_private_bytes": 6459453440,
+      "samples": 1327,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "e37977dda5d045b7a1ebe91c3cb637bc97732b9e27055dadbc19f18976fe2147"
+    },
+    {
+      "name": "actions-end-and-index",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-end-and-index/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-end-and-index",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 21308,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 25416634368,
+      "safety_stop": null,
+      "duration_seconds": 1409.547,
+      "peak_rss_bytes": 6280921088,
+      "peak_private_bytes": 6422331392,
+      "samples": 1409,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "fde47460154e2799b30044f3be40ca4efec0cb77a228b1c96a4829f7c54717ec",
+      "report_artifacts": {
+        "report.json": "1cd5f3c9be10355eedcaf5a4995b0920ba3f3443d0b163cd4aff9662e1c050a6",
+        "report.stages.jsonl": "29e24a7a09f6a7ea2f2c0a94538900de22db2d40878009662e076ee2725dfcc9",
+        "diagnostic-sources.jsonl": "683d44d90f2e8d45fb6d0d5814e877de7a18b89facb38ed281473f4fdf611825"
+      },
+      "result_summary": {
+        "documents_parsed": 8,
+        "documents_constructed": 8,
+        "selected_endpoints": 534,
+        "mandatory_references": {
+          "counts": {
+            "ambiguous": 0,
+            "complete": 534,
+            "endpoint_mismatch": 0,
+            "incomplete": 0,
+            "invalid": 0,
+            "unresolved": 0
+          },
+          "failures": [],
+          "total": 534
+        },
+        "kernel_obligations": 0,
+        "producer_converged": true,
+        "producer_completeness": "Incomplete",
+        "certificate_fully_closed": false,
+        "incomplete_pairs": 4,
+        "producer_diagnostics": [
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "63d0949c-20e2-5ffa-81a2-62b9826530dc"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "7661b183-d02f-5ba1-ae73-8f0f8b60b3c3"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "86ddb7cd-ac22-5322-9aa7-ff4755f00198"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "fc5a3876-bdc7-555d-a38d-0720ca04e233"
+          }
+        ],
+        "authority_conflicts": 0,
+        "kerml_producers_replayed": false
+      }
+    },
+    {
+      "name": "actions-owned-cross-subsetting",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-owned-cross-subsetting/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "c7d65cfb29e4cfa79300ff8cd1af9f15b1b0bc40",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-owned-cross-subsetting",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 21312,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 23719170048,
+      "safety_stop": null,
+      "duration_seconds": 1491.656,
+      "peak_rss_bytes": 6273675264,
+      "peak_private_bytes": 6438330368,
+      "samples": 1491,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "3c4ee5cde6bbf9d21a0e4b7e7a5871a48eb718889554d2180e3c7ec08e1b0cd6",
+      "release_build_source_commit": "7782e3c",
+      "report_artifacts": {
+        "verification/generated/language-stability-bridge/actions-owned-cross-subsetting/report.json": "853920a1139d5eae12133dad1a2c9dd0426921d775175088afbeb45108c4618a",
+        "verification/generated/language-stability-bridge/actions-owned-cross-subsetting/report.stages.jsonl": "e65da2079a75def2b891f018391ea73481cf76b12534e3947087c41a8172e062"
+      },
+      "result_summary": {
+        "scope": [
+          "Systems Library/Actions.sysml",
+          "Systems Library/Connections.sysml",
+          "Systems Library/Constraints.sysml",
+          "Systems Library/Flows.sysml",
+          "Systems Library/Items.sysml",
+          "Systems Library/Parts.sysml",
+          "Systems Library/Ports.sysml",
+          "Systems Library/States.sysml"
+        ],
+        "systems_documents_parsed": 8,
+        "systems_documents_constructed": 8,
+        "systems_documents_byte_exact": 8,
+        "last_reference_round": {
+          "evaluated": 534,
+          "kernel_obligations": 0,
+          "reused": 0,
+          "round": 0,
+          "selected": 534
+        },
+        "local_elements": 6204,
+        "kernel_obligations": 0,
+        "mandatory_references": {
+          "counts": {
+            "ambiguous": 0,
+            "complete": 534,
+            "endpoint_mismatch": 0,
+            "incomplete": 0,
+            "invalid": 0,
+            "unresolved": 0
+          },
+          "failures": [],
+          "total": 534
+        },
+        "construction_producers": {
+          "closure_counters": {
+            "applicable_subject_family_pairs": 11553,
+            "certificate_build_micros": 102929776,
+            "certificate_bytes": 2632194,
+            "closed_pairs": 11553,
+            "closed_requirements": 407532,
+            "families_registered": 87,
+            "incomplete_pairs": 0,
+            "negative_queries_certified": 108893
+          },
+          "completeness": "Complete",
+          "converged": true,
+          "derived_elements": 3425,
+          "diagnostics": [],
+          "final_predicates": true,
+          "rounds": 31,
+          "subjects_evaluated": 20801
+        },
+        "producer_closure": {
+          "applicable_pairs": 11553,
+          "certificate_bytes": 2632194,
+          "closed_pairs": 11553,
+          "closed_requirements": 407532,
+          "context_contract_digest": [
+            176,
+            66,
+            57,
+            133,
+            137,
+            99,
+            88,
+            197,
+            195,
+            204,
+            2,
+            40,
+            151,
+            62,
+            252,
+            168,
+            32,
+            124,
+            39,
+            53,
+            32,
+            141,
+            199,
+            61,
+            21,
+            243,
+            98,
+            108,
+            31,
+            93,
+            224,
+            35
+          ],
+          "digest": [
+            82,
+            42,
+            86,
+            195,
+            96,
+            34,
+            220,
+            120,
+            45,
+            167,
+            84,
+            185,
+            245,
+            209,
+            212,
+            5,
+            21,
+            56,
+            193,
+            135,
+            207,
+            111,
+            137,
+            49,
+            11,
+            184,
+            61,
+            43,
+            169,
+            98,
+            181,
+            102
+          ],
+          "fully_closed": true,
+          "incomplete_pairs": 0,
+          "model_digest": [
+            168,
+            75,
+            240,
+            226,
+            41,
+            13,
+            100,
+            48,
+            49,
+            215,
+            77,
+            168,
+            207,
+            96,
+            220,
+            91,
+            75,
+            31,
+            40,
+            93,
+            64,
+            85,
+            158,
+            66,
+            110,
+            132,
+            113,
+            109,
+            246,
+            139,
+            243,
+            130
+          ],
+          "producer_registry_digest": [
+            231,
+            71,
+            2,
+            117,
+            227,
+            248,
+            227,
+            239,
+            157,
+            160,
+            101,
+            244,
+            234,
+            175,
+            38,
+            27,
+            22,
+            132,
+            205,
+            158,
+            192,
+            217,
+            9,
+            121,
+            39,
+            37,
+            152,
+            66,
+            125,
+            231,
+            21,
+            164
+          ],
+          "required_requirements": 407532,
+          "revalidation_bytes": 685683928,
+          "semantic_closure_digest": [
+            205,
+            244,
+            58,
+            89,
+            45,
+            203,
+            169,
+            186,
+            111,
+            190,
+            53,
+            61,
+            75,
+            178,
+            163,
+            1,
+            127,
+            18,
+            219,
+            152,
+            109,
+            2,
+            157,
+            36,
+            203,
+            45,
+            19,
+            76,
+            249,
+            66,
+            83,
+            5
+          ]
+        },
+        "closure_transport": {
+          "rebindings": 2,
+          "reopened_evaluations": 0,
+          "retained_evaluations": 0,
+          "total_reopened_evaluations": 11963,
+          "total_retained_evaluations": 1235
+        },
+        "authority_conflicts": [],
+        "kerml_producers_replayed": false,
+        "scoped_preflight_passed": true,
+        "publication_attempted": false
+      }
+    },
+    {
+      "name": "systems-medium-thirteen",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/systems-medium-thirteen/report.json",
+        "--documents=Actions,Attributes,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,Requirements,States,Views",
+        "--audit-only"
+      ],
+      "source_commit": "262fd5c3dbf71073bb509b698d7654bd7b0b755d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/systems-medium-thirteen",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 27276,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 23065890816,
+      "safety_stop": null,
+      "duration_seconds": 1749.844,
+      "peak_rss_bytes": 6566592512,
+      "peak_private_bytes": 6659510272,
+      "samples": 1749,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "2a9e548145ca52b5db33280934796a2300669f3e621d9a095a4d7bae9e24c5fb",
+      "release_build_source_commit": "4fdaf2b",
+      "report_artifacts": [
+        {
+          "path": "verification/generated/language-stability-bridge/systems-medium-thirteen/report.json",
+          "sha256": "9ae2f8440aa694b51abbc1f0da20ae0efcaa55cb646e17cd369c1ff9496a0947"
+        },
+        {
+          "path": "verification/generated/language-stability-bridge/systems-medium-thirteen/report.stages.jsonl",
+          "sha256": "6d6651bf1bcbd441167947d4954a5ad54f57ae9dfa26b5b233ca091c2deea0b1"
+        }
+      ],
+      "result_summary": {
+        "systems_documents_parsed": 13,
+        "systems_documents_constructed": 13,
+        "systems_documents_byte_exact": 13,
+        "last_reference_round": {
+          "evaluated": 695,
+          "kernel_obligations": 0,
+          "reused": 0,
+          "round": 0,
+          "selected": 695
+        },
+        "mandatory_references": {
+          "counts": {
+            "ambiguous": 0,
+            "complete": 695,
+            "endpoint_mismatch": 0,
+            "incomplete": 0,
+            "invalid": 0,
+            "unresolved": 0
+          },
+          "failures": [],
+          "total": 695
+        },
+        "kernel_obligations": 0,
+        "construction_producers": {
+          "closure_counters": {
+            "applicable_subject_family_pairs": 14677,
+            "certificate_build_micros": 114718098,
+            "certificate_bytes": 2695589,
+            "closed_pairs": 14404,
+            "closed_requirements": 385941,
+            "families_registered": 87,
+            "incomplete_pairs": 14,
+            "negative_queries_certified": 153647
+          },
+          "completeness": "Incomplete",
+          "converged": false,
+          "derived_elements": 4179,
+          "diagnostics": [
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "420b87f6-0adf-5721-87ac-d0a91c0ffbab"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "4f1c7548-fa6f-5ec4-b275-754941bd1cd6"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "56b5e106-4706-5b98-8389-578a9452a712"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "92d17f67-7cf8-5e29-bb3d-f38dcc3f65f4"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "973eea9d-90ad-51d0-b5f8-cff0f870c158"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "98c30374-e65a-579b-be50-0d23d18160d8"
+            },
+            {
+              "code": "KQ_PRODUCER_CLOSURE",
+              "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+              "subject": "f23bff63-ed3c-5d65-9ca7-21455344397b"
+            },
+            {
+              "code": "KQ_VARIABLE_FEATURING",
+              "message": "Variable featuring requires its snapshot domain",
+              "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+            },
+            {
+              "code": "KQ_VARIABLE_FEATURING",
+              "message": "Variable featuring requires its snapshot domain",
+              "subject": "56b5e106-4706-5b98-8389-578a9452a712"
+            },
+            {
+              "code": "KQ_VARIABLE_FEATURING",
+              "message": "Variable featuring requires its snapshot domain",
+              "subject": "973eea9d-90ad-51d0-b5f8-cff0f870c158"
+            }
+          ],
+          "final_predicates": true,
+          "rounds": 32,
+          "subjects_evaluated": 27296
+        },
+        "producer_closure": {
+          "applicable_pairs": 14677,
+          "certificate_bytes": 2695589,
+          "closed_pairs": 14404,
+          "closed_requirements": 385941,
+          "context_contract_digest": [
+            173,
+            108,
+            232,
+            171,
+            36,
+            191,
+            86,
+            121,
+            33,
+            96,
+            22,
+            167,
+            37,
+            167,
+            201,
+            65,
+            162,
+            93,
+            235,
+            142,
+            239,
+            29,
+            148,
+            120,
+            192,
+            234,
+            226,
+            24,
+            202,
+            236,
+            133,
+            11
+          ],
+          "digest": [
+            218,
+            25,
+            204,
+            84,
+            78,
+            84,
+            182,
+            194,
+            121,
+            171,
+            232,
+            84,
+            224,
+            199,
+            43,
+            105,
+            18,
+            38,
+            12,
+            52,
+            21,
+            35,
+            88,
+            129,
+            113,
+            155,
+            196,
+            66,
+            231,
+            11,
+            29,
+            249
+          ],
+          "fully_closed": false,
+          "incomplete_pairs": 14,
+          "model_digest": [
+            254,
+            53,
+            73,
+            162,
+            152,
+            152,
+            38,
+            58,
+            128,
+            222,
+            115,
+            65,
+            156,
+            194,
+            200,
+            226,
+            168,
+            144,
+            12,
+            20,
+            48,
+            15,
+            56,
+            157,
+            185,
+            4,
+            59,
+            135,
+            19,
+            1,
+            107,
+            112
+          ],
+          "producer_registry_digest": [
+            231,
+            71,
+            2,
+            117,
+            227,
+            248,
+            227,
+            239,
+            157,
+            160,
+            101,
+            244,
+            234,
+            175,
+            38,
+            27,
+            22,
+            132,
+            205,
+            158,
+            192,
+            217,
+            9,
+            121,
+            39,
+            37,
+            152,
+            66,
+            125,
+            231,
+            21,
+            164
+          ],
+          "required_requirements": 417348,
+          "revalidation_bytes": 839569912,
+          "semantic_closure_digest": [
+            123,
+            74,
+            83,
+            139,
+            123,
+            65,
+            16,
+            105,
+            94,
+            123,
+            231,
+            57,
+            97,
+            56,
+            120,
+            126,
+            23,
+            112,
+            64,
+            214,
+            12,
+            135,
+            36,
+            9,
+            124,
+            5,
+            136,
+            30,
+            168,
+            19,
+            12,
+            179
+          ]
+        },
+        "closure_transport": {
+          "rebindings": 2,
+          "reopened_evaluations": 0,
+          "retained_evaluations": 0,
+          "total_reopened_evaluations": 15562,
+          "total_retained_evaluations": 1679
+        },
+        "authority_conflicts": [],
+        "kerml_producers_replayed": false,
+        "scoped_preflight_passed": false,
+        "publication_attempted": false
+      },
+      "interpretation": "Scoped gate incomplete at the 32-round resource limit; convergence was not reached. Final diagnostics do not establish a persistent semantic cycle. Full publication not attempted."
+    },
+    {
+      "name": "systems-medium-result-populations",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/systems-medium-result-populations/report.json",
+        "--documents=Actions,Attributes,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,Requirements,States,Views",
+        "--audit-only"
+      ],
+      "source_commit": "9152fb989627c40aa3ddbda80bf28a892b41139e",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/systems-medium-result-populations",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 23448,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 22924615680,
+      "safety_stop": null,
+      "duration_seconds": 1726.844,
+      "peak_rss_bytes": 6653952000,
+      "peak_private_bytes": 6748000256,
+      "samples": 1726,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "bac21b69f9ffbc3d3a491af16dfb28655641fe54297ebd901b3b97e7e44c1067",
+      "release_build_source_commit": "b018b187194610dada1e5573263b3a4f0276bfe3",
+      "report_artifacts": [
+        {
+          "path": "verification/generated/language-stability-bridge/systems-medium-result-populations/report.json",
+          "sha256": "9aa5332692a443a1bc8cb1a761a7207714f83116e816a1e7a6d0201dfaad3288"
+        },
+        {
+          "path": "verification/generated/language-stability-bridge/systems-medium-result-populations/report.stages.jsonl",
+          "sha256": "80c8e737d05d878af2013690888a8be0bdb3cd3653bf2d85cab71efd5a2b2aca"
+        }
+      ],
+      "result_summary": {
+        "systems_documents_parsed": 13,
+        "systems_documents_constructed": 13,
+        "systems_documents_byte_exact": 13,
+        "last_reference_round": {
+          "evaluated": 695,
+          "kernel_obligations": 0,
+          "reused": 0,
+          "round": 0,
+          "selected": 695
+        },
+        "mandatory_references": {
+          "counts": {
+            "ambiguous": 0,
+            "complete": 695,
+            "endpoint_mismatch": 0,
+            "incomplete": 0,
+            "invalid": 0,
+            "unresolved": 0
+          },
+          "failures": [],
+          "total": 695
+        },
+        "kernel_obligations": 0,
+        "construction_producers": {
+          "closure_counters": {
+            "applicable_subject_family_pairs": 14791,
+            "certificate_build_micros": 112426942,
+            "certificate_bytes": 2698418,
+            "closed_pairs": 14791,
+            "closed_requirements": 417786,
+            "families_registered": 87,
+            "incomplete_pairs": 0,
+            "negative_queries_certified": 154069
+          },
+          "completeness": "Complete",
+          "converged": true,
+          "derived_elements": 4252,
+          "diagnostics": [],
+          "final_predicates": true,
+          "round_limit": 64,
+          "round_limit_reached": false,
+          "rounds": 33,
+          "subjects_evaluated": 27429
+        },
+        "producer_closure": {
+          "applicable_pairs": 14791,
+          "certificate_bytes": 2698418,
+          "closed_pairs": 14791,
+          "closed_requirements": 417786,
+          "context_contract_digest": [
+            205,
+            53,
+            44,
+            214,
+            198,
+            144,
+            181,
+            138,
+            84,
+            243,
+            129,
+            98,
+            51,
+            168,
+            36,
+            172,
+            215,
+            103,
+            6,
+            128,
+            138,
+            79,
+            57,
+            1,
+            118,
+            47,
+            18,
+            186,
+            190,
+            58,
+            215,
+            66
+          ],
+          "digest": [
+            86,
+            182,
+            99,
+            229,
+            56,
+            183,
+            165,
+            34,
+            181,
+            130,
+            217,
+            153,
+            62,
+            166,
+            102,
+            40,
+            161,
+            179,
+            30,
+            239,
+            32,
+            55,
+            142,
+            57,
+            95,
+            131,
+            123,
+            247,
+            85,
+            27,
+            115,
+            235
+          ],
+          "fully_closed": true,
+          "incomplete_pairs": 0,
+          "model_digest": [
+            136,
+            242,
+            105,
+            44,
+            106,
+            128,
+            8,
+            119,
+            146,
+            42,
+            187,
+            41,
+            218,
+            39,
+            68,
+            113,
+            69,
+            122,
+            38,
+            155,
+            108,
+            239,
+            178,
+            241,
+            50,
+            150,
+            55,
+            41,
+            189,
+            81,
+            76,
+            47
+          ],
+          "producer_registry_digest": [
+            245,
+            67,
+            128,
+            10,
+            93,
+            59,
+            6,
+            69,
+            208,
+            153,
+            199,
+            96,
+            138,
+            169,
+            234,
+            41,
+            16,
+            3,
+            7,
+            50,
+            51,
+            87,
+            176,
+            135,
+            194,
+            203,
+            138,
+            219,
+            104,
+            150,
+            155,
+            112
+          ],
+          "required_requirements": 417786,
+          "revalidation_bytes": 874567848,
+          "semantic_closure_digest": [
+            207,
+            94,
+            13,
+            225,
+            238,
+            70,
+            164,
+            233,
+            66,
+            13,
+            169,
+            104,
+            122,
+            3,
+            87,
+            191,
+            30,
+            225,
+            139,
+            128,
+            36,
+            246,
+            60,
+            82,
+            183,
+            40,
+            5,
+            164,
+            90,
+            160,
+            40,
+            113
+          ]
+        },
+        "closure_transport": {
+          "rebindings": 2,
+          "reopened_evaluations": 0,
+          "retained_evaluations": 0,
+          "total_reopened_evaluations": 15570,
+          "total_retained_evaluations": 1679
+        },
+        "authority_conflicts": [],
+        "kerml_producers_replayed": false,
+        "scoped_preflight_passed": true,
+        "publication_attempted": false,
+        "publication_accepted": false
+      },
+      "interpretation": "Medium scoped gate passed after the inherited-result population correction and sufficient Systems budget. Exact final certificate is fully closed. Full 21-document publication remains separate and has not been attempted."
+    },
+    {
+      "name": "systems-full-language-bridge",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/systems-full-language-bridge/report.json"
+      ],
+      "source_commit": "530b4302da085b66265bd2dd5abecf32d0125069",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/systems-full-language-bridge",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 23356,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 21253550080,
+      "safety_stop": "private_memory",
+      "duration_seconds": 1693.297,
+      "peak_rss_bytes": 6886055936,
+      "peak_private_bytes": 6979997696,
+      "samples": 1692,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "827f6919f8ebd748871d78d22b549f637b1e9e6f8e0ff99c59bf4b54e5d6818f",
+      "release_build_source_commit": "692ed8ebba2c8a24bb228bf8ecce56f68fbeff4d",
+      "release_binary_sha256": "ae61879c82a56226f845e33b015e73b299c9880b9ab2e5fd7439686de1d1e228",
+      "report_artifacts": [
+        {
+          "path": "verification/generated/language-stability-bridge/systems-full-language-bridge/report.stages.jsonl",
+          "sha256": "fe678f33769df34de6e1c6d9ffae03d21f754c286ce5b6cfd51282303551a043"
+        }
+      ],
+      "final_report_created": false,
+      "construction_observation": {
+        "reference_progress": "Systems: references round=2 selected=1327 obligations=0 evaluated=1327 reused=0",
+        "mandatory_audit_progress": "Systems: mandatory references audited=1327 failures=0"
+      },
+      "last_completed_stage": {
+        "added": 789,
+        "closure_counters": {
+          "applicable_subject_family_pairs": 24732,
+          "certificate_build_micros": 83778231,
+          "certificate_bytes": 2877404,
+          "closed_pairs": 22236,
+          "closed_requirements": 395011,
+          "families_registered": 87,
+          "incomplete_pairs": 6,
+          "negative_queries_certified": 98005
+        },
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "0fbd3c4e-90ef-5cdd-b7c4-badbbd0c22eb"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "420b87f6-0adf-5721-87ac-d0a91c0ffbab"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "645e8bcf-5b2b-5b10-82ff-49d0c7e4f012"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "7b1b5cfd-929c-58a3-a4e9-b9ea7d31db3c"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "a088065c-e638-56f4-aca0-eb31b392de20"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "3af5418b-509c-5284-a0ee-019494766fa1"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "80ea68eb-545d-53d2-81a4-33a860f22b60"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "f1e9f776-13cf-5f0b-b9e1-f2a7204a4a8d"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "fe3ae656-267a-5c7c-86c7-71ad9c0ce13e"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "0fbd3c4e-90ef-5cdd-b7c4-badbbd0c22eb"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "645e8bcf-5b2b-5b10-82ff-49d0c7e4f012"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "7b1b5cfd-929c-58a3-a4e9-b9ea7d31db3c"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "a088065c-e638-56f4-aca0-eb31b392de20"
+          }
+        ],
+        "phase": "publication",
+        "stage": 18,
+        "stratum": "ContextualBindings"
+      },
+      "last_progress_before_stop": "Systems publication: round=19 evaluated=2048/2636 planned=1547",
+      "interpretation": "First normal full attempt stopped by the unchanged private-memory watchdog. Construction audited all1327 references without failure and had zero kernel obligations, but strict publication was unfinished. No final report, accepted facade receipt or bindings were produced. This is a resource stop, not a semantic rejection. One retry remains only after a concrete defect fix."
+    },
+    {
+      "name": "systems-full-interned-reads-retry",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/systems-full-interned-reads-retry/report.json"
+      ],
+      "source_commit": "97a79a9308e9fc3a7998c735591405b4443b7fc6",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/systems-full-interned-reads-retry",
+      "exit_code": 124,
+      "command_exit_code": 124,
+      "command_pid": 26356,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 22854852608,
+      "safety_stop": "wall_time",
+      "duration_seconds": 2100.546,
+      "peak_rss_bytes": 5689376768,
+      "peak_private_bytes": 5775601664,
+      "samples": 2099,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "469cf3c26b79f7b9ca33ee76aefa6fa41d3948e7a1cd8540900cd924e56d13ff",
+      "release_build_source": "076005455e169dfaf7f229edd3290c310290f5ba",
+      "release_binary_sha256": "fc0092259cee4533f7481803d5255539c5e1121185257b748e52e1021f059f4d",
+      "stages_path": "verification/generated/language-stability-bridge/systems-full-interned-reads-retry/report.stages.jsonl",
+      "stages_sha256": "083d195f593dce3e5ffbd065b21646b84c9c1e3efaf32b0f064ee8c47967af7e",
+      "final_report_created": false,
+      "construction_observation": {
+        "selected_endpoints": 1327,
+        "mandatory_references_audited": 1327,
+        "failures": 0,
+        "kernel_obligations": 0,
+        "scope": "construction; final strict mandatory audit unfinished"
+      },
+      "last_completed_stage": {
+        "added": 15,
+        "closure_counters": {
+          "applicable_subject_family_pairs": 24732,
+          "certificate_build_micros": 99865164,
+          "certificate_bytes": 2914410,
+          "closed_pairs": 22236,
+          "closed_requirements": 395011,
+          "families_registered": 87,
+          "incomplete_pairs": 6,
+          "negative_queries_certified": 138143
+        },
+        "completeness": "Incomplete",
+        "diagnostics": [
+          {
+            "code": "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE",
+            "message": "A scheduler-issued EffectiveTyping closure witness is required for this negative owner-type antecedent",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "006ebf10-0147-55f4-b469-6041876e9f8d"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "0dd52805-e478-5b83-b2f0-e955ab8000f8"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "0fbd3c4e-90ef-5cdd-b7c4-badbbd0c22eb"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "1a5e1ae2-e70e-54c0-8da9-2d749201721a"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "420b87f6-0adf-5721-87ac-d0a91c0ffbab"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "4f1c7548-fa6f-5ec4-b275-754941bd1cd6"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "5e122faf-8354-5596-9973-a2d47c69f98e"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "645e8bcf-5b2b-5b10-82ff-49d0c7e4f012"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "70506936-f8f9-5057-9e36-37230a4e02df"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "7b1b5cfd-929c-58a3-a4e9-b9ea7d31db3c"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "92d17f67-7cf8-5e29-bb3d-f38dcc3f65f4"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "98c30374-e65a-579b-be50-0d23d18160d8"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "a07be4da-cccf-55f2-86fa-953be67af485"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "a088065c-e638-56f4-aca0-eb31b392de20"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "a1ff5677-154c-54fa-b0b4-78c9a54a3c73"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "b35223f7-eeec-5fdb-83a2-169c44861aab"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "b7597899-b3ac-5da6-a5be-46141714bb05"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "c5273603-3353-575e-99b6-242cf361b21e"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "d8a5aa08-c0e3-583a-8969-2e22683106a2"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "f23bff63-ed3c-5d65-9ca7-21455344397b"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "3af5418b-509c-5284-a0ee-019494766fa1"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "80ea68eb-545d-53d2-81a4-33a860f22b60"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "f1e9f776-13cf-5f0b-b9e1-f2a7204a4a8d"
+          },
+          {
+            "code": "KQ_VALUE_CONTEXT",
+            "message": "Value binding requires complete featuring domains",
+            "subject": "fe3ae656-267a-5c7c-86c7-71ad9c0ce13e"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "0fbd3c4e-90ef-5cdd-b7c4-badbbd0c22eb"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "36893206-121a-59d7-bcc0-3764144f3d76"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "645e8bcf-5b2b-5b10-82ff-49d0c7e4f012"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "7b1b5cfd-929c-58a3-a4e9-b9ea7d31db3c"
+          },
+          {
+            "code": "KQ_VARIABLE_FEATURING",
+            "message": "Variable featuring requires its snapshot domain",
+            "subject": "a088065c-e638-56f4-aca0-eb31b392de20"
+          }
+        ],
+        "elapsed_seconds": 2017.0283253,
+        "phase": "publication",
+        "stage": 21,
+        "stratum": "ContextualBindings"
+      },
+      "last_progress_before_stop": "Systems publication: round=22 evaluated=1280/2633 planned=936 elapsed=2094.588s",
+      "prior_attempt_prefix_comparison": {
+        "compared_completed_frontiers": 56,
+        "excluded_observation_fields": [
+          "elapsed_seconds",
+          "closure_counters.certificate_build_micros"
+        ],
+        "differing_frontiers": [],
+        "scope": "Retained observations match; this does not establish full graph identity or acceptance."
+      },
+      "interpretation": "Final permitted retry stopped by the unchanged wall-time watchdog. Peak private memory remained below its limit. Construction audited all 1327 references without failures and had zero kernel obligations, but strict publication was unfinished. No final report, accepted receipt, accepted binding manifest or cache was produced. Both full attempts are used; no additional full run is authorized within this milestone."
+    }
+  ]
+}

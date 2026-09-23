@@ -3,6 +3,10 @@ use crate::*;
 use agq_kerml::{classes as c, properties as p, views};
 use agq_kernel::{ElementId, value::Value};
 
+#[cfg(test)]
+#[path = "../tests/unit/instantiation_population.rs"]
+mod population_tests;
+
 impl KerMlQueries<'_> {
     /// The declared target or standard operator Function of an instantiation.
     /// Standard package identities are bound once; operator symbols remain
@@ -52,12 +56,12 @@ impl KerMlQueries<'_> {
                 }
             }
         } else {
-            let memberships = self.memberships(expression);
-            if let Some(&membership) = memberships
-                .value
-                .iter()
-                .find(|&&m| !self.is(m, c::FEATURE_MEMBERSHIP))
-            {
+            let memberships = self.owned_relationships_excluding(
+                expression,
+                c::MEMBERSHIP,
+                [c::FEATURE_MEMBERSHIP],
+            );
+            if let Some(&membership) = memberships.value.first() {
                 let member = self.member(membership);
                 out.value = member.value.filter(|&e| self.is(e, c::TYPE));
                 out.merge(member);
@@ -81,7 +85,7 @@ impl KerMlQueries<'_> {
     /// First owned input Feature, in semantic membership order.
     pub(crate) fn first_input(&self, expression: ElementId) -> QueryResult<Option<ElementId>> {
         let mut out = self.result(None);
-        let features = self.direct_features(expression);
+        let features = self.owned_directed_features(expression);
         let agq_kernel::metamodel::ValueKind::Enumeration(domain) = self
             .model()
             .registry()
