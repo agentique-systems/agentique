@@ -66,7 +66,35 @@ fn accepted_systems_cache_roundtrip_and_tampering() {
     output.sync_all().unwrap();
     drop(output);
     assert_eq!(&receipt["identity"], trusted.identity());
-    drop(publication); // Keep only one Systems graph and one shared KerML instance.
+    // Before any catalogue update, artifact issuance can only restore a
+    // candidate by consuming an actual accepted facade as independent authority.
+    let candidate = publication
+        .verify_candidate_cache(
+            File::open(&roundtrip).unwrap(),
+            &sources,
+            &receipt,
+            &manifest,
+        )
+        .expect("live accepted facade authenticates exact candidate cache");
+    assert_restored(&candidate, &kerml);
+    assert_eq!(candidate.identity(), &identity);
+    assert_eq!(candidate.context(), &context);
+    assert_eq!(candidate.bindings(), &bindings);
+    let mut changed_binding = manifest.clone();
+    changed_binding["bindings"][0]["element"] =
+        serde_json::json!(agq_kernel::ElementId::from_u128(0));
+    assert!(
+        candidate
+            .verify_candidate_cache(
+                File::open(&roundtrip).unwrap(),
+                &sources,
+                &receipt,
+                &changed_binding,
+            )
+            .is_err(),
+        "caller candidate binding cannot replace live accepted authority"
+    );
+    // Consuming verification keeps only one Systems graph and shared KerML.
 
     let restored = restore(&roundtrip, &sources, &kerml);
     assert_restored(&restored, &kerml);

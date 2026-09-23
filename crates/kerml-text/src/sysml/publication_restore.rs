@@ -37,6 +37,102 @@ struct DocumentMetadata {
     construction_gap: Option<String>,
 }
 
+// Candidate authority is created only from an existing accepted facade. JSON
+// supplied by a caller never enters this type without exact live comparison.
+enum ReceiptAuthority {
+    Trusted(TrustedPublicationReceipt),
+    Candidate {
+        receipt: Value,
+        bindings: Value,
+        certificate: Arc<agq_kerml_semantics::ProducerClosureCertificate>,
+    },
+}
+impl ReceiptAuthority {
+    fn identity(&self) -> &Value {
+        match self {
+            Self::Trusted(receipt) => receipt.identity(),
+            Self::Candidate { receipt, .. } => &receipt["identity"],
+        }
+    }
+    fn binding_manifest(&self) -> &Value {
+        match self {
+            Self::Trusted(receipt) => receipt.binding_manifest(),
+            Self::Candidate { bindings, .. } => bindings,
+        }
+    }
+    fn source_content_set(&self) -> &str {
+        match self {
+            Self::Trusted(receipt) => receipt.source_content_set(),
+            Self::Candidate { receipt, .. } => receipt["source_content_set"]
+                .as_str()
+                .expect("live receipt"),
+        }
+    }
+    fn publication_format(&self) -> &str {
+        match self {
+            Self::Trusted(receipt) => receipt.publication_format(),
+            Self::Candidate { receipt, .. } => receipt["format"].as_str().expect("live receipt"),
+        }
+    }
+    fn entry_names(&self) -> Box<dyn Iterator<Item = &str> + '_> {
+        match self {
+            Self::Trusted(receipt) => Box::new(receipt.entry_names()),
+            Self::Candidate { receipt, .. } => Box::new(
+                receipt["entries"]
+                    .as_object()
+                    .expect("live receipt")
+                    .keys()
+                    .map(String::as_str),
+            ),
+        }
+    }
+    fn entry_bytes(&self, name: &str) -> Result<u64, SystemsPublicationCacheError> {
+        match self {
+            Self::Trusted(receipt) => Ok(receipt.entry_bytes(name)?),
+            Self::Candidate { receipt, .. } => receipt["entries"][name]["bytes"]
+                .as_u64()
+                .filter(|n| *n < u64::MAX)
+                .ok_or(SystemsPublicationCacheError::Mismatch(
+                    "candidate archive entry size",
+                )),
+        }
+    }
+    fn verify_entry_digest(
+        &self,
+        name: &str,
+        digest: [u8; 32],
+    ) -> Result<(), SystemsPublicationCacheError> {
+        match self {
+            Self::Trusted(receipt) => Ok(receipt.verify_entry_digest(name, digest)?),
+            Self::Candidate { receipt, .. }
+                if receipt["entries"][name]["sha256"] == json!(digest) =>
+            {
+                Ok(())
+            }
+            Self::Candidate { .. } => Err(SystemsPublicationCacheError::Mismatch(
+                "candidate archive entry digest",
+            )),
+        }
+    }
+    fn attach_closure<'m>(
+        &self,
+        context: SysmlSemanticContext<'m>,
+        bytes: Vec<u8>,
+    ) -> Result<SysmlSemanticContext<'m>, SystemsPublicationCacheError> {
+        match self {
+            Self::Trusted(receipt) => {
+                Ok(context.with_trusted_producer_closure(receipt, Cursor::new(bytes))?)
+            }
+            // Bytes were authenticated against the live certificate serialization.
+            // Reattach the actual scheduler certificate, validating the restored
+            // context and independently reconstructed registry through its API.
+            Self::Candidate { certificate, .. } => {
+                Ok(context.with_producer_closure(certificate.clone())?)
+            }
+        }
+    }
+}
+
 impl CanonicalSysmlSystemsLibrary {
     /// Restore only the exact separately accepted receipt and original sources.
     /// This remains disabled while the compiled Systems catalogue is empty.
@@ -46,7 +142,60 @@ impl CanonicalSysmlSystemsLibrary {
         sources: &VerifiedLibrarySet,
         accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
     ) -> Result<Self, SystemsPublicationCacheError> {
-        let receipt = TrustedPublicationReceipt::checked_in("sysml-systems-operational-v2")?;
+        let receipt = ReceiptAuthority::Trusted(TrustedPublicationReceipt::checked_in(
+            "sysml-systems-operational-v2",
+        )?);
+        Self::restore_with_authority(reader, sources, accepted_kerml, receipt)
+    }
+
+    /// Cross-validate candidate artifacts against this already accepted facade,
+    /// then restore their exact graph with no producer replay. Caller JSON is
+    /// compared with independently regenerated live entry/identity digests.
+    /// Consuming the original releases its graph before decoding the replacement.
+    /// This does not add a receipt to the separately compiled trust catalogue.
+    pub fn verify_candidate_cache(
+        self,
+        reader: impl Read + Seek,
+        sources: &VerifiedLibrarySet,
+        candidate_receipt: &Value,
+        candidate_bindings: &Value,
+    ) -> Result<Self, SystemsPublicationCacheError> {
+        self.check_binding_manifest(sources, candidate_bindings)?;
+        let bindings = self.binding_manifest(sources)?;
+        let mut entries = BTreeMap::new();
+        for (name, value) in [
+            ("facade.json", self.facade_metadata(sources)),
+            ("closure.json", self.producer_closure.receipt_value()),
+        ] {
+            let mut digest = DigestWriter::new(io::sink());
+            serde_json::to_writer(&mut digest, &value)?;
+            entries.insert(name, digest.identity());
+        }
+        let mut digest = DigestWriter::new(io::sink());
+        agq_kernel::archive::write_dependent_overlay_with_evidence(&self.overlay, &mut digest)?;
+        entries.insert("kernel.jsonl", digest.identity());
+        let receipt = self.cache_receipt(sources, &bindings, entries)?;
+        if *candidate_receipt != receipt {
+            return Err(SystemsPublicationCacheError::Mismatch(
+                "candidate receipt differs from accepted facade",
+            ));
+        }
+        let accepted_kerml = self.accepted_kerml.clone();
+        let authority = ReceiptAuthority::Candidate {
+            receipt,
+            bindings,
+            certificate: self.producer_closure.clone(),
+        };
+        drop(self);
+        Self::restore_with_authority(reader, sources, accepted_kerml, authority)
+    }
+
+    fn restore_with_authority(
+        reader: impl Read + Seek,
+        sources: &VerifiedLibrarySet,
+        accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
+        receipt: ReceiptAuthority,
+    ) -> Result<Self, SystemsPublicationCacheError> {
         let identity = SystemsLibraryIdentity::pinned(SystemsLibraryIdentity::SOURCE_CONTENT_SET);
         let empty_bindings = StandardSysmlBindings::unbound(identity.clone());
         let initial_contract = SysmlDependencyContract::checked_in_for_profile(
@@ -124,14 +273,16 @@ impl CanonicalSysmlSystemsLibrary {
             ));
         }
         let closure_bytes = authenticated_bytes(&mut archive, &receipt, "closure.json")?;
-        let context = SysmlSemanticContext::for_producer_overlay(
-            &overlay,
-            accepted_kerml.complete_overlay(),
-            &metadata.roots,
-            &contract,
-            bindings.clone(),
-        )?
-        .with_trusted_producer_closure(&receipt, Cursor::new(closure_bytes))?;
+        let context = receipt.attach_closure(
+            SysmlSemanticContext::for_producer_overlay(
+                &overlay,
+                accepted_kerml.complete_overlay(),
+                &metadata.roots,
+                &contract,
+                bindings.clone(),
+            )?,
+            closure_bytes,
+        )?;
         let producer_closure = context
             .kerml_context()
             .producer_closure()
@@ -194,7 +345,7 @@ impl CanonicalSysmlSystemsLibrary {
 }
 
 fn check_interpretation(
-    receipt: &TrustedPublicationReceipt,
+    receipt: &ReceiptAuthority,
     sources: &VerifiedLibrarySet,
     accepted_kerml: &CanonicalKermlStandardLibraries,
     contract: &SysmlDependencyContract,
@@ -469,7 +620,7 @@ fn check_entries<R: Read + Seek>(
 
 fn authenticated_bytes<R: Read + Seek>(
     archive: &mut ZipArchive<R>,
-    receipt: &TrustedPublicationReceipt,
+    receipt: &ReceiptAuthority,
     name: &str,
 ) -> Result<Vec<u8>, SystemsPublicationCacheError> {
     let expected = receipt.entry_bytes(name)?;

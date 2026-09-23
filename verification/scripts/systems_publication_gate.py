@@ -104,6 +104,13 @@ def accept_report(report):
     checked_families(audit["checked"])
     require(report["accepted_bindings"] == 69 and report["bindings_stale_check"] is True,
             "accepted binding manifest")
+    require(report["candidate_cache_restored"] is True
+            and report["candidate_restore_producers_replayed"] is False
+            and report["artifact_promotion"] == "atomic_directory_rename", "transactional artifact issuance")
+    if report.get("converged_checkpoint_authenticated"):
+        require(report["systems_producers_replayed"] is False
+                and type(report["finalization_producer_evaluations"]) is int
+                and report["finalization_producer_evaluations"] == 0, "finalization must not replay producers")
     require(report["checkpoint_session"]["accepted_authority"] is False, "checkpoint authority")
     documents = report["documents"]
     require(len(documents) == len({d["path"] for d in documents}) == 21, "document population")

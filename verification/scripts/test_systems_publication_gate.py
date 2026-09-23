@@ -32,7 +32,8 @@ def report_fixture():
         publication_digest=[1] * 32, semantic_digest=[1] * 32, accepted_kerml_digest=[1] * 32,
         publication_gate=dict(findings=[], mandatory_references=1327, complete_references=1327, checked=checked),
         accepted_bindings=69, bindings_stale_check=True, checkpoint_session=dict(accepted_authority=False),
-        documents=documents)
+        candidate_cache_restored=True, candidate_restore_producers_replayed=False,
+        artifact_promotion="atomic_directory_rename", documents=documents)
 
 
 class GateTests(unittest.TestCase):
@@ -64,6 +65,8 @@ class GateTests(unittest.TestCase):
             ("publication_attempted", False), ("kernel_obligations", False), ("kernel_obligations", 1),
             ("bindings_stale_check", False), ("authority_conflicts", ["conflict"]),
             ("systems_documents_byte_exact", 20), ("accepted_bindings", 68),
+            ("candidate_cache_restored", False), ("candidate_restore_producers_replayed", True),
+            ("artifact_promotion", "individual_file_renames"),
         ]
         for key, value in mutations:
             with self.subTest(key=key, value=value), self.assertRaises(ValueError):
