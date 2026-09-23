@@ -169,4 +169,108 @@ fn interfaces_inline_function_body_preserves_frontend_shape() {
             .unwrap();
         assert_eq!(reference.name.segments, [name]);
     }
+    // The full callee has no own return: it inherits Calculation/Evaluation's
+    // result. Its final body invocation owns the explicit SysML empty result.
+    let named = |name: &str| {
+        model
+            .elements()
+            .find(|record| {
+                record.slot(p::ELEMENT_DECLARED_NAME).is_some_and(|slot| {
+                    slot.value()
+                        .values()
+                        .any(|value| value == &Value::String(name.into()))
+                })
+            })
+            .unwrap()
+            .id()
+    };
+    let owned = |owner, class| {
+        references(owner, p::ELEMENT_OWNED_RELATIONSHIP)
+            .into_iter()
+            .filter(|relationship| model.element(*relationship).unwrap().metaclass() == class)
+            .flat_map(|relationship| {
+                references(relationship, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
+            })
+            .collect::<Vec<_>>()
+    };
+    let calculation = named("excludingOnce");
+    let seq = named("seq");
+    let value = named("value");
+    assert_eq!(
+        model.element(calculation).unwrap().metaclass(),
+        agq_sysml::classes::CALCULATION_DEFINITION
+    );
+    assert!(owned(calculation, c::RETURN_PARAMETER_MEMBERSHIP).is_empty());
+    for (feature, bounds) in [
+        (seq, vec![c::LITERAL_INTEGER, c::LITERAL_INFINITY]),
+        (value, vec![c::LITERAL_INTEGER]),
+    ] {
+        child(calculation, c::FEATURE_MEMBERSHIP, feature);
+        assert_eq!(
+            model.element(feature).unwrap().metaclass(),
+            agq_sysml::classes::REFERENCE_USAGE
+        );
+        let range = owned(feature, c::OWNING_MEMBERSHIP)
+            .into_iter()
+            .find(|element| model.element(*element).unwrap().metaclass() == c::MULTIPLICITY_RANGE)
+            .unwrap();
+        let literals = owned(range, c::OWNING_MEMBERSHIP);
+        assert_eq!(
+            literals
+                .iter()
+                .map(|element| model.element(*element).unwrap().metaclass())
+                .collect::<Vec<_>>(),
+            bounds
+        );
+        for literal in literals {
+            let results = owned(literal, c::RETURN_PARAMETER_MEMBERSHIP);
+            assert_eq!(results.len(), 1);
+            assert_eq!(model.element(results[0]).unwrap().metaclass(), c::FEATURE);
+        }
+    }
+    let subset = references(value, p::ELEMENT_OWNED_RELATIONSHIP)
+        .into_iter()
+        .find(|element| model.element(*element).unwrap().metaclass() == c::SUBSETTING)
+        .unwrap();
+    assert_eq!(
+        draft
+            .references()
+            .iter()
+            .find(|reference| reference.relationship == subset)
+            .unwrap()
+            .name
+            .segments,
+        ["seq"]
+    );
+    let range = id(0xdefd4cf3013a55228498bf56a584ab11);
+    let first = id(0x8dad8aad0fef5d9b9727ae371dbc1107);
+    child(invocation, c::PARAMETER_MEMBERSHIP, first);
+    child(first, c::FEATURE_VALUE, range);
+    assert_eq!(
+        model.element(range).unwrap().metaclass(),
+        c::OPERATOR_EXPRESSION
+    );
+    let size = id(0x4d8fd9ed78e153db809ae4afc4f30361);
+    let upper = id(0x52ecf4096e5e546c8b7813f901d2dc77);
+    child(range, c::PARAMETER_MEMBERSHIP, upper);
+    child(upper, c::FEATURE_VALUE, size);
+    assert_eq!(
+        model.element(size).unwrap().metaclass(),
+        c::INVOCATION_EXPRESSION
+    );
+    let final_call = id(0xbe40b5edd16f54978960a1116667f53f);
+    child(calculation, c::RESULT_EXPRESSION_MEMBERSHIP, final_call);
+    assert_eq!(
+        model.element(final_call).unwrap().metaclass(),
+        c::INVOCATION_EXPRESSION
+    );
+    assert_eq!(owned(final_call, c::PARAMETER_MEMBERSHIP).len(), 2);
+    for expression in [range, size, final_call] {
+        let results = owned(expression, c::RETURN_PARAMETER_MEMBERSHIP);
+        assert_eq!(results.len(), 1);
+        assert_eq!(
+            model.element(results[0]).unwrap().metaclass(),
+            agq_sysml::classes::REFERENCE_USAGE
+        );
+    }
 }
