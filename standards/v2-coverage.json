@@ -118,7 +118,7 @@
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 publication; exact Operational v2 SysML Systems parsing and declared lowering. The latest completed eight-document Actions audit has Complete references, zero kernel obligations and fully closed producer evidence. Full Systems acceptance, language readiness and production modeling workspace remain gated. No full conformance, application migration or execution claim.",
+  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 publication; exact Operational v2 SysML Systems parsing and declared lowering. Actions scoped closure passes. The latest 13-document medium audit has 695/695 Complete references and zero kernel obligations, but producer closure remains Incomplete at the round limit. Full Systems acceptance, language readiness and production modeling workspace remain gated. No full conformance, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": {
     "stage": "structural-runtime-v3",
@@ -549,7 +549,7 @@
     "systems_publication": "not accepted"
   },
   "sysml_systems_library_publication": {
-    "status": "actions-scoped-complete-full-publication-pending",
+    "status": "medium-scoped-references-complete-producer-budget-exhausted",
     "profile": "agentique-sysml-2.0-operational/2",
     "evidence": "verification/summaries/language-stability-bridge/README.md",
     "kerML_dependency": "exact accepted immutable Operational v9 /26; no producer replay",
@@ -561,20 +561,25 @@
     "semantic_authority": "standards/sysml-2.0-operational-semantic-v2.json",
     "authority_decisions_pending": 0,
     "latest_completed_scope": {
-      "run": "actions-owned-cross-subsetting",
+      "run": "systems-medium-thirteen",
       "documents": [
         "Actions",
+        "Attributes",
+        "Calculations",
         "Connections",
         "Constraints",
         "Flows",
+        "Interfaces",
         "Items",
         "Parts",
         "Ports",
-        "States"
+        "Requirements",
+        "States",
+        "Views"
       ],
       "references": {
-        "total": 534,
-        "complete": 534,
+        "total": 695,
+        "complete": 695,
         "unresolved": 0,
         "incomplete": 0,
         "ambiguous": 0,
@@ -582,15 +587,17 @@
         "endpoint_mismatch": 0
       },
       "kernel_construction_obligations": 0,
-      "producer_closure": "Complete",
-      "producer_converged": true,
-      "certificate_fully_closed": true,
-      "incomplete_producer_pairs": 0,
+      "producer_closure": "Incomplete",
+      "producer_converged": false,
+      "certificate_fully_closed": false,
+      "incomplete_producer_pairs": 14,
       "authority_conflicts": 0,
       "evidence": "verification/summaries/language-stability-bridge/publication-commands.json",
-      "producer_diagnostics": 0
+      "producer_diagnostics": 11,
+      "producer_rounds": 32,
+      "boundary": "The 32-round resource limit was exhausted before convergence; final diagnostics do not establish a persistent semantic cycle."
     },
-    "focused_corrections": "Producer closure integration and targeted generic semantic corrections pass matching fixtures, soundness guards and the eight-document Actions corpus gate; medium/full Systems publication remains separate.",
+    "focused_corrections": "Producer closure integration and targeted generic corrections pass matching fixtures, soundness guards and the Actions scoped gate. The medium candidate completes all references but exhausts its scheduler round budget before convergence; diagnosis continues before retry. Full publication remains separate.",
     "full_publication_this_bridge": "not yet run; scoped counts are not full-corpus acceptance",
     "systems_publication": "not accepted",
     "accepted_bindings": false,
@@ -635,6 +642,36 @@
       "kernel_construction_obligations": 2,
       "candidate_evidence": "verification/summaries/sysml-systems-publication/candidate-status.json",
       "historical": true
+    },
+    "passed_actions_scope": {
+      "run": "actions-owned-cross-subsetting",
+      "documents": [
+        "Actions",
+        "Connections",
+        "Constraints",
+        "Flows",
+        "Items",
+        "Parts",
+        "Ports",
+        "States"
+      ],
+      "references": {
+        "total": 534,
+        "complete": 534,
+        "unresolved": 0,
+        "incomplete": 0,
+        "ambiguous": 0,
+        "invalid": 0,
+        "endpoint_mismatch": 0
+      },
+      "kernel_construction_obligations": 0,
+      "producer_closure": "Complete",
+      "producer_converged": true,
+      "certificate_fully_closed": true,
+      "incomplete_producer_pairs": 0,
+      "authority_conflicts": 0,
+      "evidence": "verification/summaries/language-stability-bridge/publication-commands.json",
+      "producer_diagnostics": 0
     }
   }
 }

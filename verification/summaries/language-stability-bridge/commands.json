@@ -10694,6 +10694,22 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "target/foundation-integration"
       }
+    },
+    {
+      "name": "bridge-medium-checkpoint-standards",
+      "command": [
+        "npm.cmd",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "02e0589da5b792cb2053dccf16dd3e811c9a610a",
+      "working_changes_sha256": "37fe38fd60f93d913e452dd6e8a86db8bf2c7602e7972057738fe32b1adc28c1",
+      "output_sha256": "b0c718eead5af14ed5b18c7ea4e1525da5e7cdb0fb0fdd452e9afe62c0438511",
+      "duration_seconds": 0.53,
+      "output": "verification/generated/language-stability-bridge/bridge-medium-checkpoint-standards.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [
