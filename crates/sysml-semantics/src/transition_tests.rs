@@ -192,7 +192,10 @@ fn pending_extra_parameter_ancestors_do_not_suppress_known_payload_structure() {
 
 #[test]
 fn transition_payload_specialization_materializes_ordered_chain_and_is_idempotent() {
-    let snapshot = fixture(true, true).finish();
+    let mut fixture = fixture(true, true);
+    fixture.create(9000, kc::FEATURE, "unrelatedAncestor");
+    fixture.create(9001, kc::FEATURE, "unrelatedPremise");
+    let snapshot = fixture.finish();
     let queries = q(&snapshot);
     let result = crate::transition::plan_transition_payload(
         queries.kerml(),
@@ -233,6 +236,31 @@ fn transition_payload_specialization_materializes_ordered_chain_and_is_idempoten
         )
         .unwrap();
     }
+    // A second, independent ancestor is a discovery candidate, not part of the
+    // positive proof of the existing trigger/payload chain.
+    plan.add_derived_element(
+        agq_kernel::DerivationKey {
+            rule: agq_kernel::RuleId::from_u128(9002),
+            subject: id(102),
+            output: agq_kernel::OutputKey::from_u128(9003),
+        },
+        kc::SUBSETTING,
+        BTreeMap::from([
+            (
+                kp::SUBSETTING_SUBSETTING_FEATURE,
+                SlotValue::Scalar(Value::Reference(id(102))),
+            ),
+            (
+                kp::SUBSETTING_SUBSETTED_FEATURE,
+                SlotValue::Scalar(Value::Reference(id(9000))),
+            ),
+        ]),
+        Some(id(102)),
+        &queries
+            .kerml()
+            .canonical_fact_evidence(agq_kernel::provenance::FactKey::Element(id(9001))),
+    )
+    .unwrap();
     let derived = plan.materialize(&snapshot).unwrap();
     assert_eq!(derived.production.completeness, Completeness::Complete);
     let derived_queries = KerMlQueries::new(
@@ -256,6 +284,12 @@ fn transition_payload_specialization_materializes_ordered_chain_and_is_idempoten
             .value
             .contains(&chain)
     );
+    assert!(
+        derived_queries
+            .all_supertypes(id(102))
+            .positive_dependencies
+            .contains(&agq_kernel::provenance::FactKey::Element(id(9001)))
+    );
     let repeated = crate::transition::plan_transition_payload(
         &derived_queries,
         SysmlBaselineProfile::OperationalV1,
@@ -268,6 +302,12 @@ fn transition_payload_specialization_materializes_ordered_chain_and_is_idempoten
         repeated.evidence
     );
     assert!(repeated.elements.is_empty());
+    assert!(
+        !repeated
+            .evidence
+            .positive_dependencies
+            .contains(&agq_kernel::provenance::FactKey::Element(id(9001)))
+    );
 }
 
 #[test]
