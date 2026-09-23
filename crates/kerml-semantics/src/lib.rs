@@ -34,6 +34,9 @@ mod producer_closure_tests;
 #[path = "../tests/unit/producer_future_scope.rs"]
 mod producer_future_scope_tests;
 #[cfg(test)]
+#[path = "../tests/unit/producer_index_select_scope.rs"]
+mod producer_index_select_scope_tests;
+#[cfg(test)]
 #[path = "../tests/unit/producer_invocation_scope.rs"]
 mod producer_invocation_scope_tests;
 #[cfg(test)]
