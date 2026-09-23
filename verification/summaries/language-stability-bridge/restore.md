@@ -52,10 +52,10 @@ never replays producers.
 
 The integrated preparation supersedes earlier held-branch cherry-pick instructions.
 Exact commands/source/patch/output hashes remain in
-[systems-restore-preparation.json](systems-restore-preparation.json),
-[systems-receipt-layering.json](systems-receipt-layering.json),
-[held-restore-integration.json](held-restore-integration.json), and
-[commands.json](commands.json). Initial compile/lint corrections are preserved.
+[commands.json](commands.json). Its `source_ledgers` ranges preserve provenance
+from `systems-restore-preparation.json`, `systems-receipt-layering.json`,
+`held-restore-integration.json` and the original ordinary ledger. Initial
+compile/lint corrections are preserved without collapsing repeated commands.
 The mistaken `context_overlay` filter selected zero tests; the corrected
 `overlay_tests` command passed five. Zero selected tests are not gate evidence.
 

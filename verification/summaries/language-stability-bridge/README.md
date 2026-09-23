@@ -10,18 +10,19 @@ is unchanged. Generation-1 release evidence remains independent.
 
 **Systems publication and foundation readiness remain unaccepted.** The latest
 completed corpus result is the eight-document Actions/dependency scope:
-**499/534 mandatory references Complete, 35 Incomplete**, zero unresolved,
+**532/534 mandatory references Complete, two Incomplete**, zero unresolved,
 ambiguous, invalid or mismatched references, zero kernel obligations. All eight
-documents parse and construct; all 534 endpoints are selected. The scheduler
-converges but closure remains Incomplete. Medium/full publication has not run;
+documents parse and construct byte-exactly; all 534 endpoints are selected. The scheduler
+converges but closure remains Incomplete. The remaining references are
+`Anything` and `receiver` on TriggerAction `35c0b23f?`. Medium/full publication has not run;
 the full-publication attempt budget is unused.
 
 Subsequent focused corrections close the while-loop, inherited assertion-result
 and trigger/receiver fixtures. The receiver passed in 33.80 seconds on `55b5af8`;
 the complete SysML package subsequently passed 73 tests in 71.38 seconds. These
 results cover faithful synthetic layered fixtures, not accepted corpus closure.
-A corrected Actions audit is running from `08e4a83`; it has no final result yet.
-The latest producer changes have not yet been measured in a completed corpus audit.
+The completed `08e4a83` audit improves the prior 499/534 result by 33 references
+but still fails the scoped gate. No full-publication acceptance is inferred.
 See [closure.md](closure.md) for the defects, proof boundaries, regressions and
 historical failed/passing observations. Full KerML verification also passes
 336 tests (173 unit, 163 integration), with two existing scale ignores; the
@@ -44,7 +45,7 @@ Exit 124 is a requested workflow stop, not a semantic result; peak private memor
 was 4,515.0 MiB. No final reference audit exists for that run. Provisional endpoint
 selections are never Complete-reference counts.
 
-Four corrected scoped audits finished normally with exit 1 and no watchdog stop.
+Five corrected scoped audits finished normally with exit 1 and no watchdog stop.
 Each parsed/constructed 8/8 documents, selected 534 endpoints and had zero kernel
 obligations. These remain failed scoped gates, not Systems acceptance:
 
@@ -54,13 +55,15 @@ obligations. These remain failed scoped gates, not Systems acceptance:
 | `actions-declared-source` | 1,013.563 | 5,211.5 | 3 owner-type, 219 producer-closure, 13 value-context, 66 variable-featuring |
 | `actions-selected-populations` | 1,066.390 | 5,037.0 | 1 owner-type, 169 producer-closure, 13 value-context, 62 variable-featuring |
 | `actions-positive-witness` | 788.969 | 4,955.0 | 1 owner-type, 122 producer-closure, 13 value-context, 62 variable-featuring |
+| `actions-exact-contributions` (`08e4a83`) | 894.063 | 5,284.5 | 106 producer-closure, 11 value-context, 45 variable-featuring |
 
-The last corpus certificate has 8,259 applicable subject/family pairs, 5,107 closed
-and 208 explicitly incomplete. Its compact proof is 2,567,512 bytes; optional
-in-memory revalidation reads occupy 272,315,080 bytes and remain a separate
-optimization concern. Two checked rebindings retain 992 evaluations and reopen
-8,912. A final predicate pass's individual zero counters do not summarize earlier
-reconstructions. Per-subject explanations are diagnostic evidence, not acceptance.
+The latest audit has 162 diagnostics, 22 rounds, 10,917 subjects and 2,441 derived
+elements. Its certificate records 10,017 applicable subject/family pairs, 6,061
+closed and 164 explicitly incomplete, with 379,104 closed requirements. The compact
+certificate is 2,594,064 bytes; optional revalidation reads are separately
+406,184,536 bytes. Two rebindings retain 1,233 evaluations and reopen 10,419.
+A final pass's individual counters do not replace aggregate reconstruction
+observations. Per-subject explanations remain diagnostic evidence, not acceptance.
 
 Full non-audit publication now uses normal preparation; scoped/audit-only paths
 retain the final construction predicate pass. Strict publication independently
@@ -118,15 +121,20 @@ because the production crate/manifest remains gated.
 Frontend `npm run check`, `npm run build`, `npm test`, and `npm run standards:check`
 passed. Both grammar stale gates, the complete metamodel stale gate and both
 language runtime gates passed. An initial `cargo fmt --all -- --check` exited 1;
-`cargo fmt --all` exited 0 and corrected layout. Final integrated workspace checks
-remain to run after implementation convergence. No browser-facing code changed,
+`cargo fmt --all` exited 0 and corrected layout. Integrated workspace/all-target Clippy with warnings denied, strict Rustdoc
+for seven language crates, and the dependency-boundary gate now pass. The final
+workspace test run remains a separate integration obligation. No browser-facing code changed,
 so browser tests are outside this milestone's requested scope.
 
 [commands.json](commands.json) records ordinary commands, exits, exact tested
 source/patch identities, environment overrides and output hashes.
 [publication-commands.json](publication-commands.json) retains watchdog observations.
-Auxiliary review JSON records remain temporarily separate while the lead writes
-active ledgers; [closure.md](closure.md) and [restore.md](restore.md) index them.
+The ordinary ledger contains all 112 original records: 47 from the main ledger
+and 65 from 13 former review ledgers. `source_ledgers` preserves each original
+filename, source Git commit, Git-blob SHA-256 and zero-based command range.
+Consolidation checked exact record equality for every range and retained duplicate
+names/runs; the publication ledger was left unchanged. [closure.md](closure.md)
+and [restore.md](restore.md) retain the findings and Markdown-only observations.
 Markdown-only observations explicitly mark missing hashes/identities rather than
 inventing them. Raw logs and reports are ignored under `verification/generated/`.
 A finished command, zero-test filter or compile-only fixture is not acceptance.

@@ -1,9 +1,9 @@
 # Producer closure integration and regressions
 
-Status at `c38f373`: focused corrections are integrated; Systems publication and
-language readiness remain unaccepted. The latest completed corpus gate is still
-499/534 Actions references Complete, 35 Incomplete and zero kernel obligations.
-After that run, the loop, assertion and receiver regressions close; the receiver
+Current status: focused corrections are integrated; Systems publication and
+language readiness remain unaccepted. The latest completed corpus gate (`08e4a83`) has
+532/534 Actions references Complete, two Incomplete and zero kernel obligations.
+Following the earlier 499/534 audit, the loop, assertion and receiver regressions close; the receiver
 passed on `55b5af8` in 33.80 seconds. The complete SysML package then passed
 73 tests in 71.38 seconds, including unsupported variation remaining Incomplete.
 These synthetic fixtures use genuinely closed
@@ -24,8 +24,8 @@ accepted KerML `/26` interpretation and receipt identities remain unchanged.
 ## Defect and regression matrix
 
 Implementation/review commits below identify the corrections. Exact command
-identities and hashes are in [commands.json](commands.json) and the linked review
-ledgers; the retained observation table covers older Markdown-only results.
+identities and hashes are in [commands.json](commands.json) and its source-ledger
+ranges; the retained observation table covers older Markdown-only results.
 
 | Boundary / concrete failure | Corrected behavior and permanent coverage | Implementation / observed outcome |
 | --- | --- | --- |
@@ -89,18 +89,11 @@ separately. Corpus proof and read-storage measurements are in the milestone READ
 
 ## Verification records
 
-JSON command records retain their exact original source/patch identities, output
-hashes and exits. Until the final ledger merge, scoped review records are
-[independent-review.json](independent-review.json),
-[declared-evidence-review.json](declared-evidence-review.json),
-[selected-ownership-review.json](selected-ownership-review.json),
-[specialization-witness-review.json](specialization-witness-review.json),
-[positive-population-review.json](positive-population-review.json),
-[positive-owner-review.json](positive-owner-review.json),
-[expression-effects-review.json](expression-effects-review.json),
-[independent-valuation-binding-review.json](independent-valuation-binding-review.json),
-and [independent-transition-positive-chain-review.json](independent-transition-positive-chain-review.json),
-and [independent-selected-contribution-review.json](independent-selected-contribution-review.json).
+[commands.json](commands.json) retains every ordinary command record unchanged,
+including source/patch identities, output hashes and exits. Its `source_ledgers`
+map preserves the original filename, source Git commit, Git-blob SHA-256 and
+zero-based contiguous command range for each former review ledger. Duplicate
+command names and unsuccessful runs remain distinct records.
 The final contribution review (`17c56c7`) passes seven kernel, five selected-proof,
 97 producer and five historical-restoration tests (two pre-existing scale ignores).
 Earlier checks exposed a temporary module-hook conflict, incomplete fixture state,
@@ -119,7 +112,8 @@ historical stage populations, not the final integrated package count. Full KerML
 `cargo test --locked --offline -p agq-kerml-semantics` (exit 0, 145.84 s):
 173 unit tests plus 163 integration tests across 34 binaries, two existing scale
 ignores, and a successful zero-test Rustdoc run. The exact output hash is in
-`independent-selected-contribution-review.json`; no ignored cache gate ran.
+the `independent-selected-contribution-review.json` source range in
+[commands.json](commands.json); no ignored cache gate ran.
 Final full workspace verification belongs to the lead's integration gate.
 
 <details>
