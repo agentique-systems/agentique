@@ -26,8 +26,8 @@ The completed `08e4a83` audit improves the prior 499/534 result by 33 references
 but still fails the scoped gate. No full-publication acceptance is inferred.
 A subsequent regression reproduced an unrelated ancestor's variable-property
 premise entering an otherwise sufficient Action/SelfLink exclusion proof.
-The selected-witness correction (`f15cfca`) passes five focused tests and the
-receiver fixture; its corrected Actions audit remains pending. The text frontend
+The selected-witness correction (`f15cfca`) passes five focused tests, the receiver
+fixture and all 74 SysML package tests; its corrected Actions audit remains pending. The text frontend
 package passed 91 tests with two explicit accepted-cache ignores before that fix.
 See [closure.md](closure.md) for the defects, proof boundaries, regressions and
 historical failed/passing observations. Full KerML verification also passes

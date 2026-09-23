@@ -3259,6 +3259,75 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
       }
+    },
+    {
+      "name": "positive-exclusion-sysml-package",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2be642f247ff503dd7c7fa7afa7645fd6d527384",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "0e8320c9aacc1250f85342c2be94a260c69b442fc07efdf2c783ec44aaae846d",
+      "duration_seconds": 53.44,
+      "output": "verification/generated/language-stability-bridge/positive-exclusion-sysml-package.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "bridge-positive-exclusion-build",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2c9edcb920d4585ce18886dfe2b74818298e78a6",
+      "working_changes_sha256": "2d1783099ada88edb5f45f5f00f5663b123363495317db472aef9ed52aeddb16",
+      "output_sha256": "6f9ee46c5fc9e21457ac7102da4986dd728a67b990218a019f46aa96c65c0a51",
+      "duration_seconds": 541.89,
+      "output": "verification/generated/language-stability-bridge/bridge-positive-exclusion-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "CARGO_PROFILE_RELEASE_DEBUG": "0"
+      }
+    },
+    {
+      "name": "bridge-consolidated-standards",
+      "command": [
+        "npm.cmd",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5cbd6669949e652f6c011dced3813177c4c90d13",
+      "working_changes_sha256": "20dc64684abdf75509f4f0568562299005139654a11590314e6eea25761fc01f",
+      "output_sha256": "24a0f85f9d2b3eda89d5a529aaac57e6af7fe58ab40e4df880f8964d42cc6480",
+      "duration_seconds": 0.72,
+      "output": "verification/generated/language-stability-bridge/bridge-consolidated-standards.log",
+      "environment_overrides": {}
     }
   ],
   "source_ledgers": [
@@ -3366,6 +3435,16 @@
       "source_blob_sha256": "ff1b3fe865c87b87eb402fa33b85d0be314750fe67986cea8defc4964016e1d3",
       "first_command": 115,
       "command_count": 6
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/positive-exclusion-review.json",
+      "source_commit": "6b1f4466b89432df55029e7609b8db3d1fbb1fb4",
+      "source_blob_sha256": "4c61deeb4d07d43ee433ee7d691df67941ac1440ba2a7893ac05a1280bc0c02f",
+      "first_command": 121,
+      "command_count": 1,
+      "source_command_indices": [
+        6
+      ]
     }
   ]
 }
