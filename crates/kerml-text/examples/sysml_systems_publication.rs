@@ -4,7 +4,8 @@ use agq_kerml_syntax::production::SysmlSyntaxProfile;
 use agq_kerml_text::{
     library::CanonicalKermlStandardLibraries,
     sysml::{
-        SYSTEMS_PUBLICATION_MAX_ROUNDS, prepare_systems_library_slice_with_semantic_progress,
+        SYSTEMS_PUBLICATION_MAX_ROUNDS, SystemsFinalizationAuditMode,
+        prepare_systems_library_slice_with_semantic_progress,
         prepare_systems_library_with_frontier_checkpoints,
         prepare_systems_library_with_semantic_progress, systems_frontier_source_identity,
     },
@@ -35,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         argument("--cache=").ok_or("--cache=<accepted KerML publication cache> is required")?;
     let output = argument("--output=").ok_or("--output=<report path> is required")?;
     let finalize_journal = argument("--finalize-converged=");
+    let audit_mode = parse_audit_workers(std::env::args(), finalize_journal.is_some())?;
     let audit_only = std::env::args().any(|arg| arg == "--audit-only");
     let checkpoint_directory = argument("--checkpoint=");
     let resume_journal = argument("--resume=");
@@ -70,6 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "--finalize-converged requires independently retained --resume-sha256",
                 )?,
             )?,
+            audit_mode,
         );
     }
     if resume_journal.is_some() != resume_pin.is_some() {
@@ -649,6 +652,7 @@ fn finalize_converged(
     output: &std::path::Path,
     journal: &std::path::Path,
     journal_digest: [u8; 32],
+    audit_mode: SystemsFinalizationAuditMode,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // This branch deliberately precedes all prepare_* and publish() calls.
     // An invalid/nonconverged checkpoint fails here without a scheduler fallback.
@@ -663,12 +667,13 @@ fn finalize_converged(
         )?)
     })?);
     let publication =
-        match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::finalize_from_converged_frontier(
+        match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::finalize_from_converged_frontier_with_audit_mode(
             &sources,
             accepted.clone(),
             journal,
             journal_digest,
             &transaction.audits,
+            audit_mode,
         ) {
             Ok(publication) => publication,
             Err(error) => {
@@ -676,6 +681,7 @@ fn finalize_converged(
                     "format":"agq-sysml-systems-publication-audit/1", "scope":null,
                     "publication_attempted":true,"publication_accepted":false,
                     "systems_producers_replayed":false,"kerml_producers_replayed":false,
+                    "effective_audit_workers":audit_worker_count(audit_mode),
                     "publication_error":error.to_string(),"audit_directory":transaction.audits,
                     "elapsed_seconds":started.elapsed().as_secs_f64(),
                 });
@@ -699,6 +705,7 @@ fn finalize_converged(
         "kerml_producers_replayed":false,"systems_producers_replayed":false,
         "converged_checkpoint_authenticated":true,
         "finalization_producer_evaluations":0,
+        "effective_audit_workers":audit_worker_count(audit_mode),
         "authenticated_checkpoint_entry":authenticated_checkpoint_entry(journal, journal_digest)?,
         "final_capability_findings":publication.audit().findings.iter().filter(|finding|matches!(finding,
             agq_kerml_text::sysml::SystemsPublicationFinding::Capability { .. })).count(),
@@ -784,6 +791,41 @@ fn parse_digest(value: &str) -> Result<[u8; 32], Box<dyn std::error::Error>> {
     Ok(digest)
 }
 
+fn parse_audit_workers(
+    arguments: impl IntoIterator<Item = impl AsRef<str>>,
+    finalizing: bool,
+) -> Result<SystemsFinalizationAuditMode, &'static str> {
+    let mut selected = None;
+    for argument in arguments {
+        let argument = argument.as_ref();
+        if argument == "--audit-workers" {
+            return Err("--audit-workers requires =1 or =2");
+        }
+        let Some(value) = argument.strip_prefix("--audit-workers=") else {
+            continue;
+        };
+        if !finalizing {
+            return Err("--audit-workers is only supported with --finalize-converged");
+        }
+        if selected.is_some() {
+            return Err("--audit-workers may be specified only once");
+        }
+        selected = Some(match value {
+            "1" => SystemsFinalizationAuditMode::Serial,
+            "2" => SystemsFinalizationAuditMode::ParallelTwo,
+            _ => return Err("--audit-workers must be 1 or 2"),
+        });
+    }
+    Ok(selected.unwrap_or_default())
+}
+
+fn audit_worker_count(mode: SystemsFinalizationAuditMode) -> usize {
+    match mode {
+        SystemsFinalizationAuditMode::Serial => 1,
+        SystemsFinalizationAuditMode::ParallelTwo => 2,
+    }
+}
+
 fn checkpoint_report(
     session: Option<&PublicationFrontierSession>,
 ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
@@ -834,4 +876,45 @@ fn closure_counters(counters: &agq_kerml_semantics::PublicationCounters) -> serd
         .clone(),
     );
     result
+}
+
+#[cfg(test)]
+mod audit_worker_option_tests {
+    use super::*;
+
+    #[test]
+    fn serial_default_and_explicit_bounded_workers() {
+        assert_eq!(
+            parse_audit_workers(std::iter::empty::<&str>(), true),
+            Ok(SystemsFinalizationAuditMode::Serial)
+        );
+        assert_eq!(
+            parse_audit_workers(["--audit-workers=1"], true),
+            Ok(SystemsFinalizationAuditMode::Serial)
+        );
+        assert_eq!(
+            parse_audit_workers(["--audit-workers=2"], true),
+            Ok(SystemsFinalizationAuditMode::ParallelTwo)
+        );
+    }
+
+    #[test]
+    fn worker_options_cannot_select_a_scheduler_path_or_unbounded_workers() {
+        for option in [
+            "--audit-workers",
+            "--audit-workers=",
+            "--audit-workers=0",
+            "--audit-workers=3",
+            "--audit-workers=-1",
+            "--audit-workers=all",
+        ] {
+            assert!(parse_audit_workers([option], true).is_err(), "{option}");
+        }
+        assert!(parse_audit_workers(["--audit-workers=2"], false).is_err());
+        assert!(parse_audit_workers(["--audit-workers=1", "--audit-workers=2"], true).is_err());
+        assert_eq!(
+            parse_audit_workers(std::iter::empty::<&str>(), false),
+            Ok(SystemsFinalizationAuditMode::Serial)
+        );
+    }
 }
