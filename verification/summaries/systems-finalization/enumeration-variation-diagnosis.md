@@ -19,7 +19,7 @@ finalizer was run for this diagnosis.
 
 ## Representative canonical evidence
 
-`SysML::TransitionFeatureKind::trigger` has these retained identities:
+`SysML::Systems::TransitionFeatureKind::trigger` has these retained identities:
 
 | Role | Identity |
 | --- | --- |
