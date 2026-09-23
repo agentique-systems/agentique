@@ -1,16 +1,18 @@
 //! Exact Systems candidate/closure audit over a restored sealed KerML publication.
-use agq_kerml_semantics::{Completeness, QualifiedName};
+use agq_kerml_semantics::{Completeness, PublicationFrontierSession, QualifiedName};
 use agq_kerml_syntax::production::SysmlSyntaxProfile;
 use agq_kerml_text::{
     library::CanonicalKermlStandardLibraries,
     sysml::{
         SYSTEMS_PUBLICATION_MAX_ROUNDS, prepare_systems_library_slice_with_semantic_progress,
-        prepare_systems_library_with_semantic_progress,
+        prepare_systems_library_with_frontier_checkpoints,
+        prepare_systems_library_with_semantic_progress, systems_frontier_source_identity,
     },
 };
 use agq_kernel::value::Value;
 use agq_standard_libraries::VerifiedLibrarySet;
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet},
     io::Write,
@@ -30,6 +32,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cache =
         argument("--cache=").ok_or("--cache=<accepted KerML publication cache> is required")?;
     let output = argument("--output=").ok_or("--output=<report path> is required")?;
+    let checkpoint_directory = argument("--checkpoint=");
+    let resume_journal = argument("--resume=");
+    let resume_pin =
+        std::env::args().find_map(|arg| arg.strip_prefix("--resume-sha256=").map(str::to_owned));
+    let contextual_interval: usize = std::env::args()
+        .find_map(|arg| {
+            arg.strip_prefix("--checkpoint-interval=")
+                .map(str::to_owned)
+        })
+        .map(|value| value.parse())
+        .transpose()?
+        .unwrap_or(0);
+    if checkpoint_directory.is_some() && resume_journal.is_some() {
+        return Err("choose --checkpoint or --resume".into());
+    }
+    if resume_journal.is_some() != resume_pin.is_some() {
+        return Err(
+            "--resume and independently retained --resume-sha256 are required together".into(),
+        );
+    }
     std::fs::create_dir_all(output.parent().ok_or("output parent")?)?;
     let mut stages = std::fs::File::create(output.with_extension("stages.jsonl"))?;
     let started = Instant::now();
@@ -75,6 +97,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Systems: dependency restored in {:.3}s",
         started.elapsed().as_secs_f64()
     );
+    let source_identity = systems_frontier_source_identity(
+        &sources,
+        &accepted,
+        SysmlSyntaxProfile::OperationalV2,
+        audit_only.then_some(&paths),
+    );
+    let checkpoints = if let Some(directory) = checkpoint_directory {
+        Some(Arc::new(PublicationFrontierSession::create(
+            directory,
+            source_identity,
+            contextual_interval,
+        )?))
+    } else if let Some(journal) = resume_journal {
+        Some(Arc::new(PublicationFrontierSession::resume(
+            journal,
+            parse_digest(resume_pin.as_deref().expect("validated resume pin"))?,
+            source_identity,
+            contextual_interval,
+        )?))
+    } else {
+        None
+    };
     let mut last_reference_round = None;
     let mut last_producer_stage = None;
     let reference_progress = |round: &agq_kerml_text::library::ReferenceRefinementRound| {
@@ -146,7 +190,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Scoped audits must exercise final predicates. A normal full publication
     // uses the standard preparation path and performs final closure under the
     // strict publication contract below, without a redundant scoped final pass.
-    let preparation = if audit_only {
+    let preparation = if let Some(session) = &checkpoints {
+        prepare_systems_library_with_frontier_checkpoints(
+            &sources,
+            accepted.clone(),
+            SysmlSyntaxProfile::OperationalV2,
+            audit_only.then_some(&paths),
+            session.clone(),
+            reference_progress,
+            batch_progress,
+            producer_progress,
+        )
+    } else if audit_only {
         prepare_systems_library_slice_with_semantic_progress(
             &sources,
             accepted.clone(),
@@ -198,6 +253,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ]);
     let mut document_counts = BTreeMap::<_, BTreeMap<&str, usize>>::new();
     let mut failures = vec![];
+    let mut reference_semantics = Sha256::new();
+    reference_semantics.update(b"agq-systems-mandatory-reference-results/1\0");
     for (index, batch) in draft.references().chunks(32).enumerate() {
         let q = queries.fork().status_queries();
         for reference in batch {
@@ -249,6 +306,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Completeness::Complete => "complete",
             };
             *counts.get_mut(status).expect("counter") += 1;
+            let observation = serde_json::to_vec(&json!({
+                "relationship":reference.relationship,"property":reference.property,
+                "name":reference.name.segments,"origin":reference.origin,
+                "status":status,"targets":targets,"stored":stored,
+                "diagnostics":answer.diagnostics.iter().map(|d|json!({
+                    "code":d.code,"subject":d.subject,"message":d.message
+                })).collect::<Vec<_>>(),
+            }))?;
+            reference_semantics.update((observation.len() as u64).to_le_bytes());
+            reference_semantics.update(observation);
             *document_counts
                 .entry(reference.origin.document)
                 .or_default()
@@ -402,6 +469,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "local_elements":model.elements().filter(|r|accepted.overlay().model().element(r.id()).is_none()).count(),
         "mandatory_references":{"total":draft.references().len(),"counts":counts,"failures":failures},
         "reference_audit_scope":"construction",
+        "construction_reference_semantic_digest":<[u8;32]>::from(reference_semantics.finalize()),
         "authority_targets":authority,
         "authority_conflicts":authority_conflicts.iter().map(|conflict|json!({
             "rule":conflict.rule,"subject":conflict.subject,
@@ -410,6 +478,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "documents":documents,
         "construction_producers":candidate.production().map(|production|json!({"final_predicates":production.final_predicates,"completeness":format!("{:?}",production.completeness),"converged":production.converged,"rounds":production.counters.fixed_point_rounds,"round_limit":SYSTEMS_PUBLICATION_MAX_ROUNDS,"round_limit_reached":!production.converged && production.counters.fixed_point_rounds >= SYSTEMS_PUBLICATION_MAX_ROUNDS,"subjects_evaluated":production.counters.subjects_evaluated,"derived_elements":production.counters.new_elements_proposed,"closure_counters":closure_counters(&production.counters),"diagnostics":production.stages.last().map(|stage|stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>())})), "publication_accepted":false,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
+        "checkpoint_session":checkpoint_report(checkpoints.as_deref())?,
+        "incremental_certificate_reference_check":std::env::var_os("AGQ_CERTIFICATE_VERIFY_FULL_REBUILD").is_some(),
     });
     drop(queries);
     if audit_only {
@@ -439,6 +509,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &sources,
         agq_kerml_semantics::PublicationClosureOptions {
             max_rounds: SYSTEMS_PUBLICATION_MAX_ROUNDS,
+            frontier_checkpoints: checkpoints.clone(),
             ..Default::default()
         },
         |round, done, total, planned| {
@@ -461,10 +532,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             writeln!(stages, "{evidence}").expect("write publication stage evidence");
             stages.flush().expect("flush publication stage evidence");
             println!(
-                "Systems publication: frontier={} stratum={:?} added={} completeness={:?} elapsed={:.3}s",
+                "Systems publication: frontier={} stratum={:?} added={} closed_pairs={} completeness={:?} elapsed={:.3}s",
                 stage.stage,
                 stage.stratum,
                 stage.added_elements,
+                stage.counters.closed_producer_pairs,
                 stage.completeness,
                 started.elapsed().as_secs_f64()
             )
@@ -527,6 +599,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     report["elapsed_seconds"] = json!(started.elapsed().as_secs_f64());
+    report["checkpoint_session"] = checkpoint_report(checkpoints.as_deref())?;
     write_report(&output, &report)?;
     println!(
         "Systems: {parsed}/21 parsed; {constructed}/21 constructed; {} kernel obligations; {:.3}s",
@@ -546,6 +619,7 @@ fn closure_report(
     json!({
         "digest":certificate.digest(),
         "semantic_closure_digest":certificate.semantic_closure_digest(),
+        "revalidation_digest":certificate.revalidation_digest(),
         "model_digest":certificate.model_digest(),
         "producer_registry_digest":certificate.registry_digest(),
         "context_contract_digest":certificate.context_contract_digest(),
@@ -559,6 +633,29 @@ fn closure_report(
             * agq_kerml_semantics::SemanticClosureRequirement::ALL.len(),
         "fully_closed":certificate.is_fully_closed(model),
     })
+}
+
+fn parse_digest(value: &str) -> Result<[u8; 32], Box<dyn std::error::Error>> {
+    if value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err("resume SHA-256 must contain exactly 64 hexadecimal digits".into());
+    }
+    let mut digest = [0; 32];
+    for (index, byte) in digest.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)?;
+    }
+    Ok(digest)
+}
+
+fn checkpoint_report(
+    session: Option<&PublicationFrontierSession>,
+) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    let Some(session) = session else {
+        return Ok(serde_json::Value::Null);
+    };
+    let latest = session.latest_checkpoint()?.map(|(path, digest)| {
+        json!({"journal":path,"sha256":digest.iter().map(|byte|format!("{byte:02x}")).collect::<String>()})
+    });
+    Ok(json!({"statistics":session.statistics(),"latest":latest,"accepted_authority":false}))
 }
 
 fn write_report(

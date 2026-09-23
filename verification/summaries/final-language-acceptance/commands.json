@@ -265,6 +265,155 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-self-model"
       }
+    },
+    {
+      "name": "checkpoint-cli-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2953a66a5a41bd8d129118833207f4656b0e68b5",
+      "working_changes_sha256": "4fe5da96f62be4e7676f0eac91ef0288e2b2153e89e0e02ce367feab66810887",
+      "output_sha256": "8dcc8bec3a6dca1bfde95b6388cac4240579b1844c330c04d99753fa7a314102",
+      "duration_seconds": 11.89,
+      "output": "verification/generated/final-language-acceptance/checkpoint-cli-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/foundation-integration"
+      }
+    },
+    {
+      "name": "clean-unused-foundation-actions",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "target/foundation-actions"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2953a66a5a41bd8d129118833207f4656b0e68b5",
+      "working_changes_sha256": "c035d6ed5e4c88869cf8d990c3e1fc55b034c5d6289a2b32e9a0fd8ee2bed2ad",
+      "output_sha256": "a0987585ceea1c933b4f0629e22344dc84dceb34237973936917a363bd8ff4ef",
+      "duration_seconds": 0.83,
+      "output": "verification/generated/final-language-acceptance/clean-unused-foundation-actions.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "clean-unused-bridge-architecture",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "target/bridge-architecture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2953a66a5a41bd8d129118833207f4656b0e68b5",
+      "working_changes_sha256": "c035d6ed5e4c88869cf8d990c3e1fc55b034c5d6289a2b32e9a0fd8ee2bed2ad",
+      "output_sha256": "85236f4a07ac880f65cf648a2b8fb9b761dfb7dae224eb269370205c7a6d3642",
+      "duration_seconds": 0.72,
+      "output": "verification/generated/final-language-acceptance/clean-unused-bridge-architecture.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "clean-unused-foundation-evidence",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "target/foundation-evidence"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2953a66a5a41bd8d129118833207f4656b0e68b5",
+      "working_changes_sha256": "c035d6ed5e4c88869cf8d990c3e1fc55b034c5d6289a2b32e9a0fd8ee2bed2ad",
+      "output_sha256": "542cd07f458c3609f6c4599946511c4a8fc3f2f1daca814c65dc6b0d9faca7f1",
+      "duration_seconds": 0.78,
+      "output": "verification/generated/final-language-acceptance/clean-unused-foundation-evidence.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "clean-unused-foundation-vehicle",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "target/foundation-vehicle"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2953a66a5a41bd8d129118833207f4656b0e68b5",
+      "working_changes_sha256": "c035d6ed5e4c88869cf8d990c3e1fc55b034c5d6289a2b32e9a0fd8ee2bed2ad",
+      "output_sha256": "d547d5b8e69d6c999bfeae509db7b2441bf4b5ed6a5e679bebe530bcbf50b013",
+      "duration_seconds": 0.38,
+      "output": "verification/generated/final-language-acceptance/clean-unused-foundation-vehicle.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "clean-unused-foundation",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "target/foundation"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2953a66a5a41bd8d129118833207f4656b0e68b5",
+      "working_changes_sha256": "c035d6ed5e4c88869cf8d990c3e1fc55b034c5d6289a2b32e9a0fd8ee2bed2ad",
+      "output_sha256": "34391292a9bf9bb45e1c169a4c3c488f4752afa18948a40ac8edd5ba2f406c34",
+      "duration_seconds": 0.42,
+      "output": "verification/generated/final-language-acceptance/clean-unused-foundation.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "clean-unused-foundation-closure",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "target/foundation-closure"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "2953a66a5a41bd8d129118833207f4656b0e68b5",
+      "working_changes_sha256": "c035d6ed5e4c88869cf8d990c3e1fc55b034c5d6289a2b32e9a0fd8ee2bed2ad",
+      "output_sha256": "e82fcfcabfddffb63bce1969c3d1ea23037d8c510f684e101d3d7a18e42d2701",
+      "duration_seconds": 0.62,
+      "output": "verification/generated/final-language-acceptance/clean-unused-foundation-closure.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "medium-gate-regressions",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_medium_frontier_gate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "2953a66a5a41bd8d129118833207f4656b0e68b5",
+      "working_changes_sha256": "a1b07fe03ae125732f8a21b170bb3a103f3a343476aef73881d66ec972a6df6f",
+      "output_sha256": "351f929ed84aacafade91b6fd67dc7be9217ffaea2ca9d1c9d59bd385ba30fb6",
+      "duration_seconds": 0.12,
+      "output": "verification/generated/final-language-acceptance/medium-gate-regressions.log",
+      "environment_overrides": {}
     }
   ]
 }

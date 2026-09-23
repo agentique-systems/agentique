@@ -35,7 +35,10 @@ fn view_metadata_acceptance_fixture_preserves_real_frontend_classes() {
             "{name}"
         );
     }
-    assert_eq!(model.instances(s::METADATA_USAGE, false).unwrap().count(), 1);
+    assert_eq!(
+        model.instances(s::METADATA_USAGE, false).unwrap().count(),
+        1
+    );
 }
 
 fn accepted_view_metadata(accepted: &Arc<CanonicalSysmlSystemsLibrary>) {
