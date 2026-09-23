@@ -120,9 +120,10 @@ fn trigger_receiver_node_parameter_closes_with_nested_feature_value() {
         agq_sysml::properties::TRANSITION_FEATURE_MEMBERSHIP_KIND,
         "trigger",
     );
-    // PayloadParameter and NodeParameter are ReferenceUsage under
-    // ParameterMembership. Their grammar assigns no stored direction.
+    // The frontend assigns input direction to both ParameterMembership
+    // children, including parameters whose syntax has no explicit direction.
     f.create(60_014, sc::REFERENCE_USAGE, "apayload");
+    set_enum(&mut f, 60_014, kp::FEATURE_DIRECTION, "in");
     f.member(60_013, 60_014, 160_014, kc::PARAMETER_MEMBERSHIP);
     f.relation(
         60_014,
@@ -132,6 +133,7 @@ fn trigger_receiver_node_parameter_closes_with_nested_feature_value() {
         kp::FEATURE_TYPING_TYPE,
     );
     f.create(60_015, sc::REFERENCE_USAGE, "");
+    set_enum(&mut f, 60_015, kp::FEATURE_DIRECTION, "in");
     f.member(60_013, 60_015, 160_015, kc::PARAMETER_MEMBERSHIP);
     f.create(60_016, kc::FEATURE_REFERENCE_EXPRESSION, "");
     f.member(60_015, 60_016, 160_016, kc::FEATURE_VALUE);
@@ -222,6 +224,11 @@ fn trigger_receiver_node_parameter_closes_with_nested_feature_value() {
             .unwrap(),
     );
     assert_eq!(queries.owning_type(id(60_015)).value, Some(id(60_013)));
+    for (parameter, inherited) in [(60_014, 60_001), (60_015, 60_002)] {
+        let redefined = queries.redefined_features(id(parameter));
+        assert_eq!(redefined.completeness, Completeness::Complete);
+        assert!(redefined.value.contains(&id(inherited)), "{redefined:?}");
+    }
     let types = queries.feature_types(id(60_014));
     assert_eq!(types.completeness, Completeness::Complete, "{types:?}");
     assert!(types.value.contains(&anything));

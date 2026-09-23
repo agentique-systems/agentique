@@ -8,6 +8,125 @@ use agq_kernel::{
 };
 use agq_sysml::{classes as s, properties as sp};
 
+#[test]
+fn actions_trigger_lowering_preserves_input_parameter_defaults() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
+    let source = sources
+        .documents()
+        .find(|s| s.path() == "Systems Library/Actions.sysml")
+        .unwrap();
+    let syntax = production::parse_sysml_with_profile(
+        production::SysmlSyntaxProfile::OperationalV2,
+        source.document(),
+        source.revision(),
+        source.source(),
+        Default::default(),
+    )
+    .unwrap();
+    let base = Snapshot::new(Arc::new(
+        agq_sysml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap(),
+    ));
+    let draft = construction::construct_on(
+        &[SourceInput {
+            syntax: &syntax,
+            library: Some(source),
+            sysml: true,
+        }],
+        &Default::default(),
+        BaselineProfile::OPERATIONAL_V9,
+        base,
+        None,
+    )
+    .unwrap();
+    let model = draft.candidate().model();
+    let trigger = ElementId::from_u128(0x35c0b23fb73e5c7e9079b8c8bc9c39e6);
+    let agq_kernel::metamodel::ValueKind::Enumeration(domain) = model
+        .registry()
+        .property(p::FEATURE_DIRECTION)
+        .unwrap()
+        .value_kind
+    else {
+        unreachable!()
+    };
+    let input = *model
+        .registry()
+        .enumeration(domain)
+        .unwrap()
+        .literals
+        .iter()
+        .find(|(_, name)| name.as_str() == "in")
+        .unwrap()
+        .0;
+    for (number, source_text) in [
+        (trigger.as_u128(), "apayload: Anything via receiver"),
+        (0x70506936f8f950579e3637230a4e02df, "apayload: Anything"),
+        (0xa1ff5677154c54fab0b478c9a54a3c73, "receiver"),
+    ] {
+        let id = ElementId::from_u128(number);
+        let record = model.element(id).unwrap();
+        assert_eq!(
+            record.metaclass(),
+            if id == trigger {
+                s::ACCEPT_ACTION_USAGE
+            } else {
+                s::REFERENCE_USAGE
+            }
+        );
+        assert_eq!(
+            model
+                .navigation_slot(id, p::FEATURE_IS_COMPOSITE)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Boolean(id == trigger))
+        );
+        assert_eq!(
+            model
+                .navigation_slot(id, p::FEATURE_IS_PORTION)
+                .unwrap()
+                .value(),
+            &SlotValue::Scalar(Value::Boolean(false))
+        );
+        assert_eq!(
+            model
+                .navigation_slot(id, p::FEATURE_DIRECTION)
+                .map(|slot| slot.value()),
+            (id != trigger).then_some(&SlotValue::Scalar(Value::Enumeration(input)))
+        );
+        let memberships: Vec<_> = model
+            .incoming_for_property(id, p::RELATIONSHIP_OWNED_RELATED_ELEMENT)
+            .map(|incoming| incoming.source)
+            .collect();
+        assert_eq!(memberships.len(), 1);
+        let membership = model.element(memberships[0]).unwrap();
+        assert_eq!(
+            membership.metaclass(),
+            if id == trigger {
+                s::TRANSITION_FEATURE_MEMBERSHIP
+            } else {
+                c::PARAMETER_MEMBERSHIP
+            }
+        );
+        let owners: Vec<_> = model
+            .incoming_for_property(membership.id(), p::ELEMENT_OWNED_RELATIONSHIP)
+            .map(|owner| owner.source)
+            .collect();
+        assert_eq!(
+            owners,
+            vec![if id == trigger {
+                ElementId::from_u128(0x8cf3c953ad025312bf90b8ab9dca34ee)
+            } else {
+                trigger
+            }]
+        );
+        let location = draft.source_map().get(&FactKey::Element(id)).unwrap();
+        assert_eq!(
+            &source.source()[location.range.start() as usize..location.range.end() as usize],
+            source_text
+        );
+    }
+}
+
 #[path = "sysml_authority_tests.rs"]
 mod authority;
 

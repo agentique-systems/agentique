@@ -3356,6 +3356,59 @@
         "CARGO_BUILD_JOBS": "1",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
       }
+    },
+    {
+      "name": "trigger-input-lowering",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-kerml-text",
+        "actions_trigger_lowering_preserves_input_parameter_defaults",
+        "--lib",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f15cfca6b2d2376074eb693a33e4a458c75f66a1",
+      "working_changes_sha256": "c38cc082c797243a0141850e5af3d3c4001df89de21f0a326168bc1eb96edbb9",
+      "output_sha256": "a1391d325d9e95e47e41dfc235084f697e49a80f87eb10b5039b29b38f911344",
+      "duration_seconds": 0.97,
+      "output": "verification/generated/language-stability-bridge/trigger-input-lowering.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
+    },
+    {
+      "name": "trigger-input-positional",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "agq-sysml-semantics",
+        "trigger_receiver_node_parameter_closes",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f15cfca6b2d2376074eb693a33e4a458c75f66a1",
+      "working_changes_sha256": "c38cc082c797243a0141850e5af3d3c4001df89de21f0a326168bc1eb96edbb9",
+      "output_sha256": "35dffe2385587f547e7c04c0eda3c9ea8f82bd4d8dd0d822b957248c3d1035a7",
+      "duration_seconds": 27.23,
+      "output": "verification/generated/language-stability-bridge/trigger-input-positional.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:/Users/phili/github/agentique-systems/agentique/target/bridge-closure"
+      }
     }
   ],
   "source_ledgers": [
@@ -3473,6 +3526,17 @@
       "source_command_indices": [
         6
       ]
+    },
+    {
+      "path": "verification/summaries/language-stability-bridge/commands.json",
+      "source_commit": "5df2703",
+      "source_command_indices": [
+        112,
+        113
+      ],
+      "source_blob_sha256": "4bde40ac28c679f3c78e707db6fc51806248a9c5e404bbfcdbd225dcb1808435",
+      "first_command": 125,
+      "command_count": 2
     }
   ]
 }

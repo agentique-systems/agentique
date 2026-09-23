@@ -93,11 +93,19 @@ the corpus or substitute for the exact focused-run records in `commands.json`.
   corrected before the retained reproduction.
 - The receiver fixture preserves AcceptAction ? StateUsage ? TransitionUsage ?
   AcceptActionUsage, inherited inout payload/input receiver, two transition inputs,
-  and an unnamed directionless NodeParameter with a bound FeatureReferenceExpression
+  and an unnamed NodeParameter with a bound FeatureReferenceExpression
   and canonical result. Baseline `2a3d9cb` failed with eight incomplete pairs and no
   arity/invalid/missing-input finding (18.92 s). The trace linked FeatureValue(60015)
   through generated contextual ownership to VariableFeaturing. Initial-reference
-  support now closes this fixture; the actual corpus still needs its next audit.
+  support now closes this fixture. A later source-only construction check found
+  that generic ParameterMembership lowering assigns input direction to both the
+  local payload and receiver even though their syntax has no direction keyword.
+  The fixture now preserves those defaults and verifies both positional
+  redefinitions; it remains Complete. A pinned Actions lowering regression checks
+  the exact trigger/child classes, composite and portion flags, input directions,
+  membership owners and source bytes without restoring or replaying standards.
+  This correction does not reproduce the actual corpus's two pending positional
+  evaluations and does not establish publication acceptance.
 - Fixture-only failures remain distinguished from semantic failures: abstract
   Relationship replaced by concrete FeatureTyping; missing visibility corrected;
   a lost fixture ownership map restored; digest assertions updated to the explicit
