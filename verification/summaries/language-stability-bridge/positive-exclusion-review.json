@@ -1,0 +1,169 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "positive-exclusion-original-regression",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "may_time_vary_positive_exclusion"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c4b80c3db0f24d763a0c674159c7898c731d3e0b",
+      "working_changes_sha256": "59f48124dde95df0fea99957b77c58f8859dec40785e8791036775281236d705",
+      "output_sha256": "4c633e559a03e5dea625a47c1d24c671ef15429fc7d5bdfdb099052c74b96219",
+      "duration_seconds": 25.98,
+      "output": "verification/generated/language-stability-bridge/positive-exclusion-original-regression.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "positive-exclusion-original-repro",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "may_time_vary_positive_exclusion"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c4b80c3db0f24d763a0c674159c7898c731d3e0b",
+      "working_changes_sha256": "fa584f3934cdffda3e002d4f2160f692b18209da9b6a47d4037fbfdeb7e396a9",
+      "output_sha256": "4dba48ef2a7ed65ede3224767add935687e6c476970cafc96fce5017000f4fa2",
+      "duration_seconds": 6.8,
+      "output": "verification/generated/language-stability-bridge/positive-exclusion-original-repro.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "positive-action-original-repro",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "may_time_vary_positive_exclusion"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c4b80c3db0f24d763a0c674159c7898c731d3e0b",
+      "working_changes_sha256": "ec9e3b6d58ab65475a652b19170c45e045cd99ec01e0815cdf7f2b6d134053d0",
+      "output_sha256": "f65b1cd691ffdb853dc9c39e185479307324a210fd351998cbc3d0a2f46c9669",
+      "duration_seconds": 6.56,
+      "output": "verification/generated/language-stability-bridge/positive-action-original-repro.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "positive-exclusion-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "may_time_vary"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "afb092a3c41be8092056442d7989d12311531e61",
+      "working_changes_sha256": "1cf0dfc6641558eb7b2a2418dfd6135fa6742b36b622f3bb6c905ac574d50eb3",
+      "output_sha256": "c900c12f2e4c07cb06c30284553a6ca1734edc7a63d2676b6056baf66a058ced",
+      "duration_seconds": 7.59,
+      "output": "verification/generated/language-stability-bridge/positive-exclusion-focused.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "positive-exclusion-trigger-receiver",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib",
+        "trigger_receiver_node_parameter_closes_with_nested_feature_value"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "afb092a3c41be8092056442d7989d12311531e61",
+      "working_changes_sha256": "1cf0dfc6641558eb7b2a2418dfd6135fa6742b36b622f3bb6c905ac574d50eb3",
+      "output_sha256": "79b03975a16d536a8b21ad941a93d4e03de0fdfd1187cea770fbea8348563017",
+      "duration_seconds": 27.41,
+      "output": "verification/generated/language-stability-bridge/positive-exclusion-trigger-receiver.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    },
+    {
+      "name": "positive-exclusion-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "039a0353e43d2754612ad0dab9bdff7efe19c0a5",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "8c124e46ddfbd96206f1773e924ee3cabc86d2fb81d60271962a3da7e8ca176b",
+      "duration_seconds": 12.14,
+      "output": "verification/generated/language-stability-bridge/positive-exclusion-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\bridge-architecture"
+      }
+    }
+  ]
+}
