@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python",
+    "verification/summaries/final-language-acceptance/medium-tail-profile.py",
+    "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/medium-uninterrupted/report.stages.jsonl",
+    "--watchdog",
+    "C:/Users/phili/github/agentique-systems/agentique/verification/generated/overnight-convergence/foundation-medium-uninterrupted/observations.jsonl",
+    "--output-log",
+    "C:/Users/phili/github/agentique-systems/agentique/verification/generated/overnight-convergence/foundation-medium-uninterrupted/output.log",
+    "--output",
+    "verification/summaries/final-language-acceptance/medium-tail-profile.json",
+    "--markdown",
+    "verification/summaries/final-language-acceptance/medium-tail-profile.md"
+  ],
+  "exit": 0,
+  "seconds": 0.125,
+  "output": "verification\\generated\\final-language-acceptance\\medium-tail-profile.log",
+  "output_sha256": "016ebdb591d1660cf157cda546a22781a8cfdca964e1391a2df1d460c8d37b5a"
+}
