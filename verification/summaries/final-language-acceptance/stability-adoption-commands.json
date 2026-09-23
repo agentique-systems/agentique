@@ -1,0 +1,30 @@
+{
+  "source_commit": "694722d1569664dc0206cbb1ba4b5590cb9725f6",
+  "worktree": "agentique-stability-adoption-held",
+  "scope": "Documentation only; conditional adoption remains held. No runtime build or corpus execution.",
+  "tool_versions": {
+    "git": "2.42.0.windows.2",
+    "python": "3.12.10"
+  },
+  "commands": [
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "wall_time_seconds": 0.4153158,
+      "output": ""
+    },
+    {
+      "command": "@'\nimport hashlib, json, pathlib, re, subprocess, sys\nroot = pathlib.Path.cwd()\npaths = [\n    'docs/adr/0026-language-foundation-stability-contract.md',\n    'docs/architecture.md',\n    'docs/modeling-workspace-phase1-design.md',\n    'docs/semantic-kernel.md',\n    'verification/summaries/final-language-acceptance/stability-adoption-review.md',\n    'verification/summaries/final-language-acceptance/query-cache-observation-review.md',\n]\nchecked = 0\nfor name in paths:\n    path = root / name\n    content = path.read_text(encoding='utf-8')\n    assert all(line.rstrip() == line for line in content.splitlines()), name\n    for target in re.findall(r'\\]\\(([^)]+)\\)', content):\n        if '://' in target or target.startswith('mailto:'):\n            continue\n        relative, _, fragment = target.partition('#')\n        linked = (path.parent / relative).resolve() if relative else path\n        assert linked.exists(), (name, target)\n        checked += 1\n        if fragment and linked.suffix == '.md':\n            headings = re.findall(r'^#{1,6}\\s+(.+)$', linked.read_text(encoding='utf-8'), flags=re.M)\n            slugs = [re.sub(r'[^\\w -]', '', heading.lower()).replace(' ', '-') for heading in headings]\n            assert fragment in slugs, (name, target)\nadr = (root / paths[0]).read_text(encoding='utf-8')\nassert adr.startswith('# ADR 0026: language foundation stability contract\\n\\nStatus: proposed;')\nadr27 = pathlib.Path('docs/adr/0027-compositional-semantic-publication.md')\nassert 'Status: proposed research architecture; not adopted and not current publication' in adr27.read_text(encoding='utf-8')\nassert subprocess.check_output(['git', 'diff', '--', str(adr27)]) == b''\ncoverage = json.loads(pathlib.Path('standards/v2-coverage.json').read_text(encoding='utf-8'))\nfor key in ('claim', 'modeling_platform_gate', 'sysml_systems_library_publication', 'compositional_semantic_publication', 'kerml_canonical_publication', 'legacy_release_register'):\n    assert key in coverage, key\nassert coverage['modeling_platform_gate']['result'] == 'gated'\nassert subprocess.check_output(['git', 'diff', '--', 'standards/v2-coverage.json', 'standards/coverage.json', 'verification/traceability.json']) == b''\ncontent_digest = hashlib.sha256()\nfor name in paths:\n    content_digest.update(name.encode('utf-8') + b'\\0' + (root / name).read_bytes())\nprint(json.dumps({'documents': len(paths), 'relative_links': checked, 'conditional_status': 'preserved', 'coverage_and_adr0027': 'unchanged', 'documentation_content_sha256': content_digest.hexdigest(), 'python': sys.version.split()[0]}))\n'@ | python -",
+      "exit_code": 0,
+      "wall_time_seconds": 0.5846276,
+      "output": "{\"documents\": 6, \"relative_links\": 72, \"conditional_status\": \"preserved\", \"coverage_and_adr0027\": \"unchanged\", \"documentation_content_sha256\": \"f6f70155c8f5be50f712b073a24ebe9d3f1847db644fdb7a0f1d76f5def2b7d7\", \"python\": \"3.12.10\"}"
+    }
+  ],
+  "not_run": [
+    "Rust builds/tests/Clippy/Rustdoc",
+    "corpus publication or resume",
+    "accepted-cache gate",
+    "workspace acceptance"
+  ],
+  "final_verification_owner": "lead integration"
+}

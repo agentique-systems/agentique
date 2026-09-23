@@ -42,7 +42,7 @@ remain subject to ordinary Rust API review.
 | Immutable accepted dependencies | Projects share accepted standard records and identities. Local declarations cannot rewrite accepted records or their composite ownership; the accepted publication's own semantic view remains fixed. Combined project queries can observe local noncomposite relationships that reference standard elements. Such source, inverse and project-wide searches require their own closure evidence. The immutable boundary discharges only requirements no local producer or pending local provider can change. |
 | Effective feature/member semantics | Effective queries retain original element and Membership identities, visibility, specialization and redefinition suppression, order where defined, and evidence. Inheritance is lookup/projection over the canonical graph; inherited copies are forbidden. Current-graph projections cannot be relabeled as effective closure. |
 | KerML query composition | KerML queries operate over the shared language-agnostic kernel view. Query composition retains completeness, invalidity, evidence and positive/negative search dependencies. Status-only queries and invalidation read sets are explicitly evidence-free and cannot substitute for proof or publication. |
-| SysML query composition | SysML reuses KerML contracts over the same canonical graph and composes its authenticated semantic context. Definition/Usage and structural Attribute/Item/Part, Port/Connection/Interface, Occurrence/Action/State and Requirement/Case APIs retain those completeness and evidence contracts. Structural support does not imply executable semantics. |
+| SysML query composition | SysML reuses KerML contracts over the same canonical graph and composes its authenticated semantic context. Definition/Usage and structural Attribute/Item/Part, Port/Connection/Interface, Occurrence/Action/State, Requirement/Constraint/Case and View/Metadata APIs retain those completeness and evidence contracts. Each accepted family requires permanent authored fixtures over the accepted Systems dependency. Structural support does not imply executable semantics. |
 
 A negative owner predicate distinguishes an absent closed owner population, an
 unresolved owner, and an owner/type that producers may still introduce. Explain
@@ -55,6 +55,39 @@ the kernel and SysML composes KerML. No `agq-kernel`, `agq-kerml*` or `agq-sysml
 crate may depend on the Gen1 model/workspace/application stack. Platform views
 borrow canonical records; syntax, database rows, DTOs and diagrams are not a
 second canonical model. Transport and storage remain outside language contracts.
+
+## Monolithic publication and resumable frontiers
+
+The immediate Systems authority is the existing monolithic dependency-driven
+scheduler, through its Structural, StableProperties and ContextualBindings strata.
+Acceptance still requires convergence, Complete producer closure, a fully closed
+certificate, the complete mandatory-reference audit, and all facade acceptance
+checks. Construction success, a scoped audit, matching counts or a graph digest
+alone cannot substitute for this boundary.
+
+Incremental certificate maintenance may reuse unaffected topology and producer
+scope calculations. The complete causal and requirement fixed points remain the
+authority; the full certificate rebuild is the reference implementation. Exact
+equivalence includes closure rows, requirements, negative/provider/search reads
+and the semantic certificate digest. Removing an opportunity or changing an
+applicable scope must remove obsolete rows.
+
+A durable frontier checkpoint is an **unaccepted continuation of that same
+computation**. Its externally retained journal pin authenticates the archive and
+scheduler/certificate state. Resume also authenticates source/publication inputs,
+the accepted KerML dependency, profiles, descriptors, producer registry, rules,
+bindings, graph and certificate context. A mismatch rejects resume. Checkpoint
+transport preserves ordered-reference positions and selected proof/search support;
+observational timings and allocation layout do not convey authority. Trusted
+accepted-publication cache restoration is a separate facade boundary and performs
+no accepted producer replay. Legacy structural archives that omit optional
+selected support cannot be treated as lossless accepted Systems caches.
+
+[ADR 0027](0027-compositional-semantic-publication.md) remains proposed research.
+Current provider/search footprints do not prove useful Systems strata; they do
+not prove semantic indivisibility. Keep its planner, exact comparator, boundary
+audits and invalid-partition tests. Neither this contract's adoption nor the
+initial workspace requires compositional sealing or another Systems partition run.
 
 ## Implementation freedom and compatibility
 
@@ -90,7 +123,7 @@ calling a change a bug fix does not exempt it from identity/version obligations.
 ## Adoption gate and bounded platform scope
 
 The integration owner adopts this ADR only with a concise readiness record under
-`verification/summaries/language-stability-bridge/` establishing all of:
+`verification/summaries/final-language-acceptance/` establishing all of:
 
 - accepted immutable KerML and Systems canonical publications and accepted
   bindings, including complete mandatory reference audits;
@@ -102,6 +135,11 @@ The integration owner adopts this ADR only with a concise readiness record under
   semantic architecture tests using accepted publications;
 - stable identity/provenance contracts and the recorded Gen1/Gen2 dependency
   audit.
+
+The [conditional adoption review](../../verification/summaries/final-language-acceptance/stability-adoption-review.md)
+maps these contracts to the implemented monolithic path and names the remaining
+measured gates. It is not the readiness decision. Earlier language-stability
+bridge summaries remain historical evidence and are not rewritten as successes.
 
 The record must distinguish measured acceptance from proposed behavior. Failed or
 unrun gates keep this ADR proposed and [ADR 0024](0024-gen2-modeling-workspace.md)

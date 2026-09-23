@@ -495,3 +495,20 @@ A construction view is never a Snapshot and has no publication shortcut. Preview
 does not change its base or consume identities; `Snapshot::apply` still enforces
 all structural invariants. This supports mutually dependent declarations without
 inventing endpoints or weakening either structural runtime gate.
+
+## Graph transport and publication authority
+
+Kernel graph archives preserve structural data under their versioned format;
+they never grant language-publication acceptance. Legacy structural archives,
+lossless dependent evidence archives and construction/strict frontier archives
+remain distinct. The evidence format retains exact selected ordered-reference
+positions and proof/search support. A frontier archive can retain an unpublished
+construction with obligations; restoring it cannot manufacture a strict Snapshot.
+
+The language scheduler authenticates a durable frontier's exact source/context,
+graph, producer registry and certificate state before continuing the monolithic
+fixed point. An independently accepted language facade instead authenticates a
+trusted standard cache and restores its accepted evidence without producer replay.
+Matching graph counts or aggregate digests alone cannot replace either check.
+See [ADR 0026](adr/0026-language-foundation-stability-contract.md); its adoption
+still requires the separate language-readiness decision.

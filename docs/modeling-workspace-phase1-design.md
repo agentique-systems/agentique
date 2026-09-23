@@ -393,11 +393,15 @@ premises retain their existing rejection rules.
 The ordered-reference cache now covers both fresh ordered-slot creation and
 later append events. Preserve selected position, exact explanation and searches;
 whole-slot search submissions still discard earlier precision when they cannot
-be attributed. Dependent archive restoration retains the supplied dependency's
-cache by lookup, while restored local contributions remain absent and queries
-fall back to aggregate evidence. Checkpoint rebinding must observe lost or
-changed contribution metadata. The optional cache is not added to canonical
-archive bytes or semantic model identity merely to enable sharing.
+be attributed. Legacy structural dependent archives retain the supplied
+dependency's cache by lookup but omit local contributions; queries then use
+aggregate evidence and transport must revalidate lost precision. The distinct
+dependent evidence archive used for Systems cache transport preserves exact local
+positions, proofs and searches and authenticates the supplied dependency's
+selected support. Frontier archives additionally retain the unaccepted scheduler
+continuation. These formats confer no acceptance themselves. Preserve each
+format's bytes and authority contract; sharing does not justify changing semantic
+identity or silently substituting one archive format for another.
 
 Archive wire output retains its current logical ordering, proof/search table
 assignment and complete identity reservations. Stream merged reservation sets
@@ -423,7 +427,7 @@ Extend the existing kernel tests before using the representation in the workspac
 | `registry_extensions` | Existing classes reuse base index populations under a compatible extension; new local subclasses are found correctly. Incompatible descriptors and newly unsatisfied navigation bounds still reject. |
 | `derivations`, `reference_contributions`, `structural_search_sharing` | Local proofs resolve base premises without copied base pools. Strict/construction/additive paths preserve declared versus derived facts, exact contribution support and fallback; changing a local carrier still reopens relevant negative/provider closure. |
 | KerML sealed dependency / selected contribution controls | A sealed historical Incoming search does not become a current producer read; an identical explicit current search survives either merge order. A changed inverse projection on a protected subject remains live. Fresh-slot and append support keep precise guards; loss of local metadata on restore reopens transport conservatively. |
-| `archive`, accepted publication restoration | Dependent roundtrip retains the supplied base allocation and canonical bytes/digests. Protected archive writes/reservations reject, local contribution metadata remains optional, and historical accepted receipt checks still pass. |
+| `archive`, accepted publication restoration | Dependent roundtrip retains the supplied base allocation and canonical bytes/digests. Protected archive writes/reservations reject; legacy optional-contribution fallback, lossless evidence transport and frontier continuation remain distinct. Historical accepted receipt checks still pass. |
 | Workspace 100-document/five-revision fixture | Observe local/base table entries, index entries, proof-pool entries and touched projection sizes, plus unique retained storage and peak temporary memory. Empty mounts allocate no standard-sized maps; tiny edits rebuild only authored/touched index populations. Parallel readers see revision-specific results and no standard producer replay. |
 
 For small neutral graphs, compare every public graph/query projection with an
@@ -433,8 +437,47 @@ storage observations rather than exposing allocator identity as a semantic API.
 Run the kernel and language package gates, archive/receipt checks and workspace
 fixture after implementation; none has been run for this design-only review.
 
-Future work may refine document dependency invalidation, persistent authored
-indexes, incremental derivation and revision retention policies. It must preserve
-the immutable revision and evidence contracts. SQLite persistence, network APIs,
-diagram rendering, transformations, execution IR, simulation, assistant features
-and Gen1 migration are explicitly outside phase 1.
+## Future semantic recomputation after an authored edit
+
+The first workspace may recompute the authored semantic population while borrowing
+accepted standards. Shared storage, syntax reconciliation and semantic
+incrementality are separate properties. A rare standard publication can be
+expensive and cached; a frequent authored edit must eventually invalidate only
+the work its changes can affect. No publication timing is an authored-edit target.
+
+The intended future path is:
+
+```text
+document edit and exact source revision
+    -> query/provider footprint invalidation
+    -> affected existing and newly applicable producer populations
+    -> closure certificate revalidation
+    -> new immutable revision
+```
+
+Footprints must include positive facts, absent identities, negative searches,
+provider availability, applicability/class changes, future helpers and relationship
+endpoints in both directions. A local relationship to a standard element can
+change a current incoming population without changing any accepted record.
+Preserving old values is insufficient: unchanged closure also requires unchanged
+relevant producer opportunities and closed search populations. Deletions and
+disappearing opportunities must remove obsolete local facts and certificate rows.
+
+Reuse the existing ProducerEffect and per-effect scope contracts. ADR 0027's
+component planner can become an invalidation planner as read-side footprints gain
+proof, with conservative fallback when a boundary is unknown. It remains research
+infrastructure: this workspace does not depend on independent component sealing,
+source-document SCCs, or an adopted ADR 0027. Do not rerun Systems partition
+planning to justify an authored edit.
+
+Any future incremental path must equal the reference authored recomputation for
+declared/derived graphs, identities, ordered relationships, provenance, positive
+and negative/search evidence, certificate contents and revision-bound effective
+query answers. Test insertions into previously empty searches, removals, scope
+changes and standard-targeting local relationships, and retain old revisions for
+parallel readers. Allocation identity is a sharing observation, not semantic proof.
+
+SQLite persistence, server/API migration, Systems Modeling API, diagrams,
+transformations, execution IR, simulation, assistant features and Gen1 migration
+remain outside this in-memory phase. Full language conformance remains a separate
+coverage register, not another general foundation milestone.

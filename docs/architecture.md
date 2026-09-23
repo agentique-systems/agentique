@@ -135,7 +135,10 @@ No Systems publication is accepted. Mandatory reference and combined producer
 closure remain pending. Operational v2 records the three bounded canonical target
 corrections while Published and Operational v1 remain reproducible.
 The immediate acceptance path is the monolithic dependency-driven scheduler and
-its existing Structural/ContextualBindings strata. Compositional publication is
+its existing Structural, StableProperties and ContextualBindings strata.
+Incremental certificate input reuse retains the complete causal/requirement
+fixed point and its full rebuild oracle. An authenticated frontier checkpoint
+resumes that computation and does not accept a publication. Compositional publication is
 proposed research in [ADR 0027](adr/0027-compositional-semantic-publication.md),
 not current publication authority or an additional foundation gate. Its semantic subject
 dependency planner preserves potential writers and negative/provider searches;
@@ -149,9 +152,17 @@ this does not establish semantic indivisibility of Systems. See the
 reference, producer, capability, binding, provenance or authority gate. Canonical
 identities retain their source provenance through lowering and refinement;
 authored edits do not change the immutable library dependency. See the current
-[language stability bridge evidence](../verification/summaries/language-stability-bridge/README.md)
+[final language acceptance evidence](../verification/summaries/final-language-acceptance/README.md),
+the historical [language stability bridge evidence](../verification/summaries/language-stability-bridge/README.md),
 and the historical
 [Phase 1 foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md).
+
+[ADR 0026](adr/0026-language-foundation-stability-contract.md) remains proposed
+until accepted Systems restoration, Agentique's self-model and the effective
+SysML API gate pass. Its [conditional adoption review](../verification/summaries/final-language-acceptance/stability-adoption-review.md)
+does not declare readiness. Once those measured gates pass, only the in-memory
+modeling workspace is authorized. Its future [footprint invalidation roadmap](modeling-workspace-phase1-design.md#future-semantic-recomputation-after-an-authored-edit)
+reuses compositional research without depending on component sealing.
 
 Normative targets are KerML 1.0 and SysML 2.0. Metamodel import, runtime descriptor
 closure, semantic queries, textual grammar and library ingestion have distinct
