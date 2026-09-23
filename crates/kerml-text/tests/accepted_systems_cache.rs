@@ -10,7 +10,9 @@ use agq_kerml_text::{
 };
 use agq_standard_libraries::VerifiedLibrarySet;
 use agq_sysml_semantics::StandardSysmlRole;
+use sha2::{Digest, Sha256};
 use std::{
+    collections::BTreeMap,
     fs::{self, File, OpenOptions},
     io::{self, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
@@ -41,6 +43,15 @@ fn accepted_systems_cache_roundtrip_and_tampering() {
     let manifest = publication.binding_manifest(&sources).unwrap();
     assert_eq!(&manifest, trusted.binding_manifest());
     let certificate = publication.producer_closure().receipt_value();
+    let selected_evidence = selected_reference_evidence(publication.overlay().model());
+    assert!(
+        publication
+            .overlay()
+            .model()
+            .ordered_reference_contributions()
+            .any(|((owner, _, _), _)| kerml.overlay().model().element(owner).is_none()),
+        "accepted Systems retains local selected evidence"
+    );
     let ids: Vec<_> = publication
         .overlay()
         .model()
@@ -64,6 +75,10 @@ fn accepted_systems_cache_roundtrip_and_tampering() {
     assert_eq!(restored.bindings(), &bindings);
     assert_eq!(restored.binding_manifest(&sources).unwrap(), manifest);
     assert_eq!(restored.producer_closure().receipt_value(), certificate);
+    assert_eq!(
+        selected_reference_evidence(restored.overlay().model()),
+        selected_evidence
+    );
     assert!(
         restored
             .overlay()
@@ -132,6 +147,45 @@ fn accepted_systems_cache_roundtrip_and_tampering() {
         .unwrap();
     drop(file);
     rejected(&tampered, &sources, &kerml, "truncated archive");
+}
+
+type SelectedEvidence = Vec<(
+    (
+        agq_kernel::ElementId,
+        agq_kernel::PropertyId,
+        agq_kernel::ElementId,
+    ),
+    usize,
+    [u8; 32],
+    [u8; 32],
+)>;
+
+// Retain content hashes, not a second publication's potentially large evidence
+// payloads. Pool addresses accelerate repeated immutable values only; equality
+// depends on exact proof/search contents and ordered-reference position.
+fn selected_reference_evidence(model: &agq_kernel::ModelView) -> SelectedEvidence {
+    let mut proofs = BTreeMap::new();
+    let mut searches = BTreeMap::new();
+    model
+        .ordered_reference_contributions()
+        .map(|(key, contribution)| {
+            let proof = *proofs
+                .entry(std::ptr::from_ref(contribution.explanation()) as usize)
+                .or_insert_with(|| {
+                    <[u8; 32]>::from(Sha256::digest(
+                        serde_json::to_vec(contribution.explanation()).unwrap(),
+                    ))
+                });
+            let search = *searches
+                .entry(std::ptr::from_ref(contribution.searches()) as usize)
+                .or_insert_with(|| {
+                    <[u8; 32]>::from(Sha256::digest(
+                        serde_json::to_vec(contribution.searches()).unwrap(),
+                    ))
+                });
+            (key, contribution.position(), proof, search)
+        })
+        .collect()
 }
 
 fn required_cache(name: &str) -> PathBuf {

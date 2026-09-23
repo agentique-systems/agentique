@@ -682,3 +682,178 @@ fn frontier_rejects_selected_support_with_missing_or_cyclic_evidence() {
         assert!(read_publication_frontier(Cursor::new(bytes), registry(), None).is_err());
     }
 }
+
+fn dependent_with_selected_evidence() -> (Arc<DerivedOverlay>, DerivedOverlay) {
+    let dependency = Arc::new(overlay());
+    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let local = ElementId::from_u128(701);
+    let mut changes = base.change_set();
+    changes.create(local, MEMBERSHIP, authored());
+    changes.set(local, SOURCES, ordered_refs(&[VEHICLE]), authored());
+    let declared = base.apply(&changes).unwrap();
+    let mut builder = DerivationBuilder::new(declared);
+    builder.extend_ordered_references(
+        local,
+        SOURCES,
+        vec![ENGINE, key(1).element_id()],
+        Explanation {
+            rule: key(0).rule,
+            dependencies: BTreeSet::from([Dependency::Declared(FactKey::Element(local))]),
+        },
+    );
+    builder.searches(
+        FactKey::Property {
+            element: local,
+            property: SOURCES,
+        },
+        BTreeSet::from([StructuralSearch::Incoming(ENGINE)]),
+    );
+    (dependency, builder.build().unwrap())
+}
+
+#[test]
+fn strict_dependent_evidence_roundtrip_is_lossless_and_separate_from_frontiers() {
+    let (dependency, original) = dependent_with_selected_evidence();
+    assert_eq!(
+        original.model().ordered_reference_contributions().count(),
+        dependency.model().ordered_reference_contributions().count() + 2
+    );
+    let mut bytes = Vec::new();
+    write_dependent_overlay_with_evidence(&original, &mut bytes).unwrap();
+    assert!(String::from_utf8_lossy(&bytes).starts_with(
+        "{\"DependentHeader\":{\"format\":\"agq-kernel-dependent-evidence-archive/1\""
+    ));
+    assert!(read_dependent_overlay(Cursor::new(&bytes), registry(), dependency.clone()).is_err());
+    assert!(
+        read_publication_frontier(Cursor::new(&bytes), registry(), Some(dependency.clone()))
+            .is_err()
+    );
+    assert!(
+        read_construction_frontier(Cursor::new(&bytes), registry(), Some(dependency.clone()))
+            .is_err()
+    );
+    let restored =
+        read_dependent_overlay_with_evidence(Cursor::new(&bytes), registry(), dependency.clone())
+            .unwrap();
+    assert!(Arc::ptr_eq(
+        restored.declared().immutable_dependency().unwrap(),
+        &dependency
+    ));
+    assert!(original.facts().eq(restored.facts()));
+    assert!(
+        original
+            .model()
+            .ordered_reference_contributions()
+            .eq(restored.model().ordered_reference_contributions())
+    );
+    assert!(
+        original
+            .model()
+            .computation_searches()
+            .eq(restored.model().computation_searches())
+    );
+    let mut rewritten = Vec::new();
+    write_dependent_overlay_with_evidence(&restored, &mut rewritten).unwrap();
+    assert_eq!(bytes, rewritten);
+
+    let mut frontier = Vec::new();
+    write_publication_frontier(&original, &mut frontier).unwrap();
+    assert_eq!(
+        String::from_utf8(bytes.clone())
+            .unwrap()
+            .split_once('\n')
+            .unwrap()
+            .1,
+        String::from_utf8(frontier.clone())
+            .unwrap()
+            .split_once('\n')
+            .unwrap()
+            .1,
+        "payload exactly matches existing frontier encoding; header independently pins all dependency evidence"
+    );
+    assert!(
+        read_dependent_overlay_with_evidence(Cursor::new(frontier), registry(), dependency.clone())
+            .is_err()
+    );
+    let mut legacy = Vec::new();
+    write_dependent_overlay(&original, &mut legacy).unwrap();
+    assert!(
+        read_dependent_overlay_with_evidence(Cursor::new(&legacy), registry(), dependency.clone())
+            .is_err()
+    );
+    let restored_legacy =
+        read_dependent_overlay(Cursor::new(&legacy), registry(), dependency.clone()).unwrap();
+    assert_eq!(
+        restored_legacy
+            .model()
+            .ordered_reference_contributions()
+            .count(),
+        dependency.model().ordered_reference_contributions().count()
+    );
+    let mut rewritten_legacy = Vec::new();
+    write_dependent_overlay(&restored_legacy, &mut rewritten_legacy).unwrap();
+    assert_eq!(legacy, rewritten_legacy);
+
+    let mut legacy_dependency = Vec::new();
+    write_overlay(&dependency, &mut legacy_dependency).unwrap();
+    let same_aggregate =
+        Arc::new(read_overlay(Cursor::new(legacy_dependency), registry()).unwrap());
+    assert!(dependency.facts().eq(same_aggregate.facts()));
+    assert_eq!(
+        same_aggregate
+            .model()
+            .ordered_reference_contributions()
+            .count(),
+        0
+    );
+    assert!(
+        read_dependent_overlay_with_evidence(Cursor::new(bytes), registry(), same_aggregate)
+            .is_err(),
+        "exact dependency pin includes selected proof/search support, not just aggregate graph"
+    );
+}
+
+#[test]
+fn strict_dependent_evidence_rejects_invalid_selected_proofs_and_searches() {
+    let (dependency, original) = dependent_with_selected_evidence();
+    let mut bytes = Vec::new();
+    write_dependent_overlay_with_evidence(&original, &mut bytes).unwrap();
+    let entries = String::from_utf8(bytes)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        .collect::<Vec<_>>();
+    for selected in [
+        serde_json::json!({"Proof": Explanation {
+            rule: key(0).rule,
+            dependencies: BTreeSet::from([Dependency::Declared(FactKey::Element(ElementId::from_u128(99999)))])
+        }}),
+        serde_json::json!({"Search": [StructuralSearch::Element(ElementId::from_u128(99999))]}),
+    ] {
+        let mut changed = entries.clone();
+        let (table, field) = if selected.get("Proof").is_some() {
+            ("Proof", "proof")
+        } else {
+            ("Search", "searches")
+        };
+        let next = changed
+            .iter()
+            .filter(|entry| entry.get(table).is_some())
+            .count();
+        let position = changed
+            .iter()
+            .position(|entry| entry.get("ReferenceContribution").is_some())
+            .unwrap();
+        changed[position]["ReferenceContribution"][field] = serde_json::json!(next);
+        changed.insert(position, selected);
+        let changed: String = changed.iter().map(|entry| format!("{entry}\n")).collect();
+        assert!(
+            read_dependent_overlay_with_evidence(
+                Cursor::new(changed),
+                registry(),
+                dependency.clone()
+            )
+            .is_err()
+        );
+    }
+}

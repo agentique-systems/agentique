@@ -157,7 +157,7 @@ impl CanonicalSysmlSystemsLibrary {
         drop(closure);
         archive.start_file("kernel.jsonl", options)?;
         let mut digest = DigestWriter::new(&mut archive);
-        agq_kernel::archive::write_dependent_overlay(&self.overlay, &mut digest)?;
+        agq_kernel::archive::write_dependent_overlay_with_evidence(&self.overlay, &mut digest)?;
         entries.insert("kernel.jsonl", digest.identity());
         archive.finish()?.flush()?;
         Ok(json!({

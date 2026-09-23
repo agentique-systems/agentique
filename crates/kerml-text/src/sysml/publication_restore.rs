@@ -70,7 +70,7 @@ impl CanonicalSysmlSystemsLibrary {
             .immutable_dependency()
             .expect("accepted KerML dependency")
             .clone();
-        let overlay = agq_kernel::archive::read_dependent_overlay(
+        let overlay = agq_kernel::archive::read_dependent_overlay_with_evidence(
             BufReader::new(archive.by_name("kernel.jsonl")?.take(graph_bytes)),
             Arc::new(registry),
             dependency,
@@ -78,7 +78,7 @@ impl CanonicalSysmlSystemsLibrary {
         // A changing seekable input cannot replace the graph after its first
         // hash. Authenticate what was actually decoded, retaining derived facts.
         let mut actual_graph = DigestWriter::new(io::sink());
-        agq_kernel::archive::write_dependent_overlay(&overlay, &mut actual_graph)?;
+        agq_kernel::archive::write_dependent_overlay_with_evidence(&overlay, &mut actual_graph)?;
         if actual_graph.bytes != graph_bytes {
             return Err(SystemsPublicationCacheError::Mismatch(
                 "decoded graph byte count",

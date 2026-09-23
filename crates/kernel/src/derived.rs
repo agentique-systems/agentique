@@ -70,9 +70,9 @@ pub struct DerivationBuildMetrics {
 /// the entry in the current ordered slot; it is not proof that an arbitrary
 /// filtered population is complete. Callers must retain their population search.
 ///
-/// Ordinary graph archives omit this optimization; publication-frontier archives
-/// preserve it exactly. Missing metadata requires aggregate slot evidence and
-/// invalidates any transported proof which relied on it.
+/// Legacy graph archives omit this optimization; dependent evidence and
+/// publication-frontier archives preserve it exactly. Missing metadata requires
+/// aggregate slot evidence and invalidates transported proofs which relied on it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OrderedReferenceContribution {
     pub(crate) position: usize,

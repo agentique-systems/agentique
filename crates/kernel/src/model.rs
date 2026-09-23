@@ -660,8 +660,8 @@ impl ModelView {
     /// Optional precise support captured by ordered-reference creation or append. Resolve
     /// property aliases before lookup. Absence requires ordinary aggregate slot
     /// evidence; it never establishes that the reference or its proof is absent.
-    /// Archives intentionally omit this cache, so consumers retaining a selected
-    /// contribution must invalidate on changed evidence or lost availability.
+    /// Legacy archives omit this cache; dependent evidence and frontier formats
+    /// retain it. Consumers invalidate on changed evidence or lost availability.
     pub fn ordered_reference_contribution(
         &self,
         element: ElementId,

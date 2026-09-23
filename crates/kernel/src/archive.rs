@@ -15,7 +15,28 @@ use std::io::{BufRead, Write};
 
 const FORMAT: &str = "agq-kernel-graph-archive/1";
 const DEPENDENT_FORMAT: &str = "agq-kernel-dependent-graph-archive/1";
+const DEPENDENT_EVIDENCE_FORMAT: &str = "agq-kernel-dependent-evidence-archive/1";
 const MAX_LINE_BYTES: u64 = 64 * 1024 * 1024;
+
+#[derive(Clone, Copy)]
+enum ArchiveFormat {
+    Legacy,
+    Frontier,
+    DependentEvidence,
+}
+impl ArchiveFormat {
+    fn identity(self, construction: bool, dependent: bool) -> &'static str {
+        match self {
+            Self::Legacy if dependent => DEPENDENT_FORMAT,
+            Self::Legacy => FORMAT,
+            Self::Frontier => frontier_format(construction, dependent),
+            Self::DependentEvidence => DEPENDENT_EVIDENCE_FORMAT,
+        }
+    }
+    fn preserves_contributions(self) -> bool {
+        !matches!(self, Self::Legacy)
+    }
+}
 
 /// Serialization, registry identity, or structural reconstruction failed.
 #[derive(Debug, thiserror::Error)]
@@ -68,7 +89,7 @@ enum Entry {
         fact: FactKey,
         table: usize,
     },
-    /// Present only in the separate, unaccepted producer-frontier format.
+    /// Present in lossless dependent evidence and producer-frontier formats.
     ReferenceContribution {
         element: ElementId,
         property: PropertyId,
@@ -334,17 +355,37 @@ fn registry_digest(registry: &MetamodelRegistry) -> [u8; 32] {
 pub fn write_snapshot(snapshot: &Snapshot, writer: impl Write) -> Result<(), ArchiveError> {
     write(snapshot, None, false, writer)
 }
-/// Stream a declared root snapshot and all derived state, with shared evidence tables.
+/// Stream the historical root graph format with shared aggregate evidence tables.
+/// Selected ordered-reference contribution caches are omitted by this encoding.
 pub fn write_overlay(overlay: &DerivedOverlay, writer: impl Write) -> Result<(), ArchiveError> {
     write(overlay.declared(), Some(overlay), false, writer)
 }
 /// Stream only the local graph delta over one exact immutable dependency.
 /// The dependency must have its own root archive; this confers no language seal.
+/// This historical encoding omits local selected contributions; use
+/// [`write_dependent_overlay_with_evidence`] when their exact support is required.
 pub fn write_dependent_overlay(
     overlay: &DerivedOverlay,
     writer: impl Write,
 ) -> Result<(), ArchiveError> {
     write(overlay.declared(), Some(overlay), true, writer)
+}
+
+/// Stream a strict local graph delta including selected ordered-reference proofs
+/// and searches. The separately supplied immutable dependency remains external.
+/// This lossless format contains no scheduler state or publication authority.
+/// Historical root/dependent archive encodings remain unchanged.
+pub fn write_dependent_overlay_with_evidence(
+    overlay: &DerivedOverlay,
+    writer: impl Write,
+) -> Result<(), ArchiveError> {
+    write_input(
+        &DerivationInput::Strict(overlay.declared().clone()),
+        Some(overlay.model()),
+        true,
+        ArchiveFormat::DependentEvidence,
+        writer,
+    )
 }
 
 /// Stream an unaccepted strict producer frontier, preserving selected ordered
@@ -357,7 +398,7 @@ pub fn write_publication_frontier(
         &DerivationInput::Strict(overlay.declared().clone()),
         Some(overlay.model()),
         overlay.declared().immutable_dependency().is_some(),
-        true,
+        ArchiveFormat::Frontier,
         writer,
     )
 }
@@ -372,7 +413,7 @@ pub fn write_construction_frontier(
         &DerivationInput::Construction(overlay.declared_shared().clone()),
         Some(overlay.model()),
         overlay.declared().immutable_dependency().is_some(),
-        true,
+        ArchiveFormat::Frontier,
         writer,
     )
 }
@@ -396,9 +437,29 @@ impl Write for ArchiveDigest {
         Ok(())
     }
 }
-fn dependency_digest(dependency: &DerivedOverlay) -> Result<[u8; 32], ArchiveError> {
+fn dependency_digest(
+    dependency: &DerivedOverlay,
+    format: ArchiveFormat,
+) -> Result<[u8; 32], ArchiveError> {
     let mut writer = ArchiveDigest(Sha256::new());
+    if matches!(format, ArchiveFormat::DependentEvidence) {
+        writer.write_all(b"agq-kernel-dependent-evidence-dependency/1\0")?;
+    }
     write_overlay(dependency, &mut writer)?;
+    if matches!(format, ArchiveFormat::DependentEvidence) {
+        for (key, contribution) in dependency.model().ordered_reference_contributions() {
+            serde_json::to_writer(
+                &mut writer,
+                &(
+                    key,
+                    contribution.position(),
+                    contribution.explanation(),
+                    contribution.searches(),
+                ),
+            )?;
+            writer.write_all(b"\n")?;
+        }
+    }
     Ok(writer.0.finalize().into())
 }
 fn write(
@@ -411,7 +472,7 @@ fn write(
         &DerivationInput::Strict(snapshot.clone()),
         overlay.map(DerivedOverlay::model),
         dependent,
-        false,
+        ArchiveFormat::Legacy,
         writer,
     )
 }
@@ -420,7 +481,7 @@ fn write_input(
     snapshot: &DerivationInput,
     overlay: Option<&ModelView>,
     dependent: bool,
-    frontier: bool,
+    format: ArchiveFormat,
     mut writer: impl Write,
 ) -> Result<(), ArchiveError> {
     let dependency = snapshot.immutable_dependency();
@@ -429,14 +490,11 @@ fn write_input(
         emit(
             &mut writer,
             &Entry::DependentHeader {
-                format: if frontier {
-                    frontier_format(matches!(snapshot, DerivationInput::Construction(_)), true)
-                } else {
-                    DEPENDENT_FORMAT
-                }
-                .into(),
+                format: format
+                    .identity(matches!(snapshot, DerivationInput::Construction(_)), true)
+                    .into(),
                 registry: registry_digest(snapshot.model().registry()),
-                dependency: dependency_digest(dependency)?,
+                dependency: dependency_digest(dependency, format)?,
             },
         )?;
     } else if dependency.is_some() || snapshot.model().declared_source.is_some() {
@@ -447,12 +505,9 @@ fn write_input(
         emit(
             &mut writer,
             &Entry::Header {
-                format: if frontier {
-                    frontier_format(matches!(snapshot, DerivationInput::Construction(_)), false)
-                } else {
-                    FORMAT
-                }
-                .into(),
+                format: format
+                    .identity(matches!(snapshot, DerivationInput::Construction(_)), false)
+                    .into(),
                 registry: registry_digest(snapshot.model().registry()),
                 overlay: overlay.is_some(),
             },
@@ -559,7 +614,7 @@ fn write_input(
             let table = tables.search(searches, &mut writer)?;
             emit(&mut writer, &Entry::Searches { fact: *fact, table })?;
         }
-        if frontier {
+        if format.preserves_contributions() {
             for (&(element, property, target), contribution) in &overlay.reference_contributions {
                 if dependency.is_some_and(|d| d.model().element(element).is_some()) {
                     continue;
@@ -708,13 +763,43 @@ pub fn read_dependent_overlay(
     overlay.ok_or(ArchiveError::Invalid("expected dependent overlay archive"))
 }
 
+/// Validate a strict dependent evidence archive, preserving selected ordered
+/// proofs/searches and the supplied immutable dependency allocation. This rejects
+/// legacy and scheduler-frontier formats and confers no language acceptance.
+pub fn read_dependent_overlay_with_evidence(
+    mut reader: impl BufRead,
+    registry: Arc<MetamodelRegistry>,
+    dependency: Arc<DerivedOverlay>,
+) -> Result<DerivedOverlay, ArchiveError> {
+    match read_input(
+        &mut reader,
+        registry,
+        Some(dependency),
+        false,
+        ArchiveFormat::DependentEvidence,
+    )?
+    .1
+    {
+        Some(Frontier::Strict(overlay)) => Ok(overlay),
+        _ => Err(ArchiveError::Invalid("expected strict dependent evidence")),
+    }
+}
+
 /// Restore an unaccepted strict frontier under the exact supplied dependency.
 pub fn read_publication_frontier(
     mut reader: impl BufRead,
     registry: Arc<MetamodelRegistry>,
     dependency: Option<Arc<DerivedOverlay>>,
 ) -> Result<DerivedOverlay, ArchiveError> {
-    match read_input(&mut reader, registry, dependency, false, true)?.1 {
+    match read_input(
+        &mut reader,
+        registry,
+        dependency,
+        false,
+        ArchiveFormat::Frontier,
+    )?
+    .1
+    {
         Some(Frontier::Strict(overlay)) => Ok(overlay),
         _ => Err(ArchiveError::Invalid("expected strict frontier")),
     }
@@ -727,7 +812,15 @@ pub fn read_construction_frontier(
     registry: Arc<MetamodelRegistry>,
     dependency: Option<Arc<DerivedOverlay>>,
 ) -> Result<crate::derived::ConstructionOverlay, ArchiveError> {
-    match read_input(&mut reader, registry, dependency, true, true)?.1 {
+    match read_input(
+        &mut reader,
+        registry,
+        dependency,
+        true,
+        ArchiveFormat::Frontier,
+    )?
+    .1
+    {
         Some(Frontier::Construction(overlay)) => Ok(overlay),
         _ => Err(ArchiveError::Invalid("expected construction frontier")),
     }
@@ -829,9 +922,9 @@ fn declared_input(
         model.declared_source = dependency.model().declared_source.clone();
         model.statuses = dependency.model().statuses.clone();
         model.searches = dependency.model().searches.clone();
-        // Local archive bytes carry no append-contribution cache. Evidence on
-        // the separately supplied immutable dependency remains authenticated by
-        // that exact object and can be retained without reconstructing it.
+        // Evidence on the separately supplied immutable dependency remains
+        // authenticated by that exact object. Lossless archive formats restore
+        // local selected contributions after constructing the overlay.
         model.reference_contributions = dependency.model().reference_contributions.clone();
     }
     if construction {
@@ -871,7 +964,7 @@ fn read(
     registry: Arc<MetamodelRegistry>,
     dependency: Option<Arc<DerivedOverlay>>,
 ) -> Result<(Snapshot, Option<DerivedOverlay>), ArchiveError> {
-    let (input, overlay) = read_input(reader, registry, dependency, false, false)?;
+    let (input, overlay) = read_input(reader, registry, dependency, false, ArchiveFormat::Legacy)?;
     let DerivationInput::Strict(snapshot) = input else {
         unreachable!("strict read")
     };
@@ -887,7 +980,7 @@ fn read_input(
     registry: Arc<MetamodelRegistry>,
     dependency: Option<Arc<DerivedOverlay>>,
     construction: bool,
-    frontier: bool,
+    archive_format: ArchiveFormat,
 ) -> Result<(DerivationInput, Option<Frontier>), ArchiveError> {
     let mut line = Vec::new();
     let has_overlay = match (next(reader, &mut line)?, &dependency) {
@@ -898,12 +991,7 @@ fn read_input(
                 overlay,
             },
             None,
-        ) if format
-            == if frontier {
-                frontier_format(construction, false)
-            } else {
-                FORMAT
-            }
+        ) if format == archive_format.identity(construction, false)
             && expected == registry_digest(&registry) =>
         {
             overlay
@@ -915,14 +1003,9 @@ fn read_input(
                 dependency: digest,
             },
             Some(dependency),
-        ) if format
-            == if frontier {
-                frontier_format(construction, true)
-            } else {
-                DEPENDENT_FORMAT
-            }
+        ) if format == archive_format.identity(construction, true)
             && expected == registry_digest(&registry)
-            && digest == dependency_digest(dependency)? =>
+            && digest == dependency_digest(dependency, archive_format)? =>
         {
             true
         }
@@ -1061,7 +1144,7 @@ fn read_input(
                 position,
                 proof,
                 searches,
-            } if frontier && snapshot.is_some() => {
+            } if archive_format.preserves_contributions() && snapshot.is_some() => {
                 if dependency
                     .as_ref()
                     .is_some_and(|d| d.model().element(element).is_some())
