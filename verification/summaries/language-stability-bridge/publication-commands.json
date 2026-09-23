@@ -462,6 +462,91 @@
         "min_free_disk_bytes": 1073741824
       },
       "output_sha256": "e37977dda5d045b7a1ebe91c3cb637bc97732b9e27055dadbc19f18976fe2147"
+    },
+    {
+      "name": "actions-end-and-index",
+      "command": [
+        "target/foundation-integration/release/examples/sysml_systems_publication.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output=verification/generated/language-stability-bridge/actions-end-and-index/report.json",
+        "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States",
+        "--audit-only"
+      ],
+      "source_commit": "0e3d7f5888a79de062e7ff13d935bba18c080b8e",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/actions-end-and-index",
+      "exit_code": 1,
+      "command_exit_code": 1,
+      "command_pid": 21308,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 25416634368,
+      "safety_stop": null,
+      "duration_seconds": 1409.547,
+      "peak_rss_bytes": 6280921088,
+      "peak_private_bytes": 6422331392,
+      "samples": 1409,
+      "limits": {
+        "wall_seconds": 2100.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824
+      },
+      "output_sha256": "fde47460154e2799b30044f3be40ca4efec0cb77a228b1c96a4829f7c54717ec",
+      "report_artifacts": {
+        "report.json": "1cd5f3c9be10355eedcaf5a4995b0920ba3f3443d0b163cd4aff9662e1c050a6",
+        "report.stages.jsonl": "29e24a7a09f6a7ea2f2c0a94538900de22db2d40878009662e076ee2725dfcc9",
+        "diagnostic-sources.jsonl": "683d44d90f2e8d45fb6d0d5814e877de7a18b89facb38ed281473f4fdf611825"
+      },
+      "result_summary": {
+        "documents_parsed": 8,
+        "documents_constructed": 8,
+        "selected_endpoints": 534,
+        "mandatory_references": {
+          "counts": {
+            "ambiguous": 0,
+            "complete": 534,
+            "endpoint_mismatch": 0,
+            "incomplete": 0,
+            "invalid": 0,
+            "unresolved": 0
+          },
+          "failures": [],
+          "total": 534
+        },
+        "kernel_obligations": 0,
+        "producer_converged": true,
+        "producer_completeness": "Incomplete",
+        "certificate_fully_closed": false,
+        "incomplete_pairs": 4,
+        "producer_diagnostics": [
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "63d0949c-20e2-5ffa-81a2-62b9826530dc"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "7661b183-d02f-5ba1-ae73-8f0f8b60b3c3"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "86ddb7cd-ac22-5322-9aa7-ff4755f00198"
+          },
+          {
+            "code": "KQ_PRODUCER_CLOSURE",
+            "message": "No compatible scheduler certificate closes EffectiveTyping for this subject",
+            "subject": "fc5a3876-bdc7-555d-a38d-0720ca04e233"
+          }
+        ],
+        "authority_conflicts": 0,
+        "kerml_producers_replayed": false
+      }
     }
   ]
 }

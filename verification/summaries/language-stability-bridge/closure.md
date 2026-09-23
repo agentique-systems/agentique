@@ -1028,3 +1028,29 @@ Strict all-target Clippy for all three affected packages and formatting pass.
 The `index-usage-commands.json` range retains every attempt and fixture correction;
 raw output hashes were checked when consolidating. Root release source `905e4ee`
 then builds successfully. The next Actions audit remains a separate required gate.
+
+## End/index correction corpus result: four explicit-multiplicity ends remain
+
+`actions-end-and-index` (clean source `0e3d7f5`, release `905e4ee`) finishes normally
+with exit 1 in 1,409.547 s, peak private 6,124.8 MiB and no watchdog stop. All eight
+original documents parse/construct, 534/534 references are Complete, selected
+endpoints are 534, and kernel obligations/authority conflicts are zero. The
+indexed assignment and sixteen end usages from the preceding audit now close.
+
+Closure still converges Incomplete in 31 rounds with four MayTimeVary failures.
+The exact remaining subjects are `63d0949c-20e2-5ffa-81a2-62b9826530dc` and
+`86ddb7cd-ac22-5322-9aa7-ff4755f00198` (Flows lines 69/68, `[1] target/source`),
+and `7661b183-d02f-5ba1-ae73-8f0f8b60b3c3` and
+`fc5a3876-bdc7-555d-a38d-0720ca04e233` (Items lines 138/139, `[0..*]` ends).
+OwnedCrossing, PositionalRedefinition and VariableFeaturing remain Pending on
+all four; their EffectiveOwnership requirement is closed. CrossDomain,
+FeatureValuation and FeatureValue are Complete. Source spans in the ignored
+`diagnostic-sources.jsonl` were matched only after original KPAR SHA-256 validation.
+
+There are 11,044/11,547 closed applicable pairs, 382,623/407,490 closed requirements,
+20,030 subject evaluations, 3,418 derived elements and 6,197 local elements.
+The certificate is 2,631,923 bytes; optional revalidation data is 682,310,664 bytes.
+Two transports retain 1,235 and reopen 11,919 evaluations in aggregate. Final
+report, stage stream and source-map hashes are retained with the command record.
+This remains scoped failure evidence. A matching explicit-multiplicity fixture
+must diagnose the remaining boundary before another corpus attempt.

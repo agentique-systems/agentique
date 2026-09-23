@@ -561,7 +561,7 @@
     "semantic_authority": "standards/sysml-2.0-operational-semantic-v2.json",
     "authority_decisions_pending": 0,
     "latest_completed_scope": {
-      "run": "actions-immediate-owner",
+      "run": "actions-end-and-index",
       "documents": [
         "Actions",
         "Connections",
@@ -585,7 +585,7 @@
       "producer_closure": "Incomplete",
       "producer_converged": true,
       "certificate_fully_closed": false,
-      "incomplete_producer_pairs": 24,
+      "incomplete_producer_pairs": 4,
       "authority_conflicts": 0,
       "evidence": "verification/summaries/language-stability-bridge/publication-commands.json"
     },

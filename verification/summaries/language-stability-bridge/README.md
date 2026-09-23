@@ -13,7 +13,7 @@ completed corpus result is the eight-document Actions/dependency scope:
 **534/534 mandatory references Complete**, zero unresolved, incomplete,
 ambiguous, invalid or mismatched references, and zero kernel obligations. All eight
 documents parse and construct byte-exactly. The scheduler converges but producer
-closure remains Incomplete: 24 evaluations remain incomplete and the certificate
+closure remains Incomplete: four evaluations remain incomplete and the certificate
 is not fully closed. The scoped acceptance guard correctly rejects this result.
 Medium/full publication has not run;
 the full-publication attempt budget is unused.
@@ -24,7 +24,8 @@ frontend and authentic Action/Occurrence ancestry. Actual-planner and independen
 guards verify the end-membership filter, directed valuation proof separation,
 eligible argument populations and the earlier per-effect/immediate owning-Type
 writer scopes. These synthetic dependency results are not publication acceptance.
-The rebuilt `actions-end-and-index` audit is running; its result is not yet known.
+The rebuilt `actions-end-and-index` audit reduces the remaining incomplete
+evaluations from 24 to four; it remains an unsuccessful acceptance gate.
 See [closure.md](closure.md) for each correction and exact evidence boundary.
 
 The [Gen1/Gen2 audit](../gen1-gen2-audit/README.md), proposed
@@ -38,28 +39,26 @@ the executable actual-cache gate.
 
 ## Publication observations
 
-All completed scoped runs remain failed acceptance gates until the full certificate
-closes. The immediately preceding bounded-writer audit had 64 incomplete producer
-pairs; the current run below has 24. Earlier observations, actual exits and resource
-limits remain in [publication-commands.json](publication-commands.json) and the
-[closure record](closure.md). Provisional endpoint selections are never
-Complete-reference counts.
+The latest `actions-end-and-index` audit uses clean source `0e3d7f5` and the
+successful release build from `905e4ee`. It exits 1 normally in **1,409.547 seconds**,
+peaking at **6,124.8 MiB private memory**, with no watchdog stop. All eight documents
+parse/construct byte-exactly; selected endpoints and Complete mandatory references
+are both 534, with zero reference failures, kernel obligations or authority
+conflicts. Accepted KerML producers are not replayed.
 
-The latest `actions-immediate-owner` audit (source `fad6a95`, release built from
-`749f9c9`) finishes normally with exit 1 in **1,327.469 seconds**, peaking at
-**6,160.2 MiB private memory**. All 534 references are Complete, with zero kernel
-obligations or authority conflicts; 8/8 documents parse and construct byte-exactly.
-Accepted KerML producers are not replayed. Closure converges in 31 rounds but is
-Incomplete: **24 pairs** (21 Usage mayTimeVary, 2 FeatureReferenceExpression,
-1 FeatureValue), 23 diagnostics, and 382,442/407,028 closed requirements. It
-evaluates 19,917 subjects and derives 3,341 elements. The compact certificate is
-2,628,939 bytes; optional revalidation data is 712,671,848 bytes. Two rebindings
-retain 1,225 evaluations and reopen 11,801 in total. No medium/full attempt is
-consumed, and the full attempt budget remains unused.
+Closure converges in 31 rounds but remains Incomplete and not fully closed:
+**four MayTimeVary pairs**, four diagnostics, 11,044/11,547 closed applicable pairs
+and 382,623/407,490 closed requirements. It evaluates 20,030 subjects and derives
+3,418 elements. Certificate/revalidation sizes are 2,631,923 and 682,310,664 bytes;
+two rebindings retain 1,235 and reopen 11,919 evaluations in aggregate.
 
-Byte-verified diagnostic source spans isolate 20 remaining end usages in
-Flows/Connections/Items and the indexed assignment `assign var := seq#(index)`
-in Actions. Bounded planner/fixture diagnosis precedes any further corpus run.
+The indexed assignment and sixteen previously blocked ends now close. The four
+remaining subjects are Flows lines 68/69 (`[1] source` and `[1] target`) and Items
+lines 138/139 (the two `[0..*]` item ends). Original KPAR hashes were checked before
+mapping their source spans. Exact command, exit, resource observations, final
+counts and report hashes are in [publication-commands.json](publication-commands.json).
+Earlier failed audits remain historical in that ledger and [closure.md](closure.md).
+Medium/full publication has not run; the full-attempt budget is unused.
 
 Full non-audit publication now uses normal preparation; scoped/audit-only paths
 retain the final construction predicate pass. Strict publication independently
