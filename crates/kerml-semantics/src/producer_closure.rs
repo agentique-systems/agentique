@@ -850,6 +850,23 @@ impl ProducerEvaluationTable {
             }
         }
         let trace = std::env::var_os("AGQ_PRODUCER_CAUSAL_TRACE").is_some();
+        // Optional diagnostic filtering keeps a corpus trace bounded to the
+        // subjects under investigation. It never filters closure propagation.
+        let trace_subjects = std::env::var("AGQ_PRODUCER_CAUSAL_SUBJECTS")
+            .ok()
+            .map(|value| {
+                value
+                    .split(',')
+                    .map(|id| id.trim().to_ascii_lowercase())
+                    .filter(|id| !id.is_empty())
+                    .collect::<BTreeSet<_>>()
+            });
+        let trace_pair = |writer: ElementId, reader: ElementId| {
+            trace
+                && trace_subjects.as_ref().is_none_or(|subjects| {
+                    subjects.contains(&writer.to_string()) || subjects.contains(&reader.to_string())
+                })
+        };
         let mut future_effects_applied = false;
         while let Some(pair) = pending.pop_front() {
             let subject = subjects[pair / families];
@@ -883,9 +900,11 @@ impl ProducerEvaluationTable {
                                 )
                             })
                         }) {
-                            if trace && !blocked.contains(reader) {
+                            if !blocked.contains(reader)
+                                && trace_pair(subject, subjects[*reader / families])
+                            {
                                 eprintln!(
-                                    "closure future cause {subject:?}/{} -> {:?}/{} read={read:?}",
+                                    "closure future cause {subject}/{} -> {}/{} read={read:?}",
                                     descriptor.id.name(),
                                     subjects[*reader / families],
                                     registry.descriptors[*reader % families].id.name()
@@ -917,9 +936,11 @@ impl ProducerEvaluationTable {
                             &mutable_feature_populations,
                         )
                     }) {
-                        if trace && !blocked.contains(reader) {
+                        if !blocked.contains(reader)
+                            && trace_pair(subject, subjects[*reader / families])
+                        {
                             eprintln!(
-                                "closure direct cause {subject:?}/{} -> {:?}/{} read={read:?}",
+                                "closure direct cause {subject}/{} -> {}/{} read={read:?}",
                                 descriptor.id.name(),
                                 subjects[*reader / families],
                                 registry.descriptors[*reader % families].id.name()
@@ -966,9 +987,9 @@ impl ProducerEvaluationTable {
             }
             for reader in affected {
                 if blocked.insert(reader) {
-                    if trace {
+                    if trace_pair(subject, subjects[reader / families]) {
                         eprintln!(
-                            "closure dependency {:?}/{} -> {:?}/{}",
+                            "closure dependency {}/{} -> {}/{}",
                             subject,
                             descriptor.id.name(),
                             subjects[reader / families],

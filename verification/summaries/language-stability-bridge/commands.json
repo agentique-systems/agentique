@@ -628,6 +628,35 @@
       "duration_seconds": 0.91,
       "output": "verification/generated/language-stability-bridge/foundation-current-standards-check.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "bounded-causal-diagnostics-check",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "7ee17b325a460bb2dda2351e67b0d26897e40606",
+      "working_changes_sha256": "0578f93cc8958c6219e6ce936d9f1e36df77fc0a40c7253cb58ea4bcaf514e2c",
+      "output_sha256": "cb9edf75718bc5700001adb71c9c5d818e892b34f7a63ec6cc829438bb539840",
+      "duration_seconds": 18.5,
+      "output": "verification/generated/language-stability-bridge/bounded-causal-diagnostics-check.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\foundation-integration"
+      }
     }
   ]
 }

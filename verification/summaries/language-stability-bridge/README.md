@@ -69,6 +69,11 @@ remaining difference from the real library is still under diagnosis. The live
 publication binding context fix is separately covered by rejection and attachment
 tests and does not establish publication acceptance.
 
+The existing `AGQ_PRODUCER_CAUSAL_TRACE=1` diagnostic can be bounded with
+`AGQ_PRODUCER_CAUSAL_SUBJECTS=<comma-separated element UUIDs>`. It records causal
+edges involving those subjects; propagation and certification are unchanged.
+Package Clippy with warnings denied passes for this diagnostic-only change.
+
 A focused immutable-dependency review passes five tests. Accepted records are
 not producer subjects, but combined project searches over local noncomposite
 carriers remain subject to local closure. An accepted dependency source marker
