@@ -26,6 +26,8 @@ use std::{
 mod artifacts;
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
+#[path = "support/systems_corpus_witnesses.rs"]
+mod systems_corpus_witnesses;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -549,6 +551,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "findings":effective.findings.iter().map(|finding|format!("{finding:?}")).collect::<Vec<_>>(),
             "publication_authority":false,
         });
+        report["corpus_witnesses"] = systems_corpus_witnesses::audit(&candidate)?;
         let passed = candidate.construction_complete()
             && draft
                 .producer_closure()
@@ -560,7 +563,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             })
             && failures.is_empty()
             && authority_conflicts.is_empty()
-            && effective.findings.is_empty();
+            && effective.findings.is_empty()
+            && report["corpus_witnesses"]["passed"] == true;
         report["scoped_preflight_passed"] = json!(passed);
         report["publication_attempted"] = json!(false);
         write_report(&output, &report)?;
