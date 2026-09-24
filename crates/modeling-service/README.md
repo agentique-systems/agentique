@@ -1,0 +1,35 @@
+# Gen2 modeling service
+
+The service coordinates a transport-neutral repository and an authenticated
+accepted Systems publication. It has no runtime SQL, Axum or Gen1 dependency.
+
+Resolve `(ProjectId, RevisionSelector)` once to obtain a `BoundRevision`. Retain
+that handle for all queries in a request; subsequent branch moves cannot change
+its sources, graph, completeness or evidence. `current_element` and
+`declared_element` are graph projections. `effective_members` and `effective_names`
+return owned language query evidence, diagnostics and semantic context.
+Source position lookup explicitly represents multiple matching elements.
+
+`prepare_changes` returns an inspectable candidate without changing a durable
+head. `commit_prepared` persists the complete candidate with CAS and returns only
+after durable success. Retain the prepared value for exact idempotent retry after
+an unknown acknowledgement. The convenience `apply_document_changes` performs
+both steps; retrying it reconstructs a different candidate and is not the lost-ack
+recovery protocol. Initial project creation allocates an empty Working R0; authored
+R1 and later source-backed edits follow the ordinary commit contract.
+
+Restoration authenticates source/identity/publication bindings and reconstructs
+the workspace. Stored Working status remains Working even when the reconstructed
+semantics could pass validation. Stored Validated status additionally requires
+matching graph, context and closure identities and the actual checked Phase1V1
+transition. This is supported platform acceptance, not whole-language conformance.
+
+The bounded revision cache is optional and evictable. Each entry binds the exact
+revision, accepted publications and semantic context. Unqueryable Working revisions
+can bypass it; a cache optimization cannot turn a durable success into failure.
+`check_integrity` composes storage verification with reconstruction of all retained
+revisions, including detached histories. It can be expensive by design.
+
+The API adapter projects these owned values against the pinned Systems Modeling
+API 1.0 shapes. Arbitrary semantic mutation, source/programmatic reconciliation,
+automatic merge, views and execution remain separate contracts.

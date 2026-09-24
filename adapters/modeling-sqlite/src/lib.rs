@@ -512,6 +512,7 @@ impl ModelingRepository for SqliteRepository {
 
     fn list_revisions(&self, project: ProjectId) -> Result<Vec<RevisionManifest>, RepositoryError> {
         let connection = self.lock()?;
+        self::project(&connection, project)?;
         let mut statement = connection
             .prepare("SELECT id FROM revisions WHERE project_id=? ORDER BY id")
             .map_err(storage)?;

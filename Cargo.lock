@@ -144,6 +144,86 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-modeling-api"
+version = "0.1.0"
+dependencies = [
+ "agq-kernel",
+ "agq-modeling-repository",
+ "agq-modeling-service",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
+name = "agq-modeling-http"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml-text",
+ "agq-kernel",
+ "agq-modeling-api",
+ "agq-modeling-repository",
+ "agq-modeling-service",
+ "agq-modeling-sqlite",
+ "agq-standard-libraries",
+ "axum",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tower",
+ "uuid",
+]
+
+[[package]]
+name = "agq-modeling-repository"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml-text",
+ "agq-kernel",
+ "agq-modeling-workspace",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
+name = "agq-modeling-service"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml",
+ "agq-kerml-semantics",
+ "agq-kerml-text",
+ "agq-kernel",
+ "agq-modeling-repository",
+ "agq-modeling-sqlite",
+ "agq-modeling-workspace",
+ "agq-standard-libraries",
+ "chrono",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "agq-modeling-sqlite"
+version = "0.1.0"
+dependencies = [
+ "agq-modeling-repository",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "agq-modeling-workspace"
 version = "0.1.0"
 dependencies = [
