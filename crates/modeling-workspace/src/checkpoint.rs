@@ -6,9 +6,13 @@ use serde::{Deserialize, Serialize};
 /// Explicit versioned revision representation without graphs or source bytes.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectRevisionCheckpoint {
+    /// Representation version; currently one.
     pub format_version: u32,
+    /// Exact durable project revision, independent of kernel revision labels.
     pub project_revision_id: ProjectRevisionId,
+    /// Sole immutable history parent, if this is not the initial revision.
     pub parent_revision_id: Option<ProjectRevisionId>,
+    /// Authored identity reservations and source-content digests.
     pub source: SourceIdentityCheckpoint,
 }
 
@@ -16,8 +20,11 @@ pub struct ProjectRevisionCheckpoint {
 /// Source checkpoints and authenticated publications remain required to restore it.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ProjectSemanticCache {
+    /// Representation version; currently one.
     pub format_version: u32,
+    /// Revision to which the cached facts belong.
     pub project_revision_id: ProjectRevisionId,
+    /// Local authored graph cache and its exact semantic identities.
     pub source: SourceSemanticCache,
 }
 
@@ -25,20 +32,28 @@ pub struct ProjectSemanticCache {
 /// fresh kernel revision allocated during a source rebuild.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SemanticFingerprint {
+    /// Canonical effective graph and provenance identity.
     pub model_digest: [u8; 32],
+    /// Semantic context independent of kernel revision allocation.
     pub context_contract_digest: [u8; 32],
+    /// Actual producer closure identity, when a certificate exists.
     pub closure_digest: Option<[u8; 32]>,
+    /// Accepted KerML publication semantic identity.
     pub accepted_kerml: [u8; 32],
+    /// Accepted SysML Systems publication identity.
     pub accepted_sysml: [u8; 32],
 }
 
 /// Checkpoint authentication or ordinary source reconstruction failed.
 #[derive(Debug, thiserror::Error)]
 pub enum CheckpointError {
+    /// The durable representation requires an unsupported version.
     #[error("unsupported project checkpoint version {0}")]
     Version(u32),
+    /// The disposable cache belongs to another revision or format.
     #[error("semantic cache revision or format does not match the source checkpoint")]
     CacheIdentity,
+    /// Source authentication, parsing or semantic reconstruction failed.
     #[error(transparent)]
     Source(#[from] SourceCheckpointError),
 }

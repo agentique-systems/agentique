@@ -41,9 +41,15 @@ pub enum SourceCheckpointError {
     #[error(transparent)]
     Build(#[from] LibraryLoadError),
     #[error(transparent)]
-    Archive(#[from] agq_kernel::archive::ArchiveError),
+    Archive(Box<agq_kernel::archive::ArchiveError>),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+}
+
+impl From<agq_kernel::archive::ArchiveError> for SourceCheckpointError {
+    fn from(error: agq_kernel::archive::ArchiveError) -> Self {
+        Self::Archive(Box::new(error))
+    }
 }
 
 impl SourceCompilation {

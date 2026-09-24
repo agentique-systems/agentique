@@ -10,14 +10,23 @@ use sha2::{Digest, Sha256};
 /// every restored graph also passes ordinary producer and effective-query audits.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SourceSemanticCache {
+    /// Representation version; currently one.
     pub format_version: u32,
+    /// Exact source identity checkpoint, including source-content digests.
     pub source_identity_digest: [u8; 32],
+    /// Canonical effective graph and provenance identity.
     pub model_digest: [u8; 32],
+    /// Semantic context independent of a fresh kernel revision label.
     pub context_contract_digest: [u8; 32],
+    /// Exact combined KerML and SysML producer registry.
     pub producer_registry_digest: [u8; 32],
+    /// Closure certificate semantic identity, reproduced on restore.
     pub semantic_closure_digest: [u8; 32],
+    /// Accepted language profiles, descriptors, grammar and rule dependencies.
     pub sysml_dependency_digest: [u8; 32],
+    /// SHA-256 of the local kernel frontier bytes.
     pub kernel_frontier_digest: [u8; 32],
+    /// Versioned kernel cache archive, excluding immutable standard dependencies.
     pub kernel_frontier: Vec<u8>,
 }
 
