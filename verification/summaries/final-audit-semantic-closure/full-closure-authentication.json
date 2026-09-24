@@ -1,0 +1,108 @@
+{
+  "format": "agq-full-systems-closure-authentication/1",
+  "passed": true,
+  "publication_authority": false,
+  "semantic_authority": "pending Rust direct-finalizer authentication and audits",
+  "independently_retained_journal_sha256": "15356f167c1b5f9a4095d9a02bcda63a5710a2db2c47c93570de3a0136844f3c",
+  "closed_producer_pairs": 27177,
+  "closed_requirements": 452172,
+  "mandatory_references_complete": 1327,
+  "producer_diagnostics": [],
+  "checkpoint": {
+    "journal_sha256": "15356f167c1b5f9a4095d9a02bcda63a5710a2db2c47c93570de3a0136844f3c",
+    "archive_sha256": "70af866050564705339c87b5fdcda5c94bd1c73829e11457559a87345382dfbe",
+    "source_identity": "f9294c96aca347e4399f283648f9b81fbe527ccb05ba68f4ebb60db4df0fd3fc",
+    "certificate_receipt_digest": "0e7527e9f1f49dc8a338dcaaba9b6af3ea92e03ad8818464a957f7a77fef3dc9",
+    "graph_sha256": "5bdb669376dd259307f6622b8cc60703eb8b512f337c37715fc1567d66430d5b",
+    "graph_payload_sha256": "a935679c8aecaba027469a8ba09f4122f4d3a2db5700dee209edddc26eea58a0",
+    "header": {
+      "DependentHeader": {
+        "format": "agq-kernel-dependent-publication-frontier/1",
+        "registry": [
+          184,
+          147,
+          22,
+          168,
+          121,
+          147,
+          150,
+          44,
+          183,
+          31,
+          70,
+          144,
+          113,
+          94,
+          81,
+          89,
+          189,
+          81,
+          44,
+          107,
+          160,
+          116,
+          90,
+          217,
+          158,
+          228,
+          243,
+          216,
+          211,
+          155,
+          117,
+          236
+        ],
+        "dependency": [
+          135,
+          175,
+          12,
+          58,
+          57,
+          91,
+          145,
+          150,
+          142,
+          179,
+          91,
+          14,
+          200,
+          83,
+          153,
+          89,
+          158,
+          204,
+          170,
+          128,
+          169,
+          126,
+          50,
+          212,
+          72,
+          224,
+          242,
+          78,
+          87,
+          220,
+          109,
+          222
+        ]
+      }
+    },
+    "contributions": 6053,
+    "selected_reference_digest": "f5873c509e134d51751671bd1dc03d02eea6b6daacc04f3b384216774c49408e"
+  },
+  "evidence": [
+    {
+      "path": "verification/generated/final-audit-semantic-closure/full-closure/report.json",
+      "sha256": "ed553323f5ba10d98ef760465f10291a7362fe4f16b468821babd79468980e40"
+    },
+    {
+      "path": "verification/generated/overnight-convergence/semantic-closure-systems-full/result.json",
+      "sha256": "6a39dab2fe4191daf103c9f9fc87d2e6dda47f78379716e30ad12d7e6b17353a"
+    },
+    {
+      "path": "verification/summaries/final-audit-semantic-closure/executable.json",
+      "sha256": "d7da4b9802b6b23a489a9992bd85891cc8cab89bd39b15a9b0b95a2953a82bd5"
+    }
+  ]
+}

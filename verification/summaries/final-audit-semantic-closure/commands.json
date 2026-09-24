@@ -1049,6 +1049,21 @@
       "duration_seconds": 0.12,
       "output": "verification/generated/final-audit-semantic-closure/medium13-audit-profile.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "authenticate-full-closure",
+      "command": [
+        "python",
+        "verification/summaries/final-audit-semantic-closure/authenticate-full-closure.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "257d73cb3ddf5ba47f43fc9fb29f701d6ded7b99",
+      "working_changes_sha256": "34af5adf5f9980f2e8d97256f4130b3986d509c6d91c58531d8d0285d2865177",
+      "output_sha256": "574f1d94eb8e8ad4a6575c08c660f28c21839758e4339a0c6dd05d0ebf1f0829",
+      "duration_seconds": 28.12,
+      "output": "verification/generated/final-audit-semantic-closure/authenticate-full-closure.log",
+      "environment_overrides": {}
     }
   ]
 }

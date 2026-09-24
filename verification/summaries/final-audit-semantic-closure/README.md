@@ -114,9 +114,23 @@ overhead measurement. The deterministic bounded worker implementation remains
 unchanged for full acceptance. Scope and population differ from the old full
 audit, so these durations are not a before/after performance comparison.
 
-Both scoped gates are green before the fresh full run. Full closure and
-authenticated finalization remain pending. No accepted Systems receipt or
-default-profile change is claimed here.
+Both scoped gates were green before the fresh full run. The full `--close-only`
+command then finished successfully in 3,143.969 seconds, within its 3,600-second
+budget, with peak private memory of 5,773.0 MiB. Its strict frontier reached
+Complete at 3,052.792 seconds: **27,177/27,177 producer pairs and
+452,172/452,172 requirements closed**, zero incomplete pairs and zero producer
+diagnostics. All 1,327 mandatory references are Complete.
+
+The independently retained journal pin is
+`15356f167c1b5f9a4095d9a02bcda63a5710a2db2c47c93570de3a0136844f3c`.
+The [transport authentication](full-closure-authentication.json) verifies the
+completed run's output, executable, journal, archive, decoded graph/state, and
+strict certificate bindings. It is not publication authority. The Rust direct
+finalizer must independently authenticate the contract and perform every audit.
+No old converged frontier was resumed; nine new checkpoints were committed.
+
+Authenticated direct finalization remains pending. No accepted Systems receipt
+or default-profile change is claimed here.
 
 ## Platform boundary
 
