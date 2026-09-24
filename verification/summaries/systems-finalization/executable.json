@@ -1,0 +1,9 @@
+{
+  "format": "agq-publication-executable-evidence/1",
+  "executable": "verification/generated/systems-finalization/finalizer.exe",
+  "sha256": "be4f8b7c03c6f6d07ad8da0bc5bddb1990ec0799b2bd25dff09ea6bfd4b57ef4",
+  "bytes": 19182080,
+  "source_commit": "a7d803c7cc40ef73c57135f2e780903582300bf3",
+  "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "purpose": "Read-only finalization of independently authenticated converged frontier; no Systems producer replay."
+}

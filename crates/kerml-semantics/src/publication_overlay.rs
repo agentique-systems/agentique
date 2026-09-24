@@ -501,18 +501,51 @@ impl KerMlQueries<'_> {
         subjects: impl IntoIterator<Item = ElementId>,
         extension_rules: impl IntoIterator<Item = agq_kernel::RuleId>,
     ) -> PublicationCapabilityReport {
+        self.audit_publication_capabilities_with_rules_and_progress(
+            subjects,
+            extension_rules,
+            |_, _, _| {},
+        )
+    }
+    /// The same complete capability audit with observational begin/end boundaries.
+    /// Provenance scans reuse borrowed immutable proof/search allocations.
+    pub fn audit_publication_capabilities_with_rules_and_progress(
+        &self,
+        subjects: impl IntoIterator<Item = ElementId>,
+        extension_rules: impl IntoIterator<Item = agq_kernel::RuleId>,
+        mut progress: impl FnMut(PublicationAuditPhase, bool, usize),
+    ) -> PublicationCapabilityReport {
+        let subjects: Vec<_> = subjects.into_iter().collect();
         let mut q = KerMlQueries::for_production(self.context.fork());
         let mut checks = PublicationChecks::new(self.model(), true);
         checks.extension_rules.extend(extension_rules);
+        progress(PublicationAuditPhase::Capabilities, true, 0);
         checks.standard_bindings(&q);
-        for (index, subject) in subjects.into_iter().enumerate() {
+        for (index, subject) in subjects.iter().copied().enumerate() {
             if index > 0 && index.is_multiple_of(32) {
                 // Keep the aggregate audit/proof deduplication, while bounding
                 // per-query memo retention over a combined language corpus.
                 q = KerMlQueries::for_production(self.context.fork());
             }
-            checks.subject(&q, subject);
+            checks.subject_queries(&q, subject);
         }
+        progress(
+            PublicationAuditPhase::Capabilities,
+            false,
+            checks.failures.values().map(BTreeSet::len).sum(),
+        );
+        progress(PublicationAuditPhase::DerivedProvenance, true, 0);
+        for subject in subjects {
+            checks.subject_provenance(&q, subject);
+        }
+        progress(
+            PublicationAuditPhase::DerivedProvenance,
+            false,
+            checks
+                .failures
+                .get(&PublicationFamily::IdentityProvenance)
+                .map_or(0, BTreeSet::len),
+        );
         PublicationCapabilityReport {
             context: self.context().clone(),
             checked_items: checks.counts,
@@ -521,6 +554,13 @@ impl KerMlQueries<'_> {
             provider_reads: PublicationProviderReads::from_keys(checks.provider_keys.unwrap()),
         }
     }
+}
+
+/// Observational phases of the unchanged publication-critical audit set.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PublicationAuditPhase {
+    Capabilities,
+    DerivedProvenance,
 }
 
 struct PublicationChecks<'m> {
@@ -652,7 +692,10 @@ impl PublicationChecks<'_> {
         });
     }
     fn subject(&mut self, q: &KerMlQueries<'_>, subject: ElementId) {
-        use PublicationFamily as F;
+        self.subject_provenance(q, subject);
+        self.subject_queries(q, subject);
+    }
+    fn subject_provenance(&mut self, q: &KerMlQueries<'_>, subject: ElementId) {
         if let Some(record) = q.model().element(subject) {
             self.provenance(q, FactKey::Element(subject), subject, record.origin());
             for (property, slot) in record.slots() {
@@ -679,6 +722,9 @@ impl PublicationChecks<'_> {
                 );
             }
         }
+    }
+    fn subject_queries(&mut self, q: &KerMlQueries<'_>, subject: ElementId) {
+        use PublicationFamily as F;
         if q.is(subject, c::NAMESPACE) {
             self.answer(
                 F::NamespaceImports,

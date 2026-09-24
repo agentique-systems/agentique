@@ -4,7 +4,8 @@ use agq_kerml_syntax::production::SysmlSyntaxProfile;
 use agq_kerml_text::{
     library::CanonicalKermlStandardLibraries,
     sysml::{
-        SYSTEMS_PUBLICATION_MAX_ROUNDS, prepare_systems_library_slice_with_semantic_progress,
+        SYSTEMS_PUBLICATION_MAX_ROUNDS, SystemsFinalizationAuditMode,
+        prepare_systems_library_slice_with_semantic_progress,
         prepare_systems_library_with_frontier_checkpoints,
         prepare_systems_library_with_semantic_progress, systems_frontier_source_identity,
     },
@@ -21,6 +22,8 @@ use std::{
     time::Instant,
 };
 
+#[path = "support/systems_publication_artifacts.rs"]
+mod artifacts;
 #[path = "support/publication_metrics.rs"]
 mod publication_metrics;
 
@@ -32,6 +35,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cache =
         argument("--cache=").ok_or("--cache=<accepted KerML publication cache> is required")?;
     let output = argument("--output=").ok_or("--output=<report path> is required")?;
+    let finalize_journal = argument("--finalize-converged=");
+    let audit_mode = parse_audit_workers(std::env::args(), finalize_journal.is_some())?;
+    let audit_only = std::env::args().any(|arg| arg == "--audit-only");
     let checkpoint_directory = argument("--checkpoint=");
     let resume_journal = argument("--resume=");
     let resume_pin =
@@ -47,18 +53,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if checkpoint_directory.is_some() && resume_journal.is_some() {
         return Err("choose --checkpoint or --resume".into());
     }
+    if let Some(journal) = finalize_journal {
+        if checkpoint_directory.is_some()
+            || resume_journal.is_some()
+            || audit_only
+            || argument("--documents=").is_some()
+            || contextual_interval != 0
+        {
+            return Err("--finalize-converged accepts only the exact full retained frontier; no scheduler or slice options".into());
+        }
+        return finalize_converged(
+            &root,
+            &cache,
+            &output,
+            &journal,
+            parse_digest(
+                resume_pin.as_deref().ok_or(
+                    "--finalize-converged requires independently retained --resume-sha256",
+                )?,
+            )?,
+            audit_mode,
+        );
+    }
     if resume_journal.is_some() != resume_pin.is_some() {
         return Err(
             "--resume and independently retained --resume-sha256 are required together".into(),
         );
     }
+    let transaction = if audit_only {
+        None
+    } else {
+        Some(artifacts::ArtifactTransaction::begin(&output)?)
+    };
+    let output = match &transaction {
+        Some(transaction) => transaction.report_path(&output)?,
+        None => output,
+    };
     std::fs::create_dir_all(output.parent().ok_or("output parent")?)?;
-    let mut stages = std::fs::File::create(output.with_extension("stages.jsonl"))?;
+    let stages_path = transaction
+        .as_ref()
+        .map(|t| t.audits.join("producer-stages.jsonl"))
+        .unwrap_or_else(|| output.with_extension("stages.jsonl"));
+    let mut stages = std::fs::File::create(stages_path)?;
     let started = Instant::now();
     let sources = VerifiedLibrarySet::load_from_directory(&root)?;
     let selected =
         std::env::args().find_map(|arg| arg.strip_prefix("--documents=").map(str::to_owned));
-    let audit_only = std::env::args().any(|arg| arg == "--audit-only");
     let paths: BTreeSet<String> = if let Some(selected) = &selected {
         if !audit_only {
             return Err(
@@ -442,7 +482,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }).collect();
     let mut report = json!({
         "format":"agq-sysml-systems-publication-audit/1",
-        "scope":paths,
+        "scope":audit_only.then_some(&paths),
         "sysml_profile":candidate.syntax_profile().id(),
         "accepted_kerml_digest":accepted.semantic_digest(),
         "accepted_kerml_profile":accepted.profile().id(),
@@ -571,25 +611,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             report["accepted_bindings"] = json!(publication.bindings().targets().len());
             report["publication_gate"] = audit_report(publication.audit());
             report["publication_closure_counters"] = closure_counters(publication.counters());
-            // Preserve the already accepted graph before this process exits.
-            // Receipt files are outputs here, not trusted restoration inputs.
-            let directory = output.parent().ok_or("output parent")?;
-            std::fs::create_dir_all(directory)?;
-            let cache_path = directory.join("canonical.publication.zip");
-            let mut cache = std::fs::File::create(&cache_path)?;
-            let receipt = publication.write_cache(&mut cache, &sources)?;
-            cache.sync_all()?;
-            write_report(&directory.join("accepted-publication.json"), &receipt)?;
-            write_report(
-                &directory.join("standard-bindings.json"),
-                &publication.binding_manifest(&sources)?,
+            artifacts::issue(
+                publication,
+                &sources,
+                transaction.as_ref().expect("full publication transaction"),
+                &mut report,
             )?;
-            let persisted_bindings = serde_json::from_reader(std::fs::File::open(
-                directory.join("standard-bindings.json"),
-            )?)?;
-            publication.check_binding_manifest(&sources, &persisted_bindings)?;
-            report["bindings_stale_check"] = json!(true);
-            report["exported_cache"] = json!(cache_path);
         }
         Err(agq_kerml_text::sysml::SystemsPublicationError::Rejected(audit)) => {
             report["publication_gate"] = audit_report(&audit);
@@ -600,7 +627,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     report["elapsed_seconds"] = json!(started.elapsed().as_secs_f64());
     report["checkpoint_session"] = checkpoint_report(checkpoints.as_deref())?;
-    write_report(&output, &report)?;
+    if let Some(transaction) = &transaction {
+        transaction.stage("final_report", || artifacts::write_json(&output, &report))?;
+    } else {
+        write_report(&output, &report)?;
+    }
     println!(
         "Systems: {parsed}/21 parsed; {constructed}/21 constructed; {} kernel obligations; {:.3}s",
         obligations,
@@ -609,7 +640,121 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if report["publication_accepted"] != true {
         std::process::exit(1);
     }
+    transaction
+        .expect("accepted publication transaction")
+        .promote()?;
     Ok(())
+}
+
+fn finalize_converged(
+    root: &std::path::Path,
+    cache: &std::path::Path,
+    output: &std::path::Path,
+    journal: &std::path::Path,
+    journal_digest: [u8; 32],
+    audit_mode: SystemsFinalizationAuditMode,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // This branch deliberately precedes all prepare_* and publish() calls.
+    // An invalid/nonconverged checkpoint fails here without a scheduler fallback.
+    let transaction = artifacts::ArtifactTransaction::begin(output)?;
+    let candidate_report = transaction.report_path(output)?;
+    let started = Instant::now();
+    let sources = VerifiedLibrarySet::load_from_directory(root)?;
+    let accepted = Arc::new(transaction.stage("kerml_dependency_restore", || {
+        Ok(CanonicalKermlStandardLibraries::restore_cache(
+            std::fs::File::open(cache)?,
+            &sources,
+        )?)
+    })?);
+    let publication =
+        match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::finalize_from_converged_frontier_with_audit_mode(
+            &sources,
+            accepted.clone(),
+            journal,
+            journal_digest,
+            &transaction.audits,
+            audit_mode,
+        ) {
+            Ok(publication) => publication,
+            Err(error) => {
+                let mut report = json!({
+                    "format":"agq-sysml-systems-publication-audit/1", "scope":null,
+                    "publication_attempted":true,"publication_accepted":false,
+                    "systems_producers_replayed":false,"kerml_producers_replayed":false,
+                    "effective_audit_workers":audit_worker_count(audit_mode),
+                    "publication_error":error.to_string(),"audit_directory":transaction.audits,
+                    "elapsed_seconds":started.elapsed().as_secs_f64(),
+                });
+                if let agq_kerml_text::sysml::SystemsPublicationError::Rejected(audit) = &error {
+                    report["publication_gate"] = audit_report(audit);
+                }
+                artifacts::write_json(&candidate_report, &report)?;
+                return Err(error.into());
+            }
+        };
+    let documents: Vec<_> = publication.documents().iter().map(|document|json!({
+        "path":document.path,"document":document.document,"sha256":document.source_sha256,
+        "profile":document.profile.id(),"parsed":document.parsed,"byte_exact":document.byte_exact,
+        "recovery_count":document.recovery_count,"production_count":document.production_count,
+        "construction_gap":document.construction_gap,
+    })).collect();
+    let mut report = json!({
+        "format":"agq-sysml-systems-publication-audit/1","scope":null,
+        "sysml_profile":SysmlSyntaxProfile::OperationalV2.id(),
+        "accepted_kerml_digest":accepted.semantic_digest(),"accepted_kerml_profile":accepted.profile().id(),
+        "kerml_producers_replayed":false,"systems_producers_replayed":false,
+        "converged_checkpoint_authenticated":true,
+        "finalization_producer_evaluations":0,
+        "effective_audit_workers":audit_worker_count(audit_mode),
+        "authenticated_checkpoint_entry":authenticated_checkpoint_entry(journal, journal_digest)?,
+        "final_capability_findings":publication.audit().findings.iter().filter(|finding|matches!(finding,
+            agq_kerml_text::sysml::SystemsPublicationFinding::Capability { .. })).count(),
+        "final_authority_findings":publication.audit().findings.iter().filter(|finding|matches!(finding,
+            agq_kerml_text::sysml::SystemsPublicationFinding::Authority(_))).count(),
+        "systems_documents_parsed":publication.documents().iter().filter(|d|d.parsed).count(),
+        "systems_documents_constructed":publication.documents().iter().filter(|d|d.construction_gap.is_none()).count(),
+        "systems_documents_byte_exact":publication.documents().iter().filter(|d|d.byte_exact).count(),
+        "construction_complete":true,"kernel_obligations":0,"kernel_obligation_details":[],
+        "producer_closure":closure_report(publication.producer_closure(), publication.overlay().model()),
+        "mandatory_references":{"total":publication.audit().mandatory_references,"counts":{
+            "complete":publication.audit().complete_references,"incomplete":0,"unresolved":0,
+            "ambiguous":0,"invalid":0,"endpoint_mismatch":0},"failures":[]},
+        "reference_audit_scope":"accepted_publication","authority_conflicts":[],"documents":documents,
+        "publication_producers":{"converged":true,"completeness":"Complete"},
+        "publication_attempted":true,"publication_accepted":true,
+        "publication_digest":publication.publication_digest(),"semantic_digest":publication.semantic_digest(),
+        "accepted_bindings":publication.bindings().targets().len(),"publication_gate":audit_report(publication.audit()),
+        "publication_closure_counters":closure_counters(publication.counters()),
+        "checkpoint_session":{"accepted_authority":false,"latest":{"journal":journal,
+            "sha256":journal_digest.iter().map(|byte|format!("{byte:02x}")).collect::<String>()}},
+    });
+    artifacts::issue(publication, &sources, &transaction, &mut report)?;
+    report["elapsed_seconds"] = json!(started.elapsed().as_secs_f64());
+    transaction.stage("final_report", || {
+        artifacts::write_json(&candidate_report, &report)
+    })?;
+    transaction.promote()?;
+    println!(
+        "Systems: read-only finalization accepted and atomically issued; {:.3}s",
+        started.elapsed().as_secs_f64()
+    );
+    Ok(())
+}
+
+fn authenticated_checkpoint_entry(
+    journal: &std::path::Path,
+    expected: [u8; 32],
+) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    let bytes = std::fs::read(journal)?;
+    if <[u8; 32]>::from(Sha256::digest(&bytes)) != expected {
+        return Err("retained frontier journal changed during finalization".into());
+    }
+    let journal: serde_json::Value = serde_json::from_slice(&bytes)?;
+    let entry = journal["entries"]
+        .as_array()
+        .and_then(|entries| entries.last())
+        .ok_or("authenticated frontier journal has no entries")?;
+    Ok(json!({"source_identity":journal["source_identity"],"entry":entry}))
 }
 
 fn closure_report(
@@ -644,6 +789,41 @@ fn parse_digest(value: &str) -> Result<[u8; 32], Box<dyn std::error::Error>> {
         *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)?;
     }
     Ok(digest)
+}
+
+fn parse_audit_workers(
+    arguments: impl IntoIterator<Item = impl AsRef<str>>,
+    finalizing: bool,
+) -> Result<SystemsFinalizationAuditMode, &'static str> {
+    let mut selected = None;
+    for argument in arguments {
+        let argument = argument.as_ref();
+        if argument == "--audit-workers" {
+            return Err("--audit-workers requires =1 or =2");
+        }
+        let Some(value) = argument.strip_prefix("--audit-workers=") else {
+            continue;
+        };
+        if !finalizing {
+            return Err("--audit-workers is only supported with --finalize-converged");
+        }
+        if selected.is_some() {
+            return Err("--audit-workers may be specified only once");
+        }
+        selected = Some(match value {
+            "1" => SystemsFinalizationAuditMode::Serial,
+            "2" => SystemsFinalizationAuditMode::ParallelTwo,
+            _ => return Err("--audit-workers must be 1 or 2"),
+        });
+    }
+    Ok(selected.unwrap_or_default())
+}
+
+fn audit_worker_count(mode: SystemsFinalizationAuditMode) -> usize {
+    match mode {
+        SystemsFinalizationAuditMode::Serial => 1,
+        SystemsFinalizationAuditMode::ParallelTwo => 2,
+    }
 }
 
 fn checkpoint_report(
@@ -696,4 +876,45 @@ fn closure_counters(counters: &agq_kerml_semantics::PublicationCounters) -> serd
         .clone(),
     );
     result
+}
+
+#[cfg(test)]
+mod audit_worker_option_tests {
+    use super::*;
+
+    #[test]
+    fn serial_default_and_explicit_bounded_workers() {
+        assert_eq!(
+            parse_audit_workers(std::iter::empty::<&str>(), true),
+            Ok(SystemsFinalizationAuditMode::Serial)
+        );
+        assert_eq!(
+            parse_audit_workers(["--audit-workers=1"], true),
+            Ok(SystemsFinalizationAuditMode::Serial)
+        );
+        assert_eq!(
+            parse_audit_workers(["--audit-workers=2"], true),
+            Ok(SystemsFinalizationAuditMode::ParallelTwo)
+        );
+    }
+
+    #[test]
+    fn worker_options_cannot_select_a_scheduler_path_or_unbounded_workers() {
+        for option in [
+            "--audit-workers",
+            "--audit-workers=",
+            "--audit-workers=0",
+            "--audit-workers=3",
+            "--audit-workers=-1",
+            "--audit-workers=all",
+        ] {
+            assert!(parse_audit_workers([option], true).is_err(), "{option}");
+        }
+        assert!(parse_audit_workers(["--audit-workers=2"], false).is_err());
+        assert!(parse_audit_workers(["--audit-workers=1", "--audit-workers=2"], true).is_err());
+        assert_eq!(
+            parse_audit_workers(std::iter::empty::<&str>(), false),
+            Ok(SystemsFinalizationAuditMode::Serial)
+        );
+    }
 }

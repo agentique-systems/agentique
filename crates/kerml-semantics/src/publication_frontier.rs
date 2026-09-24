@@ -84,6 +84,103 @@ pub(super) struct State<Certificate = FrontierCertificate> {
     pub evaluation_rows: Vec<(ElementId, Vec<u8>)>,
 }
 
+/// Authenticated strict graph and scheduler state, still without publication authority.
+/// Fields are private: convergence and closure cannot be supplied by callers.
+pub struct ConvergedPublicationFrontier {
+    overlay: DerivedOverlay,
+    state: State,
+}
+
+impl ConvergedPublicationFrontier {
+    /// Exact graph decoded under the independently supplied immutable dependency.
+    pub fn overlay(&self) -> &DerivedOverlay {
+        &self.overlay
+    }
+
+    /// Authenticate the final semantic context and complete closure coverage.
+    /// This performs no producer evaluation, graph mutation or context rebasing.
+    pub fn authenticate(
+        self,
+        mut context_factory: impl for<'m> FnMut(
+            &'m DerivedOverlay,
+        )
+            -> Result<SemanticContext<'m>, PublicationOverlayError>,
+        registry: &ProducerRegistry,
+    ) -> Result<PublicationClosure, PublicationOverlayError> {
+        let Self { overlay, state } = self;
+        let bound_context = context_factory(&overlay)?;
+        if !std::ptr::eq(bound_context.model(), overlay.model()) {
+            return Err(failure(
+                "converged frontier context is bound to another model",
+            ));
+        }
+        let context = bound_context.id().clone();
+        drop(bound_context);
+        if context.model_digest != state.model_digest
+            || context.closure_contract_digest() != state.context_contract
+            || context.producer_registry_digest != Some(registry.digest())
+        {
+            return Err(failure(
+                "converged frontier graph/context/registry mismatch",
+            ));
+        }
+        let certificate =
+            restore_certificate(state.certificate, &context, registry, overlay.model())?;
+        if !certificate.is_fully_closed(overlay.model())
+            || certificate.applicable_pairs() != certificate.closed_pairs()
+            || certificate.incomplete_pairs() != 0
+        {
+            return Err(failure("converged frontier closure coverage incomplete"));
+        }
+        if state.counters.applicable_subject_family_pairs != certificate.applicable_pairs()
+            || state.counters.closed_producer_pairs != certificate.closed_pairs()
+            || state.counters.incomplete_producer_pairs != certificate.incomplete_pairs()
+            || state.counters.closed_producer_effects != certificate.closed_effects()
+            || state.counters.families_registered != registry.descriptors().len()
+        {
+            return Err(failure(
+                "converged frontier certificate accounting mismatch",
+            ));
+        }
+        // The separately retained scheduler rows must agree with its certificate.
+        // Inspect bytes directly without cloning its potentially large proof trees.
+        let mut seen = BTreeSet::new();
+        for (subject, row) in &state.evaluation_rows {
+            if !seen.insert(*subject)
+                || row.len() != registry.descriptors().len()
+                || row.iter().enumerate().any(|(family, value)| {
+                    certificate
+                        .evaluation(*subject, family)
+                        .map(|state| state as u8)
+                        != Some(*value)
+                })
+            {
+                return Err(failure("converged frontier evaluation rows mismatch"));
+            }
+        }
+        let local = overlay
+            .model()
+            .elements()
+            .filter(|record| !overlay.declared().is_dependency_element(record.id()))
+            .map(|record| record.id())
+            .collect();
+        if seen != state.population || seen != local {
+            return Err(failure("converged frontier evaluation coverage mismatch"));
+        }
+        Ok(PublicationClosure {
+            overlay,
+            stages: state.stages,
+            counters: state.counters,
+            completeness: Completeness::Complete,
+            converged: true,
+            certificate: Some(certificate),
+            producer_reads: QueryInvalidationSet::from_keys(
+                state.dependencies.into_values().flatten().collect(),
+            ),
+        })
+    }
+}
+
 pub(super) struct Invocation<'a> {
     session: &'a PublicationFrontierSession,
     index: usize,
@@ -241,6 +338,69 @@ impl PublicationFrontierSession {
             return Err(failure("frontier source/publication identity mismatch"));
         }
         Ok(())
+    }
+
+    /// Decode the final strict checkpoint only. Earlier construction invocations
+    /// are neither replayed nor interpreted. The authenticated journal transitively
+    /// pins graph bytes, certificate bytes and exact proof/search transport bytes.
+    pub fn restore_converged_frontier(
+        &self,
+        registry: std::sync::Arc<agq_kernel::metamodel::MetamodelRegistry>,
+        dependency: Option<std::sync::Arc<DerivedOverlay>>,
+    ) -> Result<ConvergedPublicationFrontier, PublicationOverlayError> {
+        let entry = self
+            .journal
+            .lock()
+            .map_err(failure)?
+            .entries
+            .last()
+            .cloned()
+            .ok_or_else(|| failure("missing converged frontier"))?;
+        let path = self
+            .directory
+            .join(format!("{}.zip", hex(entry.archive_sha256)));
+        if digest_file(&path)? != entry.archive_sha256 {
+            return Err(failure("frontier archive authentication mismatch"));
+        }
+        let mut archive = ZipArchive::new(File::open(path).map_err(failure)?).map_err(failure)?;
+        if archive.len() != 2 {
+            return Err(failure("frontier archive entry count"));
+        }
+        let mut state_reader = HashedIo::new(archive.by_name("state.json").map_err(failure)?);
+        let state: State = serde_json::from_reader(&mut state_reader).map_err(failure)?;
+        if state_reader.digest() != entry.state_sha256 {
+            return Err(failure("decoded frontier state authentication mismatch"));
+        }
+        if !state.converged
+            || !state.worklist.is_empty()
+            || state.stratum != ResultStructureStratum::ContextualBindings
+            || state
+                .status
+                .values()
+                .any(|(status, _)| *status != Completeness::Complete)
+            || state
+                .stages
+                .last()
+                .is_none_or(|stage| stage.completeness != Completeness::Complete)
+        {
+            return Err(failure("frontier is not strictly converged"));
+        }
+        let mut graph_reader = HashedIo::new(archive.by_name("graph.jsonl").map_err(failure)?);
+        let overlay = agq_kernel::archive::read_publication_frontier(
+            BufReader::new(&mut graph_reader),
+            registry,
+            dependency,
+        )
+        .map_err(failure)?;
+        if graph_reader.digest() != entry.graph_sha256 {
+            return Err(failure("decoded frontier graph authentication mismatch"));
+        }
+        self.restored_invocations.fetch_add(1, Ordering::Relaxed);
+        self.restored_completed_invocations
+            .fetch_add(1, Ordering::Relaxed);
+        self.skipped_rounds
+            .fetch_add(state.round, Ordering::Relaxed);
+        Ok(ConvergedPublicationFrontier { overlay, state })
     }
 
     pub(super) fn begin(

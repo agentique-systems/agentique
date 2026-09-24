@@ -132,10 +132,12 @@ projections and structural Port/Connector projections retain their evidence.
 Current-graph answers do not certify unfinished SysML producer closure.
 
 No Systems publication is accepted. The final monolithic run reached Complete
-producer closure and saved a converged frontier, then exhausted its one-hour
-budget before the final publication report and accepted cache were issued. The
-final mandatory-reference and facade acceptance gates remain unproven; see the
-[readiness decision](../verification/summaries/final-language-acceptance/readiness.md).
+producer closure and saved a converged frontier. Its authenticated read-only
+finalizer subsequently completed all 1,327 mandatory references, but rejected
+the effective SysML population audit with 674 findings. The retained graph lacks
+the enumeration-owner typing needed to discharge its structural variation
+obligations. No producer was replayed and no accepted artifacts were issued; see
+the [finalization evidence](../verification/summaries/systems-finalization/README.md).
 Operational v2 records the three bounded canonical target
 corrections while Published and Operational v1 remain reproducible.
 The immediate acceptance path is the monolithic dependency-driven scheduler and
@@ -156,7 +158,8 @@ this does not establish semantic indivisibility of Systems. See the
 reference, producer, capability, binding, provenance or authority gate. Canonical
 identities retain their source provenance through lowering and refinement;
 authored edits do not change the immutable library dependency. See the current
-[final language acceptance evidence](../verification/summaries/final-language-acceptance/README.md),
+[language readiness decision](../verification/summaries/language-foundation-accepted/README.md),
+the historical [final language acceptance evidence](../verification/summaries/final-language-acceptance/README.md),
 the historical [language stability bridge evidence](../verification/summaries/language-stability-bridge/README.md),
 and the historical
 [Phase 1 foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md).

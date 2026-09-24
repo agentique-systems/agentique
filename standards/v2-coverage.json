@@ -137,7 +137,7 @@
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 publication; exact Operational v2 SysML Systems parsing and declared lowering. Actions scoped closure passes. The 13-document medium uninterrupted/resumed gate has 695/695 Complete references, zero kernel obligations and exact fully closed certificate equivalence. The single final full attempt reached Complete strict producer closure and durably saved a converged checkpoint, then exhausted its one-hour budget before final publication issuance. Full Systems acceptance, language readiness and production modeling workspace remain gated. No full conformance, application migration or execution claim.",
+  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 publication; exact Operational v2 SysML Systems parsing and declared lowering. The strict Systems fixed point is authenticated and was not replayed. Read-only finalization independently completed 1327/1327 mandatory references but rejected the effective population audit with 674 findings, including missing enumeration-owner typing. Systems acceptance, language readiness and production modeling workspace remain gated on those concrete defects. No full conformance, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": {
     "stage": "structural-runtime-v3",
@@ -156,9 +156,9 @@
   "modeling_platform_gate": {
     "stage": "language-foundation-readiness",
     "result": "gated",
-    "evidence": "verification/summaries/final-language-acceptance/readiness.md",
+    "evidence": "verification/summaries/language-foundation-accepted/README.md",
     "completed_stages": [],
-    "reason": "KerML is accepted. Operational v2 parses and constructs all 21 exact Systems documents. Medium uninterrupted/resumed equivalence passes. The full strict scheduler reached Complete with a durable converged frontier, but the one-hour attempt stopped before final publication report, accepted bindings and cache issuance. Final Systems acceptance and accepted authored self-model/effective-core gates remain required. Production ProjectWorkspace is held in isolated commit e5a65f8, pending the explicit readiness gate rather than full conformance.",
+    "reason": "KerML remains accepted. The authenticated converged Systems frontier restored without producer replay and passed all mandatory references, but strict final acceptance rejected 674 effective-query findings. Its enumeration literals lack required owner typing. ADR 0026, accepted self-model/effective-core gates and production ProjectWorkspace integration remain held; no broad conformance gate is added.",
     "previous_milestone": {
       "stage": "prerequisite",
       "result": "blocked",
@@ -568,9 +568,9 @@
     "systems_publication": "not accepted"
   },
   "sysml_systems_library_publication": {
-    "status": "final-full-attempt-wall-time-stop-after-strict-producer-convergence",
+    "status": "authenticated-converged-frontier-final-effective-audit-rejected",
     "profile": "agentique-sysml-2.0-operational/2",
-    "evidence": "verification/summaries/final-language-acceptance/readiness.md",
+    "evidence": "verification/summaries/systems-finalization/README.md",
     "kerML_dependency": "exact accepted immutable Operational v9 /26; no producer replay",
     "systems_documents": 21,
     "operational_documents_parsed": 21,
@@ -647,7 +647,8 @@
       "kernel_obligations": 0,
       "final_publication_audit": "not recorded as passed; no final report or accepted artifacts issued",
       "budget_exhausted": true,
-      "additional_attempt_or_resume_performed": false
+      "additional_attempt_or_resume_performed": false,
+      "historical": true
     },
     "systems_publication": "not accepted",
     "accepted_bindings": false,
@@ -722,6 +723,29 @@
       "authority_conflicts": 0,
       "evidence": "verification/summaries/language-stability-bridge/publication-commands.json",
       "producer_diagnostics": 0
+    },
+    "final_read_only_acceptance": {
+      "run": "systems-finalizer-1",
+      "checkpoint_authenticated": true,
+      "producer_replayed": false,
+      "exit_code": 1,
+      "watchdog_stop": null,
+      "duration_seconds": 1632.078,
+      "peak_private_bytes": 6040027136,
+      "references": {
+        "total": 1327,
+        "complete": 1327,
+        "unresolved": 0,
+        "incomplete": 0,
+        "ambiguous": 0,
+        "invalid": 0,
+        "endpoint_mismatch": 0
+      },
+      "capability_findings": 674,
+      "authority_findings": 0,
+      "artifacts_promoted": false,
+      "rejection": "verification/summaries/systems-finalization/rejection.json",
+      "diagnosis": "verification/summaries/systems-finalization/enumeration-variation-diagnosis.md"
     }
   }
 }

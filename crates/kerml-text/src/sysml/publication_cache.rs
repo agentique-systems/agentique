@@ -120,7 +120,32 @@ impl CanonicalSysmlSystemsLibrary {
         sources: &VerifiedLibrarySet,
     ) -> Result<Value, SystemsPublicationCacheError> {
         let bindings = self.binding_manifest(sources)?;
-        let metadata = json!({
+        let metadata = self.facade_metadata(sources);
+        let closure = self.producer_closure.receipt_value();
+        let mut archive = ZipWriter::new(writer);
+        let options = SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated)
+            .compression_level(Some(1))
+            .large_file(true);
+        let mut entries = BTreeMap::new();
+        for (name, value) in [("facade.json", &metadata), ("closure.json", &closure)] {
+            archive.start_file(name, options)?;
+            let mut digest = DigestWriter::new(&mut archive);
+            serde_json::to_writer(&mut digest, value)?;
+            entries.insert(name, digest.identity());
+        }
+        drop(metadata);
+        drop(closure);
+        archive.start_file("kernel.jsonl", options)?;
+        let mut digest = DigestWriter::new(&mut archive);
+        agq_kernel::archive::write_dependent_overlay_with_evidence(&self.overlay, &mut digest)?;
+        entries.insert("kernel.jsonl", digest.identity());
+        archive.finish()?.flush()?;
+        self.cache_receipt(sources, &bindings, entries)
+    }
+
+    fn facade_metadata(&self, sources: &VerifiedLibrarySet) -> Value {
+        json!({
             "format":"agq-sysml-publication-facade/1",
             "source_content_set":sources.content_set_id(),
             "roots":self.roots,
@@ -137,34 +162,20 @@ impl CanonicalSysmlSystemsLibrary {
             "complete_references":self.audit.complete_references,
             "checked":self.audit.checked.iter().map(|(family,count)|
                 (format!("{family:?}"),*count)).collect::<BTreeMap<_,_>>(),
-        });
-        let closure = self.producer_closure.receipt_value();
-        let mut archive = ZipWriter::new(writer);
-        let options = SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated)
-            .compression_level(Some(1))
-            .large_file(true);
-        let mut entries = BTreeMap::new();
-        for (name, value) in [("facade.json", &metadata), ("closure.json", &closure)] {
-            archive.start_file(name, options)?;
-            let mut digest = DigestWriter::new(&mut archive);
-            serde_json::to_writer(&mut digest, value)?;
-            entries.insert(name, digest.identity());
-        }
-        // These entries are complete. Release their expanded JSON before the
-        // kernel archive allocates its proof and search serialization tables.
-        drop(metadata);
-        drop(closure);
-        archive.start_file("kernel.jsonl", options)?;
-        let mut digest = DigestWriter::new(&mut archive);
-        agq_kernel::archive::write_dependent_overlay_with_evidence(&self.overlay, &mut digest)?;
-        entries.insert("kernel.jsonl", digest.identity());
-        archive.finish()?.flush()?;
+        })
+    }
+
+    fn cache_receipt(
+        &self,
+        sources: &VerifiedLibrarySet,
+        bindings: &Value,
+        entries: BTreeMap<&str, Value>,
+    ) -> Result<Value, SystemsPublicationCacheError> {
         Ok(json!({
             "format":"agq-sysml-accepted-publication/1",
             "status":"accepted",
             "source_content_set":sources.content_set_id(),
-            "binding_manifest_sha256":json_digest(&bindings)?,
+            "binding_manifest_sha256":json_digest(bindings)?,
             "entries":entries,
             "identity":{
                 "publication_digest":self.publication_digest(),

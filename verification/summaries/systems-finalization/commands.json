@@ -1,0 +1,504 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "retained-frontier-authentication",
+      "command": [
+        "python",
+        "verification/scripts/audit_stopped_systems_frontier.py",
+        "--repository",
+        ".",
+        "--journal",
+        "verification\\generated\\final-language-acceptance\\full-frontiers\\journal-735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5.json",
+        "--journal-sha256",
+        "735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5",
+        "--output",
+        "verification/generated/systems-finalization/authentication.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "0c4c0adae19125c5a72b3e3521c7df1c6c6d84f0",
+      "duration_seconds": 29.859,
+      "result_sha256": "86cd9f24036de6fb13cddbbca76ab0d48ce899d06cffebc6a67f56f65057a1ba",
+      "result": "verification/summaries/systems-finalization/authentication.json"
+    },
+    {
+      "name": "finalization-artifact-guards",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_systems_publication_gate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "8d875535ce4fc9c11bdc036d2843a954beac42a0",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "35bba77e8d6dc989ba88b32c417dcc4fce299665512770fa676a2da9bcbd02bd",
+      "duration_seconds": 0.31,
+      "output": "verification/generated/systems-finalization/finalization-artifact-guards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "finalizer-release",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a7d803c7cc40ef73c57135f2e780903582300bf3",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "3a6f1177e91f45e2c31d566a86bbcd81ba2e3d43df664743c02bbd2e0dd421b3",
+      "duration_seconds": 400.38,
+      "output": "verification/generated/systems-finalization/finalizer-release.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "held-public-search-reuse-format",
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "crates/kerml-semantics/src/queries.rs",
+        "crates/kerml-semantics/tests/unit/shared_query_searches.rs"
+      ],
+      "exit_code": 0,
+      "tool_version": "rustfmt 1.8.0-stable (ded5c06cf2 2025-12-08)",
+      "source_commit": "047807af93d3594503a637680b1d4aeda84e2c55",
+      "working_changes_sha256": "2f6da911603a47f8b77af2be7f3c5029bca990292ccbb06972c76dff59cce770",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/systems-finalization/held-public-search-reuse-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "held-public-search-reuse-diff",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "047807af93d3594503a637680b1d4aeda84e2c55",
+      "working_changes_sha256": "2f6da911603a47f8b77af2be7f3c5029bca990292ccbb06972c76dff59cce770",
+      "output_sha256": "2a67a23642725d4d075ddeaa30264c7e79d2896a8d92326cfc976a1842bd9a53",
+      "duration_seconds": 0.34,
+      "output": "verification/generated/systems-finalization/held-public-search-reuse-diff.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-standards",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "1aa882728b9bf7eec9576e3470b168ffd5eb76e500ea0e677d2f45ceeed56201",
+      "output_sha256": "914caad4faf048f94de180455e640f5eef43cdd4dd9f6fedf3e5264af1608c23",
+      "duration_seconds": 0.72,
+      "output": "verification/generated/systems-finalization/final-standards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "1aa882728b9bf7eec9576e3470b168ffd5eb76e500ea0e677d2f45ceeed56201",
+      "output_sha256": "9138af665c719d82cca1870f73fa1000eecd62e48da1c2dcd7c81a6a20616a48",
+      "duration_seconds": 1.09,
+      "output": "verification/generated/systems-finalization/final-node-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "1aa882728b9bf7eec9576e3470b168ffd5eb76e500ea0e677d2f45ceeed56201",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 3.45,
+      "output": "verification/generated/systems-finalization/final-fmt.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-generation-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "1aa882728b9bf7eec9576e3470b168ffd5eb76e500ea0e677d2f45ceeed56201",
+      "output_sha256": "4b46c49f77531a7a4652e7a79f7004a097d42001186db5c21968bfc8afb2ce13",
+      "duration_seconds": 0.19,
+      "output": "verification/generated/systems-finalization/final-generation-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-kerml-grammar",
+      "command": [
+        "python",
+        "tools/kerml-grammar/generate.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "1aa882728b9bf7eec9576e3470b168ffd5eb76e500ea0e677d2f45ceeed56201",
+      "output_sha256": "f3a599a056523d9072af76571f2157b7cc271a5afa80cad15b482498f51df7c6",
+      "duration_seconds": 0.27,
+      "output": "verification/generated/systems-finalization/final-kerml-grammar.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-sysml-grammar",
+      "command": [
+        "python",
+        "tools/sysml-grammar/generate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "1aa882728b9bf7eec9576e3470b168ffd5eb76e500ea0e677d2f45ceeed56201",
+      "output_sha256": "29106a270ab4b808a4289843a999b02e9f3950df2ba0954fb1a90611cea9d2b4",
+      "duration_seconds": 0.52,
+      "output": "verification/generated/systems-finalization/final-sysml-grammar.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-workspace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "d0ad15f9956e9b427ce35b9b5358f851d77812fcd8ba2f0bc372e8ebebb65f69",
+      "output_sha256": "4f660c7c989f83dbbc3674b8d8cdc46b0416486fef3702a8ce510af8ae887a5c",
+      "duration_seconds": 80.62,
+      "output": "verification/generated/systems-finalization/final-workspace-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "public-search-evidence-equivalence",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-semantics",
+        "--lib",
+        "queries::shared_search_tests",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "c004155eeb2a808d0834c5d547d37e05b8efde21899728faa3b4ac41665cab51",
+      "duration_seconds": 905.45,
+      "output": "verification/generated/systems-finalization/public-search-evidence-equivalence.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "retained-enumeration-absence",
+      "command": [
+        "python",
+        "verification/scripts/diagnose_systems_enumeration_frontier.py",
+        "--repository",
+        ".",
+        "--archive",
+        "verification/generated/final-language-acceptance/full-frontiers/c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d.zip",
+        "--archive-sha256",
+        "c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d",
+        "--graph-sha256",
+        "c056ecf5ea4b168235677763d3b2dd64ebefb15fbc71ca43bcee090865b1608a",
+        "--output",
+        "verification/generated/systems-finalization/enumeration-diagnosis.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "9d7ac4054f07355440d41ca33437aaa6c84d1a44",
+      "working_changes_sha256": "8fda9d2864663b6ea3efe0aeda0d3bdc33ee265246d0579a13167210fd8852fa",
+      "output_sha256": "9662a6098589a6955339b5bf0ec83b437ce1432187eaa77e7273cca210d5a250",
+      "duration_seconds": 11.51,
+      "output": "verification/generated/systems-finalization/retained-enumeration-absence.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "finalizer-example-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9d7ac4054f07355440d41ca33437aaa6c84d1a44",
+      "working_changes_sha256": "8fda9d2864663b6ea3efe0aeda0d3bdc33ee265246d0579a13167210fd8852fa",
+      "output_sha256": "1628413bedb7db4fa920d8bb0a5229fb318583ca2c7f12113f614b4c1ccf110e",
+      "duration_seconds": 41.83,
+      "output": "verification/generated/systems-finalization/finalizer-example-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "protected-inputs-preserved",
+      "command": [
+        "python",
+        "-c",
+        "import json,hashlib,pathlib; pins=json.loads(pathlib.Path('verification/generated/systems-finalization/protected-inputs.json').read_text()); actual={name:hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() for name in pins}; print(json.dumps(actual,indent=2)); assert actual==pins, 'protected input identity changed'"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "9d7ac4054f07355440d41ca33437aaa6c84d1a44",
+      "working_changes_sha256": "8fda9d2864663b6ea3efe0aeda0d3bdc33ee265246d0579a13167210fd8852fa",
+      "output_sha256": "aab2bdd28f8d3abd407afa18df5089538b5575cf26f7288640c75641dae406f9",
+      "duration_seconds": 0.08,
+      "output": "verification/generated/systems-finalization/protected-inputs-preserved.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-metamodel-stale",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9d7ac4054f07355440d41ca33437aaa6c84d1a44",
+      "working_changes_sha256": "8fda9d2864663b6ea3efe0aeda0d3bdc33ee265246d0579a13167210fd8852fa",
+      "output_sha256": "77fc6ab1dfe097d65e6d119c3ea5733304def3d8bf4e51024715d57ae5bc4cc0",
+      "duration_seconds": 13.5,
+      "output": "verification/generated/systems-finalization/final-metamodel-stale.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "final-kerml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9d7ac4054f07355440d41ca33437aaa6c84d1a44",
+      "working_changes_sha256": "8fda9d2864663b6ea3efe0aeda0d3bdc33ee265246d0579a13167210fd8852fa",
+      "output_sha256": "96cc4b36837ecf82e452933a4c66fbf6819adc809c50e2fbc8bbbbcc8286ee69",
+      "duration_seconds": 1.56,
+      "output": "verification/generated/systems-finalization/final-kerml-runtime.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "final-sysml-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9d7ac4054f07355440d41ca33437aaa6c84d1a44",
+      "working_changes_sha256": "8fda9d2864663b6ea3efe0aeda0d3bdc33ee265246d0579a13167210fd8852fa",
+      "output_sha256": "84f8a7323f93c16fe2f07b31eb7e078d07b8552c9f07307396f8c5f51fdb91f3",
+      "duration_seconds": 3.11,
+      "output": "verification/generated/systems-finalization/final-sysml-runtime.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "final-strict-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-sysml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9d7ac4054f07355440d41ca33437aaa6c84d1a44",
+      "working_changes_sha256": "8fda9d2864663b6ea3efe0aeda0d3bdc33ee265246d0579a13167210fd8852fa",
+      "output_sha256": "85a37eb6b6167ad2675b49a235c62d3a3579d177bd0d5edbcefe91859d6a0d5f",
+      "duration_seconds": 29.89,
+      "output": "verification/generated/systems-finalization/final-strict-rustdoc.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "name": "final-coverage-standards",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "9d7ac4054f07355440d41ca33437aaa6c84d1a44",
+      "working_changes_sha256": "8fda9d2864663b6ea3efe0aeda0d3bdc33ee265246d0579a13167210fd8852fa",
+      "output_sha256": "21aebc661dd1504357f1c446715b1957d59a2cf6aa81bb8b11a0f1c02b8d4efd",
+      "duration_seconds": 0.58,
+      "output": "verification/generated/systems-finalization/final-coverage-standards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--",
+        "--test-threads=2"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4640e5a82e485896b294bf4afeec24efdd024aa6",
+      "working_changes_sha256": "dfd003149ca5099ac97ad917a7598203134b0cdd07c1aec946e530d1ac845c28",
+      "output_sha256": "55102438310738d5b6cff99e745e6eb25c7d003e927f1f98573a102a93047fc7",
+      "duration_seconds": 919.14,
+      "output": "verification/generated/systems-finalization/final-workspace-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    }
+  ]
+}

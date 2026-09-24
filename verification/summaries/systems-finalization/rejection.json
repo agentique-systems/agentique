@@ -1,0 +1,33 @@
+{
+  "publication_accepted": false,
+  "producer_replayed": false,
+  "findings": 674,
+  "unique_diagnostics": 238,
+  "codes": {
+    "KQ_RESULT_INHERITANCE_CYCLE": 33,
+    "SQ_PUBLICATION_TYPED_QUERY": 592,
+    "KQ_END_CYCLE": 9,
+    "SQ_ELEMENT_KIND": 40
+  },
+  "messages": {
+    "Cyclic specialization prevents complete structural end ordering": 3,
+    "Cyclic result inheritance requires an established membership fixed point": 21,
+    "Canonical element has the wrong SysML metaclass": 3,
+    "effective return parameters is Incomplete; pending implications: {}": 21,
+    "effective parameters is Incomplete; pending implications: {}": 3,
+    "effective attribute definitions is Incomplete; pending implications: {(ElementId(...), Variation)}": 21,
+    "effective names is Incomplete; pending implications: {(ElementId(...), Variation)}": 21,
+    "effective ports is Incomplete; pending implications: {(ElementId(...), Variation)}": 23,
+    "effective redefinition is Incomplete; pending implications: {(ElementId(...), Variation)}": 23,
+    "effective return parameters is Incomplete; pending implications: {(ElementId(...), Variation)}": 23,
+    "effective subsetting is Incomplete; pending implications: {(ElementId(...), Variation)}": 23,
+    "effective usage types is Incomplete; pending implications: {(ElementId(...), Variation)}": 21,
+    "effective usages is Incomplete; pending implications: {(ElementId(...), Variation)}": 23,
+    "effective interface ends is Invalid; pending implications: {}": 1,
+    "current item definitions is Invalid; pending implications: {}": 2,
+    "current part definitions is Invalid; pending implications: {}": 2,
+    "effective item definitions is Invalid; pending implications: {}": 2,
+    "effective part definitions is Invalid; pending implications: {}": 2
+  },
+  "subjects": 50
+}

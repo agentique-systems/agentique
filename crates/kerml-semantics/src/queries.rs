@@ -400,6 +400,16 @@ impl<'m> KerMlQueries<'m> {
     /// Expand provenance without conflating an original declared assertion with
     /// a later derived extension of the same property key.
     pub(crate) fn fact<T>(&self, out: &mut QueryResult<T>, key: FactKey) {
+        self.fact_with_search_sharing::<true, T>(out, key);
+    }
+
+    // The false instantiation is the unchanged eager-search oracle in tests.
+    // No sharing state escapes this one immutable evidence expansion.
+    fn fact_with_search_sharing<const SHARE_SEARCHES: bool, T>(
+        &self,
+        out: &mut QueryResult<T>,
+        key: FactKey,
+    ) {
         let Some(root) = self.fact_origin(key) else {
             return;
         };
@@ -467,6 +477,7 @@ impl<'m> KerMlQueries<'m> {
             return;
         }
         out.producer_expanded_facts.insert(key);
+        let mut expanded_searches = BTreeSet::new();
         let mut queue = vec![(key, false)];
         while let Some((key, declared)) = queue.pop() {
             if declared {
@@ -509,12 +520,17 @@ impl<'m> KerMlQueries<'m> {
                 out.fact_origins.insert(key, origin);
                 continue;
             }
-            out.search_dependencies.extend(
-                self.model()
-                    .computation_searches_for(key)
-                    .cloned()
-                    .map(SearchDependency::Kernel),
-            );
+            if let Some(searches) = self.model().computation_searches_shared(key) {
+                // Many distinct canonical facts share the same immutable search
+                // population. Expand it once per traversal while retaining every
+                // fact and origin below. The borrowed ModelView owns these Arcs
+                // throughout the call, so allocation tokens cannot be recycled.
+                // Tokens never enter query evidence, equality or semantic identity.
+                if !SHARE_SEARCHES || expanded_searches.insert(Arc::as_ptr(searches)) {
+                    out.search_dependencies
+                        .extend(searches.iter().cloned().map(SearchDependency::Kernel));
+                }
+            }
             out.positive_dependencies.insert(key);
             out.fact_origins.insert(key, origin.clone());
             match origin.as_ref() {

@@ -1,0 +1,72 @@
+{
+  "format": "agq-unaccepted-converged-systems-frontier-audit/1",
+  "artifact_authentication_passed": true,
+  "accepted_publication": false,
+  "grants_publication_authority": false,
+  "resumed": false,
+  "journal": "verification\\generated\\final-language-acceptance\\full-frontiers\\journal-735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5.json",
+  "journal_sha256": "735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5",
+  "invocation": 3,
+  "round": 28,
+  "stratum": "ContextualBindings",
+  "converged": true,
+  "status_population": {
+    "Complete": 3921
+  },
+  "pending_worklist": 0,
+  "applicable_pairs": 26532,
+  "closed_pairs": 26532,
+  "incomplete_pairs": 0,
+  "closed_requirements": 452052,
+  "certificate_subjects": 75342,
+  "producer_families": 87,
+  "certificate_receipt_digest": "73231635c3e2223153d45872ad9af09685a6305a9348ed9ed3a53934319ea5a0",
+  "model_digest": "ef6208047445ccfa6b5ced129d32b60f0513ddbddbdc5d9806d09b4bc9242d29",
+  "context_contract_digest": "e86ec6b5b7375d3be2a83f74fee3d61f31aa72acb93143d6e3a022c19b680585",
+  "producer_registry_digest": "f543800a5d3b0645d099c7608aa9ea29100307323357b087c2cb8adb68969b70",
+  "certificate_digest": "3445b500c663c4621d99caea059549827d631dbbb02be6d76589eb06de1b904d",
+  "source_identity": "16c342414231f9ffd6669099527e108f2af2069faaab67f54f296ab3d08e846c",
+  "source_identity_recomputed_from_original_bytes": true,
+  "systems_kpar_sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+  "source_content_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "accepted_kerml_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+  "accepted_kerml_receipt_source_sha256": "d51d43a8e907698f94297ff3cfb007ac5dbf088ebec550ef97e8f7107b351ff5",
+  "executable_sha256": "237d2508dfa46f82390d317827deb4be22775e07d7bfab8e49f4a641d0b7d6c6",
+  "executable_build_commit": "7223938437dc8ab7c684961bfb76eaba6c6c92f0",
+  "source_identity_implementation_sha256": "1e155132faa74750aa755c836123d3e2b5c25e0e6c68874f51f6b85c3de6e9ac",
+  "publication_implementation_sha256": "5d24571bd928f0c0837820b1dc8bb9cee0e8c36ce76e872c8c136aeacb67e2c9",
+  "scheduler_implementation_sha256": "cd369aa8433071ad801d28e60028b1eb9564e928119a1b02eabe28f0d478de52",
+  "archive_sha256": "c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d",
+  "decoded_state_sha256": "a97a6c78b9976d25da2b46d615d3361666e509847c4f64b5ed6a3367ecceb30e",
+  "graph_evidence": {
+    "graph_sha256": "c056ecf5ea4b168235677763d3b2dd64ebefb15fbc71ca43bcee090865b1608a",
+    "graph_payload_sha256": "23b83764d3436b2b72bf9661718c3447a2033449127e6406faecbd6962408a53",
+    "contributions": 6033,
+    "selected_reference_digest": "4f8fdbdf1ec88490ef29d0c8b774ca756411d7ea2e4e8f71c9d39b682a6e3583",
+    "format": "agq-kernel-dependent-publication-frontier/1",
+    "descriptor_registry_digest": "b89316a87993962cb71f4690715e5159bd512c6ba0745ad99ee4f3d8d39b75ec",
+    "accepted_dependency_graph_sha256": "87af0c3a395b91968eb35b0ec85399599eccaa80a97e32d448e0f24e57dc6dde"
+  },
+  "watchdog": {
+    "exit_code": 124,
+    "safety_stop": "wall_time",
+    "duration_seconds": 3601.109,
+    "result_sha256": "6b5361ccc2aaa0afd55c2045f37af5378c7e79746ad11e4bccd897aecae8764b",
+    "output_sha256": "ae46992cf2955400314e96e40ac693b4d87b2e03b25dc05742f018ea93db94bd"
+  },
+  "final_scheduler_stage": {
+    "stage": 27,
+    "phase": "publication",
+    "completeness": "Complete",
+    "elapsed_seconds": 3449.3239849,
+    "stages_sha256": "17e7c5c0274357415cde3f0cc11aae178e97aac2af6cf41d7a8d0619175c3116"
+  },
+  "publication_artifacts_absent": {
+    "report.json": true,
+    "canonical.publication.zip": true,
+    "accepted-publication.json": true,
+    "standard-bindings.json": true
+  },
+  "audit_elapsed_seconds": 29.859,
+  "limitations": "Authenticates unaccepted stored scheduler evidence only. This verifier did not run Rust restore or publication audits. Final strict references, capability/provenance audit and accepted bindings/facade/receipt/cache remain unproven; the precise interrupted post-checkpoint audit step is not recorded."
+}
