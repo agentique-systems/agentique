@@ -261,6 +261,7 @@ impl CanonicalSysmlSystemsLibrary {
             SysmlSyntaxProfile::Published => SysmlBaselineProfile::Published,
             SysmlSyntaxProfile::OperationalV1 => SysmlBaselineProfile::OperationalV1,
             SysmlSyntaxProfile::OperationalV2 => SysmlBaselineProfile::OperationalV2,
+            SysmlSyntaxProfile::OperationalV3 => SysmlBaselineProfile::OperationalV3,
         };
         let identity = SystemsLibraryIdentity::pinned(SystemsLibraryIdentity::SOURCE_CONTENT_SET);
         let empty_bindings = StandardSysmlBindings::unbound(identity.clone());
@@ -715,7 +716,10 @@ fn audit_inputs(
             "candidate dependency contract",
         ),
         (
-            candidate.syntax_profile() == SysmlSyntaxProfile::OperationalV2,
+            matches!(
+                candidate.syntax_profile(),
+                SysmlSyntaxProfile::OperationalV2 | SysmlSyntaxProfile::OperationalV3
+            ) && candidate.syntax_profile().id() == contract.sysml_profile.id(),
             "SysML syntax profile",
         ),
         (
@@ -779,7 +783,7 @@ fn audit_inputs(
         ));
     }
     for status in candidate.documents() {
-        let valid = status.profile == SysmlSyntaxProfile::OperationalV2
+        let valid = status.profile == candidate.syntax_profile()
             && status.parsed
             && status.byte_exact
             && status.recovery_count == 0
@@ -1224,6 +1228,27 @@ fn audit_sysml_population<'m>(
             }
         }
         for (applies, name, query) in [
+            (
+                sc::OCCURRENCE_USAGE,
+                "current occurrence definitions",
+                SysmlQueries::current_occurrence_definitions
+                    as fn(&SysmlQueries<'m>, ElementId) -> _,
+            ),
+            (
+                sc::OCCURRENCE_USAGE,
+                "effective occurrence definitions",
+                SysmlQueries::effective_occurrence_definitions,
+            ),
+            (
+                sc::CONNECTION_USAGE,
+                "current connection definitions",
+                SysmlQueries::current_connection_definitions,
+            ),
+            (
+                sc::CONNECTION_USAGE,
+                "effective connection definitions",
+                SysmlQueries::effective_connection_definitions,
+            ),
             (
                 sc::ATTRIBUTE_USAGE,
                 "current attribute definitions",

@@ -299,6 +299,9 @@ fn prepare_systems_library_scope(
         production::SysmlSyntaxProfile::OperationalV2 => {
             agq_sysml_semantics::SysmlBaselineProfile::OperationalV2
         }
+        production::SysmlSyntaxProfile::OperationalV3 => {
+            agq_sysml_semantics::SysmlBaselineProfile::OperationalV3
+        }
     };
     let candidate_bindings = agq_sysml_semantics::StandardSysmlBindings::unbound(
         agq_sysml_semantics::SystemsLibraryIdentity::pinned(
@@ -424,6 +427,7 @@ fn prepare_systems_library_scope(
             profile,
             production::SysmlSyntaxProfile::OperationalV1
                 | production::SysmlSyntaxProfile::OperationalV2
+                | production::SysmlSyntaxProfile::OperationalV3
         )
     {
         // Positive inheritance normally supplies source endpoints without

@@ -49,6 +49,8 @@ pub enum SysmlSyntaxProfile {
     OperationalV1,
     /// Operational v1 grammar plus the v2 semantic correction manifest.
     OperationalV2,
+    /// Operational v1 grammar with the bounded v3 ConnectionUsage interpretation.
+    OperationalV3,
 }
 
 impl SysmlSyntaxProfile {
@@ -58,6 +60,7 @@ impl SysmlSyntaxProfile {
             Self::Published => "omg-sysml-2.0-published/1",
             Self::OperationalV1 => "agentique-sysml-2.0-operational/1",
             Self::OperationalV2 => "agentique-sysml-2.0-operational/2",
+            Self::OperationalV3 => "agentique-sysml-2.0-operational/3",
         }
     }
 
@@ -67,7 +70,9 @@ impl SysmlSyntaxProfile {
         match self {
             Self::Published => None,
             Self::OperationalV1 => Some(generated_sysml_operational::COMPATIBILITY_MANIFEST_SHA256),
-            Self::OperationalV2 => Some(generated_sysml_operational::COMPATIBILITY_MANIFEST_SHA256),
+            Self::OperationalV2 | Self::OperationalV3 => {
+                Some(generated_sysml_operational::COMPATIBILITY_MANIFEST_SHA256)
+            }
         }
     }
 }
@@ -90,7 +95,11 @@ impl Dialect {
             },
             (
                 Self::SysMl,
-                Some(SysmlSyntaxProfile::OperationalV1 | SysmlSyntaxProfile::OperationalV2),
+                Some(
+                    SysmlSyntaxProfile::OperationalV1
+                    | SysmlSyntaxProfile::OperationalV2
+                    | SysmlSyntaxProfile::OperationalV3,
+                ),
             ) => Grammar {
                 root: generated_sysml_operational::ROOT,
                 symbol_count: generated_sysml_operational::SYMBOL_COUNT,
