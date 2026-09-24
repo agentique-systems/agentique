@@ -26,7 +26,7 @@ fn accepted_systems_cache_roundtrip_and_tampering() {
     // Fail before the large KerML load when either input or authority is absent.
     let kerml_path = required_cache("AGENTIQUE_KERML_CACHE");
     let systems_path = required_cache("AGENTIQUE_SYSTEMS_CACHE");
-    let trusted = TrustedPublicationReceipt::checked_in("sysml-systems-operational-v2")
+    let trusted = TrustedPublicationReceipt::checked_in("sysml-systems-operational-v3")
         .expect("the requested gate requires the independently accepted compiled Systems receipt");
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
@@ -243,6 +243,10 @@ fn assert_restored(
     publication: &CanonicalSysmlSystemsLibrary,
     kerml: &Arc<CanonicalKermlStandardLibraries>,
 ) {
+    assert_eq!(
+        publication.context().dependencies.sysml_profile,
+        agq_sysml_semantics::SysmlBaselineProfile::OPERATIONAL_V3
+    );
     assert!(Arc::ptr_eq(publication.accepted_kerml(), kerml));
     let dependency = publication.declared().immutable_dependency().unwrap();
     assert!(std::ptr::eq(dependency.model(), kerml.overlay().model()));

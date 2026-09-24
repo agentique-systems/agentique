@@ -119,6 +119,43 @@
         "stall_seconds": 600.0
       },
       "output_sha256": "08e62f517d17c79a629b32a96e0bb8cb223f7e4502075203857217bbc5fd4be5"
+    },
+    {
+      "name": "semantic-closure-strict-finalizer",
+      "command": [
+        "verification/generated/final-audit-semantic-closure/systems-runner.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--profile=operational-v3",
+        "--finalize-converged=verification/generated/final-audit-semantic-closure/full-frontiers/journal-15356f167c1b5f9a4095d9a02bcda63a5710a2db2c47c93570de3a0136844f3c.json",
+        "--resume-sha256=15356f167c1b5f9a4095d9a02bcda63a5710a2db2c47c93570de3a0136844f3c",
+        "--audit-workers=2",
+        "--output=verification/generated/final-audit-semantic-closure/accepted/report.json"
+      ],
+      "source_commit": "4ac9b8e58695ad837fed6643b0cedfac05d15635",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-closure-strict-finalizer",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 20532,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 3097956352,
+      "safety_stop": null,
+      "duration_seconds": 1660.484,
+      "peak_rss_bytes": 5839314944,
+      "peak_private_bytes": 6037487616,
+      "samples": 1660,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824,
+        "stall_seconds": 0
+      },
+      "output_sha256": "79a15e18c911f585c279d791b96961dfd03f42e7613c1b310410e28f75abc19f"
     }
   ]
 }

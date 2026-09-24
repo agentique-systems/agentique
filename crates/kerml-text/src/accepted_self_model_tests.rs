@@ -1140,7 +1140,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     };
     let kerml_cache = open_cache("AGENTIQUE_KERML_CACHE");
     let systems_cache = open_cache("AGENTIQUE_SYSTEMS_CACHE");
-    agq_kerml_semantics::TrustedPublicationReceipt::checked_in("sysml-systems-operational-v2")
+    agq_kerml_semantics::TrustedPublicationReceipt::checked_in("sysml-systems-operational-v3")
         .expect("the requested gate requires the independently accepted compiled Systems receipt");
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
@@ -1148,6 +1148,10 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         Arc::new(CanonicalKermlStandardLibraries::restore_cache(kerml_cache, &sources).unwrap());
     let accepted = Arc::new(
         CanonicalSysmlSystemsLibrary::restore_cache(systems_cache, &sources, kerml).unwrap(),
+    );
+    assert_eq!(
+        accepted.context().dependencies.sysml_profile,
+        agq_sysml_semantics::SysmlBaselineProfile::OPERATIONAL_V3
     );
     // These independent fixtures do not need the retained authored history.
     // Finish them before allocating r0/r1 and keep only equivalence observations.

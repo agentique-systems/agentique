@@ -1064,6 +1064,101 @@
       "duration_seconds": 28.12,
       "output": "verification/generated/final-audit-semantic-closure/authenticate-full-closure.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "accepted-systems-artifact-gate",
+      "command": [
+        "python",
+        "verification/scripts/systems_publication_gate.py",
+        "--report",
+        "verification/generated/final-audit-semantic-closure/accepted/report.json",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/accepted-artifact-gate.json"
+      ],
+      "exit_code": 1,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ac9b8e58695ad837fed6643b0cedfac05d15635",
+      "working_changes_sha256": "25c5a89b15289f5487dd2c0cb44d9c7a373a0a78c4926292710b0b297de2df09",
+      "output_sha256": "5d0d14c7053c56ad2b316bcb818e9677c1016d68a99cc86d1a8055b832732de4",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/final-audit-semantic-closure/accepted-systems-artifact-gate.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-effective-classification",
+      "command": [
+        "python",
+        "verification/scripts/classify_systems_final_audit.py",
+        "--report",
+        "verification/generated/final-audit-semantic-closure/accepted/report.json",
+        "--subjects",
+        "verification/generated/systems-finalization/finding-subjects.json",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/final-effective-classification.json",
+        "--require-clean"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ac9b8e58695ad837fed6643b0cedfac05d15635",
+      "working_changes_sha256": "3b6ffba8238745db143714e9f2cd516299149ae821a1fa503f57cc09394fb56b",
+      "output_sha256": "5218ea21c5bbc02129165fd6d4a435b835e82bcb4bfe13d5f5aaa4ca623bcfee",
+      "duration_seconds": 0.08,
+      "output": "verification/generated/final-audit-semantic-closure/final-effective-classification.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-effective-audit-profile",
+      "command": [
+        "python",
+        "verification/scripts/profile_systems_effective_audit.py",
+        "--journal",
+        "verification/generated/final-audit-semantic-closure/.accepted.audits-27053ae4-db28-49dc-8073-1d8699d4f8a0/audit-events.jsonl",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/final-effective-audit-profile.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ac9b8e58695ad837fed6643b0cedfac05d15635",
+      "working_changes_sha256": "edc139ae3b3ae90dfffeb1d12c62414cb5dd29320e407b3d3e66ce73f5571052",
+      "output_sha256": "e5952ad0caeafab5abcb28d75271ba1a51c3184a1b43caec8c2d845e31e63037",
+      "duration_seconds": 0.17,
+      "output": "verification/generated/final-audit-semantic-closure/final-effective-audit-profile.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "accepted-systems-artifact-gate-correct-range",
+      "command": [
+        "python",
+        "verification/scripts/systems_publication_gate.py",
+        "--report",
+        "verification/generated/final-audit-semantic-closure/accepted/report.json",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/accepted-artifact-gate.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4693b620bba0c57eccdc4f183465967b1957e3da",
+      "working_changes_sha256": "8eaea01ee0271d9f4dd5ce45407546c4edd740fe3340730d657ec1099a8c1d0d",
+      "output_sha256": "6af700d7c605a8a5caf334775b11c9832bab54e068359526efa825601e69b1bc",
+      "duration_seconds": 42.86,
+      "output": "verification/generated/final-audit-semantic-closure/accepted-systems-artifact-gate-correct-range.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "accepted-profile-freshness-capture",
+      "command": [
+        "node",
+        "tools/sysml-publication-stale.mjs",
+        "--capture"
+      ],
+      "exit_code": 0,
+      "tool_version": "v22.11.0",
+      "source_commit": "4693b620bba0c57eccdc4f183465967b1957e3da",
+      "working_changes_sha256": "eaa31926b14757de70c7b310f530d281b2bb4534e64b58a4bd32816546007ce3",
+      "output_sha256": "e8fa2c39a819b1a95623a702fe00c1940da0b976e2c1bfc0fd8a8917c03ec535",
+      "duration_seconds": 0.22,
+      "output": "verification/generated/final-audit-semantic-closure/accepted-profile-freshness-capture.log",
+      "environment_overrides": {}
     }
   ]
 }

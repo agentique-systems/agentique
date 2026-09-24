@@ -18,7 +18,8 @@ v9, its accepted graph and the original standard/library bytes remain unchanged.
 - [Connection authority](connection-authority.md): the pinned corpus requires
   the narrowly authorized Operational v3 interpretation. Historical profiles
   retain their domain behavior. Enumeration and inheritance fixes do not create
-  operational interpretations. Published remains the default pending acceptance.
+  operational interpretations. After accepted publication, the current
+  `OPERATIONAL` alias selects v3; the explicit Published profile remains available.
 - Naming completeness is independent from structural variation closure.
 - Structural cycle and inherited-end fixes require actual effective API evidence;
   static graph projections do not establish query completeness.
@@ -129,8 +130,31 @@ strict certificate bindings. It is not publication authority. The Rust direct
 finalizer must independently authenticate the contract and perform every audit.
 No old converged frontier was resumed; nine new checkpoints were committed.
 
-Authenticated direct finalization remains pending. No accepted Systems receipt
-or default-profile change is claimed here.
+Authenticated direct finalization accepted and atomically issued the Systems
+publication, bindings, cache and receipt. Every pre-audit and final identity/
+provenance audit passed. The effective audit checked 13,644 local canonical
+subjects in 1,706 deterministic bounded-worker batches, with **zero weighted
+findings, zero distinct diagnostics and zero affected subjects**. Its
+[classification](final-effective-classification.json) is zero in every root
+family. The finalizer performed no producer replay.
+
+The complete finalizer command exited 0 in 1,660.484 seconds, with peak private
+memory of 5,757.8 MiB. The effective population audit took 1,047.408 seconds;
+its [profile](final-effective-audit-profile.json) records the actual batch events.
+The [exported-artifact gate](accepted-artifact-gate.json) independently verifies
+all 1,327 references, 21 original documents, 69 bindings, checkpoint transport,
+source provenance and archive digests. That verifier initially rejected Rust's
+tuple-encoded source ranges because it expected an object. The
+[format correction](publication-origin-format.md) requires the actual two-element
+array and preserves all bounds and provenance checks; seven regressions and the
+full artifact gate pass. The failed command remains in the ledger.
+
+The issued receipt and binding files are copied byte-for-byte into the compiled
+v3 catalogue. The current `SysmlBaselineProfile::OPERATIONAL` alias and generic
+trusted restoration select this accepted interpretation. Historical v2 remains
+explicit and unaccepted; the enum's Published default remains reproducible.
+Compiled trusted-cache restoration and authored stability are separate gates
+below; artifact verification alone does not establish them.
 
 ## Platform boundary
 

@@ -17,7 +17,12 @@ struct CatalogueEntry<'a> {
 
 // Add only independently accepted receipt/binding documents. Cache files and
 // callers cannot supply entries. Existing KerML /26 restoration is separate.
-const CATALOGUE: &[CatalogueEntry<'static>] = &[];
+const CATALOGUE: &[CatalogueEntry<'static>] = &[CatalogueEntry {
+    id: "sysml-systems-operational-v3",
+    receipt_format: "agq-sysml-accepted-publication/1",
+    receipt: include_str!("../../../standards/sysml-accepted-publication.json"),
+    bindings: include_str!("../../../standards/sysml-standard-bindings.json"),
+}];
 
 /// Failure to authenticate previously accepted producer evidence.
 #[derive(Debug)]

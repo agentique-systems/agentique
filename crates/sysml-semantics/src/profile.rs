@@ -16,6 +16,8 @@ impl SysmlBaselineProfile {
     pub const OPERATIONAL_V1: Self = Self::OperationalV1;
     pub const OPERATIONAL_V2: Self = Self::OperationalV2;
     pub const OPERATIONAL_V3: Self = Self::OperationalV3;
+    /// Current independently accepted Systems interpretation.
+    pub const OPERATIONAL: Self = Self::OPERATIONAL_V3;
 
     pub const fn id(self) -> &'static str {
         match self {

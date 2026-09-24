@@ -152,7 +152,7 @@ impl ReceiptAuthority {
 
 impl CanonicalSysmlSystemsLibrary {
     /// Restore only the exact separately accepted receipt and original sources.
-    /// This remains disabled while the compiled Systems catalogue is empty.
+    /// Uses the current independently accepted Systems interpretation.
     /// The accepted KerML allocation is shared; local producer counters are zero.
     pub fn restore_cache(
         reader: impl Read + Seek,
@@ -163,7 +163,7 @@ impl CanonicalSysmlSystemsLibrary {
             reader,
             sources,
             accepted_kerml,
-            SysmlBaselineProfile::OPERATIONAL_V2,
+            SysmlBaselineProfile::OPERATIONAL,
         )
     }
 
