@@ -222,6 +222,9 @@ pub enum QueryKind {
     SuppressedFeature,
     OwningType,
     ExpressionResults,
+    /// Whole return-parameter population; subject and value identify the Type,
+    /// including when its proven collection is empty.
+    ResultPopulation,
     NamingSource,
     RedefinitionEndConformance,
     FormalConstraintTarget,
@@ -300,6 +303,9 @@ pub enum Rule {
     RemoveRedefinedFeature,
     FeatureOwningType,
     InheritedResult,
+    /// A cyclic return population established from complete owned populations,
+    /// its specialization component, and complete external boundary inputs.
+    InheritedResultFixedPoint,
     OrderedNamingFeature,
     ImpliedNamingAgreement,
     /// Normative naming override supplied by the context's composed language.

@@ -83,6 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "{}",
             serde_json::json!({"subject":subject,"name":name(subject),
             "effective_completeness":format!("{:?}",actual.completeness()),
+            "kernel_completeness":format!("{:?}",actual.kerml.completeness),
             "effective_value":actual.value(),
             "effective_diagnostics":format!("{:?}",actual.diagnostics),
             "kernel_diagnostics":format!("{:?}",actual.kerml.diagnostics),"publication_authority":false})

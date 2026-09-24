@@ -333,6 +333,33 @@ impl KerMlQueries<'_> {
                 }
             };
             if established {
+                if out.completeness == Completeness::Complete {
+                    let premises: Vec<_> = out
+                        .positive_dependencies
+                        .iter()
+                        .copied()
+                        .map(Evidence::Fact)
+                        .chain(
+                            out.search_dependencies
+                                .iter()
+                                .cloned()
+                                .map(Evidence::Search),
+                        )
+                        .collect();
+                    for &id in &component {
+                        // This certifies a population, not a fictitious result
+                        // Feature. The conclusion keys identify every SCC member;
+                        // exhaustive owned-return/general searches and external
+                        // boundary facts justify even the empty fixed point.
+                        out.prove(
+                            QueryKind::ResultPopulation,
+                            id,
+                            id,
+                            Rule::InheritedResultFixedPoint,
+                            premises.clone(),
+                        );
+                    }
+                }
                 for id in component {
                     values.insert(id, fixed.remove(&id).unwrap());
                 }

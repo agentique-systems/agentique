@@ -1,0 +1,913 @@
+{
+  "publication_authority": false,
+  "producer_replay": false,
+  "exit_code": 0,
+  "semantic_commit": "a6413bf",
+  "raw_sha256": "fe4086c2903751123dfc99965a14104a5711e807fcb5f07cca606bdb56f834a6",
+  "executable_sha256": "d49471e4ba123afd2a87cedef077e739e6e8cb90ed7e4bf9eaac0e1c37c717d3",
+  "parameter_subjects": [
+    {
+      "effective_completeness": "Incomplete",
+      "effective_diagnostics": "{}",
+      "effective_value": [
+        "2c8616e5-d921-5eaa-b3ec-0af94bb8f701",
+        "a6a63b29-e6ae-5632-b3f3-ca826e32232e"
+      ],
+      "kernel_completeness": "Complete",
+      "kernel_diagnostics": "{}",
+      "name": "messages",
+      "publication_authority": false,
+      "subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "effective_completeness": "Incomplete",
+      "effective_diagnostics": "{}",
+      "effective_value": [
+        "2c8616e5-d921-5eaa-b3ec-0af94bb8f701",
+        "a6a63b29-e6ae-5632-b3f3-ca826e32232e"
+      ],
+      "kernel_completeness": "Complete",
+      "kernel_diagnostics": "{}",
+      "name": "flows",
+      "publication_authority": false,
+      "subject": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "effective_completeness": "Incomplete",
+      "effective_diagnostics": "{}",
+      "effective_value": [
+        "2c8616e5-d921-5eaa-b3ec-0af94bb8f701",
+        "a6a63b29-e6ae-5632-b3f3-ca826e32232e"
+      ],
+      "kernel_completeness": "Complete",
+      "kernel_diagnostics": "{}",
+      "name": "successionFlows",
+      "publication_authority": false,
+      "subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    }
+  ],
+  "result_subjects": [
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "0da1cb76-eed1-5f6f-aba7-0de8aff65f98",
+          "name": ""
+        },
+        {
+          "id": "f08f6522-5768-54a4-a859-31156f26beef",
+          "name": ""
+        },
+        {
+          "id": "c53da6f8-837f-5b3a-8838-cfb22d5df5f8",
+          "name": ""
+        },
+        {
+          "id": "ce19e5e4-0a1d-58c7-8b6e-3956845963fd",
+          "name": ""
+        },
+        {
+          "id": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "name": "TransitionAction"
+        },
+        {
+          "id": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "name": ""
+        },
+        {
+          "id": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "name": "Actions"
+        },
+        {
+          "id": "610fe5af-0a3c-505c-b4e9-7f3b71f9ed72",
+          "name": ""
+        },
+        {
+          "id": "1f73b583-ce95-5def-b2a5-b025466960bc",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "0da1cb76-eed1-5f6f-aba7-0de8aff65f98",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "0df9add9-7323-573a-8427-e742241ec733",
+          "name": ""
+        },
+        {
+          "id": "212e494f-74c1-5d67-a006-9e5f9510b238",
+          "name": ""
+        },
+        {
+          "id": "4cc1318f-7488-5eaa-8194-05e5a49fd82c",
+          "name": ""
+        },
+        {
+          "id": "bfc22c37-2104-5b93-8d6e-4f52b17f8a99",
+          "name": ""
+        },
+        {
+          "id": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "name": "TransitionAction"
+        },
+        {
+          "id": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "name": ""
+        },
+        {
+          "id": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "name": "Actions"
+        },
+        {
+          "id": "610fe5af-0a3c-505c-b4e9-7f3b71f9ed72",
+          "name": ""
+        },
+        {
+          "id": "1f73b583-ce95-5def-b2a5-b025466960bc",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "0df9add9-7323-573a-8427-e742241ec733",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "140ef6ea-f727-51a0-89f6-61d454cb48c7",
+          "name": "target"
+        },
+        {
+          "id": "a9ad3b6a-ffb6-56d2-b061-4a8c2ea1e0d2",
+          "name": ""
+        },
+        {
+          "id": "3b9fab91-096f-5012-841c-ad946c367fdf",
+          "name": "flows"
+        },
+        {
+          "id": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "140ef6ea-f727-51a0-89f6-61d454cb48c7",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Incomplete",
+      "owners": [
+        {
+          "id": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+          "name": "messages"
+        },
+        {
+          "id": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "value": [],
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ]
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "221542a4-584d-5f0b-9142-50dff2e8763d",
+          "name": ""
+        },
+        {
+          "id": "7239038c-65f8-5f36-8efe-9069ec57ea45",
+          "name": ""
+        },
+        {
+          "id": "1daf197e-73f1-532f-99c2-5512a1468034",
+          "name": ""
+        },
+        {
+          "id": "ba17e046-6259-54d4-b105-7aa02b63754d",
+          "name": ""
+        },
+        {
+          "id": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "name": "StateTransitionAction"
+        },
+        {
+          "id": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "name": ""
+        },
+        {
+          "id": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+          "name": "States"
+        },
+        {
+          "id": "5e733dd1-aeab-5904-9453-ce9a18c1efa5",
+          "name": ""
+        },
+        {
+          "id": "bf5bdf1f-2e74-5594-b276-f26aee5cd8e0",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "221542a4-584d-5f0b-9142-50dff2e8763d",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "29480f97-23d3-5c60-8e2d-11d822639e86",
+          "name": ""
+        },
+        {
+          "id": "ec7457c0-c4d2-5e73-92bd-363db415a36b",
+          "name": ""
+        },
+        {
+          "id": "42e14b9c-f0b2-590f-84bd-5826d21e21c4",
+          "name": ""
+        },
+        {
+          "id": "dc978a8a-69d1-575e-a336-b783f3707272",
+          "name": ""
+        },
+        {
+          "id": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "name": "StateTransitionAction"
+        },
+        {
+          "id": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "name": ""
+        },
+        {
+          "id": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+          "name": "States"
+        },
+        {
+          "id": "5e733dd1-aeab-5904-9453-ce9a18c1efa5",
+          "name": ""
+        },
+        {
+          "id": "bf5bdf1f-2e74-5594-b276-f26aee5cd8e0",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "29480f97-23d3-5c60-8e2d-11d822639e86",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Incomplete",
+      "owners": [
+        {
+          "id": "3b9fab91-096f-5012-841c-ad946c367fdf",
+          "name": "flows"
+        },
+        {
+          "id": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "value": [],
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ]
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+          "name": "source"
+        },
+        {
+          "id": "576f2f35-88fb-542e-a915-7933afd3d837",
+          "name": ""
+        },
+        {
+          "id": "3b9fab91-096f-5012-841c-ad946c367fdf",
+          "name": "flows"
+        },
+        {
+          "id": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "515638fd-0ff9-53fc-a6ba-05e1d820e62c",
+          "name": ""
+        },
+        {
+          "id": "2d57e815-037a-5317-bca5-cf67c0e9a12d",
+          "name": ""
+        },
+        {
+          "id": "4cc1318f-7488-5eaa-8194-05e5a49fd82c",
+          "name": ""
+        },
+        {
+          "id": "bfc22c37-2104-5b93-8d6e-4f52b17f8a99",
+          "name": ""
+        },
+        {
+          "id": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "name": "TransitionAction"
+        },
+        {
+          "id": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "name": ""
+        },
+        {
+          "id": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "name": "Actions"
+        },
+        {
+          "id": "610fe5af-0a3c-505c-b4e9-7f3b71f9ed72",
+          "name": ""
+        },
+        {
+          "id": "1f73b583-ce95-5def-b2a5-b025466960bc",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "515638fd-0ff9-53fc-a6ba-05e1d820e62c",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Incomplete",
+      "owners": [
+        {
+          "id": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+          "name": "successionFlows"
+        },
+        {
+          "id": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "value": [],
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ]
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "5ec82633-f2d4-5e14-a9b1-eb992bac8298",
+          "name": "target"
+        },
+        {
+          "id": "46882739-95de-5dfb-b619-680b88721fa8",
+          "name": ""
+        },
+        {
+          "id": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+          "name": "successionFlows"
+        },
+        {
+          "id": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "5ec82633-f2d4-5e14-a9b1-eb992bac8298",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Incomplete",
+      "owners": [
+        {
+          "id": "643d02aa-0e56-5d10-9b3c-f301561f4487",
+          "name": ""
+        },
+        {
+          "id": "c73d2896-41b7-51bc-80fe-2a4a8eea41ae",
+          "name": ""
+        },
+        {
+          "id": "7c62e058-4cc4-5798-9754-aa33f032f6a5",
+          "name": ""
+        },
+        {
+          "id": "2f69c6be-b61f-5128-bdd5-25b45b9db127",
+          "name": ""
+        },
+        {
+          "id": "cb244767-d64d-50f0-9775-4b23c3a79d1b",
+          "name": "ControlAction"
+        },
+        {
+          "id": "e09898ef-5fe0-5014-b99e-c5e6518d302e",
+          "name": ""
+        },
+        {
+          "id": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "name": "Actions"
+        },
+        {
+          "id": "610fe5af-0a3c-505c-b4e9-7f3b71f9ed72",
+          "name": ""
+        },
+        {
+          "id": "1f73b583-ce95-5def-b2a5-b025466960bc",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "643d02aa-0e56-5d10-9b3c-f301561f4487",
+      "value": [],
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ]
+    },
+    {
+      "completeness": "Incomplete",
+      "owners": [
+        {
+          "id": "75c57429-f867-5e06-8c5a-cb4666c48ade",
+          "name": ""
+        },
+        {
+          "id": "e054401c-0b08-5ccd-bb32-7c477a0c6f54",
+          "name": ""
+        },
+        {
+          "id": "7c62e058-4cc4-5798-9754-aa33f032f6a5",
+          "name": ""
+        },
+        {
+          "id": "2f69c6be-b61f-5128-bdd5-25b45b9db127",
+          "name": ""
+        },
+        {
+          "id": "cb244767-d64d-50f0-9775-4b23c3a79d1b",
+          "name": "ControlAction"
+        },
+        {
+          "id": "e09898ef-5fe0-5014-b99e-c5e6518d302e",
+          "name": ""
+        },
+        {
+          "id": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "name": "Actions"
+        },
+        {
+          "id": "610fe5af-0a3c-505c-b4e9-7f3b71f9ed72",
+          "name": ""
+        },
+        {
+          "id": "1f73b583-ce95-5def-b2a5-b025466960bc",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "75c57429-f867-5e06-8c5a-cb4666c48ade",
+      "value": [],
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ]
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "86de7286-c609-59e0-87ed-46cf6c3f4548",
+          "name": "source"
+        },
+        {
+          "id": "10ca627b-15e5-55ff-879f-12cfa8ede5cc",
+          "name": ""
+        },
+        {
+          "id": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+          "name": "successionFlows"
+        },
+        {
+          "id": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "86de7286-c609-59e0-87ed-46cf6c3f4548",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "888cda79-aaa5-5d72-a654-b35603802e37",
+          "name": "source"
+        },
+        {
+          "id": "9936c7f8-cad7-5112-8929-1c3108a5ae2b",
+          "name": ""
+        },
+        {
+          "id": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+          "name": "messages"
+        },
+        {
+          "id": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "888cda79-aaa5-5d72-a654-b35603802e37",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "9f0f359c-0538-55f5-ad28-13fd27caee32",
+          "name": ""
+        },
+        {
+          "id": "b331b384-aa94-53c5-9895-4602161b5e41",
+          "name": ""
+        },
+        {
+          "id": "efdbd0f7-dc19-5dd3-9f57-2022084b3ddc",
+          "name": ""
+        },
+        {
+          "id": "12ef2076-fa1e-5f01-aa66-c49f17f6de80",
+          "name": ""
+        },
+        {
+          "id": "eae727bf-967c-54fe-88cc-2b5d0d9120a9",
+          "name": "AcceptAction"
+        },
+        {
+          "id": "b5959cdf-7d36-5e34-b236-38aa65256f0a",
+          "name": ""
+        },
+        {
+          "id": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "name": "Actions"
+        },
+        {
+          "id": "610fe5af-0a3c-505c-b4e9-7f3b71f9ed72",
+          "name": ""
+        },
+        {
+          "id": "1f73b583-ce95-5def-b2a5-b025466960bc",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "9f0f359c-0538-55f5-ad28-13fd27caee32",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "a2119528-2e45-5c59-82c5-25828219bcde",
+          "name": ""
+        },
+        {
+          "id": "df5b928a-4367-550c-a667-61e5d5c1e7e5",
+          "name": ""
+        },
+        {
+          "id": "1daf197e-73f1-532f-99c2-5512a1468034",
+          "name": ""
+        },
+        {
+          "id": "ba17e046-6259-54d4-b105-7aa02b63754d",
+          "name": ""
+        },
+        {
+          "id": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "name": "StateTransitionAction"
+        },
+        {
+          "id": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "name": ""
+        },
+        {
+          "id": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+          "name": "States"
+        },
+        {
+          "id": "5e733dd1-aeab-5904-9453-ce9a18c1efa5",
+          "name": ""
+        },
+        {
+          "id": "bf5bdf1f-2e74-5594-b276-f26aee5cd8e0",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "a2119528-2e45-5c59-82c5-25828219bcde",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Incomplete",
+      "owners": [
+        {
+          "id": "a84a5d47-666c-55ad-910a-665d3ca8e364",
+          "name": ""
+        },
+        {
+          "id": "65923720-25ac-5128-9ca8-7cf2ef3f29c6",
+          "name": ""
+        },
+        {
+          "id": "c53da6f8-837f-5b3a-8838-cfb22d5df5f8",
+          "name": ""
+        },
+        {
+          "id": "ce19e5e4-0a1d-58c7-8b6e-3956845963fd",
+          "name": ""
+        },
+        {
+          "id": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "name": "TransitionAction"
+        },
+        {
+          "id": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "name": ""
+        },
+        {
+          "id": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "name": "Actions"
+        },
+        {
+          "id": "610fe5af-0a3c-505c-b4e9-7f3b71f9ed72",
+          "name": ""
+        },
+        {
+          "id": "1f73b583-ce95-5def-b2a5-b025466960bc",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "a84a5d47-666c-55ad-910a-665d3ca8e364",
+      "value": [],
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ]
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "b269c9a9-c168-57ca-bb1e-7de2462caa89",
+          "name": ""
+        },
+        {
+          "id": "88390f84-5825-51cd-99b5-c9235c8b2daf",
+          "name": ""
+        },
+        {
+          "id": "efdbd0f7-dc19-5dd3-9f57-2022084b3ddc",
+          "name": ""
+        },
+        {
+          "id": "12ef2076-fa1e-5f01-aa66-c49f17f6de80",
+          "name": ""
+        },
+        {
+          "id": "eae727bf-967c-54fe-88cc-2b5d0d9120a9",
+          "name": "AcceptAction"
+        },
+        {
+          "id": "b5959cdf-7d36-5e34-b236-38aa65256f0a",
+          "name": ""
+        },
+        {
+          "id": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "name": "Actions"
+        },
+        {
+          "id": "610fe5af-0a3c-505c-b4e9-7f3b71f9ed72",
+          "name": ""
+        },
+        {
+          "id": "1f73b583-ce95-5def-b2a5-b025466960bc",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "b269c9a9-c168-57ca-bb1e-7de2462caa89",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "d33b74d9-03dd-5f67-8b2d-6a621603eb0d",
+          "name": "target"
+        },
+        {
+          "id": "2a69f38d-b0a6-5aff-b661-7d5b6da253cf",
+          "name": ""
+        },
+        {
+          "id": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+          "name": "messages"
+        },
+        {
+          "id": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "name": ""
+        },
+        {
+          "id": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "name": "Flows"
+        },
+        {
+          "id": "f8528d7b-03ab-5057-ae52-dcd47080b45c",
+          "name": ""
+        },
+        {
+          "id": "f7138634-f74a-5366-8448-fce722ac69ba",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "d33b74d9-03dd-5f67-8b2d-6a621603eb0d",
+      "value": [],
+      "diagnostic_codes": []
+    },
+    {
+      "completeness": "Complete",
+      "owners": [
+        {
+          "id": "f0fa074a-e058-5df1-80d2-1f352aafc916",
+          "name": ""
+        },
+        {
+          "id": "b3a3a45d-fe2d-535a-884b-761bec95414c",
+          "name": ""
+        },
+        {
+          "id": "42e14b9c-f0b2-590f-84bd-5826d21e21c4",
+          "name": ""
+        },
+        {
+          "id": "dc978a8a-69d1-575e-a336-b783f3707272",
+          "name": ""
+        },
+        {
+          "id": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "name": "StateTransitionAction"
+        },
+        {
+          "id": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "name": ""
+        },
+        {
+          "id": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+          "name": "States"
+        },
+        {
+          "id": "5e733dd1-aeab-5904-9453-ce9a18c1efa5",
+          "name": ""
+        },
+        {
+          "id": "bf5bdf1f-2e74-5594-b276-f26aee5cd8e0",
+          "name": ""
+        }
+      ],
+      "publication_authority": false,
+      "result_subject": "f0fa074a-e058-5df1-80d2-1f352aafc916",
+      "value": [],
+      "diagnostic_codes": []
+    }
+  ],
+  "limits": "Historical graph is deliberately unaccepted under current implementation. Missing current producer certificate remains Incomplete; only the structural query cycle results are compared."
+}

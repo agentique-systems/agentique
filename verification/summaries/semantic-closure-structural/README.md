@@ -12,6 +12,11 @@ Return inheritance decomposes unresolved specialization components, establishes
 finite candidate reachability, applies explicit/positional suppression, and
 checks the ordered fixed point against the ordinary inheritance equations.
 Empty results retain every reachable owned-return and general-population search.
+Each proven SCC member also has a `ResultPopulation` conclusion with the
+`InheritedResultFixedPoint` rule, following the existing whole-population
+evidence contract. Its premises retain the owned populations, component edges
+and external boundary evidence. No result Feature is invented, and incomplete
+inputs cannot issue that proof.
 Pending namespaces/specializations remain Incomplete. A nonempty cycle with an
 unstable semantic order remains Incomplete. The sealed KerML-only interpretation
 is preserved; cyclic proofs require an independently identified language extension.
@@ -49,7 +54,9 @@ applicable):
 | `cargo clippy -p agq-kerml-semantics -p agq-sysml-semantics --all-targets -- -D warnings` | 0 | finished successfully |
 | `cargo fmt --all -- --check` | 0 | no differences |
 | `cargo build --release --config profile.release.lto=false -p agq-kerml-text --example structural_frontier_probe` | 0 | optimized diagnostic built |
-| `structural_frontier_probe ROOT JOURNAL KERML_CACHE` | 0 | real parameter-cycle rejection with owned/external counts; 21 result subjects inspected |
+| `structural_frontier_probe ROOT JOURNAL KERML_CACHE` before fix | 0 | real parameter-cycle rejection with owned/external counts; 21 result subjects inspected |
+| `structural_frontier_probe ROOT JOURNAL KERML_CACHE` after fix | 0 | all three parameter KerML answers Complete with the two original Message parameters; zero end-cycle or result-cycle diagnostics |
+| `cargo clippy -p agq-kerml-text --example structural_frontier_probe -- -D warnings` | 0 | diagnostic example clean |
 
 The journal argument was
 `verification/generated/final-language-acceptance/full-frontiers/journal-735481e45453e104dd2bfe5d1e35bdb4ca89974d71b78dce5c51d267adfb6df5.json`;
@@ -69,5 +76,8 @@ were changed or removed.
 Development failures were corrected before these gates: probe imports/private
 snapshot access, a missing pending-source guard exposed by the negative return
 fixture, a Windows link lock from a concurrent test executable, and one Clippy
-needless-borrow warning. The optimized real-graph after-fix probe is recorded
-separately when complete; the rows above do not claim Systems acceptance.
+needless-borrow warning. The optimized after-fix probe is recorded in
+`real-structural-query-closure.json`. The final return regression command was
+repeated after adding explicit population evidence: 11 tests passed, including
+proof coverage and absence of a Complete proof for pending inputs. These results
+do not claim Systems acceptance.

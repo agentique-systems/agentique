@@ -357,8 +357,40 @@ fn empty_return_cycle_retains_complete_negative_population_evidence() {
                 })
         );
     }
+    for member in [1, 2] {
+        let conclusion = Conclusion {
+            query: QueryKind::ResultPopulation,
+            subject: id(member),
+            value: id(member),
+        };
+        let proof = answer.explanations[&conclusion]
+            .iter()
+            .find(|proof| proof.rule == Rule::InheritedResultFixedPoint)
+            .unwrap();
+        for owner in [1, 2, 3] {
+            assert!(proof.premises.contains(&Evidence::Search(
+                SearchDependency::OwnedRelationships {
+                    owner: id(owner),
+                    class: c::RETURN_PARAMETER_MEMBERSHIP,
+                }
+            )));
+            assert!(proof.premises.contains(&Evidence::Search(
+                SearchDependency::OwnedRelationships {
+                    owner: id(owner),
+                    class: c::SPECIALIZATION,
+                }
+            )));
+        }
+    }
     let pending = cycle_queries(&snapshot, BTreeSet::from([id(3)])).result_parameters(id(1));
     assert_eq!(pending.completeness, Completeness::Incomplete);
+    assert!(
+        !pending
+            .explanations
+            .values()
+            .flatten()
+            .any(|proof| proof.rule == Rule::InheritedResultFixedPoint)
+    );
     let historical = KerMlQueries::new(
         SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
     );
