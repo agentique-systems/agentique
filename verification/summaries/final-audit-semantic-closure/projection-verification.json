@@ -86,6 +86,12 @@
       "exit_code": 0,
       "result": "Initial run: 7 tests passed in 0.159 seconds. After adding a document/global reference-population mismatch negative, final run: 7 tests passed in 0.124 seconds. Both reviewed scope fixtures verify pinned original sources and report evidence; negative cases reject scope/source substitutions, incomplete references/producer closure/effective audits, false publication authority and modified classification/mapping fixtures. Synthetic reports are not executed semantic gates.",
       "output": "verification/generated/final-closure-projections/semantic-slice-gate-tests.log"
+    },
+    {
+      "command": "python -m unittest discover -s verification/scripts -p test_systems_semantic_slice_gate.py",
+      "exit_code": 0,
+      "result": "Witness extension: 11 tests passed in 0.457 seconds. Requires actual corpus witness schema from structural helper0141dc2, seven/21 enumerations only in combined scope, exact two Interface and three Flow populations in both scopes, and original two HappensDuring carriers with Complete narrowed typed subsets. Negative fixtures cover missing/failed/reduced populations, canonical identity/order/owner changes, incomplete names/types and wrong projection subsets. No real corpus execution or publication claim.",
+      "output": "verification/generated/final-closure-projections/semantic-slice-witness-tests.log"
     }
   ],
   "rust_gate": "Enumeration owner ran cargo test -p agq-sysml-semantics --lib on combined projection + enumeration + /6 context changes: 96 passed, 0 failed, exit 0, 130.43 seconds. Includes real scheduler Color effective typing/names and projection/naming regressions. Raw command evidence belongs to verification/summaries/enumeration-closure/commands.json.",

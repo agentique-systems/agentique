@@ -21,6 +21,31 @@ clean effective publication-query audit evidence with bounded workers. It also
 requires explicit v3, the accepted immutable KerML v9 identity without replay,
 and false publication attempt/acceptance/authority flags.
 
+The fresh report must also contain `corpus_witnesses` emitted by the real-query
+example helper. Combined16 requires all seven EnumerationDefinitions and 21
+literals; medium13 contains neither enumeration document and requires zero of
+each. Literal IDs, owning EnumerationDefinition IDs, original VariantMemberships
+and explicit names are checked against the independently pinned ownership plan.
+Each literal must retain exactly one canonical owner FeatureTyping, Complete
+effective typing/names and its DataValue subsetting. Variation must be canonically
+true on every expected definition.
+
+Both scopes require two BinaryInterface subjects with exactly the original two
+ordered PortUsage ends, and all three FlowUsage subjects with exactly the original
+Message parameters and their own ends, including original canonical owners. The
+fixture IDs appear only in verification code. The gate compares actual answers
+with those independent constants even if the report's expected fields are changed
+to agree with an incorrect answer.
+
+Both exact HappensDuring ConnectionUsages must retain their original canonical
+FeatureTyping edges and plain Association targets. Broad effective Usage typing
+retains HappensDuring; the four typed projections must be Complete, conforming,
+exclude that plain Association, and preserve the formal subset relationships.
+Each exact source case has a nonempty PartDefinition population and corresponding
+inherited occurrence/item/connection populations. Aggregate flags alone cannot
+replace these checked identities and answer populations. Query witnesses must
+report no canonical element-count change and no publication authority.
+
 The prior classification and slice plan have independent reviewed content pins.
 The classifier is rerun over all 238 distinct rows and must reproduce the exact
 674 weighted findings, 50 subjects and zero `Other` findings. The combined plan
@@ -48,3 +73,11 @@ incomplete pairs/requirements, producer diagnostics, altered reference counts,
 publication/profile/dependency mismatches, malformed digests and modified reviewed
 classification/mapping fixtures. Synthetic passing reports in these tests do not
 represent executed semantic gates. Fresh combined and medium outcomes are pending.
+
+Witness-extension verification: the same command completed with exit 0 and 11
+tests passed in 0.457 seconds. Added negatives cover missing/failed/self-reduced
+witness sets, canonical owner/VariantMembership/typing changes, pending explicit
+names, lost DataValue subsetting, copied or reordered structural identities,
+changed expected and actual fields together, wrong original ConnectionUsage
+carriers, missing typed operations and violated projection subsets. Output retains
+a digest of the complete witness object and its scope-specific population counts.

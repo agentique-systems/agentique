@@ -31,6 +31,22 @@ CERTIFICATE_DIGESTS = (
     "producer_registry_digest", "context_contract_digest",
 )
 REFERENCE_STATES = set("complete unresolved incomplete ambiguous invalid endpoint_mismatch".split())
+# Exact source fixture identities, never language implementation special cases.
+BINARY_INTERFACE = "1c60c98b-d3e4-531e-8b37-0ac695c0e9f2"
+INTERFACE_SUBJECTS = (BINARY_INTERFACE, "8ce7e6db-fd66-5ba1-9cd9-a09a77092859")
+INTERFACE_ENDS = ("45511382-ea84-5db3-b172-c1acd4acd229", "1e65a6e7-843d-5965-b645-2aeb545bbb03")
+FLOW_ENDS = {
+    "18da1d9a-37e3-547a-ac0e-bf9793f724b4": ("888cda79-aaa5-5d72-a654-b35603802e37", "d33b74d9-03dd-5f67-8b2d-6a621603eb0d"),
+    "3b9fab91-096f-5012-841c-ad946c367fdf": ("3dbf09d5-eb9a-5eca-9b34-9091ee102a4c", "140ef6ea-f727-51a0-89f6-61d454cb48c7"),
+    "5e756f07-e2c7-56e7-8a4c-7b5283d66543": ("86de7286-c609-59e0-87ed-46cf6c3f4548", "5ec82633-f2d4-5e14-a9b1-eb992bac8298"),
+}
+MESSAGE = "6a26e6c7-abde-598c-a1fb-f63ad3b08bee"
+FLOW_PARAMETERS = ("2c8616e5-d921-5eaa-b3ec-0af94bb8f701", "a6a63b29-e6ae-5632-b3f3-ca826e32232e")
+HAPPENS_DURING = "51a76600-2466-5695-8c53-8e327f6302de"
+CONNECTION_TYPINGS = {
+    "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca": "81be881d-6fc1-57d1-8434-a7267d640b15",
+    "e76d30a1-2f36-584d-8dce-409db017b746": "48dd041c-6912-599a-8a2a-93faab66570a",
+}
 
 
 def seconds(value, label):
@@ -95,7 +111,116 @@ def reference_counts(value, expected, label, sparse=False):
     return total
 
 
-def accept_report(report, scope, expected):
+def corpus_expectations(plan, expected):
+    literals = {}
+    for row in plan["all_prior_subjects"]:
+        if row["class"] != "ENUMERATION_USAGE" or row["document"] not in expected:
+            continue
+        membership, definition = row["ownership"][:2]
+        require(membership["child"] == row["subject"] and definition["child"] == membership["owner"],
+                "pinned literal ownership chain")
+        literals[row["subject"]] = dict(document=row["document"], owning_definition=definition["owner"],
+            variant_membership=membership["owner"], name=row["name"]["Scalar"]["String"])
+    definitions = {row["owning_definition"]: row["document"] for row in literals.values()}
+    counts = dict(enumeration_definitions=len(definitions), enumeration_literals=len(literals),
+        interface_subjects=len(INTERFACE_SUBJECTS) if "Systems Library/Interfaces.sysml" in expected else 0,
+        flow_subjects=len(FLOW_ENDS) if "Systems Library/Flows.sysml" in expected else 0,
+        connection_subjects=len(CONNECTION_TYPINGS) if "Systems Library/Flows.sysml" in expected else 0)
+    return literals, definitions, counts
+
+
+def witnessed_subjects(rows, subjects, label):
+    require(isinstance(rows, list) and len(rows) == len(subjects)
+            and {row["subject"] for row in rows} == set(subjects), f"{label}: exact witnessed subjects")
+    require(all(row["passed"] is True for row in rows), f"{label}: failed witness")
+    return {row["subject"]: row for row in rows}
+
+
+def corpus_witnesses(value, plan, expected):
+    require(value["schema"] == "agq.systems-corpus-witnesses/v1"
+            and value["publication_authority"] is False, "corpus witness format/authority")
+    require(isinstance(value["source_documents"], list)
+            and len(value["source_documents"]) == len(expected)
+            and set(value["source_documents"]) == set(expected), "exact corpus witness source scope")
+    require(value["passed"] is True and value["findings"] == []
+            and value["unchanged_canonical_element_count"] is True, "corpus witness failure or graph mutation")
+    literals, definitions, counts = corpus_expectations(plan, expected)
+    require(set(value["expected"]) == set(counts)
+            and all(natural(value["expected"][name], name) == count for name, count in counts.items()),
+            "exact expected corpus witness counts")
+    actual_definitions = witnessed_subjects(value["enumeration_definitions"], definitions, "enumeration definitions")
+    for subject, row in actual_definitions.items():
+        require(row["document"] == definitions[subject] and row["is_variation"] is True,
+                "canonical enumeration variation")
+    for document in set(definitions.values()):
+        names = [row["name"] for row in actual_definitions.values() if row["document"] == document]
+        require(len(names) == len(set(names))
+                and set(names) == set(plan["enumeration_definitions"][Path(document).stem]),
+                "exact enumeration definition names")
+    actual_literals = witnessed_subjects(value["enumeration_literals"], literals, "enumeration literals")
+    typing_edges = set()
+    for subject, row in actual_literals.items():
+        source = literals[subject]
+        owner = source["owning_definition"]
+        require(all(row[field] == source[field] for field in ("document", "owning_definition", "variant_membership")),
+                "canonical literal owner and VariantMembership")
+        require(isinstance(row["feature_typings"], list) and len(row["feature_typings"]) == 1
+                and row["owner_typing_targets"] == [owner]
+                and row["typed_enumeration_definitions"] == [owner], "canonical enumeration FeatureTyping")
+        typing = identifier(row["feature_typings"][0])
+        require(typing not in typing_edges, "shared enumeration FeatureTyping identity")
+        typing_edges.add(typing)
+        require(isinstance(row["usage_types"], list) and owner in row["usage_types"]
+                and len(row["usage_types"]) == len(set(row["usage_types"])), "effective literal owner typing")
+        for target in row["usage_types"]:
+            identifier(target)
+        require(row["types_completeness"] == row["names_completeness"] == "Complete"
+                and row["names"] == [source["name"]], "Complete explicit enumeration typing/names")
+        require(row["data_value_subsetting_retained"] is True, "enumeration DataValue subsetting")
+    interfaces = witnessed_subjects(value["interface_ends"],
+        INTERFACE_SUBJECTS if counts["interface_subjects"] else (), "interface ends")
+    for row in interfaces.values():
+        require(row["expected"] == row["actual"] == list(INTERFACE_ENDS)
+                and row["completeness"] == "Complete"
+                and row["canonical_owners"] == [BINARY_INTERFACE] * 2
+                and row["canonical_port_usages"] is True, "exact original BinaryInterface PortUsage ends")
+    flows = witnessed_subjects(value["flows"], FLOW_ENDS if counts["flow_subjects"] else (), "Flow usages")
+    for subject, row in flows.items():
+        require(row["expected_parameters"] == row["parameters"] == list(FLOW_PARAMETERS)
+                and row["parameters_completeness"] == "Complete"
+                and row["canonical_parameter_owners"] == [MESSAGE] * 2, "exact inherited Flow parameters")
+        require(row["expected_ends"] == row["ends"] == list(FLOW_ENDS[subject])
+                and row["ends_completeness"] == "Complete"
+                and row["canonical_end_owners"] == [subject] * 2, "exact canonical Flow ends")
+    connections = witnessed_subjects(value["connections"],
+        CONNECTION_TYPINGS if counts["connection_subjects"] else (), "HappensDuring connections")
+    for subject, row in connections.items():
+        require(row["happens_during"] == HAPPENS_DURING
+                and row["feature_typings"] == [CONNECTION_TYPINGS[subject]]
+                and row["direct_typing_targets"] == [HAPPENS_DURING], "original ConnectionUsage FeatureTyping")
+        require(row["types_completeness"] == "Complete" and isinstance(row["usage_types"], list)
+                and HAPPENS_DURING in row["usage_types"]
+                and len(row["usage_types"]) == len(set(row["usage_types"])), "broad ConnectionUsage Association typing")
+        for target in row["usage_types"]:
+            identifier(target)
+        projections = row["projections"]
+        require(isinstance(projections, list) and len(projections) == 4
+                and {item["operation"] for item in projections} == {"occurrence", "item", "part", "connection"},
+                "all four typed ConnectionUsage projections")
+        selected = {}
+        for projection in projections:
+            targets = projection["values"]
+            require(projection["completeness"] == "Complete" and projection["targets_conform"] is True
+                    and projection["excludes_plain_association"] is True and isinstance(targets, list)
+                    and len(targets) > 0 and len(targets) == len(set(targets))
+                    and HAPPENS_DURING not in targets, "Complete conforming ConnectionUsage typed projection")
+            selected[projection["operation"]] = {identifier(target) for target in targets}
+        require(selected["part"] <= selected["item"] <= selected["occurrence"] <= set(row["usage_types"])
+                and selected["connection"] <= selected["item"], "ConnectionUsage formal subset projections")
+    return counts
+
+
+def accept_report(report, scope, expected, plan):
     count, expected_references = SCOPES[scope]
     require(report["format"] == "agq-sysml-systems-publication-audit/1", "report format")
     require(isinstance(report["scope"], list) and len(report["scope"]) == count
@@ -158,6 +283,7 @@ def accept_report(report, scope, expected):
     seconds(report["elapsed_seconds"], "construction report duration")
     if report["checkpoint_session"] is not None:
         require(report["checkpoint_session"]["accepted_authority"] is False, "checkpoint authority")
+    corpus_witnesses(report["corpus_witnesses"], plan, expected)
     return references
 
 
@@ -193,7 +319,7 @@ def validate(report_path, root, scope):
     plan, expected, prior, fixtures = reviewed_scope(root, scope)
     raw = report_path.read_bytes()
     report = json.loads(raw)
-    references = accept_report(report, scope, expected)
+    references = accept_report(report, scope, expected, plan)
     content_set, kpar = source_pins(root, report, plan, expected)
     covered = [row for row in plan["all_prior_subjects"]
                if row["accepted_dependency"] or row["document"] in expected]
@@ -204,6 +330,8 @@ def validate(report_path, root, scope):
         closed_producer_pairs=report["producer_closure"]["closed_pairs"],
         closed_requirements=report["producer_closure"]["closed_requirements"],
         effective_findings=0, effective_checked=report["effective_sysml_audit"]["checked"],
+        corpus_witness_counts=corpus_expectations(plan, expected)[2],
+        corpus_witness_digest=sha(encoded(report["corpus_witnesses"])),
         effective_audit_elapsed_seconds=report["effective_sysml_audit"]["elapsed_seconds"],
         construction_report_elapsed_seconds=report["elapsed_seconds"],
         workers=report["effective_sysml_audit"]["workers"],
