@@ -1,6 +1,19 @@
 //! Verification-only scheduler and storage observations; no acceptance authority.
 use crate::*;
 
+/// Full reconstruction oracle over identical source and identity inputs.
+pub fn full_rebuild(
+    revision: &WorkingProjectRevision,
+) -> Result<Arc<WorkingProjectRevision>, WorkspaceError> {
+    Ok(Arc::new(WorkingProjectRevision {
+        revision: ProjectRevision {
+            revision: revision.revision(),
+            parent: revision.parent(),
+            compilation: revision.compilation.full_rebuild()?,
+        },
+    }))
+}
+
 /// Subjects recorded at actual evaluation sites, including reconstruction passes.
 pub fn producer_subjects(
     revision: &WorkingProjectRevision,

@@ -1,0 +1,65 @@
+{
+  "format": "agentique-phase2-frontend-acceptance/1",
+  "base_commit": "0535764",
+  "accepted_publications": "unchanged KerML Operational v9 and SysML Operational v3",
+  "checkpoint": {
+    "representation": "Versioned source identity and reservation carrier, with separately supplied exact source blobs",
+    "restored_identities": [
+      "ProjectId",
+      "ProjectRevisionId",
+      "parent",
+      "root ElementId",
+      "DocumentId",
+      "SourceRevisionId",
+      "SyntaxNodeId",
+      "canonical ElementId",
+      "declared reservation and retirement history"
+    ],
+    "kernel_revision": "fresh allocation; semantic graph, context contract and closure fingerprints compare independently",
+    "validated_handle": "never restored from a stored boolean; explicit validation is rerun",
+    "exact_restore_test": "passed",
+    "cold_authored_source_restore_ms": 41210
+  },
+  "commands": [
+    {
+      "command": "cargo check -p agq-modeling-workspace --offline",
+      "exit_code": 0,
+      "duration_seconds": 18.32
+    },
+    {
+      "command": "cargo test --release --config profile.release.lto=false --offline -p agq-modeling-workspace --features verification --test phase2_checkpoint exact_source_restore -- --ignored --nocapture",
+      "exit_code": 0,
+      "test_duration_seconds": 255.52,
+      "tests_passed": 1,
+      "output": "cold_source_restore_ms=41210; test result: ok. 1 passed; 0 failed"
+    },
+    {
+      "command": "cargo test --release --config profile.release.lto=false --offline -p agq-kerml-text --features verification --lib unchanged_document_lowering_is_reused -- --nocapture",
+      "exit_code": 0,
+      "test_duration_seconds": 0.03,
+      "tests_passed": 1,
+      "output": "exact canonical records, occurrences, source map and reference declarations across five edit classes; 1 of 2 documents lowered"
+    },
+    {
+      "command": "cargo test --release --config profile.release.lto=false --offline -p agq-modeling-workspace --features verification --test phase2_checkpoint local_edit_classes -- --ignored --nocapture",
+      "exit_code": 101,
+      "test_duration_seconds": 341.0,
+      "output": "Initial exact first-edit graph, evidence and closure comparisons passed; fixture lookup helper then incorrectly required Complete for a Working fixture. Corrected stable KerML input and added preflight plus baseline validation."
+    },
+    {
+      "command": "cargo test --release --config profile.release.lto=false --offline -p agq-modeling-workspace --features verification --test phase2_checkpoint local_edit_classes -- --ignored --nocapture",
+      "exit_code": 4294967295,
+      "wall_seconds": 77.013,
+      "output": "Resource interruption: explicitly stopped own verified test process after C: free space approached 100 MB with two accepted-cache runtimes. No semantic result. Accepted runtimes subsequently serialized."
+    },
+    {
+      "command": "cargo test --release --config profile.release.lto=false --offline -p agq-modeling-workspace --features verification --test phase2_checkpoint local_edit_frontend_fixtures_are_complete -- --nocapture",
+      "exit_code": 0,
+      "test_duration_seconds": 0.01,
+      "tests_passed": 1,
+      "output": "All corrected oracle documents parse without recovery."
+    }
+  ],
+  "incremental_semantic_oracle": "pending",
+  "persisted_semantic_cache": "pending"
+}

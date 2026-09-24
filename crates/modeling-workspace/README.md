@@ -32,8 +32,34 @@ conformance or execution support.
 Both handles expose the existing KerML and SysML query contracts. Element/source
 lookup and diagnostics are revision-bound; there is no second semantic DTO
 model. Accepted standards remain shared, immutable dependencies. Authored
-construction is rebuilt for each edit; future provider-footprint invalidation
-can reduce recomputation without changing revision or acceptance contracts.
+construction still passes full kernel validation for each edit. Unchanged
+documents share immutable syntax and pre-resolution lowering fragments. Global
+structural completion and reference refinement run on the assembled current
+declarations; native producer checkpoints revalidate query/provider reads before
+retaining an evaluation. Broad namespace/search dependencies reopen work
+conservatively. Every final local subject is still effectively audited.
+
+Repository callers use `prepare` to construct a detached candidate and call
+`acknowledge` only after their durable transaction commits. `from_revision` opens
+an independent branch workspace without copying graphs. `apply` remains the
+Phase 1 in-memory convenience operation.
+
+`ProjectRevisionCheckpoint` is an explicit versioned identity carrier. Source
+bytes are supplied separately by DocumentId and checked against SHA-256 digests.
+Restore reparses those bytes, checks every syntax-node shape before restoring
+its identity, restores active/retired reservations against the authenticated
+standards, and reconstructs semantics through the ordinary language engine.
+Only a Working handle is returned. A repository must authenticate its validation
+receipt and call the actual platform validation conversion independently.
+Kernel revision labels are freshly allocated; canonical graph/provenance,
+semantic-contract and closure fingerprints are independently comparable.
+
+`compilation_work` separates documents reparsed/lowered, lowering cache hits,
+records lowered, declared records submitted across construction passes, producer subjects and audited
+subjects. It does not claim incremental kernel construction or audit reuse.
+`edit_frontier` separates source/syntax changes and declared fact changes from
+derived consequences. The verification-only `full_rebuild` bypasses lowering
+and prior producer caches while retaining identical source identity inputs.
 
 The `verification` feature records actual producer evaluations and inspects
 physical kernel table ownership. It supplies no acceptance authority. See

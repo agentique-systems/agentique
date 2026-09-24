@@ -35,3 +35,7 @@ required-features = ["verification"]
 [[test]]
 name = "self_model"
 required-features = ["verification"]
+
+[[test]]
+name = "phase2_checkpoint"
+required-features = ["verification"]

@@ -5,6 +5,8 @@
 mod binding_manifest;
 pub(crate) mod construction;
 pub mod corrections;
+#[cfg(test)]
+mod incremental_fragment_tests;
 mod publication;
 pub(crate) mod refinement;
 mod vocabulary;

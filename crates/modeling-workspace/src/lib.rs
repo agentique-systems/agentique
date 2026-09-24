@@ -67,6 +67,14 @@ pub struct ProjectRevision {
     compilation: SourceCompilation,
 }
 impl ProjectRevision {
+    /// Observable authored work; counts never establish semantic acceptance.
+    pub fn compilation_work(&self) -> &agq_kerml_text::CompilationWork {
+        self.compilation.work()
+    }
+    /// Exact source identities and declared fact changes since the parent.
+    pub fn edit_frontier(&self) -> &agq_kerml_text::SourceEditFrontier {
+        self.compilation.edit_frontier()
+    }
     /// Authored project identity shared by this history, independent of its path labels.
     pub fn project(&self) -> ProjectId {
         self.compilation.inputs().project()

@@ -53,6 +53,33 @@ fn omission_is_distinct_from_explicit_retirement_without_a_strict_graph() {
 }
 
 #[test]
+fn identity_checkpoint_retains_omitted_and_retired_reservations() {
+    let base = Snapshot::new(registry());
+    let history = DeclaredConstructionHistory::from_snapshot(&base);
+    let (history, _) = history.reconcile(candidate(&base, authored())).unwrap();
+    let checkpoint = history.identity_checkpoint();
+    let restored = DeclaredConstructionHistory::restore_identities(&base, &checkpoint).unwrap();
+    assert_eq!(restored.identity_checkpoint(), checkpoint);
+    restored.reconcile(candidate(&base, authored())).unwrap();
+    let retired = history
+        .retire(&DeclaredIdentitySet {
+            elements: BTreeSet::from([ENGINE]),
+            ..Default::default()
+        })
+        .unwrap();
+    let restored =
+        DeclaredConstructionHistory::restore_identities(&base, &retired.identity_checkpoint())
+            .unwrap();
+    assert!(matches!(
+        restored.reconcile(candidate(&base, authored())),
+        Err(ModelError::ReusedIdentity(ENGINE))
+    ));
+    let mut duplicate = checkpoint.clone();
+    duplicate.elements.push(checkpoint.elements[0].clone());
+    assert!(DeclaredConstructionHistory::restore_identities(&base, &duplicate).is_err());
+}
+
+#[test]
 fn same_source_node_can_advance_revision_but_a_different_node_cannot_reuse_identity() {
     let base = Snapshot::new(registry());
     let source = |node, revision: u64| DeclaredOrigin::Authored {

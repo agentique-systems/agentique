@@ -24,6 +24,7 @@ pub struct SourceInputs {
     limits: ParseLimits,
     dependency: Arc<AcceptedSourceDependency>,
     documents: BTreeMap<String, Arc<ProjectDocument>>,
+    documents_reparsed: usize,
 }
 impl SourceInputs {
     /// Authenticate both accepted publications once; this never produces standards.
@@ -36,6 +37,7 @@ impl SourceInputs {
             limits: ParseLimits::default(),
             dependency: AcceptedSourceDependency::new(publication)?,
             documents: BTreeMap::new(),
+            documents_reparsed: 0,
         })
     }
     /// Prepare inputs without modifying this revision. Language recovery is retained.
@@ -43,6 +45,18 @@ impl SourceInputs {
         &self,
         changes: impl IntoIterator<Item = ProjectChange>,
     ) -> Result<Self, ProjectError> {
+        let changes: Vec<_> = changes.into_iter().collect();
+        let documents_reparsed = changes
+            .iter()
+            .filter(|change| {
+                matches!(
+                    change,
+                    ProjectChange::Add { .. }
+                        | ProjectChange::Replace { .. }
+                        | ProjectChange::Edit { .. }
+                )
+            })
+            .count();
         let documents = prepare_documents(
             &self.documents,
             changes,
@@ -52,6 +66,7 @@ impl SourceInputs {
         )?;
         Ok(Self {
             documents,
+            documents_reparsed,
             ..self.clone()
         })
     }
@@ -84,12 +99,13 @@ impl SourceInputs {
         self: &Arc<Self>,
         previous: Option<&SourceCompilation>,
     ) -> Result<SourceCompilation, LibraryLoadError> {
-        self.compile_with_history(previous, None)
+        self.compile_with_history(previous, None, true)
     }
     fn compile_with_history(
         self: &Arc<Self>,
         previous: Option<&SourceCompilation>,
         restored: Option<(DeclaredConstructionHistory, LibrarySourceMap)>,
+        incremental: bool,
     ) -> Result<SourceCompilation, LibraryLoadError> {
         if previous.is_some_and(|previous| {
             previous.inputs.project != self.project
@@ -116,6 +132,17 @@ impl SourceInputs {
             )
         });
         let (history, mut ledger) = prepare_identity_history(&self.documents, &history, ledger)?;
+        let cache = std::cell::RefCell::new(previous.map_or_else(Default::default, |previous| {
+            previous.lowering_cache.next_revision()
+        }));
+        cache.borrow_mut().allow_reuse = incremental;
+        cache.borrow_mut().retain_documents(
+            &self
+                .documents
+                .values()
+                .map(|document| (document.id(), document.revision()))
+                .collect(),
+        );
         let mut diagnostics = Vec::new();
         let mut omitted = BTreeSet::new();
         for document in self.documents.values() {
@@ -146,6 +173,7 @@ impl SourceInputs {
                 self.dependency.clone(),
                 &pending,
                 Some(&history),
+                Some(&cache),
             ) {
                 Ok(prepared) => break (prepared, pending),
                 Err(LibraryLoadError::UnsupportedSource { origin, construct }) => {
@@ -235,6 +263,9 @@ impl SourceInputs {
             history,
             identities: ledger,
             effective_audit: None,
+            lowering_cache: cache.into_inner(),
+            work: CompilationWork::default(),
+            edit_frontier: SourceEditFrontier::default(),
             #[cfg(feature = "verification")]
             producer_subjects: observation.finish(),
         };
@@ -316,6 +347,21 @@ impl SourceInputs {
             subjects,
             report,
         });
+        result.work = CompilationWork {
+            documents_reparsed: self.documents_reparsed,
+            documents_lowered: result.lowering_cache.documents_lowered,
+            lowering_cache_hits: result.lowering_cache.documents_reused,
+            records_lowered: result.lowering_cache.records_lowered,
+            records_rebuilt: result.lowering_cache.records_rebuilt,
+            producer_subjects_evaluated: result
+                .producer_status()
+                .map_or(0, |status| status.counters.subjects_evaluated),
+            effective_audit_subjects_evaluated: result
+                .effective_audit
+                .as_ref()
+                .map_or(0, |audit| audit.subjects.len()),
+        };
+        result.edit_frontier = SourceEditFrontier::between(previous, &result);
         Ok(result)
     }
     fn lowering_inputs(&self, omitted: &BTreeSet<DocumentId>) -> Vec<SourceInput<'_>> {
@@ -439,6 +485,137 @@ enum SourceFrontier {
 }
 
 /// Immutable declared/derived frontier, certificate, source evidence and checked identity history.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct CompilationWork {
+    pub documents_reparsed: usize,
+    /// Actual lowering traversals, including repeated full reference-refinement passes.
+    pub documents_lowered: usize,
+    pub lowering_cache_hits: usize,
+    pub records_lowered: usize,
+    /// Declared local records submitted to kernel construction across all passes.
+    /// Cached lowering still undergoes kernel validation; this includes the root.
+    pub records_rebuilt: usize,
+    pub producer_subjects_evaluated: usize,
+    pub effective_audit_subjects_evaluated: usize,
+}
+
+/// Exact authored input/fact delta. Producer invalidation independently checks
+/// native query/provider reads, including negative-search populations.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct SourceEditFrontier {
+    pub source_revisions: Vec<(
+        DocumentId,
+        Option<SourceRevisionId>,
+        Option<SourceRevisionId>,
+    )>,
+    pub syntax_nodes_added: BTreeSet<agq_kernel::SyntaxNodeId>,
+    pub syntax_nodes_removed: BTreeSet<agq_kernel::SyntaxNodeId>,
+    pub declared_facts_added: BTreeSet<FactKey>,
+    pub declared_facts_removed: BTreeSet<FactKey>,
+    pub declared_facts_changed: BTreeSet<FactKey>,
+}
+impl SourceEditFrontier {
+    fn between(previous: Option<&SourceCompilation>, next: &SourceCompilation) -> Self {
+        let documents = |compilation: &SourceCompilation| {
+            compilation
+                .inputs
+                .documents()
+                .map(|(_, doc)| (doc.id(), doc.revision()))
+                .collect::<BTreeMap<_, _>>()
+        };
+        let before = previous.map(documents).unwrap_or_default();
+        let after = documents(next);
+        let ids: BTreeSet<_> = before.keys().chain(after.keys()).copied().collect();
+        let nodes = |compilation: &SourceCompilation| {
+            compilation
+                .inputs
+                .documents()
+                .flat_map(|(_, doc)| {
+                    doc.production_syntax()
+                        .into_iter()
+                        .flat_map(|syntax| syntax.nodes().map(|node| node.id()))
+                })
+                .collect::<BTreeSet<_>>()
+        };
+        let old_nodes = previous.map(nodes).unwrap_or_default();
+        let new_nodes = nodes(next);
+        let before_facts = previous.map(declared_facts).unwrap_or_default();
+        let after_facts = declared_facts(next);
+        Self {
+            source_revisions: ids
+                .into_iter()
+                .filter_map(|id| {
+                    let before = before.get(&id).copied();
+                    let after = after.get(&id).copied();
+                    (before != after).then_some((id, before, after))
+                })
+                .collect(),
+            syntax_nodes_added: new_nodes.difference(&old_nodes).copied().collect(),
+            syntax_nodes_removed: old_nodes.difference(&new_nodes).copied().collect(),
+            declared_facts_added: after_facts
+                .keys()
+                .filter(|fact| !before_facts.contains_key(fact))
+                .copied()
+                .collect(),
+            declared_facts_removed: before_facts
+                .keys()
+                .filter(|fact| !after_facts.contains_key(fact))
+                .copied()
+                .collect(),
+            declared_facts_changed: after_facts
+                .iter()
+                .filter(|(fact, value)| before_facts.get(fact).is_some_and(|old| old != *value))
+                .map(|(fact, _)| *fact)
+                .collect(),
+        }
+    }
+}
+#[derive(PartialEq, Eq)]
+enum DeclaredFactValue<'a> {
+    Element(agq_kernel::MetaclassId, &'a agq_kernel::provenance::Origin),
+    Slot(&'a agq_kernel::Slot),
+    Occurrence(&'a agq_kernel::association::AssociationOccurrence),
+}
+fn declared_facts(compilation: &SourceCompilation) -> BTreeMap<FactKey, DeclaredFactValue<'_>> {
+    let model = compilation
+        .strict_snapshot()
+        .map(Snapshot::model)
+        .or_else(|| compilation.construction().map(ConstructionView::model));
+    let mut facts = BTreeMap::new();
+    if let Some(model) = model {
+        let standards = compilation.inputs.accepted_sysml().overlay().model();
+        for record in model
+            .elements()
+            .filter(|record| standards.element(record.id()).is_none())
+        {
+            facts.insert(
+                FactKey::Element(record.id()),
+                DeclaredFactValue::Element(record.metaclass(), record.origin()),
+            );
+            for (property, slot) in record.slots() {
+                facts.insert(
+                    FactKey::Property {
+                        element: record.id(),
+                        property,
+                    },
+                    DeclaredFactValue::Slot(slot),
+                );
+            }
+        }
+        for occurrence in model
+            .association_occurrences()
+            .filter(|occurrence| standards.association_occurrence(occurrence.id()).is_none())
+        {
+            facts.insert(
+                FactKey::AssociationOccurrence(occurrence.id()),
+                DeclaredFactValue::Occurrence(occurrence),
+            );
+        }
+    }
+    facts
+}
+
+/// Immutable declared/derived frontier, certificate, source evidence and checked identity history.
 #[derive(Debug)]
 pub struct SourceCompilation {
     inputs: Arc<SourceInputs>,
@@ -448,10 +625,32 @@ pub struct SourceCompilation {
     history: DeclaredConstructionHistory,
     identities: LibrarySourceMap,
     effective_audit: Option<SourceEffectiveAudit>,
+    lowering_cache: crate::library::construction::LoweringCache,
+    work: CompilationWork,
+    edit_frontier: SourceEditFrontier,
     #[cfg(feature = "verification")]
     producer_subjects: BTreeSet<ElementId>,
 }
 impl SourceCompilation {
+    /// Measured work, distinct from semantic acceptance or wall-clock latency.
+    pub fn work(&self) -> &CompilationWork {
+        &self.work
+    }
+    /// Authored delta; derived consequences remain separate semantic query results.
+    pub fn edit_frontier(&self) -> &SourceEditFrontier {
+        &self.edit_frontier
+    }
+    /// Exact source/identity oracle, with document lowering and producer reuse disabled.
+    pub fn full_rebuild(&self) -> Result<Self, LibraryLoadError> {
+        let mut rebuilt = self.inputs.compile_with_history(
+            None,
+            Some((self.history.clone(), self.identities.clone())),
+            false,
+        )?;
+        // The oracle deliberately retains the same parsed source identity inputs.
+        rebuilt.work.documents_reparsed = 0;
+        Ok(rebuilt)
+    }
     pub fn inputs(&self) -> &Arc<SourceInputs> {
         &self.inputs
     }

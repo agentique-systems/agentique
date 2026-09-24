@@ -179,6 +179,7 @@ fn interpretation(error: impl std::fmt::Debug) -> LibraryLoadError {
     LibraryLoadError::Interpretation(format!("{error:?}"))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn prepare_accepted_source(
     inputs: &[SourceInput<'_>],
     root: ElementId,
@@ -186,6 +187,7 @@ pub(crate) fn prepare_accepted_source(
     dependency: Arc<AcceptedSourceDependency>,
     pending: &BTreeSet<ElementId>,
     history: Option<&agq_kernel::DeclaredConstructionHistory>,
+    cache: Option<&std::cell::RefCell<construction::LoweringCache>>,
 ) -> Result<PreparedSource, LibraryLoadError> {
     let base = dependency.mounted.project_snapshot();
     let profile = dependency.publication.accepted_kerml().profile();
@@ -194,12 +196,14 @@ pub(crate) fn prepare_accepted_source(
     let mut reopened_evaluations = 0;
     let mut status = None;
     let construct = |resolved: &BTreeMap<(ElementId, agq_kernel::PropertyId), ElementId>| {
-        let draft = construction::construct_on(
+        let mut cache = cache.map(std::cell::RefCell::borrow_mut);
+        let draft = construction::construct_on_cached(
             inputs,
             resolved,
             profile,
             base.clone(),
             Some((root, origin.clone())),
+            cache.as_deref_mut(),
         )?;
         if let Some(history) = history {
             Ok(draft.reconcile_declared(history)?.1)
@@ -346,6 +350,7 @@ pub(crate) fn lower_accepted_source(
         origin,
         dependency.clone(),
         &BTreeSet::new(),
+        None,
         None,
     )?;
     finish_accepted_source(inputs, prepared, previous, root, dependency, None)

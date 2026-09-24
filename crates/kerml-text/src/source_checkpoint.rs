@@ -103,6 +103,7 @@ impl SourceIdentityCheckpoint {
         let mut inputs = SourceInputs::with_accepted_sysml(publication)?;
         inputs.project = self.project_id;
         inputs.root = self.root;
+        inputs.documents_reparsed = self.documents.len();
         let mut document_ids = BTreeSet::new();
         let mut syntax_ids = BTreeSet::new();
         for saved in &self.documents {
@@ -166,6 +167,6 @@ impl SourceIdentityCheckpoint {
         if ledger.len() != self.identity_sources.len() {
             return Err(Mismatch("duplicate identity origin"));
         }
-        Ok(Arc::new(inputs).compile_with_history(None, Some((history, ledger)))?)
+        Ok(Arc::new(inputs).compile_with_history(None, Some((history, ledger)), false)?)
     }
 }
