@@ -209,6 +209,83 @@
       "duration_seconds": 0.09,
       "output": "verification/generated/enumeration-closure/enumeration-final-format.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "plan-final-audit-slices",
+      "command": [
+        "python",
+        "verification/scripts/plan_final_audit_slices.py",
+        "--frontier",
+        "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/full-frontiers/c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d.zip",
+        "--output",
+        "verification/fixtures/final-audit-semantic-closure/slices.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "82b9ba7722f60957ebcd138fa05ee306364641f4",
+      "working_changes_sha256": "cb97d4295f85be77b131b90cff383905f347f4635f5605c8c1aae2013f0bb2a3",
+      "output_sha256": "4a87a3ba3c439a15afe0bbb7a53cd35f4106c4b408903016149105baa1d2efc5",
+      "duration_seconds": 6.25,
+      "output": "verification/generated/enumeration-closure/plan-final-audit-slices.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "plan-final-audit-slices-all-subjects",
+      "command": [
+        "python",
+        "verification/scripts/plan_final_audit_slices.py",
+        "--frontier",
+        "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/full-frontiers/c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d.zip",
+        "--kerml-cache",
+        "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output",
+        "verification/fixtures/final-audit-semantic-closure/slices.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "82b9ba7722f60957ebcd138fa05ee306364641f4",
+      "working_changes_sha256": "837892f40de1d84335e221ccd5d9ffad2535b5a61e4be8b075703e45a117c343",
+      "output_sha256": "5c7b10e710ae256c40f20ef6b1431640494fd949baec01af510a471ed2817bc3",
+      "duration_seconds": 23.41,
+      "output": "verification/generated/enumeration-closure/plan-final-audit-slices-all-subjects.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "enumeration-authority-inventory-check",
+      "command": [
+        "python",
+        "verification/sysml-semantic-foundation-v1/authority.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "82b9ba7722f60957ebcd138fa05ee306364641f4",
+      "working_changes_sha256": "4d49542df8f29fc2034fa3c4da8910a75ec4c3b0cef8d6311e5e41ea9d7d3963",
+      "output_sha256": "c19fa30bf9583335b58a3191967a7ce7443190edb46c38d6cfd7b2445ce6ea74",
+      "duration_seconds": 6.89,
+      "output": "verification/generated/enumeration-closure/enumeration-authority-inventory-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "plan-final-audit-slices-final",
+      "command": [
+        "python",
+        "verification/scripts/plan_final_audit_slices.py",
+        "--frontier",
+        "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-language-acceptance/full-frontiers/c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d.zip",
+        "--kerml-cache",
+        "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output",
+        "verification/fixtures/final-audit-semantic-closure/slices.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "82b9ba7722f60957ebcd138fa05ee306364641f4",
+      "working_changes_sha256": "55889237652fda4fbf22c49e618877db4224290b04ef59d883c6becaa5187838",
+      "output_sha256": "5c7b10e710ae256c40f20ef6b1431640494fd949baec01af510a471ed2817bc3",
+      "duration_seconds": 25.25,
+      "output": "verification/generated/enumeration-closure/plan-final-audit-slices-final.log",
+      "environment_overrides": {}
     }
   ]
 }

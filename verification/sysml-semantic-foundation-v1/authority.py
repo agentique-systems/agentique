@@ -11,6 +11,20 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "standards/sysml-semantic-coverage.json"
 X = "{http://www.omg.org/spec/XMI/20161101}"
 SLICE = set("Definition Usage OccurrenceDefinition OccurrenceUsage ItemDefinition ItemUsage PartDefinition PartUsage AttributeDefinition AttributeUsage PortDefinition PortUsage ConjugatedPortDefinition PortConjugation ConnectionDefinition ConnectionUsage ConnectorAsUsage InterfaceDefinition InterfaceUsage".split())
+IMPLEMENTATIONS = {
+    "Systems-DefinitionAndUsage-Usage-checkUsageVariationDefinitionSpecialization": {
+        "implementation_status": "implemented-structural-producer",
+        "deferred_reason": None,
+        "producer_id": "checkUsageVariationDefinitionSpecialization",
+        "implementation": "crates/sysml-semantics/src/producers.rs",
+        "implementation_scope": "Generic VariantMembership-owned Usage specialization to its owning variation Definition through canonical FeatureTyping, with direct/indirect witness suppression and evidence-bearing scheduler closure; no standalone validator or broader variation-Usage completion claim",
+        "tests": [
+            "crates/sysml-semantics/src/producer_enumeration_tests.rs",
+            "crates/kerml-text/src/sysml_enumeration_tests.rs",
+        ],
+        "evidence": "verification/summaries/enumeration-closure/authority.md",
+    },
+}
 
 
 def digest(data):
@@ -101,6 +115,7 @@ def main():
                 "implementation_status": "not-implemented", "query_id": None,
                 "deferred_reason": "Awaiting project/library semantic prerequisites and normative rule implementation" if name in SLICE else "Outside initial systems structural semantic family; body retained for future interpretation",
             })
+            retained[-1].update(IMPLEMENTATIONS.get(rule.get(X + "id"), {}))
         total_rules += len(retained)
         inherited = [{"metaclass": classes[a].get("name"), "source_id": a,
                       "rules": [r.get(X + "id") for r in rules(classes[a])]}
@@ -125,7 +140,7 @@ def main():
     out = {
         "format": "agentique-sysml-semantic-coverage/1", "generation": 2,
         "normative_targets": {"KerML": "1.0", "SysML": "2.0"},
-        "status": "inventory-established-rules-not-implemented",
+        "status": "inventory-established-bounded-implementation-recorded",
         "generator": "verification/sysml-semantic-foundation-v1/authority.py",
         "specification": {"path": "SysML.pdf", "sha256": digest(pdf_bytes)},
         "library_set": libraries["id"], "class_count": len(rows), "own_rule_operation_count": total_rules,
@@ -145,7 +160,7 @@ def main():
         assert OUT.read_bytes() == encoded, "Semantic authority inventory is stale"
     else:
         OUT.write_bytes(encoded)
-    print(f"Verified {len(rows)} SysML classes, {total_rules} own rules/operations, {len(documents)} pinned library documents; no semantic implementation claim")
+    print(f"Verified {len(rows)} SysML classes, {total_rules} own rules/operations, {len(documents)} pinned library documents; {len(IMPLEMENTATIONS)} bounded structural producer implementation recorded")
 
 
 if __name__ == "__main__":

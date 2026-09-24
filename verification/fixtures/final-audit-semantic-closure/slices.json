@@ -1,0 +1,2541 @@
+{
+  "format": "agq-final-audit-slice-plan/1",
+  "publication_authority": false,
+  "semantic_gates_run": false,
+  "source_content_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "systems_kpar_sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+  "retained_frontier_archive_sha256": "c42d679d2908df7ba0a864710eda0e4e8c8cb97e70ead2ef5e9c604888bd447d",
+  "retained_frontier_graph_sha256": "c056ecf5ea4b168235677763d3b2dd64ebefb15fbc71ca43bcee090865b1608a",
+  "accepted_kerml_graph_sha256": "87af0c3a395b91968eb35b0ec85399599eccaa80a97e32d448e0f24e57dc6dde",
+  "all_subject_counts": {
+    "Kernel Semantic Library/Links.kerml": 2,
+    "Kernel Semantic Library/Occurrences.kerml": 1,
+    "Systems Library/Actions.sysml": 8,
+    "Systems Library/Flows.sysml": 11,
+    "Systems Library/Interfaces.sysml": 1,
+    "Systems Library/States.sysml": 4,
+    "Systems Library/SysML.sysml": 13,
+    "Systems Library/VerificationCases.sysml": 10
+  },
+  "all_prior_subjects": [
+    {
+      "subject": "0da1cb76-eed1-5f6f-aba7-0de8aff65f98",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Actions.sysml",
+      "ownership": [
+        {
+          "child": "0da1cb76-eed1-5f6f-aba7-0de8aff65f98",
+          "owner": "f08f6522-5768-54a4-a859-31156f26beef",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "f08f6522-5768-54a4-a859-31156f26beef",
+          "owner": "c53da6f8-837f-5b3a-8838-cfb22d5df5f8",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "c53da6f8-837f-5b3a-8838-cfb22d5df5f8",
+          "owner": "ce19e5e4-0a1d-58c7-8b6e-3956845963fd",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ce19e5e4-0a1d-58c7-8b6e-3956845963fd",
+          "owner": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "owner": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "owner": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4"
+    },
+    {
+      "subject": "0df9add9-7323-573a-8427-e742241ec733",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Actions.sysml",
+      "ownership": [
+        {
+          "child": "0df9add9-7323-573a-8427-e742241ec733",
+          "owner": "212e494f-74c1-5d67-a006-9e5f9510b238",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "212e494f-74c1-5d67-a006-9e5f9510b238",
+          "owner": "4cc1318f-7488-5eaa-8194-05e5a49fd82c",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "4cc1318f-7488-5eaa-8194-05e5a49fd82c",
+          "owner": "bfc22c37-2104-5b93-8d6e-4f52b17f8a99",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "bfc22c37-2104-5b93-8d6e-4f52b17f8a99",
+          "owner": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "owner": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "owner": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4"
+    },
+    {
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "trigger"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "12bb4729-06c1-51b0-9974-891634003445",
+          "owner": "491e3d29-d761-53e5-844f-ae19475d60fd",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "491e3d29-d761-53e5-844f-ae19475d60fd",
+          "owner": "59e40ca7-2a9a-55ca-8f79-da5ca6b6ad0b",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "59e40ca7-2a9a-55ca-8f79-da5ca6b6ad0b",
+          "owner": "d064cf8a-e013-5251-8065-bfe5265298c5",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "d064cf8a-e013-5251-8065-bfe5265298c5",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "140ef6ea-f727-51a0-89f6-61d454cb48c7",
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      },
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "140ef6ea-f727-51a0-89f6-61d454cb48c7",
+          "owner": "a9ad3b6a-ffb6-56d2-b061-4a8c2ea1e0d2",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "a9ad3b6a-ffb6-56d2-b061-4a8c2ea1e0d2",
+          "owner": "3b9fab91-096f-5012-841c-ad946c367fdf",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "3b9fab91-096f-5012-841c-ad946c367fdf",
+          "owner": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "messages"
+        }
+      },
+      "categories": [
+        "EndCycle",
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+          "owner": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "requirement"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+          "owner": "76a63581-781e-5118-9fb2-257b219965db",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "76a63581-781e-5118-9fb2-257b219965db",
+          "owner": "0f42db8a-335f-5a33-a4a4-ff290c965af4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "0f42db8a-335f-5a33-a4a4-ff290c965af4",
+          "owner": "e81585a2-85ae-5bbd-883f-837b0c5f321e",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "e81585a2-85ae-5bbd-883f-837b0c5f321e",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "guard"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "1efd3834-9efb-585f-acae-295d328dfa6d",
+          "owner": "b291a1a7-9cd0-5225-9afb-87fdebcac1c4",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b291a1a7-9cd0-5225-9afb-87fdebcac1c4",
+          "owner": "59e40ca7-2a9a-55ca-8f79-da5ca6b6ad0b",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "59e40ca7-2a9a-55ca-8f79-da5ca6b6ad0b",
+          "owner": "d064cf8a-e013-5251-8065-bfe5265298c5",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "d064cf8a-e013-5251-8065-bfe5265298c5",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "error"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "21234846-e44e-505e-ac35-424bc23fa18b",
+          "owner": "b08b8fc0-f87b-566d-9395-4181b97c8a32",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b08b8fc0-f87b-566d-9395-4181b97c8a32",
+          "owner": "53a00e2d-b4f2-5ca8-b72b-4e33b7c56642",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "53a00e2d-b4f2-5ca8-b72b-4e33b7c56642",
+          "owner": "9f4aeb7b-52a8-5107-8988-93d9651319fa",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "9f4aeb7b-52a8-5107-8988-93d9651319fa",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "221542a4-584d-5f0b-9142-50dff2e8763d",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/States.sysml",
+      "ownership": [
+        {
+          "child": "221542a4-584d-5f0b-9142-50dff2e8763d",
+          "owner": "7239038c-65f8-5f36-8efe-9069ec57ea45",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "7239038c-65f8-5f36-8efe-9069ec57ea45",
+          "owner": "1daf197e-73f1-532f-99c2-5512a1468034",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "1daf197e-73f1-532f-99c2-5512a1468034",
+          "owner": "ba17e046-6259-54d4-b105-7aa02b63754d",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ba17e046-6259-54d4-b105-7aa02b63754d",
+          "owner": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "owner": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "owner": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "c6d24c93-492b-5c83-a014-267cdd7aa681"
+    },
+    {
+      "subject": "29480f97-23d3-5c60-8e2d-11d822639e86",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/States.sysml",
+      "ownership": [
+        {
+          "child": "29480f97-23d3-5c60-8e2d-11d822639e86",
+          "owner": "ec7457c0-c4d2-5e73-92bd-363db415a36b",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ec7457c0-c4d2-5e73-92bd-363db415a36b",
+          "owner": "42e14b9c-f0b2-590f-84bd-5826d21e21c4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "42e14b9c-f0b2-590f-84bd-5826d21e21c4",
+          "owner": "dc978a8a-69d1-575e-a336-b783f3707272",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "dc978a8a-69d1-575e-a336-b783f3707272",
+          "owner": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "owner": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "owner": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "c6d24c93-492b-5c83-a014-267cdd7aa681"
+    },
+    {
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "at"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "295d6c7a-fffd-5727-85e7-03deffb83594",
+          "owner": "5052f7ea-0ab1-577d-825f-2665613a7759",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "5052f7ea-0ab1-577d-825f-2665613a7759",
+          "owner": "fe316564-0065-5b56-a5b3-45978e99df47",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "fe316564-0065-5b56-a5b3-45978e99df47",
+          "owner": "afa3a151-7026-530c-a8b5-237e3c5b5e44",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "afa3a151-7026-530c-a8b5-237e3c5b5e44",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "flows"
+        }
+      },
+      "categories": [
+        "EndCycle",
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "3b9fab91-096f-5012-841c-ad946c367fdf",
+          "owner": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "3d57badd-1709-5fb8-a860-e80f3b411ae2",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "EnumerationConstruction"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "3d57badd-1709-5fb8-a860-e80f3b411ae2",
+          "owner": "f7b861b2-a954-5238-af4f-7a4129a29820",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "f7b861b2-a954-5238-af4f-7a4129a29820",
+          "owner": "669cf8d7-b09b-559e-b30e-9933efa502f7",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "669cf8d7-b09b-559e-b30e-9933efa502f7",
+          "owner": "9f57fe7c-ec4a-5eae-aafa-83ea76fee6f1",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "9f57fe7c-ec4a-5eae-aafa-83ea76fee6f1",
+          "owner": "7e4292a8-d5bd-5faa-86cf-c816c3de50ff",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "7e4292a8-d5bd-5faa-86cf-c816c3de50ff",
+          "owner": "ac6a7110-3c10-5d57-b1e4-0c6c8402b5f5",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ac6a7110-3c10-5d57-b1e4-0c6c8402b5f5",
+          "owner": "52826eaa-8211-515c-8fee-1eedee395942",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "52826eaa-8211-515c-8fee-1eedee395942",
+          "owner": "56e26872-1782-5258-88a5-28a58f15e119",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "56e26872-1782-5258-88a5-28a58f15e119",
+          "owner": "0c0efcc6-3fcb-51d7-b91c-69fcd5bc18c1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "0c0efcc6-3fcb-51d7-b91c-69fcd5bc18c1",
+          "owner": "03b15f3a-ebae-5a15-bdc1-ad0fc528d52a",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "03b15f3a-ebae-5a15-bdc1-ad0fc528d52a",
+          "owner": "c3c30037-d413-5225-bcc5-2f08eeaff373",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "c3c30037-d413-5225-bcc5-2f08eeaff373",
+          "owner": "3ef44639-3d5c-54df-b44c-1b1ea28f5a9e",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "3ef44639-3d5c-54df-b44c-1b1ea28f5a9e",
+          "owner": "583959da-ef5b-5c11-9e7e-70ba03a5ed87",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "583959da-ef5b-5c11-9e7e-70ba03a5ed87",
+          "owner": "88fca4e0-f663-5900-86b7-2fd0fa65b086",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "88fca4e0-f663-5900-86b7-2fd0fa65b086",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      },
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+          "owner": "576f2f35-88fb-542e-a915-7933afd3d837",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "576f2f35-88fb-542e-a915-7933afd3d837",
+          "owner": "3b9fab91-096f-5012-841c-ad946c367fdf",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "3b9fab91-096f-5012-841c-ad946c367fdf",
+          "owner": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b6110811-8533-592d-bfa4-ece8b5e97a70",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "4167e261-a897-5f30-a4cb-0bc37f94b0ec",
+      "class": "FEATURE",
+      "name": "target",
+      "categories": [
+        "InheritedEndSuppression"
+      ],
+      "document": "Kernel Semantic Library/Links.kerml",
+      "ownership": [
+        {
+          "child": "4167e261-a897-5f30-a4cb-0bc37f94b0ec",
+          "owner": "bea516b4-e58a-5b51-8ac0-c43482e59042",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "bea516b4-e58a-5b51-8ac0-c43482e59042",
+          "owner": "4bb338f9-cace-57cf-a884-a187b0610873",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "4bb338f9-cace-57cf-a884-a187b0610873",
+          "owner": "70a21994-b4aa-55a9-841b-29f81e682b58",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "70a21994-b4aa-55a9-841b-29f81e682b58",
+          "owner": "b1075dae-f39a-579d-95e2-749e4f099b56",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": true,
+      "source_package": "b1075dae-f39a-579d-95e2-749e4f099b56"
+    },
+    {
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "assumption"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+          "owner": "33f13051-0f20-574f-8bf5-a9ba8b10f1f2",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "33f13051-0f20-574f-8bf5-a9ba8b10f1f2",
+          "owner": "0f42db8a-335f-5a33-a4a4-ff290c965af4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "0f42db8a-335f-5a33-a4a4-ff290c965af4",
+          "owner": "e81585a2-85ae-5bbd-883f-837b0c5f321e",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "e81585a2-85ae-5bbd-883f-837b0c5f321e",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "515638fd-0ff9-53fc-a6ba-05e1d820e62c",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Actions.sysml",
+      "ownership": [
+        {
+          "child": "515638fd-0ff9-53fc-a6ba-05e1d820e62c",
+          "owner": "2d57e815-037a-5317-bca5-cf67c0e9a12d",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "2d57e815-037a-5317-bca5-cf67c0e9a12d",
+          "owner": "4cc1318f-7488-5eaa-8194-05e5a49fd82c",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "4cc1318f-7488-5eaa-8194-05e5a49fd82c",
+          "owner": "bfc22c37-2104-5b93-8d6e-4f52b17f8a99",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "bfc22c37-2104-5b93-8d6e-4f52b17f8a99",
+          "owner": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "owner": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "owner": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4"
+    },
+    {
+      "subject": "51a76600-2466-5695-8c53-8e327f6302de",
+      "class": "ASSOCIATION",
+      "name": "HappensDuring",
+      "categories": [
+        "ConnectionAuthority"
+      ],
+      "document": "Kernel Semantic Library/Occurrences.kerml",
+      "ownership": [
+        {
+          "child": "51a76600-2466-5695-8c53-8e327f6302de",
+          "owner": "187c95b5-55e7-5526-9112-a3bcff9793dd",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "187c95b5-55e7-5526-9112-a3bcff9793dd",
+          "owner": "c3328dd3-dd22-5729-8242-2df351e6f870",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": true,
+      "source_package": "c3328dd3-dd22-5729-8242-2df351e6f870"
+    },
+    {
+      "subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "successionFlows"
+        }
+      },
+      "categories": [
+        "EndCycle",
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+          "owner": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "5ec82633-f2d4-5e14-a9b1-eb992bac8298",
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      },
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "5ec82633-f2d4-5e14-a9b1-eb992bac8298",
+          "owner": "46882739-95de-5dfb-b619-680b88721fa8",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "46882739-95de-5dfb-b619-680b88721fa8",
+          "owner": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+          "owner": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "snapshot"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+          "owner": "9e0c0020-8610-5a9c-af62-a26e1de0a2da",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "9e0c0020-8610-5a9c-af62-a26e1de0a2da",
+          "owner": "32a6c483-0840-5873-b2a4-d29f266b5e55",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "32a6c483-0840-5873-b2a4-d29f266b5e55",
+          "owner": "5bb7baa5-30da-501c-a567-5851685021b8",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "5bb7baa5-30da-501c-a567-5851685021b8",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "pass"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "6184d023-2020-50f5-9d59-ba219191a308",
+          "owner": "f8c24b8a-c465-5ebf-a267-5a07911fe89f",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "f8c24b8a-c465-5ebf-a267-5a07911fe89f",
+          "owner": "53a00e2d-b4f2-5ca8-b72b-4e33b7c56642",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "53a00e2d-b4f2-5ca8-b72b-4e33b7c56642",
+          "owner": "9f4aeb7b-52a8-5107-8988-93d9651319fa",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "9f4aeb7b-52a8-5107-8988-93d9651319fa",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "643d02aa-0e56-5d10-9b3c-f301561f4487",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Actions.sysml",
+      "ownership": [
+        {
+          "child": "643d02aa-0e56-5d10-9b3c-f301561f4487",
+          "owner": "c73d2896-41b7-51bc-80fe-2a4a8eea41ae",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "c73d2896-41b7-51bc-80fe-2a4a8eea41ae",
+          "owner": "7c62e058-4cc4-5798-9754-aa33f032f6a5",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "7c62e058-4cc4-5798-9754-aa33f032f6a5",
+          "owner": "2f69c6be-b61f-5128-bdd5-25b45b9db127",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "2f69c6be-b61f-5128-bdd5-25b45b9db127",
+          "owner": "cb244767-d64d-50f0-9775-4b23c3a79d1b",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "cb244767-d64d-50f0-9775-4b23c3a79d1b",
+          "owner": "e09898ef-5fe0-5014-b99e-c5e6518d302e",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "e09898ef-5fe0-5014-b99e-c5e6518d302e",
+          "owner": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4"
+    },
+    {
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "do"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+          "owner": "935d71b8-5f11-5de5-948b-eea849d83629",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "935d71b8-5f11-5de5-948b-eea849d83629",
+          "owner": "e69b8e42-68cb-56e2-ad85-cb6cd6232370",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "e69b8e42-68cb-56e2-ad85-cb6cd6232370",
+          "owner": "95f04e88-95b4-5b4a-9f0e-efe07a556f06",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "95f04e88-95b4-5b4a-9f0e-efe07a556f06",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "75c57429-f867-5e06-8c5a-cb4666c48ade",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Actions.sysml",
+      "ownership": [
+        {
+          "child": "75c57429-f867-5e06-8c5a-cb4666c48ade",
+          "owner": "e054401c-0b08-5ccd-bb32-7c477a0c6f54",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "e054401c-0b08-5ccd-bb32-7c477a0c6f54",
+          "owner": "7c62e058-4cc4-5798-9754-aa33f032f6a5",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "7c62e058-4cc4-5798-9754-aa33f032f6a5",
+          "owner": "2f69c6be-b61f-5128-bdd5-25b45b9db127",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "2f69c6be-b61f-5128-bdd5-25b45b9db127",
+          "owner": "cb244767-d64d-50f0-9775-4b23c3a79d1b",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "cb244767-d64d-50f0-9775-4b23c3a79d1b",
+          "owner": "e09898ef-5fe0-5014-b99e-c5e6518d302e",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "e09898ef-5fe0-5014-b99e-c5e6518d302e",
+          "owner": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4"
+    },
+    {
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "timeslice"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "7e26cc61-c229-5031-ac43-20946f5108b9",
+          "owner": "588dd9c5-3de6-5738-810e-b9b7465e6380",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "588dd9c5-3de6-5738-810e-b9b7465e6380",
+          "owner": "32a6c483-0840-5873-b2a4-d29f266b5e55",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "32a6c483-0840-5873-b2a4-d29f266b5e55",
+          "owner": "5bb7baa5-30da-501c-a567-5851685021b8",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "5bb7baa5-30da-501c-a567-5851685021b8",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "86de7286-c609-59e0-87ed-46cf6c3f4548",
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      },
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "86de7286-c609-59e0-87ed-46cf6c3f4548",
+          "owner": "10ca627b-15e5-55ff-879f-12cfa8ede5cc",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "10ca627b-15e5-55ff-879f-12cfa8ede5cc",
+          "owner": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+          "owner": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "78efd691-1aef-53bf-a5c1-5b4a15807d37",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "888cda79-aaa5-5d72-a654-b35603802e37",
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      },
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "888cda79-aaa5-5d72-a654-b35603802e37",
+          "owner": "9936c7f8-cad7-5112-8929-1c3108a5ae2b",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "9936c7f8-cad7-5112-8929-1c3108a5ae2b",
+          "owner": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+          "owner": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "8ce7e6db-fd66-5ba1-9cd9-a09a77092859",
+      "class": "INTERFACE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "binaryInterfaces"
+        }
+      },
+      "categories": [
+        "InheritedEndSuppression"
+      ],
+      "document": "Systems Library/Interfaces.sysml",
+      "ownership": [
+        {
+          "child": "8ce7e6db-fd66-5ba1-9cd9-a09a77092859",
+          "owner": "e40e14d0-ef31-520b-85c4-56c00e6061e0",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "e40e14d0-ef31-520b-85c4-56c00e6061e0",
+          "owner": "ed7da2a0-9998-5556-9c5d-4b5d18b6026b",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ed7da2a0-9998-5556-9c5d-4b5d18b6026b"
+    },
+    {
+      "subject": "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca",
+      "class": "CONNECTION_USAGE",
+      "name": null,
+      "categories": [
+        "TypedProjection"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca",
+          "owner": "ede6353c-bae2-55c1-857e-cd938720ddbe",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ede6353c-bae2-55c1-857e-cd938720ddbe",
+          "owner": "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+          "owner": "7506865a-3fbc-5eb5-9692-3164f05ddff6",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "7506865a-3fbc-5eb5-9692-3164f05ddff6",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "fail"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+          "owner": "5e4e1fcc-bdda-5646-9cf5-f5b709d0fc96",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "5e4e1fcc-bdda-5646-9cf5-f5b709d0fc96",
+          "owner": "53a00e2d-b4f2-5ca8-b72b-4e33b7c56642",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "53a00e2d-b4f2-5ca8-b72b-4e33b7c56642",
+          "owner": "9f4aeb7b-52a8-5107-8988-93d9651319fa",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "9f4aeb7b-52a8-5107-8988-93d9651319fa",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "inspect"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+          "owner": "2bd191d8-700d-59db-b628-8e6aa3fb19b0",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "2bd191d8-700d-59db-b628-8e6aa3fb19b0",
+          "owner": "b0321b6d-4a13-5e9c-8615-274056f8141d",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b0321b6d-4a13-5e9c-8615-274056f8141d",
+          "owner": "3f4d6b19-e4a8-581c-b437-69be04fc5d75",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "3f4d6b19-e4a8-581c-b437-69be04fc5d75",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "effect"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+          "owner": "e77d2bcd-9f64-5feb-b1dd-b6b2516354c3",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "e77d2bcd-9f64-5feb-b1dd-b6b2516354c3",
+          "owner": "59e40ca7-2a9a-55ca-8f79-da5ca6b6ad0b",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "59e40ca7-2a9a-55ca-8f79-da5ca6b6ad0b",
+          "owner": "d064cf8a-e013-5251-8065-bfe5265298c5",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "d064cf8a-e013-5251-8065-bfe5265298c5",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "9f0f359c-0538-55f5-ad28-13fd27caee32",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Actions.sysml",
+      "ownership": [
+        {
+          "child": "9f0f359c-0538-55f5-ad28-13fd27caee32",
+          "owner": "b331b384-aa94-53c5-9895-4602161b5e41",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b331b384-aa94-53c5-9895-4602161b5e41",
+          "owner": "efdbd0f7-dc19-5dd3-9f57-2022084b3ddc",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "efdbd0f7-dc19-5dd3-9f57-2022084b3ddc",
+          "owner": "12ef2076-fa1e-5f01-aa66-c49f17f6de80",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "12ef2076-fa1e-5f01-aa66-c49f17f6de80",
+          "owner": "eae727bf-967c-54fe-88cc-2b5d0d9120a9",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "eae727bf-967c-54fe-88cc-2b5d0d9120a9",
+          "owner": "b5959cdf-7d36-5e34-b236-38aa65256f0a",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b5959cdf-7d36-5e34-b236-38aa65256f0a",
+          "owner": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4"
+    },
+    {
+      "subject": "a2119528-2e45-5c59-82c5-25828219bcde",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/States.sysml",
+      "ownership": [
+        {
+          "child": "a2119528-2e45-5c59-82c5-25828219bcde",
+          "owner": "df5b928a-4367-550c-a667-61e5d5c1e7e5",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "df5b928a-4367-550c-a667-61e5d5c1e7e5",
+          "owner": "1daf197e-73f1-532f-99c2-5512a1468034",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "1daf197e-73f1-532f-99c2-5512a1468034",
+          "owner": "ba17e046-6259-54d4-b105-7aa02b63754d",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ba17e046-6259-54d4-b105-7aa02b63754d",
+          "owner": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "owner": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "owner": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "c6d24c93-492b-5c83-a014-267cdd7aa681"
+    },
+    {
+      "subject": "a84a5d47-666c-55ad-910a-665d3ca8e364",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Actions.sysml",
+      "ownership": [
+        {
+          "child": "a84a5d47-666c-55ad-910a-665d3ca8e364",
+          "owner": "65923720-25ac-5128-9ca8-7cf2ef3f29c6",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "65923720-25ac-5128-9ca8-7cf2ef3f29c6",
+          "owner": "c53da6f8-837f-5b3a-8838-cfb22d5df5f8",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "c53da6f8-837f-5b3a-8838-cfb22d5df5f8",
+          "owner": "ce19e5e4-0a1d-58c7-8b6e-3956845963fd",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ce19e5e4-0a1d-58c7-8b6e-3956845963fd",
+          "owner": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "9a929ce0-cdac-5da4-8c26-3913dafbe3ee",
+          "owner": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "719862d0-2306-5987-8fc4-0624a7d6bfcc",
+          "owner": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4"
+    },
+    {
+      "subject": "b269c9a9-c168-57ca-bb1e-7de2462caa89",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Actions.sysml",
+      "ownership": [
+        {
+          "child": "b269c9a9-c168-57ca-bb1e-7de2462caa89",
+          "owner": "88390f84-5825-51cd-99b5-c9235c8b2daf",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "88390f84-5825-51cd-99b5-c9235c8b2daf",
+          "owner": "efdbd0f7-dc19-5dd3-9f57-2022084b3ddc",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "efdbd0f7-dc19-5dd3-9f57-2022084b3ddc",
+          "owner": "12ef2076-fa1e-5f01-aa66-c49f17f6de80",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "12ef2076-fa1e-5f01-aa66-c49f17f6de80",
+          "owner": "eae727bf-967c-54fe-88cc-2b5d0d9120a9",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "eae727bf-967c-54fe-88cc-2b5d0d9120a9",
+          "owner": "b5959cdf-7d36-5e34-b236-38aa65256f0a",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b5959cdf-7d36-5e34-b236-38aa65256f0a",
+          "owner": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4"
+    },
+    {
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "after"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+          "owner": "d999ca2f-48f3-5d48-945f-cef27a1a2351",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "d999ca2f-48f3-5d48-945f-cef27a1a2351",
+          "owner": "fe316564-0065-5b56-a5b3-45978e99df47",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "fe316564-0065-5b56-a5b3-45978e99df47",
+          "owner": "afa3a151-7026-530c-a8b5-237e3c5b5e44",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "afa3a151-7026-530c-a8b5-237e3c5b5e44",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "entry"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+          "owner": "b3626e19-e6f7-5fbf-97f3-1c0e5991f95e",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b3626e19-e6f7-5fbf-97f3-1c0e5991f95e",
+          "owner": "e69b8e42-68cb-56e2-ad85-cb6cd6232370",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "e69b8e42-68cb-56e2-ad85-cb6cd6232370",
+          "owner": "95f04e88-95b4-5b4a-9f0e-efe07a556f06",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "95f04e88-95b4-5b4a-9f0e-efe07a556f06",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "analyze"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "c7138546-28c0-5788-9519-0297d7a38d7d",
+          "owner": "45f1ca9c-1885-5cd5-9f85-5cd5b9132a50",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "45f1ca9c-1885-5cd5-9f85-5cd5b9132a50",
+          "owner": "b0321b6d-4a13-5e9c-8615-274056f8141d",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b0321b6d-4a13-5e9c-8615-274056f8141d",
+          "owner": "3f4d6b19-e4a8-581c-b437-69be04fc5d75",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "3f4d6b19-e4a8-581c-b437-69be04fc5d75",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "exit"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+          "owner": "3716b283-ac62-56e6-ad4f-e8806f514361",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "3716b283-ac62-56e6-ad4f-e8806f514361",
+          "owner": "e69b8e42-68cb-56e2-ad85-cb6cd6232370",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "e69b8e42-68cb-56e2-ad85-cb6cd6232370",
+          "owner": "95f04e88-95b4-5b4a-9f0e-efe07a556f06",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "95f04e88-95b4-5b4a-9f0e-efe07a556f06",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "demo"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+          "owner": "a80139c7-9a91-50fb-a51f-2d4d1952588c",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "a80139c7-9a91-50fb-a51f-2d4d1952588c",
+          "owner": "b0321b6d-4a13-5e9c-8615-274056f8141d",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b0321b6d-4a13-5e9c-8615-274056f8141d",
+          "owner": "3f4d6b19-e4a8-581c-b437-69be04fc5d75",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "3f4d6b19-e4a8-581c-b437-69be04fc5d75",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "cdcb027b-1d54-52bb-be1f-f48f1a8361f1",
+      "class": "FEATURE",
+      "name": "source",
+      "categories": [
+        "InheritedEndSuppression"
+      ],
+      "document": "Kernel Semantic Library/Links.kerml",
+      "ownership": [
+        {
+          "child": "cdcb027b-1d54-52bb-be1f-f48f1a8361f1",
+          "owner": "5fd24cb6-ca03-5e74-a80b-fb24a7bef0a2",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "5fd24cb6-ca03-5e74-a80b-fb24a7bef0a2",
+          "owner": "4bb338f9-cace-57cf-a884-a187b0610873",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "4bb338f9-cace-57cf-a884-a187b0610873",
+          "owner": "70a21994-b4aa-55a9-841b-29f81e682b58",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "70a21994-b4aa-55a9-841b-29f81e682b58",
+          "owner": "b1075dae-f39a-579d-95e2-749e4f099b56",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": true,
+      "source_package": "b1075dae-f39a-579d-95e2-749e4f099b56"
+    },
+    {
+      "subject": "d33b74d9-03dd-5f67-8b2d-6a621603eb0d",
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      },
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "d33b74d9-03dd-5f67-8b2d-6a621603eb0d",
+          "owner": "2a69f38d-b0a6-5aff-b661-7d5b6da253cf",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "2a69f38d-b0a6-5aff-b661-7d5b6da253cf",
+          "owner": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+          "owner": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "782a45e7-fbeb-533e-a534-472c5d12a965",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "when"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/SysML.sysml",
+      "ownership": [
+        {
+          "child": "e5222938-6eec-512d-a197-244f755feede",
+          "owner": "54528eda-63a5-5740-b98d-7d8df3d2bdae",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "54528eda-63a5-5740-b98d-7d8df3d2bdae",
+          "owner": "fe316564-0065-5b56-a5b3-45978e99df47",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "fe316564-0065-5b56-a5b3-45978e99df47",
+          "owner": "afa3a151-7026-530c-a8b5-237e3c5b5e44",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "afa3a151-7026-530c-a8b5-237e3c5b5e44",
+          "owner": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b38ec3aa-80df-5746-bbea-f4bc25cf0bf1",
+          "owner": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "11d0dda4-c452-53bf-9cee-3bcbb9f1feb9",
+          "owner": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e"
+    },
+    {
+      "subject": "e76d30a1-2f36-584d-8dce-409db017b746",
+      "class": "CONNECTION_USAGE",
+      "name": null,
+      "categories": [
+        "TypedProjection"
+      ],
+      "document": "Systems Library/Flows.sysml",
+      "ownership": [
+        {
+          "child": "e76d30a1-2f36-584d-8dce-409db017b746",
+          "owner": "2710136a-1f16-515b-b111-8546018fc45f",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "2710136a-1f16-515b-b111-8546018fc45f",
+          "owner": "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+          "owner": "7506865a-3fbc-5eb5-9692-3164f05ddff6",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "7506865a-3fbc-5eb5-9692-3164f05ddff6",
+          "owner": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57"
+    },
+    {
+      "subject": "f0fa074a-e058-5df1-80d2-1f352aafc916",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "ResultCycle"
+      ],
+      "document": "Systems Library/States.sysml",
+      "ownership": [
+        {
+          "child": "f0fa074a-e058-5df1-80d2-1f352aafc916",
+          "owner": "b3a3a45d-fe2d-535a-884b-761bec95414c",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b3a3a45d-fe2d-535a-884b-761bec95414c",
+          "owner": "42e14b9c-f0b2-590f-84bd-5826d21e21c4",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "42e14b9c-f0b2-590f-84bd-5826d21e21c4",
+          "owner": "dc978a8a-69d1-575e-a336-b783f3707272",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "dc978a8a-69d1-575e-a336-b783f3707272",
+          "owner": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "c609a22a-5798-56e0-86f3-1393dd607994",
+          "owner": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "fd7acd45-aa60-53c3-a9be-4847501a288a",
+          "owner": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "c6d24c93-492b-5c83-a014-267cdd7aa681"
+    },
+    {
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "test"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+          "owner": "ded30692-48dd-542f-ba32-a37ab3c03358",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ded30692-48dd-542f-ba32-a37ab3c03358",
+          "owner": "b0321b6d-4a13-5e9c-8615-274056f8141d",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "b0321b6d-4a13-5e9c-8615-274056f8141d",
+          "owner": "3f4d6b19-e4a8-581c-b437-69be04fc5d75",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "3f4d6b19-e4a8-581c-b437-69be04fc5d75",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "f61de17e-ffe3-5853-8589-9759b63a7daf",
+      "class": "REFERENCE_USAGE",
+      "name": null,
+      "categories": [
+        "EnumerationConstruction"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "f61de17e-ffe3-5853-8589-9759b63a7daf",
+          "owner": "6397b71b-7a80-5104-8708-c7ff2e8ba22d",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "6397b71b-7a80-5104-8708-c7ff2e8ba22d",
+          "owner": "9f1e190d-ef6c-5e4f-8e75-fc428abca65b",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "9f1e190d-ef6c-5e4f-8e75-fc428abca65b",
+          "owner": "ace97d88-cb11-59d2-b258-25e16dea0504",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "ace97d88-cb11-59d2-b258-25e16dea0504",
+          "owner": "309adcc7-df2d-5936-a049-fab5683536a0",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "309adcc7-df2d-5936-a049-fab5683536a0",
+          "owner": "df80b695-84e2-57b0-899d-bb34dbd49695",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "df80b695-84e2-57b0-899d-bb34dbd49695",
+          "owner": "0f947570-3e6b-5720-97b4-3e5faebda369",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "0f947570-3e6b-5720-97b4-3e5faebda369",
+          "owner": "3d52f054-2126-5530-8569-3a09ecbe2fbe",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "3d52f054-2126-5530-8569-3a09ecbe2fbe",
+          "owner": "0c0efcc6-3fcb-51d7-b91c-69fcd5bc18c1",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "0c0efcc6-3fcb-51d7-b91c-69fcd5bc18c1",
+          "owner": "03b15f3a-ebae-5a15-bdc1-ad0fc528d52a",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "03b15f3a-ebae-5a15-bdc1-ad0fc528d52a",
+          "owner": "c3c30037-d413-5225-bcc5-2f08eeaff373",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "c3c30037-d413-5225-bcc5-2f08eeaff373",
+          "owner": "3ef44639-3d5c-54df-b44c-1b1ea28f5a9e",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "3ef44639-3d5c-54df-b44c-1b1ea28f5a9e",
+          "owner": "583959da-ef5b-5c11-9e7e-70ba03a5ed87",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "583959da-ef5b-5c11-9e7e-70ba03a5ed87",
+          "owner": "88fca4e0-f663-5900-86b7-2fd0fa65b086",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "88fca4e0-f663-5900-86b7-2fd0fa65b086",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    },
+    {
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "inconclusive"
+        }
+      },
+      "categories": [
+        "EnumerationConstruction",
+        "VariationNaming"
+      ],
+      "document": "Systems Library/VerificationCases.sysml",
+      "ownership": [
+        {
+          "child": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+          "owner": "b2dfdf85-4fd4-5e62-b007-1ce48a1d4cc3",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "b2dfdf85-4fd4-5e62-b007-1ce48a1d4cc3",
+          "owner": "53a00e2d-b4f2-5ca8-b72b-4e33b7c56642",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        },
+        {
+          "child": "53a00e2d-b4f2-5ca8-b72b-4e33b7c56642",
+          "owner": "9f4aeb7b-52a8-5107-8988-93d9651319fa",
+          "property": "RELATIONSHIP_OWNED_RELATED_ELEMENT"
+        },
+        {
+          "child": "9f4aeb7b-52a8-5107-8988-93d9651319fa",
+          "owner": "9fb688ea-d073-5d8f-94e2-43370547c204",
+          "property": "ELEMENT_OWNED_RELATIONSHIP"
+        }
+      ],
+      "accepted_dependency": false,
+      "source_package": "9fb688ea-d073-5d8f-94e2-43370547c204"
+    }
+  ],
+  "result_cycle_subject_counts": {
+    "Systems Library/Actions.sysml": 8,
+    "Systems Library/Flows.sysml": 9,
+    "Systems Library/States.sysml": 4
+  },
+  "result_cycle_subjects": [
+    "0da1cb76-eed1-5f6f-aba7-0de8aff65f98",
+    "0df9add9-7323-573a-8427-e742241ec733",
+    "140ef6ea-f727-51a0-89f6-61d454cb48c7",
+    "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+    "221542a4-584d-5f0b-9142-50dff2e8763d",
+    "29480f97-23d3-5c60-8e2d-11d822639e86",
+    "3b9fab91-096f-5012-841c-ad946c367fdf",
+    "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+    "515638fd-0ff9-53fc-a6ba-05e1d820e62c",
+    "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+    "5ec82633-f2d4-5e14-a9b1-eb992bac8298",
+    "643d02aa-0e56-5d10-9b3c-f301561f4487",
+    "75c57429-f867-5e06-8c5a-cb4666c48ade",
+    "86de7286-c609-59e0-87ed-46cf6c3f4548",
+    "888cda79-aaa5-5d72-a654-b35603802e37",
+    "9f0f359c-0538-55f5-ad28-13fd27caee32",
+    "a2119528-2e45-5c59-82c5-25828219bcde",
+    "a84a5d47-666c-55ad-910a-665d3ca8e364",
+    "b269c9a9-c168-57ca-bb1e-7de2462caa89",
+    "d33b74d9-03dd-5f67-8b2d-6a621603eb0d",
+    "f0fa074a-e058-5df1-80d2-1f352aafc916"
+  ],
+  "enumeration_definitions": {
+    "SysML": [
+      "PortionKind",
+      "RequirementConstraintKind",
+      "StateSubactionKind",
+      "TransitionFeatureKind",
+      "TriggerKind"
+    ],
+    "VerificationCases": [
+      "VerdictKind",
+      "VerificationMethodKind"
+    ]
+  },
+  "textual_qualified_document_dependencies": {
+    "Actions": [
+      "Flows"
+    ],
+    "Allocations": [
+      "Connections"
+    ],
+    "AnalysisCases": [
+      "Calculations",
+      "Cases"
+    ],
+    "Attributes": [],
+    "Calculations": [
+      "Actions"
+    ],
+    "Cases": [
+      "Calculations",
+      "Parts",
+      "Requirements"
+    ],
+    "Connections": [
+      "Actions",
+      "Parts"
+    ],
+    "Constraints": [],
+    "Flows": [
+      "Actions"
+    ],
+    "Interfaces": [
+      "Connections",
+      "Ports"
+    ],
+    "Items": [
+      "Constraints",
+      "Parts"
+    ],
+    "Metadata": [
+      "Items"
+    ],
+    "Parts": [
+      "Actions",
+      "Items",
+      "Ports",
+      "States"
+    ],
+    "Ports": [],
+    "Requirements": [
+      "Actions",
+      "Attributes",
+      "Constraints",
+      "Interfaces",
+      "Parts"
+    ],
+    "StandardViewDefinitions": [
+      "SysML"
+    ],
+    "States": [
+      "Actions"
+    ],
+    "SysML": [],
+    "UseCases": [
+      "Cases"
+    ],
+    "VerificationCases": [
+      "Cases",
+      "Requirements"
+    ],
+    "Views": [
+      "Parts",
+      "Requirements"
+    ]
+  },
+  "slices": {
+    "H1-enumerations": {
+      "documents": [
+        "Actions",
+        "Attributes",
+        "Calculations",
+        "Cases",
+        "Connections",
+        "Constraints",
+        "Flows",
+        "Interfaces",
+        "Items",
+        "Metadata",
+        "Parts",
+        "Ports",
+        "Requirements",
+        "States",
+        "SysML",
+        "VerificationCases"
+      ],
+      "document_count": 16,
+      "documents_argument": "--documents=Actions,Attributes,Calculations,Cases,Connections,Constraints,Flows,Interfaces,Items,Metadata,Parts,Ports,Requirements,States,SysML,VerificationCases"
+    },
+    "H2-flow-interface": {
+      "documents": [
+        "Actions",
+        "Calculations",
+        "Connections",
+        "Constraints",
+        "Flows",
+        "Interfaces",
+        "Items",
+        "Parts",
+        "Ports",
+        "States"
+      ],
+      "document_count": 10,
+      "documents_argument": "--documents=Actions,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,States"
+    },
+    "H3-result-cycles": {
+      "documents": [
+        "Actions",
+        "Connections",
+        "Constraints",
+        "Flows",
+        "Items",
+        "Parts",
+        "Ports",
+        "States"
+      ],
+      "document_count": 8,
+      "documents_argument": "--documents=Actions,Connections,Constraints,Flows,Items,Parts,Ports,States"
+    },
+    "H4-medium": {
+      "documents": [
+        "Actions",
+        "Attributes",
+        "Calculations",
+        "Connections",
+        "Constraints",
+        "Flows",
+        "Interfaces",
+        "Items",
+        "Parts",
+        "Ports",
+        "Requirements",
+        "States",
+        "Views"
+      ],
+      "document_count": 13,
+      "documents_argument": "--documents=Actions,Attributes,Calculations,Connections,Constraints,Flows,Interfaces,Items,Parts,Ports,Requirements,States,Views"
+    },
+    "H1-H3-combined": {
+      "documents": [
+        "Actions",
+        "Attributes",
+        "Calculations",
+        "Cases",
+        "Connections",
+        "Constraints",
+        "Flows",
+        "Interfaces",
+        "Items",
+        "Metadata",
+        "Parts",
+        "Ports",
+        "Requirements",
+        "States",
+        "SysML",
+        "VerificationCases"
+      ],
+      "document_count": 16,
+      "documents_argument": "--documents=Actions,Attributes,Calculations,Cases,Connections,Constraints,Flows,Interfaces,Items,Metadata,Parts,Ports,Requirements,States,SysML,VerificationCases"
+    }
+  },
+  "documents": {
+    "Actions": {
+      "path": "Systems Library/Actions.sysml",
+      "sha256": "541e019ff4a827fc5f2139987d2a96f8735e9423d623859fb0e93281371eafb5",
+      "document": "8d72ed80-d6a5-5b7d-8205-c30a3d2f504d",
+      "root": "4b3e8a25-b131-5527-9f63-a950e6fdc4f4",
+      "root_range": [
+        0,
+        14335
+      ]
+    },
+    "Allocations": {
+      "path": "Systems Library/Allocations.sysml",
+      "sha256": "0ad900a4c25d88eb96da3d57e365f6c38cd87019bcaac5ab91eee9523b5f0ed1",
+      "document": "f4f235c1-75d6-50e9-b3c9-6c791f63eacb",
+      "root": "bb7cf1a1-26e8-5bb4-947d-e99156a321af",
+      "root_range": [
+        0,
+        788
+      ]
+    },
+    "AnalysisCases": {
+      "path": "Systems Library/AnalysisCases.sysml",
+      "sha256": "2bb88f61178f2cefd5441600d2d980ed1e1a4ffc5cb7b3ca9207edee5c350f87",
+      "document": "bd6e1341-4d9a-598a-ae74-3356c5295541",
+      "root": "6b5c944b-b7a2-598a-84c8-a96964625b1f",
+      "root_range": [
+        0,
+        1038
+      ]
+    },
+    "Attributes": {
+      "path": "Systems Library/Attributes.sysml",
+      "sha256": "0ff9b0acc3f0a7bd68fefe6b110e9136f1911d0c483741804c3b8ca07f5f538d",
+      "document": "d4b0bce6-0650-5ca9-b4c1-123406ee7ad6",
+      "root": "a46f31b6-9f00-58f5-a1d6-a926dc689462",
+      "root_range": [
+        0,
+        626
+      ]
+    },
+    "Calculations": {
+      "path": "Systems Library/Calculations.sysml",
+      "sha256": "19f5c2ac553c0a034550292de6bfa601e6948fc81d5af781b59c940eee2e5f72",
+      "document": "1353da88-7307-5076-90eb-0e8137b11bae",
+      "root": "34522778-f0c7-5ff6-b575-6fcb71eccf8b",
+      "root_range": [
+        0,
+        990
+      ]
+    },
+    "Cases": {
+      "path": "Systems Library/Cases.sysml",
+      "sha256": "2c4c0cbaaa466f9f720ba69af3a019517ca0a7741a561f7880006bae946bf24f",
+      "document": "e78a99fd-3875-5781-a4ab-4a05b29cf291",
+      "root": "260a3b32-5492-57af-afe3-78fcf6821dc7",
+      "root_range": [
+        0,
+        1619
+      ]
+    },
+    "Connections": {
+      "path": "Systems Library/Connections.sysml",
+      "sha256": "089d687c23c50095f1874d7f5ae1bb4af0f4d41afa0b58c518439a9691fcc3e3",
+      "document": "54160c33-fbae-52a0-8a59-e32ee8a8752f",
+      "root": "c6956c77-8982-557a-a9ca-c4e2f22c4b2d",
+      "root_range": [
+        0,
+        2133
+      ]
+    },
+    "Constraints": {
+      "path": "Systems Library/Constraints.sysml",
+      "sha256": "84dd65984abd0c35c37b75ef5766bfa63c836aa75a1c75a9d3eb5f4230fa8fdd",
+      "document": "02523915-5c75-5840-9a07-1b2c00b781f1",
+      "root": "b808e376-0668-5202-9dd6-29f1f1ae172f",
+      "root_range": [
+        0,
+        1263
+      ]
+    },
+    "Flows": {
+      "path": "Systems Library/Flows.sysml",
+      "sha256": "4e65e6a45060d634db8ba16767d7692e7704c62c84b579fdb2e56b18bd0f8a34",
+      "document": "24be0e02-4ed9-5306-aeaa-de836c2f50ce",
+      "root": "b6e424ca-d0dc-5fd1-a601-cd50c6997d57",
+      "root_range": [
+        0,
+        4987
+      ]
+    },
+    "Interfaces": {
+      "path": "Systems Library/Interfaces.sysml",
+      "sha256": "62b5c3c2bc3960e8d25633231c3933a81e422b3a904dc9541b8787113d076c66",
+      "document": "2a80d641-a037-5a99-b151-18036e3d273e",
+      "root": "ed7da2a0-9998-5556-9c5d-4b5d18b6026b",
+      "root_range": [
+        0,
+        3467
+      ]
+    },
+    "Items": {
+      "path": "Systems Library/Items.sysml",
+      "sha256": "3a344edb7def2276fa15e410c363531e5098d93bdf33a583418151fa87f538b3",
+      "document": "58deefe8-d1ca-5a88-83d9-efb8b07e074e",
+      "root": "036597ff-0852-5d5e-97ea-cf7c0700ef15",
+      "root_range": [
+        0,
+        3946
+      ]
+    },
+    "Metadata": {
+      "path": "Systems Library/Metadata.sysml",
+      "sha256": "6ad7a7857fad81570c84fac73981f8cce5aacab79bee2619644670bb792b2474",
+      "document": "ba15f023-7c02-5e13-a9d9-c9698c313654",
+      "root": "5683a201-e793-509e-8c50-ec7c685e8227",
+      "root_range": [
+        0,
+        813
+      ]
+    },
+    "Parts": {
+      "path": "Systems Library/Parts.sysml",
+      "sha256": "ccaaee608c1eb372c47cfdfc011c5f4f48cc5bcca5fb8b2441587ec26fd0fdaa",
+      "document": "8c7eb7dd-a3a2-5d0c-bac3-d8d66a69d0a4",
+      "root": "20921e29-61fc-516a-b2bb-7516d7fd230f",
+      "root_range": [
+        0,
+        1844
+      ]
+    },
+    "Ports": {
+      "path": "Systems Library/Ports.sysml",
+      "sha256": "401b2cb745bc0efb9df386d0435bddffa0e23d1eb6511cbe824734169b6a9566",
+      "document": "fe2608aa-5aca-541c-b702-893347cd9e9b",
+      "root": "73118669-5ab0-5933-a00d-ec447b55f688",
+      "root_range": [
+        0,
+        1522
+      ]
+    },
+    "Requirements": {
+      "path": "Systems Library/Requirements.sysml",
+      "sha256": "c436a8fe2959b380ee3d8ae7c1c206311aa9c1215d13800b215f9952e1216632",
+      "document": "1eb31772-876d-5715-b642-94c0edac7c4f",
+      "root": "c2673301-b734-5c51-969e-6e9ea25806a3",
+      "root_range": [
+        0,
+        5466
+      ]
+    },
+    "StandardViewDefinitions": {
+      "path": "Systems Library/StandardViewDefinitions.sysml",
+      "sha256": "b29882b0240e3cc2721b66c6bc9fd1d2d2431a34e80e170cd465911ff8d833a5",
+      "document": "fd9aaa5c-751b-52a4-960b-b08ac3ad3b68",
+      "root": "c0170905-4dc7-501a-a4c3-de13db0cbd8e",
+      "root_range": [
+        0,
+        6114
+      ]
+    },
+    "States": {
+      "path": "Systems Library/States.sysml",
+      "sha256": "9524f4c6d4dd10550faf6692dfdef3975e9e7f8514368e92032e8a17199f4980",
+      "document": "869ab9ca-e736-5d27-b49c-f697f22b25b9",
+      "root": "c6d24c93-492b-5c83-a014-267cdd7aa681",
+      "root_range": [
+        0,
+        3369
+      ]
+    },
+    "SysML": {
+      "path": "Systems Library/SysML.sysml",
+      "sha256": "badb9f49bd280d0273a5f55fd6572fe2b332df6c8f3888415c04589fb314b900",
+      "document": "325305b9-b018-5559-acd5-8592e2e60015",
+      "root": "ac9fa6fc-93a8-5489-ba91-c19eb7148f6e",
+      "root_range": [
+        0,
+        24612
+      ]
+    },
+    "UseCases": {
+      "path": "Systems Library/UseCases.sysml",
+      "sha256": "242e51944c32032215d76a9ff1fd967d8ba36efffd9d78da1c423a5b102a2cf6",
+      "document": "ce273c67-cc1f-5cec-a3b0-847c964cdba3",
+      "root": "b9fd02a1-2056-5834-bf62-61189e70fcc0",
+      "root_range": [
+        0,
+        1271
+      ]
+    },
+    "VerificationCases": {
+      "path": "Systems Library/VerificationCases.sysml",
+      "sha256": "dbee7255e16df9c5cf0bded96c43cb60b1e5026b6973c5fb1176316902ac47b9",
+      "document": "9e3730df-148c-5a36-9195-a23cc1b824ea",
+      "root": "9fb688ea-d073-5d8f-94e2-43370547c204",
+      "root_range": [
+        0,
+        2488
+      ]
+    },
+    "Views": {
+      "path": "Systems Library/Views.sysml",
+      "sha256": "4bbf3ab15d4e0c5754e0864c4a0a29efbcab1d18542741cfd98cf903c5930f25",
+      "document": "78215481-452f-5123-9500-4ec748094e73",
+      "root": "82dea6d9-3557-53a6-8d7f-9e037f93f3be",
+      "root_range": [
+        0,
+        3845
+      ]
+    }
+  },
+  "dependency_scope": "Lexical qualified references only, with reviewed semantic supplements: the previously closed eight-document Actions foundation; Metadata for SysML's metadata definitions; Calculations for Interfaces::excludingOnce. This plan does not prove new reference or producer closure."
+}

@@ -5,7 +5,7 @@
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "status": "inventory-established-rules-not-implemented",
+  "status": "inventory-established-bounded-implementation-recorded",
   "generator": "verification/sysml-semantic-foundation-v1/authority.py",
   "specification": {
     "path": "SysML.pdf",
@@ -22160,9 +22160,17 @@
             "owningVariationDefinition <> null implies specializes(owningVariationDefinition)"
           ],
           "library_dependencies": [],
-          "implementation_status": "not-implemented",
+          "implementation_status": "implemented-structural-producer",
           "query_id": null,
-          "deferred_reason": "Awaiting project/library semantic prerequisites and normative rule implementation"
+          "deferred_reason": null,
+          "producer_id": "checkUsageVariationDefinitionSpecialization",
+          "implementation": "crates/sysml-semantics/src/producers.rs",
+          "implementation_scope": "Generic VariantMembership-owned Usage specialization to its owning variation Definition through canonical FeatureTyping, with direct/indirect witness suppression and evidence-bearing scheduler closure; no standalone validator or broader variation-Usage completion claim",
+          "tests": [
+            "crates/sysml-semantics/src/producer_enumeration_tests.rs",
+            "crates/kerml-text/src/sysml_enumeration_tests.rs"
+          ],
+          "evidence": "verification/summaries/enumeration-closure/authority.md"
         },
         {
           "source_id": "Systems-DefinitionAndUsage-Usage-checkUsageVariationUsageTypeFeaturing",
